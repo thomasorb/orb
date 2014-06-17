@@ -1,0 +1,1306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Core module &mdash; Orb 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="_static/logo.ico"/>
+    <link rel="top" title="Orb 1.1 documentation" href="index.html" />
+    <link rel="next" title="Utils module" href="utils_module.html" />
+    <link rel="prev" title="ORB Documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="utils_module.html" title="Utils module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="ORB Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Core module</a><ul>
+<li><a class="reference internal" href="#tools-class">Tools class</a></li>
+<li><a class="reference internal" href="#cube-class">Cube class</a></li>
+<li><a class="reference internal" href="#textcolor-class">TextColor class</a></li>
+<li><a class="reference internal" href="#progressbar-class">ProgressBar class</a></li>
+<li><a class="reference internal" href="#memfile-class">MemFile class</a></li>
+<li><a class="reference internal" href="#indexer-class">Indexer class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">ORB Documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="utils_module.html"
+                        title="next chapter">Utils module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/core_module.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="core-module">
+<h1><a class="toc-backref" href="#id1">Core module</a><a class="headerlink" href="#core-module" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#core-module" id="id1">Core module</a><ul>
+<li><a class="reference internal" href="#tools-class" id="id2">Tools class</a></li>
+<li><a class="reference internal" href="#cube-class" id="id3">Cube class</a></li>
+<li><a class="reference internal" href="#textcolor-class" id="id4">TextColor class</a></li>
+<li><a class="reference internal" href="#progressbar-class" id="id5">ProgressBar class</a></li>
+<li><a class="reference internal" href="#memfile-class" id="id6">MemFile class</a></li>
+<li><a class="reference internal" href="#indexer-class" id="id7">Indexer class</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="tools-class">
+<h2><a class="toc-backref" href="#id2">Tools class</a><a class="headerlink" href="#tools-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.Tools">
+<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Tools</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Parent class of all classes of orbs and process modules.</p>
+<p>Implement basic methods to read and write FITS data, display
+messages, feed a logfile and manage the server for parallel
+processing.</p>
+<dl class="method">
+<dt id="core.Tools._close_pp_server">
+<tt class="descname">_close_pp_server</tt><big>(</big><em>js</em><big>)</big><a class="headerlink" href="#core.Tools._close_pp_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroy the parallel python job server to avoid too much
+opened files.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to <a class="reference external" href="http://www.parallelpython.com/">http://www.parallelpython.com/</a> for
+sources and information on Parallel Python software.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_basic_frame_header">
+<tt class="descname">_get_basic_frame_header</tt><big>(</big><em>dimx</em>, <em>dimy</em>, <em>config_file_name='config.orb'</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_frame_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a specific part of a header that can be used for image
+files or frames. It creates a false WCS useful to get a rough
+idea of the angular separation between two objects in the
+image.</p>
+<p>The header is returned as a list of tuples (key, value,
+comment) that can be added to any FITS file created by
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dimx</strong> &#8211; dimension of the first axis of the frame</li>
+<li><strong>dimy</strong> &#8211; dimension of the second axis of the frame</li>
+<li><strong>config_file_name</strong> &#8211; (Optional) Name of the configuration
+file (config.orb by default).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_basic_header">
+<tt class="descname">_get_basic_header</tt><big>(</big><em>file_type</em>, <em>config_file_name='config.orb'</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a basic header as a list of tuples (key, value,
+comment) that can be added to any FITS file created by
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_type</strong> &#8211; Description of the type of file created.</li>
+<li><strong>config_file_name</strong> &#8211; (Optional) Name of the configuration
+file (config.orb by default).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_basic_spectrum_cube_header">
+<tt class="descname">_get_basic_spectrum_cube_header</tt><big>(</big><em>nm_axis</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_cube_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a specific part of a header that can be used for
+a spectral cube. It creates the wavelength axis of the cube.</p>
+<p>The header is returned as a list of tuples (key, value,
+comment) that can be added to any FITS file created by
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a>
+and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nm_axis</strong> &#8211; Wavelength axis in nanometers. Each point of
+this axis must correspond to the wavelength of each
+frame. The axis must thus have the same length as the number
+of frames in the cube.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_basic_spectrum_frame_header">
+<tt class="descname">_get_basic_spectrum_frame_header</tt><big>(</big><em>frame_index</em>, <em>nm_axis</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_frame_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a specific part of a header that can be used for
+independant frames of a spectral cube. It gives the wavelength
+position of the frame.</p>
+<p>The header is returned as a list of tuples (key, value,
+comment) that can be added to any FITS file created by
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a>
+and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>frame_index</strong> &#8211; Index of the frame.</li>
+<li><strong>nm_axis</strong> &#8211; Wavelength axis in nanometers. Each point of
+this axis must correspond to the wavelength of each
+frame. The axis must thus have the same length as the number
+of frames in the cube.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_config_file_path">
+<tt class="descname">_get_config_file_path</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_config_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full path to the configuration file given its name.</p>
+<p>The configuration file must exist and it must be located in
+orbs/data/.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config_file_name</strong> &#8211; Name of the configuration file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_config_parameter">
+<tt class="descname">_get_config_parameter</tt><big>(</big><em>param_key</em>, <em>optional=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_config_parameter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Return a parameter written in a config file located in</dt>
+<dd>orbs/data/</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>param_key</strong> &#8211; Key of the parameter to be read</li>
+<li><strong>optional</strong> &#8211; (Optional) If True, a parameter key which is
+not found only raise a warning and the method returns
+None. Else, an error is raised (Default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>A parameter key is a string in upper case
+(e.g. PIX_SIZE_CAM1) which starts a line and which must be
+followed in the configuration file by an empty space and the
+parameter (in one word - no empty space). The following
+words on the same line are not read. A line not starting by
+a parameter key is considered as a comment. Please refer to
+the configuration file in orbs/data/ folder:</p>
+<div class="last highlight-python"><pre>## ORB configuration file 
+# Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;
+
+## Instrumental parameters
+PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
+PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  </pre>
+</div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_data_path_hdr">
+<tt class="descname">_get_data_path_hdr</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_data_path_hdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the header of the created files.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_date_str">
+<tt class="descname">_get_date_str</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_date_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return local date and hour as a short string 
+for messages</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_fft_params_header">
+<tt class="descname">_get_fft_params_header</tt><big>(</big><em>apodization_function</em><big>)</big><a class="headerlink" href="#core.Tools._get_fft_params_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a specific part of the header containing the
+parameters of the FFT.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>apodization_function</strong> &#8211; Name of the apodization function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_filter_file_path">
+<tt class="descname">_get_filter_file_path</tt><big>(</big><em>filter_name</em><big>)</big><a class="headerlink" href="#core.Tools._get_filter_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full path to the filter file given the name of
+the filter.</p>
+<p>The filter file name must be filter_FILTER_NAME and it must be
+located in orbs/data/.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_name</strong> &#8211; Name of the filter.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_mask_path">
+<tt class="descname">_get_mask_path</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#core.Tools._get_mask_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the path to the mask given the path to the original
+FITS file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; Path of the origial FITS file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_msg_class_hdr">
+<tt class="descname">_get_msg_class_hdr</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_msg_class_hdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the header of the displayed messages.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_standard_file_path">
+<tt class="descname">_get_standard_file_path</tt><big>(</big><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em><big>)</big><a class="headerlink" href="#core.Tools._get_standard_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a standard spectrum file path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>standard_name</strong> &#8211; Name of the standard star. Must be
+recorded in the standard table.</li>
+<li><strong>standard_table_name</strong> &#8211; (Optional) Name of the standard
+table file (default std_table.orb).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple [standard file path, standard type]. Standard type
+can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_standard_list">
+<tt class="descname">_get_standard_list</tt><big>(</big><em>standard_table_name='std_table.orb'</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#core.Tools._get_standard_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of standards recorded in the standard table</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>standard_table_name</strong> &#8211; (Optional) Name of the standard
+table file (default std_table.orb).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_standard_table_path">
+<tt class="descname">_get_standard_table_path</tt><big>(</big><em>standard_table_name</em><big>)</big><a class="headerlink" href="#core.Tools._get_standard_table_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full path to the standard table giving name,
+location and type of the recorded standard spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>standard_table_name</strong> &#8211; Name of the standard table file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_tuning_parameter">
+<tt class="descname">_get_tuning_parameter</tt><big>(</big><em>parameter_name</em>, <em>default_value</em><big>)</big><a class="headerlink" href="#core.Tools._get_tuning_parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the tuning parameter if it exists. In
+the other case return the default value.</p>
+<p>This method is used to help in setting some tuning parameters
+of some method externally.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The value returned if not the default value will
+be a string.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parameter_name</strong> &#8211; Name of the parameter</li>
+<li><strong>default_value</strong> &#8211; Default value.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._init_logfile_name">
+<tt class="descname">_init_logfile_name</tt><big>(</big><em>logfile_name</em><big>)</big><a class="headerlink" href="#core.Tools._init_logfile_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize logfile name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._init_pp_server">
+<tt class="descname">_init_pp_server</tt><big>(</big><em>silent=False</em><big>)</big><a class="headerlink" href="#core.Tools._init_pp_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a server for parallel processing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>silent</strong> &#8211; (Optional) If silent no message is printed
+(Default False).</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to <a class="reference external" href="http://www.parallelpython.com/">http://www.parallelpython.com/</a> for
+sources and information on Parallel Python software</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._print_caller_traceback">
+<tt class="descname">_print_caller_traceback</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._print_caller_traceback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the traceback of the calling function and log it into
+the log file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._print_error">
+<tt class="descname">_print_error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#core.Tools._print_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print an error message and raise an exception which will
+stop the execution of the program.</p>
+<p>Error messages are written in the log file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> &#8211; The message to be displayed.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._print_msg">
+<tt class="descname">_print_msg</tt><big>(</big><em>message</em>, <em>color=False</em>, <em>no_hdr=False</em><big>)</big><a class="headerlink" href="#core.Tools._print_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a simple message.</p>
+<p>Simple messages are written in the log file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>message</strong> &#8211; The message to be displayed.</li>
+<li><strong>color</strong> &#8211; (Optional) If True, the message is diplayed in
+color. If &#8216;alt&#8217;, an alternative color is displayed.</li>
+<li><strong>no_hdr</strong> &#8211; (Optional) If True, The message is displayed
+as it is, without any header.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._print_traceback">
+<tt class="descname">_print_traceback</tt><big>(</big><em>no_hdr=False</em><big>)</big><a class="headerlink" href="#core.Tools._print_traceback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a traceback and log it into the logfile.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>no_hdr</strong> &#8211; (Optional) If True, The message is displayed
+as it is, without any header.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method returns a traceback only if an error has
+been raised.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._print_warning">
+<tt class="descname">_print_warning</tt><big>(</big><em>message</em>, <em>traceback=False</em><big>)</big><a class="headerlink" href="#core.Tools._print_warning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a warning message. No exception is raised.</p>
+<p>Warning  messages are written in the log file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>message</strong> &#8211; The message to be displayed.</li>
+<li><strong>traceback</strong> &#8211; (Optional) If True, print traceback (default
+False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._update_fits_key">
+<tt class="descname">_update_fits_key</tt><big>(</big><em>fits_name</em>, <em>key</em>, <em>value</em>, <em>comment</em><big>)</big><a class="headerlink" href="#core.Tools._update_fits_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update one key of a FITS file. If the key doesn&#8217;t exist
+create one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+relative or absolut.</li>
+<li><strong>key</strong> &#8211; Exact name of the key to be updated.</li>
+<li><strong>value</strong> &#8211; New value of the key</li>
+<li><strong>comment</strong> &#8211; Comment on this key</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to
+<a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyfits/">http://www.stsci.edu/institute/software_hardware/pyfits/</a> for
+more information on PyFITS module. And
+<a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
+files.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools.open_file">
+<tt class="descname">open_file</tt><big>(</big><em>file_name</em>, <em>mode='w'</em><big>)</big><a class="headerlink" href="#core.Tools.open_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a file in write mode (by default) and return a file
+object.</p>
+<p>Create the file if it doesn&#8217;t exist (only in write mode).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+relative or absolute.</li>
+<li><strong>mode</strong> &#8211; (Optional) Can be &#8216;w&#8217; for write mode, &#8216;r&#8217; for
+read mode and &#8216;a&#8217; for append mode.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools.read_fits">
+<tt class="descname">read_fits</tt><big>(</big><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em><big>)</big><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a FITS data file and returns its data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+relative or absolut.</li>
+<li><strong>no_error</strong> &#8211; (Optional) If True this function will only
+display a warning message if the file does not exist (so it
+does not raise an exception) (default False)</li>
+<li><strong>nan_filter</strong> &#8211; (Optional) If True replace NaN by zeros
+(default False)</li>
+<li><strong>return_header</strong> &#8211; (Optional) If True return a tuple (data,
+header) (default False).</li>
+<li><strong>return_hdu_only</strong> &#8211; (Optional) If True return FITS header
+data unit only. No data will be returned (default False).</li>
+<li><strong>return_mask</strong> &#8211; (Optional) If True return only the mask
+corresponding to the data file (default False).</li>
+<li><strong>silent</strong> &#8211; (Optional) If True no message is displayed
+except if an error is raised (default False).</li>
+<li><strong>delete_after</strong> &#8211; (Optional) If True delete file after
+reading (default False).</li>
+<li><strong>data_index</strong> &#8211; (Optional) Index of data in the header data
+unit (Default 0).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to
+<a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyfits/">http://www.stsci.edu/institute/software_hardware/pyfits/</a> for
+more information on PyFITS module. And
+<a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
+files.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools.write_fits">
+<tt class="descname">write_fits</tt><big>(</big><em>fits_name</em>, <em>fits_data</em>, <em>fits_header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>mask=None</em>, <em>replace=False</em>, <em>record_stats=False</em><big>)</big><a class="headerlink" href="#core.Tools.write_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data in FITS format. If the file doesn&#8217;t exist create
+it with its directories.</p>
+<p>If the file already exists add a number to its name before the
+extension (unless &#8216;overwrite&#8217; option is set to True).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+relative or absolut.</li>
+<li><strong>fits_data</strong> &#8211; Data to be written in the file.</li>
+<li><strong>fits_header</strong> &#8211; (Optional) Optional keywords to update or
+create. It can be a pyfits.Header() instance or a list of
+tuples [(KEYWORD_1, VALUE_1, COMMENT_1), (KEYWORD_2,
+VALUE_2, COMMENT_2), ...]. Standard keywords like SIMPLE,
+BITPIX, NAXIS, EXTEND does not have to be passed.</li>
+<li><strong>silent</strong> &#8211; (Optional) If True turn this function won&#8217;t
+display any message (default False)</li>
+<li><strong>overwrite</strong> &#8211; (Optional) If True overwrite the output file
+if it exists (default False).</li>
+<li><strong>mask</strong> &#8211; (Optional) It not None must be an array with the
+same size as the given data but filled with ones and
+zeros. Bad values (NaN or Inf) are converted to 1 and the
+array is converted to 8 bit unsigned integers (uint8). This
+array will be written to the disk with the same path
+terminated by &#8216;_mask&#8217;. The header of the mask FITS file will
+be the same as the original data (default None).</li>
+<li><strong>replace</strong> &#8211; (Optional) If True and if the file already
+exist, new data replace old data in the existing file. NaN
+values do not replace old values. Other values replace old
+values. New array MUST have the same size as the existing
+array. Note that if replace is True, overwrite is
+automatically set to True.</li>
+<li><strong>record_stats</strong> &#8211; (Optional) If True, record mean and
+median of data. Useful if they often have to be computed
+(default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">float64 data is converted to float32 data to avoid
+too big files with unnecessary precision</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to
+<a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyfits/">http://www.stsci.edu/institute/software_hardware/pyfits/</a> for
+more information on PyFITS module and
+<a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
+files.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cube-class">
+<h2><a class="toc-backref" href="#id3">Cube class</a><a class="headerlink" href="#cube-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.Cube">
+<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Cube</tt><big>(</big><em>image_list_path</em>, <em>data_prefix='temp_data_'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=</em><span class="optional">[</span><span class="optional">]</span>, <em>wcs_header=</em><span class="optional">[</span><span class="optional">]</span>, <em>calibration_laser_header=</em><span class="optional">[</span><span class="optional">]</span>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><big>)</big><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<p>Generate and manage a <strong>virtual frame-divided cube</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>image_list_path</strong> &#8211; Path to the list of images which form the
+virtual cube. If <tt class="docutils literal"><span class="pre">image_list_path</span></tt> is set to &#8216;&#8217; then this
+class will not try to load any data.  Can be useful when the
+user don&#8217;t want to use or process any data.</li>
+<li><strong>config_file_name</strong> &#8211; (Optional) name of the config file to
+use. Must be located in orbs/data/</li>
+<li><strong>data_prefix</strong> &#8211; (Optional) Prefix used to determine the header
+of the name of each created file (default &#8216;temp_data&#8217;)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A <strong>frame-divided cube</strong> is a set of frames grouped
+together by a list.  It avoids storing a data cube in one large
+data file and loading an entire cube to process it.</p>
+</div>
+<dl class="method">
+<dt id="core.Cube.export">
+<tt class="descname">export</tt><big>(</big><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>fits_header=None</em>, <em>overwrite=False</em><big>)</big><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export cube as one FITS file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>export_path</strong> &#8211; Path of the exported FITS file</li>
+<li><strong>x_range</strong> &#8211; Tuple (x_min, x_max)</li>
+<li><strong>y_range</strong> &#8211; Tuple (y_min, y_max)</li>
+<li><strong>z_range</strong> &#8211; Tuple (z_min, z_max)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_all_data">
+<tt class="descname">get_all_data</tt><big>(</big><em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_all_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the whole data cube</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_column_data">
+<tt class="descname">get_column_data</tt><big>(</big><em>icol</em>, <em>silent=True</em>, <em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_column_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return data as a slice along x axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>icol</strong> &#8211; Column index</li>
+<li><strong>silent</strong> &#8211; (Optional) if False display a progress bar
+during data loading (default True)</li>
+<li><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_data">
+<tt class="descname">get_data</tt><big>(</big><em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>z_min</em>, <em>z_max</em>, <em>silent=False</em>, <em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a part of the data cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x_min</strong> &#8211; minimum index along x axis</li>
+<li><strong>x_max</strong> &#8211; maximum index along x axis</li>
+<li><strong>y_min</strong> &#8211; minimum index along y axis</li>
+<li><strong>y_max</strong> &#8211; maximum index along y axis</li>
+<li><strong>z_min</strong> &#8211; minimum index along z axis</li>
+<li><strong>z_max</strong> &#8211; maximum index along z axis</li>
+<li><strong>silent</strong> &#8211; (Optional) if False display a progress bar
+during data loading (default False)</li>
+<li><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_data_frame">
+<tt class="descname">get_data_frame</tt><big>(</big><em>index</em>, <em>silent=False</em>, <em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_data_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return one frame of the cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>index</strong> &#8211; Index of the frame to be returned</li>
+<li><strong>silent</strong> &#8211; (Optional) if False display a progress bar
+during data loading (default False)</li>
+<li><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_frame_header">
+<tt class="descname">get_frame_header</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#core.Cube.get_frame_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the header of a frame given its index in the list.</p>
+<p>The header is returned as an instance of pyfits.Header().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> &#8211; Index of the frame</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to
+<a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyfits/">http://www.stsci.edu/institute/software_hardware/pyfits/</a> for
+more information on PyFITS module and
+<a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
+files.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_interf_energy_map">
+<tt class="descname">get_interf_energy_map</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_interf_energy_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the energy map of an interferogram cube</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_mean_image">
+<tt class="descname">get_mean_image</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_mean_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mean image of a cube (corresponding to a deep
+frame for an interferogram cube or a specral cube)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_quadrant_dims">
+<tt class="descname">get_quadrant_dims</tt><big>(</big><em>quad_number</em>, <em>div_nb=None</em>, <em>dimx=None</em>, <em>dimy=None</em><big>)</big><a class="headerlink" href="#core.Cube.get_quadrant_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the indices of a quadrant along x and y axes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>quad_number</strong> &#8211; Quadrant number</li>
+<li><strong>div_nb</strong> &#8211; (Optional) Use another number of divisions
+along x and y axes. (e.g. if div_nb = 3, the number of
+quadrant is 9 ; if div_nb = 4, the number of quadrant is 16)</li>
+<li><strong>dimx</strong> &#8211; (Optional) Use another x axis dimension. Other
+than the axis dimension of the managed data cube</li>
+<li><strong>dimy</strong> &#8211; (Optional) Use another y axis dimension. Other
+than the axis dimension of the managed data cube</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_resized_data">
+<tt class="descname">get_resized_data</tt><big>(</big><em>size_x</em>, <em>size_y</em><big>)</big><a class="headerlink" href="#core.Cube.get_resized_data" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Resize the data cube and return it using spline</dt>
+<dd>interpolation.</dd>
+</dl>
+<p>This function is used only to resize a cube of flat or dark
+frames. Note that resizing dark or flat frames must be
+avoided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>size_x</strong> &#8211; New size of the cube along x axis</li>
+<li><strong>size_y</strong> &#8211; New size of the cube along y axis</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This function must not be used to resize images
+containing star-like objects (a linear interpopolation must
+be done in this case).</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_resized_frame">
+<tt class="descname">get_resized_frame</tt><big>(</big><em>index</em>, <em>size_x</em>, <em>size_y</em>, <em>degree=3</em><big>)</big><a class="headerlink" href="#core.Cube.get_resized_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a resized frame using spline interpolation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>index</strong> &#8211; Index of the frame to resize</li>
+<li><strong>size_x</strong> &#8211; New size of the cube along x axis</li>
+<li><strong>size_y</strong> &#8211; New size of the cube along y axis</li>
+<li><strong>degree</strong> &#8211; (Optional) Interpolation degree (Default 3)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">To use this function on images containing
+star-like objects a linear interpolation must be done
+(set degree to 1).</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_spectrum_energy_map">
+<tt class="descname">get_spectrum_energy_map</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_spectrum_energy_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the energy map of a spectrum cube</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_zmean">
+<tt class="descname">get_zmean</tt><big>(</big><em>nozero=False</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zmean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a vector containing frames median.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nozero</strong> &#8211; If True zeros are removed from the median
+computation. If there&#8217;s only zeros, median frame value will
+be a NaN (default False).</li>
+<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+compute median.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_zmedian">
+<tt class="descname">get_zmedian</tt><big>(</big><em>nozero=False</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zmedian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a vector containing frames mean.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nozero</strong> &#8211; If True zeros are removed from the mean
+computation. If there&#8217;s only zeros, mean frame value will
+be a NaN (default False).</li>
+<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+compute mean.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_zstat">
+<tt class="descname">get_zstat</tt><big>(</big><em>nozero=False</em>, <em>stat='mean'</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zstat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a vector containing frames stat (mean, median or
+std).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nozero</strong> &#8211; If True zeros are removed from the stat
+computation. If there&#8217;s only zeros, stat frame value will
+be a NaN (default False).</li>
+<li><strong>stat</strong> &#8211; Type of stat to return. Can be &#8216;mean&#8217;, &#8216;median&#8217;
+or &#8216;std&#8217;</li>
+<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+compute stat.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_zstd">
+<tt class="descname">get_zstd</tt><big>(</big><em>nozero=False</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zstd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a vector containing frames std.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nozero</strong> &#8211; If True zeros are removed from the std
+computation. If there&#8217;s only zeros, std frame value will
+be a NaN (default False).</li>
+<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+compute std.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.is_same_2D_size">
+<tt class="descname">is_same_2D_size</tt><big>(</big><em>cube_test</em><big>)</big><a class="headerlink" href="#core.Cube.is_same_2D_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if another cube has the same dimensions along x and y
+axes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_test</strong> &#8211; Cube to check</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.is_same_3D_size">
+<tt class="descname">is_same_3D_size</tt><big>(</big><em>cube_test</em><big>)</big><a class="headerlink" href="#core.Cube.is_same_3D_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if another cube has the same dimensions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_test</strong> &#8211; Cube to check</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="textcolor-class">
+<h2><a class="toc-backref" href="#id4">TextColor class</a><a class="headerlink" href="#textcolor-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.TextColor">
+<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">TextColor</tt><a class="headerlink" href="#core.TextColor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define ANSI Escape sequences to display text with colors.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Note that colored text doesn&#8217;t work on Windows, use
+disable() function to disable coloured text.</p>
+</div>
+<dl class="method">
+<dt id="core.TextColor.disable">
+<tt class="descname">disable</tt><big>(</big><big>)</big><a class="headerlink" href="#core.TextColor.disable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable ANSI Escape sequences for windows portability</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="progressbar-class">
+<h2><a class="toc-backref" href="#id5">ProgressBar class</a><a class="headerlink" href="#progressbar-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.ProgressBar">
+<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">ProgressBar</tt><big>(</big><em>max_index</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.ProgressBar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display a simple progress bar in the terminal</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_index</strong> &#8211; The index considered as 100%</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="core.ProgressBar._erase_line">
+<tt class="descname">_erase_line</tt><big>(</big><big>)</big><a class="headerlink" href="#core.ProgressBar._erase_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Erase the progress bar</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.ProgressBar._time_str_convert">
+<tt class="descname">_time_str_convert</tt><big>(</big><em>sec</em><big>)</big><a class="headerlink" href="#core.ProgressBar._time_str_convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a number of seconds in a human readable string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sec</strong> &#8211; Number of seconds to convert</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.ProgressBar.end">
+<tt class="descname">end</tt><big>(</big><em>silent=False</em><big>)</big><a class="headerlink" href="#core.ProgressBar.end" title="Permalink to this definition">¶</a></dt>
+<dd><p>End the progress bar and display the total time needed to
+complete the process.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>silent</strong> &#8211; If True remove the progress bar from the
+screen. Further diplayed text will be displayed above the
+progress bar.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.ProgressBar.update">
+<tt class="descname">update</tt><big>(</big><em>index</em>, <em>info=''</em><big>)</big><a class="headerlink" href="#core.ProgressBar.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the progress bar.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>index</strong> &#8211; Index representing the progress of the
+process. Must be less than index_max.</li>
+<li><strong>info</strong> &#8211; (Optional) Information to be displayed as
+comments</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="memfile-class">
+<h2><a class="toc-backref" href="#id6">MemFile class</a><a class="headerlink" href="#memfile-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.MemFile">
+<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">MemFile</tt><big>(</big><em>memfile_path</em><big>)</big><a class="headerlink" href="#core.MemFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manage memory file.</p>
+<p>A memory file is a file containing options that must be shared by
+multiple classes. Options in this file are temporary.</p>
+<p>This class behaves as a dictionary reflecting the content of the
+memory file on the disk.</p>
+<dl class="method">
+<dt id="core.MemFile.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#core.MemFile.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update memory file with the data contained in self.mem</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="indexer-class">
+<h2><a class="toc-backref" href="#id7">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.Indexer">
+<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Indexer</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<p>Manage locations of created files.</p>
+<p>All files locations are stored in a text-like file: the index
+file. This file is the &#8216;real&#8217; counterpart of the index (which is
+&#8216;virtual&#8217; until <a class="reference internal" href="#core.Indexer.update_index" title="core.Indexer.update_index"><tt class="xref py py-meth docutils literal"><span class="pre">core.Indexer.update_index()</span></tt></a> is
+called). This method is called each time
+<tt class="xref py py-meth docutils literal"><span class="pre">core.Indexer.__setitem__()</span></tt> is called.</p>
+<p>This class can be accessed like a dictionary.</p>
+<dl class="method">
+<dt id="core.Indexer._get_index_path">
+<tt class="descname">_get_index_path</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer._get_index_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path of the index</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Indexer._index2group">
+<tt class="descname">_index2group</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#core.Indexer._index2group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an integer (0, 1 or 2) to a group of files
+(&#8216;merged&#8217;, &#8216;cam1&#8217; or &#8216;cam2&#8217;).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Indexer.get_path">
+<tt class="descname">get_path</tt><big>(</big><em>file_key</em>, <em>file_group=None</em>, <em>err=False</em><big>)</big><a class="headerlink" href="#core.Indexer.get_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the path of a file recorded in the index.</p>
+<p>Equivalent to self[file_key] if the option file_group is not used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_key</strong> &#8211; Key name of the file to be located</li>
+<li><strong>file_group</strong> &#8211; (Optional) Add group prefix to the key
+name. File group must be &#8216;cam1&#8217;, &#8216;cam2&#8217;, &#8216;merged&#8217; or their
+integer equivalent 1, 2, 0. File group can also be set to
+None (default None).</li>
+<li><strong>err</strong> &#8211; (Optional) Print an error instead of a warning if
+the file is not indexed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Indexer.load_index">
+<tt class="descname">load_index</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer.load_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load index file and rebuild index of already located files</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Indexer.set_file_group">
+<tt class="descname">set_file_group</tt><big>(</big><em>file_group</em><big>)</big><a class="headerlink" href="#core.Indexer.set_file_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the group of the next files to be recorded. All given
+file keys will be prefixed by the file group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_group</strong> &#8211; File group must be &#8216;cam1&#8217;, &#8216;cam2&#8217;, &#8216;merged&#8217;
+or their integer equivalent 1, 2, 0. File group can also be
+set to None.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Indexer.update_index">
+<tt class="descname">update_index</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer.update_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update index files with data in the virtual index</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="utils_module.html" title="Utils module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="ORB Documentation"
+             >previous</a> |</li>
+        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

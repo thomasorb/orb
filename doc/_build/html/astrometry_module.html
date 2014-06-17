@@ -1,0 +1,1228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Astrometry module &mdash; Orb 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="_static/logo.ico"/>
+    <link rel="top" title="Orb 1.1 documentation" href="index.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="CUtils module" href="cutils_module.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="Changelog"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cutils_module.html" title="CUtils module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Astrometry module</a><ul>
+<li><a class="reference internal" href="#astrometry-class">Astrometry class</a></li>
+<li><a class="reference internal" href="#starsparams-class">StarsParams class</a></li>
+<li><a class="reference internal" href="#psf-class">PSF class</a></li>
+<li><a class="reference internal" href="#gaussian-class">Gaussian class</a></li>
+<li><a class="reference internal" href="#moffat-class">Moffat class</a></li>
+<li><a class="reference internal" href="#astrometry-functions">Astrometry functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cutils_module.html"
+                        title="previous chapter">CUtils module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="changelog.html"
+                        title="next chapter">Changelog</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/astrometry_module.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="astrometry-module">
+<h1><a class="toc-backref" href="#id1">Astrometry module</a><a class="headerlink" href="#astrometry-module" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#astrometry-module" id="id1">Astrometry module</a><ul>
+<li><a class="reference internal" href="#astrometry-class" id="id2">Astrometry class</a></li>
+<li><a class="reference internal" href="#starsparams-class" id="id3">StarsParams class</a></li>
+<li><a class="reference internal" href="#psf-class" id="id4">PSF class</a></li>
+<li><a class="reference internal" href="#gaussian-class" id="id5">Gaussian class</a></li>
+<li><a class="reference internal" href="#moffat-class" id="id6">Moffat class</a></li>
+<li><a class="reference internal" href="#astrometry-functions" id="id7">Astrometry functions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="astrometry-class">
+<h2><a class="toc-backref" href="#id2">Astrometry class</a><a class="headerlink" href="#astrometry-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="astrometry.Astrometry">
+<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Astrometry</tt><big>(</big><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='moffat'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=3.0</em>, <em>data_prefix=''</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>config_file_name='config.orb'</em>, <em>logfile_name=None</em>, <em>tuning_parameters={}</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<p>Manage all astrometrical processes that can be made on a single
+frame of a whole cube.</p>
+<p>This class can detect stars in the given data and return fit
+parameters. Fit parameters are returned as a
+<a class="reference internal" href="#astrometry.StarsParams" title="astrometry.StarsParams"><tt class="xref py py-class docutils literal"><span class="pre">StarsParams</span></tt></a> object used to store and access
+fit parameters.</p>
+<p>Possible fitting profiles are at least Gaussian and Moffat. Other
+profiles can be created by expanding <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">PSF</span></tt></a>
+class.</p>
+<dl class="method">
+<dt id="astrometry.Astrometry._get_fit_results_path">
+<tt class="descname">_get_fit_results_path</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_fit_results_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the default path to the file containing all fit
+results.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry._get_star_list_path">
+<tt class="descname">_get_star_list_path</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_star_list_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the default path to the star list file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.arc2pix">
+<tt class="descname">arc2pix</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.arc2pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert pixels in arcseconds</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> &#8211; a value or a vector in pixel</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.dark_current_level">
+<tt class="descname">dark_current_level</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.dark_current_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dark current level in ADU/pixel (can be computed from dark frames:
+median(master_dark_frame))</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.detect_stack">
+<tt class="descname">detect_stack</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.detect_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of frames stacked together to create one median frame
+used for star detection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.detect_stars">
+<tt class="descname">detect_stars</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect star position in data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>index</strong> &#8211; Minimum index of the images used for star detection.</li>
+<li><strong>min_star_number</strong> &#8211; Minimum number of stars to
+detect. Must be greater or equal to 4 (minimum star number
+for any alignment process).</li>
+<li><strong>no_save</strong> &#8211; if True do not save the list of detected stars
+in a file, only return a list (default False).</li>
+<li><strong>saturation_threshold</strong> &#8211; Number of counts above which the
+star can be considered as saturated. Very low by default
+because at the ZPD the intensity of a star can be twice the
+intensity far from it (default 35000).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(star_list_path, mean_fwhm_arc) : (a path to a list
+of the dected stars, the mean FWHM of the stars in arcsec)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Star detection walks through 2 steps:</p>
+<ol class="last arabic simple">
+<li>Preselection of 4 times the minimum number of stars to
+detect using a variable threshold with a filter for hot
+pixels and stars near the border of the image.</li>
+<li>Stars are fitted to test if they are &#8216;real&#8217; stars. The
+most luminous stars (that do not saturate) are
+eventually taken.</li>
+</ol>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.fit_results">
+<tt class="descname">fit_results</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.fit_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array containing all the resulting parameters (as dictionaries)
+of the fit of each star in each frame</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.fit_stars_in_cube">
+<tt class="descname">fit_stars_in_cube</tt><big>(</big><em>correct_alignment=False</em>, <em>save=True</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fwhm_min=0.5</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>fix_aperture_size=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>hpfilter=False</em>, <em>add_cube=None</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit stars in the cube.</p>
+<p>Frames must not be too disaligned. Disalignment can be
+corrected as the cube is fitted by setting correct_alignment
+option to True.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>correct_alignment</strong> &#8211; (Optional) If True, the initial star
+positions from the star list are corrected by their last
+recorded deviation. Useful when the cube is smoothly
+disaligned from one frame to the next.</li>
+<li><strong>save</strong> &#8211; (Optional) If True save the fit results in a file
+(default True).</li>
+<li><strong>fix_height</strong> &#8211; (Optional) Fix height parameter to its
+estimation (default True)</li>
+<li><strong>fix_beta</strong> &#8211; (Optional) Fix beta to its default value
+(default True).</li>
+<li><strong>fix_fwhm</strong> &#8211; (Optional) Fix FWHM to the default value
+(default False)</li>
+<li><strong>fwhm_min</strong> &#8211; (Optional) Minimum valid FWHM of the fitted
+star (default 0.5)</li>
+<li><strong>local_background</strong> &#8211; (Optional) If True, background level
+is estimated locally, i.e. around the stars. If False, a
+global background is estimated for each frame and will be
+used for all the stars in the frame. In this case,
+background level is fixed and will be the same for fitting
+and photometry (default True).</li>
+<li><strong>no_aperture_photometry</strong> &#8211; (Optional) if True no aperture
+photometry will be done after parameters fit. It increases
+the speed of the process (default False).</li>
+<li><strong>fix_aperture_size</strong> &#8211; (Optional) If True, size of the
+aperture is fixed to a radius defined by the default value
+of the FWHM. If False, aperture size is evaluated for each
+frame from the mean FWHM of the stars in the frame (default
+False).</li>
+<li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will
+be more precise but this can lead to errors if the stars
+positions are not already roughly known (default False).</li>
+<li><strong>aper_coeff</strong> &#8211; (Optional) Aperture coefficient. The
+aperture radius is Rap = aper_coeff * FWHM. Better when
+between 1.5 to reduce the variation of the collected photons
+with varying FWHM and 3. to account for the flux in the
+wings (default 3., better for star with a high SNR).</li>
+<li><strong>blur</strong> &#8211; (Optional) If True, blur frame (low pass
+filtering) before fitting stars. It can be used to enhance
+the quality of the fitted flux of undersampled data. Note
+that the error on star position can be greater on blurred
+frame. This option must not be used for alignment purpose
+(default False).</li>
+<li><strong>no_fit</strong> &#8211; (Optional) If True, no fit is done. Only the
+aperture photometry. Star positions in the star list must
+thus be precise (default False).</li>
+<li><strong>hpfilter</strong> &#8211; (Optional) If True, frames are HP filtered
+before fitting stars. Useful for alignment purpose if there
+are too much nebulosities in the frames. This option must
+not be used for photometry (default False).</li>
+<li><strong>estimate_local_noise</strong> &#8211; (Optional) If True, the level of
+noise is computed from the background pixels around the
+stars. readout_noise and dark_current_level are thus not
+used (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.fit_stars_in_frame">
+<tt class="descname">fit_stars_in_frame</tt><big>(</big><em>index</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>local_background=True</em>, <em>save=False</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit stars in one frame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>index</strong> &#8211; Index of the frame to fit.</li>
+<li><strong>fix_height</strong> &#8211; (Optional) Fix height parameter to its
+estimation (default False)</li>
+<li><strong>fix_beta</strong> &#8211; (Optional) Fix beta to the given value
+(default True).</li>
+<li><strong>fix_fwhm</strong> &#8211; (Optional) Fix FWHM to to its
+estimation (default False).</li>
+<li><strong>local_background</strong> &#8211; (Optional) If True, height is
+evaluated locally (median of the box around the star). If
+False, the sky background is determined it the whole frame
+and the guess height will be the same for all the stars
+(default True).</li>
+<li><strong>save</strong> &#8211; (Optional) If True save the fit results in a file
+(default True).</li>
+<li><strong>fix_aperture_fwhm_pix</strong> &#8211; (Optional) If a positive
+float. FWHM used to scale aperture size is not computed from
+the mean FWHM in the frame but fixed to the given float
+(default None).</li>
+<li><strong>no_aperture_photometry</strong> &#8211; (Optional) If True, aperture
+photometry will not be done after profile fitting (default
+False).</li>
+<li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will
+be more precise but this can lead to errors if the stars
+positions are not already roughly known (default False).</li>
+<li><strong>aper_coeff</strong> &#8211; (Optional) Aperture coefficient. The
+aperture radius is Rap = aper_coeff * FWHM. Better when
+between 1.5 to reduce the variation of the collected photons
+with varying FWHM and 3. to account for the flux in the
+wings (default 3., better for star with a high SNR).</li>
+<li><strong>blur</strong> &#8211; (Optional) If True, blur frame (low pass
+filtering) before fitting stars. It can be used to enhance
+the quality of the fitted flux of undersampled data. Note
+that the error on star position can be greater on blurred
+frame. This option must not be used for alignment purpose
+(default False).</li>
+<li><strong>no_fit</strong> &#8211; (Optional) If True, no fit is done. Only the
+aperture photometry. Star positions in the star list must
+thus be precise (default False).</li>
+<li><strong>estimate_local_noise</strong> &#8211; (Optional) If True, the level of
+noise is computed from the background pixels around the
+stars. readout_noise and dark_current_level are thus not
+used (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.fit_tol">
+<tt class="descname">fit_tol</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.fit_tol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tolerance on the fit parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.get_alignment_vectors">
+<tt class="descname">get_alignment_vectors</tt><big>(</big><em>fit_cube=False</em>, <em>min_coeff=0.2</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.get_alignment_vectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return alignement vectors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fit_cube</strong> &#8211; (Optional) If True, the cube is fitted before
+using the fit results to create the alignement vectors. Else
+the vectors are created using the fit results already in
+memory (default False).</li>
+<li><strong>min_coeff</strong> &#8211; The minimum proportion of stars correctly
+fitted to assume a good enough calculated disalignment
+(default 0.2).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.load_fit_results">
+<tt class="descname">load_fit_results</tt><big>(</big><em>fit_results_path=None</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.load_fit_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a file containing the fit results</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.load_star_list">
+<tt class="descname">load_star_list</tt><big>(</big><em>star_list_path</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.load_star_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a list of stars coordinates</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>star_list_path</strong> &#8211; The path to the star list file.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#astrometry.load_star_list" title="astrometry.load_star_list"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.load_star_list()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.pix2arc">
+<tt class="descname">pix2arc</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.pix2arc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert arcseconds in pixels</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> &#8211; a value or a vector in arcsec</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.readout_noise">
+<tt class="descname">readout_noise</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.readout_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Readout noise in ADU/pixel (can be computed from bias frames:
+std(master_bias_frame))</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.reduced_chi_square_limit">
+<tt class="descname">reduced_chi_square_limit</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.reduced_chi_square_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coefficient on the reduced chi square for bad quality fits
+rejection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.reset_box_size">
+<tt class="descname">reset_box_size</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_box_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset box size attribute. Useful if FWHM or scale has been
+modified after class init.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.reset_fwhm_arc">
+<tt class="descname">reset_fwhm_arc</tt><big>(</big><em>fwhm_arc</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_fwhm_arc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset FWHM of stars in arcsec</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fwhm_arc</strong> &#8211; FWHM of stars in arcsec</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.reset_fwhm_pix">
+<tt class="descname">reset_fwhm_pix</tt><big>(</big><em>fwhm_pix</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_fwhm_pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset FWHM of stars in pixels</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fwhm_arc</strong> &#8211; FWHM of stars in pixels</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.reset_profile_name">
+<tt class="descname">reset_profile_name</tt><big>(</big><em>profile_name</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_profile_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the name of the profile used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>profile_name</strong> &#8211; Name of the PSF profile to use for
+fitting. Can be &#8216;moffat&#8217; or &#8216;gaussian&#8217;.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.reset_scale">
+<tt class="descname">reset_scale</tt><big>(</big><em>scale</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset scale attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scale</strong> &#8211; Frame scale in arcsec/pixel</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.reset_star_list">
+<tt class="descname">reset_star_list</tt><big>(</big><em>star_list</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_star_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the list of stars</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>star_list</strong> &#8211; An array of shape (star_nb, 2) giving the
+positions in x and y of the stars.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="starsparams-class">
+<h2><a class="toc-backref" href="#id3">StarsParams class</a><a class="headerlink" href="#starsparams-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="astrometry.StarsParams">
+<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">StarsParams</tt><big>(</big><em>star_nb=1</em>, <em>frame_nb=1</em>, <em>logfile_name=None</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<p>StarsParams manage the parameters of each star in each frame of
+a cube.</p>
+<p>It can be accessed as a simple 3D array of shape (star_number,
+frame_nb, parameter).</p>
+<p>Additional methods provide an easy access to the data.</p>
+<dl class="method">
+<dt id="astrometry.StarsParams.convert">
+<tt class="descname">convert</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert StarsParams data to a new StarsParams instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.StarsParams.get_star_list">
+<tt class="descname">get_star_list</tt><big>(</big><em>index=0</em>, <em>all_params=False</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.get_star_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array of the positions of the stars in one frame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>index</strong> &#8211; (Optional) The index of the frame to use to
+create the list of stars (default 0)</li>
+<li><strong>all_params</strong> &#8211; (Optional) If True, all params are
+returned. Bad params are returned as NaN values.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.StarsParams.load_stars_params">
+<tt class="descname">load_stars_params</tt><big>(</big><em>params_file_path</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.load_stars_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a file containing stars parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fit_results_path</strong> &#8211; Path to the file parameters</li>
+<li><strong>silent</strong> &#8211; (Optional) If True, no message is printed
+(default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.StarsParams.reset_data">
+<tt class="descname">reset_data</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.StarsParams.reset_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset StarsParams data to an empty array</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.StarsParams.save_stars_params">
+<tt class="descname">save_stars_params</tt><big>(</big><em>params_file_path</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.save_stars_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save stars parameters in one file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>params_file_path</strong> &#8211; Path to the parameters file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="psf-class">
+<h2><a class="toc-backref" href="#id4">PSF class</a><a class="headerlink" href="#psf-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="astrometry.PSF">
+<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">PSF</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.PSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<p>General class of inheritance for point spread functions (PSFs)</p>
+<dl class="method">
+<dt id="astrometry.PSF.array2d">
+<tt class="descname">array2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.PSF.array2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 2D profile given the size of the returned
+array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nx</strong> &#8211; Length of the returned array along x axis</li>
+<li><strong>ny</strong> &#8211; Length of the returned array along y axis</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.PSF.varray2d">
+<tt class="descname">varray2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.PSF.varray2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a vectorized 2D profile given the size of the returned
+array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nx</strong> &#8211; Length of the returned array along x axis</li>
+<li><strong>ny</strong> &#8211; Length of the returned array along y axis</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="gaussian-class">
+<h2><a class="toc-backref" href="#id5">Gaussian class</a><a class="headerlink" href="#gaussian-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="astrometry.Gaussian">
+<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Gaussian</tt><big>(</big><em>params</em>, <em>logfile_name=None</em><big>)</big><a class="headerlink" href="#astrometry.Gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></tt></a></p>
+<p>Class implementing the gaussian profile</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The Gaussian profile used here is:
+<span class="math">\(f(x,y) = H + A \times \exp(\frac{-r^2}{2 W^2})\)</span></p>
+<p>and,
+<span class="math">\(r = (x - dx)^2 + (y - dy)^2\)</span></p>
+<p class="last">The total flux F under the 2D profile is:
+<span class="math">\(F = 2 \pi A W^2\)</span></p>
+</div>
+<dl class="method">
+<dt id="astrometry.Gaussian.array2d">
+<tt class="descname">array2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.Gaussian.array2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 2D profile given the size of the returned
+array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nx</strong> &#8211; Length of the returned array along x axis</li>
+<li><strong>ny</strong> &#8211; Length of the returned array along y axis</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Gaussian.flux">
+<tt class="descname">flux</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Gaussian.flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the total flux under the 2D profile.</p>
+<p>The total flux F under a 2D profile is :
+<span class="math">\(F = 2 \pi A W^2\)</span></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Under a 1d profile the flux is <span class="math">\(F = \sqrt{2\pi}A W\)</span></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Gaussian.flux_error">
+<tt class="descname">flux_error</tt><big>(</big><em>amplitude_err</em>, <em>width_err</em><big>)</big><a class="headerlink" href="#astrometry.Gaussian.flux_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return flux error.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>amplitude_err</strong> &#8211; estimation of the amplitude error</li>
+<li><strong>width_err</strong> &#8211; estimation of the width error</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Gaussian.input_params">
+<tt class="descname">input_params</tt><em class="property"> = ['height', 'amplitude', 'x', 'y', 'fwhm']</em><a class="headerlink" href="#astrometry.Gaussian.input_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keys of the input parameters</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Gaussian.params">
+<tt class="descname">params</tt><em class="property"> = {}</em><a class="headerlink" href="#astrometry.Gaussian.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary containing the parameters of the profile</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="moffat-class">
+<h2><a class="toc-backref" href="#id6">Moffat class</a><a class="headerlink" href="#moffat-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="astrometry.Moffat">
+<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Moffat</tt><big>(</big><em>params</em>, <em>logfile_name=None</em><big>)</big><a class="headerlink" href="#astrometry.Moffat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></tt></a></p>
+<p>Class implementing the Moffat profile.</p>
+<p>This profile is useful to fit stars on CCD arrays.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The Moffat profile has been first proposed by Moffat
+(1969) A&amp;A. The exact form of the equation used has been derived
+from Trujillo et al. (2001) MNRAS, 977. The PSF:</p>
+<p><span class="math">\(f(x,y) = H + A \times [1+(\frac{r}{\alpha})^2]^{-\beta}\)</span></p>
+<p>with,
+<span class="math">\(\alpha = \frac{\text{FWHM}}{2\sqrt{2^{1/\beta} - 1}}\)</span></p>
+<p>and,
+<span class="math">\(r = (x - dx)^2 + (y - dy)^2\)</span></p>
+<p class="last">The total flux F under the 2D profile is thus:
+<span class="math">\(F = A \times \frac{\pi \alpha^2}{\beta - 1}\)</span></p>
+</div>
+<dl class="method">
+<dt id="astrometry.Moffat.array2d">
+<tt class="descname">array2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.Moffat.array2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 2D profile given the size of the returned
+array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nx</strong> &#8211; Length of the returned array along x axis</li>
+<li><strong>ny</strong> &#8211; Length of the returned array along y axis</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Moffat.flux">
+<tt class="descname">flux</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Moffat.flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the total flux under the 2D profile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Moffat.flux_error">
+<tt class="descname">flux_error</tt><big>(</big><em>amplitude_err</em>, <em>width_err</em><big>)</big><a class="headerlink" href="#astrometry.Moffat.flux_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return flux error.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>amplitude_err</strong> &#8211; estimation of the amplitude error</li>
+<li><strong>width_err</strong> &#8211; estimation of the width error</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Not implemented yet!</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Moffat.input_params">
+<tt class="descname">input_params</tt><em class="property"> = ['height', 'amplitude', 'x', 'y', 'fwhm', 'beta']</em><a class="headerlink" href="#astrometry.Moffat.input_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keys of the input parameters</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Moffat.params">
+<tt class="descname">params</tt><em class="property"> = {}</em><a class="headerlink" href="#astrometry.Moffat.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary containing the parameters of the profile</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="astrometry-functions">
+<h2><a class="toc-backref" href="#id7">Astrometry functions</a><a class="headerlink" href="#astrometry-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="astrometry.mag">
+<tt class="descclassname">astrometry.</tt><tt class="descname">mag</tt><big>(</big><em>flux</em><big>)</big><a class="headerlink" href="#astrometry.mag" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Return the instrumental magnitude of a given flux (magnitude 0</dt>
+<dd>is set to 1 e-)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flux</strong> &#8211; Flux in e-</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.guess">
+<tt class="descclassname">astrometry.</tt><tt class="descname">guess</tt><big>(</big><em>star_box</em>, <em>pos=None</em>, <em>height=None</em>, <em>precise_pos=False</em><big>)</big><a class="headerlink" href="#astrometry.guess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an estimation of the star parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>star_box</strong> &#8211; Sub-part of an image surrounding a star. The
+center of the star must be placed near the center of the
+box. The dimensions of the box must be greater than 3 times
+the FWHM of the star.</li>
+<li><strong>pos</strong> &#8211; (Optional) Position guess as a tuple (x,y). Used to
+estimate amplitude (default None).</li>
+<li><strong>height</strong> &#8211; (Optional) Guess of the background level. Used to
+estimate amplitude (default None).</li>
+<li><strong>precise_pos</strong> &#8211; (Optional) If True, position is estimated from
+the marginal distribution of the PSF. Return a far better
+estimation if and only if the star is well centered in the box,
+i.e. if and only if the position of the star is already
+known. This can lead to errors when trying to find the star in
+the box, in this case precise_pos must be set to False (default
+False).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">[height,amplitude,x,y,width]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.fit_star">
+<tt class="descclassname">astrometry.</tt><tt class="descname">fit_star</tt><big>(</big><em>star_box</em>, <em>profile_name='gaussian'</em>, <em>fwhm_pix=None</em>, <em>amp=None</em>, <em>beta=3.5</em>, <em>height=None</em>, <em>pos=None</em>, <em>fix_height=False</em>, <em>fix_amp=False</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fix_pos=False</em>, <em>fit_tol=0.001</em>, <em>check=True</em>, <em>fwhm_min=0.5</em>, <em>check_reject=False</em>, <em>ron=10.0</em>, <em>dcl=0.0</em>, <em>estimate_local_noise=True</em>, <em>precise_guess=False</em><big>)</big><a class="headerlink" href="#astrometry.fit_star" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a single star</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>star_box</strong> &#8211; The box where the star has to be fitted.</li>
+<li><strong>profile_name</strong> &#8211; (Optional) Name of the PSF profile to use to
+fit stars. May be &#8216;gaussian&#8217; or &#8216;moffat&#8217; (default &#8216;gaussian&#8217;).</li>
+<li><strong>amp</strong> &#8211; (Optional) Amplitude guess, replace the value of the
+automatic estimation (default None).</li>
+<li><strong>fwhm_pix</strong> &#8211; (Optional) Estimate of the FWHM in pixels. If
+None given FWHM is estimated to half the box size (default
+None).</li>
+<li><strong>beta</strong> &#8211; (Optional) Beta parameter of the moffat psf. Used
+only if the fitted profile is a Moffat psf (default 3.5).</li>
+<li><strong>height</strong> &#8211; (Optional) Height guess, replace the value of the
+automatic estimation (default None).</li>
+<li><strong>pos</strong> &#8211; (Optional) Position guess as a tuple (x,y), replace
+the value of the automatic estimation (default None).</li>
+<li><strong>fix_amp</strong> &#8211; (Optional) Fix amplitude parameter to its
+estimation (default False)</li>
+<li><strong>fix_height</strong> &#8211; (Optional) Fix height parameter to its
+estimation (default False)</li>
+<li><strong>fix_beta</strong> &#8211; (Optional) Fix beta to the given value (default
+True).</li>
+<li><strong>fix_fwhm</strong> &#8211; (Optional) Fix FWHM to its estimation (default
+False).</li>
+<li><strong>fix_pos</strong> &#8211; (Optional) Fix position parameters (x,y) at their
+estimated value (default False).</li>
+<li><strong>fit_tol</strong> &#8211; (Optional) Tolerance on the paramaters fit (the
+lower the better but the longer too) (default 1e-2).</li>
+<li><strong>check</strong> &#8211; (Optional) If True, check fit results for oddities
+(default True).</li>
+<li><strong>fwhm_min</strong> &#8211; (Optional) Minimum valid FWHM [in pixel] of the
+fitted star (default 0.5)</li>
+<li><strong>check_reject</strong> &#8211; (Optional) [Debug] If True, print the reason
+why a fit is rejected (default False).</li>
+<li><strong>ron</strong> &#8211; (Optional) Readout noise in ADU/pixel (default
+10.). estimate_local_noise must be set to False for this noise
+to be taken into account.</li>
+<li><strong>dcl</strong> &#8211; (Optional) Dark current level in ADU/pixel (default
+0.). estimate_local_noise must be set to False for this noise to
+be taken into account.</li>
+<li><strong>estimate_local_noise</strong> &#8211; (Optional) If True, the level of
+noise is computed from the background pixels around the
+stars. ron and dcl are thus not used (default True).</li>
+<li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will be
+more precise but this can lead to errors if the stars positions
+are not already roughly known (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.aperture_photometry">
+<tt class="descclassname">astrometry.</tt><tt class="descname">aperture_photometry</tt><big>(</big><em>star_box</em>, <em>fwhm_guess</em>, <em>background_guess=None</em>, <em>background_guess_err=0.0</em>, <em>aper_coeff=3.0</em>, <em>warn=True</em>, <em>x_guess=None</em>, <em>y_guess=None</em><big>)</big><a class="headerlink" href="#astrometry.aperture_photometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the aperture photometry of a star centered in a star box.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>star_box</strong> &#8211; Star box</li>
+<li><strong>fwhm_guess</strong> &#8211; Guessed FWHM. Used to get the aperture radius.</li>
+<li><strong>background_guess</strong> &#8211; (Optional) If not None, this guess is
+used instead of the background determination in an annulus
+around the star (default None).</li>
+<li><strong>background_guess_err</strong> &#8211; (Optional) Error on the background
+guess. Used to compute the aperture photometry error (default 0.).</li>
+<li><strong>aper_coeff</strong> &#8211; (Optional) Aperture coefficient. The aperture
+radius is Rap = aper_coeff * FWHM. Better when between 1.5 to
+reduce the variation of the collected photons with varying FWHM
+and 3. to account for the flux in the wings (default 3., better
+for star with a high SNR).</li>
+<li><strong>warn</strong> &#8211; If True, print a warning when the background cannot
+be well estimated (default True).</li>
+<li><strong>x_guess</strong> &#8211; (Optional) position of the star along x axis. If
+None, star is assumed to lie at the very center of the frame
+(default None).</li>
+<li><strong>y_guess</strong> &#8211; (Optional) position of the star along y axis. If
+None, star is assumed to lie at the very center of the frame
+(default None).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Tuple (flux, aperture surface, bad). If bad estimation:
+bad set to 1, else bad set to 0.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Best aperture for maximum S/N: 1. FWHM (Howell 1989,
+Howell 1992). But that works only when the PSF is well sampled
+which is not always the case so a higher aperture coefficient
+may be better. More over, to get exact photometry the result
+must be corrected by aperture growth curve for the &#8216;missing
+light&#8217;. A coefficient of 1.27 FWHM corresponds to 3 sigma and
+collects more than 99% of the light. A coefficient of 1.5 reduce
+the variations of the proportion of collected photons with the
+FWHM.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Best radius for sky background annulus is determined
+from this rule of thumb: The number of pixels to estimate the
+background must be al least 3 times the number of pixel in the
+aperture (Merline &amp; Howell 1995). Choosing the aperture radius
+coefficient(Cap) as Rap = Cap * FWHM and the inner radius
+coefficient (Cin) as Rin = Cin * FWHM, gives the outer radius
+coefficient (Cout): Cout = sqrt(3*Cap^2 + Cin^2)</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The star MUST be at the center (+/- a pixel) of the
+star box.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.fit_stars_in_frame">
+<tt class="descclassname">astrometry.</tt><tt class="descname">fit_stars_in_frame</tt><big>(</big><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=True</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>nozero=False</em>, <em>silent=True</em><big>)</big><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit stars in a frame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>frame</strong> &#8211; The frame from which stars must be fitted.</li>
+<li><strong>star_list</strong> &#8211; A list of star positions as an array of shape
+(star_nb, 2)</li>
+<li><strong>box_size</strong> &#8211; The size of the box created around a star to fit
+its parameter.</li>
+<li><strong>profile_name</strong> &#8211; (Optional) Name of the PSF profile to use to
+fit stars. May be &#8216;gaussian&#8217; or &#8216;moffat&#8217; (default &#8216;gaussian&#8217;).</li>
+<li><strong>fwhm_pix</strong> &#8211; (Optional) Estimate of the FWHM in pixels. If
+None given FWHM is estimated to half the box size (default
+None).</li>
+<li><strong>scale</strong> &#8211; (Optional) Scale of the frame in arcsec/pixel. If
+given the fwhm in arcseconds is also computed (keyword:
+&#8216;fwhm_arc&#8217;) with the fit parameters (default None).</li>
+<li><strong>beta</strong> &#8211; (Optional) Beta parameter of the moffat psf. Used
+only if the fitted profile is a Moffat psf (default 3.5).</li>
+<li><strong>fix_height</strong> &#8211; (Optional) Fix height parameter to its
+estimation (default True)</li>
+<li><strong>fix_beta</strong> &#8211; (Optional) Fix beta to the given value (default
+True).</li>
+<li><strong>fix_fwhm</strong> &#8211; (Optional) Fix FWHM to the given value or the
+estimated value (default False).</li>
+<li><strong>fit_tol</strong> &#8211; (Optional) Tolerance on the paramaters fit (the
+lower the better but the longer too) (default 1e-2).</li>
+<li><strong>nozero</strong> &#8211; (Optional) If True do not fit any star which box
+(the pixels around it) contains a zero (default False).</li>
+<li><strong>fwhm_min</strong> &#8211; (Optional) Minimum valid FWHM of the fitted star
+(default 0.5)</li>
+<li><strong>silent</strong> &#8211; (Optional) If True no messages are printed (default
+True).</li>
+<li><strong>local_background</strong> &#8211; (Optional) If True, height is estimated
+localy, i.e. around the star. If False, the sky background is
+determined it the whole frame and the height will be the same
+for all the stars, so fix_height option is automatically set to
+True (default True).</li>
+<li><strong>fix_aperture_fwhm_pix</strong> &#8211; (Optional) If a positive float. FWHM
+used to scale aperture size is not computed from the mean FWHM
+in the frame but fixed to the given float (default None).</li>
+<li><strong>no_aperture_photometry</strong> &#8211; (Optional) If True, aperture
+photometry will not be done after profile fitting (default
+False).</li>
+<li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will be
+more precise but this can lead to errors if the stars positions
+are not already roughly known (default False).</li>
+<li><strong>readout_noise</strong> &#8211; (Optional) Readout noise in ADU/pixel (can
+be computed from bias frames: std(master_bias_frame)) (default
+10.)</li>
+<li><strong>dark_current_level</strong> &#8211; (Optional) Dark current level in
+ADU/pixel (can be computed from dark frames:
+median(master_dark_frame)) (default 0.)</li>
+<li><strong>aper_coeff</strong> &#8211; (Optional) Aperture coefficient. The aperture
+radius is Rap = aper_coeff * FWHM. Better when between 1.5 to
+reduce the variation of the collected photons with varying FWHM
+and 3. to account for the flux in the wings (default 3., better
+for star with a high SNR).</li>
+<li><strong>blur</strong> &#8211; (Optional) If True, blur frame (low pass filtering)
+before fitting stars. It can be used to enhance the quality of
+the fitted flux of undersampled data. Note that the error on
+star position can be greater on blurred frame. This option must
+not be used for alignment purpose (default False).</li>
+<li><strong>no_fit</strong> &#8211; (Optional) If True, no fit is done. Only the
+aperture photometry. Star positions in the star list must thus
+be precise (default False).</li>
+<li><strong>estimate_local_noise</strong> &#8211; (Optional) If True, the level of
+noise is computed from the background pixels around the
+stars. readout_noise and dark_current_level are thus not used
+(default True).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Parameters of a 2D fit of the stars positions.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-meth docutils literal"><span class="pre">process.Astrometry.load_star_list()</span></tt> to load
+a predefined list of stars or
+<tt class="xref py py-meth docutils literal"><span class="pre">process.Astrometry.detect_stars()</span></tt> to automatically
+create it.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-meth docutils literal"><span class="pre">process.Astrometry.fit_star()</span></tt></p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.load_star_list">
+<tt class="descclassname">astrometry.</tt><tt class="descname">load_star_list</tt><big>(</big><em>star_list_path</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.load_star_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a list of stars coordinates</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>star_list_path</strong> &#8211; The path to the star list file.</li>
+<li><strong>silent</strong> &#8211; (Optional) If True no message is printed (default
+False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>A list of stars is a list of star coordinates (x and
+y). Each set of coordinates is separated by a line
+break. There must not be any blank line or comments.</p>
+<p>For example:</p>
+<div class="last highlight-python"><pre>221.994164678 62.8374036151
+135.052291354 274.848787038
+186.478298303 11.8162949818
+362.642981933 323.083868198
+193.546595814 321.017948051</pre>
+</div>
+</div>
+<p>The star list can be created using DS9
+(<a class="reference external" href="http://hea-www.harvard.edu/RD/ds9/site/Home.html">http://hea-www.harvard.edu/RD/ds9/site/Home.html</a>) on the
+first image of the sequence :</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Select more than 3 stars with the circular tool (the
+more you select, the better will be the alignment)</li>
+<li>Save the regions you have created with the options:<ul>
+<li>Format = &#8216;XY&#8217;</li>
+<li>Coordinate system = &#8216;Image&#8217;</li>
+</ul>
+</li>
+</ol>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.get_profile">
+<tt class="descclassname">astrometry.</tt><tt class="descname">get_profile</tt><big>(</big><em>profile_name</em><big>)</big><a class="headerlink" href="#astrometry.get_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the PSF profile class corresponding to the given profile name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>profile</em>) &#8211; The name of the PSF profile. Must be &#8216;moffat&#8217;
+or &#8216;gaussian&#8217;.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.radial_profile">
+<tt class="descclassname">astrometry.</tt><tt class="descname">radial_profile</tt><big>(</big><em>a</em>, <em>xc</em>, <em>yc</em>, <em>rmax</em><big>)</big><a class="headerlink" href="#astrometry.radial_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the averaged radial profile on a region of a 2D array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> &#8211; A 2D array</li>
+<li><strong>xc</strong> &#8211; Center of the profile along x axis</li>
+<li><strong>yc</strong> &#8211; Center of the profile along y axis</li>
+<li><strong>rmax</strong> &#8211; Radius of the profile</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(R axis, V axis). A tuple of 2 vectors giving the radius
+axis and the corresponding values axis.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrometry.sky_background_level">
+<tt class="descclassname">astrometry.</tt><tt class="descname">sky_background_level</tt><big>(</big><em>im</em>, <em>smooth_coeff=0.1</em>, <em>return_mode=False</em>, <em>bins=25</em>, <em>return_error=False</em><big>)</big><a class="headerlink" href="#astrometry.sky_background_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the level of the sky background based on the maximum of
+the histogram of the pixels distribution in the image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>im</strong> &#8211; Image.</li>
+<li><strong>smooth_coeff</strong> &#8211; (Optional) the smoothing degree, i.e. the
+number of smoothing points is defined by smooth_coeff *
+size(histogram) (default 0.05). If smooth_coeff &lt;= 0. no
+smoothing is applied.</li>
+<li><strong>return_mode</strong> &#8211; (Optional) If True the returned value is the
+mode (an entire value for a distribution of integers). If False,
+return the mean of a sigmacut realized around the mode (a
+fractional value, generally more precise).</li>
+<li><strong>bins</strong> &#8211; (Optional) Number of bins for the histogram (default
+20).</li>
+<li><strong>return_error</strong> &#8211; (Optional) If True, the error on the
+estimation is returned (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="Changelog"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cutils_module.html" title="CUtils module"
+             >previous</a> |</li>
+        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

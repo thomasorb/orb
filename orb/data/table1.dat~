@@ -1,0 +1,25 @@
+sp01.dat  PG 0205+134  02 05 21.3 +13 22 18  sdOB  14.87 -0.05  New; Composite spect.
+sp02.dat  PG 0216+032  02 16 43.0 +03 13 08  sdOC  14.79 -0.25  New; PHL1256
+sp03.dat  PG 0310+149  03 10 49.9 +14 55 14  sdO   15.63 -0.07  New
+sp04.dat  HZ 14        04 38 15.6 +10 53 57  dA    14.01        Oke; strong lines
+sp05.dat  G 191B2B     05 01 31.5 +52 45 52  dAwk  11.85 -0.32  Oke; HST
+sp06.dat  Hiltner 600  06 42 37.2 +02 11 25  B1V   10.42 +0.18  Stone; strong lines
+sp07.dat  PG 0823+546  08 23 01.0 +54 37 58  sdOC  14.36        New
+sp08.dat  PG 0846+249  08 46 07.9 +24 56 25  DA1   16.94        New; Ton 353
+sp09.dat  PG 0934+554  09 34 49.8 +55 19 15  sdO   12.16 -0.26  New; GD 299; sm. gp.
+sp10.dat  PG 0939+262  09 39 58.8 +26 14 42  DA1   14.89 -0.28  New; Ton 21
+sp11.dat  Feige 34     10 36 41.2 +43 21 50  sdO   11.25 -0.30  Stone; PG; HST
+sp12.dat  PG 1121+145  11 21 39.4 +14 30 18  DA1   16.97 -0.22  New
+sp13.dat  GD 140       11 34 27.5 +30 04 27  DA2   12.50 -0.06  Oke; PG; str. lines
+sp14.dat  EG 81        11 34 51.3 +14 26 58  sdO   13.30 -0.26  New; PG; comp. spec.
+sp15.dat  Feige 66     12 34 54.7 +25 20 31  sdO   10.54        New; HST
+sp16.dat  Feige 67     12 39 18.9 +17 47 24  sdO   11.89 -0.32  New; PG; HST
+sp17.dat  HZ 44        13 21 19.0 +36 23 39  sdO   11.74 -0.29  Oke; HST
+sp18.dat  PG 1545+035  15 45 53.9 +03 32 03  sdOB  14.34        New
+sp19.dat  PG 1708+602  17 08 35.9 +60 13 52  sdOC  13.92 -0.25  New
+sp20.dat  HD 192281    20 10 46.8 +40 07 01  O5f    7.44 +0.38  Whiteoak
+sp21.dat  Cyg OB2 No.9 20 31 23.0 +41 04 50  O5If  10.70 +1.93  New
+sp22.dat  Wolf 1346    20 32 12.9 +24 53 32  DA    11.59 -0.07  Oke; high pm; str. lines
+sp23.dat  BD +28 4211  21 48 57.1 +28 37 48  sdOp  10.56 -0.34  Stone: HST
+sp24.dat  HD 217086    22 54 49.0 +62 27 35  O5     7.49 +0.63  Whiteoak
+sp25.dat  Feige 110    23 17 23.5 -05 26 22  sdO   11.88 -0.32  Stone; EG158; HST

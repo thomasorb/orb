@@ -1,0 +1,61 @@
+## ORBS configuration file 
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File : config.orb
+
+## Observatory
+OBSERVATORY_NAME OMM
+TELESCOPE_NAME OMM
+INSTRUMENT_NAME SIMSITELLE
+
+## Instrumental parameters
+FIELD_OF_VIEW 12.4 # Size of the field of view of the camera 1 in
+		   # arc-minutes along the largest axis
+PIX_SIZE_CAM1 15 # Size of one pixel of the camera 1 in um
+PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um
+BALANCED_CAM 2 # Number of the camera on the balanced port
+
+## Disalignment guess
+INIT_ANGLE 0. # Rough angle between images of the camera 1 and
+		# images of the camera 2 [in degree] (set it to
+		# 85. when cameras are orthogonal)
+INIT_DX 0. # Rough x axis disalignment [in pixel] (unbinned)
+INIT_DY 0. # Rough y axis disalignment [in pixel] (unbinned)
+
+## Calibration parameters
+CALIB_NM_LASER 632.816 # Wavelength of the calibration laser [in nm]
+CALIB_ORDER 30 # Folding order of the calibration cube
+CALIB_STEP_SIZE 9765 # Step size of the calibration cube [in nm]
+
+## Phase parameters
+PHASE_FIT_DEG 1 # Degree of the polynomial used to fit the phase
+
+## Processing parameters
+DIV_NB 4 # Number of "Quadrants" division along one axis of a cube
+	 # (the total number of quadrants is thus DIV_NB^2)
+OPTIM_DARK_CAM1 0 # Optimization routine for the dark of CAM 1 
+OPTIM_DARK_CAM2 1 # Optimization routine for the dark of CAM 2
+
+## Astrometry parameters
+DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
+INIT_FWHM 2.5 # Rough estimate of the usual stars FWHM [in arcsecond]
+PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
+MOFFAT_BETA 3.5 # default beta parameter for the Moffat PSF
+DETECT_STACK 5 # Number of frames to combine for star detection
+
+# Dark calibration parameters a, b, c of the function : 
+# dark_level = a*exp((T-b)/c) [T in degrees C]. 
+# Used to correct for varying dark level of the camera 2 of
+# SpIOMM. Used only if OPTIM_DARK_CAM2 is not 0.
+DARK_CALIB_PARAM_A -23.985312
+DARK_CALIB_PARAM_B -78.064005
+DARK_CALIB_PARAM_C 8.684493
+
+# Bias calibration parameters a, b of the function :
+# bias_level = aT + b [T in degrees C]. 
+# Used to correct for varying dark level of the camera 2 of
+# SpIOMM. Used only if OPTIM_DARK_CAM2 is not 0.
+BIAS_CALIB_PARAM_A 7.22859919
+BIAS_CALIB_PARAM_B 1417.34030164
+
+## WCS parameters
+WCS_ROTATION -93. # Initial rotation angle of the image [in degree]

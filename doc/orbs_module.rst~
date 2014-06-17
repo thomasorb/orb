@@ -1,0 +1,18 @@
+Orbs module
+===========
+
+Orbs class
+----------
+
+.. autoclass:: orbs.Orbs
+   :members:
+   :private-members:
+   :show-inheritance:
+
+Performance class
+-----------------
+
+.. autoclass:: orbs.Performance
+   :members:
+   :private-members:
+   :show-inheritance:

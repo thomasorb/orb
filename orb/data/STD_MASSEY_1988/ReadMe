@@ -1,0 +1,168 @@
+III/116             Spectrophotometric Standards      (Massey+ 1988)
+================================================================================
+Spectrophotometric Standards
+     Massey P., Strobel K., Barnes J.V., Anderson E.
+    <Astrophys. J. 328, 315 (1988)>
+    =1988ApJ...328..315M
+================================================================================
+ADC_Keywords: Spectrophotometry ; Stars, standard
+
+Abstract:
+     Observers at the National Optical Astronomy Observatories have
+     provided spectrophotometry for 25 stars in the visual magnitude range
+     7.5 to 16.6. This document describes the machine-readable version of
+     their results as received from P. Massey. The magnitudes are on the
+     Hayes-Latham system and cover the wavelength range from 3200 to 8100
+     angstroms at approximately two angstrom intervals.
+
+
+Description:
+    The stellar magnitude system is based on the brightness of Vega at
+    each wavelength. Vega, itself, has been compared accurately with
+    laboratory standards. Unfortunately, Vega is much too bright to be
+    observed under the same conditions with most stars of interest. Hence,
+    various investigators have compared carefully with Vega and a few
+    other primary standards somewhat fainter stars to be used as secondary
+    standards. In addition, several much fainter stars have been used as
+    tertiary standards with lower accuracy.
+
+    With the common use of linear detectors and large telescopes, it has
+    become important to provide spectrophotometric standards for a range
+    of magnitudes including quite faint stars. The planning for the Hubble
+    Space Telescope increased the necessity for fainter standards.
+    Moreover, both the IUE and the HST require that the standards be
+    established at the shortest wavelength reliably accessible from the
+    ground so that ultraviolet spectrophotometry can be tied to visual
+    spectrophotometry accurately.
+
+    Investigators at Kitt Peak National Observatory have pursued a lengthy
+    program to provide both more accurate spectrophotometry of faint stars
+    and a dense distribution of the wavelengths at which the fluxes are
+    measured. The close spacing of points is essential to place the fairly
+    short stretches of a high resolution spectrum available with a solid
+    state detector on a standard system.
+
+    The present compilation provides improved data for nine stars
+    previously observed by Stone (1977) or Oke (1974) and spectro-
+    photometry of 16 new standards, eight of which are fainter than
+    14.0 mag. To provide red standards and still avoid stars with numerous
+    spectral lines, a highly reddened O5 star and two substantially
+    reddened (but bright) O5 stars are included. The observations were all
+    referenced to either BD+28 4211 or Feige 34. For four stars in common,
+    comparison with the data from Stone indicates that the calibration of
+    the standard stars is good to about 0.03 mag. The internal accuracy of
+    the data for the individual stars is substantially higher. The
+    measurements are on the Hayes-Latham system.
+
+    Table 1 describes the stars. It is identical to Table 1 in the source
+    reference except that V has been omitted. The number of observations
+    per star ranges from 3 to 29, but not all observations were made under
+    photometric conditions. Only one observation of Feige 110 was made
+    under photometric conditions. For PG 0205+134, PG 0310+149, PG
+    0939+262, PG 1121+145, and PG 1545+035, only two measurements were
+    made under photometric conditions. The magnitudes for HZ44 show a
+    large scatter within the 29 measurements. Fig. 1, also from the source
+    reference, provides finding fields for all stars except for the two
+    brightest.
+
+File Summary:
+--------------------------------------------------------------------------------
+ FileName    Lrecl    Records    Explanations
+--------------------------------------------------------------------------------
+ReadMe          80          .    This file
+table1.dat      88         25    List of stars with spectrophotometry
+sp01.dat        16       2556    Spectrum of PG 0205+134
+sp02.dat        16       2718    Spectrum of PG 0216+032
+sp03.dat        16       2556    Spectrum of PG 0310+149
+sp04.dat        16       2729    Spectrum of HZ 14
+sp05.dat        16       2730    Spectrum of G 191B2B
+sp06.dat        16       2525    Spectrum of Hiltner 600
+sp07.dat        16       2526    Spectrum of PG 0823+546
+sp08.dat        16       3054    Spectrum of PG 0846+249
+sp09.dat        16       2515    Spectrum of PG 0934+554
+sp10.dat        16       3053    Spectrum of PG 0939+262
+sp11.dat        16       3461    Spectrum of Feige 34
+sp12.dat        16       2931    Spectrum of PG 1121+145
+sp13.dat        16       2516    Spectrum of GD 140
+sp14.dat        16       2533    Spectrum of EG 81
+sp15.dat        16       2533    Spectrum of Feige 66
+sp16.dat        16       2533    Spectrum of Feige 67
+sp17.dat        16       3345    Spectrum of HZ 44
+sp18.dat        16       1863    Spectrum of PG 1545+035
+sp19.dat        16       2433    Spectrum of PG 1708+602
+sp20.dat        16       2433    Spectrum of HD 192281
+sp21.dat        16       2434    Spectrum of Cyg OB2 No.9
+sp22.dat        16       2434    Spectrum of Wolf 1346
+sp23.dat        16       3209    Spectrum of BD +28 4211
+sp24.dat        16       2433    Spectrum of HD 217086
+sp25.dat        16       2419    Spectrum of Feige 110
+spectra        105       4468   *All spectra in a single file
+--------------------------------------------------------------------------------
+Note on spectra:
+    This file contains all 25 spectra as a single file. The information
+    for each star begins with a header record. This record contains, in
+    order, the star name, the number of data points, the wavelength of the
+    first data pixel (in angstroms), and the wavelength per pixel. These
+    header records are the only ones for which the first byte is not
+    blank. The star name starts in byte 1 in the header; the remaining
+    information follows in order with one or more blanks between each type
+    of information but the format is otherwise not uniform. The remaining
+    records before the next header record contain the data. Each magnitude
+    has its decimal point in every seventh byte, starting with byte 4.
+--------------------------------------------------------------------------------
+
+Byte-by-byte Description of file: table1.dat
+--------------------------------------------------------------------------------
+   Bytes Format  Units   Label    Explanations
+--------------------------------------------------------------------------------
+   1-  8  A8     ---     File     Name of the file which contains the
+                                    spectrophotometry
+  11- 22  A12    ---     Star     Name of the star
+  24- 25  I2     h       RAh      Right Ascension 1950 (hours)
+  27- 28  I2     min     RAm      Right Ascension 1950 (minutes)
+  30- 33  F4.1   s       RAs      Right Ascension 1950 (seconds)
+      35  A1     ---     DE-      Declination 1950 (sign)
+  36- 37  I2     deg     DEd      Declination 1950 (degrees)
+  39- 40  I2     arcmin  DEm      Declination 1950 (minutes)
+  42- 43  I2     arcsec  DEs      Declination 1950 (seconds)
+  46- 49  A4     ---     SpType   Spectral type
+  52- 56  F5.2   mag     m5666    Magnitude (1)
+  58- 62  F5.2   mag     B-V      ? colour
+  65- 88  A24    ---     Notes    Notes concerning the star
+--------------------------------------------------------------------------------
+Note (1): All magnitudes are m_5556 except for PG 0934+554 for which V
+    is given.  For PG 0205+134, PG 0216+032, PG 0310+149, PG 0939+262,
+    and PG 1708+602, the g-v indices of Green, Schmidt, and Liebert
+    have been substituted for B-V.
+
+Byte-by-byte Description of file: sp*.dat
+--------------------------------------------------------------------------------
+   Bytes Format  Units   Label    Explanations
+--------------------------------------------------------------------------------
+   1-  9  F9.4   0.1nm   Lambda   Wavelength (Angstroems)
+  11- 16  F6.3   mag    m(Lambda) ?=0.00 Magnitude on the Hayes-Latham system
+--------------------------------------------------------------------------------
+
+Acknowledgments:
+    We thank Dr. Massey for forwarding to us the Spectrophotometric Data
+    in easily machine-readable form and for the accompanying reprint.
+
+References:
+  Green, R.F., Schmidt, M., and Liebert, J. 1986, ApJS, 61, 305
+  Hayes, D.S. and Latham, D. W. 1975, ApJ, 197, 593
+  Oke, J.B. 1974, ApJS, 27, 21
+  Stone, R.P.S. 1977, ApJ, 193, 135
+  Whiteoak, J.B. 1966, ApJ, 144, 305
+
+Historical Notes:
+  * September 1991 at ADC: The Spectrophotometric Standards catalog was
+    received from Dr. Massey in August 1987 in 25 machine-readable files,
+    one for each star. These files have been concatenated into a
+    single file. The documentation was written by Nancy G. Roman,
+    Doc. No. NSSDC/WDC-A-R&S 91-09
+    Files on the "Selected Astronomical Catalogs" Vol. 1 CD-ROM, directory
+    /spectro/spstd
+  * 11-Sep-1995: documentation standardized; individual files have been
+    recreated to allow standard conversions into FITS of each spectrum.
+================================================================================
+(End)                                     Francois Ochsenbein [CDS]  11-Sep-1995

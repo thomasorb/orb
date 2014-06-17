@@ -1,0 +1,136 @@
+Quick start Guide
+#################
+
+.. contents::
+
+Step 1: Create your option file
+-------------------------------
+
+The option file defines all the reduction parameters (files folders,
+observation parameters ...). Just run the following into your
+reduction folder to open *OptCreator* a little program which will
+help you create this file ::
+
+  orbs-optcreator
+
+.. image:: orbs-optcreator.png
+   :width: 100%
+
+The first two columns are essentiel parameters. The last column
+contains optional (but useful) parameters for data calibration.
+
+Most of the options are self-explanatory only the bad frames option needs some information. Just see below.
+
+Step 2: Reduce your data
+------------------------
+
+Automated reduction
+~~~~~~~~~~~~~~~~~~~
+
+
+Running ``orbs`` from the reduction folder starts the reduction process. You just have to enter the name of the option file to be used::
+
+  orbs [-a apodization] options_file.opt
+
+For example::
+
+  orbs -a 1.6 options.opt
+     
+
+.. note:: ``orbs`` command alone prints all the available options
+
+Important options
+~~~~~~~~~~~~~~~~~
+
+Only some of the available options are listed here.
+
+:option:`-1 --single1` Reduction of camera 1 alone
+
+:option:`-2 --single2` Reduction of camera 2 alone
+  
+:option:`-b --bad=` Bad frames that won't be used during the reduction
+     process (airplane and satellite lines are a common artifacts
+     which cannot be perfectly corrected and must be removed). It has
+     to be written with separating commas ',' (no whitespace)
+     e.g. 150,217,218,219. For a set of images use ':'
+     e.g. 150,170:180,185. Note that the starting index is 0 (in DS9
+     the starting index is 1 !).
+      
+:option:`-c --calib=` Calibration file path
+  
+:option:`-a --apod=` Apodization function that will be used during FFT
+     computation (can be barthann, bartlett, blackman, blackmanharris,
+     bohman, hamming, hann, nuttall, parzen)
+
+:option:`--init_angle=` Change config variable :py:const:`~orbs.Orbs.INIT_ANGLE` for this reduction only. You can also change it definitively by editing the file orbs/data/config.orb.
+
+:option:`--start_step=` Starting step. Use it to recover from an error
+     at a certain step without having to run the whole process one
+     more time. Note that the step designation is different for the
+     full reduction (2 cameras) or the single camera reduction (1
+     camera).
+
+.. note:: The steps designations for the full reduction are :
+
+            1. Compute alignment vectors (see:
+               :py:meth:`~orbs.Orbs.compute_alignment_vector`)
+
+            2. Compute cosmic ray maps (see:
+               :py:meth:`~orbs.Orbs.compute_cosmic_ray_map`)
+
+            3. Compute interferograms (see:
+               :py:meth:`~orbs.Orbs.compute_interferogram`)
+
+            4. Transform cube B (see:
+               :py:meth:`~orbs.Orbs.transform_cube_B`)
+
+            5. Merge interferograms (see:
+               :py:meth:`~orbs.Orbs.merge_interferograms`)
+
+            6. Compute calibration map (see:
+               :py:meth:`~orbs.Orbs.compute_calibration_map`)
+
+            7. Compute phase maps (see: 
+               :py:meth:`~orbs.Orbs.compute_phase_maps()`)
+
+            8. Compute spectrum (see:
+               :py:meth:`~orbs.Orbs.compute_spectrum`)
+
+            9. Calibrate spectrum (see: 
+               :py:meth:`~orbs.Orbs.calibrate_spectrum`)
+            
+
+
+.. note:: The steps designations for the single camera reduction are :
+
+            1. Compute alignment vectors (see:
+               :py:meth:`~orbs.Orbs.compute_alignment_vector`)
+
+            2. Compute cosmic ray maps (see:
+               :py:meth:`~orbs.Orbs.compute_cosmic_ray_map`)
+
+            3. Compute interferogram (see:
+               :py:meth:`~orbs.Orbs.compute_interferogram`)
+
+            4. Correct interferogram (see:  
+               :py:meth:`~orbs.Orbs.correct_interferogram`)
+
+            5. Compute calibration map (see:
+               :py:meth:`~orbs.Orbs.compute_calibration_map`)
+
+            6. Compute phase maps (see: 
+               :py:meth:`~orbs.Orbs.compute_phase_maps()`)
+
+            7. Compute spectrum (see:
+               :py:meth:`~orbs.Orbs.compute_spectrum`)
+
+            8. Calibrate spectrum (see: 
+               :py:meth:`~orbs.Orbs.calibrate_spectrum`)
+
+
+Get full control over ORBS
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also take the full control over the reduction steps by modifying and running the script (see the file ``scripts/reduction_script.py`` for more information)::
+
+  python reduction_script.py

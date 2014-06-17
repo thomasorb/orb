@@ -1,0 +1,88 @@
+Installation
+############
+
+Unpacking
+---------
+
+Once the package is downloaded you can uncompress it wherever you want
+but remember to **define the path to the ORBS folder into the
+scripts**::
+
+  scripts/reduction_script.py
+  scripts/orbs.py
+
+It is also recommended to create a symbolic link (under Linux or Mac)
+to use the scripts from any location. Run as root::
+
+  ln -s /link/to/orbs /usr/bin/orbs
+  ln -s /link/to/orbs-optcreator /usr/bin/orbs-optcreator
+
+Dependances
+-----------
+
+You must use Python_ 2.6 or later and install the following modules
+(always try to use use the latest version):
+
+Scipy_
+~~~~~~
+
+  |Linux| As root run::
+
+    apt-get install python-scipy
+
+  |Mac| Everything is explained here: http://www.scipy.org/Installing_SciPy/Mac_OS_X
+
+Numpy_
+~~~~~~
+
+ |Linux| As root run:: 
+   
+    apt-get install python-numpy
+
+ |Mac| It must already be installed
+ 
+pyFITS_
+~~~~~~~
+
+  |Linux| As root run::
+   
+     apt-get install python-pyfits
+
+  |Mac| Use Mac Ports
+
+
+Parallel_ Python
+~~~~~~~~~~~~~~~~
+
+  |Linux| Download the latest version (pp-1.x.x.tar.gz), untar and once in pp-1.x.x directory run as root:: 
+
+	    python setup.py install
+
+  |Mac| Download the latest version (pp-1.x.x.tar.gz), untar and once in pp-1.x.x directory run as root:: 
+
+      python setup.py build
+
+  (For Mac only) append the following line at the beginning of the scripts ``scripts/reduction_script.py`` and ``scripts/orbs.py``::
+
+      sys.path.append('/path/to/pp-1.x.x')
+
+
+
+
+.. |Linux| image:: linux-icon.png
+            :height: 40
+   	    :width: 40
+            :scale: 70
+
+.. |Mac| image:: icon_mac.png
+            :height: 32
+   	    :width: 32
+            :scale: 80
+
+
+          
+.. _Python: http://www.python.org/
+.. _Scipy: http://www.scipy.org/
+.. _Numpy: http://numpy.scipy.org/
+.. _PyFITS: http://www.stsci.edu/resources/software_hardware/pyfits
+.. _Parallel: http://www.parallelpython.com/
