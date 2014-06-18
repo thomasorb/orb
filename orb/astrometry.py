@@ -1113,7 +1113,7 @@ class Astrometry(Tools):
 
         :param precise_guess: (Optional) If True, the fit guess will
           be more precise but this can lead to errors if the stars
-          positions are not already roughly known (default False).
+          positions are not already well known (default False).
 
         :param aper_coeff: (Optional) Aperture coefficient. The
           aperture radius is Rap = aper_coeff * FWHM. Better when
@@ -1267,7 +1267,7 @@ class Astrometry(Tools):
 
         :param precise_guess: (Optional) If True, the fit guess will
           be more precise but this can lead to errors if the stars
-          positions are not already roughly known (default False).
+          positions are not already well known (default False).
 
         :param aper_coeff: (Optional) Aperture coefficient. The
           aperture radius is Rap = aper_coeff * FWHM. Better when
@@ -1553,9 +1553,10 @@ class Astrometry(Tools):
           because at the ZPD the intensity of a star can be twice the
           intensity far from it (default 35000).
 
-        :param try_catalogue: If True, try to use a catalogue to
-          detect stars if target_ra, target_dec, target_x, target_y
-          and wcs_rotation parameters have been given.
+        :param try_catalogue: If True, try to use a star catalogue
+          (e.g. USNO-B1) to detect stars if target_ra, target_dec,
+          target_x, target_y and wcs_rotation parameters have been
+          given (see :py:meth:`process.Astrometry.query_vizier`).
 
         :return: (star_list_path, mean_fwhm_arc) : (a path to a list
           of the dected stars, the mean FWHM of the stars in arcsec)
@@ -2281,7 +2282,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
 
     :param precise_guess: (Optional) If True, the fit guess will be
       more precise but this can lead to errors if the stars positions
-      are not already roughly known (default False).
+      are not already well known (default False).
     """
     star_box = star_box.astype(float)
     if np.any(np.isnan(star_box)):
@@ -2364,7 +2365,6 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
                                    guess_params[2], guess_params[3])
         dcl = 0.
         
-
     profile = get_profile(profile_name)
 
     if profile_name == 'moffat':
@@ -2659,16 +2659,29 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        dark_current_level=0., local_background=True,
                        no_aperture_photometry=False,
                        precise_guess=False, aper_coeff=3., blur=False,
-                       no_fit=False, estimate_local_noise=True, multi_fit=False,
-                       enable_zoom=False, enable_rotation=False,
-                       nozero=False, silent=True):
-    
+                       no_fit=False, estimate_local_noise=True,
+                       multi_fit=False, enable_zoom=False,
+                       enable_rotation=False, nozero=False,
+                       silent=True):
+
     ## WARNING : DO NOT CHANGE THE ORDER OF THE ARGUMENTS OR TAKE CARE
     ## OF THE CALL IN astrometry.Astrometry.fit_stars_in_cube()
   
     """Fit stars in a frame.
 
-    :param frame: The frame from which stars must be fitted.
+    2 fitting modes are possible:
+    
+      * individual fit mode [multi_fit=False]: The stars are all fit
+        independantly.
+      
+      * multi fit mode [multi_fit=True]: The stars fitted all together
+        considering that the position pattern is well known, the same
+        shift in x and y will be applied. Optionaly the pattern can be
+        rotated and zoomed. The FWHM is also considered to be the
+        same. This option is far more robust and precise for alignment
+        purposes.
+
+    :param frame: The frame containing the stars to fit.
 
     :param star_list: A list of star positions as an array of shape
       (star_nb, 2)
@@ -2703,7 +2716,8 @@ def fit_stars_in_frame(frame, star_list, box_size,
       lower the better but the longer too) (default 1e-2).
 
     :param nozero: (Optional) If True do not fit any star which box
-      (the pixels around it) contains a zero (default False).
+      (the pixels around it) contains a zero. Valid only in individual
+      fit mode [multi_fit=False] (default False).
 
     :param fwhm_min: (Optional) Minimum valid FWHM of the fitted star
       (default 0.5)
@@ -2713,9 +2727,12 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     :param local_background: (Optional) If True, height is estimated
       localy, i.e. around the star. If False, the sky background is
-      determined it the whole frame and the height will be the same
-      for all the stars, so fix_height option is automatically set to
-      True (default True).
+      determined in the whole frame. In individual fit mode
+      [multi_fit=False] height will be the same for all the stars, and
+      the fix_height option is thus automatically set to True. In
+      multi fit mode [multi_fit=True] height is considered as a
+      covarying parameter for all the stars but it won't be fixed
+      (default True).
 
     :param fix_aperture_fwhm_pix: (Optional) If a positive float. FWHM
       used to scale aperture size is not computed from the mean FWHM
@@ -2727,7 +2744,8 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     :param precise_guess: (Optional) If True, the fit guess will be
       more precise but this can lead to errors if the stars positions
-      are not already roughly known (default False).
+      are not already well known. Valid only in individual fit mode
+      [multi_fit=False] (default False).
           
     :param readout_noise: (Optional) Readout noise in ADU/pixel (can
       be computed from bias frames: std(master_bias_frame)) (default
@@ -2759,13 +2777,13 @@ def fit_stars_in_frame(frame, star_list, box_size,
       known because the overall shift only is estimated (default
       False).
 
-    :param enable_zoom: (Optional) Useful only if multi_fit is True.
-      If True, the stars position pattern can be zoomed to better
-      adjust it to the real frame (default False).
+    :param enable_zoom: (Optional) If True, the stars position pattern
+      can be zoomed to better adjust it to the real frame. Valid only
+      in multi fit mode [multi_fit=True] (default False).
 
-    :param enable_rotation: (Optional) Useful only if multi_fit is
-      True.  If True, the stars position pattern can be rotated to
-      better adjust it to the real frame (default False).
+    :param enable_rotation: (Optional) If True, the stars position
+      pattern can be rotated to better adjust it to the real frame
+      Valid only in multi fit mode [multi_fit=True] (default False).
 
     :param estimate_local_noise: (Optional) If True, the level of
       noise is computed from the background pixels around the
@@ -2882,8 +2900,6 @@ def fit_stars_in_frame(frame, star_list, box_size,
                     fit_results[istar] = dict(star_params)
                 else:
                     fit_results[istar] = None
-                
-            
         else:
             for istar in range(star_list.shape[0]):        
                 ## Create fit box

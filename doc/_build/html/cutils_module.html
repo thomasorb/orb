@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUtils module &mdash; Orb 1.1 documentation</title>
+    <title>CUtils module &mdash; Orb 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2 documentation" href="index.html" />
     <link rel="next" title="Astrometry module" href="astrometry_module.html" />
     <link rel="prev" title="Utils module" href="utils_module.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -191,7 +191,7 @@
 
 <dl class="function">
 <dt id="cutils.transform_A_to_B">
-<tt class="descclassname">cutils.</tt><tt class="descname">transform_A_to_B</tt><big>(</big><em>double x1</em>, <em>double y1</em>, <em>double dx</em>, <em>double dy</em>, <em>double dr</em>, <em>double da</em>, <em>double db</em>, <em>double xrc</em>, <em>double yrc</em>, <em>double z</em>, <em>double dx_err=0.0</em>, <em>double dy_err=0.0</em>, <em>double dr_err=0.0</em>, <em>double z_err=0.0</em>, <em>bool return_err=False</em><big>)</big><a class="headerlink" href="#cutils.transform_A_to_B" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">cutils.</tt><tt class="descname">transform_A_to_B</tt><big>(</big><em>double x1</em>, <em>double y1</em>, <em>double dx</em>, <em>double dy</em>, <em>double dr</em>, <em>double da</em>, <em>double db</em>, <em>double xrc</em>, <em>double yrc</em>, <em>double z</em>, <em>double x1_err=0.0</em>, <em>double y1_err=0.0</em>, <em>double dx_err=0.0</em>, <em>double dy_err=0.0</em>, <em>double dr_err=0.0</em>, <em>double z_err=0.0</em>, <em>bool return_err=False</em><big>)</big><a class="headerlink" href="#cutils.transform_A_to_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform star positions in camera A to the same star position
 in camera B given the transformation parameters</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -209,6 +209,8 @@ in camera B given the transformation parameters</p>
 <li><strong>xrc</strong> &#8211; x coordinate of the rotation center</li>
 <li><strong>yrc</strong> &#8211; y coordinate of the rotation center</li>
 <li><strong>z</strong> &#8211; zoom coefficient</li>
+<li><strong>x1_err</strong> &#8211; (Optional) Error on x1 estimate (default 0.)</li>
+<li><strong>y1_err</strong> &#8211; (Optional) Error on y1 estimate (default 0.)</li>
 <li><strong>dx_err</strong> &#8211; (Optional) Error on dx estimate (default 0.)</li>
 <li><strong>dy_err</strong> &#8211; (Optional) Error on dy estimate (default 0.)</li>
 <li><strong>dr_err</strong> &#8211; (Optional) Error on dr estimate (default 0.)</li>
@@ -711,7 +713,7 @@ stars. ron and dcl parameters are thus not used (default True).</li>
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

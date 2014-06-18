@@ -8,7 +8,7 @@ ORB Documentation
 ##################
 
 .. image:: orb.png
-   :width: 40%
+   :width: 25%
    :align: center
 
 .. topic:: Welcome to ORB documentation !

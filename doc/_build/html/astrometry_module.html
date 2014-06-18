@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Astrometry module &mdash; Orb 1.1 documentation</title>
+    <title>Astrometry module &mdash; Orb 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2 documentation" href="index.html" />
     <link rel="next" title="Changelog" href="changelog.html" />
     <link rel="prev" title="CUtils module" href="cutils_module.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="cutils_module.html" title="CUtils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -213,9 +213,10 @@ in a file, only return a list (default False).</li>
 star can be considered as saturated. Very low by default
 because at the ZPD the intensity of a star can be twice the
 intensity far from it (default 35000).</li>
-<li><strong>try_catalogue</strong> &#8211; If True, try to use a catalogue to
-detect stars if target_ra, target_dec, target_x, target_y
-and wcs_rotation parameters have been given.</li>
+<li><strong>try_catalogue</strong> &#8211; If True, try to use a star catalogue
+(e.g. USNO-B1) to detect stars if target_ra, target_dec,
+target_x, target_y and wcs_rotation parameters have been
+given (see <tt class="xref py py-meth docutils literal"><span class="pre">process.Astrometry.query_vizier()</span></tt>).</li>
 </ul>
 </td>
 </tr>
@@ -318,7 +319,7 @@ frame from the mean FWHM of the stars in the frame (default
 False).</li>
 <li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will
 be more precise but this can lead to errors if the stars
-positions are not already roughly known (default False).</li>
+positions are not already well known (default False).</li>
 <li><strong>aper_coeff</strong> &#8211; (Optional) Aperture coefficient. The
 aperture radius is Rap = aper_coeff * FWHM. Better when
 between 1.5 to reduce the variation of the collected photons
@@ -392,7 +393,7 @@ photometry will not be done after profile fitting (default
 False).</li>
 <li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will
 be more precise but this can lead to errors if the stars
-positions are not already roughly known (default False).</li>
+positions are not already well known (default False).</li>
 <li><strong>aper_coeff</strong> &#8211; (Optional) Aperture coefficient. The
 aperture radius is Rap = aper_coeff * FWHM. Better when
 between 1.5 to reduce the variation of the collected photons
@@ -1052,7 +1053,7 @@ noise is computed from the background pixels around the
 stars. ron and dcl are thus not used (default True).</li>
 <li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will be
 more precise but this can lead to errors if the stars positions
-are not already roughly known (default False).</li>
+are not already well known (default False).</li>
 </ul>
 </td>
 </tr>
@@ -1131,12 +1132,25 @@ star box.</p>
 <dt id="astrometry.fit_stars_in_frame">
 <tt class="descclassname">astrometry.</tt><tt class="descname">fit_stars_in_frame</tt><big>(</big><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=True</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>nozero=False</em>, <em>silent=True</em><big>)</big><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in a frame.</p>
+<p>2 fitting modes are possible:</p>
+<blockquote>
+<div><ul class="simple">
+<li>individual fit mode [multi_fit=False]: The stars are all fit
+independantly.</li>
+<li>multi fit mode [multi_fit=True]: The stars fitted all together
+considering that the position pattern is well known, the same
+shift in x and y will be applied. Optionaly the pattern can be
+rotated and zoomed. The FWHM is also considered to be the
+same. This option is far more robust and precise for alignment
+purposes.</li>
+</ul>
+</div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>frame</strong> &#8211; The frame from which stars must be fitted.</li>
+<li><strong>frame</strong> &#8211; The frame containing the stars to fit.</li>
 <li><strong>star_list</strong> &#8211; A list of star positions as an array of shape
 (star_nb, 2)</li>
 <li><strong>box_size</strong> &#8211; The size of the box created around a star to fit
@@ -1160,16 +1174,20 @@ estimated value (default False).</li>
 <li><strong>fit_tol</strong> &#8211; (Optional) Tolerance on the paramaters fit (the
 lower the better but the longer too) (default 1e-2).</li>
 <li><strong>nozero</strong> &#8211; (Optional) If True do not fit any star which box
-(the pixels around it) contains a zero (default False).</li>
+(the pixels around it) contains a zero. Valid only in individual
+fit mode [multi_fit=False] (default False).</li>
 <li><strong>fwhm_min</strong> &#8211; (Optional) Minimum valid FWHM of the fitted star
 (default 0.5)</li>
 <li><strong>silent</strong> &#8211; (Optional) If True no messages are printed (default
 True).</li>
 <li><strong>local_background</strong> &#8211; (Optional) If True, height is estimated
 localy, i.e. around the star. If False, the sky background is
-determined it the whole frame and the height will be the same
-for all the stars, so fix_height option is automatically set to
-True (default True).</li>
+determined in the whole frame. In individual fit mode
+[multi_fit=False] height will be the same for all the stars, and
+the fix_height option is thus automatically set to True. In
+multi fit mode [multi_fit=True] height is considered as a
+covarying parameter for all the stars but it won&#8217;t be fixed
+(default True).</li>
 <li><strong>fix_aperture_fwhm_pix</strong> &#8211; (Optional) If a positive float. FWHM
 used to scale aperture size is not computed from the mean FWHM
 in the frame but fixed to the given float (default None).</li>
@@ -1178,7 +1196,8 @@ photometry will not be done after profile fitting (default
 False).</li>
 <li><strong>precise_guess</strong> &#8211; (Optional) If True, the fit guess will be
 more precise but this can lead to errors if the stars positions
-are not already roughly known (default False).</li>
+are not already well known. Valid only in individual fit mode
+[multi_fit=False] (default False).</li>
 <li><strong>readout_noise</strong> &#8211; (Optional) Readout noise in ADU/pixel (can
 be computed from bias frames: std(master_bias_frame)) (default
 10.)</li>
@@ -1203,12 +1222,12 @@ same time. More robust for alignment purpose. The difference of
 position between the stars in the star list must be precisely
 known because the overall shift only is estimated (default
 False).</li>
-<li><strong>enable_zoom</strong> &#8211; (Optional) Useful only if multi_fit is True.
-If True, the stars position pattern can be zoomed to better
-adjust it to the real frame (default False).</li>
-<li><strong>enable_rotation</strong> &#8211; (Optional) Useful only if multi_fit is
-True.  If True, the stars position pattern can be rotated to
-better adjust it to the real frame (default False).</li>
+<li><strong>enable_zoom</strong> &#8211; (Optional) If True, the stars position pattern
+can be zoomed to better adjust it to the real frame. Valid only
+in multi fit mode [multi_fit=True] (default False).</li>
+<li><strong>enable_rotation</strong> &#8211; (Optional) If True, the stars position
+pattern can be rotated to better adjust it to the real frame
+Valid only in multi fit mode [multi_fit=True] (default False).</li>
 <li><strong>estimate_local_noise</strong> &#8211; (Optional) If True, the level of
 noise is computed from the background pixels around the
 stars. readout_noise and dark_current_level are thus not used
@@ -1373,7 +1392,7 @@ estimation is returned (default False).</li>
         <li class="right" >
           <a href="cutils_module.html" title="CUtils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

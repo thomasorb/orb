@@ -63,6 +63,8 @@ def radians(double deg):
 
 def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
                      double da, double db, double xrc, double yrc, double z,
+                     double x1_err=0.,
+                     double y1_err=0.,
                      double dx_err=0.,
                      double dy_err=0.,
                      double dr_err=0.,
@@ -81,6 +83,8 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
     :param xrc: x coordinate of the rotation center
     :param yrc: y coordinate of the rotation center
     :param z: zoom coefficient
+    :param x1_err: (Optional) Error on x1 estimate (default 0.)
+    :param y1_err: (Optional) Error on y1 estimate (default 0.)
     :param dx_err: (Optional) Error on dx estimate (default 0.)
     :param dy_err: (Optional) Error on dy estimate (default 0.)
     :param dr_err: (Optional) Error on dr estimate (default 0.)
@@ -91,8 +95,8 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
     :return: (x2, y2) = f(x1, y1). (x2, y2, x2_err, y2_err) if
       return_err is True.
     """
-    cdef double x1_err = 0.
-    cdef double y1_err = 0.
+    cdef double x1_orig = x1
+    cdef double y1_orig = y1
     cdef double x2_err = 0.
     cdef double y2_err = 0.
     cdef double a, b, c, d, a_err, b_err, c_err, d_err
@@ -107,8 +111,8 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
     y1 = y1 / cos(db) / z
     
     if return_err:
-        x1_err = x1 * (z_err / z)
-        y1_err = y1 * (z_err / z)
+        x1_err = x1 * sqrt((z_err / z)**2. + (x1_err / x1_orig)**2.)
+        y1_err = y1 * sqrt((z_err / z)**2. + (y1_err / y1_orig)**2.)
         
     x1 = x1 - dx
     y1 = y1 - dy
@@ -948,7 +952,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
       (default False).
 
     :param fit_tol: (Optional) Tolerance on the fit (default 1e-3).
-
+      
     :param ron: (Optional) Readout noise. If given and if
       estimate_local_noise is set to False the readout noise is fixed
       to the given value. If not given the ron is guessed from the
@@ -1040,14 +1044,16 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
             
         return stars_p, cov_p
 
-    def sigma(data, ron, dcl):
-        # guessing sigma as sqrt(photon noise + readout noise^2 + dark
-        # current level)
-        return np.sqrt(np.abs(data) + (ron)**2. + dcl)
+    def sigma(np.ndarray[np.float64_t, ndim=2] data,
+              double noise, double dcl):
+        """guess sigma as sqrt(photon noise + readout noise^2 + dark
+        current level)"""
+        return np.sqrt(np.abs(data) + (noise)**2. + dcl)
 
     def model_diff(int dimx, int dimy, np.ndarray[np.float64_t, ndim=2] params,
                    int box_size, np.ndarray[np.float64_t, ndim=2] frame,
-                   double ron, double dcl, transpose=False, normalize=False):
+                   np.ndarray[np.float64_t, ndim=1] noise, double dcl,
+                   transpose=False, normalize=False):
         """params is an array (star_nb, 5) with the 5 parameters of
         each star in this order : height, amplitude, posx, posy, fwhm
         """
@@ -1061,10 +1067,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         cdef int hsz
 
         if not transpose:
-            res = np.zeros(
+            res = np.empty(
                 (box_size * params.shape[0], box_size), dtype=float)
         else:
-            res = np.zeros(
+            res = np.empty(
                 (box_size, box_size * params.shape[0]), dtype=float)
 
         res.fill(np.nan)
@@ -1098,7 +1104,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
             if star.shape[0] > 1 and star.shape[1] > 1:
                 data = frame[x_min:x_max, y_min:y_max]
-                star = (star - data) / sigma(data, ron, dcl)
+                star = (star - data) / sigma(data, noise[istar], dcl)
                 if normalize:
                     star /= np.max(star)
                 if not transpose:
@@ -1109,7 +1115,6 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                     res[0: star.shape[0],
                         istar * box_size:
                         istar * box_size + star.shape[1]] = star
-                
         return res
     
     def diff(np.ndarray[np.float64_t, ndim=1] free_p,
@@ -1118,7 +1123,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
              np.ndarray[np.float64_t, ndim=1] cov_p_mask,
              np.ndarray[np.float64_t, ndim=2] frame,
              int box_size, int star_nb,
-             double ron, double dcl):
+             np.ndarray[np.float64_t, ndim=1] noise, double dcl):
 
         cdef np.ndarray[np.float64_t, ndim=2] params = np.zeros(
             (star_nb, np.size(stars_p_mask)), dtype=float)
@@ -1146,7 +1151,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                 cov_p[5], 0., 0., rcx, rcy, cov_p[4])
         
         res = model_diff(frame.shape[0], frame.shape[1],
-                         params, box_size, frame, ron, dcl)
+                         params, box_size, frame, noise, dcl)
            
         return res[np.nonzero(~np.isnan(res))]
     
@@ -1198,8 +1203,13 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cdef double x_min, x_max, y_min, y_max, rcx, rcy
     cdef np.ndarray[np.float64_t, ndim=1] noise_guess = np.zeros(
         (star_nb), dtype=float)
+    cdef np.ndarray[np.float64_t, ndim=2] cov_matrix, box
+    cdef double dx_guess, dy_guess, dx_guess_arg, dy_guess_arg
     cdef added_height = 0.
     cdef frame_min = 0.
+
+    cdef double FWHM_SKY_COEFF = 1.5
+    cdef int SUB_DIV = 10
 
     # no fit on pure NaN frame
     if np.all(np.isnan(frame)):
@@ -1214,51 +1224,34 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     # box size must be odd
     if box_size % 2 == 0: box_size += 1
 
-    # define guessed parameters
-    for istar in range(star_nb):
-        x_min, x_max, y_min, y_max = get_box_coords(
-            new_pos[istar, 0], new_pos[istar, 1], box_size,
-            0, frame.shape[0], 0, frame.shape[1])
-        frame_mask[x_min:x_max, y_min:y_max] = 1
-        # the 3 most intense pixels are skipped to determine the max
-        # in the box to avoid errors due to a cosmic ray.
-        amp_guess[istar] = bn.nanmax(
-            (np.sort(frame[x_min:x_max, y_min:y_max].flatten()))[:-3])
-        stars_p[istar,0] = bn.nanmedian(frame[x_min:x_max, y_min:y_max])
-        noise_guess[istar] = bn.nanstd(sigmacut(
-            frame[x_min:x_max, y_min:y_max].flatten(),
-            stars_p[istar,0],True, 2.5, 2))
-        
-    if not np.isnan(height_guess):
-        stars_p[:,0] = height_guess
-        
+    # fwhm guess
     if np.isnan(fwhm_guess):
-        fwhm_guess = <double> box_size / 2.
-        
-    stars_p[:,2:4] = new_pos
-    stars_p[:,1] = amp_guess - stars_p[istar,0]
+        fwhm_guess = <double> box_size / 3.
+
+    # initial parameters    
     stars_p[:,4] = fwhm_guess
-
-    # guess ron and dcl
-    if np.isnan(ron) or estimate_local_noise:
-        ron = bn.nanmean(sigmacut(noise_guess, 0.,False, 2.5, 2))
-    if np.isnan(dcl) or estimate_local_noise:
-        dcl = 0.
-
+    stars_p[:,2:4] = new_pos
+    
     # precise determination of the initial shift from the marginal
     # distribution of the psf [e.g. Howell 2006]
     test_p = np.copy(stars_p)
     test_p[:,1] = 0.
     test_x = np.abs(bn.nansum(model_diff(frame.shape[0], frame.shape[1],
                                          test_p, box_size, frame,
-                                         0., 0., transpose=True,
+                                         noise_guess * 0.,
+                                         0., transpose=True,
                                          normalize=True), axis=1))
     test_y = np.abs(bn.nansum(model_diff(frame.shape[0], frame.shape[1],
                                          test_p, box_size, frame,
-                                         0., 0., transpose=False,
+                                         noise_guess * 0.,
+                                         0., transpose=False,
                                          normalize=True), axis=0))
     test_x = test_x - np.min(test_x)
     test_y = test_y - np.min(test_y)
+    
+    dx_guess_arg = <double> np.argmax(test_x) - <double> box_size / 2.
+    dy_guess_arg = <double> np.argmax(test_y) - <double> box_size / 2.
+    
     test_x *= gaussian1d(np.arange(test_x.shape[0]).astype(float),
                          0., 1., <double> test_x.shape[0] / 2. - 0.5,
                          <double> test_x.shape[0] / 2.)
@@ -1268,14 +1261,64 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     nzi = np.nonzero(test_x > 0)
     nzj = np.nonzero(test_y > 0)
-    
-    cov_p[1] = (np.sum((test_x[nzi])*np.arange(box_size)[nzi])
-                / np.sum(test_x[nzi])
-                - (box_size / 2. - 0.5))
-    cov_p[2] = (np.sum((test_y[nzj])*np.arange(box_size)[nzj])
-                /np.sum(test_y[nzj])
-                - (box_size / 2. - 0.5))
 
+    dx_guess = (np.sum((test_x[nzi]) * np.arange(box_size)[nzi])
+                / np.sum(test_x[nzi])
+                - (<double> box_size / 2. - 0.))
+    dy_guess = (np.sum((test_y[nzj]) * np.arange(box_size)[nzj])
+                /np.sum(test_y[nzj])
+                - (<double> box_size / 2. - 0.))
+
+    # far from the center the arg-based guess is generally better
+    if abs(dx_guess) > <double> box_size / 4.: dx_guess = dx_guess_arg
+    if abs(dy_guess) > <double> box_size / 4.: dy_guess = dy_guess_arg
+        
+    if cov_pos:
+        cov_p[1] = dx_guess
+        cov_p[2] = dy_guess
+    else:
+        stars_p[:,2] += dx_guess
+        stars_p[:,3] += dy_guess
+
+    # background and noise guess
+    for istar in range(star_nb):
+        x_min, x_max, y_min, y_max = get_box_coords(
+            stars_p[istar,2] + cov_p[1], stars_p[istar,3] + cov_p[2], box_size,
+            0, frame.shape[0], 0, frame.shape[1])
+        frame_mask[x_min:x_max, y_min:y_max] = 1
+        box = frame[x_min:x_max, y_min:y_max]
+        # amplitude guess
+        # the 3 most intense pixels are skipped to determine the max
+        # in the box to avoid errors due to a cosmic ray.
+        amp_guess[istar] = bn.nanmax(
+            (np.sort(box.flatten()))[:-3])
+        # define 'sky pixels'
+        S_sky = surface_value(
+            box.shape[0], box.shape[1],
+            stars_p[istar,2] + cov_p[1] - x_min,
+            stars_p[istar,3] + cov_p[2] - y_min, FWHM_SKY_COEFF * fwhm_guess,
+            np.max([box.shape[0], box.shape[1]]), SUB_DIV)
+       
+        sky_pixels = box * S_sky
+        sky_pixels = np.sort(sky_pixels[np.nonzero(sky_pixels)])[1:-1]
+        # guess background
+        stars_p[istar,0] = bn.nanmean(sky_pixels)
+        # guess noise
+        noise_guess[istar] = bn.nanstd(sky_pixels) - sqrt(stars_p[istar,0])
+
+    if not np.isnan(height_guess):
+        stars_p[:,0] = height_guess
+        
+    stars_p[:,1] = amp_guess - stars_p[istar,0]
+
+
+    # guess ron and dcl
+    if not np.isnan(ron) and not estimate_local_noise:
+        noise_guess.fill(ron)
+        
+    if np.isnan(dcl) or estimate_local_noise:
+        dcl = 0.
+    
     # define masks
     cov_p_mask.fill(0)
     stars_p_mask.fill(1)
@@ -1304,7 +1347,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     fit = scipy.optimize.leastsq(diff, free_p,
                                  args=(fixed_p, stars_p_mask, cov_p_mask,
                                        np.copy(frame), box_size, star_nb,
-                                       ron, dcl),
+                                       noise_guess, dcl),
                                  maxfev=500, full_output=True,
                                  xtol=fit_tol)
 
@@ -1328,10 +1371,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         # compute least square fit errors and add cov dx, dy and zoom
         rcx = <double> frame.shape[0] / 2.
         rcy = <double> frame.shape[1] / 2.
-        cov_x = fit[1]
-        if cov_x is None: # no covariance : no error estimation
+        cov_matrix = fit[1]
+        if cov_matrix is None: # no covariance : no error estimation
             stars_err.fill(np.nan)
-            
             # compute transformed postitions
             for istar in range(stars_p.shape[0]):
                 stars_p[istar,2], stars_p[istar,3] = transform_A_to_B(
@@ -1339,9 +1381,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                     cov_p[5], 0., 0., rcx, rcy, cov_p[4])
             
         else:
-            cov_x *= returned_data['reduced-chi-square']
+            cov_matrix *= returned_data['reduced-chi-square']
             cov_diag = np.sqrt(np.abs(
-                np.array([cov_x[i,i] for i in range(cov_x.shape[0])])))
+                np.array([cov_matrix[i,i]
+                          for i in range(cov_matrix.shape[0])])))
 
             fixed_p.fill(0.)
             stars_err, cov_err = params_vect2arrays(
@@ -1356,6 +1399,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                  stars_err[istar,2], stars_err[istar,3]) = transform_A_to_B(
                     stars_p[istar,2], stars_p[istar,3], -cov_p[1], -cov_p[2],
                     cov_p[5], 0., 0., rcx, rcy, cov_p[4],
+                    x1_err=stars_err[istar,2],
+                    y1_err=stars_err[istar,3],
                     dx_err=cov_err[1],
                     dy_err=cov_err[2],
                     z_err=cov_err[4],

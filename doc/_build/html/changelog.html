@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; Orb 1.1 documentation</title>
+    <title>Changelog &mdash; Orb 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2 documentation" href="index.html" />
     <link rel="prev" title="Astrometry module" href="astrometry_module.html" /> 
   </head>
   <body>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -55,8 +55,10 @@
 <li><a class="reference internal" href="#v1-0-creation-of-orb">v1.0 Creation of ORB</a></li>
 <li><a class="reference internal" href="#v1-1">v1.1</a><ul>
 <li><a class="reference internal" href="#multi-fit-of-stars">Multi fit of stars</a></li>
+<li><a class="reference internal" href="#usno-b1-based-star-detection">USNO-B1 based star detection</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#v1-2">v1.2</a></li>
 </ul>
 </li>
 </ul>
@@ -104,10 +106,32 @@ ORBS module have been moved to ORB.</p>
 <ul class="simple">
 <li><a class="reference internal" href="astrometry_module.html#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><tt class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></tt></a> has been updated to fit
 multiple stars at the same time (see:
-<a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></tt></a>). The star fit is now a lot more
+<a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></tt></a>). The star fit is now way more
 robust.</li>
 </ul>
 </div>
+<div class="section" id="usno-b1-based-star-detection">
+<h3>USNO-B1 based star detection<a class="headerlink" href="#usno-b1-based-star-detection" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><tt class="xref py py-meth docutils literal"><span class="pre">query_vizier()</span></tt></a> and
+<a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><tt class="xref py py-meth docutils literal"><span class="pre">register()</span></tt></a> have been moved from
+<tt class="xref py py-class docutils literal"><span class="pre">orbs.process.Spectrum</span></tt> so that the registration is part of
+the Astrometry module (which makes more sense). This way it is now
+possible to use a star catalogue like USNO-B1 to detect stars in the
+cube. It is not a default behaviour because extended emission region
+contains virtually no catalogued stars. This option can be useful for
+galaxies to avoid the confision of HII regions and stars.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="v1-2">
+<h2>v1.2<a class="headerlink" href="#v1-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></tt></a> noise estimation
+enhanced. The initial estimation of the shift has also been updated.</li>
+<li>Minor bugs fix. This version is considered as a nearly stable
+version ready for release.</li>
+</ul>
 </div>
 </div>
 
@@ -129,7 +153,7 @@ robust.</li>
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
