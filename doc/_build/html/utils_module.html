@@ -472,36 +472,77 @@ instead of ZPD index (default False).</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="utils.fit_gaussian1d">
-<tt class="descclassname">utils.</tt><tt class="descname">fit_gaussian1d</tt><big>(</big><em>data</em>, <em>shift=None</em>, <em>height=None</em>, <em>fwhm=None</em>, <em>amplitude=None</em>, <em>return_residual=False</em>, <em>fix_height=False</em>, <em>fit_tol=0.01</em>, <em>check=True</em><big>)</big><a class="headerlink" href="#utils.fit_gaussian1d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the parameters of the fit of a 1-D gaussian</p>
+<dt id="utils.fit_lines_in_vector">
+<tt class="descclassname">utils.</tt><tt class="descname">fit_lines_in_vector</tt><big>(</big><em>vector</em>, <em>lines</em>, <em>fwhm_guess=3.5</em>, <em>cont_guess=None</em>, <em>shift_guess=0.0</em>, <em>fix_cont=False</em>, <em>fix_fwhm=False</em>, <em>cov_fwhm=True</em>, <em>cov_pos=True</em>, <em>reguess_positions=False</em>, <em>return_fitted_vector=False</em>, <em>fit_tol=0.001</em>, <em>no_absorption=False</em>, <em>poly_order=0</em>, <em>fmodel='gaussian'</em>, <em>sig_noise=None</em>, <em>interpolation_params=None</em>, <em>signal_range=None</em><big>)</big><a class="headerlink" href="#utils.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit multiple gaussian shaped emission lines in a spectrum vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data</strong> &#8211; Data to be fitted (must be a 1-D vector)</li>
-<li><strong>amplitude</strong> &#8211; (Optional) Guess for the amplitude of the
-gaussian. If None, moments are used to guess it (default None)</li>
-<li><strong>shift</strong> &#8211; (Optional) Guess for the position of the center of
-the gaussian. If None, moments are used to guess it (default
-None)</li>
-<li><strong>height</strong> &#8211; (Optional) Guess for the height of the gaussian. If
-None, moments are used to guess it (default None)</li>
-<li><strong>fwhm</strong> &#8211; (Optional) Guess for the FWHM (in pixels) of the
-gaussian. If None, moments are used to guess it (default None)</li>
-<li><strong>return_residual</strong> &#8211; (Optional) If True return the parameters of the
-fit and the residual for each point of the data (False by
-default)</li>
-<li><strong>fix_height</strong> &#8211; (Optional) If True height is fixed to the given
-guess or its computed value.</li>
-<li><strong>fit_tol</strong> &#8211; (Optional) Tolerance on the paramaters fit (the
-lower the better but the longer too) (default 1e-2).</li>
-<li><strong>check</strong> &#8211; (Optional) If True check returned fit (default True)</li>
+<li><strong>vector</strong> &#8211; Vector to fit</li>
+<li><strong>lines</strong> &#8211; Positions of the lines in channels</li>
+<li><strong>fwhm_guess</strong> &#8211; (Optional) Initial guess on the lines FWHM
+(default 3.5).</li>
+<li><strong>cont_guess</strong> &#8211; (Optional) Initial guess on the continuum
+(default None). Must be a tuple of poly_order + 1 values ordered
+with the highest orders first.</li>
+<li><strong>shift_guess</strong> &#8211; (Optional) Initial guess on the global shift
+of the lines (default 0.).</li>
+<li><strong>fix_cont</strong> &#8211; (Optional) If True, continuum is fixed to the
+initial guess (default False).</li>
+<li><strong>fix_fwhm</strong> &#8211; (Optional) If True, FWHM value is fixed to the
+initial guess (default False).</li>
+<li><strong>cov_fwhm</strong> &#8211; (Optional) If True FWHM is considered to be the
+same for all lines and become a covarying parameter (default
+True).</li>
+<li><strong>cov_pos</strong> &#8211; (Optional) If True the estimated relative
+positions of the lines (the lines parameter) are considered to
+be exact and only need to be shifted. Positions are thus
+covarying. Very useful but the initial estimation of the line
+relative positions must be very precise (default False).</li>
+<li><strong>reguess_positions</strong> &#8211; (Optional) If True, positions are
+guessed again. Useful if the given estimations really are rough
+ones. Note that this must not be used with cov_pos set to True
+(default False).</li>
+<li><strong>return_fitted_vector</strong> &#8211; (Optional) If True Fitted vector is
+returned.</li>
+<li><strong>fit_tol</strong> &#8211; (Optional) Tolerance on the fit value (default
+1e-2).</li>
+<li><strong>no_absorption</strong> &#8211; (Optional) If True, no negative amplitude
+are returned (default False).</li>
+<li><strong>poly_order</strong> &#8211; (Optional) Order of the polynomial used to fit
+continuum. Use high orders carefully (default 0).</li>
+<li><strong>fmodel</strong> &#8211; (Optional) Fitting model. Can be &#8216;gaussian&#8217;, 
+&#8216;sinc&#8217; or &#8216;sinc2&#8217; (default &#8216;gaussian&#8217;).</li>
+<li><strong>sig_noise</strong> &#8211; (Optional) Noise standard deviation guess. If
+None noise value is guessed but the gaussian FWHM must not
+exceed half of the sampling interval (default None).</li>
+<li><strong>interpolation_params</strong> &#8211; (Optional) Must be a tuple [step,
+order]. Interpolate data before fitting when data has been
+previously interpolated from an irregular wavelength axis to a
+regular one.</li>
+<li><strong>signal_range</strong> &#8211; (Optional) a tuple (x_min, x_max) giving the
+lowest and highest channel numbers containing signal.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">[height, amplitude, shift, fwhm]</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>a dictionary containing:</p>
+<ul class="simple">
+<li>lines parameters [key: &#8216;lines-params&#8217;] Lines parameters are
+given as an array of shape (lines_nb, 4). The order of the 4
+parameters for each lines is [height at the center of the
+line, ampitude, position, fwhm].</li>
+<li>lines parameters errors [key: &#8216;lines-params-err&#8217;]</li>
+<li>residual [key: &#8216;residual&#8217;]</li>
+<li>chi-square [key: &#8216;chi-square&#8217;]</li>
+<li>reduced chi-square [key: &#8216;reduced-chi-square&#8217;]</li>
+<li>SNR [key: &#8216;snr&#8217;]</li>
+<li>continuum parameters [key: &#8216;cont-params&#8217;]</li>
+<li>and optionally the fitted vector [key: &#8216;fitted-vector&#8217;]
+depending on the option return_fitted_vector.</li>
+</ul>
+</p>
 </td>
 </tr>
 </tbody>
@@ -696,6 +737,40 @@ coordinates in degrees (ra, dec)</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.get_mask_from_ds9_region_line">
+<tt class="descclassname">utils.</tt><tt class="descname">get_mask_from_ds9_region_line</tt><big>(</big><em>reg_line</em>, <em>x_range=None</em>, <em>y_range=None</em><big>)</big><a class="headerlink" href="#utils.get_mask_from_ds9_region_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read one line of a ds9 region file and return the list of
+pixels in the region.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>reg_line</strong> &#8211; Line of the ds9 region file</li>
+<li><strong>x_range</strong> &#8211; (Optional) Range of x image coordinates
+considered as valid. Pixels outside this range are
+rejected. If None, no validation is done (default None).</li>
+<li><strong>y_range</strong> &#8211; (Optional) Range of y image coordinates
+considered as valid. Pixels outside this range are
+rejected. If None, no validation is done (default None).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The returned array can be used like a list of
+indices returned by e.g. numpy.nonzero().</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Coordinates can be image coordinates (x,y) or sky
+coordinates in degrees (ra, dec)</p>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.get_open_fds">
 <tt class="descclassname">utils.</tt><tt class="descname">get_open_fds</tt><big>(</big><big>)</big><a class="headerlink" href="#utils.get_open_fds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of open file descriptors</p>
@@ -778,7 +853,7 @@ interferogram before computing its FFT.</p>
 
 <dl class="function">
 <dt id="utils.interpolate_axis">
-<tt class="descclassname">utils.</tt><tt class="descname">interpolate_axis</tt><big>(</big><em>a</em>, <em>new_axis</em>, <em>deg</em>, <em>old_axis=None</em><big>)</big><a class="headerlink" href="#utils.interpolate_axis" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">interpolate_axis</tt><big>(</big><em>a</em>, <em>new_axis</em>, <em>deg</em>, <em>old_axis=None</em>, <em>fill_value=0.0</em><big>)</big><a class="headerlink" href="#utils.interpolate_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate a vector along a new axis.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -790,6 +865,8 @@ interferogram before computing its FFT.</p>
 <li><strong>deg</strong> &#8211; Interpolation degree</li>
 <li><strong>old_axis</strong> &#8211; (Optional) Original vector axis. If None,
 a regular range axis is assumed (default None).</li>
+<li><strong>fill_value</strong> &#8211; (Optional) extrapolated points are filled with
+this value (default 0.)</li>
 </ul>
 </td>
 </tr>
@@ -805,12 +882,15 @@ a regular range axis is assumed (default None).</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>calibration_map</strong> &#8211; Map</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>calibration_map</strong> &#8211; Map</li>
+<li><strong>dimx</strong> &#8211; X dimension of the result</li>
+<li><strong>dimy</strong> &#8211; Y dimension of the result</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
-<p>:param dimx : X dimension of the result
-:param dimy : Y dimension of the result</p>
 </dd></dl>
 
 <dl class="function">

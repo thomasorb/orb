@@ -52,8 +52,9 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#v1-0">v1.0</a><ul>
-<li><a class="reference internal" href="#v1-0-0">v1.0.0</a></li>
+<li><a class="reference internal" href="#v1-0-creation-of-orb">v1.0 Creation of ORB</a></li>
+<li><a class="reference internal" href="#v1-1">v1.1</a><ul>
+<li><a class="reference internal" href="#multi-fit-of-stars">Multi fit of stars</a></li>
 </ul>
 </li>
 </ul>
@@ -91,10 +92,21 @@
             
   <div class="section" id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="v1-0">
-<h2>v1.0<a class="headerlink" href="#v1-0" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="v1-0-0">
-<h3>v1.0.0<a class="headerlink" href="#v1-0-0" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="v1-0-creation-of-orb">
+<h2>v1.0 Creation of ORB<a class="headerlink" href="#v1-0-creation-of-orb" title="Permalink to this headline">¶</a></h2>
+<p>Architecture change of ORBS. All the shared content originally in the
+ORBS module have been moved to ORB.</p>
+</div>
+<div class="section" id="v1-1">
+<h2>v1.1<a class="headerlink" href="#v1-1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="multi-fit-of-stars">
+<h3>Multi fit of stars<a class="headerlink" href="#multi-fit-of-stars" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="astrometry_module.html#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><tt class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></tt></a> has been updated to fit
+multiple stars at the same time (see:
+<a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></tt></a>). The star fit is now a lot more
+robust.</li>
+</ul>
 </div>
 </div>
 </div>

@@ -118,7 +118,7 @@
 <h2><a class="toc-backref" href="#id2">Astrometry class</a><a class="headerlink" href="#astrometry-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Astrometry">
-<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Astrometry</tt><big>(</big><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='moffat'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=3.0</em>, <em>data_prefix=''</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>config_file_name='config.orb'</em>, <em>logfile_name=None</em>, <em>tuning_parameters={}</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Astrometry</tt><big>(</big><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='moffat'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=3.0</em>, <em>data_prefix=''</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>target_radec=None</em>, <em>target_xy=None</em>, <em>wcs_rotation=None</em>, <em>config_file_name='config.orb'</em>, <em>logfile_name=None</em>, <em>tuning_parameters={}</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
 <p>Manage all astrometrical processes that can be made on a single
 frame of a whole cube.</p>
@@ -129,6 +129,18 @@ fit parameters.</p>
 <p>Possible fitting profiles are at least Gaussian and Moffat. Other
 profiles can be created by expanding <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">PSF</span></tt></a>
 class.</p>
+<dl class="attribute">
+<dt id="astrometry.Astrometry.BASE_URL">
+<tt class="descname">BASE_URL</tt><em class="property"> = 'http://vizier.hia.nrc.ca/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.BASE_URL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Beginning of the URL to the Vizer server by default</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry._get_combined_frame">
+<tt class="descname">_get_combined_frame</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_combined_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a combined frame to work on</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="astrometry.Astrometry._get_fit_results_path">
 <tt class="descname">_get_fit_results_path</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_fit_results_path" title="Permalink to this definition">¶</a></dt>
@@ -157,6 +169,18 @@ results.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="astrometry.Astrometry.base_url">
+<tt class="descname">base_url</tt><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Beginning of the URL to the Vizier server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="astrometry.Astrometry.base_url_ca">
+<tt class="descname">base_url_ca</tt><em class="property"> = 'http://vizier.hia.nrc.ca/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url_ca" title="Permalink to this definition">¶</a></dt>
+<dd><p>Beginning of the URL to the Vizier server in Canada</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="astrometry.Astrometry.dark_current_level">
 <tt class="descname">dark_current_level</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.dark_current_level" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dark current level in ADU/pixel (can be computed from dark frames:
@@ -172,8 +196,53 @@ used for star detection</p>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.detect_stars">
-<tt class="descname">detect_stars</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
-<dd><p>Detect star position in data.</p>
+<tt class="descname">detect_stars</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em>, <em>try_catalogue=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect star positions in data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>index</strong> &#8211; Minimum index of the images used for star detection.</li>
+<li><strong>min_star_number</strong> &#8211; Minimum number of stars to
+detect. Must be greater or equal to 4 (minimum star number
+for any alignment process).</li>
+<li><strong>no_save</strong> &#8211; if True do not save the list of detected stars
+in a file, only return a list (default False).</li>
+<li><strong>saturation_threshold</strong> &#8211; Number of counts above which the
+star can be considered as saturated. Very low by default
+because at the ZPD the intensity of a star can be twice the
+intensity far from it (default 35000).</li>
+<li><strong>try_catalogue</strong> &#8211; If True, try to use a catalogue to
+detect stars if target_ra, target_dec, target_x, target_y
+and wcs_rotation parameters have been given.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(star_list_path, mean_fwhm_arc) : (a path to a list
+of the dected stars, the mean FWHM of the stars in arcsec)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Star detection walks through 2 steps:</p>
+<ol class="last arabic simple">
+<li>Preselection of 4 times the minimum number of stars to
+detect using a variable threshold with a filter for hot
+pixels and stars near the border of the image.</li>
+<li>Stars are fitted to test if they are &#8216;real&#8217; stars. The
+most luminous stars (that do not saturate) are
+eventually taken.</li>
+</ol>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.detect_stars_from_catalogue">
+<tt class="descname">detect_stars_from_catalogue</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars_from_catalogue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect star positions in data from a catalogue.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -198,18 +267,6 @@ of the dected stars, the mean FWHM of the stars in arcsec)</p>
 </tr>
 </tbody>
 </table>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p>Star detection walks through 2 steps:</p>
-<ol class="last arabic simple">
-<li>Preselection of 4 times the minimum number of stars to
-detect using a variable threshold with a filter for hot
-pixels and stars near the border of the image.</li>
-<li>Stars are fitted to test if they are &#8216;real&#8217; stars. The
-most luminous stars (that do not saturate) are
-eventually taken.</li>
-</ol>
-</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -221,7 +278,7 @@ of the fit of each star in each frame</p>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.fit_stars_in_cube">
-<tt class="descname">fit_stars_in_cube</tt><big>(</big><em>correct_alignment=False</em>, <em>save=True</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fwhm_min=0.5</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>fix_aperture_size=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>hpfilter=False</em>, <em>add_cube=None</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_cube" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">fit_stars_in_cube</tt><big>(</big><em>correct_alignment=False</em>, <em>save=True</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fwhm_min=0.5</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>fix_aperture_size=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>hpfilter=False</em>, <em>add_cube=None</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_cube" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in the cube.</p>
 <p>Frames must not be too disaligned. Disalignment can be
 corrected as the cube is fitted by setting correct_alignment
@@ -284,6 +341,17 @@ not be used for photometry (default False).</li>
 noise is computed from the background pixels around the
 stars. readout_noise and dark_current_level are thus not
 used (default True).</li>
+<li><strong>multi_fit</strong> &#8211; (Optional) If True all stars are fitted at
+the same time. More robust for alignment purpose. The
+difference of position between the stars in the star list
+must be precisely known because the overall shift only is
+estimated (default False).</li>
+<li><strong>enable_zoom</strong> &#8211; (Optional) Useful only if multi_fit is
+True.  If True, the stars position pattern can be zoomed to
+better adjust it to the real frame (default False).</li>
+<li><strong>enable_rotation</strong> &#8211; (Optional) Useful only if multi_fit is
+True.  If True, the stars position pattern can be rotated to
+better adjust it to the real frame (default False).</li>
 </ul>
 </td>
 </tr>
@@ -293,14 +361,15 @@ used (default True).</li>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.fit_stars_in_frame">
-<tt class="descname">fit_stars_in_frame</tt><big>(</big><em>index</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>local_background=True</em>, <em>save=False</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">fit_stars_in_frame</tt><big>(</big><em>index</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>local_background=True</em>, <em>save=False</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in one frame.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>index</strong> &#8211; Index of the frame to fit.</li>
+<li><strong>index</strong> &#8211; Index of the frame to fit. If index is a frame,
+this frame is used instead.</li>
 <li><strong>fix_height</strong> &#8211; (Optional) Fix height parameter to its
 estimation (default False)</li>
 <li><strong>fix_beta</strong> &#8211; (Optional) Fix beta to the given value
@@ -342,6 +411,17 @@ thus be precise (default False).</li>
 noise is computed from the background pixels around the
 stars. readout_noise and dark_current_level are thus not
 used (default True).</li>
+<li><strong>multi_fit</strong> &#8211; (Optional) If True all stars are fitted at
+the same time. More robust for alignment purpose. The
+difference of position between the stars in the star list
+must be precisely known because the overall shift only is
+estimated (default False).</li>
+<li><strong>enable_zoom</strong> &#8211; (Optional) Useful only if multi_fit is
+True.  If True, the stars position pattern can be zoomed to
+better adjust it to the real frame (default False).</li>
+<li><strong>enable_rotation</strong> &#8211; (Optional) Useful only if multi_fit is
+True.  If True, the stars position pattern can be rotated to
+better adjust it to the real frame (default False).</li>
 </ul>
 </td>
 </tr>
@@ -416,6 +496,45 @@ fitted to assume a good enough calculated disalignment
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="astrometry.Astrometry.query_vizier">
+<tt class="descname">query_vizier</tt><big>(</big><em>radius=7</em>, <em>catalog='USNO-B1.0'</em>, <em>max_stars=100</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.query_vizier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of star coordinates around an object in a
+given radius based on a query to VizieR Services
+(<a class="reference external" href="http://vizier.u-strasbg.fr/viz-bin/VizieR">http://vizier.u-strasbg.fr/viz-bin/VizieR</a>)</p>
+<p>Note that the idea of this method has been picked from an IDL
+function: QUERYVIZIER
+(<a class="reference external" href="http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro">http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro</a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>radius</strong> &#8211; (Optional) Radius around the target in
+arc-minutes (default 7).</li>
+<li><strong>catalog</strong> &#8211; (Optional) Catalog to ask on the VizieR
+database (see notes) (default &#8216;USNO-B1&#8217;)</li>
+<li><strong>max_stars</strong> &#8211; (Optional) Maximum number of row to retrieve
+(default 100)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Some catalogs that can be used::
+&#8216;V/139&#8217; - Sloan SDSS photometric catalog Release 9 (2012)
+&#8216;2MASS-PSC&#8217; - 2MASS point source catalog (2003)
+&#8216;GSC2.3&#8217; - Version 2.3.2 of the HST Guide Star Catalog (2006)
+&#8216;USNO-B1&#8217; - Verson B1 of the US Naval Observatory catalog (2003)
+&#8216;UCAC4&#8217;  - 4th U.S. Naval Observatory CCD Astrograph Catalog (2012)
+&#8216;B/DENIS/DENIS&#8217; - 2nd Deep Near Infrared Survey of southern Sky (2005)
+&#8216;I/259/TYC2&#8217; - Tycho-2 main catalog (2000)
+&#8216;I/311/HIP2&#8217; - Hipparcos main catalog, new reduction (2007)</p>
+</div>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="astrometry.Astrometry.readout_noise">
 <tt class="descname">readout_noise</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.readout_noise" title="Permalink to this definition">¶</a></dt>
@@ -428,6 +547,32 @@ std(master_bias_frame))</p>
 <tt class="descname">reduced_chi_square_limit</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.reduced_chi_square_limit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coefficient on the reduced chi square for bad quality fits
 rejection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.register">
+<tt class="descname">register</tt><big>(</big><em>max_stars=50</em>, <em>full_deep_frame=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register data and return a corrected pywcs.WCS object.</p>
+<p>Precise RA/DEC positions of the stars in the field are
+recorded from a catalog of the VIZIER server.</p>
+<p>Using the real position of the same stars in the frame, WCS
+transformation parameters are optimized.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>max_stars</strong> &#8211; (Optional) Maximum number of stars used to
+fit (default 50)</li>
+<li><strong>full_deep_frame</strong> &#8211; (Optional) If True all the frames of
+the cube are used to create a deep frame. Use it only when
+the frames in the cube are aligned. In the other case only
+the first frames are combined together (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -984,7 +1129,7 @@ star box.</p>
 
 <dl class="function">
 <dt id="astrometry.fit_stars_in_frame">
-<tt class="descclassname">astrometry.</tt><tt class="descname">fit_stars_in_frame</tt><big>(</big><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=True</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>nozero=False</em>, <em>silent=True</em><big>)</big><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">astrometry.</tt><tt class="descname">fit_stars_in_frame</tt><big>(</big><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=True</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>nozero=False</em>, <em>silent=True</em><big>)</big><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in a frame.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1053,6 +1198,17 @@ not be used for alignment purpose (default False).</li>
 <li><strong>no_fit</strong> &#8211; (Optional) If True, no fit is done. Only the
 aperture photometry. Star positions in the star list must thus
 be precise (default False).</li>
+<li><strong>multi_fit</strong> &#8211; (Optional) If True all stars are fitted at the
+same time. More robust for alignment purpose. The difference of
+position between the stars in the star list must be precisely
+known because the overall shift only is estimated (default
+False).</li>
+<li><strong>enable_zoom</strong> &#8211; (Optional) Useful only if multi_fit is True.
+If True, the stars position pattern can be zoomed to better
+adjust it to the real frame (default False).</li>
+<li><strong>enable_rotation</strong> &#8211; (Optional) Useful only if multi_fit is
+True.  If True, the stars position pattern can be rotated to
+better adjust it to the real frame (default False).</li>
 <li><strong>estimate_local_noise</strong> &#8211; (Optional) If True, the level of
 noise is computed from the background pixels around the
 stars. readout_noise and dark_current_level are thus not used

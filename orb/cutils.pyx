@@ -3,9 +3,23 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: cutils.pyx
 
-# __author__ = "Thomas Martin"
-# __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"
-# __docformat__ = 'reStructuredText'
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
 
 """
 CUtils is a set of C functions coded in Cython_ to improve their speed.
@@ -1184,9 +1198,18 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cdef double x_min, x_max, y_min, y_max, rcx, rcy
     cdef np.ndarray[np.float64_t, ndim=1] noise_guess = np.zeros(
         (star_nb), dtype=float)
+    cdef added_height = 0.
+    cdef frame_min = 0.
 
-    if np.any(frame < 0.):
-        frame -= np.min(frame)
+    # no fit on pure NaN frame
+    if np.all(np.isnan(frame)):
+        return []
+
+    # avoid negative values by adding a height level to the frame
+    frame_min = np.nanmin(frame)
+    if frame_min < 0.:
+        added_height = -frame_min
+        frame += added_height
     
     # box size must be odd
     if box_size % 2 == 0: box_size += 1
@@ -1276,7 +1299,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         
     free_p, fixed_p = params_arrays2vect(stars_p, stars_p_mask,
                                          cov_p, cov_p_mask)
-
+    
     ### FIT ###
     fit = scipy.optimize.leastsq(diff, free_p,
                                  args=(fixed_p, stars_p_mask, cov_p_mask,
@@ -1299,7 +1322,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         returned_data['chi-square'] = chisq
 
         # cov height and fwhm
-        stars_p[:,0] += cov_p[0]
+        stars_p[:,0] += cov_p[0] - added_height
         stars_p[:,4] += cov_p[3]
         
         # compute least square fit errors and add cov dx, dy and zoom

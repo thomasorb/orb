@@ -3,6 +3,23 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: utils.py
 
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Utils module contains functions that are used by the processing
 classes of ORBS
@@ -2055,8 +2072,10 @@ def interpolate_map(calibration_map, dimx, dimy):
     """Interpolate 2D data map.
     
     :param calibration_map: Map
-    :param dimx : X dimension of the result
-    :param dimy : Y dimension of the result
+    
+    :param dimx: X dimension of the result
+    
+    :param dimy: Y dimension of the result
     """
     x_map = np.arange(calibration_map.shape[0])
     y_map = np.arange(calibration_map.shape[1])

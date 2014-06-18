@@ -3,6 +3,23 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: astrometry.py
 
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 The Astrometry module is aimed to manage all astrometry processes:
 Fitting star position and photometry for alignement and cubes merging.
@@ -1955,7 +1972,7 @@ class Astrometry(Tools):
 
 
 
-    def register(self, max_stars=50):
+    def register(self, max_stars=50, full_deep_frame=False):
         """Register data and return a corrected pywcs.WCS object.
         
         Precise RA/DEC positions of the stars in the field are
@@ -1966,6 +1983,11 @@ class Astrometry(Tools):
         
         :param max_stars: (Optional) Maximum number of stars used to
           fit (default 50)
+
+        :param full_deep_frame: (Optional) If True all the frames of
+          the cube are used to create a deep frame. Use it only when
+          the frames in the cube are aligned. In the other case only
+          the first frames are combined together (default False).
         """
         def get_transformation_error(guess, deg_list, fit_list,
                                      target_ra, target_dec):
@@ -1998,7 +2020,10 @@ class Astrometry(Tools):
 
 
         # get deep frame
-        deep_frame = self._get_combined_frame()
+        if not full_deep_frame:
+            deep_frame = self._get_combined_frame()
+        else:
+            deep_frame = self.data.get_mean_image()
         
         delta = self.scale / 3600. # arcdeg per pixel
         
@@ -2026,7 +2051,6 @@ class Astrometry(Tools):
             pos = wcs.wcs_sky2pix(istar[0], istar[1], 0)
             star_list_pix.append((pos[0][0], pos[1][0]))
 
-
         ## # Save stars coords
         ## f = self.open_file(self._get_stars_coords_path(), 'w')
         ## for istar in star_list_deg:
@@ -2034,10 +2058,6 @@ class Astrometry(Tools):
         ##                        istar[1]))
 
         star_list_pix = np.array(star_list_pix)
-        ## import pylab as pl
-        ## pl.imshow(deep_frame.T)
-        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1], color='r')
-        ## pl.show()
         
         # Fit stars from computed position in the image
         self.reset_star_list(star_list_pix)
@@ -2786,14 +2806,20 @@ def fit_stars_in_frame(frame, star_list, box_size,
     star_list = np.array(star_list, dtype=float)
     
     ## Frame background determination if wanted
+    background = None
+    cov_height = False
+    
     if not local_background:
         if precise_guess:
             background = sky_background_level(frame)
         else:
             background = np.median(frame)
-        fix_height = True
-    else:
-        background = None
+        if not multi_fit:
+            fix_height = True
+        else:
+            cov_height = True
+    
+    
 
     ## Blur frame to avoid undersampled data
     if blur:
@@ -2806,10 +2832,10 @@ def fit_stars_in_frame(frame, star_list, box_size,
     if not no_fit:
         if multi_fit:
             fit_params = cutils.multi_fit_stars(
-                np.array(frame, dtype=float), np.array(star_list), box_size,
+                np.array(fit_frame, dtype=float), np.array(star_list), box_size,
                 height_guess=np.array(background, dtype=np.float),
                 fwhm_guess=np.array(fwhm_pix, dtype=np.float),
-                cov_height=False,
+                cov_height=cov_height,
                 cov_pos=True,
                 cov_fwhm=True,
                 fix_height=fix_height,

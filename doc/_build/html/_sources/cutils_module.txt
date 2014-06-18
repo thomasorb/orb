@@ -28,6 +28,7 @@ Contents
     cutils.gaussian_kernel
     cutils.get_box_coords
     cutils.point_inside_polygon
+    cutils.multi_fit_stars
 
 
 
@@ -43,6 +44,7 @@ Cutils
 .. autofunction:: radians
 .. autofunction:: transform_A_to_B
 .. autofunction:: gaussian_array2d
+.. autofunction:: moffat_array2d
 .. autofunction:: surface_value
 .. autofunction:: sigmacut
 .. autofunction:: sigmaclip
@@ -60,4 +62,5 @@ Cutils
 .. autofunction:: gaussian_kernel
 .. autofunction:: get_box_coords
 .. autofunction:: point_inside_polygon
+.. autofunction:: multi_fit_stars
 
