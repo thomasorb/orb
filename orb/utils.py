@@ -2043,6 +2043,43 @@ def nm2pix(nm_axis, nm):
                               bounds_error=False, fill_value=np.nan)
      return f(nm)
 
+def nm2cm1(nm):
+    """Convert a wavelength in nm to a wavenumber in cm-1.
+
+    :param nm: wavelength i nm
+    """
+    return 1e7 / np.float(nm)
+
+def cm12nm(cm1):
+    """Convert a wavenumber in cm-1 to a wavelength in nm.
+
+    :param cm1: wavenumber in cm-1
+    """
+    return 1e7 / np.float(cm1)
+
+def cm12pix(cm1_axis, cm1):
+     """Convert a wavenumber in cm-1 to a pixel position given an axis
+     in cm-1.
+
+     :param cm1_axis: Axis in cm-1
+     
+     :param cm1: Wavenumber in cm-1
+     """
+     f = interpolate.interp1d(cm1_axis, np.arange(cm1_axis.shape[0]),
+                              bounds_error=False, fill_value=np.nan)
+     return f(cm1)
+
+def fwhm_nm2cm1(fwhm_nm, nm):
+    """Convert a FWHM in nm to a FWHM in cm-1.
+    
+    The central wavelength in nm of the line must also be given
+
+    :param fwhm_nm: FWHM in nm
+    
+    :param nm: Wavelength in nm where the FWHM is evaluated
+    """
+    return 1e7 * fwhm_nm / nm**2.
+
 def polyfit1d(a, deg, w=None, return_coeffs=False):
     """Fit a polynomial to a 1D vector.
     
@@ -2246,6 +2283,7 @@ def transform_interferogram(interf, nm_laser,
                             balanced=True, bad_frames_vector=None,
                             smoothing_deg=2, return_complex=False,
                             final_step_nb=None, return_ireg_axis=False,
+                            low_order_correction=True,
                             conserve_energy=False):
     
     """Transform an interferogram into a spectrum.
@@ -2327,15 +2365,18 @@ def transform_interferogram(interf, nm_laser,
       wavenumber axis (emission lines and especially unapodized sinc
       emission lines are symetric) (default False).
 
+    :param low_order_correction: (Optional) If True substract a low
+      order polynomial to remove low frequency noise. Useful for
+      unperfectly corrected interferograms (default True).
+
     :param conserve_energy: (Optional) If True the energy is conserved
       in the transformation (default False).
 
     .. note:: Interferogram can be complex
     """
-    
     MIN_ZEROS_LENGTH = 8 # Minimum length of a zeros band to smooth it
     interf = np.copy(interf)
-    
+   
     if return_phase and n_phase == 0:
         raise Exception("Phase cannot be computed with 0 points, return_phase=True and n_phase=0 options are not compatible !")
     if return_phase and ext_phase != None:
@@ -2345,7 +2386,8 @@ def transform_interferogram(interf, nm_laser,
 
     if final_step_nb == None:
         final_step_nb = dimz
-        
+
+    
     # discard zeros interferogram
     if len(np.nonzero(interf)[0]) == 0:
         if return_phase:
@@ -2375,23 +2417,25 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 2 - low order polynomial substraction to suppress 
     # low frequency noise
-    low_order_fit = polyfit1d(interf, 3)
-    for inonzero in nonzero_pix[0]:
-        interf[inonzero] -= low_order_fit[inonzero]
+    if low_order_correction:
+        low_order_fit = polyfit1d(interf, 3)
+        for inonzero in nonzero_pix[0]:
+            interf[inonzero] -= low_order_fit[inonzero]
 
     #####
     # 3 - ZPD shift to center the spectrum
-    temp_vector = np.zeros(interf.shape[0] + 2 * abs(zpd_shift),
-                           dtype=interf.dtype)
-    temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = interf
-    interf = np.copy(temp_vector)
-    interf = np.roll(interf, zpd_shift)
+    if zpd_shift != 0:
+        temp_vector = np.zeros(interf.shape[0] + 2 * abs(zpd_shift),
+                               dtype=interf.dtype)
+        temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = interf
+        interf = np.copy(temp_vector)
+        interf = np.roll(interf, zpd_shift)
 
     if bad_frames_vector != None:
         temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = bad_frames_vector
         bad_frames_vector = np.copy(temp_vector)
         bad_frames_vector = np.roll(bad_frames_vector, zpd_shift)
-
+    
     #####
     # 4 - Zeros smoothing
     #
@@ -2427,7 +2471,7 @@ def transform_interferogram(interf, nm_laser,
     #
     # The low resolution interferogram is a small part of the real
     # interferogram taken symmetrically around ZPD
-    if (ext_phase == None) and (n_phase != 0):
+    if (ext_phase is None) and (n_phase != 0):
         lr_phase, lr_spectrum = get_lr_phase(interf, n_phase=n_phase,
                                              return_lr_spectrum=True)
         
@@ -2453,7 +2497,7 @@ def transform_interferogram(interf, nm_laser,
                                                   w=weights, return_coeffs=True)
             
             
-    elif (ext_phase != None):
+    elif ext_phase is not None:
         lr_phase = ext_phase
 
     if return_phase:
@@ -2480,7 +2524,8 @@ def transform_interferogram(interf, nm_laser,
     # least 2 times more points than the initial vector to
     # compute its FFT. FFT computation is faster for a vector
     # size equal to a power of 2.
-    zero_padded_size = next_power_of_two(2*final_step_nb)
+    #zero_padded_size = next_power_of_two(2*final_step_nb)
+    zero_padded_size = 2 * final_step_nb
     
     temp_vector = np.zeros(zero_padded_size, dtype=interf.dtype)
     zeros_border = int((zero_padded_size - interf.shape[0]) / 2.)
@@ -2494,12 +2539,15 @@ def transform_interferogram(interf, nm_laser,
 
     #####
     # 9 - Fast Fourier Transform of the interferogram
-    center = zero_padded_size/2 + 1
+    center = zero_padded_size / 2
     interf_fft = np.fft.fft(zero_padded_vector)[:center]
 
     # normalization of the vector to take into account zero-padding 
-    interf_fft *= float(zero_padded_size) / float(dimz) / 2.
-    
+    if np.iscomplexobj(interf):
+        interf_fft /= (zero_padded_size / dimz)
+    else:
+        interf_fft /= (zero_padded_size / dimz) / 2.
+        
     #####
     # 10 - Phase correction
     if n_phase != 0:
@@ -2515,7 +2563,7 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 11 - Off-axis effect correction with maxima map   
     # Irregular wavelength axis creation
-    correction_coeff = float(calibration_coeff)/nm_laser
+    correction_coeff = float(calibration_coeff) / nm_laser
     nm_axis_ireg = create_nm_axis_ireg(spectrum_corr.shape[0], step, order,
                                        nm_max=nm_max, corr=correction_coeff)
     
@@ -2534,8 +2582,12 @@ def transform_interferogram(interf, nm_laser,
                                          nm_max=nm_max, corr=1.)
  
     # spectrum interpolation
-    spectrum = interpolate_axis(spectrum_corr, final_axis, 5,
-                                old_axis=nm_axis_ireg)
+    if not (return_ireg_axis and correction_coeff == 1.):
+        spectrum = interpolate_axis(spectrum_corr, final_axis, 5,
+                                    old_axis=nm_axis_ireg)
+    else:
+        spectrum = spectrum_corr
+
 
     # Extrapolated parts of the spectrum are set to zero
     spectrum[np.nonzero(final_axis > np.max(nm_axis_ireg))] = 0.
@@ -2557,7 +2609,8 @@ def transform_interferogram(interf, nm_laser,
 
 def transform_spectrum(spectrum, nm_laser, calibration_coeff,
                        step, order, window_type, zpd_shift, nm_max=None,
-                       ext_phase=None, return_complex=False):
+                       ext_phase=None, return_complex=False, wavenumber=False,
+                       final_step_nb=None):
     """Transform a spectrum into an interferogram.
 
     This function is the inverse of :py:meth:`utils.transform_interferogram`.
@@ -2586,7 +2639,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
       specified if order is equal to 0 (default None).
       
     :param ext_phase: (Optional) External phase vector. If given this
-      phase vector is used replacing the original phase of the
+      phase vector is used in place of the original phase of the
       spectrum. Useful to add a phase to an interferogram. Note that
       this phase is intended to be used to inverse transform an
       already transformed interferogram. The computed phase correction
@@ -2594,44 +2647,67 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
       :py:meth:`utils.transform_interferogram` is not reversed for
       even orders, it is reversed here in this function.
 
-    :param return_complex: If True return a complex
+    :param return_complex: (Optional) If True return a complex
       interferogram. Else return the real part of it (default False).
+
+    :param wavenumber: (Optional) If True the spectrum axis is in
+      cm-1. In this case, and if no wavelength correction has to be
+      applied (calibration_coeff == nm_laser) there will be no
+      interpolation of the original spectrum (better precision)
+      (default False).
+
+    :param final_step_nb: (Optional) Final size of the
+      interferogram. Must be less than the size of the original
+      spectrum. If None the final size of the interferogram is the
+      same as the size of the original spectrum (default None).
 
     .. note:: Interferogram can be complex
     """
-    INTERPOLATION_COEFF = 50 # must be an interger >= 1
-    
+    INTERPOLATION_COEFF = 1 # must be an interger >= 1
+
     spectrum = np.copy(spectrum)
     spectrum = spectrum.astype(np.complex)
     step_nb = spectrum.shape[0]
-    interpolation_size = next_power_of_two(INTERPOLATION_COEFF * step_nb)
+    if final_step_nb is not None:
+        if final_step_nb > step_nb:
+            self._print_error('final_step_nb must be less than the size of the original spectrum')
+    else:
+        final_step_nb = step_nb
 
     # On-axis -> Off-axis [nm - > cm-1]
     correction_coeff = calibration_coeff / nm_laser
-    nm_axis = create_nm_axis(step_nb, step, order, nm_max=nm_max)
+    
+    if not wavenumber:
+        base_axis = create_nm_axis(step_nb, step, order, nm_max=nm_max)
+    else:
+        base_axis = create_nm_axis_ireg(step_nb, step, order,
+                                        corr=1., nm_max=nm_max)
+    
     nm_axis_ireg = create_nm_axis_ireg(step_nb, step, order,
                                        corr=correction_coeff,
                                        nm_max=nm_max)
-    spectrum = interpolate_axis(spectrum, nm_axis_ireg[::-1], 5,
-                                old_axis=nm_axis)
+    if not (wavenumber and correction_coeff == 1.):
+        spectrum = interpolate_axis(spectrum, nm_axis_ireg[::-1], 5,
+                                    old_axis=base_axis)
+    else:
+        spectrum = spectrum[::-1]
     
     # Add phase to the spectrum (Re-phase)
-    if ext_phase != None:
-        if not order&1:
-            ext_phase = ext_phase[::-1]
-        ext_phase = interpolate_size(ext_phase, step_nb, 5)
-    
-        spectrum_real = np.copy(spectrum.real)
-        spectrum_imag = np.copy(spectrum.imag)
-        spectrum.real = (spectrum_real * np.cos(ext_phase)
-                         - spectrum_imag * np.sin(ext_phase))
-        spectrum.imag = (spectrum_real * np.sin(ext_phase)
-                         + spectrum_imag * np.cos(ext_phase))
+    if ext_phase is not None:
+        if np.any(ext_phase != 0.):
+            if not order&1:
+                ext_phase = ext_phase[::-1]
+            ext_phase = interpolate_size(ext_phase, step_nb, 5)
+            spectrum_real = np.copy(spectrum.real)
+            spectrum_imag = np.copy(spectrum.imag)
+            spectrum.real = (spectrum_real * np.cos(ext_phase)
+                             - spectrum_imag * np.sin(ext_phase))
+            spectrum.imag = (spectrum_real * np.sin(ext_phase)
+                             + spectrum_imag * np.cos(ext_phase))
 
-    # Zero-filling
-    spectrum = interpolate_size(spectrum, interpolation_size, 1)
-   
-    zeros_spectrum = np.zeros(interpolation_size * 2, dtype=spectrum.dtype)
+        
+   # Zero-filling
+    zeros_spectrum = np.zeros(step_nb * 2, dtype=spectrum.dtype)
     if order&1:
         zeros_spectrum[:spectrum.shape[0]] += spectrum
     else:
@@ -2640,21 +2716,21 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
 
     # IFFT and re-shift + center burst
     interf = np.fft.ifft(spectrum)
-    interf = np.roll(interf, interpolation_size/2 - zpd_shift)
+    interf = np.roll(interf, step_nb - zpd_shift)
     interf = interf[
-        interpolation_size/2-(step_nb/2) - step_nb%2:
-        interpolation_size/2+(step_nb/2)]
+        step_nb-(final_step_nb/2) - final_step_nb%2:
+        step_nb+(final_step_nb/2)]
     
     interf = np.array(interf)
 
     # De-apodize
-    if window_type != None:
-        window = norton_beer_window(window_type, step_nb)
+    if window_type is not None:
+        window = norton_beer_window(window_type, final_step_nb)
         interf /= window
     
     # Normalization to remove zero filling effect on the mean energy
-    interf *= 2.
-
+    interf *= step_nb / float(final_step_nb) * 2.
+    
     if return_complex:
         return interf
     else:
