@@ -1475,23 +1475,33 @@ class Cube(Tools):
         return np.sqrt(energy_map / self.dimz)
 
     def get_spectrum_energy_map(self):
-        """Return the energy map of a spectrum cube"""
+        """Return the energy map of a spectrum cube.
+
+        .. note:: In this process NaNs are considered as zeros.
+        """
         energy_map = np.zeros((self.dimx, self.dimy), dtype=float)
         progress = ProgressBar(self.dimz)
         for _ik in range(self.dimz):
-            energy_map += (self.get_data_frame(_ik))**2.
+            frame = self.get_data_frame(_ik)
+            non_nans = np.nonzero(~np.isnan(frame))
+            energy_map[non_nans] += (frame[non_nans])**2.
             progress.update(_ik, info="Creating spectrum energy map")
         progress.end()
         return np.sqrt(energy_map) / self.dimz
 
     def get_mean_image(self):
         """Return the mean image of a cube (corresponding to a deep
-        frame for an interferogram cube or a specral cube)"""
+        frame for an interferogram cube or a specral cube).
+
+        .. note:: In this process NaNs are considered as zeros.
+        """
         if self.mean_image == None:
             mean_im = np.zeros((self.dimx, self.dimy), dtype=float)
             progress = ProgressBar(self.dimz)
             for _ik in range(self.dimz):
-                mean_im += self.get_data_frame(_ik)
+                frame = self.get_data_frame(_ik)
+                non_nans = np.nonzero(~np.isnan(frame))
+                mean_im[non_nans] += frame[non_nans]
                 progress.update(_ik, info="Creating mean image")
             progress.end()
             self.mean_image = mean_im / self.dimz

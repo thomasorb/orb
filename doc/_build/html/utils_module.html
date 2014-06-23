@@ -6,15 +6,16 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.2 documentation</title>
+    <title>Utils module &mdash; Orb 1.2.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2',
+        VERSION:     '1.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.1 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
@@ -45,7 +46,7 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -98,8 +99,8 @@ classes of ORBS</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>ABmag</strong> &#8211; A magnitude in the AB magnitude system</li>
-<li><strong>lam</strong> &#8211; Wavelength in angstrom</li>
+<li><span class="target" id="utils.ABmag2flambda.params.ABmag"></span><strong>ABmag</strong><a class="paramlink headerlink reference internal" href="#utils.ABmag2flambda.params.ABmag">¶</a> &#8211; A magnitude in the AB magnitude system</li>
+<li><span class="target" id="utils.ABmag2flambda.params.lam"></span><strong>lam</strong><a class="paramlink headerlink reference internal" href="#utils.ABmag2flambda.params.lam">¶</a> &#8211; Wavelength in angstrom</li>
 </ul>
 </td>
 </tr>
@@ -118,7 +119,7 @@ f_nu = 10^(-0.4 * (ABmag + 48.60))</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ABmag</strong> &#8211; A magnitude in the AB magnitude system</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.ABmag2fnu.params.ABmag"></span><strong>ABmag</strong><a class="paramlink headerlink reference internal" href="#utils.ABmag2fnu.params.ABmag">¶</a> &#8211; A magnitude in the AB magnitude system</td>
 </tr>
 </tbody>
 </table>
@@ -147,8 +148,8 @@ gaussian shape function.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>n</strong> &#8211; Window length</li>
-<li><strong>coeff</strong> &#8211; Border size in percentage of the total length.</li>
+<li><span class="target" id="utils.border_cut_window.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.border_cut_window.params.n">¶</a> &#8211; Window length</li>
+<li><span class="target" id="utils.border_cut_window.params.coeff"></span><strong>coeff</strong><a class="paramlink headerlink reference internal" href="#utils.border_cut_window.params.coeff">¶</a> &#8211; Border size in percentage of the total length.</li>
 </ul>
 </td>
 </tr>
@@ -167,8 +168,41 @@ function is used by <a class="reference internal" href="#utils.create_master_fra
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frames</strong> &#8211; Set of frames to check</li>
-<li><strong>sigma_reject</strong> &#8211; (Optional) Rejection coefficient (default 2.)</li>
+<li><span class="target" id="utils.check_frames.params.frames"></span><strong>frames</strong><a class="paramlink headerlink reference internal" href="#utils.check_frames.params.frames">¶</a> &#8211; Set of frames to check</li>
+<li><span class="target" id="utils.check_frames.params.sigma_reject"></span><strong>sigma_reject</strong><a class="paramlink headerlink reference internal" href="#utils.check_frames.params.sigma_reject">¶</a> &#8211; (Optional) Rejection coefficient (default 2.)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.cm12nm">
+<tt class="descclassname">utils.</tt><tt class="descname">cm12nm</tt><big>(</big><em>cm1</em><big>)</big><a class="headerlink" href="#utils.cm12nm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a wavenumber in cm-1 to a wavelength in nm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.cm12nm.params.cm1"></span><strong>cm1</strong><a class="paramlink headerlink reference internal" href="#utils.cm12nm.params.cm1">¶</a> &#8211; wavenumber in cm-1</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.cm12pix">
+<tt class="descclassname">utils.</tt><tt class="descname">cm12pix</tt><big>(</big><em>cm1_axis</em>, <em>cm1</em><big>)</big><a class="headerlink" href="#utils.cm12pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a wavenumber in cm-1 to a pixel position given an axis
+in cm-1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.cm12pix.params.cm1_axis"></span><strong>cm1_axis</strong><a class="paramlink headerlink reference internal" href="#utils.cm12pix.params.cm1_axis">¶</a> &#8211; Axis in cm-1</li>
+<li><span class="target" id="utils.cm12pix.params.cm1"></span><strong>cm1</strong><a class="paramlink headerlink reference internal" href="#utils.cm12pix.params.cm1">¶</a> &#8211; Wavenumber in cm-1</li>
 </ul>
 </td>
 </tr>
@@ -186,11 +220,11 @@ filter bandpass.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>nm_min_filter</strong> &#8211; Min wavelength of the filter in nm.</li>
-<li><strong>nm_max_filter</strong> &#8211; Max wavelength of the filter in nm.</li>
-<li><strong>theta_min</strong> &#8211; (Optional) Min angle of the detector (default
+<li><span class="target" id="utils.compute_obs_params.params.nm_min_filter"></span><strong>nm_min_filter</strong><a class="paramlink headerlink reference internal" href="#utils.compute_obs_params.params.nm_min_filter">¶</a> &#8211; Min wavelength of the filter in nm.</li>
+<li><span class="target" id="utils.compute_obs_params.params.nm_max_filter"></span><strong>nm_max_filter</strong><a class="paramlink headerlink reference internal" href="#utils.compute_obs_params.params.nm_max_filter">¶</a> &#8211; Max wavelength of the filter in nm.</li>
+<li><span class="target" id="utils.compute_obs_params.params.theta_min"></span><strong>theta_min</strong><a class="paramlink headerlink reference internal" href="#utils.compute_obs_params.params.theta_min">¶</a> &#8211; (Optional) Min angle of the detector (default
 5.01).</li>
-<li><strong>theta_max</strong> &#8211; (Optional) Max angle of the detector (default
+<li><span class="target" id="utils.compute_obs_params.params.theta_max"></span><strong>theta_max</strong><a class="paramlink headerlink reference internal" href="#utils.compute_obs_params.params.theta_max">¶</a> &#8211; (Optional) Max angle of the detector (default
 11.28).</li>
 </ul>
 </td>
@@ -211,8 +245,8 @@ filter bandpass.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>bad_frames_vector</strong> &#8211; The vector of indexes to correct</li>
-<li><strong>dimz</strong> &#8211; Dimension of the cube along the 3rd axis.</li>
+<li><span class="target" id="utils.correct_bad_frames_vector.params.bad_frames_vector"></span><strong>bad_frames_vector</strong><a class="paramlink headerlink reference internal" href="#utils.correct_bad_frames_vector.params.bad_frames_vector">¶</a> &#8211; The vector of indexes to correct</li>
+<li><span class="target" id="utils.correct_bad_frames_vector.params.dimz"></span><strong>dimz</strong><a class="paramlink headerlink reference internal" href="#utils.correct_bad_frames_vector.params.dimz">¶</a> &#8211; Dimension of the cube along the 3rd axis.</li>
 </ul>
 </td>
 </tr>
@@ -230,8 +264,8 @@ filter bandpass.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>map2d</strong> &#8211; The map to correct</li>
-<li><strong>bad_value</strong> &#8211; (Optional) Value considered as bad (default
+<li><span class="target" id="utils.correct_map2d.params.map2d"></span><strong>map2d</strong><a class="paramlink headerlink reference internal" href="#utils.correct_map2d.params.map2d">¶</a> &#8211; The map to correct</li>
+<li><span class="target" id="utils.correct_map2d.params.bad_value"></span><strong>bad_value</strong><a class="paramlink headerlink reference internal" href="#utils.correct_map2d.params.bad_value">¶</a> &#8211; (Optional) Value considered as bad (default
 np.nan).</li>
 </ul>
 </td>
@@ -250,10 +284,10 @@ polynomial fit.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>vector</strong> &#8211; The vector to be corrected.</li>
-<li><strong>bad_value</strong> &#8211; (Optional) Bad value to correct (default np.nan)</li>
-<li><strong>deg</strong> &#8211; (Optional) Spline degree or polyfit degree (default 3)</li>
-<li><strong>polyfit</strong> &#8211; (Optional) If True non valid values are guessed
+<li><span class="target" id="utils.correct_vector.params.vector"></span><strong>vector</strong><a class="paramlink headerlink reference internal" href="#utils.correct_vector.params.vector">¶</a> &#8211; The vector to be corrected.</li>
+<li><span class="target" id="utils.correct_vector.params.bad_value"></span><strong>bad_value</strong><a class="paramlink headerlink reference internal" href="#utils.correct_vector.params.bad_value">¶</a> &#8211; (Optional) Bad value to correct (default np.nan)</li>
+<li><span class="target" id="utils.correct_vector.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.correct_vector.params.deg">¶</a> &#8211; (Optional) Spline degree or polyfit degree (default 3)</li>
+<li><span class="target" id="utils.correct_vector.params.polyfit"></span><strong>polyfit</strong><a class="paramlink headerlink reference internal" href="#utils.correct_vector.params.polyfit">¶</a> &#8211; (Optional) If True non valid values are guessed
 using a polynomial fit to the data instead of an spline
 interpolation (default False)</li>
 </ul>
@@ -274,7 +308,7 @@ a nonzero number.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> &#8211; A vector.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.count_nonzeros.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.count_nonzeros.params.a">¶</a> &#8211; A vector.</td>
 </tr>
 </tbody>
 </table>
@@ -289,10 +323,10 @@ a nonzero number.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>n</strong> &#8211; Number of steps on the axis</li>
-<li><strong>step</strong> &#8211; Step size in nm</li>
-<li><strong>order</strong> &#8211; Folding order</li>
-<li><strong>corr</strong> &#8211; (Optional) Coefficient of correction (default 1.)</li>
+<li><span class="target" id="utils.create_cm1_axis.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.create_cm1_axis.params.n">¶</a> &#8211; Number of steps on the axis</li>
+<li><span class="target" id="utils.create_cm1_axis.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.create_cm1_axis.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="utils.create_cm1_axis.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_cm1_axis.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="utils.create_cm1_axis.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#utils.create_cm1_axis.params.corr">¶</a> &#8211; (Optional) Coefficient of correction (default 1.)</li>
 </ul>
 </td>
 </tr>
@@ -311,16 +345,16 @@ combine.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frames</strong> &#8211; Frames to combine.</li>
-<li><strong>reject</strong> &#8211; (Optional) Rejection operation. Can be &#8216;sigclip&#8217;,
+<li><span class="target" id="utils.create_master_frame.params.frames"></span><strong>frames</strong><a class="paramlink headerlink reference internal" href="#utils.create_master_frame.params.frames">¶</a> &#8211; Frames to combine.</li>
+<li><span class="target" id="utils.create_master_frame.params.reject"></span><strong>reject</strong><a class="paramlink headerlink reference internal" href="#utils.create_master_frame.params.reject">¶</a> &#8211; (Optional) Rejection operation. Can be &#8216;sigclip&#8217;,
 &#8216;minmax&#8217;, &#8216;avsigclip&#8217; (default &#8216;avsigclip&#8217;)</li>
-<li><strong>combine</strong> &#8211; (Optional) Combining operation. Can be
+<li><span class="target" id="utils.create_master_frame.params.combine"></span><strong>combine</strong><a class="paramlink headerlink reference internal" href="#utils.create_master_frame.params.combine">¶</a> &#8211; (Optional) Combining operation. Can be
 &#8216;average&#8217; or &#8216;median&#8217; (default &#8216;average&#8217;)</li>
-<li><strong>sigma</strong> &#8211; (Optional) Sigma factor for pixel rejection
+<li><span class="target" id="utils.create_master_frame.params.sigma"></span><strong>sigma</strong><a class="paramlink headerlink reference internal" href="#utils.create_master_frame.params.sigma">¶</a> &#8211; (Optional) Sigma factor for pixel rejection
 (default 3.).</li>
-<li><strong>silent</strong> &#8211; (Optional) If True no information message are
+<li><span class="target" id="utils.create_master_frame.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#utils.create_master_frame.params.silent">¶</a> &#8211; (Optional) If True no information message are
 displayed.</li>
-<li><strong>check</strong> &#8211; (Optional) If True deviating frames are rejected
+<li><span class="target" id="utils.create_master_frame.params.check"></span><strong>check</strong><a class="paramlink headerlink reference internal" href="#utils.create_master_frame.params.check">¶</a> &#8211; (Optional) If True deviating frames are rejected
 before combination (default True).</li>
 </ul>
 </td>
@@ -366,10 +400,10 @@ than 3 frames.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>n</strong> &#8211; Number of steps on the axis</li>
-<li><strong>step</strong> &#8211; Step size in nm</li>
-<li><strong>order</strong> &#8211; Folding order</li>
-<li><strong>nm_max</strong> &#8211; (Optional) Must be given if order is 0 (default None)</li>
+<li><span class="target" id="utils.create_nm_axis.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.n">¶</a> &#8211; Number of steps on the axis</li>
+<li><span class="target" id="utils.create_nm_axis.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="utils.create_nm_axis.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="utils.create_nm_axis.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.nm_max">¶</a> &#8211; (Optional) Must be given if order is 0 (default None)</li>
 </ul>
 </td>
 </tr>
@@ -393,11 +427,11 @@ axis in cm-1.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>n</strong> &#8211; Number of steps on the axis</li>
-<li><strong>step</strong> &#8211; Step size in nm</li>
-<li><strong>order</strong> &#8211; Folding order</li>
-<li><strong>nm_max</strong> &#8211; (Optional) Must be given if order is 0 (default None)</li>
-<li><strong>corr</strong> &#8211; (Optional) Coefficient of correction (default 1.)</li>
+<li><span class="target" id="utils.create_nm_axis_ireg.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.n">¶</a> &#8211; Number of steps on the axis</li>
+<li><span class="target" id="utils.create_nm_axis_ireg.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="utils.create_nm_axis_ireg.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="utils.create_nm_axis_ireg.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.nm_max">¶</a> &#8211; (Optional) Must be given if order is 0 (default None)</li>
+<li><span class="target" id="utils.create_nm_axis_ireg.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.corr">¶</a> &#8211; (Optional) Coefficient of correction (default 1.)</li>
 </ul>
 </td>
 </tr>
@@ -415,8 +449,8 @@ beeing the interferogram axis)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; Interferogram cube</li>
-<li><strong>apod</strong> &#8211; (Optional) Apodization function used. See
+<li><span class="target" id="utils.cube_raw_fft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.cube_raw_fft.params.x">¶</a> &#8211; Interferogram cube</li>
+<li><span class="target" id="utils.cube_raw_fft.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#utils.cube_raw_fft.params.apod">¶</a> &#8211; (Optional) Apodization function used. See
 <a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><tt class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></tt></a> (default None)</li>
 </ul>
 </td>
@@ -435,13 +469,13 @@ beeing the interferogram axis)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; Vector to filter</li>
-<li><strong>cutoff_coeff</strong> &#8211; Coefficient defining the position of the cut
+<li><span class="target" id="utils.fft_filter.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.fft_filter.params.a">¶</a> &#8211; Vector to filter</li>
+<li><span class="target" id="utils.fft_filter.params.cutoff_coeff"></span><strong>cutoff_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.fft_filter.params.cutoff_coeff">¶</a> &#8211; Coefficient defining the position of the cut
 frequency (Cut frequency = cut_coeff * vector length)</li>
-<li><strong>width_coeff</strong> &#8211; (Optional) Coefficient defining the width of
+<li><span class="target" id="utils.fft_filter.params.width_coeff"></span><strong>width_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.fft_filter.params.width_coeff">¶</a> &#8211; (Optional) Coefficient defining the width of
 the smoothed part of the filter (width = width_coeff * vector
 length) (default 0.2)</li>
-<li><strong>filter_type</strong> &#8211; (Optional) Type of filter to use. Can be
+<li><span class="target" id="utils.fft_filter.params.filter_type"></span><strong>filter_type</strong><a class="paramlink headerlink reference internal" href="#utils.fft_filter.params.filter_type">¶</a> &#8211; (Optional) Type of filter to use. Can be
 &#8216;high_pass&#8217; or &#8216;low_pass&#8217;.</li>
 </ul>
 </td>
@@ -459,10 +493,10 @@ length) (default 0.2)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>step_number</strong> &#8211; (Optional) If the full number of steps is
+<li><span class="target" id="utils.find_zpd.params.step_number"></span><strong>step_number</strong><a class="paramlink headerlink reference internal" href="#utils.find_zpd.params.step_number">¶</a> &#8211; (Optional) If the full number of steps is
 greater than the number of frames of the cube. Useful when
 the interferograms are non symetric (default None).</li>
-<li><strong>return_zpd_shift</strong> &#8211; (Optional) If True return ZPD shift
+<li><span class="target" id="utils.find_zpd.params.return_zpd_shift"></span><strong>return_zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.find_zpd.params.return_zpd_shift">¶</a> &#8211; (Optional) If True return ZPD shift
 instead of ZPD index (default False).</li>
 </ul>
 </td>
@@ -480,49 +514,49 @@ instead of ZPD index (default False).</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>vector</strong> &#8211; Vector to fit</li>
-<li><strong>lines</strong> &#8211; Positions of the lines in channels</li>
-<li><strong>fwhm_guess</strong> &#8211; (Optional) Initial guess on the lines FWHM
+<li><span class="target" id="utils.fit_lines_in_vector.params.vector"></span><strong>vector</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.vector">¶</a> &#8211; Vector to fit</li>
+<li><span class="target" id="utils.fit_lines_in_vector.params.lines"></span><strong>lines</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.lines">¶</a> &#8211; Positions of the lines in channels</li>
+<li><span class="target" id="utils.fit_lines_in_vector.params.fwhm_guess"></span><strong>fwhm_guess</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.fwhm_guess">¶</a> &#8211; (Optional) Initial guess on the lines FWHM
 (default 3.5).</li>
-<li><strong>cont_guess</strong> &#8211; (Optional) Initial guess on the continuum
+<li><span class="target" id="utils.fit_lines_in_vector.params.cont_guess"></span><strong>cont_guess</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.cont_guess">¶</a> &#8211; (Optional) Initial guess on the continuum
 (default None). Must be a tuple of poly_order + 1 values ordered
 with the highest orders first.</li>
-<li><strong>shift_guess</strong> &#8211; (Optional) Initial guess on the global shift
+<li><span class="target" id="utils.fit_lines_in_vector.params.shift_guess"></span><strong>shift_guess</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.shift_guess">¶</a> &#8211; (Optional) Initial guess on the global shift
 of the lines (default 0.).</li>
-<li><strong>fix_cont</strong> &#8211; (Optional) If True, continuum is fixed to the
+<li><span class="target" id="utils.fit_lines_in_vector.params.fix_cont"></span><strong>fix_cont</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.fix_cont">¶</a> &#8211; (Optional) If True, continuum is fixed to the
 initial guess (default False).</li>
-<li><strong>fix_fwhm</strong> &#8211; (Optional) If True, FWHM value is fixed to the
+<li><span class="target" id="utils.fit_lines_in_vector.params.fix_fwhm"></span><strong>fix_fwhm</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.fix_fwhm">¶</a> &#8211; (Optional) If True, FWHM value is fixed to the
 initial guess (default False).</li>
-<li><strong>cov_fwhm</strong> &#8211; (Optional) If True FWHM is considered to be the
+<li><span class="target" id="utils.fit_lines_in_vector.params.cov_fwhm"></span><strong>cov_fwhm</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.cov_fwhm">¶</a> &#8211; (Optional) If True FWHM is considered to be the
 same for all lines and become a covarying parameter (default
 True).</li>
-<li><strong>cov_pos</strong> &#8211; (Optional) If True the estimated relative
+<li><span class="target" id="utils.fit_lines_in_vector.params.cov_pos"></span><strong>cov_pos</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.cov_pos">¶</a> &#8211; (Optional) If True the estimated relative
 positions of the lines (the lines parameter) are considered to
 be exact and only need to be shifted. Positions are thus
 covarying. Very useful but the initial estimation of the line
 relative positions must be very precise (default False).</li>
-<li><strong>reguess_positions</strong> &#8211; (Optional) If True, positions are
+<li><span class="target" id="utils.fit_lines_in_vector.params.reguess_positions"></span><strong>reguess_positions</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.reguess_positions">¶</a> &#8211; (Optional) If True, positions are
 guessed again. Useful if the given estimations really are rough
 ones. Note that this must not be used with cov_pos set to True
 (default False).</li>
-<li><strong>return_fitted_vector</strong> &#8211; (Optional) If True Fitted vector is
+<li><span class="target" id="utils.fit_lines_in_vector.params.return_fitted_vector"></span><strong>return_fitted_vector</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.return_fitted_vector">¶</a> &#8211; (Optional) If True Fitted vector is
 returned.</li>
-<li><strong>fit_tol</strong> &#8211; (Optional) Tolerance on the fit value (default
+<li><span class="target" id="utils.fit_lines_in_vector.params.fit_tol"></span><strong>fit_tol</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.fit_tol">¶</a> &#8211; (Optional) Tolerance on the fit value (default
 1e-2).</li>
-<li><strong>no_absorption</strong> &#8211; (Optional) If True, no negative amplitude
+<li><span class="target" id="utils.fit_lines_in_vector.params.no_absorption"></span><strong>no_absorption</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.no_absorption">¶</a> &#8211; (Optional) If True, no negative amplitude
 are returned (default False).</li>
-<li><strong>poly_order</strong> &#8211; (Optional) Order of the polynomial used to fit
+<li><span class="target" id="utils.fit_lines_in_vector.params.poly_order"></span><strong>poly_order</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.poly_order">¶</a> &#8211; (Optional) Order of the polynomial used to fit
 continuum. Use high orders carefully (default 0).</li>
-<li><strong>fmodel</strong> &#8211; (Optional) Fitting model. Can be &#8216;gaussian&#8217;, 
+<li><span class="target" id="utils.fit_lines_in_vector.params.fmodel"></span><strong>fmodel</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.fmodel">¶</a> &#8211; (Optional) Fitting model. Can be &#8216;gaussian&#8217;, 
 &#8216;sinc&#8217; or &#8216;sinc2&#8217; (default &#8216;gaussian&#8217;).</li>
-<li><strong>sig_noise</strong> &#8211; (Optional) Noise standard deviation guess. If
+<li><span class="target" id="utils.fit_lines_in_vector.params.sig_noise"></span><strong>sig_noise</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.sig_noise">¶</a> &#8211; (Optional) Noise standard deviation guess. If
 None noise value is guessed but the gaussian FWHM must not
 exceed half of the sampling interval (default None).</li>
-<li><strong>interpolation_params</strong> &#8211; (Optional) Must be a tuple [step,
+<li><span class="target" id="utils.fit_lines_in_vector.params.interpolation_params"></span><strong>interpolation_params</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.interpolation_params">¶</a> &#8211; (Optional) Must be a tuple [step,
 order]. Interpolate data before fitting when data has been
 previously interpolated from an irregular wavelength axis to a
 regular one.</li>
-<li><strong>signal_range</strong> &#8211; (Optional) a tuple (x_min, x_max) giving the
+<li><span class="target" id="utils.fit_lines_in_vector.params.signal_range"></span><strong>signal_range</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.signal_range">¶</a> &#8211; (Optional) a tuple (x_min, x_max) giving the
 lowest and highest channel numbers containing signal.</li>
 </ul>
 </td>
@@ -558,8 +592,27 @@ depending on the option return_fitted_vector.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fnu</strong> &#8211; Flux in erg/cm2/s/Hz</li>
-<li><strong>nu</strong> &#8211; frequency in Hz</li>
+<li><span class="target" id="utils.fnu2flambda.params.fnu"></span><strong>fnu</strong><a class="paramlink headerlink reference internal" href="#utils.fnu2flambda.params.fnu">¶</a> &#8211; Flux in erg/cm2/s/Hz</li>
+<li><span class="target" id="utils.fnu2flambda.params.nu"></span><strong>nu</strong><a class="paramlink headerlink reference internal" href="#utils.fnu2flambda.params.nu">¶</a> &#8211; frequency in Hz</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.fwhm_nm2cm1">
+<tt class="descclassname">utils.</tt><tt class="descname">fwhm_nm2cm1</tt><big>(</big><em>fwhm_nm</em>, <em>nm</em><big>)</big><a class="headerlink" href="#utils.fwhm_nm2cm1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a FWHM in nm to a FWHM in cm-1.</p>
+<p>The central wavelength in nm of the line must also be given</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.fwhm_nm2cm1.params.fwhm_nm"></span><strong>fwhm_nm</strong><a class="paramlink headerlink reference internal" href="#utils.fwhm_nm2cm1.params.fwhm_nm">¶</a> &#8211; FWHM in nm</li>
+<li><span class="target" id="utils.fwhm_nm2cm1.params.nm"></span><strong>nm</strong><a class="paramlink headerlink reference internal" href="#utils.fwhm_nm2cm1.params.nm">¶</a> &#8211; Wavelength in nm where the FWHM is evaluated</li>
 </ul>
 </td>
 </tr>
@@ -576,11 +629,11 @@ depending on the option return_fitted_vector.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; Array giving the positions where the gaussian is evaluated</li>
-<li><strong>h</strong> &#8211; Height</li>
-<li><strong>a</strong> &#8211; Amplitude</li>
-<li><strong>dx</strong> &#8211; Position of the center</li>
-<li><strong>w</strong> &#8211; FWHM, <span class="math">\(\text{FWHM} = \text{Width} \times 2 \sqrt{2 \ln 2}\)</span></li>
+<li><span class="target" id="utils.gaussian1d.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.gaussian1d.params.x">¶</a> &#8211; Array giving the positions where the gaussian is evaluated</li>
+<li><span class="target" id="utils.gaussian1d.params.h"></span><strong>h</strong><a class="paramlink headerlink reference internal" href="#utils.gaussian1d.params.h">¶</a> &#8211; Height</li>
+<li><span class="target" id="utils.gaussian1d.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.gaussian1d.params.a">¶</a> &#8211; Amplitude</li>
+<li><span class="target" id="utils.gaussian1d.params.dx"></span><strong>dx</strong><a class="paramlink headerlink reference internal" href="#utils.gaussian1d.params.dx">¶</a> &#8211; Position of the center</li>
+<li><span class="target" id="utils.gaussian1d.params.w"></span><strong>w</strong><a class="paramlink headerlink reference internal" href="#utils.gaussian1d.params.w">¶</a> &#8211; FWHM, <span class="math">\(\text{FWHM} = \text{Width} \times 2 \sqrt{2 \ln 2}\)</span></li>
 </ul>
 </td>
 </tr>
@@ -598,15 +651,15 @@ its size and the limits of the range along x and y axes.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>ix</strong> &#8211; center of the box along x axis</li>
-<li><strong>iy</strong> &#8211; center of the box along y axis</li>
-<li><strong>box_size</strong> &#8211; Size of the box. The final size of the box will
+<li><span class="target" id="utils.get_box_coords.params.ix"></span><strong>ix</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.ix">¶</a> &#8211; center of the box along x axis</li>
+<li><span class="target" id="utils.get_box_coords.params.iy"></span><strong>iy</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.iy">¶</a> &#8211; center of the box along y axis</li>
+<li><span class="target" id="utils.get_box_coords.params.box_size"></span><strong>box_size</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.box_size">¶</a> &#8211; Size of the box. The final size of the box will
 generally be the same if box_size is odd. Note that the final
 size of the box cannot be guaranteed.</li>
-<li><strong>x_lim_min</strong> &#8211; Minimum limit of the range along x.</li>
-<li><strong>x_lim_max</strong> &#8211; Maximum limit of the range along x.</li>
-<li><strong>y_lim_min</strong> &#8211; Minimum limit of the range along y.</li>
-<li><strong>y_lim_max</strong> &#8211; Maximum limit of the range along y.</li>
+<li><span class="target" id="utils.get_box_coords.params.x_lim_min"></span><strong>x_lim_min</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.x_lim_min">¶</a> &#8211; Minimum limit of the range along x.</li>
+<li><span class="target" id="utils.get_box_coords.params.x_lim_max"></span><strong>x_lim_max</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.x_lim_max">¶</a> &#8211; Maximum limit of the range along x.</li>
+<li><span class="target" id="utils.get_box_coords.params.y_lim_min"></span><strong>y_lim_min</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.y_lim_min">¶</a> &#8211; Minimum limit of the range along y.</li>
+<li><span class="target" id="utils.get_box_coords.params.y_lim_max"></span><strong>y_lim_max</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.y_lim_max">¶</a> &#8211; Maximum limit of the range along y.</li>
 </ul>
 </td>
 </tr>
@@ -627,16 +680,16 @@ is best used with phase vectors.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>filter_file_path</strong> &#8211; Path to the filter file. If None,
+<li><span class="target" id="utils.get_filter_edges_pix.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.filter_file_path">¶</a> &#8211; Path to the filter file. If None,
 filter_min and filter_max must be specified.</li>
-<li><strong>step</strong> &#8211; Step size of the moving mirror in nm.</li>
-<li><strong>order</strong> &#8211; Folding order.</li>
-<li><strong>correction_factor</strong> &#8211; Correction factor
+<li><span class="target" id="utils.get_filter_edges_pix.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
+<li><span class="target" id="utils.get_filter_edges_pix.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.order">¶</a> &#8211; Folding order.</li>
+<li><span class="target" id="utils.get_filter_edges_pix.params.correction_factor"></span><strong>correction_factor</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.correction_factor">¶</a> &#8211; Correction factor
 (i.e. calibration_map_value / laser_wavelength)</li>
-<li><strong>n</strong> &#8211; Number of points of the interpolation axis.</li>
-<li><strong>filter_min</strong> &#8211; (Optional) Edge min of the filter in nm
+<li><span class="target" id="utils.get_filter_edges_pix.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.n">¶</a> &#8211; Number of points of the interpolation axis.</li>
+<li><span class="target" id="utils.get_filter_edges_pix.params.filter_min"></span><strong>filter_min</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.filter_min">¶</a> &#8211; (Optional) Edge min of the filter in nm
 (default None).</li>
-<li><strong>filter_max</strong> &#8211; (Optional) Edge max of the filter in nm
+<li><span class="target" id="utils.get_filter_edges_pix.params.filter_max"></span><strong>filter_max</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_edges_pix.params.filter_max">¶</a> &#8211; (Optional) Edge max of the filter in nm
 (default None).</li>
 </ul>
 </td>
@@ -660,10 +713,10 @@ its axis in pixels.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>filter_file_path</strong> &#8211; Path to the filter file.</li>
-<li><strong>step</strong> &#8211; Step size of the moving mirror in nm.</li>
-<li><strong>order</strong> &#8211; Folding order.</li>
-<li><strong>n</strong> &#8211; Number of points of the interpolation axis.</li>
+<li><span class="target" id="utils.get_filter_function.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.filter_file_path">¶</a> &#8211; Path to the filter file.</li>
+<li><span class="target" id="utils.get_filter_function.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
+<li><span class="target" id="utils.get_filter_function.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.order">¶</a> &#8211; Folding order.</li>
+<li><span class="target" id="utils.get_filter_function.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.n">¶</a> &#8211; Number of points of the interpolation axis.</li>
 </ul>
 </td>
 </tr>
@@ -688,12 +741,12 @@ and max edges are given in pixels over the interpolation axis.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>interf</strong> &#8211; Interferogram vector</li>
-<li><strong>n_phase</strong> &#8211; (Optional) Number of points for phase
+<li><span class="target" id="utils.get_lr_phase.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#utils.get_lr_phase.params.interf">¶</a> &#8211; Interferogram vector</li>
+<li><span class="target" id="utils.get_lr_phase.params.n_phase"></span><strong>n_phase</strong><a class="paramlink headerlink reference internal" href="#utils.get_lr_phase.params.n_phase">¶</a> &#8211; (Optional) Number of points for phase
 computation. Of course it can be no greater than the number of
 points of the interferogram. If None, this is set to 50% of the
 interferogram length (Default None).</li>
-<li><strong>return_lr_spectrum</strong> &#8211; (Optional) If True return also the low
+<li><span class="target" id="utils.get_lr_phase.params.return_lr_spectrum"></span><strong>return_lr_spectrum</strong><a class="paramlink headerlink reference internal" href="#utils.get_lr_phase.params.return_lr_spectrum">¶</a> &#8211; (Optional) If True return also the low
 resolution spectrum from which phase is computed (Default False).</li>
 </ul>
 </td>
@@ -712,11 +765,11 @@ resolution spectrum from which phase is computed (Default False).</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>reg_path</strong> &#8211; Path to a ds9 region file</li>
-<li><strong>x_range</strong> &#8211; (Optional) Range of x image coordinates
+<li><span class="target" id="utils.get_mask_from_ds9_region_file.params.reg_path"></span><strong>reg_path</strong><a class="paramlink headerlink reference internal" href="#utils.get_mask_from_ds9_region_file.params.reg_path">¶</a> &#8211; Path to a ds9 region file</li>
+<li><span class="target" id="utils.get_mask_from_ds9_region_file.params.x_range"></span><strong>x_range</strong><a class="paramlink headerlink reference internal" href="#utils.get_mask_from_ds9_region_file.params.x_range">¶</a> &#8211; (Optional) Range of x image coordinates
 considered as valid. Pixels outside this range are
 rejected. If None, no validation is done (default None).</li>
-<li><strong>y_range</strong> &#8211; (Optional) Range of y image coordinates
+<li><span class="target" id="utils.get_mask_from_ds9_region_file.params.y_range"></span><strong>y_range</strong><a class="paramlink headerlink reference internal" href="#utils.get_mask_from_ds9_region_file.params.y_range">¶</a> &#8211; (Optional) Range of y image coordinates
 considered as valid. Pixels outside this range are
 rejected. If None, no validation is done (default None).</li>
 </ul>
@@ -746,11 +799,11 @@ pixels in the region.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>reg_line</strong> &#8211; Line of the ds9 region file</li>
-<li><strong>x_range</strong> &#8211; (Optional) Range of x image coordinates
+<li><span class="target" id="utils.get_mask_from_ds9_region_line.params.reg_line"></span><strong>reg_line</strong><a class="paramlink headerlink reference internal" href="#utils.get_mask_from_ds9_region_line.params.reg_line">¶</a> &#8211; Line of the ds9 region file</li>
+<li><span class="target" id="utils.get_mask_from_ds9_region_line.params.x_range"></span><strong>x_range</strong><a class="paramlink headerlink reference internal" href="#utils.get_mask_from_ds9_region_line.params.x_range">¶</a> &#8211; (Optional) Range of x image coordinates
 considered as valid. Pixels outside this range are
 rejected. If None, no validation is done (default None).</li>
-<li><strong>y_range</strong> &#8211; (Optional) Range of y image coordinates
+<li><span class="target" id="utils.get_mask_from_ds9_region_line.params.y_range"></span><strong>y_range</strong><a class="paramlink headerlink reference internal" href="#utils.get_mask_from_ds9_region_line.params.y_range">¶</a> &#8211; (Optional) Range of y image coordinates
 considered as valid. Pixels outside this range are
 rejected. If None, no validation is done (default None).</li>
 </ul>
@@ -794,8 +847,8 @@ diffrence filtering given by Mighell (1999).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>im</strong> &#8211; Image to filter</li>
-<li><strong>deg</strong> &#8211; (Optional) Radius of the kernel of the low pass
+<li><span class="target" id="utils.high_pass_diff_image_filter.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#utils.high_pass_diff_image_filter.params.im">¶</a> &#8211; Image to filter</li>
+<li><span class="target" id="utils.high_pass_diff_image_filter.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.high_pass_diff_image_filter.params.deg">¶</a> &#8211; (Optional) Radius of the kernel of the low pass
 filter. Must be &gt; 0 (default 2).</li>
 </ul>
 </td>
@@ -812,7 +865,7 @@ filter. Must be &gt; 0 (default 2).</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>im</strong> &#8211; Image to filter</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.high_pass_image_filter.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#utils.high_pass_image_filter.params.im">¶</a> &#8211; Image to filter</td>
 </tr>
 </tbody>
 </table>
@@ -832,7 +885,7 @@ filter. Must be &gt; 0 (default 2).</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>interf</strong> &#8211; an interferogram</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.interf_mean_energy.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#utils.interf_mean_energy.params.interf">¶</a> &#8211; an interferogram</td>
 </tr>
 </tbody>
 </table>
@@ -853,20 +906,20 @@ interferogram before computing its FFT.</p>
 
 <dl class="function">
 <dt id="utils.interpolate_axis">
-<tt class="descclassname">utils.</tt><tt class="descname">interpolate_axis</tt><big>(</big><em>a</em>, <em>new_axis</em>, <em>deg</em>, <em>old_axis=None</em>, <em>fill_value=0.0</em><big>)</big><a class="headerlink" href="#utils.interpolate_axis" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">interpolate_axis</tt><big>(</big><em>a</em>, <em>new_axis</em>, <em>deg</em>, <em>old_axis=None</em>, <em>fill_value=nan</em><big>)</big><a class="headerlink" href="#utils.interpolate_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate a vector along a new axis.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; vector to interpolate</li>
-<li><strong>new_axis</strong> &#8211; Interpolation axis</li>
-<li><strong>deg</strong> &#8211; Interpolation degree</li>
-<li><strong>old_axis</strong> &#8211; (Optional) Original vector axis. If None,
+<li><span class="target" id="utils.interpolate_axis.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_axis.params.a">¶</a> &#8211; vector to interpolate</li>
+<li><span class="target" id="utils.interpolate_axis.params.new_axis"></span><strong>new_axis</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_axis.params.new_axis">¶</a> &#8211; Interpolation axis</li>
+<li><span class="target" id="utils.interpolate_axis.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_axis.params.deg">¶</a> &#8211; Interpolation degree</li>
+<li><span class="target" id="utils.interpolate_axis.params.old_axis"></span><strong>old_axis</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_axis.params.old_axis">¶</a> &#8211; (Optional) Original vector axis. If None,
 a regular range axis is assumed (default None).</li>
-<li><strong>fill_value</strong> &#8211; (Optional) extrapolated points are filled with
-this value (default 0.)</li>
+<li><span class="target" id="utils.interpolate_axis.params.fill_value"></span><strong>fill_value</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_axis.params.fill_value">¶</a> &#8211; (Optional) extrapolated points are filled with
+this value (default np.nan)</li>
 </ul>
 </td>
 </tr>
@@ -883,9 +936,9 @@ this value (default 0.)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>calibration_map</strong> &#8211; Map</li>
-<li><strong>dimx</strong> &#8211; X dimension of the result</li>
-<li><strong>dimy</strong> &#8211; Y dimension of the result</li>
+<li><span class="target" id="utils.interpolate_map.params.calibration_map"></span><strong>calibration_map</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.calibration_map">¶</a> &#8211; Map</li>
+<li><span class="target" id="utils.interpolate_map.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.dimx">¶</a> &#8211; X dimension of the result</li>
+<li><span class="target" id="utils.interpolate_map.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.dimy">¶</a> &#8211; Y dimension of the result</li>
 </ul>
 </td>
 </tr>
@@ -902,9 +955,9 @@ this value (default 0.)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; vector to interpolate</li>
-<li><strong>size</strong> &#8211; New size of the vector</li>
-<li><strong>deg</strong> &#8211; Interpolation degree</li>
+<li><span class="target" id="utils.interpolate_size.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_size.params.a">¶</a> &#8211; vector to interpolate</li>
+<li><span class="target" id="utils.interpolate_size.params.size"></span><strong>size</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_size.params.size">¶</a> &#8211; New size of the vector</li>
+<li><span class="target" id="utils.interpolate_size.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_size.params.deg">¶</a> &#8211; Interpolation degree</li>
 </ul>
 </td>
 </tr>
@@ -920,7 +973,7 @@ this value (default 0.)</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lam</strong> &#8211; Wavelength in angstrom</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.lambda2nu.params.lam"></span><strong>lam</strong><a class="paramlink headerlink reference internal" href="#utils.lambda2nu.params.lam">¶</a> &#8211; Wavelength in angstrom</td>
 </tr>
 </tbody>
 </table>
@@ -938,7 +991,7 @@ Blackman-Harris window.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> &#8211; Number of points.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.learner95_window.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.learner95_window.params.n">¶</a> &#8211; Number of points.</td>
 </tr>
 </tbody>
 </table>
@@ -953,8 +1006,8 @@ Blackman-Harris window.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>im</strong> &#8211; Image to filter</li>
-<li><strong>deg</strong> &#8211; Radius of the kernel. Must be &gt; 0.</li>
+<li><span class="target" id="utils.low_pass_image_filter.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#utils.low_pass_image_filter.params.im">¶</a> &#8211; Image to filter</li>
+<li><span class="target" id="utils.low_pass_image_filter.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.low_pass_image_filter.params.deg">¶</a> &#8211; Radius of the kernel. Must be &gt; 0.</li>
 </ul>
 </td>
 </tr>
@@ -970,8 +1023,22 @@ Blackman-Harris window.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> &#8211; The number from which the next power of two has to be
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.next_power_of_two.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.next_power_of_two.params.n">¶</a> &#8211; The number from which the next power of two has to be
 computed. Can be an array of numbers.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.nm2cm1">
+<tt class="descclassname">utils.</tt><tt class="descname">nm2cm1</tt><big>(</big><em>nm</em><big>)</big><a class="headerlink" href="#utils.nm2cm1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a wavelength in nm to a wavenumber in cm-1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.nm2cm1.params.nm"></span><strong>nm</strong><a class="paramlink headerlink reference internal" href="#utils.nm2cm1.params.nm">¶</a> &#8211; wavelength i nm</td>
 </tr>
 </tbody>
 </table>
@@ -987,8 +1054,8 @@ in nm</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nm_axis</strong> &#8211; Axis in nm</li>
-<li><strong>nm</strong> &#8211; Wavelength in nm</li>
+<li><span class="target" id="utils.nm2pix.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#utils.nm2pix.params.nm_axis">¶</a> &#8211; Axis in nm</li>
+<li><span class="target" id="utils.nm2pix.params.nm"></span><strong>nm</strong><a class="paramlink headerlink reference internal" href="#utils.nm2pix.params.nm">¶</a> &#8211; Wavelength in nm</li>
 </ul>
 </td>
 </tr>
@@ -1006,9 +1073,9 @@ in nm</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fwhm</strong> &#8211; FWHM relative to the sinc function. Must be: 1.1,
+<li><span class="target" id="utils.norton_beer_window.params.fwhm"></span><strong>fwhm</strong><a class="paramlink headerlink reference internal" href="#utils.norton_beer_window.params.fwhm">¶</a> &#8211; FWHM relative to the sinc function. Must be: 1.1,
 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9 or 2.0. (default &#8216;1.6&#8217;)</li>
-<li><strong>n</strong> &#8211; Number of points (default 1000)</li>
+<li><span class="target" id="utils.norton_beer_window.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.norton_beer_window.params.n">¶</a> &#8211; Number of points (default 1000)</li>
 </ul>
 </td>
 </tr>
@@ -1146,8 +1213,8 @@ in nm</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nm_axis</strong> &#8211; Axis in nm</li>
-<li><strong>pix</strong> &#8211; Pixel position</li>
+<li><span class="target" id="utils.pix2nm.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#utils.pix2nm.params.nm_axis">¶</a> &#8211; Axis in nm</li>
+<li><span class="target" id="utils.pix2nm.params.pix"></span><strong>pix</strong><a class="paramlink headerlink reference internal" href="#utils.pix2nm.params.pix">¶</a> &#8211; Pixel position</li>
 </ul>
 </td>
 </tr>
@@ -1165,11 +1232,11 @@ origin is placed at the center of the map by default.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>f</strong> &#8211; The function to map.</li>
-<li><strong>n</strong> &#8211; Matrix size. Can be a couple of integers (nx, ny).</li>
-<li><strong>corner</strong> &#8211; (Optional) If True, the origin of the coordinates
+<li><span class="target" id="utils.polar_map2d.params.f"></span><strong>f</strong><a class="paramlink headerlink reference internal" href="#utils.polar_map2d.params.f">¶</a> &#8211; The function to map.</li>
+<li><span class="target" id="utils.polar_map2d.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.polar_map2d.params.n">¶</a> &#8211; Matrix size. Can be a couple of integers (nx, ny).</li>
+<li><span class="target" id="utils.polar_map2d.params.corner"></span><strong>corner</strong><a class="paramlink headerlink reference internal" href="#utils.polar_map2d.params.corner">¶</a> &#8211; (Optional) If True, the origin of the coordinates
 becomes the corner (0,0) of the map (default False)</li>
-<li><strong>circle</strong> &#8211; (Optional) If False and if the matrix is not
+<li><span class="target" id="utils.polar_map2d.params.circle"></span><strong>circle</strong><a class="paramlink headerlink reference internal" href="#utils.polar_map2d.params.circle">¶</a> &#8211; (Optional) If False and if the matrix is not
 squared, the coordinates are those of an ellipsis of the same
 shape as the matrix (default True).</li>
 </ul>
@@ -1188,12 +1255,12 @@ shape as the matrix (default True).</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; Vector to fit</li>
-<li><strong>deg</strong> &#8211; Fit degree</li>
-<li><strong>return_coeffs</strong> &#8211; (Optional) If True return fit coefficients
+<li><span class="target" id="utils.polyfit1d.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.polyfit1d.params.a">¶</a> &#8211; Vector to fit</li>
+<li><span class="target" id="utils.polyfit1d.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.polyfit1d.params.deg">¶</a> &#8211; Fit degree</li>
+<li><span class="target" id="utils.polyfit1d.params.return_coeffs"></span><strong>return_coeffs</strong><a class="paramlink headerlink reference internal" href="#utils.polyfit1d.params.return_coeffs">¶</a> &#8211; (Optional) If True return fit coefficients
 as returned by numpy.polynomial.polynomial.polyfit() (default
 False).</li>
-<li><strong>w</strong> &#8211; (Optional) If not None, weights to apply to the
+<li><span class="target" id="utils.polyfit1d.params.w"></span><strong>w</strong><a class="paramlink headerlink reference internal" href="#utils.polyfit1d.params.w">¶</a> &#8211; (Optional) If not None, weights to apply to the
 fit. Must have the same shape as the vector to fit (default
 None)</li>
 </ul>
@@ -1214,12 +1281,12 @@ small data set (&lt; 500 x 500 x 10).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frames</strong> &#8211; Frames to combine.</li>
-<li><strong>reject</strong> &#8211; (Optional) Rejection operation. Can be &#8216;sigclip&#8217;,
+<li><span class="target" id="utils.pp_create_master_frame.params.frames"></span><strong>frames</strong><a class="paramlink headerlink reference internal" href="#utils.pp_create_master_frame.params.frames">¶</a> &#8211; Frames to combine.</li>
+<li><span class="target" id="utils.pp_create_master_frame.params.reject"></span><strong>reject</strong><a class="paramlink headerlink reference internal" href="#utils.pp_create_master_frame.params.reject">¶</a> &#8211; (Optional) Rejection operation. Can be &#8216;sigclip&#8217;,
 &#8216;minmax&#8217;, &#8216;avsigclip&#8217; (default &#8216;avsigclip&#8217;)</li>
-<li><strong>combine</strong> &#8211; (Optional) Combining operation. Can be
+<li><span class="target" id="utils.pp_create_master_frame.params.combine"></span><strong>combine</strong><a class="paramlink headerlink reference internal" href="#utils.pp_create_master_frame.params.combine">¶</a> &#8211; (Optional) Combining operation. Can be
 &#8216;average&#8217; or &#8216;median&#8217; (default &#8216;average&#8217;)</li>
-<li><strong>sigma</strong> &#8211; (Optional) Sigma factor for pixel rejection
+<li><span class="target" id="utils.pp_create_master_frame.params.sigma"></span><strong>sigma</strong><a class="paramlink headerlink reference internal" href="#utils.pp_create_master_frame.params.sigma">¶</a> &#8211; (Optional) Sigma factor for pixel rejection
 (default 3.).</li>
 </ul>
 </td>
@@ -1241,10 +1308,10 @@ small data set (&lt; 500 x 500 x 10).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; Interferogram.</li>
-<li><strong>apod</strong> &#8211; (Optional) Apodization function used. See
+<li><span class="target" id="utils.raw_fft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.x">¶</a> &#8211; Interferogram.</li>
+<li><span class="target" id="utils.raw_fft.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.apod">¶</a> &#8211; (Optional) Apodization function used. See
 <a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><tt class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></tt></a> (default None)</li>
-<li><strong>inverse</strong> &#8211; (Optional) If True compute the inverse FFT
+<li><span class="target" id="utils.raw_fft.params.inverse"></span><strong>inverse</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.inverse">¶</a> &#8211; (Optional) If True compute the inverse FFT
 (default False).</li>
 </ul>
 </td>
@@ -1261,7 +1328,7 @@ small data set (&lt; 500 x 500 x 10).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_file_path</strong> &#8211; Path to the filter file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.read_filter_file.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#utils.read_filter_file.params.filter_file_path">¶</a> &#8211; Path to the filter file.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(list of filter wavelength, list of corresponding
 transmission coefficients, minimum edge of the filter, maximum
@@ -1315,11 +1382,11 @@ be specified using the keywords : FILTER_MIN and FILTER_MAX:</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; A distribution of values</li>
-<li><strong>weights</strong> &#8211; Weights of each value of a (Must have the same
+<li><span class="target" id="utils.robust_mean.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.robust_mean.params.a">¶</a> &#8211; A distribution of values</li>
+<li><span class="target" id="utils.robust_mean.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#utils.robust_mean.params.weights">¶</a> &#8211; Weights of each value of a (Must have the same
 length as a). If None, weights are all considered equal to 1
 (default None).</li>
-<li><strong>warn</strong> &#8211; If True, warnings are raised.</li>
+<li><span class="target" id="utils.robust_mean.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#utils.robust_mean.params.warn">¶</a> &#8211; If True, warnings are raised.</li>
 </ul>
 </td>
 </tr>
@@ -1338,8 +1405,8 @@ length as a). If None, weights are all considered equal to 1
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; A distribution of values</li>
-<li><strong>warn</strong> &#8211; If True, warnings are raised.</li>
+<li><span class="target" id="utils.robust_median.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.robust_median.params.a">¶</a> &#8211; A distribution of values</li>
+<li><span class="target" id="utils.robust_median.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#utils.robust_median.params.warn">¶</a> &#8211; If True, warnings are raised.</li>
 </ul>
 </td>
 </tr>
@@ -1358,8 +1425,8 @@ length as a). If None, weights are all considered equal to 1
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; A distribution of values</li>
-<li><strong>warn</strong> &#8211; If True, warnings are raised.</li>
+<li><span class="target" id="utils.robust_std.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.robust_std.params.a">¶</a> &#8211; A distribution of values</li>
+<li><span class="target" id="utils.robust_std.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#utils.robust_std.params.warn">¶</a> &#8211; If True, warnings are raised.</li>
 </ul>
 </td>
 </tr>
@@ -1378,8 +1445,8 @@ length as a). If None, weights are all considered equal to 1
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>a</strong> &#8211; A distribution of values</li>
-<li><strong>warn</strong> &#8211; If True, warnings are raised.</li>
+<li><span class="target" id="utils.robust_sum.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.robust_sum.params.a">¶</a> &#8211; A distribution of values</li>
+<li><span class="target" id="utils.robust_sum.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#utils.robust_sum.params.warn">¶</a> &#8211; If True, warnings are raised.</li>
 </ul>
 </td>
 </tr>
@@ -1389,25 +1456,26 @@ length as a). If None, weights are all considered equal to 1
 
 <dl class="function">
 <dt id="utils.shift_frame">
-<tt class="descclassname">utils.</tt><tt class="descname">shift_frame</tt><big>(</big><em>frame</em>, <em>dx</em>, <em>dy</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>order</em><big>)</big><a class="headerlink" href="#utils.shift_frame" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a shifted frame.</p>
+<tt class="descclassname">utils.</tt><tt class="descname">shift_frame</tt><big>(</big><em>frame</em>, <em>dx</em>, <em>dy</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>order</em>, <em>fill_value=nan</em><big>)</big><a class="headerlink" href="#utils.shift_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a shifted frame wit the same dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frame</strong> &#8211; Two dimensions array to be shifted</li>
-<li><strong>dx</strong> &#8211; Shift value along the axis 0</li>
-<li><strong>dy</strong> &#8211; Shift value along the axis 1</li>
+<li><span class="target" id="utils.shift_frame.params.frame"></span><strong>frame</strong><a class="paramlink headerlink reference internal" href="#utils.shift_frame.params.frame">¶</a> &#8211; Two dimensions array to be shifted</li>
+<li><span class="target" id="utils.shift_frame.params.dx"></span><strong>dx</strong><a class="paramlink headerlink reference internal" href="#utils.shift_frame.params.dx">¶</a> &#8211; Shift value along the axis 0</li>
+<li><span class="target" id="utils.shift_frame.params.dy"></span><strong>dy</strong><a class="paramlink headerlink reference internal" href="#utils.shift_frame.params.dy">¶</a> &#8211; Shift value along the axis 1</li>
+<li><span class="target" id="utils.shift_frame.params.x_max, y_min, y_max"></span><strong>x_max, y_min, y_max</strong><a class="paramlink headerlink reference internal" href="#utils.shift_frame.params.x_max, y_min, y_max">¶</a> (<em>x_min,</em>) &#8211; Boundaries of the region to be
+shifted.</li>
+<li><span class="target" id="utils.shift_frame.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.shift_frame.params.order">¶</a> &#8211; interpolation order.</li>
+<li><span class="target" id="utils.shift_frame.params.(Optional)"></span><strong>(Optional)</strong><a class="paramlink headerlink reference internal" href="#utils.shift_frame.params.(Optional)">¶</a> (<em>fill_value</em>) &#8211; Value of the extrapolated points
+(default np.nan).</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="docutils">
-<dt>x_min, x_max, y_min, y_max are the boundaries of the</dt>
-<dd>region to be shifted. Return an array with the same dimensions</dd>
-</dl>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">To avoid spline interpolation defects around
@@ -1425,15 +1493,15 @@ of the too deviant values.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; The distribution to cut</li>
-<li><strong>sigma</strong> &#8211; (Optional) Number of sigma above which values are
+<li><span class="target" id="utils.sigmacut.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.x">¶</a> &#8211; The distribution to cut</li>
+<li><span class="target" id="utils.sigmacut.params.sigma"></span><strong>sigma</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.sigma">¶</a> &#8211; (Optional) Number of sigma above which values are
 considered as deviant (default 3.)</li>
-<li><strong>min_values</strong> &#8211; (Optional) Minimum number of values to return
+<li><span class="target" id="utils.sigmacut.params.min_values"></span><strong>min_values</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.min_values">¶</a> &#8211; (Optional) Minimum number of values to return
 (default 3)</li>
-<li><strong>central_value</strong> &#8211; (Optional) If not none, this value is used as
+<li><span class="target" id="utils.sigmacut.params.central_value"></span><strong>central_value</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.central_value">¶</a> &#8211; (Optional) If not none, this value is used as
 the central value of the cut. Else the median of the
 distribution is used as the central value (default None)</li>
-<li><strong>warn</strong> &#8211; (Optional) If False no warning message is printed
+<li><span class="target" id="utils.sigmacut.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.warn">¶</a> &#8211; (Optional) If False no warning message is printed
 (default False).</li>
 </ul>
 </td>
@@ -1446,11 +1514,11 @@ distribution is used as the central value (default None)</li>
 <dt id="utils.sinc1d">
 <tt class="descclassname">utils.</tt><tt class="descname">sinc1d</tt><big>(</big><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em><big>)</big><a class="headerlink" href="#utils.sinc1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 1D sinc 
-:param x: Array giving the positions where the function is evaluated
-:param h: Height
-:param a: Amplitude
-:param dx: Position of the center
-:param w: FWHM</p>
+:param _sphinx_paramlinks_utils.sinc1d.x: Array giving the positions where the function is evaluated
+:param _sphinx_paramlinks_utils.sinc1d.h: Height
+:param _sphinx_paramlinks_utils.sinc1d.a: Amplitude
+:param _sphinx_paramlinks_utils.sinc1d.dx: Position of the center
+:param _sphinx_paramlinks_utils.sinc1d.w: FWHM</p>
 </dd></dl>
 
 <dl class="function">
@@ -1462,10 +1530,10 @@ distribution is used as the central value (default None)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> &#8211; Vector to smooth</li>
-<li><strong>deg</strong> &#8211; (Optional) Smoothing degree (or kernel
+<li><span class="target" id="utils.smooth.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.smooth.params.a">¶</a> &#8211; Vector to smooth</li>
+<li><span class="target" id="utils.smooth.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.smooth.params.deg">¶</a> &#8211; (Optional) Smoothing degree (or kernel
 radius) Must be an integer (default 2).</li>
-<li><strong>kind</strong> &#8211; Kind of smoothing function. &#8216;median&#8217; or &#8216;mean&#8217; are
+<li><span class="target" id="utils.smooth.params.kind"></span><strong>kind</strong><a class="paramlink headerlink reference internal" href="#utils.smooth.params.kind">¶</a> &#8211; Kind of smoothing function. &#8216;median&#8217; or &#8216;mean&#8217; are
 self-explanatory. &#8216;gaussian&#8217; uses a gaussian function for a
 weighted average. &#8216;gaussian_conv&#8217; and &#8216;cos_conv&#8217; make use of
 convolution with a gaussian kernel or a cosine
@@ -1493,7 +1561,7 @@ effect when convolving).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>spectrum</strong> &#8211; a 1D spectrum</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.spectrum_mean_energy.params.spectrum"></span><strong>spectrum</strong><a class="paramlink headerlink reference internal" href="#utils.spectrum_mean_energy.params.spectrum">¶</a> &#8211; a 1D spectrum</td>
 </tr>
 </tbody>
 </table>
@@ -1501,7 +1569,7 @@ effect when convolving).</p>
 
 <dl class="function">
 <dt id="utils.transform_frame">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_frame</tt><big>(</big><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em><big>)</big><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">transform_frame</tt><big>(</big><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em>, <em>fill_value=nan</em><big>)</big><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform one frame or a part of it using transformation
 coefficients.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1509,15 +1577,19 @@ coefficients.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frame</strong> &#8211; Frame to transform</li>
-<li><strong>x_min</strong> &#8211; Lower x boundary of the frame to transform</li>
-<li><strong>x_max</strong> &#8211; Upper x boundary of the frame to transform</li>
-<li><strong>y_min</strong> &#8211; Lower y boundary of the frame to transform</li>
-<li><strong>y_max</strong> &#8211; Upper y boundary of the frame to transform</li>
-<li><strong>d</strong> &#8211; Transformation coefficients [dx, dy, dr, da, db]</li>
-<li><strong>rc</strong> &#8211; Rotation center of the frame [rc_x, rc_y]</li>
-<li><strong>zoom_factor</strong> &#8211; Zoom on the image</li>
-<li><strong>interp_order</strong> &#8211; Interpolation order</li>
+<li><span class="target" id="utils.transform_frame.params.frame"></span><strong>frame</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.frame">¶</a> &#8211; Frame to transform</li>
+<li><span class="target" id="utils.transform_frame.params.x_min"></span><strong>x_min</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.x_min">¶</a> &#8211; Lower x boundary of the frame to transform</li>
+<li><span class="target" id="utils.transform_frame.params.x_max"></span><strong>x_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.x_max">¶</a> &#8211; Upper x boundary of the frame to transform</li>
+<li><span class="target" id="utils.transform_frame.params.y_min"></span><strong>y_min</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_min">¶</a> &#8211; Lower y boundary of the frame to transform</li>
+<li><span class="target" id="utils.transform_frame.params.y_max"></span><strong>y_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_max">¶</a> &#8211; Upper y boundary of the frame to transform</li>
+<li><span class="target" id="utils.transform_frame.params.d"></span><strong>d</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.d">¶</a> &#8211; Transformation coefficients [dx, dy, dr, da, db]</li>
+<li><span class="target" id="utils.transform_frame.params.rc"></span><strong>rc</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.rc">¶</a> &#8211; Rotation center of the frame [rc_x, rc_y]</li>
+<li><span class="target" id="utils.transform_frame.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.zoom_factor">¶</a> &#8211; Zoom on the image</li>
+<li><span class="target" id="utils.transform_frame.params.interp_order"></span><strong>interp_order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.interp_order">¶</a> &#8211; Interpolation order</li>
+<li><span class="target" id="utils.transform_frame.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.mask">¶</a> &#8211; (Optional) If a mask frame is passed is is also
+transformed (default None).</li>
+<li><span class="target" id="utils.transform_frame.params.fill_value"></span><strong>fill_value</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.fill_value">¶</a> &#8211; (Optional) Fill value for extrapolated points
+(default np.nan).</li>
 </ul>
 </td>
 </tr>
@@ -1527,50 +1599,50 @@ coefficients.</p>
 
 <dl class="function">
 <dt id="utils.transform_interferogram">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>return_ireg_axis=False</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>return_ireg_axis=False</em>, <em>low_order_correction=True</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>interf</strong> &#8211; Interferogram to transform.</li>
-<li><strong>nm_laser</strong> &#8211; Wavelength of the laser used for calibration.</li>
-<li><strong>calibration_coeff</strong> &#8211; Wavelength of the laser emission line
+<li><span class="target" id="utils.transform_interferogram.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.interf">¶</a> &#8211; Interferogram to transform.</li>
+<li><span class="target" id="utils.transform_interferogram.params.nm_laser"></span><strong>nm_laser</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.nm_laser">¶</a> &#8211; Wavelength of the laser used for calibration.</li>
+<li><span class="target" id="utils.transform_interferogram.params.calibration_coeff"></span><strong>calibration_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.calibration_coeff">¶</a> &#8211; Wavelength of the laser emission line
 corresponding to the computed interferogram.</li>
-<li><strong>step</strong> &#8211; Step size of the moving mirror in nm.</li>
-<li><strong>order</strong> &#8211; Folding order (can be 0 but nm_max must be specified).</li>
-<li><strong>window_type</strong> &#8211; Name of the apodization function.</li>
-<li><strong>zpd_shift</strong> &#8211; Shift of the interferogram to center the ZPD.</li>
-<li><strong>bad_frames_vector</strong> &#8211; (Optional) Mask-like vector containing
+<li><span class="target" id="utils.transform_interferogram.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
+<li><span class="target" id="utils.transform_interferogram.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.order">¶</a> &#8211; Folding order (can be 0 but nm_max must be specified).</li>
+<li><span class="target" id="utils.transform_interferogram.params.window_type"></span><strong>window_type</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.window_type">¶</a> &#8211; Name of the apodization function.</li>
+<li><span class="target" id="utils.transform_interferogram.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.zpd_shift">¶</a> &#8211; Shift of the interferogram to center the ZPD.</li>
+<li><span class="target" id="utils.transform_interferogram.params.bad_frames_vector"></span><strong>bad_frames_vector</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.bad_frames_vector">¶</a> &#8211; (Optional) Mask-like vector containing
 ones for bad frames. Bad frames are replaced by zeros using a
 special function that smoothes transition between good parts and
 zeros (default None). This vector must be uncorrected for ZPD
 shift</li>
-<li><strong>n_phase</strong> &#8211; (Optional) Number of points to use for phase
+<li><span class="target" id="utils.transform_interferogram.params.n_phase"></span><strong>n_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.n_phase">¶</a> &#8211; (Optional) Number of points to use for phase
 correction. It can be no greater than interferogram length. If
 0, no phase correction will be done and the resulting spectrum
 will be the absolute value of the complex spectrum. If None, the
 number of points is set to 20 percent of the interferogram
 length (default None).</li>
-<li><strong>ext_phase</strong> &#8211; (Optional) External phase vector. If given this
+<li><span class="target" id="utils.transform_interferogram.params.ext_phase"></span><strong>ext_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.ext_phase">¶</a> &#8211; (Optional) External phase vector. If given this
 phase vector is used instead of a low-resolution one. It must be
 as long as the interferogram.</li>
-<li><strong>nm_max</strong> &#8211; (Optional) Maximum wavelength of the spectrum. Must be
+<li><span class="target" id="utils.transform_interferogram.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.nm_max">¶</a> &#8211; (Optional) Maximum wavelength of the spectrum. Must be
 specified if order is equal to 0 (default None).</li>
-<li><strong>return_phase</strong> &#8211; (Optional) If True, compute only the phase of
+<li><span class="target" id="utils.transform_interferogram.params.return_phase"></span><strong>return_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.return_phase">¶</a> &#8211; (Optional) If True, compute only the phase of
 the interferogram and return it. If polyfit_deg is &gt;= 0, return
 the coefficients of the fitted phase (default False). Note that
 this option is not compatible with ext_phase. You must set
 ext_phase to None to set return_phase to True.</li>
-<li><strong>weights</strong> &#8211; (Optional) A vector of the same length as the
+<li><span class="target" id="utils.transform_interferogram.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.weights">¶</a> &#8211; (Optional) A vector of the same length as the
 number of points used to compute the phase (n_phase) giving the
 weight of each point for interpolation (Must be a float between
 0. and 1.). If none is given, the weights are defined by the
 amplitude of the vector.</li>
-<li><strong>polyfit_deg</strong> &#8211; (Optional) Degree of the polynomial fit to the
+<li><span class="target" id="utils.transform_interferogram.params.polyfit_deg"></span><strong>polyfit_deg</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.polyfit_deg">¶</a> &#8211; (Optional) Degree of the polynomial fit to the
 computed phase. If &lt; 0, no fit will be performed (Default 1).</li>
-<li><strong>smoothing_deg</strong> &#8211; (Optional) Degree of zeros smoothing. A
+<li><span class="target" id="utils.transform_interferogram.params.smoothing_deg"></span><strong>smoothing_deg</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.smoothing_deg">¶</a> &#8211; (Optional) Degree of zeros smoothing. A
 higher degree means a smoother transition from zeros parts (bad
 frames) to non-zero parts (good frames) of the
 interferogram. Good parts on the other side of the ZPD in
@@ -1578,21 +1650,24 @@ symmetry with zeros parts are multiplied by 2. The same
 transition is used to multiply interferogram points by zero and
 2 (default 2). This operation is not done if smoothing_deg is
 set to 0.</li>
-<li><strong>balanced</strong> &#8211; (Optional) If False, the interferogram is
+<li><span class="target" id="utils.transform_interferogram.params.balanced"></span><strong>balanced</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.balanced">¶</a> &#8211; (Optional) If False, the interferogram is
 considered as unbalanced. It is flipped before its
 transformation to get a positive spectrum. Note
 that a merged interferogram is balanced (default True).</li>
-<li><strong>return_complex</strong> &#8211; (Optional) If True and if phase is
+<li><span class="target" id="utils.transform_interferogram.params.return_complex"></span><strong>return_complex</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.return_complex">¶</a> &#8211; (Optional) If True and if phase is
 corrected the returned spectrum will be complex. In False only
 the real part is returned (default False)</li>
-<li><strong>final_step_nb</strong> &#8211; (Optional) Number of samples of the
+<li><span class="target" id="utils.transform_interferogram.params.final_step_nb"></span><strong>final_step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.final_step_nb">¶</a> &#8211; (Optional) Number of samples of the
 resulting spectrum. If None, the number of samples of the
 spectrum will be the same as the interferogram (default None).</li>
-<li><strong>return_ireg_axis</strong> &#8211; (Optional) If True, return spectrum along
+<li><span class="target" id="utils.transform_interferogram.params.return_ireg_axis"></span><strong>return_ireg_axis</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.return_ireg_axis">¶</a> &#8211; (Optional) If True, return spectrum along
 an irregular wavelength axis corresponding to its regular cm-1
 wavenumber axis (emission lines and especially unapodized sinc
 emission lines are symetric) (default False).</li>
-<li><strong>conserve_energy</strong> &#8211; (Optional) If True the energy is conserved
+<li><span class="target" id="utils.transform_interferogram.params.low_order_correction"></span><strong>low_order_correction</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.low_order_correction">¶</a> &#8211; (Optional) If True substract a low
+order polynomial to remove low frequency noise. Useful for
+unperfectly corrected interferograms (default True).</li>
+<li><span class="target" id="utils.transform_interferogram.params.conserve_energy"></span><strong>conserve_energy</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.conserve_energy">¶</a> &#8211; (Optional) If True the energy is conserved
 in the transformation (default False).</li>
 </ul>
 </td>
@@ -1607,7 +1682,7 @@ in the transformation (default False).</li>
 
 <dl class="function">
 <dt id="utils.transform_spectrum">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_spectrum</tt><big>(</big><em>spectrum</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>nm_max=None</em>, <em>ext_phase=None</em>, <em>return_complex=False</em><big>)</big><a class="headerlink" href="#utils.transform_spectrum" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">transform_spectrum</tt><big>(</big><em>spectrum</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>nm_max=None</em>, <em>ext_phase=None</em>, <em>return_complex=False</em>, <em>wavenumber=False</em>, <em>final_step_nb=None</em><big>)</big><a class="headerlink" href="#utils.transform_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform a spectrum into an interferogram.</p>
 <p>This function is the inverse of <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>.</p>
 <p>So that to get the initial interferogram, the same options used in
@@ -1619,26 +1694,35 @@ in <a class="reference internal" href="#utils.transform_interferogram" title="ut
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>spectrum</strong> &#8211; Spectrum to transform</li>
-<li><strong>nm_laser</strong> &#8211; Wavelength of the laser used for calibration.</li>
-<li><strong>calibration_coeff</strong> &#8211; Wavelength of the laser emission line
+<li><span class="target" id="utils.transform_spectrum.params.spectrum"></span><strong>spectrum</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.spectrum">¶</a> &#8211; Spectrum to transform</li>
+<li><span class="target" id="utils.transform_spectrum.params.nm_laser"></span><strong>nm_laser</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.nm_laser">¶</a> &#8211; Wavelength of the laser used for calibration.</li>
+<li><span class="target" id="utils.transform_spectrum.params.calibration_coeff"></span><strong>calibration_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.calibration_coeff">¶</a> &#8211; Wavelength of the laser emission line
 corresponding to the computed interferogram.</li>
-<li><strong>step</strong> &#8211; Step size of the moving mirror in nm.</li>
-<li><strong>order</strong> &#8211; Folding order (can be 0 but nm_max must be specified).</li>
-<li><strong>window_type</strong> &#8211; Name of the apodization function.</li>
-<li><strong>zpd_shift</strong> &#8211; Shift of the interferogram to decenter the ZPD.</li>
-<li><strong>nm_max</strong> &#8211; (Optional) Maximum wavelength of the spectrum. Must be
+<li><span class="target" id="utils.transform_spectrum.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
+<li><span class="target" id="utils.transform_spectrum.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.order">¶</a> &#8211; Folding order (can be 0 but nm_max must be specified).</li>
+<li><span class="target" id="utils.transform_spectrum.params.window_type"></span><strong>window_type</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.window_type">¶</a> &#8211; Name of the apodization function.</li>
+<li><span class="target" id="utils.transform_spectrum.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.zpd_shift">¶</a> &#8211; Shift of the interferogram to decenter the ZPD.</li>
+<li><span class="target" id="utils.transform_spectrum.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.nm_max">¶</a> &#8211; (Optional) Maximum wavelength of the spectrum. Must be
 specified if order is equal to 0 (default None).</li>
-<li><strong>ext_phase</strong> &#8211; (Optional) External phase vector. If given this
-phase vector is used replacing the original phase of the
+<li><span class="target" id="utils.transform_spectrum.params.ext_phase"></span><strong>ext_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.ext_phase">¶</a> &#8211; (Optional) External phase vector. If given this
+phase vector is used in place of the original phase of the
 spectrum. Useful to add a phase to an interferogram. Note that
 this phase is intended to be used to inverse transform an
 already transformed interferogram. The computed phase correction
 can thus be used directly. As the phase vector given by
 <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a> is not reversed for
 even orders, it is reversed here in this function.</li>
-<li><strong>return_complex</strong> &#8211; If True return a complex
+<li><span class="target" id="utils.transform_spectrum.params.return_complex"></span><strong>return_complex</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.return_complex">¶</a> &#8211; (Optional) If True return a complex
 interferogram. Else return the real part of it (default False).</li>
+<li><span class="target" id="utils.transform_spectrum.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.wavenumber">¶</a> &#8211; (Optional) If True the spectrum axis is in
+cm-1. In this case, and if no wavelength correction has to be
+applied (calibration_coeff == nm_laser) there will be no
+interpolation of the original spectrum (better precision)
+(default False).</li>
+<li><span class="target" id="utils.transform_spectrum.params.final_step_nb"></span><strong>final_step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.final_step_nb">¶</a> &#8211; (Optional) Final size of the
+interferogram. Must be less than the size of the original
+spectrum. If None the final size of the interferogram is the
+same as the size of the original spectrum (default None).</li>
 </ul>
 </td>
 </tr>
@@ -1660,10 +1744,10 @@ in camera B given the transformation parameters</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>star_list_A</strong> &#8211; List of star coordinates in the cube A.</li>
-<li><strong>params</strong> &#8211; Transformation parameters [dx, dy, dr, da, db].</li>
-<li><strong>rc</strong> &#8211; Rotation center coordinates.</li>
-<li><strong>zoom_factor</strong> &#8211; Zooming factor between the two cameras.</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.star_list_A"></span><strong>star_list_A</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.star_list_A">¶</a> &#8211; List of star coordinates in the cube A.</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.params"></span><strong>params</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.params">¶</a> &#8211; Transformation parameters [dx, dy, dr, da, db].</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.rc"></span><strong>rc</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.rc">¶</a> &#8211; Rotation center coordinates.</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.zoom_factor">¶</a> &#8211; Zooming factor between the two cameras.</li>
 </ul>
 </td>
 </tr>
@@ -1681,7 +1765,7 @@ modulation efficiency.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>params</strong> &#8211; A tuple of floats [frequency, amplitude,
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.variable_me.params.params"></span><strong>params</strong><a class="paramlink headerlink reference internal" href="#utils.variable_me.params.params">¶</a> &#8211; A tuple of floats [frequency, amplitude,
 phase]. The frequency gives the number of repetition of a sinus
 over the vector. The amplitude must be between 0. (returns a
 vector of 1) and 1. (returns a sinus going from 0 to 1). Phase
@@ -1714,7 +1798,7 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

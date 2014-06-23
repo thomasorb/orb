@@ -1680,19 +1680,33 @@ def get_open_fds():
 
 def transform_frame(frame, x_min, x_max, y_min, y_max, 
                     d, rc, zoom_factor, interp_order, 
-                    mask=None):
+                    mask=None, fill_value=np.nan):
     """Transform one frame or a part of it using transformation
     coefficients.
 
     :param frame: Frame to transform
+    
     :param x_min: Lower x boundary of the frame to transform
+    
     :param x_max: Upper x boundary of the frame to transform
+    
     :param y_min: Lower y boundary of the frame to transform
+    
     :param y_max: Upper y boundary of the frame to transform
+    
     :param d: Transformation coefficients [dx, dy, dr, da, db]
+    
     :param rc: Rotation center of the frame [rc_x, rc_y]
+    
     :param zoom_factor: Zoom on the image
+    
     :param interp_order: Interpolation order
+    
+    :param mask: (Optional) If a mask frame is passed is is also
+      transformed (default None).
+
+    :param fill_value: (Optional) Fill value for extrapolated points
+      (default np.nan).
     """
     def trans(coords, d, rc, zoom_factor):
         return cutils.transform_A_to_B(
@@ -1708,12 +1722,12 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
     
     frame = ndimage.interpolation.geometric_transform(
         frame, trans, extra_arguments=(d, rc, zoom_factor),
-        order=interp_order, mode='constant', cval=0.0)
+        order=interp_order, mode='constant', cval=fill_value)
 
     if mask != None:
         mask = ndimage.interpolation.geometric_transform(
             mask, trans, extra_arguments=(d, rc, zoom_factor),
-            order=interp_order, mode='constant', cval=0.0)
+            order=interp_order, mode='constant', cval=fill_value)
 
     if mask != None:
         return (frame[x_min:x_max, y_min:y_max],
@@ -1723,22 +1737,29 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
 
 
 def shift_frame(frame, dx, dy, x_min, x_max, 
-                y_min, y_max, order):
-    """Return a shifted frame.
+                y_min, y_max, order, fill_value=np.nan):
+    """Return a shifted frame wit the same dimensions.
 
     :param frame: Two dimensions array to be shifted
+    
     :param dx: Shift value along the axis 0
+    
     :param dy: Shift value along the axis 1
 
-    x_min, x_max, y_min, y_max are the boundaries of the
-      region to be shifted. Return an array with the same dimensions
+    :param x_min, x_max, y_min, y_max: Boundaries of the region to be
+      shifted.
+
+    :param order: interpolation order.
+
+    :param fill_value (Optional): Value of the extrapolated points
+      (default np.nan).
 
     .. note:: To avoid spline interpolation defects around
        stars use order 1 (linear interpolation).
     """
     z = frame[x_min:x_max, y_min:y_max]
     interp = ndimage.interpolation.shift(z, [-dx, -dy], order=order, 
-                                         mode='constant', cval=0.0, 
+                                         mode='constant', cval=fill_value, 
                                          prefilter=True)
     return interp
         
@@ -1778,7 +1799,7 @@ def low_pass_image_filter(im, deg):
     if 2 * deg >= max(im.shape):
         Tools()._print_error('Kernel degree is too high given the image size')
 
-    return cutils.low_pass_image_filter(np.array(im).astype(float), int(deg))
+    return cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
 
 def fft_filter(a, cutoff_coeff, width_coeff=0.2, filter_type='high_pass'):
@@ -2148,7 +2169,7 @@ def interpolate_size(a, size, deg):
             np.arange(size)/float(size - 1L) * float(a.shape[0] - 1L))
         return result
         
-def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=0.):
+def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=np.nan):
     """Interpolate a vector along a new axis.
 
     :param a: vector to interpolate
@@ -2161,7 +2182,7 @@ def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=0.):
       a regular range axis is assumed (default None).
 
     :param fill_value: (Optional) extrapolated points are filled with
-      this value (default 0.)
+      this value (default np.nan)
     """
     returned_vector=False
     if old_axis == None:
@@ -2430,11 +2451,12 @@ def transform_interferogram(interf, nm_laser,
         temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = interf
         interf = np.copy(temp_vector)
         interf = np.roll(interf, zpd_shift)
-
-    if bad_frames_vector != None:
-        temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = bad_frames_vector
-        bad_frames_vector = np.copy(temp_vector)
-        bad_frames_vector = np.roll(bad_frames_vector, zpd_shift)
+        
+        if bad_frames_vector is not None:
+            temp_vector[
+                abs(zpd_shift):abs(zpd_shift) + dimz] = bad_frames_vector
+            bad_frames_vector = np.copy(temp_vector)
+            bad_frames_vector = np.roll(bad_frames_vector, zpd_shift)
     
     #####
     # 4 - Zeros smoothing
@@ -2589,9 +2611,9 @@ def transform_interferogram(interf, nm_laser,
         spectrum = spectrum_corr
 
 
-    # Extrapolated parts of the spectrum are set to zero
-    spectrum[np.nonzero(final_axis > np.max(nm_axis_ireg))] = 0.
-    spectrum[np.nonzero(final_axis < np.min(nm_axis_ireg))] = 0.
+    # Extrapolated parts of the spectrum are set to NaN
+    spectrum[np.nonzero(final_axis > np.max(nm_axis_ireg))] = np.nan
+    spectrum[np.nonzero(final_axis < np.min(nm_axis_ireg))] = np.nan
 
 
     if conserve_energy:
@@ -2688,7 +2710,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
                                        nm_max=nm_max)
     if not (wavenumber and correction_coeff == 1.):
         spectrum = interpolate_axis(spectrum, nm_axis_ireg[::-1], 5,
-                                    old_axis=base_axis)
+                                    old_axis=base_axis, fill_value=0.)
     else:
         spectrum = spectrum[::-1]
     
@@ -2705,8 +2727,8 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
             spectrum.imag = (spectrum_real * np.sin(ext_phase)
                              + spectrum_imag * np.cos(ext_phase))
 
-        
-   # Zero-filling
+    
+    # Zero-filling
     zeros_spectrum = np.zeros(step_nb * 2, dtype=spectrum.dtype)
     if order&1:
         zeros_spectrum[:spectrum.shape[0]] += spectrum

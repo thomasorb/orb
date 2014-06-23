@@ -158,7 +158,7 @@ def gaussian_array2d(double h, double a, double dx, double dy, double fwhm,
     :param nx: X dimension of the output array
     :param ny: Y dimension of the output array
     """
-    cdef np.ndarray[np.float64_t, ndim=2] arr = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=2] arr = np.zeros(
         (nx, ny), dtype=np.float64)
     cdef double r = 0.
     cdef double w = fwhm / (2. * sqrt(2. * log(2.)))
@@ -186,7 +186,7 @@ def moffat_array2d(double h, double a, double dx, double dy,
     :param nx: X dimension of the output array
     :param ny: Y dimension of the output array
     """
-    cdef np.ndarray[np.float64_t, ndim=2] arr = np.empty((nx, ny))
+    cdef np.ndarray[np.float64_t, ndim=2] arr = np.zeros((nx, ny))
     cdef double r = 0.
     cdef double w = fwhm / (2. * sqrt(2. * log(2.)))
     cdef double alpha
@@ -395,14 +395,14 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
     cdef int dimz = frames.shape[2]
     if dimz < 3: raise Exception('There must be more than 2 frames to combine')
 
-    cdef np.ndarray[np.float64_t, ndim=3] framesdiff = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=3] framesdiff = np.zeros(
         (dimx, dimy, dimz), dtype=np.float64)
     
-    cdef np.ndarray[np.int64_t, ndim=2] argmax2d = np.empty(
+    cdef np.ndarray[np.int64_t, ndim=2] argmax2d = np.zeros(
         (dimx, dimy), dtype=np.int64)
-    cdef np.ndarray[np.float64_t, ndim=2] max2d = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=2] max2d = np.zeros(
         (dimx, dimy), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=2] sqrtmean2d = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=2] sqrtmean2d = np.zeros(
         (dimx, dimy), dtype=np.float64)
     cdef np.ndarray[np.uint8_t, ndim=2] rejects2d = np.zeros(
         (dimx, dimy), dtype=np.uint8)
@@ -410,8 +410,8 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
         (dimx, dimy), dtype=np.uint8)
     
     
-    cdef np.ndarray[np.float64_t, ndim=2] mean2d = np.empty((dimx, dimy))
-    cdef np.ndarray[np.float64_t, ndim=2] std2d = np.empty((dimx, dimy))
+    cdef np.ndarray[np.float64_t, ndim=2] mean2d = np.zeros((dimx, dimy))
+    cdef np.ndarray[np.float64_t, ndim=2] std2d = np.zeros((dimx, dimy))
     
     frames = np.sort(frames, axis=2)
     mean2d = bn.nanmean(frames[:,:,1:-1], axis=2)
@@ -663,12 +663,12 @@ def fft_filter(np.ndarray[np.float64_t, ndim=1] a,
     cdef int fn = <int> floor(<double> n/2.)
     cdef np.ndarray[np.float64_t, ndim=1] hwindow = np.zeros(
         fn, dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] window = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=1] window = np.zeros(
         n, dtype=np.float64)
     cdef int icut = max(0, <int> floor(<double> n * cutoff))
     cdef double wlen = <double> fn * width
     cdef int wsize = <int> ceil(wlen) * 2
-    cdef np.ndarray[np.float64_t, ndim=1] w = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=1] w = np.zeros(
         wsize, dtype=np.float64)
     cdef double dx
     cdef int minx, maxx
@@ -715,16 +715,14 @@ def low_pass_image_filter(np.ndarray[np.float64_t, ndim=2] im, int deg):
     
     :param deg: Kernel degree
     """
-    
     cdef np.ndarray[np.int8_t, ndim=2] real_nans = (
         np.isnan(im).astype(np.int8))
-    cdef np.ndarray[np.int8_t, ndim=2] new_nans = np.empty_like(real_nans)
+    cdef np.ndarray[np.int8_t, ndim=2] new_nans = np.zeros_like(real_nans)
     
-    cdef np.ndarray[np.float64_t, ndim=2] conv_im = np.empty_like(im)
-    cdef np.ndarray[np.float64_t, ndim=2] final_im = np.empty_like(im)
+    cdef np.ndarray[np.float64_t, ndim=2] final_im = np.zeros_like(im)
     cdef np.ndarray[np.float64_t, ndim=2] kernel = gaussian_kernel(deg)
-    cdef np.ndarray[np.float64_t, ndim=2] kernel_mod = np.empty_like(kernel)
-    cdef np.ndarray[np.float64_t, ndim=2] box = np.empty_like(kernel)
+    cdef np.ndarray[np.float64_t, ndim=2] kernel_mod = np.zeros_like(kernel)
+    cdef np.ndarray[np.float64_t, ndim=2] box = np.zeros_like(kernel)
     
     cdef int inan
     cdef int ix
@@ -732,14 +730,12 @@ def low_pass_image_filter(np.ndarray[np.float64_t, ndim=2] im, int deg):
 
     if np.any(np.isinf(im)):
         im[np.nonzero(np.isinf(im))] = np.nan
-        
+
+    final_im = scipy.ndimage.filters.convolve(im, kernel, 
+                                              mode='nearest')
     
-    conv_im = scipy.ndimage.filters.convolve(im, kernel, 
-                                             mode='nearest')
-    final_im = np.copy(conv_im)
-    
-    new_nans = (np.isnan(conv_im).astype(np.int8)
-                +  np.isinf(conv_im).astype(np.int8) - real_nans)
+    new_nans = (np.isnan(final_im).astype(np.int8)
+                +  np.isinf(final_im).astype(np.int8) - real_nans)
     
     nans = np.nonzero(new_nans > 0)
     
@@ -749,13 +745,14 @@ def low_pass_image_filter(np.ndarray[np.float64_t, ndim=2] im, int deg):
         if (ix >= deg and iy >= deg and ix < im.shape[0] - deg
             and  iy < im.shape[1] - deg):
             box = np.copy(im[ix-deg:ix+deg+1, iy-deg:iy+deg+1])
-            if np.sum(~np.isnan(box)) > 0:
-                kernel_mod = kernel * ~np.isnan(box)
-                kernel_mod = kernel_mod / np.sum(kernel_mod) * np.sum(kernel)
+            if not np.isnan(bn.nansum(box)):
+                kernel_mod = kernel * (~np.isnan(box))
+                kernel_mod = (kernel_mod / bn.nansum(kernel_mod)
+                              * bn.nansum(kernel))
                 box[np.nonzero(np.isnan(box))] = 0.
-                final_im[ix,iy] = robust_sum(box * kernel_mod)
+                final_im[ix,iy] = bn.nansum(box * kernel_mod)
                 
-    return final_im
+    return np.copy(final_im)
     
 def fast_gaussian_kernel(int deg):
     """Return a fast gaussian kernel.
@@ -770,7 +767,7 @@ def fast_gaussian_kernel(int deg):
     cdef double ddeg = <double> deg
     cdef int sz = 2 * deg + 1
     cdef double fwhm = ddeg/2. * (2. * sqrt(2. * log(2.)))
-    cdef np.ndarray[np.float64_t, ndim=2] kernel = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=2] kernel = np.zeros(
         (sz, sz), dtype=np.float64)
     
     if deg < 0: raise ValueError('deg must be >= 0')
@@ -805,8 +802,8 @@ def gaussian_kernel(double deg):
         (large_sz, large_sz), dtype=np.float64)
     
     cdef double fwhm = deg/2. * (2. * sqrt(2. * log(2.)))
-    cdef np.ndarray[np.float64_t, ndim=2] kernel = np.empty(
-        (sz, sz), dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] kernel = np.zeros(
+        (sz, sz), dtype=float)
     cdef int ii, ij, i, j
 
     
@@ -1058,19 +1055,19 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         each star in this order : height, amplitude, posx, posy, fwhm
         """
         cdef int int_posx, int_posy, istar
-        cdef np.ndarray[np.float64_t, ndim=2] star = np.empty(
+        cdef np.ndarray[np.float64_t, ndim=2] star = np.zeros(
             (box_size, box_size), dtype=float)
-        cdef np.ndarray[np.float64_t, ndim=2] data = np.empty_like(
+        cdef np.ndarray[np.float64_t, ndim=2] data = np.zeros_like(
             star, dtype=float)
         cdef np.ndarray[np.float64_t, ndim=2] res
         cdef double dx, dy, x_min, x_max, y_min, y_max
         cdef int hsz
 
         if not transpose:
-            res = np.empty(
+            res = np.zeros(
                 (box_size * params.shape[0], box_size), dtype=float)
         else:
-            res = np.empty(
+            res = np.zeros(
                 (box_size, box_size * params.shape[0]), dtype=float)
 
         res.fill(np.nan)
@@ -1107,6 +1104,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                 star = (star - data) / sigma(data, noise[istar], dcl)
                 if normalize:
                     star /= np.max(star)
+                
                 if not transpose:
                     res[istar * box_size:
                         istar * box_size + star.shape[0],
@@ -1127,9 +1125,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
         cdef np.ndarray[np.float64_t, ndim=2] params = np.zeros(
             (star_nb, np.size(stars_p_mask)), dtype=float)
-        cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.empty_like(params)
-        cdef np.ndarray[np.float64_t, ndim=1] cov_p = np.empty_like(cov_p_mask)
-        cdef np.ndarray[np.float64_t, ndim=2] res = np.empty(
+        cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros_like(params)
+        cdef np.ndarray[np.float64_t, ndim=1] cov_p = np.zeros_like(cov_p_mask)
+        cdef np.ndarray[np.float64_t, ndim=2] res = np.zeros(
             (box_size * star_nb, box_size), dtype=float)
         cdef double rcx, rcy
         cdef int istar
@@ -1159,30 +1157,33 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cdef np.ndarray[np.uint8_t, ndim=1] pos_mask = np.zeros(
         pos.shape[0], dtype=np.uint8)
     cdef int istar
-    
     for istar in range(pos.shape[0]):
-        if (pos[istar,0] > 0 and pos[istar,0] < frame.shape[0]
-            and pos[istar,1] > 0 and pos[istar,1] < frame.shape[1]):
+        if (pos[istar,0] > 0. and pos[istar,0] < <double> frame.shape[0]
+            and pos[istar,1] > 0. and pos[istar,1] < <double> frame.shape[1]):
             pos_mask[istar] = 1
             
-    cdef np.ndarray[np.float64_t, ndim=2] new_pos = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=2] new_pos = np.zeros(
         (np.sum(pos_mask), 2), dtype=float)
 
     new_pos = pos[np.nonzero(pos_mask)]
-            
+
+    # stop here if no star positions are in the frame
+    if np.size(new_pos) == 0:
+        return []
+    
     cdef int star_nb = new_pos.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
         (star_nb, 5), dtype=float) # [STARS_NB * (H,A,DX,DY,FWHM)]
     cdef np.ndarray[np.float64_t, ndim=2] stars_err = np.zeros_like(
         stars_p, dtype=float)
-    cdef np.ndarray[np.float64_t, ndim=2] new_stars_p = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=2] new_stars_p = np.zeros(
         (pos.shape[0], stars_p.shape[1]), dtype=float)
-    cdef np.ndarray[np.float64_t, ndim=2] new_stars_err = np.empty_like(
+    cdef np.ndarray[np.float64_t, ndim=2] new_stars_err = np.zeros_like(
         new_stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] stars_p_mask = np.ones(
         5, dtype=float)
     
-    cdef np.ndarray[np.float64_t, ndim=2] test_p = np.empty_like(
+    cdef np.ndarray[np.float64_t, ndim=2] test_p = np.zeros_like(
         stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] cov_p = np.zeros(
         6, dtype=float) # COV_P: HEIGHT, POSX, POSY, FWHM, ZOOM, ROT
@@ -1196,9 +1197,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         (star_nb), dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] free_p
     cdef np.ndarray[np.float64_t, ndim=1] fixed_p
-    cdef np.ndarray[np.float64_t, ndim=1] test_x = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=1] test_x = np.zeros(
         box_size, dtype=float)
-    cdef np.ndarray[np.float64_t, ndim=1] test_y = np.empty(
+    cdef np.ndarray[np.float64_t, ndim=1] test_y = np.zeros(
         box_size, dtype=float)
     cdef double x_min, x_max, y_min, y_max, rcx, rcy
     cdef np.ndarray[np.float64_t, ndim=1] noise_guess = np.zeros(
@@ -1259,8 +1260,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                          0., 1., <double> test_y.shape[0] / 2. - 0.5,
                          <double> test_y.shape[0] / 2.)
 
-    nzi = np.nonzero(test_x > 0)
-    nzj = np.nonzero(test_y > 0)
+    nzi = np.nonzero(test_x > 0.)
+    nzj = np.nonzero(test_y > 0.)
 
     dx_guess = (np.sum((test_x[nzi]) * np.arange(box_size)[nzi])
                 / np.sum(test_x[nzi])
@@ -1270,8 +1271,11 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                 - (<double> box_size / 2. - 0.))
 
     # far from the center the arg-based guess is generally better
-    if abs(dx_guess) > <double> box_size / 4.: dx_guess = dx_guess_arg
-    if abs(dy_guess) > <double> box_size / 4.: dy_guess = dy_guess_arg
+    if (abs(dx_guess) > <double> box_size / 4.
+        or np.isnan(dx_guess)): dx_guess = dx_guess_arg
+        
+    if (abs(dy_guess) > <double> box_size / 4.
+        or np.isnan(dy_guess)): dy_guess = dy_guess_arg
         
     if cov_pos:
         cov_p[1] = dx_guess
@@ -1292,6 +1296,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         # in the box to avoid errors due to a cosmic ray.
         amp_guess[istar] = bn.nanmax(
             (np.sort(box.flatten()))[:-3])
+        
         # define 'sky pixels'
         S_sky = surface_value(
             box.shape[0], box.shape[1],
@@ -1308,10 +1313,12 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     if not np.isnan(height_guess):
         stars_p[:,0] = height_guess
-        
-    stars_p[:,1] = amp_guess - stars_p[istar,0]
 
+    # height guess
+    stars_p[:,1] = amp_guess - stars_p[:,0]
 
+    if bn.anynan(stars_p): return []
+    
     # guess ron and dcl
     if not np.isnan(ron) and not estimate_local_noise:
         noise_guess.fill(ron)

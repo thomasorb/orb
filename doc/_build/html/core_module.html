@@ -6,15 +6,16 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core module &mdash; Orb 1.2 documentation</title>
+    <title>Core module &mdash; Orb 1.2.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2',
+        VERSION:     '1.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.1 documentation" href="index.html" />
     <link rel="next" title="Utils module" href="utils_module.html" />
     <link rel="prev" title="Python for ORB users" href="python_for_orb.html" /> 
   </head>
@@ -45,7 +46,7 @@
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -152,9 +153,9 @@ basic header returned by <a class="reference internal" href="#core.Tools._get_ba
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>dimx</strong> &#8211; dimension of the first axis of the frame</li>
-<li><strong>dimy</strong> &#8211; dimension of the second axis of the frame</li>
-<li><strong>config_file_name</strong> &#8211; (Optional) Name of the configuration
+<li><span class="target" id="core.Tools._get_basic_frame_header.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_frame_header.params.dimx">¶</a> &#8211; dimension of the first axis of the frame</li>
+<li><span class="target" id="core.Tools._get_basic_frame_header.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_frame_header.params.dimy">¶</a> &#8211; dimension of the second axis of the frame</li>
+<li><span class="target" id="core.Tools._get_basic_frame_header.params.config_file_name"></span><strong>config_file_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_frame_header.params.config_file_name">¶</a> &#8211; (Optional) Name of the configuration
 file (config.orb by default).</li>
 </ul>
 </td>
@@ -174,8 +175,8 @@ comment) that can be added to any FITS file created by
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file_type</strong> &#8211; Description of the type of file created.</li>
-<li><strong>config_file_name</strong> &#8211; (Optional) Name of the configuration
+<li><span class="target" id="core.Tools._get_basic_header.params.file_type"></span><strong>file_type</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_header.params.file_type">¶</a> &#8211; Description of the type of file created.</li>
+<li><span class="target" id="core.Tools._get_basic_header.params.config_file_name"></span><strong>config_file_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_header.params.config_file_name">¶</a> &#8211; (Optional) Name of the configuration
 file (config.orb by default).</li>
 </ul>
 </td>
@@ -198,7 +199,7 @@ and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._g
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nm_axis</strong> &#8211; Wavelength axis in nanometers. Each point of
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_basic_spectrum_cube_header.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_spectrum_cube_header.params.nm_axis">¶</a> &#8211; Wavelength axis in nanometers. Each point of
 this axis must correspond to the wavelength of each
 frame. The axis must thus have the same length as the number
 of frames in the cube.</td>
@@ -223,8 +224,8 @@ and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._g
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frame_index</strong> &#8211; Index of the frame.</li>
-<li><strong>nm_axis</strong> &#8211; Wavelength axis in nanometers. Each point of
+<li><span class="target" id="core.Tools._get_basic_spectrum_frame_header.params.frame_index"></span><strong>frame_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_spectrum_frame_header.params.frame_index">¶</a> &#8211; Index of the frame.</li>
+<li><span class="target" id="core.Tools._get_basic_spectrum_frame_header.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_spectrum_frame_header.params.nm_axis">¶</a> &#8211; Wavelength axis in nanometers. Each point of
 this axis must correspond to the wavelength of each
 frame. The axis must thus have the same length as the number
 of frames in the cube.</li>
@@ -245,7 +246,7 @@ orbs/data/.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config_file_name</strong> &#8211; Name of the configuration file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_config_file_path.params.config_file_name"></span><strong>config_file_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_config_file_path.params.config_file_name">¶</a> &#8211; Name of the configuration file.</td>
 </tr>
 </tbody>
 </table>
@@ -263,8 +264,8 @@ orbs/data/.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>param_key</strong> &#8211; Key of the parameter to be read</li>
-<li><strong>optional</strong> &#8211; (Optional) If True, a parameter key which is
+<li><span class="target" id="core.Tools._get_config_parameter.params.param_key"></span><strong>param_key</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_config_parameter.params.param_key">¶</a> &#8211; Key of the parameter to be read</li>
+<li><span class="target" id="core.Tools._get_config_parameter.params.optional"></span><strong>optional</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_config_parameter.params.optional">¶</a> &#8211; (Optional) If True, a parameter key which is
 not found only raise a warning and the method returns
 None. Else, an error is raised (Default False).</li>
 </ul>
@@ -313,7 +314,7 @@ parameters of the FFT.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>apodization_function</strong> &#8211; Name of the apodization function.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_fft_params_header.params.apodization_function"></span><strong>apodization_function</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_fft_params_header.params.apodization_function">¶</a> &#8211; Name of the apodization function.</td>
 </tr>
 </tbody>
 </table>
@@ -330,7 +331,7 @@ located in orbs/data/.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_name</strong> &#8211; Name of the filter.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_filter_file_path.params.filter_name"></span><strong>filter_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_filter_file_path.params.filter_name">¶</a> &#8211; Name of the filter.</td>
 </tr>
 </tbody>
 </table>
@@ -345,7 +346,7 @@ FITS file.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; Path of the origial FITS file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_mask_path.params.path"></span><strong>path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_mask_path.params.path">¶</a> &#8211; Path of the origial FITS file.</td>
 </tr>
 </tbody>
 </table>
@@ -365,7 +366,7 @@ FITS file.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> &#8211; Name of the file in ORB data folder.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_orb_data_file_path.params.file_name"></span><strong>file_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_orb_data_file_path.params.file_name">¶</a> &#8211; Name of the file in ORB data folder.</td>
 </tr>
 </tbody>
 </table>
@@ -380,9 +381,9 @@ FITS file.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>standard_name</strong> &#8211; Name of the standard star. Must be
+<li><span class="target" id="core.Tools._get_standard_file_path.params.standard_name"></span><strong>standard_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_file_path.params.standard_name">¶</a> &#8211; Name of the standard star. Must be
 recorded in the standard table.</li>
-<li><strong>standard_table_name</strong> &#8211; (Optional) Name of the standard
+<li><span class="target" id="core.Tools._get_standard_file_path.params.standard_table_name"></span><strong>standard_table_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_file_path.params.standard_table_name">¶</a> &#8211; (Optional) Name of the standard
 table file (default std_table.orb).</li>
 </ul>
 </td>
@@ -403,7 +404,7 @@ can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>standard_table_name</strong> &#8211; (Optional) Name of the standard
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_standard_list.params.standard_table_name"></span><strong>standard_table_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_list.params.standard_table_name">¶</a> &#8211; (Optional) Name of the standard
 table file (default std_table.orb).</td>
 </tr>
 </tbody>
@@ -419,7 +420,7 @@ location and type of the recorded standard spectra.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>standard_table_name</strong> &#8211; Name of the standard table file</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_standard_table_path.params.standard_table_name"></span><strong>standard_table_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_table_path.params.standard_table_name">¶</a> &#8211; Name of the standard table file</td>
 </tr>
 </tbody>
 </table>
@@ -442,8 +443,8 @@ be a string.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>parameter_name</strong> &#8211; Name of the parameter</li>
-<li><strong>default_value</strong> &#8211; Default value.</li>
+<li><span class="target" id="core.Tools._get_tuning_parameter.params.parameter_name"></span><strong>parameter_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_tuning_parameter.params.parameter_name">¶</a> &#8211; Name of the parameter</li>
+<li><span class="target" id="core.Tools._get_tuning_parameter.params.default_value"></span><strong>default_value</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_tuning_parameter.params.default_value">¶</a> &#8211; Default value.</li>
 </ul>
 </td>
 </tr>
@@ -465,7 +466,7 @@ be a string.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>silent</strong> &#8211; (Optional) If silent no message is printed
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._init_pp_server.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Tools._init_pp_server.params.silent">¶</a> &#8211; (Optional) If silent no message is printed
 (Default False).</td>
 </tr>
 </tbody>
@@ -494,7 +495,7 @@ stop the execution of the program.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> &#8211; The message to be displayed.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._print_error.params.message"></span><strong>message</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_error.params.message">¶</a> &#8211; The message to be displayed.</td>
 </tr>
 </tbody>
 </table>
@@ -510,10 +511,10 @@ stop the execution of the program.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>message</strong> &#8211; The message to be displayed.</li>
-<li><strong>color</strong> &#8211; (Optional) If True, the message is diplayed in
+<li><span class="target" id="core.Tools._print_msg.params.message"></span><strong>message</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_msg.params.message">¶</a> &#8211; The message to be displayed.</li>
+<li><span class="target" id="core.Tools._print_msg.params.color"></span><strong>color</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_msg.params.color">¶</a> &#8211; (Optional) If True, the message is diplayed in
 color. If &#8216;alt&#8217;, an alternative color is displayed.</li>
-<li><strong>no_hdr</strong> &#8211; (Optional) If True, The message is displayed
+<li><span class="target" id="core.Tools._print_msg.params.no_hdr"></span><strong>no_hdr</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_msg.params.no_hdr">¶</a> &#8211; (Optional) If True, The message is displayed
 as it is, without any header.</li>
 </ul>
 </td>
@@ -530,7 +531,7 @@ as it is, without any header.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>no_hdr</strong> &#8211; (Optional) If True, The message is displayed
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._print_traceback.params.no_hdr"></span><strong>no_hdr</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_traceback.params.no_hdr">¶</a> &#8211; (Optional) If True, The message is displayed
 as it is, without any header.</td>
 </tr>
 </tbody>
@@ -552,8 +553,8 @@ been raised.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>message</strong> &#8211; The message to be displayed.</li>
-<li><strong>traceback</strong> &#8211; (Optional) If True, print traceback (default
+<li><span class="target" id="core.Tools._print_warning.params.message"></span><strong>message</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_warning.params.message">¶</a> &#8211; The message to be displayed.</li>
+<li><span class="target" id="core.Tools._print_warning.params.traceback"></span><strong>traceback</strong><a class="paramlink headerlink reference internal" href="#core.Tools._print_warning.params.traceback">¶</a> &#8211; (Optional) If True, print traceback (default
 False)</li>
 </ul>
 </td>
@@ -572,11 +573,11 @@ create one.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+<li><span class="target" id="core.Tools._update_fits_key.params.fits_name"></span><strong>fits_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._update_fits_key.params.fits_name">¶</a> &#8211; Path to the file, can be either
 relative or absolut.</li>
-<li><strong>key</strong> &#8211; Exact name of the key to be updated.</li>
-<li><strong>value</strong> &#8211; New value of the key</li>
-<li><strong>comment</strong> &#8211; Comment on this key</li>
+<li><span class="target" id="core.Tools._update_fits_key.params.key"></span><strong>key</strong><a class="paramlink headerlink reference internal" href="#core.Tools._update_fits_key.params.key">¶</a> &#8211; Exact name of the key to be updated.</li>
+<li><span class="target" id="core.Tools._update_fits_key.params.value"></span><strong>value</strong><a class="paramlink headerlink reference internal" href="#core.Tools._update_fits_key.params.value">¶</a> &#8211; New value of the key</li>
+<li><span class="target" id="core.Tools._update_fits_key.params.comment"></span><strong>comment</strong><a class="paramlink headerlink reference internal" href="#core.Tools._update_fits_key.params.comment">¶</a> &#8211; Comment on this key</li>
 </ul>
 </td>
 </tr>
@@ -603,9 +604,9 @@ object.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+<li><span class="target" id="core.Tools.open_file.params.fits_name"></span><strong>fits_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.open_file.params.fits_name">¶</a> &#8211; Path to the file, can be either
 relative or absolute.</li>
-<li><strong>mode</strong> &#8211; (Optional) Can be &#8216;w&#8217; for write mode, &#8216;r&#8217; for
+<li><span class="target" id="core.Tools.open_file.params.mode"></span><strong>mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools.open_file.params.mode">¶</a> &#8211; (Optional) Can be &#8216;w&#8217; for write mode, &#8216;r&#8217; for
 read mode and &#8216;a&#8217; for append mode.</li>
 </ul>
 </td>
@@ -623,24 +624,24 @@ read mode and &#8216;a&#8217; for append mode.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+<li><span class="target" id="core.Tools.read_fits.params.fits_name"></span><strong>fits_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.fits_name">¶</a> &#8211; Path to the file, can be either
 relative or absolut.</li>
-<li><strong>no_error</strong> &#8211; (Optional) If True this function will only
+<li><span class="target" id="core.Tools.read_fits.params.no_error"></span><strong>no_error</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.no_error">¶</a> &#8211; (Optional) If True this function will only
 display a warning message if the file does not exist (so it
 does not raise an exception) (default False)</li>
-<li><strong>nan_filter</strong> &#8211; (Optional) If True replace NaN by zeros
+<li><span class="target" id="core.Tools.read_fits.params.nan_filter"></span><strong>nan_filter</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.nan_filter">¶</a> &#8211; (Optional) If True replace NaN by zeros
 (default False)</li>
-<li><strong>return_header</strong> &#8211; (Optional) If True return a tuple (data,
+<li><span class="target" id="core.Tools.read_fits.params.return_header"></span><strong>return_header</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.return_header">¶</a> &#8211; (Optional) If True return a tuple (data,
 header) (default False).</li>
-<li><strong>return_hdu_only</strong> &#8211; (Optional) If True return FITS header
+<li><span class="target" id="core.Tools.read_fits.params.return_hdu_only"></span><strong>return_hdu_only</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.return_hdu_only">¶</a> &#8211; (Optional) If True return FITS header
 data unit only. No data will be returned (default False).</li>
-<li><strong>return_mask</strong> &#8211; (Optional) If True return only the mask
+<li><span class="target" id="core.Tools.read_fits.params.return_mask"></span><strong>return_mask</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.return_mask">¶</a> &#8211; (Optional) If True return only the mask
 corresponding to the data file (default False).</li>
-<li><strong>silent</strong> &#8211; (Optional) If True no message is displayed
+<li><span class="target" id="core.Tools.read_fits.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.silent">¶</a> &#8211; (Optional) If True no message is displayed
 except if an error is raised (default False).</li>
-<li><strong>delete_after</strong> &#8211; (Optional) If True delete file after
+<li><span class="target" id="core.Tools.read_fits.params.delete_after"></span><strong>delete_after</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.delete_after">¶</a> &#8211; (Optional) If True delete file after
 reading (default False).</li>
-<li><strong>data_index</strong> &#8211; (Optional) Index of data in the header data
+<li><span class="target" id="core.Tools.read_fits.params.data_index"></span><strong>data_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.data_index">¶</a> &#8211; (Optional) Index of data in the header data
 unit (Default 0).</li>
 </ul>
 </td>
@@ -669,32 +670,32 @@ extension (unless &#8216;overwrite&#8217; option is set to True).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fits_name</strong> &#8211; Path to the file, can be either
+<li><span class="target" id="core.Tools.write_fits.params.fits_name"></span><strong>fits_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_name">¶</a> &#8211; Path to the file, can be either
 relative or absolut.</li>
-<li><strong>fits_data</strong> &#8211; Data to be written in the file.</li>
-<li><strong>fits_header</strong> &#8211; (Optional) Optional keywords to update or
+<li><span class="target" id="core.Tools.write_fits.params.fits_data"></span><strong>fits_data</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_data">¶</a> &#8211; Data to be written in the file.</li>
+<li><span class="target" id="core.Tools.write_fits.params.fits_header"></span><strong>fits_header</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_header">¶</a> &#8211; (Optional) Optional keywords to update or
 create. It can be a pyfits.Header() instance or a list of
 tuples [(KEYWORD_1, VALUE_1, COMMENT_1), (KEYWORD_2,
 VALUE_2, COMMENT_2), ...]. Standard keywords like SIMPLE,
 BITPIX, NAXIS, EXTEND does not have to be passed.</li>
-<li><strong>silent</strong> &#8211; (Optional) If True turn this function won&#8217;t
+<li><span class="target" id="core.Tools.write_fits.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.silent">¶</a> &#8211; (Optional) If True turn this function won&#8217;t
 display any message (default False)</li>
-<li><strong>overwrite</strong> &#8211; (Optional) If True overwrite the output file
+<li><span class="target" id="core.Tools.write_fits.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.overwrite">¶</a> &#8211; (Optional) If True overwrite the output file
 if it exists (default False).</li>
-<li><strong>mask</strong> &#8211; (Optional) It not None must be an array with the
+<li><span class="target" id="core.Tools.write_fits.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.mask">¶</a> &#8211; (Optional) It not None must be an array with the
 same size as the given data but filled with ones and
 zeros. Bad values (NaN or Inf) are converted to 1 and the
 array is converted to 8 bit unsigned integers (uint8). This
 array will be written to the disk with the same path
 terminated by &#8216;_mask&#8217;. The header of the mask FITS file will
 be the same as the original data (default None).</li>
-<li><strong>replace</strong> &#8211; (Optional) If True and if the file already
+<li><span class="target" id="core.Tools.write_fits.params.replace"></span><strong>replace</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.replace">¶</a> &#8211; (Optional) If True and if the file already
 exist, new data replace old data in the existing file. NaN
 values do not replace old values. Other values replace old
 values. New array MUST have the same size as the existing
 array. Note that if replace is True, overwrite is
 automatically set to True.</li>
-<li><strong>record_stats</strong> &#8211; (Optional) If True, record mean and
+<li><span class="target" id="core.Tools.write_fits.params.record_stats"></span><strong>record_stats</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.record_stats">¶</a> &#8211; (Optional) If True, record mean and
 median of data. Useful if they often have to be computed
 (default False).</li>
 </ul>
@@ -732,13 +733,13 @@ files.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>image_list_path</strong> &#8211; Path to the list of images which form the
+<li><span class="target" id="core.Cube.params.image_list_path"></span><strong>image_list_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.image_list_path">¶</a> &#8211; Path to the list of images which form the
 virtual cube. If <tt class="docutils literal"><span class="pre">image_list_path</span></tt> is set to &#8216;&#8217; then this
 class will not try to load any data.  Can be useful when the
 user don&#8217;t want to use or process any data.</li>
-<li><strong>config_file_name</strong> &#8211; (Optional) name of the config file to
+<li><span class="target" id="core.Cube.params.config_file_name"></span><strong>config_file_name</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.config_file_name">¶</a> &#8211; (Optional) name of the config file to
 use. Must be located in orbs/data/</li>
-<li><strong>data_prefix</strong> &#8211; (Optional) Prefix used to determine the header
+<li><span class="target" id="core.Cube.params.data_prefix"></span><strong>data_prefix</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.data_prefix">¶</a> &#8211; (Optional) Prefix used to determine the header
 of the name of each created file (default &#8216;temp_data&#8217;)</li>
 </ul>
 </td>
@@ -760,10 +761,10 @@ data file and loading an entire cube to process it.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>export_path</strong> &#8211; Path of the exported FITS file</li>
-<li><strong>x_range</strong> &#8211; Tuple (x_min, x_max)</li>
-<li><strong>y_range</strong> &#8211; Tuple (y_min, y_max)</li>
-<li><strong>z_range</strong> &#8211; Tuple (z_min, z_max)</li>
+<li><span class="target" id="core.Cube.export.params.export_path"></span><strong>export_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.export_path">¶</a> &#8211; Path of the exported FITS file</li>
+<li><span class="target" id="core.Cube.export.params.x_range"></span><strong>x_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.x_range">¶</a> &#8211; Tuple (x_min, x_max)</li>
+<li><span class="target" id="core.Cube.export.params.y_range"></span><strong>y_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.y_range">¶</a> &#8211; Tuple (y_min, y_max)</li>
+<li><span class="target" id="core.Cube.export.params.z_range"></span><strong>z_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.z_range">¶</a> &#8211; Tuple (z_min, z_max)</li>
 </ul>
 </td>
 </tr>
@@ -779,7 +780,7 @@ data file and loading an entire cube to process it.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Cube.get_all_data.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_all_data.params.mask">¶</a> &#8211; (Optional) if True return mask (default False).</td>
 </tr>
 </tbody>
 </table>
@@ -794,10 +795,10 @@ data file and loading an entire cube to process it.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>icol</strong> &#8211; Column index</li>
-<li><strong>silent</strong> &#8211; (Optional) if False display a progress bar
+<li><span class="target" id="core.Cube.get_column_data.params.icol"></span><strong>icol</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_column_data.params.icol">¶</a> &#8211; Column index</li>
+<li><span class="target" id="core.Cube.get_column_data.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_column_data.params.silent">¶</a> &#8211; (Optional) if False display a progress bar
 during data loading (default True)</li>
-<li><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</li>
+<li><span class="target" id="core.Cube.get_column_data.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_column_data.params.mask">¶</a> &#8211; (Optional) if True return mask (default False).</li>
 </ul>
 </td>
 </tr>
@@ -814,15 +815,15 @@ during data loading (default True)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x_min</strong> &#8211; minimum index along x axis</li>
-<li><strong>x_max</strong> &#8211; maximum index along x axis</li>
-<li><strong>y_min</strong> &#8211; minimum index along y axis</li>
-<li><strong>y_max</strong> &#8211; maximum index along y axis</li>
-<li><strong>z_min</strong> &#8211; minimum index along z axis</li>
-<li><strong>z_max</strong> &#8211; maximum index along z axis</li>
-<li><strong>silent</strong> &#8211; (Optional) if False display a progress bar
+<li><span class="target" id="core.Cube.get_data.params.x_min"></span><strong>x_min</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.x_min">¶</a> &#8211; minimum index along x axis</li>
+<li><span class="target" id="core.Cube.get_data.params.x_max"></span><strong>x_max</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.x_max">¶</a> &#8211; maximum index along x axis</li>
+<li><span class="target" id="core.Cube.get_data.params.y_min"></span><strong>y_min</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.y_min">¶</a> &#8211; minimum index along y axis</li>
+<li><span class="target" id="core.Cube.get_data.params.y_max"></span><strong>y_max</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.y_max">¶</a> &#8211; maximum index along y axis</li>
+<li><span class="target" id="core.Cube.get_data.params.z_min"></span><strong>z_min</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.z_min">¶</a> &#8211; minimum index along z axis</li>
+<li><span class="target" id="core.Cube.get_data.params.z_max"></span><strong>z_max</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.z_max">¶</a> &#8211; maximum index along z axis</li>
+<li><span class="target" id="core.Cube.get_data.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.silent">¶</a> &#8211; (Optional) if False display a progress bar
 during data loading (default False)</li>
-<li><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</li>
+<li><span class="target" id="core.Cube.get_data.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data.params.mask">¶</a> &#8211; (Optional) if True return mask (default False).</li>
 </ul>
 </td>
 </tr>
@@ -839,10 +840,10 @@ during data loading (default False)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>index</strong> &#8211; Index of the frame to be returned</li>
-<li><strong>silent</strong> &#8211; (Optional) if False display a progress bar
+<li><span class="target" id="core.Cube.get_data_frame.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data_frame.params.index">¶</a> &#8211; Index of the frame to be returned</li>
+<li><span class="target" id="core.Cube.get_data_frame.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data_frame.params.silent">¶</a> &#8211; (Optional) if False display a progress bar
 during data loading (default False)</li>
-<li><strong>mask</strong> &#8211; (Optional) if True return mask (default False).</li>
+<li><span class="target" id="core.Cube.get_data_frame.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_data_frame.params.mask">¶</a> &#8211; (Optional) if True return mask (default False).</li>
 </ul>
 </td>
 </tr>
@@ -859,7 +860,7 @@ during data loading (default False)</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> &#8211; Index of the frame</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Cube.get_frame_header.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_frame_header.params.index">¶</a> &#8211; Index of the frame</td>
 </tr>
 </tbody>
 </table>
@@ -883,7 +884,11 @@ files.</p>
 <dt id="core.Cube.get_mean_image">
 <tt class="descname">get_mean_image</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_mean_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean image of a cube (corresponding to a deep
-frame for an interferogram cube or a specral cube)</p>
+frame for an interferogram cube or a specral cube).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In this process NaNs are considered as zeros.</p>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -895,13 +900,13 @@ frame for an interferogram cube or a specral cube)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>quad_number</strong> &#8211; Quadrant number</li>
-<li><strong>div_nb</strong> &#8211; (Optional) Use another number of divisions
+<li><span class="target" id="core.Cube.get_quadrant_dims.params.quad_number"></span><strong>quad_number</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_quadrant_dims.params.quad_number">¶</a> &#8211; Quadrant number</li>
+<li><span class="target" id="core.Cube.get_quadrant_dims.params.div_nb"></span><strong>div_nb</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_quadrant_dims.params.div_nb">¶</a> &#8211; (Optional) Use another number of divisions
 along x and y axes. (e.g. if div_nb = 3, the number of
 quadrant is 9 ; if div_nb = 4, the number of quadrant is 16)</li>
-<li><strong>dimx</strong> &#8211; (Optional) Use another x axis dimension. Other
+<li><span class="target" id="core.Cube.get_quadrant_dims.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_quadrant_dims.params.dimx">¶</a> &#8211; (Optional) Use another x axis dimension. Other
 than the axis dimension of the managed data cube</li>
-<li><strong>dimy</strong> &#8211; (Optional) Use another y axis dimension. Other
+<li><span class="target" id="core.Cube.get_quadrant_dims.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_quadrant_dims.params.dimy">¶</a> &#8211; (Optional) Use another y axis dimension. Other
 than the axis dimension of the managed data cube</li>
 </ul>
 </td>
@@ -925,8 +930,8 @@ avoided.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>size_x</strong> &#8211; New size of the cube along x axis</li>
-<li><strong>size_y</strong> &#8211; New size of the cube along y axis</li>
+<li><span class="target" id="core.Cube.get_resized_data.params.size_x"></span><strong>size_x</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_resized_data.params.size_x">¶</a> &#8211; New size of the cube along x axis</li>
+<li><span class="target" id="core.Cube.get_resized_data.params.size_y"></span><strong>size_y</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_resized_data.params.size_y">¶</a> &#8211; New size of the cube along y axis</li>
 </ul>
 </td>
 </tr>
@@ -949,10 +954,10 @@ be done in this case).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>index</strong> &#8211; Index of the frame to resize</li>
-<li><strong>size_x</strong> &#8211; New size of the cube along x axis</li>
-<li><strong>size_y</strong> &#8211; New size of the cube along y axis</li>
-<li><strong>degree</strong> &#8211; (Optional) Interpolation degree (Default 3)</li>
+<li><span class="target" id="core.Cube.get_resized_frame.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_resized_frame.params.index">¶</a> &#8211; Index of the frame to resize</li>
+<li><span class="target" id="core.Cube.get_resized_frame.params.size_x"></span><strong>size_x</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_resized_frame.params.size_x">¶</a> &#8211; New size of the cube along x axis</li>
+<li><span class="target" id="core.Cube.get_resized_frame.params.size_y"></span><strong>size_y</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_resized_frame.params.size_y">¶</a> &#8211; New size of the cube along y axis</li>
+<li><span class="target" id="core.Cube.get_resized_frame.params.degree"></span><strong>degree</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_resized_frame.params.degree">¶</a> &#8211; (Optional) Interpolation degree (Default 3)</li>
 </ul>
 </td>
 </tr>
@@ -969,7 +974,11 @@ star-like objects a linear interpolation must be done
 <dl class="method">
 <dt id="core.Cube.get_spectrum_energy_map">
 <tt class="descname">get_spectrum_energy_map</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_spectrum_energy_map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the energy map of a spectrum cube</p>
+<dd><p>Return the energy map of a spectrum cube.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In this process NaNs are considered as zeros.</p>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -981,10 +990,10 @@ star-like objects a linear interpolation must be done
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nozero</strong> &#8211; If True zeros are removed from the median
+<li><span class="target" id="core.Cube.get_zmean.params.nozero"></span><strong>nozero</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zmean.params.nozero">¶</a> &#8211; If True zeros are removed from the median
 computation. If there&#8217;s only zeros, median frame value will
 be a NaN (default False).</li>
-<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+<li><span class="target" id="core.Cube.get_zmean.params.center"></span><strong>center</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zmean.params.center">¶</a> &#8211; If True only the center of the frame is used to
 compute median.</li>
 </ul>
 </td>
@@ -1002,10 +1011,10 @@ compute median.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nozero</strong> &#8211; If True zeros are removed from the mean
+<li><span class="target" id="core.Cube.get_zmedian.params.nozero"></span><strong>nozero</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zmedian.params.nozero">¶</a> &#8211; If True zeros are removed from the mean
 computation. If there&#8217;s only zeros, mean frame value will
 be a NaN (default False).</li>
-<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+<li><span class="target" id="core.Cube.get_zmedian.params.center"></span><strong>center</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zmedian.params.center">¶</a> &#8211; If True only the center of the frame is used to
 compute mean.</li>
 </ul>
 </td>
@@ -1024,12 +1033,12 @@ std).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nozero</strong> &#8211; If True zeros are removed from the stat
+<li><span class="target" id="core.Cube.get_zstat.params.nozero"></span><strong>nozero</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zstat.params.nozero">¶</a> &#8211; If True zeros are removed from the stat
 computation. If there&#8217;s only zeros, stat frame value will
 be a NaN (default False).</li>
-<li><strong>stat</strong> &#8211; Type of stat to return. Can be &#8216;mean&#8217;, &#8216;median&#8217;
+<li><span class="target" id="core.Cube.get_zstat.params.stat"></span><strong>stat</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zstat.params.stat">¶</a> &#8211; Type of stat to return. Can be &#8216;mean&#8217;, &#8216;median&#8217;
 or &#8216;std&#8217;</li>
-<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+<li><span class="target" id="core.Cube.get_zstat.params.center"></span><strong>center</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zstat.params.center">¶</a> &#8211; If True only the center of the frame is used to
 compute stat.</li>
 </ul>
 </td>
@@ -1047,10 +1056,10 @@ compute stat.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nozero</strong> &#8211; If True zeros are removed from the std
+<li><span class="target" id="core.Cube.get_zstd.params.nozero"></span><strong>nozero</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zstd.params.nozero">¶</a> &#8211; If True zeros are removed from the std
 computation. If there&#8217;s only zeros, std frame value will
 be a NaN (default False).</li>
-<li><strong>center</strong> &#8211; If True only the center of the frame is used to
+<li><span class="target" id="core.Cube.get_zstd.params.center"></span><strong>center</strong><a class="paramlink headerlink reference internal" href="#core.Cube.get_zstd.params.center">¶</a> &#8211; If True only the center of the frame is used to
 compute std.</li>
 </ul>
 </td>
@@ -1068,7 +1077,7 @@ axes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_test</strong> &#8211; Cube to check</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Cube.is_same_2D_size.params.cube_test"></span><strong>cube_test</strong><a class="paramlink headerlink reference internal" href="#core.Cube.is_same_2D_size.params.cube_test">¶</a> &#8211; Cube to check</td>
 </tr>
 </tbody>
 </table>
@@ -1082,7 +1091,7 @@ axes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_test</strong> &#8211; Cube to check</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Cube.is_same_3D_size.params.cube_test"></span><strong>cube_test</strong><a class="paramlink headerlink reference internal" href="#core.Cube.is_same_3D_size.params.cube_test">¶</a> &#8211; Cube to check</td>
 </tr>
 </tbody>
 </table>
@@ -1121,7 +1130,7 @@ disable() function to disable coloured text.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_index</strong> &#8211; The index considered as 100%</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.ProgressBar.params.max_index"></span><strong>max_index</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.params.max_index">¶</a> &#8211; The index considered as 100%</td>
 </tr>
 </tbody>
 </table>
@@ -1139,7 +1148,7 @@ disable() function to disable coloured text.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sec</strong> &#8211; Number of seconds to convert</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.ProgressBar._time_str_convert.params.sec"></span><strong>sec</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar._time_str_convert.params.sec">¶</a> &#8211; Number of seconds to convert</td>
 </tr>
 </tbody>
 </table>
@@ -1154,7 +1163,7 @@ complete the process.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>silent</strong> &#8211; If True remove the progress bar from the
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.ProgressBar.end.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.end.params.silent">¶</a> &#8211; If True remove the progress bar from the
 screen. Further diplayed text will be displayed above the
 progress bar.</td>
 </tr>
@@ -1171,9 +1180,9 @@ progress bar.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>index</strong> &#8211; Index representing the progress of the
+<li><span class="target" id="core.ProgressBar.update.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.update.params.index">¶</a> &#8211; Index representing the progress of the
 process. Must be less than index_max.</li>
-<li><strong>info</strong> &#8211; (Optional) Information to be displayed as
+<li><span class="target" id="core.ProgressBar.update.params.info"></span><strong>info</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.update.params.info">¶</a> &#8211; (Optional) Information to be displayed as
 comments</li>
 </ul>
 </td>
@@ -1240,12 +1249,12 @@ called). This method is called each time
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file_key</strong> &#8211; Key name of the file to be located</li>
-<li><strong>file_group</strong> &#8211; (Optional) Add group prefix to the key
+<li><span class="target" id="core.Indexer.get_path.params.file_key"></span><strong>file_key</strong><a class="paramlink headerlink reference internal" href="#core.Indexer.get_path.params.file_key">¶</a> &#8211; Key name of the file to be located</li>
+<li><span class="target" id="core.Indexer.get_path.params.file_group"></span><strong>file_group</strong><a class="paramlink headerlink reference internal" href="#core.Indexer.get_path.params.file_group">¶</a> &#8211; (Optional) Add group prefix to the key
 name. File group must be &#8216;cam1&#8217;, &#8216;cam2&#8217;, &#8216;merged&#8217; or their
 integer equivalent 1, 2, 0. File group can also be set to
 None (default None).</li>
-<li><strong>err</strong> &#8211; (Optional) Print an error instead of a warning if
+<li><span class="target" id="core.Indexer.get_path.params.err"></span><strong>err</strong><a class="paramlink headerlink reference internal" href="#core.Indexer.get_path.params.err">¶</a> &#8211; (Optional) Print an error instead of a warning if
 the file is not indexed.</li>
 </ul>
 </td>
@@ -1269,7 +1278,7 @@ file keys will be prefixed by the file group.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_group</strong> &#8211; File group must be &#8216;cam1&#8217;, &#8216;cam2&#8217;, &#8216;merged&#8217;
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Indexer.set_file_group.params.file_group"></span><strong>file_group</strong><a class="paramlink headerlink reference internal" href="#core.Indexer.set_file_group.params.file_group">¶</a> &#8211; File group must be &#8216;cam1&#8217;, &#8216;cam2&#8217;, &#8216;merged&#8217;
 or their integer equivalent 1, 2, 0. File group can also be
 set to None.</td>
 </tr>
@@ -1309,7 +1318,7 @@ set to None.</td>
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

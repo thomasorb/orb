@@ -40,6 +40,7 @@ DIV_NB 2 # Number of "Quadrants" division along one axis of a cube
 	 # (the total number of quadrants is thus DIV_NB^2)
 OPTIM_DARK_CAM1 0 # Optimization routine for the dark of CAM 1 
 OPTIM_DARK_CAM2 1 # Optimization routine for the dark of CAM 2
+EXT_ILLUMINATION 1 # Compute external illumination
 
 ## Astrometry parameters
 DETECT_STAR_NB 15 # Number of star to use for alignment and photometry

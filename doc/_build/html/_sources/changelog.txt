@@ -39,3 +39,25 @@ v1.2
 
 * Minor bugs fix. This version is considered as a nearly stable
   version ready for release.
+
+* :py:meth:`~cutils.multi_fit_stars` initial estimation enhanced (more
+  robust and precise)
+    
+v1.2.1
+******
+
+* :py:meth:`~utils.transform_spectrum` and
+  :py:meth:`~utils.transform_interferogram` adjusted to lose no energy
+  in the transformation process.  They are able to treat wavenumber
+  transformation (useful to avoid the mutiple interpolation nescessary
+  to move from a regular wavenumber space to an iregular wavelength
+  space back and forth)'
+    
+* new keywords in config.orb: FIELD_OF_VIEW_2, EXT_ILLUMINATION
+    
+* new keyword in the option file: TRYCAT to use a USNO-B1 catalogue
+  for star detection
+    
+* doc updated
+    
+* bug fix
