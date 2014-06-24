@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; Orb 1.2.1 documentation</title>
+    <title>Changelog &mdash; Orb 1.2.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.1',
+        VERSION:     '1.2.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.2 documentation" href="index.html" />
     <link rel="prev" title="Astrometry module" href="astrometry_module.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -61,6 +61,11 @@
 </li>
 <li><a class="reference internal" href="#v1-2">v1.2</a></li>
 <li><a class="reference internal" href="#v1-2-1">v1.2.1</a></li>
+<li><a class="reference internal" href="#v1-2-2">v1.2.2</a><ul>
+<li><a class="reference internal" href="#orcs-integration">ORCS integration</a></li>
+<li><a class="reference internal" href="#orb-s-scripts">ORB&#8217;s scripts</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -98,8 +103,12 @@
 <h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="v1-0-creation-of-orb">
 <h2>v1.0 Creation of ORB<a class="headerlink" href="#v1-0-creation-of-orb" title="Permalink to this headline">¶</a></h2>
-<p>Architecture change of ORBS. All the shared content originally in the
-ORBS module have been moved to ORB.</p>
+<p>Major modification of ORBS architecture. All the shared content
+originally in the ORBS module have been moved to ORB. This way, ORBS,
+ORCS, OACS, IRIS and ORUS can share the same core module without
+importing ORBS entirely each time. Conceptually ORBS, like the other
+softwares, just wraps around ORB module and is not any more the
+central part of the whole suite of softwares.</p>
 </div>
 <div class="section" id="v1-1">
 <h2>v1.1<a class="headerlink" href="#v1-1" title="Permalink to this headline">¶</a></h2>
@@ -147,11 +156,41 @@ transformation (useful to avoid the mutiple interpolation nescessary
 to move from a regular wavenumber space to an iregular wavelength
 space back and forth)&#8217;</li>
 <li>new keywords in config.orb: FIELD_OF_VIEW_2, EXT_ILLUMINATION</li>
-<li>new keyword in the option file: TRYCAT to use a USNO-B1 catalogue
-for star detection</li>
 <li>doc updated</li>
 <li>bug fix</li>
 </ul>
+</div>
+<div class="section" id="v1-2-2">
+<h2>v1.2.2<a class="headerlink" href="#v1-2-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><tt class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></tt> and
+<tt class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></tt> Cythonised.</li>
+<li><a class="reference internal" href="core_module.html#core.OptionFile" title="core.OptionFile"><tt class="xref py py-class docutils literal"><span class="pre">OptionFile</span></tt></a> enhanced to be used by
+<tt class="xref py py-meth docutils literal"><span class="pre">orbs.Orbs.__init__()</span></tt>.</li>
+</ul>
+<div class="section" id="orcs-integration">
+<h3>ORCS integration<a class="headerlink" href="#orcs-integration" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>new keywords in config.orb: OBS_LAT, OBS_LON, OBS_ALT for ORCS.</li>
+<li>new general keyword in OptionFile: INCLUDE, used to include the
+parameters of another option file.</li>
+<li>Warning messages are not displayed anymore when using the silent
+option with <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">Tools</span></tt></a></li>
+<li>move <tt class="xref py py-meth docutils literal"><span class="pre">orbs.Orbs._create_list_from_dir()</span></tt> to
+<a class="reference internal" href="core_module.html#core.Tools._create_list_from_dir" title="core.Tools._create_list_from_dir"><tt class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></tt></a> to make this useful
+method accessible to ORCS.</li>
+<li>doc updated</li>
+</ul>
+</div>
+<div class="section" id="orb-s-scripts">
+<h3>ORB&#8217;s scripts<a class="headerlink" href="#orb-s-scripts" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>move ORB&#8217;s scripts (dstack, combine, rollxz, rollyz, reduce) from
+orbs/scripts to orb/scripts so that only ORBS specific scripts are
+in orbs/scripts.</li>
+<li>create <strong>unstack</strong> script to unstack a cube into a set of frames</li>
+</ul>
+</div>
 </div>
 </div>
 
@@ -173,7 +212,7 @@ for star detection</li>
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

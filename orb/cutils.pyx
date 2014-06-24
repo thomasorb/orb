@@ -634,6 +634,46 @@ def sinc1d(np.ndarray[np.float64_t, ndim=1] x,
     cdef np.ndarray[np.float64_t, ndim=1] X = ((x-dx)/(fwhm/1.2067))
     return h + a * np.sinc(X)
 
+def interf_mean_energy(np.ndarray interf):
+    """Return the mean energy of an interferogram by step.
+
+    :param interf: an interferogram
+
+    .. warning:: The mean of the interferogram is substracted to
+      compute only the modulation energy. This is the modulation
+      energy which must be conserved in the resulting spectrum. Note
+      that the interferogram transformation function (see
+      :py:meth:`utils.transform_interferogram`) remove the mean of the
+      interferogram before computing its FFT.
+
+    .. note:: NaNs are counted as zeros.
+    """
+    cdef double energy_sum
+
+    if not np.iscomplexobj(interf):
+        energy_sum = bn.nansum((interf - bn.nanmean(interf))**2.)
+    else:
+        energy_sum = bn.nansum(
+            (interf.real - bn.nanmean(interf.real))**2.
+            + (interf.imag - bn.nanmean(interf.imag))**2.)
+    
+    return sqrt(energy_sum / <float> np.size(interf))
+
+def spectrum_mean_energy(np.ndarray spectrum):
+    """Return the mean energy of a spectrum by channel.
+
+    :param spectrum: a 1D spectrum
+
+    .. note:: NaNs are counted as zeros.
+    """
+    cdef double energy_sum
+
+    if not np.iscomplexobj(spectrum):
+        energy_sum = bn.nansum(spectrum**2.)
+    else:
+        energy_sum = bn.nansum(spectrum.real**2. + spectrum.imag**2.)
+        
+    return sqrt(energy_sum) / <float> np.size(spectrum)
 
 def fft_filter(np.ndarray[np.float64_t, ndim=1] a,
                 double cutoff, double width, bool lowpass):
@@ -1433,4 +1473,6 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     else:
         return []
         
-    
+
+
+

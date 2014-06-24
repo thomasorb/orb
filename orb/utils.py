@@ -38,6 +38,7 @@ import subprocess
 
 from core import Tools
 import cutils
+import globals
 
 import numpy as np
 from scipy import interpolate, signal, ndimage, optimize
@@ -93,10 +94,10 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
         x_max = round(box_coords[0] + (box_coords[2] / 2.) + .5)
         y_min = round(box_coords[1] - (box_coords[3] / 2.) - 1.5) 
         y_max = round(box_coords[1] + (box_coords[3] / 2.) + .5)        
-        if x_range != None:
+        if x_range is not None:
             if x_min < np.min(x_range) : x_min = np.min(x_range)
             if x_max > np.max(x_range) : x_max = np.max(x_range)
-        if y_range != None:
+        if y_range is not None:
             if y_min < np.min(y_range) : y_min = np.min(y_range)
             if y_max > np.max(y_range) : y_max = np.max(y_range)
 
@@ -117,10 +118,10 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
         x_max = round(cir_coords[0] + (cir_coords[2]) + .5)
         y_min = round(cir_coords[1] - (cir_coords[2]) - 1.5)
         y_max = round(cir_coords[1] + (cir_coords[2]) + .5)
-        if x_range != None:
+        if x_range is not None:
             if x_min < np.min(x_range) : x_min = np.min(x_range)
             if x_max > np.max(x_range) : x_max = np.max(x_range)
-        if y_range != None:
+        if y_range is not None:
             if y_min < np.min(y_range) : y_min = np.min(y_range)
             if y_max > np.max(y_range) : y_max = np.max(y_range)
 
@@ -146,10 +147,10 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
             x_max = np.max(poly_x)
             y_min = np.min(poly_y)
             y_max = np.max(poly_y)
-            if x_range != None:
+            if x_range is not None:
                 if x_min < np.min(x_range) : x_min = np.min(x_range)
                 if x_max > np.max(x_range) : x_max = np.max(x_range)
-            if y_range != None:
+            if y_range is not None:
                 if y_min < np.min(y_range) : y_min = np.min(y_range)
                 if y_max > np.max(y_range) : y_max = np.max(y_range)
 
@@ -346,7 +347,7 @@ def correct_bad_frames_vector(bad_frames_vector, dimz):
     :param bad_frames_vector: The vector of indexes to correct
     :param dimz: Dimension of the cube along the 3rd axis.
     """
-    if (bad_frames_vector == None
+    if (bad_frames_vector is None
         or np.size(bad_frames_vector) == 0):
         return bad_frames_vector
     
@@ -369,7 +370,7 @@ def find_zpd(interf, step_number=None,
     :param return_zpd_shift: (Optional) If True return ZPD shift
       instead of ZPD index (default False).
     """
-    if step_number != None:
+    if step_number is not None:
         dimz = step_number
     else:
         dimz = interf.shape[0]
@@ -444,7 +445,7 @@ def robust_mean(a, weights=None, warn=True):
     if not isinstance(a, np.ndarray):
         a = np.array(a)
     
-    if weights == None:
+    if weights is None:
         result = cutils.robust_mean(a)
     else:
         if not isinstance(weights, np.ndarray):
@@ -536,7 +537,7 @@ def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False):
     :param warn: (Optional) If False no warning message is printed
       (default False).
     """
-    if central_value == None:
+    if central_value is None:
         central_value = 0.
         use_central_value = False
     else:
@@ -974,9 +975,9 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
     """Return the position in pixels of the edges of a filter
     corrected for the off-axis effect.
 
-    Note that the axis is assumed to be uncalibrated. Spectra are
-    generally calibrated but phase vectors are not. So this function
-    is best used with phase vectors.
+    Note that the axis is assumed to be in wavenumber. Spectra are
+    generally given in wavelength but phase vectors are not. So this
+    function is best used with phase vectors.
     
     :param filter_file_path: Path to the filter file. If None,
       filter_min and filter_max must be specified.
@@ -998,10 +999,10 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
 
     .. seealso:: :py:meth:`utils.read_filter_file`
     """
-    if filter_file_path != None:
+    if filter_file_path is not None:
         (filter_nm, filter_trans,
          filter_min, filter_max) = read_filter_file(filter_file_path)
-    elif (filter_min ==  None or filter_max == None):
+    elif (filter_min is None or filter_max is None):
         Tools()._print_error("filter_min and filter_max must be specified if filter_file_path is None")
     
     nm_axis_ireg = create_nm_axis_ireg(n, step, order,
@@ -1026,7 +1027,8 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
 
     return filter_min_pix, filter_max_pix
 
-def get_filter_function(filter_file_path, step, order, n):
+def get_filter_function(filter_file_path, step, order, n,
+                        wavenumber=False):
     """Read a filter file and return its function interpolated over
     the desired number of points. Return also the edges position over
     its axis in pixels.
@@ -1038,6 +1040,10 @@ def get_filter_function(filter_file_path, step, order, n):
     :param order: Folding order.
 
     :param n: Number of points of the interpolation axis.
+
+    :param wavenumber: (Optional) If True the function is interpolated
+      and returned along a wavenumber axis. If False it is returned
+      along a wavelength axis (default False).
 
     :returns: (interpolated filter function, min edge, max edge). Min
       and max edges are given in pixels over the interpolation axis.
@@ -1052,17 +1058,20 @@ def get_filter_function(filter_file_path, step, order, n):
      filter_min, filter_max) = read_filter_file(filter_file_path)
 
     # Spectrum wavelength axis creation.
-    spectrum_nm_axis = create_nm_axis(n, step, order)
+    if not wavenumber:
+        spectrum_axis = create_nm_axis(n, step, order)
+    else:
+        spectrum_axis = create_nm_axis_ireg(n, step, order)
 
-    fnm_axis = interpolate.UnivariateSpline(np.arange(n),
-                                            spectrum_nm_axis)
-    fpix_axis = interpolate.UnivariateSpline(spectrum_nm_axis,
+    f_axis = interpolate.UnivariateSpline(np.arange(n),
+                                          spectrum_axis)
+    fpix_axis = interpolate.UnivariateSpline(spectrum_axis,
                                              np.arange(n))
 
     # Interpolation of the filter function
     interpol_f = interpolate.UnivariateSpline(filter_nm, filter_trans, 
                                               k=5, s=0)
-    filter_function = interpol_f(spectrum_nm_axis)
+    filter_function = interpol_f(spectrum_axis)
 
     # Filter function is expressed in percentage. We want it to be
     # between 0 and 1.
@@ -1071,21 +1080,24 @@ def get_filter_function(filter_file_path, step, order, n):
     # If filter edges were not specified in the filter file look
     # for parts with a transmission coefficient higher than
     # 'threshold_coeff' of the maximum transmission
-    if (filter_min == None) or (filter_max == None):
+    if (filter_min is None) or (filter_max is None):
         filter_threshold = ((np.max(filter_function) 
                              - np.min(filter_function)) 
                             * THRESHOLD_COEFF + np.min(filter_function))
         ok_values = np.nonzero(filter_function > filter_threshold)
         filter_min = np.min(ok_values)
         filter_max = np.max(ok_values)
-        Tools()._print_warning("Filter edges (%f -- %f nm) determined automatically using a threshold of %f %% transmission coefficient"%(fnm_axis(filter_min), fnm_axis(filter_max), filter_threshold*100.))
+        Tools()._print_warning("Filter edges (%f -- %f nm) determined automatically using a threshold of %f %% transmission coefficient"%(f_axis(filter_min), f_axis(filter_max), filter_threshold*100.))
     else:
         Tools()._print_msg("Filter edges read from filter file: %f -- %f"%(filter_min, filter_max))
         # filter edges converted to index of the filter vector
         filter_min = int(fpix_axis(filter_min))
         filter_max = int(fpix_axis(filter_max))
 
-    return filter_function, filter_min, filter_max
+    if not wavenumber:
+        return filter_function, filter_min, filter_max
+    else:
+        return filter_function, filter_max, filter_min
 
 def correct_map2d(map2d, bad_value=np.nan):
     """Correct a map of values by interpolation along columns.
@@ -1187,7 +1199,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                         return_fitted_vector=False, fit_tol=1e-3,
                         no_absorption=False, poly_order=0,
                         fmodel='gaussian', sig_noise=None,
-                        interpolation_params=None, signal_range=None):
+                        observation_params=None, signal_range=None,
+                        wavenumber=False):
 
     """Fit multiple gaussian shaped emission lines in a spectrum vector.
 
@@ -1245,13 +1258,20 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
       None noise value is guessed but the gaussian FWHM must not
       exceed half of the sampling interval (default None).
 
-    :param interpolation_params: (Optional) Must be a tuple [step,
+    :param observation_params: (Optional) Must be a tuple [step,
       order]. Interpolate data before fitting when data has been
       previously interpolated from an irregular wavelength axis to a
       regular one.
 
-    :param signal_range: (Optional) a tuple (x_min, x_max) giving the
+    :param signal_range: (Optional) A tuple (x_min, x_max) giving the
       lowest and highest channel numbers containing signal.
+
+    :param wavenumber: (Optional) If True the spectrum is considered
+      to be in wavenumber. It will not be interpolated but the
+      observation params will be used to compute the real line
+      shift. If False, and if the observation params are given the
+      spectrum will be interpolated to a regular wavenumber scale (The
+      shape of the lines becomes symetric) (default False).
 
     :return: a dictionary containing:
     
@@ -1326,53 +1346,53 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         
         return lines_p, cov_p, cont_p
     
-    def model(n, lines_p, cont_p, fmodel, axis):
+    def model(n, lines_p, cont_p, fmodel, pix_axis):
         mod = np.zeros(n, dtype=float)
         # continuum
         mod += np.polyval(cont_p, np.arange(n))
         for iline in range(lines_p.shape[0]):
             if fmodel == 'sinc':
                 mod += sinc1d(
-                    axis, 0., lines_p[iline, 0], lines_p[iline, 1],
+                    pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
                     lines_p[iline, 2])
             elif fmodel == 'sinc2':
                mod += np.sqrt(sinc1d(
-                   axis, 0., lines_p[iline, 0], lines_p[iline, 1],
+                   pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
                    lines_p[iline, 2])**2.)
             else:
                 mod += gaussian1d(
-                    axis, 0., lines_p[iline, 0], lines_p[iline, 1],
+                    pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
                     lines_p[iline, 2])
         
         return mod
 
-    def add_shift(lines_pos, shift, nm_axis_ireg):
-        if nm_axis_ireg is not None:
-            center = int(nm_axis_ireg.shape[0] / 2.)
+    def add_shift(lines_pos, shift, axis):
+        if axis is not None:
+            center = int(axis.shape[0] / 2.)
             # delta_lambda is evaluated at the center of the axis
             # delta_v must be a constant but the corresponding
             # delta_lambda is not: delta_v = delta_lambda / lambda
-            delta_lambda = (pix2nm(nm_axis_ireg, center+shift)
-                            - nm_axis_ireg[center])
-            delta_v = delta_lambda / nm_axis_ireg[center]
+            delta_lambda = (pix2nm(axis, center+shift)
+                            - axis[center])
+            delta_v = delta_lambda / axis[center]
 
-            lines_nm = pix2nm(nm_axis_ireg, lines_pos)
-            lines_pos = nm2pix(nm_axis_ireg, lines_nm + delta_v * lines_nm)
+            lines_nm = pix2nm(axis, lines_pos)
+            lines_pos = nm2pix(axis, lines_nm + delta_v * lines_nm)
         else:
             lines_pos += shift
         return lines_pos
 
     def diff(free_p, fixed_p, lines_p_mask, cov_p_mask,
-             cont_p_mask, data, sig, fmodel, axis, nm_axis_ireg):
+             cont_p_mask, data, sig, fmodel, pix_axis, axis):
         lines_p, cov_p, cont_p = params_vect2arrays(free_p, fixed_p,
                                                     lines_p_mask,
                                                     cov_p_mask, cont_p_mask)
         lines_p[:,2] += cov_p[0] # + FWHM
         
         # + SHIFT
-        lines_p[:,1] = add_shift(lines_p[:,1], cov_p[1], nm_axis_ireg)
+        lines_p[:,1] = add_shift(lines_p[:,1], cov_p[1], axis)
         
-        data_mod = model(np.size(data), lines_p, cont_p, fmodel, axis)
+        data_mod = model(np.size(data), lines_p, cont_p, fmodel, pix_axis)
         return (data - data_mod) / sig
 
     MIN_LINE_SIZE = 5 # Minimum size of a line whatever the guessed
@@ -1398,27 +1418,33 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     # polynomial (N+1 additional parameters)
     lines_p = np.zeros((lines_nb, 3), dtype=float)
 
+    interpolate = False
     # vector interpolation
-    if interpolation_params is not None:
-        step = interpolation_params[0]
-        order = interpolation_params[1]
-        nm_axis_ireg = (create_nm_axis_ireg(
-            x.size, step, order)[::-1])
-        nm_axis = create_nm_axis(x.size, step, order)
-        nm_axis_orig = np.copy(nm_axis)
-        nm_axis_ireg_orig = np.copy(nm_axis_ireg)
+    if observation_params is not None:
+        step = observation_params[0]
+        order = observation_params[1]
+        if not wavenumber:
+            interpolate = True
+            axis = (create_nm_axis_ireg(
+                x.size, step, order)[::-1])
+            nm_axis = create_nm_axis(x.size, step, order)
+            nm_axis_orig = np.copy(nm_axis)
+            axis_orig = np.copy(axis)
 
-        x = interpolate_axis(x, nm_axis_ireg, 5,
-                             old_axis=nm_axis,
-                             fill_value=np.nan)
+            x = interpolate_axis(x, axis, 5,
+                                 old_axis=nm_axis,
+                                 fill_value=np.nan)
 
-        # convert lines position from regular axis to irregular axis
-        lines = nm2pix(nm_axis_ireg, pix2nm(nm_axis, lines))
-        if signal_range is not None:
-            signal_range = nm2pix(nm_axis_ireg, pix2nm(
-                nm_axis, signal_range))
+            # convert lines position from a regular axis to an irregular one
+            lines = nm2pix(axis, pix2nm(nm_axis, lines))
+            if signal_range is not None:
+                signal_range = nm2pix(axis, pix2nm(
+                    nm_axis, signal_range))
+
+        else:
+            axis = create_cm1_axis(x.size, 3852, 11)
     else:
-        nm_axis_ireg = None
+        axis = None
 
     # remove parts out of signal range
     x_size_orig = np.size(x)
@@ -1426,8 +1452,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         signal_range = np.array(signal_range).astype(int)
         if np.min(signal_range) >= 0 and np.max(signal_range < np.size(x)):
             x = x[np.min(signal_range):np.max(signal_range)]
-            if interpolation_params is not None:
-                nm_axis_ireg = nm_axis_ireg[
+            if interpolate:
+                axis = axis[
                     np.min(signal_range):np.max(signal_range)]
                 nm_axis = nm_axis[np.min(signal_range):np.max(signal_range)]
             lines -= np.min(signal_range)
@@ -1435,7 +1461,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
             raise Exception('Signal range must be a tuple (min, max) with min >= 0 and max < {:d}'.format(np.size(x)))
 
     # axis
-    axis = np.arange(x.shape[0])
+    pix_axis = np.arange(x.shape[0])
 
     # check nans
     if np.any(np.isinf(x)) or np.any(np.isnan(x)) or (np.min(x) == np.max(x)):
@@ -1470,8 +1496,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     lines_p[:, 2] = fwhm_guess
         
     # polynomial guess of the continuum
-    if (cont_guess == None) or (np.size(cont_guess) != poly_order + 1):
-        if (cont_guess != None) and np.size(cont_guess) != poly_order + 1:
+    if (cont_guess is None) or (np.size(cont_guess) != poly_order + 1):
+        if (cont_guess is not None) and np.size(cont_guess) != poly_order + 1:
             Tools()._print_warning('Bad continuum guess shape')
         if poly_order > 0:
             w = np.ones_like(noise_vector)
@@ -1491,7 +1517,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         cont_fit = np.polyval(cont_guess, np.arange(noise_vector.shape[0]))
         noise_value = robust_std(noise_vector - cont_fit)
     
-    if sig_noise != None:
+    if sig_noise is not None:
         noise_value = sig_noise
 
     #### PARAMETERS = LINES_PARAMS (N*(3-COV_PARAMS_NB)),
@@ -1525,7 +1551,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     fit = optimize.leastsq(diff, free_p,
                            args=(fixed_p, lines_p_mask,
                                  cov_p_mask, cont_p_mask,
-                                 x, noise_value, fmodel, axis, nm_axis_ireg),
+                                 x, noise_value, fmodel, pix_axis, axis),
                            maxfev=5000, full_output=True,
                            xtol=fit_tol)
 
@@ -1540,7 +1566,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         full_lines_p = np.empty((lines_nb, 4), dtype=float)
         full_lines_p[:,0] = np.polyval(cont_p, lines_p[:,1])
         full_lines_p[:,1:] = lines_p
-        full_lines_p[:,2] = add_shift(full_lines_p[:,2], cov_p[1], nm_axis_ireg)
+        full_lines_p[:,2] = add_shift(full_lines_p[:,2], cov_p[1], axis)
         full_lines_p[:,3] += cov_p[0] # + FWHM_COEFF
         
         # check and correct
@@ -1557,7 +1583,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         fitted_vector.fill(np.nan)
         fitted_vector[np.min(signal_range):
                       np.max(signal_range)] = model(
-            x.shape[0], full_lines_p[:,1:], cont_p, fmodel, axis)
+            x.shape[0], full_lines_p[:,1:], cont_p, fmodel, pix_axis)
         if return_fitted_vector:
             returned_data['fitted-vector'] = fitted_vector
 
@@ -1643,19 +1669,19 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         returned_data['lines-params-err-an'] = fit_errors
         
         # interpolate back parameters
-        if interpolation_params is not None:
+        if interpolate:
             lines_dx = returned_data['lines-params'][:,2]
             
             lines_dx = nm2pix(
-                nm_axis_orig, pix2nm(nm_axis_ireg_orig, lines_dx))
+                nm_axis_orig, pix2nm(axis_orig, lines_dx))
             returned_data['lines-params'][:,2] = lines_dx
 
             if return_fitted_vector:
                 returned_data['fitted-vector'] = interpolate_axis(
                     returned_data['fitted-vector'], nm_axis_orig, 5,
-                    old_axis=nm_axis_ireg_orig, fill_value=np.nan)
-                   
-        return returned_data 
+                    old_axis=axis_orig, fill_value=np.nan)
+                
+        return returned_data
     else:
         return []
 
@@ -1717,19 +1743,19 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
     if frame.dtype != np.dtype(float):
         frame = frame.astype(float)
     
-    if mask != None:
+    if mask is not None:
         mask = mask.astype(float)
     
     frame = ndimage.interpolation.geometric_transform(
         frame, trans, extra_arguments=(d, rc, zoom_factor),
         order=interp_order, mode='constant', cval=fill_value)
 
-    if mask != None:
+    if mask is not None:
         mask = ndimage.interpolation.geometric_transform(
             mask, trans, extra_arguments=(d, rc, zoom_factor),
             order=interp_order, mode='constant', cval=fill_value)
 
-    if mask != None:
+    if mask is not None:
         return (frame[x_min:x_max, y_min:y_max],
                 mask[x_min:x_max, y_min:y_max])
     else:
@@ -1861,7 +1887,7 @@ def raw_fft(x, apod=None, inverse=False):
     # apodization
     if apod in windows:
         x *= norton_beer_window(apod, N)
-    elif apod != None:
+    elif apod is not None:
         Tools()._print_error("Unknown apodization function try %s"%
                              str(windows))
         
@@ -1897,7 +1923,7 @@ def cube_raw_fft(x, apod=None):
     # apodization
     if apod in windows:
         x *= norton_beer_window(apod, N)
-    elif apod != None:
+    elif apod is not None:
         Tools()._print_error("Unknown apodization function try %s"%
                              str(windows))
     # zero padding
@@ -1985,24 +2011,27 @@ def learner95_window(n):
             + 0.144234 * np.cos(2.*math.pi*x)
             + 0.012605 * np.cos(3.*math.pi*x))
 
-def create_nm_axis(n, step, order, nm_max=None):
+def create_nm_axis(n, step, order, nm_max=None, corr=1.):
     """Create a regular wavelength axis in nm.
 
     :param n: Number of steps on the axis
     :param step: Step size in nm
     :param order: Folding order
     :param nm_max: (Optional) Must be given if order is 0 (default None)
+    :param corr: (Optional) Coefficient of correction (default 1.)
     
     .. warning:: If the order is equal to zero, nm_max (the maximum
       wavelength observed) must be specified because in cannot be
       defined using only the the step and order arguments.
     """
-    nm_min = 2. * step / (order + 1.)
+    
+    nm_min = 2. * step / (order + 1.) / corr
     if (order > 0): 
-        nm_max = 2. * step / order
-    elif (nm_max == None):
+        nm_max = 2. * step / order / corr
+    elif (nm_max is None):
         raise Exception("If order is 0, 'nm_max' must be specified")
     return np.linspace(nm_min, nm_max, n)
+        
 
 def create_cm1_axis(n, step, order, corr=1.):
     """Create a regular wavenumber axis in cm-1.
@@ -2027,7 +2056,7 @@ def create_nm_axis_ireg(n, step, order, nm_max=None, corr=1.):
     :param nm_max: (Optional) Must be given if order is 0 (default None)
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    if nm_max == None:
+    if nm_max is None:
         if order > 0:
             cm1_min = float(order) / (2.* step) * corr
         else:
@@ -2046,11 +2075,11 @@ def pix2nm(nm_axis, pix):
      :param nm_axis: Axis in nm
      
      :param pix: Pixel position
-     """
+     """  
      f = interpolate.interp1d(np.arange(nm_axis.shape[0]), nm_axis,
                               bounds_error=False, fill_value=np.nan)
-     
      return f(pix)
+   
 
 def nm2pix(nm_axis, nm):
      """Convert a wavelength in nm to a pixel position given an axis
@@ -2060,24 +2089,45 @@ def nm2pix(nm_axis, nm):
      
      :param nm: Wavelength in nm
      """
-     f = interpolate.interp1d(nm_axis, np.arange(nm_axis.shape[0]),
-                              bounds_error=False, fill_value=np.nan)
-     return f(nm)
+     x = np.arange(nm_axis.shape[0])
+     reversed = False
+     if nm_axis[0] > nm_axis[-1]:
+         nm_axis = np.copy(nm_axis[::-1])
+         x = x[::-1]
+         reversed = True
+     f = interpolate.interp1d(nm_axis, x, bounds_error=False, fill_value=np.nan)
+     if not reversed:
+         return f(nm)
+     else:
+         return f(nm)[::-1]
 
 def nm2cm1(nm):
     """Convert a wavelength in nm to a wavenumber in cm-1.
 
     :param nm: wavelength i nm
     """
-    return 1e7 / np.float(nm)
+    return 1e7 / np.array(nm).astype(float)
 
 def cm12nm(cm1):
     """Convert a wavenumber in cm-1 to a wavelength in nm.
 
     :param cm1: wavenumber in cm-1
     """
-    return 1e7 / np.float(cm1)
+    return 1e7 / np.array(cm1).astype(float)
 
+def pix2cm1(cm1_axis, pix):
+     """Convert a wavenumber in cm-1 to a pixel position given an axis
+     in cm-1.
+
+     :param cm1_axis: Axis in cm-1
+     
+     :param pix: Pixel position
+     """
+     f = interpolate.interp1d(np.arange(cm1_axis.shape[0]), cm1_axis,
+                              bounds_error=False, fill_value=np.nan)
+
+     return f(pix)
+ 
 def cm12pix(cm1_axis, cm1):
      """Convert a wavenumber in cm-1 to a pixel position given an axis
      in cm-1.
@@ -2100,6 +2150,21 @@ def fwhm_nm2cm1(fwhm_nm, nm):
     :param nm: Wavelength in nm where the FWHM is evaluated
     """
     return 1e7 * fwhm_nm / nm**2.
+
+def line_shift(velocity, line, wavenumber=False):
+    """Return the line shift given its velocity in nm or in cm-1.
+
+    :param velocity: Line velocity in km.s-1
+
+    :param line: Wavelength/wavenumber of the line. Must be in cm-1 if
+      wavenumber is True, must be in nm otherwise.
+
+    :param wavenumber: (Optional) If True the result is returned in cm-1,
+      else it is returned in nm.
+    """
+    vel = np.array(line, dtype=float) * velocity / globals.LIGHT_VEL_KMS
+    if wavenumber: return -vel
+    else: return vel
 
 def polyfit1d(a, deg, w=None, return_coeffs=False):
     """Fit a polynomial to a 1D vector.
@@ -2185,7 +2250,7 @@ def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=np.nan):
       this value (default np.nan)
     """
     returned_vector=False
-    if old_axis == None:
+    if old_axis is None:
         old_axis = np.arange(a.shape[0])
     elif old_axis[0] > old_axis[-1]:
         old_axis = old_axis[::-1]
@@ -2258,7 +2323,7 @@ def get_lr_phase(interf, n_phase=None, return_lr_spectrum=False):
                         
     dimz = interf.shape[0]
     # define the number of points for phase computation
-    if n_phase == None:
+    if n_phase is None:
         n_phase = int(LOW_RES_COEFF * float(dimz))
             
     elif n_phase > dimz:
@@ -2303,7 +2368,7 @@ def transform_interferogram(interf, nm_laser,
                             nm_max=None, weights=None, polyfit_deg=1,
                             balanced=True, bad_frames_vector=None,
                             smoothing_deg=2, return_complex=False,
-                            final_step_nb=None, return_ireg_axis=False,
+                            final_step_nb=None, wavenumber=False,
                             low_order_correction=True,
                             conserve_energy=False):
     
@@ -2381,10 +2446,11 @@ def transform_interferogram(interf, nm_laser,
       resulting spectrum. If None, the number of samples of the
       spectrum will be the same as the interferogram (default None).
 
-    :param return_ireg_axis: (Optional) If True, return spectrum along
-      an irregular wavelength axis corresponding to its regular cm-1
-      wavenumber axis (emission lines and especially unapodized sinc
-      emission lines are symetric) (default False).
+    :param wavenumber: (Optional) If True, the returned spectrum is
+      projected onto its original wavenumber axis (emission lines and
+      especially unapodized sinc emission lines are thus symetric
+      which is not the case if the spectrum is projected onto a, more
+      convenient, regular wavelength axis) (default False).
 
     :param low_order_correction: (Optional) If True substract a low
       order polynomial to remove low frequency noise. Useful for
@@ -2400,12 +2466,12 @@ def transform_interferogram(interf, nm_laser,
    
     if return_phase and n_phase == 0:
         raise Exception("Phase cannot be computed with 0 points, return_phase=True and n_phase=0 options are not compatible !")
-    if return_phase and ext_phase != None:
+    if return_phase and ext_phase is not None:
         raise Exception("return_phase=True and ext_phase != None options are not compatible. Set the phase or get it !")
     
     dimz = interf.shape[0]
 
-    if final_step_nb == None:
+    if final_step_nb is None:
         final_step_nb = dimz
 
     
@@ -2432,17 +2498,14 @@ def transform_interferogram(interf, nm_laser,
     # interferogram is not 0
     nonzero_pix = np.nonzero(interf != 0.)
     if len(nonzero_pix[0])>0:
-        interf_mean = np.mean(interf[nonzero_pix])
-        interf[nonzero_pix] -= interf_mean
+        interf[nonzero_pix] -= np.mean(interf[nonzero_pix])
         
     #####
     # 2 - low order polynomial substraction to suppress 
     # low frequency noise
     if low_order_correction:
-        low_order_fit = polyfit1d(interf, 3)
-        for inonzero in nonzero_pix[0]:
-            interf[inonzero] -= low_order_fit[inonzero]
-
+        interf[nonzero_pix] -= polyfit1d(interf, 3)[nonzero_pix]
+    
     #####
     # 3 - ZPD shift to center the spectrum
     if zpd_shift != 0:
@@ -2467,7 +2530,7 @@ def transform_interferogram(interf, nm_laser,
     zeros_vector = np.ones_like(interf)
     zeros_vector[np.nonzero(interf == 0)] = 0
     zeros_vector = zeros_vector.real # in case interf is complex
-    if bad_frames_vector != None:
+    if bad_frames_vector is not None:
         zeros_vector[np.nonzero(bad_frames_vector)] = 0
     if len(np.nonzero(zeros_vector == 0)[0]) > 0:
         # correct only 'bands' of zeros:
@@ -2501,7 +2564,7 @@ def transform_interferogram(interf, nm_laser,
         if polyfit_deg >= 0:
             # polynomial fitting must be weigthed in case of a spectrum
             # without enough continuum.
-            if weights == None or not np.any(weights):
+            if weights is None or not np.any(weights):
                 weights = np.abs(lr_spectrum)
                 # suppress noise on spectrum borders
                 weights *= border_cut_window(lr_spectrum.shape[0])
@@ -2530,7 +2593,7 @@ def transform_interferogram(interf, nm_laser,
 
     #####
     # 6 - Apodization of the real interferogram
-    if window_type != None and window_type != '1.0':
+    if window_type is not None and window_type != '1.0':
         if window_type in ['1.1', '1.2', '1.3', '1.4', '1.5',
                            '1.6', '1.7', '1.8', '1.9', '2.0']:
             window = norton_beer_window(window_type, interf.shape[0])
@@ -2597,14 +2660,14 @@ def transform_interferogram(interf, nm_laser,
     # to the regular one
     
     # regular axis creation (in nm, if step is in nm)
-    if not return_ireg_axis:
+    if not wavenumber:
         final_axis = create_nm_axis(final_step_nb, step, order, nm_max=nm_max)
     else:
         final_axis = create_nm_axis_ireg(final_step_nb, step, order,
                                          nm_max=nm_max, corr=1.)
  
     # spectrum interpolation
-    if not (return_ireg_axis and correction_coeff == 1.):
+    if not (wavenumber and correction_coeff == 1.):
         spectrum = interpolate_axis(spectrum_corr, final_axis, 5,
                                     old_axis=nm_axis_ireg)
     else:
@@ -2764,9 +2827,7 @@ def spectrum_mean_energy(spectrum):
 
     :param spectrum: a 1D spectrum
     """
-    s = np.array(spectrum[np.nonzero(~np.isnan(spectrum))])
-    n = np.size(spectrum)
-    return (1./float(n)) * math.sqrt(np.sum(np.abs(s)**2.))
+    return orb.cutils.spectrum_mean_energy(spectrum)
 
 
 def interf_mean_energy(interf):
@@ -2783,9 +2844,8 @@ def interf_mean_energy(interf):
 
     .. note:: NaNs are set to 0.
     """
-    modulation_interf = interf - robust_mean(interf)
-    modulation_interf[np.nonzero(np.isnan(modulation_interf))] = 0.
-    return math.sqrt(robust_mean(np.abs(modulation_interf)**2.))
+    return orb.cutils.interf_mean_energy(interf)
+    
 
 def variable_me(n, params):
      """Return a sinusoidal function representing a variable

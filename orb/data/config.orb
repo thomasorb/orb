@@ -3,9 +3,12 @@
 # File : config.orb
 
 ## Observatory
-OBSERVATORY_NAME OMM
-TELESCOPE_NAME OMM
-INSTRUMENT_NAME SpIOMM
+OBSERVATORY_NAME OMM # Observatory name
+TELESCOPE_NAME OMM # Telescope name
+INSTRUMENT_NAME SpIOMM # Instrument name
+OBS_LAT 45.455000 # Observatory latitude
+OBS_LON -71.153000 # Observatory longitude
+OBS_ALT 1100. # Observatory altitude
 
 ## Instrumental parameters
 FIELD_OF_VIEW 12.4 # Size of the field of view of the camera 1 in

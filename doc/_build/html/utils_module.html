@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.2.1 documentation</title>
+    <title>Utils module &mdash; Orb 1.2.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.1',
+        VERSION:     '1.2.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.2 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -393,7 +393,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="utils.create_nm_axis">
-<tt class="descclassname">utils.</tt><tt class="descname">create_nm_axis</tt><big>(</big><em>n</em>, <em>step</em>, <em>order</em>, <em>nm_max=None</em><big>)</big><a class="headerlink" href="#utils.create_nm_axis" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">create_nm_axis</tt><big>(</big><em>n</em>, <em>step</em>, <em>order</em>, <em>nm_max=None</em>, <em>corr=1.0</em><big>)</big><a class="headerlink" href="#utils.create_nm_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a regular wavelength axis in nm.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -404,6 +404,7 @@ than 3 frames.</p>
 <li><span class="target" id="utils.create_nm_axis.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.step">¶</a> &#8211; Step size in nm</li>
 <li><span class="target" id="utils.create_nm_axis.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.order">¶</a> &#8211; Folding order</li>
 <li><span class="target" id="utils.create_nm_axis.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.nm_max">¶</a> &#8211; (Optional) Must be given if order is 0 (default None)</li>
+<li><span class="target" id="utils.create_nm_axis.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.corr">¶</a> &#8211; (Optional) Coefficient of correction (default 1.)</li>
 </ul>
 </td>
 </tr>
@@ -507,7 +508,7 @@ instead of ZPD index (default False).</li>
 
 <dl class="function">
 <dt id="utils.fit_lines_in_vector">
-<tt class="descclassname">utils.</tt><tt class="descname">fit_lines_in_vector</tt><big>(</big><em>vector</em>, <em>lines</em>, <em>fwhm_guess=3.5</em>, <em>cont_guess=None</em>, <em>shift_guess=0.0</em>, <em>fix_cont=False</em>, <em>fix_fwhm=False</em>, <em>cov_fwhm=True</em>, <em>cov_pos=True</em>, <em>reguess_positions=False</em>, <em>return_fitted_vector=False</em>, <em>fit_tol=0.001</em>, <em>no_absorption=False</em>, <em>poly_order=0</em>, <em>fmodel='gaussian'</em>, <em>sig_noise=None</em>, <em>interpolation_params=None</em>, <em>signal_range=None</em><big>)</big><a class="headerlink" href="#utils.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">fit_lines_in_vector</tt><big>(</big><em>vector</em>, <em>lines</em>, <em>fwhm_guess=3.5</em>, <em>cont_guess=None</em>, <em>shift_guess=0.0</em>, <em>fix_cont=False</em>, <em>fix_fwhm=False</em>, <em>cov_fwhm=True</em>, <em>cov_pos=True</em>, <em>reguess_positions=False</em>, <em>return_fitted_vector=False</em>, <em>fit_tol=0.001</em>, <em>no_absorption=False</em>, <em>poly_order=0</em>, <em>fmodel='gaussian'</em>, <em>sig_noise=None</em>, <em>observation_params=None</em>, <em>signal_range=None</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit multiple gaussian shaped emission lines in a spectrum vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -552,12 +553,18 @@ continuum. Use high orders carefully (default 0).</li>
 <li><span class="target" id="utils.fit_lines_in_vector.params.sig_noise"></span><strong>sig_noise</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.sig_noise">¶</a> &#8211; (Optional) Noise standard deviation guess. If
 None noise value is guessed but the gaussian FWHM must not
 exceed half of the sampling interval (default None).</li>
-<li><span class="target" id="utils.fit_lines_in_vector.params.interpolation_params"></span><strong>interpolation_params</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.interpolation_params">¶</a> &#8211; (Optional) Must be a tuple [step,
+<li><span class="target" id="utils.fit_lines_in_vector.params.observation_params"></span><strong>observation_params</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.observation_params">¶</a> &#8211; (Optional) Must be a tuple [step,
 order]. Interpolate data before fitting when data has been
 previously interpolated from an irregular wavelength axis to a
 regular one.</li>
-<li><span class="target" id="utils.fit_lines_in_vector.params.signal_range"></span><strong>signal_range</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.signal_range">¶</a> &#8211; (Optional) a tuple (x_min, x_max) giving the
+<li><span class="target" id="utils.fit_lines_in_vector.params.signal_range"></span><strong>signal_range</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.signal_range">¶</a> &#8211; (Optional) A tuple (x_min, x_max) giving the
 lowest and highest channel numbers containing signal.</li>
+<li><span class="target" id="utils.fit_lines_in_vector.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.wavenumber">¶</a> &#8211; (Optional) If True the spectrum is considered
+to be in wavenumber. It will not be interpolated but the
+observation params will be used to compute the real line
+shift. If False, and if the observation params are given the
+spectrum will be interpolated to a regular wavenumber scale (The
+shape of the lines becomes symetric) (default False).</li>
 </ul>
 </td>
 </tr>
@@ -672,9 +679,9 @@ size of the box cannot be guaranteed.</li>
 <tt class="descclassname">utils.</tt><tt class="descname">get_filter_edges_pix</tt><big>(</big><em>filter_file_path</em>, <em>correction_factor</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>filter_min=None</em>, <em>filter_max=None</em><big>)</big><a class="headerlink" href="#utils.get_filter_edges_pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the position in pixels of the edges of a filter
 corrected for the off-axis effect.</p>
-<p>Note that the axis is assumed to be uncalibrated. Spectra are
-generally calibrated but phase vectors are not. So this function
-is best used with phase vectors.</p>
+<p>Note that the axis is assumed to be in wavenumber. Spectra are
+generally given in wavelength but phase vectors are not. So this
+function is best used with phase vectors.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -704,7 +711,7 @@ filter_min and filter_max must be specified.</li>
 
 <dl class="function">
 <dt id="utils.get_filter_function">
-<tt class="descclassname">utils.</tt><tt class="descname">get_filter_function</tt><big>(</big><em>filter_file_path</em>, <em>step</em>, <em>order</em>, <em>n</em><big>)</big><a class="headerlink" href="#utils.get_filter_function" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">get_filter_function</tt><big>(</big><em>filter_file_path</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.get_filter_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a filter file and return its function interpolated over
 the desired number of points. Return also the edges position over
 its axis in pixels.</p>
@@ -717,6 +724,9 @@ its axis in pixels.</p>
 <li><span class="target" id="utils.get_filter_function.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
 <li><span class="target" id="utils.get_filter_function.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.order">¶</a> &#8211; Folding order.</li>
 <li><span class="target" id="utils.get_filter_function.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.n">¶</a> &#8211; Number of points of the interpolation axis.</li>
+<li><span class="target" id="utils.get_filter_function.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.get_filter_function.params.wavenumber">¶</a> &#8211; (Optional) If True the function is interpolated
+and returned along a wavenumber axis. If False it is returned
+along a wavelength axis (default False).</li>
 </ul>
 </td>
 </tr>
@@ -998,6 +1008,27 @@ Blackman-Harris window.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.line_shift">
+<tt class="descclassname">utils.</tt><tt class="descname">line_shift</tt><big>(</big><em>velocity</em>, <em>line</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.line_shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the line shift given its velocity in nm or in cm-1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.line_shift.params.velocity"></span><strong>velocity</strong><a class="paramlink headerlink reference internal" href="#utils.line_shift.params.velocity">¶</a> &#8211; Line velocity in km.s-1</li>
+<li><span class="target" id="utils.line_shift.params.line"></span><strong>line</strong><a class="paramlink headerlink reference internal" href="#utils.line_shift.params.line">¶</a> &#8211; Wavelength/wavenumber of the line. Must be in cm-1 if
+wavenumber is True, must be in nm otherwise.</li>
+<li><span class="target" id="utils.line_shift.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.line_shift.params.wavenumber">¶</a> &#8211; (Optional) If True the result is returned in cm-1,
+else it is returned in nm.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.low_pass_image_filter">
 <tt class="descclassname">utils.</tt><tt class="descname">low_pass_image_filter</tt><big>(</big><em>im</em>, <em>deg</em><big>)</big><a class="headerlink" href="#utils.low_pass_image_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a low pass filtered image using a gaussian kernel.</p>
@@ -1201,6 +1232,25 @@ Optical Society of America A.</td></tr>
 <dt id="utils.phase">
 <tt class="descclassname">utils.</tt><tt class="descname">phase</tt><big>(</big><em>a</em><big>)</big><a class="headerlink" href="#utils.phase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the phase of a complex number</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.pix2cm1">
+<tt class="descclassname">utils.</tt><tt class="descname">pix2cm1</tt><big>(</big><em>cm1_axis</em>, <em>pix</em><big>)</big><a class="headerlink" href="#utils.pix2cm1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a wavenumber in cm-1 to a pixel position given an axis
+in cm-1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.pix2cm1.params.cm1_axis"></span><strong>cm1_axis</strong><a class="paramlink headerlink reference internal" href="#utils.pix2cm1.params.cm1_axis">¶</a> &#8211; Axis in cm-1</li>
+<li><span class="target" id="utils.pix2cm1.params.pix"></span><strong>pix</strong><a class="paramlink headerlink reference internal" href="#utils.pix2cm1.params.pix">¶</a> &#8211; Pixel position</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -1599,7 +1649,7 @@ transformed (default None).</li>
 
 <dl class="function">
 <dt id="utils.transform_interferogram">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>return_ireg_axis=False</em>, <em>low_order_correction=True</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=True</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1660,10 +1710,11 @@ the real part is returned (default False)</li>
 <li><span class="target" id="utils.transform_interferogram.params.final_step_nb"></span><strong>final_step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.final_step_nb">¶</a> &#8211; (Optional) Number of samples of the
 resulting spectrum. If None, the number of samples of the
 spectrum will be the same as the interferogram (default None).</li>
-<li><span class="target" id="utils.transform_interferogram.params.return_ireg_axis"></span><strong>return_ireg_axis</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.return_ireg_axis">¶</a> &#8211; (Optional) If True, return spectrum along
-an irregular wavelength axis corresponding to its regular cm-1
-wavenumber axis (emission lines and especially unapodized sinc
-emission lines are symetric) (default False).</li>
+<li><span class="target" id="utils.transform_interferogram.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.wavenumber">¶</a> &#8211; (Optional) If True, the returned spectrum is
+projected onto its original wavenumber axis (emission lines and
+especially unapodized sinc emission lines are thus symetric
+which is not the case if the spectrum is projected onto a, more
+convenient, regular wavelength axis) (default False).</li>
 <li><span class="target" id="utils.transform_interferogram.params.low_order_correction"></span><strong>low_order_correction</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.low_order_correction">¶</a> &#8211; (Optional) If True substract a low
 order polynomial to remove low frequency noise. Useful for
 unperfectly corrected interferograms (default True).</li>
@@ -1798,7 +1849,7 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

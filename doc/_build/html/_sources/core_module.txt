@@ -9,6 +9,7 @@ Tools class
 .. autoclass:: core.Tools
    :members:
    :private-members:
+   :special-members:
    :show-inheritance:
 
 Cube class
@@ -17,6 +18,7 @@ Cube class
 .. autoclass:: core.Cube
    :members:
    :private-members:
+   :special-members:
    :show-inheritance:
 
 TextColor class
@@ -33,6 +35,7 @@ ProgressBar class
 .. autoclass:: core.ProgressBar
    :members:
    :private-members:
+   :special-members:
    :show-inheritance:
 
 MemFile class
@@ -41,6 +44,7 @@ MemFile class
 .. autoclass:: core.MemFile
    :members:
    :private-members:
+   :special-members:
    :show-inheritance:
 
 Indexer class
@@ -49,4 +53,32 @@ Indexer class
 .. autoclass:: core.Indexer
    :members:
    :private-members:
+   :special-members:
+   :show-inheritance:
+
+Lines class
+-----------
+
+.. autoclass:: core.Lines
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+OptionFile class
+----------------
+
+.. autoclass:: core.OptionFile
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+ParamsFile class
+----------------
+
+.. autoclass:: core.ParamsFile
+   :members:
+   :private-members:
+   :special-members:
    :show-inheritance:

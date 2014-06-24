@@ -1,0 +1,58 @@
+#!/usr/bin/python
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File: combine
+
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+#############################################
+############ COMBINE script ##################
+#############################################
+
+# This script helps the user to combine a set of frames. A
+# list of frames path must be given. List files created by ORBS can be
+# used. Custom lists can be created using the command:
+# 'ls /path/to/file/*.fits > list'
+
+import os, sys
+from orb.core import Cube
+
+def usage(): 
+    print """usage: combine LIST_OF_FITS IMAGE_NAME
+    
+    Combine a set of frames in one frame.
+    
+    Frames must have the same shape."""
+  
+    sys.exit(2)
+
+def main():
+
+    if len(sys.argv) < 3: usage()
+
+    list_of_fits_path = sys.argv[1]
+    im_name = sys.argv[2]
+    if os.path.exists(list_of_fits_path):
+        cube = Cube(list_of_fits_path, no_log=True)
+        im = cube.get_mean_image()
+        cube.write_fits(im_name, im)
+    else:
+        print "The list file does not exist"
+       
+if __name__ == "__main__":
+    main()

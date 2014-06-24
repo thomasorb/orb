@@ -136,7 +136,7 @@ class MemFile:
 
 class Tools(object):
     """
-    Parent class of all classes of orbs and process modules.
+    Parent class of all classes of orb.
 
     Implement basic methods to read and write FITS data, display
     messages, feed a logfile and manage the server for parallel
@@ -166,8 +166,7 @@ class Tools(object):
     _tuning_parameters = dict() # Dictionay containing the full names of the
                                 # parameter and their new value.
 
-    _silent = False # If True only warnings and error message will be
-                    # printed
+    _silent = False # If True only error messages will be diplayed on screen
 
     def __init__(self, data_prefix="temp_data", no_log=False,
                  tuning_parameters=dict(), logfile_name=None,
@@ -191,10 +190,10 @@ class Tools(object):
           :py:meth:`core.Tools._get_tuning_parameter`.
 
         :param config_file_name: (Optional) name of the config file to
-          use. Must be located in orbs/data/.
+          use. Must be located in orb/data/.
 
-        :param silent: If True only warnings and error messages will be
-          printed (default False).
+        :param silent: If True only error messages will be diplayed on
+          screen (default False).
         """
         self.config_file_name = config_file_name
         self._init_logfile_name(logfile_name)
@@ -243,7 +242,7 @@ class Tools(object):
         """Return the full path to the configuration file given its name. 
 
         The configuration file must exist and it must be located in
-        orbs/data/.
+        orb/data/.
 
         :param config_file_name: Name of the configuration file.
         """
@@ -259,7 +258,7 @@ class Tools(object):
         the filter.
 
         The filter file name must be filter_FILTER_NAME and it must be
-        located in orbs/data/.
+        located in orb/data/.
 
         :param filter_name: Name of the filter.
         """
@@ -340,7 +339,7 @@ class Tools(object):
         
     def _get_config_parameter(self, param_key, optional=False):
         """Return a parameter written in a config file located in
-          orbs/data/
+          orb/data/
 
         :param param_key: Key of the parameter to be read
 
@@ -354,7 +353,7 @@ class Tools(object):
           parameter (in one word - no empty space). The following
           words on the same line are not read. A line not starting by
           a parameter key is considered as a comment. Please refer to
-          the configuration file in orbs/data/ folder::
+          the configuration file in orb/data/ folder::
           
              ## ORB configuration file 
              # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
@@ -423,7 +422,8 @@ class Tools(object):
             self._print_caller_traceback()
             
         warning_msg = self._get_date_str() + self._msg_class_hdr + sys._getframe(1).f_code.co_name + " > Warning: " + message
-        print "\r" + TextColor.WARNING + warning_msg + TextColor.END
+        if not self._silent:
+            print "\r" + TextColor.WARNING + warning_msg + TextColor.END
         if not self._no_log:
             self.open_file(self._logfile_name, "a").write(warning_msg + "\n")
 
@@ -593,7 +593,8 @@ class Tools(object):
                     'Apodization function'))
         return hdr
 
-    def _get_basic_spectrum_frame_header(self, frame_index, nm_axis):
+    def _get_basic_spectrum_frame_header(self, frame_index, axis,
+                                         wavenumber=False):
         """
         Return a specific part of a header that can be used for
         independant frames of a spectral cube. It gives the wavelength
@@ -606,25 +607,38 @@ class Tools(object):
         and :meth:`core.Tools._get_frame_header`
         
         :param frame_index: Index of the frame.
-        :param nm_axis: Wavelength axis in nanometers. Each point of
-          this axis must correspond to the wavelength of each
-          frame. The axis must thus have the same length as the number
-          of frames in the cube.
-          
+        
+        :param axis: Spectrum axis. The axis must have the same length
+          as the number of frames in the cube. Must be an axis in
+          wavenumber (cm1) or in wavelength (nm).
+
+        :param wavenumber: (Optional) If True the axis is considered
+          to be in wavenumber (cm1). If False it is considered to be
+          in wavelength (nm) (default False).
         """
         hdr = list()
+        if not wavenumber:
+            wave_type = 'wavelength'
+            wave_unit = 'nm'
+        else:
+            wave_type = 'wavenumber'
+            wave_unit = 'cm-1'
+
         hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','Wavelength position',''))
-        hdr.append(('COMMENT','-------------------',''))
+        hdr.append(('COMMENT','Frame {}'.format(wave_type),''))
+        hdr.append(('COMMENT','----------------',''))
         hdr.append(('COMMENT','',''))
         hdr.append(('FRAMENB', frame_index, 'Frame number'))
-        hdr.append(('WAVEMIN', nm_axis[frame_index], 
-                    'Minimum wavelength in the frame in nm'))
-        hdr.append(('WAVEMAX', nm_axis[frame_index] + nm_axis[1] - nm_axis[0], 
-                    'Maximum wavelength in the frame in nm'))
+        
+        hdr.append(('WAVEMIN', axis[frame_index], 
+                    'Minimum {} in the frame in {}'.format(wave_type,
+                                                           wave_unit)))
+        hdr.append(('WAVEMAX', axis[frame_index] + axis[1] - axis[0], 
+                    'Maximum {} in the frame in {}'.format(wave_type,
+                                                           wave_unit)))
         return hdr
 
-    def _get_basic_spectrum_cube_header(self, nm_axis):
+    def _get_basic_spectrum_cube_header(self, nm_axis, wavenumber=False):
         """
         Return a specific part of a header that can be used for
         a spectral cube. It creates the wavelength axis of the cube.
@@ -635,23 +649,36 @@ class Tools(object):
         basic header returned by :meth:`core.Tools._get_basic_header`
         and :meth:`core.Tools._get_frame_header`
 
-        :param nm_axis: Wavelength axis in nanometers. Each point of
-          this axis must correspond to the wavelength of each
-          frame. The axis must thus have the same length as the number
-          of frames in the cube.
+        :param axis: Spectrum axis. The axis must have the same length
+          as the number of frames in the cube. Must be an axis in
+          wavenumber (cm1) or in wavelength (nm)
+          
+        :param wavenumber: (Optional) If True the axis is considered
+          to be in wavenumber (cm1). If False it is considered to be
+          in wavelength (nm) (default False).
         """
         hdr = list()
+        if not wavenumber:
+            wave_type = 'wavelength'
+            wave_unit = 'nm'
+        else:
+            wave_type = 'wavenumber'
+            wave_unit = 'cm-1'
         hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','Wavelength axis',''))
-        hdr.append(('COMMENT','---------------',''))
+        hdr.append(('COMMENT','Spectrum axis',''))
+        hdr.append(('COMMENT','-------------',''))
         hdr.append(('COMMENT','',''))
-        hdr.append(('CTYPE3', 'WAVE', 'Wavelength in nm'))
-        hdr.append(('CRVAL3', nm_axis[0], 'Minimum wavelength in nm'))
-        hdr.append(('CUNIT3', 'nm', ''))
+        hdr.append(('WAVTYPE', '{}'.format(wave_type.upper()),
+                    'Spectral axis type: wavenumber or wavelength'))
+        hdr.append(('CTYPE3', 'WAVE', '{} in {}'.format(wave_type,
+                                                        wave_unit)))
+        hdr.append(('CRVAL3', nm_axis[0], 'Minimum {} in {}'.format(wave_type,
+                                                                    wave_unit)))
+        hdr.append(('CUNIT3', '{}'.format(wave_unit), ''))
         hdr.append(('CRPIX3', 1.000000, 'Pixel coordinate of reference point'))
         hdr.append(('CDELT3', 
                     ((nm_axis[-1] - nm_axis[0]) / (len(nm_axis) - 1)), 
-                    'nm per pixel'))
+                    '{} per pixel'.format(wave_unit)))
         hdr.append(('CROTA3', 0.000000, ''))
         return hdr
 
@@ -733,6 +760,53 @@ class Tools(object):
             return self._tuning_parameters[full_parameter_name]
         else:
             return default_value
+
+    def _create_list_from_dir(self, dir_path, list_file_path):
+        """Create a file containing the list of all FITS files at
+        a specified directory and returns the path to the list 
+        file.
+
+        :param dir_path: Directory containing the FITS files
+        :param list_file_path: Path to the list file to be created
+        :returns: Path to the created list file
+        """
+        if dir_path[-1] != os.sep:
+            dir_path += os.sep
+        dir_path = os.path.dirname(str(dir_path))
+        if os.path.exists(dir_path):
+            list_file = self.open_file(list_file_path)
+            file_list = os.listdir(dir_path)
+            file_list.sort()
+            first_file = True
+            file_nb = 0
+            self._print_msg('Cheking {}'.format(dir_path))
+            for filename in file_list:
+                if (os.path.splitext(filename)[1] == ".fits"
+                    and '_bias.fits' not in filename):
+                    file_path = os.path.join(dir_path, filename)
+                    if os.path.exists(file_path):
+                        fits_hdu = self.read_fits(file_path,
+                                                  return_hdu_only=True)
+                        dims = fits_hdu[0].header['NAXIS']
+                        if first_file:
+                            dimx = fits_hdu[0].header['NAXIS1']
+                            dimy = fits_hdu[0].header['NAXIS2']
+                            first_file = False
+                        if (dims == 2
+                            and fits_hdu[0].header['NAXIS1'] == dimx
+                            and fits_hdu[0].header['NAXIS2'] == dimy):
+                            list_file.write(str(file_path)  + "\n")
+                            file_nb += 1
+                        else:
+                            self._print_error("All FITS files in the directory %s do not have the same shape. Please remove bad files."%str(dir_path))
+                    else:
+                        self._print_error(str(file_path) + " does not exists !")
+            if file_nb > 0:
+                return list_file_path
+            else:
+                self._print_error('No FITS file in the folder: %s'%dir_path)
+        else:
+            self._print_error(str(dir_path) + " does not exists !")
         
     
     def write_fits(self, fits_name, fits_data, fits_header=None,
@@ -876,7 +950,7 @@ class Tools(object):
                 # add some basic keywords in the header
                 date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
                 hdu.header.set('DATE', date, 'Creation date', after=6)
-                hdu.header.set('PROGRAM', "ORBS v%s"%__version__, 
+                hdu.header.set('PROGRAM', "ORB v%s"%__version__, 
                                'Thomas Martin: thomas.martin.1@ulaval.ca',
                                after=6)
                 hdu.header.set('MASK', 'False', '', after=6)
@@ -1020,7 +1094,7 @@ class Cube(Tools):
         user don't want to use or process any data.
    
     :param config_file_name: (Optional) name of the config file to
-        use. Must be located in orbs/data/
+        use. Must be located in orb/data/
 
     :param data_prefix: (Optional) Prefix used to determine the header
         of the name of each created file (default 'temp_data')
@@ -1075,7 +1149,7 @@ class Cube(Tools):
           when the user don't want to use or process any data.
 
         :param config_file_name: (Optional) name of the config file to
-          use. Must be located in orbs/data/ (default 'config.orb').
+          use. Must be located in orb/data/ (default 'config.orb').
 
         :param data_prefix: (Optional) Prefix used to determine the
           header of the name of each created file (default
@@ -2251,19 +2325,43 @@ class Lines(Tools):
 #################################################
         
 class OptionFile(Tools):
-    """Manage the option file"""
+    """Manage an option file.
 
+    An option file is a file containing keywords and values and
+    optionally some comments indicated by '#', e.g.::
+    
+      ## ORBS configuration file 
+      # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+      # File : config.orb
+      ## Observatory
+      OBSERVATORY_NAME OMM # Observatory name
+      TELESCOPE_NAME OMM # Telescope name
+      INSTRUMENT_NAME SpIOMM # Instrument name
+      OBS_LAT 45.455000 # Observatory latitude
+      OBS_LON -71.153000 # Observatory longitude
 
-    option_file = None
-    options = None
-    lines = None
+    .. note:: The special keyword **INCLUDE** can be used to give the
+      path to another option file that must be included. Note that
+      existing keywords will be overriden so the INCLUDE keyword is
+      best placed at the very beginning of the option file.
+
+    .. note:: Repeated keywords override themselves. Only the
+      protected keywords ('REG', 'TUNE') are all kept.
+    """
+
+    option_file = None # the option file object
+    options = None # the core list containing the parsed file
+    lines = None # a core.Lines instance
+
+    protected_keys = ['REG', 'TUNE'] # special keywords that can be
+                                     # used mulitple times without
+                                     # being overriden.
     
     def __init__(self, option_file_path):
         """Initialize class
 
         :param option_file_path: Path to the option file
         """
-        
         self.option_file = self.open_file(option_file_path, 'r')
         self.options = dict()
         self.lines = Lines()
@@ -2273,33 +2371,71 @@ class OptionFile(Tools):
                     if '#' in line:
                         line = line[:line.find('#')]
                     line = line.split()
-                    if len(line) > 2:
-                        self.options[line[0]] = line[1:]
-                    elif len(line) > 1:
-                        self.options[line[0]] = line[1]
+                    if not np.size(line) == 0:
+                        key = line[0]
 
+                        # manage INCLUDE keyword
+                        if key == 'INCLUDE':
+                            included_optfile = self.__class__(line[1])
+                            self.options = dict(
+                                self.options.items()
+                                + included_optfile.options.items())
+
+                        # manage protected keys
+                        final_key = str(key)
+                        if final_key in self.protected_keys:
+                            index = 2
+                            while final_key in self.options:
+                                final_key = key + str(index)
+                                index += 1
+
+                        if len(line) > 2:
+                            self.options[final_key] = line[1:]
+                        elif len(line) > 1:
+                            self.options[final_key] = line[1]
+                        
+        self.option_file.close()
+        
                         
     def __getitem__(self, key):
+        """Implement the evaluation of self[key]."""
         if key in self.options:
             return self.options[key]
         else: return None
         
     def iteritems(self):
+        """Implement iteritems function often used with iterable objects"""
         return self.options.iteritems()
 
     def get(self, key, cast=str):
-        param = self.__getitem__(key)
-        if param != None:
-            return cast(param)
+        """Return the value associated to a keyword.
+        
+        :param key: keyword
+        
+        :param cast: (Optional) Cast function for the returned value
+          (default str).
+        """
+        param = self[key]
+        if param is not None:
+            if cast is not bool:
+                return cast(param)
+            else:
+                return bool(int(param))
         else:
             return None
 
     def get_regions_parameters(self):
-        """Get regions parameters"""
+        """Get regions parameters.
+
+        Defined for the special keyword 'REG'.
+        """
         return {k:v for k,v in self.iteritems() if k.startswith('REG')}
 
     def get_lines(self):
-        """Get lines parameters"""
+        """Get lines parameters.
+
+        Defined for the special keyword 'LINES'.
+        """
         lines_names = self['LINES']
         lines_nm = list()
         if len(lines_names) > 2:
@@ -2315,18 +2451,69 @@ class OptionFile(Tools):
         return lines_nm
             
     def get_filter_edges(self):
-        """Get filter eges parameters"""
+        """Get filter eges parameters.
+
+        Defined for the special keyword 'FILTER_EDGES'.
+        """
         filter_edges = self['FILTER_EDGES']
         if filter_edges != None:
             filter_edges = filter_edges.split(',')
             if len(filter_edges) == 2:
                 return np.array(filter_edges).astype(float)
             else:
-                self._print_error('Bad filter edges definition: check option file')
+                self._print_error(
+                    'Bad filter edges definition: check option file')
         else:
             return None
 
+    def get_fringes(self):
+        """Get fringes
 
+        Defined for the special keyword 'FRINGES'.
+        """
+        fringes = self['FRINGES']
+        if fringes is not None:
+            fringes = fringes.split(':')
+            try:
+                return np.array(
+                    [ifringe.split(',') for ifringe in fringes],
+                    dtype=float)
+            except ValueError:
+                self._print_error("Fringes badly defined. Use no whitespace, each fringe must be separated by a ':'. Fringes parameters must be given in the order [frequency, amplitude] separated by a ',' (e.g. 150.0,0.04:167.45,0.095 gives 2 fringes of parameters [150.0, 0.04] and [167.45, 0.095]).")
+        return None
+
+    def get_bad_frames(self):
+        """Get bad frames.
+
+        Defined for the special keyword 'BAD_FRAMES'.
+        """
+        if self['BAD_FRAMES'] is not None:
+            bad_frames = self['BAD_FRAMES'].split(",")
+        else: return None
+        
+        bad_frames_list = list()
+        try:
+            for ibad in bad_frames:
+                print ibad
+                if (ibad.find(":") > 0):
+                    min_bad = int(ibad.split(":")[0])
+                    max_bad = int(ibad.split(":")[1])+1
+                    for i in range(min_bad, max_bad):
+                        bad_frames_list.append(i)
+                else:
+                    bad_frames_list.append(int(ibad))   
+            return np.array(bad_frames_list)
+        except ValueError:
+            self._print_error("Bad frames badly defined. Use no whitespace, bad frames must be comma separated. the sign ':' can be used to define a range of bad frames, commas and ':' can be mixed. Frame index must be integer.")
+
+    def get_tuning_parameters(self):
+        """Return the list of tuning parameters.
+
+        Defined for the special keyword 'TUNE'.
+        """
+        return {v[0]:v[1] for k,v in self.iteritems() if k.startswith('TUNE')}
+        
+                   
 #################################################
 #### CLASS ParamsFile ###########################
 #################################################

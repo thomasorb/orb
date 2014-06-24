@@ -5,8 +5,12 @@ Changelog
 v1.0 Creation of ORB
 ********************
 
-Architecture change of ORBS. All the shared content originally in the
-ORBS module have been moved to ORB.
+Major modification of ORBS architecture. All the shared content
+originally in the ORBS module have been moved to ORB. This way, ORBS,
+ORCS, OACS, IRIS and ORUS can share the same core module without
+importing ORBS entirely each time. Conceptually ORBS, like the other
+softwares, just wraps around ORB module and is not any more the
+central part of the whole suite of softwares.
 
 v1.1
 ****
@@ -55,9 +59,42 @@ v1.2.1
     
 * new keywords in config.orb: FIELD_OF_VIEW_2, EXT_ILLUMINATION
     
-* new keyword in the option file: TRYCAT to use a USNO-B1 catalogue
-  for star detection
-    
 * doc updated
     
 * bug fix
+
+v1.2.2
+******
+
+* :py:meth:`~cutils.spectrum_mean_energy` and
+  :py:meth:`~cutils.interf_mean_energy` Cythonised.
+
+* :py:class:`~core.OptionFile` enhanced to be used by
+  :py:meth:`orbs.Orbs.__init__`.
+
+ORCS integration
+----------------
+
+* new keywords in config.orb: OBS_LAT, OBS_LON, OBS_ALT for ORCS.
+
+* new general keyword in OptionFile: INCLUDE, used to include the
+  parameters of another option file.
+
+* Warning messages are not displayed anymore when using the silent
+  option with :py:class:`~core.Tools`
+
+* move :py:meth:`orbs.Orbs._create_list_from_dir` to
+  :py:meth:`~core.Tools._create_list_from_dir` to make this useful
+  method accessible to ORCS.
+
+* doc updated
+
+
+ORB's scripts
+-------------
+
+* move ORB's scripts (dstack, combine, rollxz, rollyz, reduce) from
+  orbs/scripts to orb/scripts so that only ORBS specific scripts are
+  in orbs/scripts.
+
+* create **unstack** script to unstack a cube into a set of frames
