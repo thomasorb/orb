@@ -23,15 +23,16 @@
 
 import math, os
 """
-Some global constants
+This file contains only some useful constants
 """
 
 
-global FWHM_COEFF # Coefficient to convert the width of a gaussian function
-            # to its FWHM (line_fwhm = line_width * FWHM)
+# Coefficient to convert the width of a gaussian function to its FWHM
+# (line_fwhm = line_width * FWHM)
 FWHM_COEFF = abs(2.*math.sqrt(2. * math.log(2.)))
 
-
-global LIGHT_VEL_KMS # Velocity of the light in the vacuum
-                     # in km.s-1
+# Velocity of the light in the vacuum in km.s-1
 LIGHT_VEL_KMS = 299792.458 
+
+# Max length of a FITS string card
+FITS_CARD_MAX_STR_LENGTH = 18

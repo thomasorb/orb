@@ -38,7 +38,7 @@ import subprocess
 
 from core import Tools
 import cutils
-import globals
+import constants
 
 import numpy as np
 from scipy import interpolate, signal, ndimage, optimize
@@ -72,7 +72,7 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
     """
     x_list = list()
     y_list = list()
-    
+
     if len(reg_line) <= 3:
         Tools._print_warning('Bad region line')
         return None
@@ -242,6 +242,19 @@ def compute_obs_params(nm_min_filter, nm_max_filter,
     nm_max = get_nm_max(step, order, cos_max)
     
     return order, step, nm_max
+
+def flambda2ABmag(flambda, lam):
+    """Return AB magnitude from flux in erg/cm2/s/A
+
+    :param flambda: Flux in erg/cm2/s/A. Can be an array.
+
+    :param lambda: Wavelength in A of the Flux. If flambda is an array
+      lambda must have the same shape.
+    """
+    c = 2.99792458e18 # Ang/s
+    fnu = lam**2./c*flambda
+    ABmag = -2.5 * np.log10(fnu) - 48.60
+    return ABmag
 
 def ABmag2fnu(ABmag):
     """Return flux in erg/cm2/s/Hz from AB magnitude (Oke, ApJS, 27,
@@ -1232,7 +1245,12 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
       positions of the lines (the lines parameter) are considered to
       be exact and only need to be shifted. Positions are thus
       covarying. Very useful but the initial estimation of the line
-      relative positions must be very precise (default False).
+      relative positions must be very precise. This parameter can also
+      be a tuple of the same length as the number of lines to
+      distinguish the covarying lines. Covarying lines must share the
+      same number. e.g. on 4 lines, [NII]6548, Halpha, [NII]6584,
+      [SII]6717, [SII]6731, if each ion has a different velocity
+      cov_pos can be : [0,1,0,2,2]. (default False).
 
     :param reguess_positions: (Optional) If True, positions are
       guessed again. Useful if the given estimations really are rough
@@ -1383,17 +1401,23 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         return lines_pos
 
     def diff(free_p, fixed_p, lines_p_mask, cov_p_mask,
-             cont_p_mask, data, sig, fmodel, pix_axis, axis):
+             cont_p_mask, data, sig, fmodel, pix_axis, axis,
+             cov_pos_mask_list):
         lines_p, cov_p, cont_p = params_vect2arrays(free_p, fixed_p,
                                                     lines_p_mask,
                                                     cov_p_mask, cont_p_mask)
         lines_p[:,2] += cov_p[0] # + FWHM
-        
         # + SHIFT
-        lines_p[:,1] = add_shift(lines_p[:,1], cov_p[1], axis)
+        for i in range(len(cov_pos_mask_list)):
+            ilines = np.arange(lines_p.shape[0])[
+                np.nonzero(cov_pos_mask_list[i])]
+            lines_p[ilines,1] = add_shift(lines_p[ilines,1], cov_p[1+i], axis)
         
         data_mod = model(np.size(data), lines_p, cont_p, fmodel, pix_axis)
+
         return (data - data_mod) / sig
+
+    MAXFEV = 5000 # Maximum number of evaluation
 
     MIN_LINE_SIZE = 5 # Minimum size of a line whatever the guessed
                       # fwhm can be.
@@ -1414,7 +1438,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     lines_nb = np.size(lines)
     line_size = int(max(math.ceil(fwhm_guess * 3.5), MIN_LINE_SIZE))
     
-    # only 3 params max for each line, cont is defined as a N order
+    # only 3 params max for each line, cont is defined as an N order
     # polynomial (N+1 additional parameters)
     lines_p = np.zeros((lines_nb, 3), dtype=float)
 
@@ -1442,11 +1466,11 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                     nm_axis, signal_range))
 
         else:
-            axis = create_cm1_axis(x.size, 3852, 11)
+            axis = create_cm1_axis(x.size, step, order)
     else:
         axis = None
 
-    # remove parts out of signal range
+    # remove parts out of the signal range
     x_size_orig = np.size(x)
     if signal_range is not None:
         signal_range = np.array(signal_range).astype(int)
@@ -1483,8 +1507,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         # position
         if reguess_positions:
             lines_p[iline, 1] = (np.sum(line_box
-                                             * np.arange(line_box.shape[0]))
-                                      / np.sum(line_box)) + iz_min
+                                        * np.arange(line_box.shape[0]))
+                                 / np.sum(line_box)) + iz_min
         
         # remove line from noise vector
         noise_vector[iz_min:iz_max] = np.nan
@@ -1524,18 +1548,32 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     ####              COV_PARAMS (FWHM_COEFF, SHIFT),
     ####              CONTINUUM COEFFS
 
+    if np.size(cov_pos) > 1:
+        if np.size(cov_pos) != lines_nb:
+            Tools()._print_error('If cov_pos is not True or False it must be a tuple of the same length as the lines number')
+        cov_pos_list = list()
+        cov_pos_mask_list = list()
+        for i in cov_pos:
+            if i not in cov_pos_list:
+                cov_pos_list.append(i)
+                cov_pos_mask_list.append(np.array(cov_pos) == i)
+    else:
+        cov_pos_list = [0]
+        cov_pos_mask_list = [np.ones(lines_nb, dtype=bool)]
+
     # define cov params
-    cov_p = np.empty(2, dtype=float)
+    cov_p = np.empty(1 + np.size(cov_pos_list), dtype=float)
     cov_p[0] = 0. # COV FWHM COEFF
-    cov_p[1] = shift_guess # COV SHIFT
-    cov_p_mask = np.zeros(2, dtype=bool)
+    for i in range(len(cov_pos_list)):
+        cov_p[1+i] = shift_guess # COV SHIFT
+    cov_p_mask = np.zeros_like(cov_p, dtype=bool)
     if cov_fwhm and not fix_fwhm: cov_p_mask[0] = True
-    if cov_pos: cov_p_mask[1] = True
+    if cov_pos != False: cov_p_mask[1:] = True
         
     # define lines params mask
     lines_p_mask = np.ones_like(lines_p, dtype=bool)
     if fix_fwhm or cov_fwhm: lines_p_mask[:,2] = False
-    if cov_pos: lines_p_mask[:,1] = False
+    if cov_pos != False: lines_p_mask[:,1] = False
     
     # define continuum params
     cont_p = np.array(cont_guess)
@@ -1546,27 +1584,34 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         lines_p, lines_p_mask,
         cov_p, cov_p_mask,
         cont_p, cont_p_mask)
-    
+
     ### FIT ###
     fit = optimize.leastsq(diff, free_p,
                            args=(fixed_p, lines_p_mask,
                                  cov_p_mask, cont_p_mask,
-                                 x, noise_value, fmodel, pix_axis, axis),
-                           maxfev=5000, full_output=True,
+                                 x, noise_value, fmodel, pix_axis, axis,
+                                 cov_pos_mask_list),
+                           maxfev=MAXFEV, full_output=True,
                            xtol=fit_tol)
 
     ### CHECK FIT RESULTS ###
     if fit[-1] <= 4:
+        if fit[2]['nfev'] >= MAXFEV: return [] # reject evaluation bounded fit
         returned_data = dict()
         last_diff = fit[2]['fvec']
         lines_p, cov_p, cont_p = params_vect2arrays(
             fit[0], fixed_p, lines_p_mask, cov_p_mask, cont_p_mask)
-
+        
         # add cov to lines params
         full_lines_p = np.empty((lines_nb, 4), dtype=float)
         full_lines_p[:,0] = np.polyval(cont_p, lines_p[:,1])
         full_lines_p[:,1:] = lines_p
-        full_lines_p[:,2] = add_shift(full_lines_p[:,2], cov_p[1], axis)
+
+        for i in range(len(cov_pos_mask_list)):
+            ilines = np.arange(lines_p.shape[0])[
+                np.nonzero(cov_pos_mask_list[i])]
+            full_lines_p[ilines,2] = add_shift(full_lines_p[ilines,2],
+                                               cov_p[1+i], axis)
         full_lines_p[:,3] += cov_p[0] # + FWHM_COEFF
         
         # check and correct
@@ -1603,24 +1648,23 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
 
         # compute least square fit errors
         cov_x = fit[1]
-        if cov_x is None: # fit has stopped because of max iteration
-            return []
-        cov_x *= returned_data['reduced-chi-square']
-        cov_diag = np.sqrt(np.abs(
-            np.array([cov_x[i,i] for i in range(cov_x.shape[0])])))
-        fixed_p = np.array(fixed_p)
-        fixed_p.fill(0.)
-        lines_err, cov_err, cont_err = params_vect2arrays(
-            cov_diag, fixed_p, lines_p_mask, cov_p_mask, cont_p_mask)
-        ls_fit_errors = np.empty_like(full_lines_p)
-        ls_fit_errors[:,1:] = lines_err
-        if cov_p_mask[0]: ls_fit_errors[:,3] = cov_err[0]
-        if cov_p_mask[1]: ls_fit_errors[:,2] = cov_err[1]
-        ls_fit_errors[:,0] = math.sqrt(np.sum(cont_err**2.))
+        if cov_x is not None:
+            cov_x *= returned_data['reduced-chi-square']
+            cov_diag = np.sqrt(np.abs(
+                np.array([cov_x[i,i] for i in range(cov_x.shape[0])])))
+            fixed_p = np.array(fixed_p)
+            fixed_p.fill(0.)
+            lines_err, cov_err, cont_err = params_vect2arrays(
+                cov_diag, fixed_p, lines_p_mask, cov_p_mask, cont_p_mask)
+            ls_fit_errors = np.empty_like(full_lines_p)
+            ls_fit_errors[:,1:] = lines_err
+            if cov_p_mask[0]: ls_fit_errors[:,3] = cov_err[0]
+            if cov_p_mask[1]: ls_fit_errors[:,2] = cov_err[1]
+            ls_fit_errors[:,0] = math.sqrt(np.sum(cont_err**2.))
 
-        returned_data['lines-params-err'] = ls_fit_errors
-        returned_data['cont-params-err'] = cont_err
-
+            returned_data['lines-params-err'] = ls_fit_errors
+            returned_data['cont-params-err'] = cont_err
+        
         # compute SNR
         # recompute noise value in case the continnum is not linear
         # (noise can be a lot overestimated in this case)
@@ -2151,6 +2195,17 @@ def fwhm_nm2cm1(fwhm_nm, nm):
     """
     return 1e7 * fwhm_nm / nm**2.
 
+def fwhm_cm12nm(fwhm_cm1, cm1):
+    """Convert a FWHM in cm-1 to a FWHM in nm.
+    
+    The central wavelength in cm-1 of the line must also be given
+
+    :param fwhm_cm1: FWHM in cm-1
+    
+    :param cm1: Wavelength in cm-1 where the FWHM is evaluated
+    """
+    return 1e7 * fwhm_cm1 / cm1**2.
+
 def line_shift(velocity, line, wavenumber=False):
     """Return the line shift given its velocity in nm or in cm-1.
 
@@ -2162,7 +2217,7 @@ def line_shift(velocity, line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    vel = np.array(line, dtype=float) * velocity / globals.LIGHT_VEL_KMS
+    vel = np.array(line, dtype=float) * velocity / constants.LIGHT_VEL_KMS
     if wavenumber: return -vel
     else: return vel
 
@@ -2182,8 +2237,13 @@ def polyfit1d(a, deg, w=None, return_coeffs=False):
       None)
     """
     n = a.shape[0]
+    nonans = np.nonzero(~np.isnan(a))
+    x = np.arange(n)[nonans]
+    if w is not None:
+        w = w[nonans]
+    a = a[nonans]
     coeffs = np.polynomial.polynomial.polyfit(
-        np.arange(n), a, deg, w=w, full=True)
+        x, a, deg, w=w, full=True)
     fit = np.polynomial.polynomial.polyval(
         np.arange(n), coeffs[0])
     if not return_coeffs:
@@ -2191,6 +2251,119 @@ def polyfit1d(a, deg, w=None, return_coeffs=False):
     else:
         return fit, coeffs
 
+def fit_map(data_map, err_map, smooth_deg):
+    """Fit map with low order polynomials
+
+    :param data_map: data map
+
+    :param err_map: error map
+
+    :param smooth_deg: Degree of fit smoothing (beware of high
+      smoothing degrees)
+
+    :return: (fitted data map, error map, fit error)
+    """
+
+    def smooth_fit_parameters(coeffs_list, err_list, order, smooth_deg):
+        """
+        Smooth the fitting parameters for a particular order of the
+        polynomial fit.
+        """
+        coeffs = coeffs_list[:,order]
+        w = np.squeeze((1./err_list)**2.)
+        return polyfit1d(coeffs, smooth_deg, w=w,
+                         return_coeffs=True)
+
+    def model(fit_coeffs, smooth_deg, dimx, dimy):
+        fit_coeffs = fit_coeffs.reshape((smooth_deg + 1, smooth_deg + 1))
+        fitted_data_map = np.zeros((dimx, dimy), dtype=float)
+        params_fit_list = list()
+        for ideg in range(smooth_deg + 1):
+            params_fit_list.append(np.polynomial.polynomial.polyval(
+                np.arange(dimy), fit_coeffs[ideg,:]))
+        params_fit_list = np.array(params_fit_list)
+        for ij in range(dimy):
+            fitted_data_map[:,ij] = np.polynomial.polynomial.polyval(
+                np.arange(dimx), params_fit_list[:, ij])
+        return fitted_data_map
+    
+    def diff(fit_coeffs, data_map, smooth_deg, err_map):
+        fitted_data_map = model(fit_coeffs, smooth_deg,
+                                data_map.shape[0],
+                                data_map.shape[1])
+        
+        res = (data_map - fitted_data_map)/err_map
+        res = res[np.nonzero(~np.isnan(res))]
+        res = res[np.nonzero(~np.isinf(res))]
+        return res.flatten()
+  
+
+    coeffs_list = list()
+    err_list = list()
+    dimx, dimy = data_map.shape
+    
+    ## Phase map fit
+    for ij in range(dimy):
+        imap = data_map[:,ij]
+        ierr = err_map[:,ij]
+        w = (1./ierr)**2.
+        if np.sum(~np.isnan(imap)) > dimy/2.:
+            vect, coeffs = polyfit1d(imap, smooth_deg, w=w,
+                                     return_coeffs=True)
+            coeffs_list.append(coeffs[0])
+            err_list.append(coeffs[1][0])
+            
+        else:
+            bad_coeffs = np.empty(smooth_deg + 1, dtype=float)
+            bad_coeffs.fill(np.nan)
+            coeffs_list.append(bad_coeffs)
+            err_list.append(np.nan)
+            
+
+    coeffs_list = np.array(coeffs_list)
+    err_list = np.array(err_list)
+
+
+    ## Smooth fit parameters 
+    params_fit_list = list()
+    fit_coeffs_list = list()
+    for ideg in range(smooth_deg + 1):
+        fit, coeffs = smooth_fit_parameters(
+            coeffs_list, err_list, ideg, smooth_deg)
+        params_fit_list.append(fit)
+        fit_coeffs_list.append(coeffs[0])
+        
+    params_fit_list = np.array(params_fit_list)
+    fit_coeffs_list = np.array(fit_coeffs_list)
+    
+    
+    ## smooth optimization
+    fit_coeffs_list_orig = np.copy(fit_coeffs_list)
+    fit = optimize.leastsq(diff, fit_coeffs_list.flatten(),
+                           args=(data_map, smooth_deg, err_map),
+                           maxfev=1000, full_output=True,
+                           xtol=1e-6)
+    
+    if fit[-1] <= 4:
+        fitted_data_map = model(fit[0], smooth_deg, dimx, dimy)
+    
+    else:
+        Tools()._print_error('Fit could not be optimized')
+
+    ## Error computation
+    # Creation of the error map: The error map gives the 
+    # Squared Error for each point used in the fit point. 
+    error_map = data_map - fitted_data_map
+
+    # The square root of the mean of this map is then normalized
+    # by the range of the values fitted. This gives the Normalized
+    # root-mean-square deviation
+    fit_error =(np.nanmean(np.sqrt(error_map**2.))
+                / (np.nanmax(data_map) - np.nanmin(data_map)))
+
+    return fitted_data_map, error_map, fit_error
+
+    
 def interpolate_map(calibration_map, dimx, dimy):
     """Interpolate 2D data map.
     
@@ -2827,7 +3000,7 @@ def spectrum_mean_energy(spectrum):
 
     :param spectrum: a 1D spectrum
     """
-    return orb.cutils.spectrum_mean_energy(spectrum)
+    return cutils.spectrum_mean_energy(spectrum)
 
 
 def interf_mean_energy(interf):
@@ -2844,7 +3017,7 @@ def interf_mean_energy(interf):
 
     .. note:: NaNs are set to 0.
     """
-    return orb.cutils.interf_mean_energy(interf)
+    return cutils.interf_mean_energy(interf)
     
 
 def variable_me(n, params):

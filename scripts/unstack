@@ -43,13 +43,14 @@ def main():
     
     cube_name = sys.argv[1]
     if os.path.exists(cube_name):
-        cube = Tools(no_log=True).read_fits(cube_name)
+        cube, hdr = Tools(no_log=True).read_fits(cube_name, return_header=True)
         for iframe in range(cube.shape[2]):
             frame_path = (os.path.splitext(cube_name)[0]
                           + os.sep + 'frame_{:04d}'.format(iframe)) + '.fits'
             
             Tools(no_log=True).write_fits(frame_path,
                                           cube[:,:,iframe],
+                                          fits_header=hdr,
                                           overwrite=True)
     else:
         print "File does not exist"

@@ -48,7 +48,7 @@ v1.2
   robust and precise)
     
 v1.2.1
-******
+======
 
 * :py:meth:`~utils.transform_spectrum` and
   :py:meth:`~utils.transform_interferogram` adjusted to lose no energy
@@ -64,7 +64,7 @@ v1.2.1
 * bug fix
 
 v1.2.2
-******
+======
 
 * :py:meth:`~cutils.spectrum_mean_energy` and
   :py:meth:`~cutils.interf_mean_energy` Cythonised.
@@ -98,3 +98,28 @@ ORB's scripts
   in orbs/scripts.
 
 * create **unstack** script to unstack a cube into a set of frames
+
+v1.2.3
+======
+
+* add py:meth:`~utils.flambda2ABmag`
+
+* change file globals.py for constants.py
+
+* add py:meth:`~core.Tools._get_basic_spectrum_header` to return a
+  header for a 1D spectrum.
+
+* py:meth:`~core.Tools.write_fits` updated to create ds9 readable 1D
+  FITS files.
+
+* py:meth:`~utils.fit_lines_in_vector` accepts a tuple for the
+  parameter cov_pos. This tuple gives the lines that are
+  covarying. This way, [NII] and Halpha can have different velocities,
+  but the [NII] lines will share the same velocity, improving a lot
+  the precision on their estimated velocity without being biased by
+  the Halpha velocity.
+
+* py:meth:`~utils.fit_map` created. This function is a generalization
+  of the old py:meth:`orbs.process.Phase.fit_phase_map` which now use
+  this general function also. The fitting process has been enhanced
+  and is now more robust and use NaNs instead of zeros.

@@ -44,7 +44,15 @@ import inspect
 
 import numpy as np
 import bottleneck as bn
-import pyfits
+
+try:
+    import astropy.io.fits as pyfits
+except:
+    import pyfits
+    import warnings
+    warnings.warn('PyFITS is now a part of Astropy (http://www.astropy.org/). PyFITS support as a standalone module will be stopped soon. It is better to install Astropy. You can still keep PyFITS for other applications.', FutureWarning)
+    
+
 from scipy import interpolate
 import pp
 
@@ -638,7 +646,7 @@ class Tools(object):
                                                            wave_unit)))
         return hdr
 
-    def _get_basic_spectrum_cube_header(self, nm_axis, wavenumber=False):
+    def _get_basic_spectrum_cube_header(self, axis, wavenumber=False):
         """
         Return a specific part of a header that can be used for
         a spectral cube. It creates the wavelength axis of the cube.
@@ -672,14 +680,52 @@ class Tools(object):
                     'Spectral axis type: wavenumber or wavelength'))
         hdr.append(('CTYPE3', 'WAVE', '{} in {}'.format(wave_type,
                                                         wave_unit)))
-        hdr.append(('CRVAL3', nm_axis[0], 'Minimum {} in {}'.format(wave_type,
+        hdr.append(('CRVAL3', axis[0], 'Minimum {} in {}'.format(wave_type,
                                                                     wave_unit)))
         hdr.append(('CUNIT3', '{}'.format(wave_unit), ''))
         hdr.append(('CRPIX3', 1.000000, 'Pixel coordinate of reference point'))
         hdr.append(('CDELT3', 
-                    ((nm_axis[-1] - nm_axis[0]) / (len(nm_axis) - 1)), 
+                    ((axis[-1] - axis[0]) / (len(axis) - 1)), 
                     '{} per pixel'.format(wave_unit)))
         hdr.append(('CROTA3', 0.000000, ''))
+        return hdr
+
+    def _get_basic_spectrum_header(self, axis, wavenumber=False):
+        """
+        Return a specific part of a header that can be used for
+        a 1D spectrum. It creates the wavelength axis.
+
+        The header is returned as a list of tuples (key, value,
+        comment) that can be added to any FITS file created by
+        :meth:`core.Tools.write_fits`. You can add this part to the
+        basic header returned by :meth:`core.Tools._get_basic_header`
+        and :meth:`core.Tools._get_frame_header`
+
+        :param axis: Spectrum axis. The axis must have the same length
+          as the spectrum length. Must be an axis in wavenumber (cm1)
+          or in wavelength (nm)
+          
+        :param wavenumber: (Optional) If True the axis is considered
+          to be in wavenumber (cm1). If False it is considered to be
+          in wavelength (nm) (default False).
+        """
+        hdr = list()
+        if not wavenumber:
+            wave_type = 'wavelength'
+            wave_unit = 'nm'
+        else:
+            wave_type = 'wavenumber'
+            wave_unit = 'cm-1'
+        hdr.append(('CTYPE1', 'WAVE', '{} in {}'.format(
+            wave_type, wave_unit)))
+        hdr.append(('CRVAL1', axis[0], 'Minimum {} in {}'.format(
+            wave_type, wave_unit)))
+        hdr.append(('CUNIT1', '{}'.format(wave_unit),
+                    'Spectrum coordinate unit'))
+        hdr.append(('CRPIX1', 1.000000, 'Pixel coordinate of reference point'))
+        hdr.append(('CD1_1', 
+                    ((axis[-1] - axis[0]) / (len(axis) - 1)), 
+                    '{} per pixel'.format(wave_unit)))
         return hdr
 
     def _init_pp_server(self, silent=False):
@@ -871,9 +917,9 @@ class Tools(object):
         if replace: overwrite=True
         
         if overwrite:
-            warnings.filterwarnings('ignore',
-                                    message='Overwriting existing file.*',
-                                    module='pyfits\.hdu.*')
+            warnings.filterwarnings(
+                'ignore', message='Overwriting existing file.*',
+                module='astropy.io.*')
 
         if replace and os.path.exists(fits_name):
             old_data = self.read_fits(fits_name)
@@ -898,7 +944,12 @@ class Tools(object):
         file_written = False
         while not file_written:
             if ((not (os.path.exists(fits_name))) or overwrite):
-                hdu = pyfits.PrimaryHDU(fits_data.transpose())
+                
+                if len(fits_data.shape) > 1:
+                    hdu = pyfits.PrimaryHDU(fits_data.transpose())
+                else:
+                    hdu = pyfits.PrimaryHDU(fits_data[np.newaxis, :])
+                    
                 if mask != None:
                     # mask conversion to only zeros or ones
                     mask = mask.astype(float)
@@ -906,12 +957,12 @@ class Tools(object):
                     mask[np.nonzero(np.isinf(mask))] = 1.
                     mask[np.nonzero(mask)] = 1.
                     mask = mask.astype(np.uint8) # UINT8 is the
-                                                 # tiniest allowed
+                                                 # smallest allowed
                                                  # type
                     hdu_mask = pyfits.PrimaryHDU(mask.transpose())
                 # add header optional keywords
                 if fits_header != None:
-                    hdu.header.extend(fits_header, strip=True,
+                    hdu.header.extend(fits_header, strip=False,
                                       update=True, end=True)
                     # Remove 3rd axis related keywords if there is no
                     # 3rd axis
@@ -922,13 +973,18 @@ class Tools(object):
                                     del hdu.header[ikey]
                                     del hdu.header[ikey]
                                     break
-                            
-                        del hdu.header['CTYPE3']
-                        del hdu.header['CRVAL3']
-                        del hdu.header['CRPIX3']
-                        del hdu.header['CDELT3']
-                        del hdu.header['CROTA3']
-                        del hdu.header['CUNIT3']
+                        if 'CTYPE3' in hdu.header:
+                            del hdu.header['CTYPE3']
+                        if 'CRVAL3' in hdu.header:
+                            del hdu.header['CRVAL3']
+                        if 'CRPIX3' in hdu.header:
+                            del hdu.header['CRPIX3']
+                        if 'CDELT3' in hdu.header:
+                            del hdu.header['CDELT3']
+                        if 'CROTA3' in hdu.header:
+                            del hdu.header['CROTA3']
+                        if 'CUNIT3' in hdu.header:
+                            del hdu.header['CUNIT3']
 
                 # add median and mean of the image in the header
                 # data is nan filtered before
@@ -942,19 +998,18 @@ class Tools(object):
                         data_median = np.nan
                     hdu.header.set('MEAN', str(data_mean),
                                    'Mean of data (NaNs filtered)',
-                                   after=6)
+                                   after=5)
                     hdu.header.set('MEDIAN', str(data_median),
                                    'Median of data (NaNs filtered)',
-                                   after=6)
+                                   after=5)
                 
                 # add some basic keywords in the header
                 date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-                hdu.header.set('DATE', date, 'Creation date', after=6)
+                hdu.header.set('MASK', 'False', '', after=5)
+                hdu.header.set('DATE', date, 'Creation date', after=5)
                 hdu.header.set('PROGRAM', "ORB v%s"%__version__, 
                                'Thomas Martin: thomas.martin.1@ulaval.ca',
-                               after=6)
-                hdu.header.set('MASK', 'False', '', after=6)
-
+                               after=5)
                 
                 # write FITS file
                 hdu.writeto(fits_name, clobber=overwrite)
@@ -1050,9 +1105,9 @@ class Tools(object):
                      "The file '%s' could not be deleted"%fits_name)
                  
         if return_header:
-            return fits_data, fits_header
+            return np.squeeze(fits_data), fits_header
         else:
-            return fits_data
+            return np.squeeze(fits_data)
 
     def open_file(self, file_name, mode='w'):
         """Open a file in write mode (by default) and return a file
@@ -2203,9 +2258,9 @@ class Lines(Tools):
         """
         def merge(merged_lines):
             merged_lines = np.array(merged_lines)
-            return (np.mean(merged_lines[:,0]),
-                    np.sum(merged_lines[:,1]))
-            
+            return (np.sum(merged_lines[:,0] * merged_lines[:,1])
+                   /np.sum(merged_lines[:,1]),
+                   np.sum(merged_lines[:,1]))
 
         lines = [line_nm for line_nm in self.air_sky_lines_nm.itervalues()
                  if (line_nm[0] >= nm_min and line_nm[0] <= nm_max)]
@@ -2226,6 +2281,7 @@ class Lines(Tools):
                         merged_lines = list()
                     else:
                         final_lines.append(lines[iline])
+                        
         # correct a border effect if the last lines of the list are to
         # be merged
         if len(merged_lines) > 0: 
@@ -2431,10 +2487,24 @@ class OptionFile(Tools):
         """
         return {k:v for k,v in self.iteritems() if k.startswith('REG')}
 
-    def get_lines(self):
+    def get_lines(self, nm_min=None, nm_max=None, delta_nm=None):
         """Get lines parameters.
 
         Defined for the special keyword 'LINES'.
+
+        All optional keywords are only used if the keyword SKY is
+        used.
+
+        :param nm_min: (Optional) min wavelength of the lines in nm
+          (default None).
+        
+        :param nm_max: (Optional) max wavelength of the lines in nm
+          (default None).
+
+        :param delta_nm: (Optional) wavelength resolution in nm as the minimum
+          wavelength interval of the spectrum. Lines comprises in half
+          of this interval are merged (default None).
+    
         """
         lines_names = self['LINES']
         lines_nm = list()
@@ -2444,7 +2514,15 @@ class OptionFile(Tools):
                 try:
                     lines_nm.append(float(iline))
                 except:
-                    lines_nm.append(self.lines.get_line_nm(iline))
+                    if iline == 'SKY':
+                        if (nm_min is not None and nm_max is not None
+                            and delta_nm is not None):
+                            lines_nm += self.lines.get_sky_lines(
+                                nm_min, nm_max, delta_nm)
+                        else: self._print_error('Keyword SKY used but nm_min, nm_max or delta_nm parameter not set')
+                            
+                    else:
+                        lines_nm.append(self.lines.get_line_nm(iline))
         else:
             return None
         

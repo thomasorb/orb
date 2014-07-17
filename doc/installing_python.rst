@@ -35,9 +35,9 @@ the **latest version**) :
 
   * Scipy_ (v0.13.3)
   * Numpy_ (v1.8.1)
-  * PyFITS_ (v3.1.1)
+  * PyFITS_ (v3.1.1) now astropy.io.fits
   * Parallel_ Python (v1.6.4)
-  * PyWCS_ (v1.11)
+  * PyWCS_ (v1.11) 
   * Bottleneck_ (v0.8.0)
 
 The following modules are optional. 
@@ -82,6 +82,17 @@ PyFITS_
 -------
 
 You might need the latest version of PyFITS_ (v3.1.2 or better)
+
+
+PyFITS_ is now part of the package astropy.io.fits. Astropy package
+must then be installed. See the installation steps at
+http://docs.astropy.org/en/stable/install.html.
+
+  sudo pip install --no-deps astropy
+
+
+If you have an old packaged tar.gz version you can go through the
+steps below.
 
 You must first have 'distutils' installed. You can install it using
 the command::
