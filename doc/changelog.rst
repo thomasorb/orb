@@ -16,7 +16,7 @@ v1.1
 ****
 
 Multi fit of stars
-------------------
+==================
 
 * :py:meth:`~astrometry.fit_stars_in_frame` has been updated to fit
   multiple stars at the same time (see:
@@ -24,7 +24,7 @@ Multi fit of stars
   robust.
 
 USNO-B1 based star detection
-----------------------------
+============================
 
 * :py:meth:`~astrometry.Astrometry.query_vizier` and
   :py:meth:`~astrometry.Astrometry.register` have been moved from
@@ -66,8 +66,10 @@ v1.2.1
 v1.2.2
 ======
 
-* :py:meth:`~cutils.spectrum_mean_energy` and
-  :py:meth:`~cutils.interf_mean_energy` Cythonised.
+* :py:meth:`~utils.spectrum_mean_energy` and
+  :py:meth:`~utils.interf_mean_energy` Cythonised to
+  :py:meth:`~cutils.spectrum_mean_energy` and
+  :py:meth:`~cutils.interf_mean_energy`.
 
 * :py:class:`~core.OptionFile` enhanced to be used by
   :py:meth:`orbs.Orbs.__init__`.
@@ -102,24 +104,106 @@ ORB's scripts
 v1.2.3
 ======
 
-* add py:meth:`~utils.flambda2ABmag`
+* add :py:meth:`~utils.flambda2ABmag`
 
 * change file globals.py for constants.py
 
-* add py:meth:`~core.Tools._get_basic_spectrum_header` to return a
+* add :py:meth:`~core.Tools._get_basic_spectrum_header` to return a
   header for a 1D spectrum.
 
-* py:meth:`~core.Tools.write_fits` updated to create ds9 readable 1D
+* :py:meth:`~core.Tools.write_fits` updated to create ds9 readable 1D
   FITS files.
 
-* py:meth:`~utils.fit_lines_in_vector` accepts a tuple for the
+* :py:meth:`~utils.fit_lines_in_vector` accepts a tuple for the
   parameter cov_pos. This tuple gives the lines that are
   covarying. This way, [NII] and Halpha can have different velocities,
   but the [NII] lines will share the same velocity, improving a lot
   the precision on their estimated velocity without being biased by
   the Halpha velocity.
 
-* py:meth:`~utils.fit_map` created. This function is a generalization
-  of the old py:meth:`orbs.process.Phase.fit_phase_map` which now use
+* :py:meth:`~utils.fit_map` created. This function is a generalization
+  of the old :py:meth:`orbs.process.Phase.fit_phase_map` which now use
   this general function also. The fitting process has been enhanced
   and is now more robust and use NaNs instead of zeros.
+
+v1.2.4
+======
+
+Miscellaneous
+-------------
+
+* all scripts have been renamed to orb-*
+
+* --nostar and --flat bug fixed. Cosmic ray detection will not be done
+  if those options are given.
+
+SITELLE data
+------------
+
+* new command: **orb-conf**. Its general purpose is to help the
+  administrator to quickly change ORB configuration. Its first use is
+  to change the configuration file depending on the used
+  instrument. To change the configration file from spiomm to sitelle
+  just type::
+
+    orb-conf -i sitelle
+
+  This command avoid the painful manual change of the config file. At
+  each new version this command can be run to quickly (and safely)
+  reconfigure ORB. Note that this function requires write rights on
+  the ORB installation folder.
+
+Sitelle image mode
+~~~~~~~~~~~~~~~~~~
+
+* if ORBS is in **sitelle mode** (if the configuration file points to
+  config.sitelle.orb), SITELLE's data frames are handled at the core
+  level. :py:meth:`~core.Tools.read_fits` accepts two new options:
+  image_mode and chip_index. If image_mode is set to 'sitelle' and the
+  chip index is 1 or 2, then the read_fits function will return only
+  of the 2 chips (depending on the chip index). **Chip slicing** is
+  handled by
+  :py:meth:`~core.Tools._read_sitelle_chip`. :py:meth:`~core.Cube.__getitem__`
+  has also been modified in the same way with the same new options. A
+  parameter line can now be added to the very first line of the image
+  list passed to the :py:class:`~core.Cube`. This line must be
+  something like::
+    
+    # sitelle 1
+
+  If the first keyword is sitelle, the second keyword is understood as
+  the chip index to read. This way, :py:class:`~core.Cube` understand
+  that the data is SITELLE's data and what chip has to be read.
+
+* :py:meth:`~core.Tools._create_list_from_dir` now accepts the options
+  image_mode and chip_index and creates the parameter line at the very
+  beginning of the output file list.
+
+* **overscan** :py:meth:`~core.Tools._read_sitelle_chip` automatically
+  substract the bias level given by the overscan areas of the returned
+  image. This default behaviour can be canceled in the future.
+
+Prebinning
+~~~~~~~~~~
+
+Used for faster computation of big data set. It
+can also be useful if the user simply wants binned data. At the user
+level only one option must be passed to the option file::
+
+  PREBINNING 2 # Data is prebinned by 2
+
+.. warning:: The real binning of the original data must be kept to the
+   same values. The user must no modify the the values of BINCAM1 and
+   BINCAM2.
+
+* if this option is set :py:meth:`~core.Tools._create_list_from_dir`
+  just adds the following directive at the beginning of the image list
+  file::
+
+    # prebinning 2
+
+* :py:meth:`~core.Tools.read_fits` accepts the option
+  'binning'. :py:meth:`~core.Tools._image_binning` has been created to
+  bin 2D data efficiently. :py:meth:`~core.Cube.__getitem__` has been
+  modified to read and treat transparently the new prebinning
+  directive that is added at the beginning of an image list file.

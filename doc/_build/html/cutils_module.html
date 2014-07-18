@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUtils module &mdash; Orb 1.2.2 documentation</title>
+    <title>CUtils module &mdash; Orb 1.2.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.2',
+        VERSION:     '1.2.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
     <link rel="next" title="Astrometry module" href="astrometry_module.html" />
     <link rel="prev" title="Utils module" href="utils_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -149,6 +149,12 @@
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#cutils.sinc1d" title="cutils.sinc1d"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.sinc1d</span></tt></a></td>
 <td>Return a 1D sinc given a set of parameters.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.interf_mean_energy" title="cutils.interf_mean_energy"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.interf_mean_energy</span></tt></a></td>
+<td>Return the mean energy of an interferogram by step.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.spectrum_mean_energy" title="cutils.spectrum_mean_energy"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.spectrum_mean_energy</span></tt></a></td>
+<td>Return the mean energy of a spectrum by channel.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#cutils.fft_filter" title="cutils.fft_filter"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.fft_filter</span></tt></a></td>
 <td>Simple lowpass or highpass FFT filter (high pass or low pass)</td>
@@ -519,6 +525,51 @@ sinc is evaluated</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="cutils.interf_mean_energy">
+<tt class="descclassname">cutils.</tt><tt class="descname">interf_mean_energy</tt><big>(</big><em>ndarray interf</em><big>)</big><a class="headerlink" href="#cutils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mean energy of an interferogram by step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="cutils.interf_mean_energy.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#cutils.interf_mean_energy.params.interf">¶</a> &#8211; an interferogram</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The mean of the interferogram is substracted to
+compute only the modulation energy. This is the modulation
+energy which must be conserved in the resulting spectrum. Note
+that the interferogram transformation function (see
+<a class="reference internal" href="utils_module.html#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>) remove the mean of the
+interferogram before computing its FFT.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">NaNs are counted as zeros.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cutils.spectrum_mean_energy">
+<tt class="descclassname">cutils.</tt><tt class="descname">spectrum_mean_energy</tt><big>(</big><em>ndarray spectrum</em><big>)</big><a class="headerlink" href="#cutils.spectrum_mean_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mean energy of a spectrum by channel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="cutils.spectrum_mean_energy.params.spectrum"></span><strong>spectrum</strong><a class="paramlink headerlink reference internal" href="#cutils.spectrum_mean_energy.params.spectrum">¶</a> &#8211; a 1D spectrum</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">NaNs are counted as zeros.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="cutils.fft_filter">
 <tt class="descclassname">cutils.</tt><tt class="descname">fft_filter</tt><big>(</big><em>ndarray a</em>, <em>double cutoff</em>, <em>double width</em>, <em>bool lowpass</em><big>)</big><a class="headerlink" href="#cutils.fft_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple lowpass or highpass FFT filter (high pass or low pass)</p>
@@ -714,7 +765,7 @@ stars. ron and dcl parameters are thus not used (default True).</li>
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

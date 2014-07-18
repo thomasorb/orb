@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core module &mdash; Orb 1.2.2 documentation</title>
+    <title>Core module &mdash; Orb 1.2.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.2',
+        VERSION:     '1.2.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
     <link rel="next" title="Utils module" href="utils_module.html" />
     <link rel="prev" title="Python for ORB users" href="python_for_orb.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -184,7 +184,7 @@ sources and information on Parallel Python software.</p>
 
 <dl class="method">
 <dt id="core.Tools._create_list_from_dir">
-<tt class="descname">_create_list_from_dir</tt><big>(</big><em>dir_path</em>, <em>list_file_path</em><big>)</big><a class="headerlink" href="#core.Tools._create_list_from_dir" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">_create_list_from_dir</tt><big>(</big><em>dir_path</em>, <em>list_file_path</em>, <em>image_mode=None</em>, <em>chip_index=None</em>, <em>prebinning=None</em><big>)</big><a class="headerlink" href="#core.Tools._create_list_from_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a file containing the list of all FITS files at
 a specified directory and returns the path to the list 
 file.</p>
@@ -195,6 +195,16 @@ file.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><span class="target" id="core.Tools._create_list_from_dir.params.dir_path"></span><strong>dir_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.dir_path">¶</a> &#8211; Directory containing the FITS files</li>
 <li><span class="target" id="core.Tools._create_list_from_dir.params.list_file_path"></span><strong>list_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.list_file_path">¶</a> &#8211; Path to the list file to be created</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.image_mode">¶</a> &#8211; (Optional) Image mode. If not None the
+given string will be written at the first line of the file
+along with the chip index.</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.chip_index"></span><strong>chip_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.chip_index">¶</a> &#8211; (Optional) Index of the chip, must be an
+integer. Used in conjonction with image mode to write the
+first directive line of the file which indicates the image
+mode.</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.prebinning"></span><strong>prebinning</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.prebinning">¶</a> &#8211; (Optional) If not None, must be an
+integer. Add another directive line for data prebinning
+(default None).</li>
 </ul>
 </td>
 </tr>
@@ -255,7 +265,7 @@ file (config.orb by default).</li>
 
 <dl class="method">
 <dt id="core.Tools._get_basic_spectrum_cube_header">
-<tt class="descname">_get_basic_spectrum_cube_header</tt><big>(</big><em>nm_axis</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_cube_header" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">_get_basic_spectrum_cube_header</tt><big>(</big><em>axis</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_cube_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a specific part of a header that can be used for
 a spectral cube. It creates the wavelength axis of the cube.</p>
 <p>The header is returned as a list of tuples (key, value,
@@ -302,6 +312,34 @@ and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._g
 as the number of frames in the cube. Must be an axis in
 wavenumber (cm1) or in wavelength (nm).</li>
 <li><span class="target" id="core.Tools._get_basic_spectrum_frame_header.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_spectrum_frame_header.params.wavenumber">¶</a> &#8211; (Optional) If True the axis is considered
+to be in wavenumber (cm1). If False it is considered to be
+in wavelength (nm) (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_basic_spectrum_header">
+<tt class="descname">_get_basic_spectrum_header</tt><big>(</big><em>axis</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a specific part of a header that can be used for
+a 1D spectrum. It creates the wavelength axis.</p>
+<p>The header is returned as a list of tuples (key, value,
+comment) that can be added to any FITS file created by
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a>
+and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._get_basic_spectrum_header.params.axis"></span><strong>axis</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_spectrum_header.params.axis">¶</a> &#8211; Spectrum axis. The axis must have the same length
+as the spectrum length. Must be an axis in wavenumber (cm1)
+or in wavelength (nm)</li>
+<li><span class="target" id="core.Tools._get_basic_spectrum_header.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_basic_spectrum_header.params.wavenumber">¶</a> &#8211; (Optional) If True the axis is considered
 to be in wavenumber (cm1). If False it is considered to be
 in wavelength (nm) (default False).</li>
 </ul>
@@ -528,6 +566,31 @@ be a string.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._image_binning">
+<tt class="descname">_image_binning</tt><big>(</big><em>a</em>, <em>binning</em><big>)</big><a class="headerlink" href="#core.Tools._image_binning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mean binned image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._image_binning.params.image"></span><strong>image</strong><a class="paramlink headerlink reference internal" href="#core.Tools._image_binning.params.image">¶</a> &#8211; 2d array to bin.</li>
+<li><span class="target" id="core.Tools._image_binning.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#core.Tools._image_binning.params.binning">¶</a> &#8211; binning (must be an integer &gt;= 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>..note:: Only the complete sets of rows or columns are binned</dt>
+<dd>so that depending on the bin size and the image size the
+last columns or rows can be ignored. This ensures that the
+binning surface is the same for every pixel in the binned
+array.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._init_logfile_name">
 <tt class="descname">_init_logfile_name</tt><big>(</big><em>logfile_name</em><big>)</big><a class="headerlink" href="#core.Tools._init_logfile_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize logfile name.</p>
@@ -639,6 +702,26 @@ False)</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._read_sitelle_chip">
+<tt class="descname">_read_sitelle_chip</tt><big>(</big><em>hdu</em>, <em>chip_index</em>, <em>substract_bias=True</em><big>)</big><a class="headerlink" href="#core.Tools._read_sitelle_chip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return chip data of a SITELLE FITS image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._read_sitelle_chip.params.hdu"></span><strong>hdu</strong><a class="paramlink headerlink reference internal" href="#core.Tools._read_sitelle_chip.params.hdu">¶</a> &#8211; pyfits.HDU Instance of the SITELLE image</li>
+<li><span class="target" id="core.Tools._read_sitelle_chip.params.chip_index"></span><strong>chip_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._read_sitelle_chip.params.chip_index">¶</a> &#8211; Index of the chip to read. Must be 1 or 2.</li>
+<li><span class="target" id="core.Tools._read_sitelle_chip.params.substract_bias"></span><strong>substract_bias</strong><a class="paramlink headerlink reference internal" href="#core.Tools._read_sitelle_chip.params.substract_bias">¶</a> &#8211; If True bias is automatically
+substracted by using the overscan area (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._update_fits_key">
 <tt class="descname">_update_fits_key</tt><big>(</big><em>fits_name</em>, <em>key</em>, <em>value</em>, <em>comment</em><big>)</big><a class="headerlink" href="#core.Tools._update_fits_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update one key of a FITS file. If the key doesn&#8217;t exist
@@ -692,7 +775,7 @@ read mode and &#8216;a&#8217; for append mode.</li>
 
 <dl class="method">
 <dt id="core.Tools.read_fits">
-<tt class="descname">read_fits</tt><big>(</big><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em><big>)</big><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">read_fits</tt><big>(</big><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em><big>)</big><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a FITS data file and returns its data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -718,6 +801,17 @@ except if an error is raised (default False).</li>
 reading (default False).</li>
 <li><span class="target" id="core.Tools.read_fits.params.data_index"></span><strong>data_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.data_index">¶</a> &#8211; (Optional) Index of data in the header data
 unit (Default 0).</li>
+<li><span class="target" id="core.Tools.read_fits.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.image_mode">¶</a> &#8211; (Optional) Can be &#8216;sitelle&#8217; or
+&#8216;classic&#8217;. If in &#8216;sitelle&#8217; mode, the parameter
+chip_index must also be set to 0 or 1. In this mode only
+one of both SITELLE quadrants is returned. In &#8216;classic&#8217; mode
+the whole frame is returned (default &#8216;classic&#8217;).</li>
+<li><span class="target" id="core.Tools.read_fits.params.chip_index"></span><strong>chip_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.chip_index">¶</a> &#8211; (Optional) Index of the chip of the
+SITELLE image. Used only if image_mode is set to &#8216;sitelle&#8217;
+In this case, must be 1 or 2. Else must be None (default
+None).</li>
+<li><span class="target" id="core.Tools.read_fits.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.binning">¶</a> &#8211; (Optional) If not None, returned data is
+binned by this amount (must be an integer &gt;= 1)</li>
 </ul>
 </td>
 </tr>
@@ -1767,9 +1861,28 @@ protected keywords (&#8216;REG&#8217;, &#8216;TUNE&#8217;) are all kept.</p>
 
 <dl class="method">
 <dt id="core.OptionFile.get_lines">
-<tt class="descname">get_lines</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.get_lines" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_lines</tt><big>(</big><em>nm_min=None</em>, <em>nm_max=None</em>, <em>delta_nm=None</em><big>)</big><a class="headerlink" href="#core.OptionFile.get_lines" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get lines parameters.</p>
 <p>Defined for the special keyword &#8216;LINES&#8217;.</p>
+<p>All optional keywords are only used if the keyword SKY is
+used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OptionFile.get_lines.params.nm_min"></span><strong>nm_min</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.get_lines.params.nm_min">¶</a> &#8211; (Optional) min wavelength of the lines in nm
+(default None).</li>
+<li><span class="target" id="core.OptionFile.get_lines.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.get_lines.params.nm_max">¶</a> &#8211; (Optional) max wavelength of the lines in nm
+(default None).</li>
+<li><span class="target" id="core.OptionFile.get_lines.params.delta_nm"></span><strong>delta_nm</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.get_lines.params.delta_nm">¶</a> &#8211; (Optional) wavelength resolution in nm as the minimum
+wavelength interval of the spectrum. Lines comprises in half
+of this interval are merged (default None).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1878,7 +1991,7 @@ True).</li>
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

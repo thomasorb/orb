@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.2.2 documentation</title>
+    <title>Utils module &mdash; Orb 1.2.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.2',
+        VERSION:     '1.2.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -159,7 +159,7 @@ gaussian shape function.</p>
 
 <dl class="function">
 <dt id="utils.check_frames">
-<tt class="descclassname">utils.</tt><tt class="descname">check_frames</tt><big>(</big><em>frames</em>, <em>sigma_reject=2.0</em><big>)</big><a class="headerlink" href="#utils.check_frames" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">check_frames</tt><big>(</big><em>frames</em>, <em>sigma_reject=2.5</em><big>)</big><a class="headerlink" href="#utils.check_frames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check and reject deviating frames based on their median level.</p>
 <p>Frames with a too deviant median level are discarded. This
 function is used by <a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><tt class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></tt></a>.</p>
@@ -169,7 +169,7 @@ function is used by <a class="reference internal" href="#utils.create_master_fra
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.check_frames.params.frames"></span><strong>frames</strong><a class="paramlink headerlink reference internal" href="#utils.check_frames.params.frames">¶</a> &#8211; Set of frames to check</li>
-<li><span class="target" id="utils.check_frames.params.sigma_reject"></span><strong>sigma_reject</strong><a class="paramlink headerlink reference internal" href="#utils.check_frames.params.sigma_reject">¶</a> &#8211; (Optional) Rejection coefficient (default 2.)</li>
+<li><span class="target" id="utils.check_frames.params.sigma_reject"></span><strong>sigma_reject</strong><a class="paramlink headerlink reference internal" href="#utils.check_frames.params.sigma_reject">¶</a> &#8211; (Optional) Rejection coefficient (default 2.5)</li>
 </ul>
 </td>
 </tr>
@@ -535,7 +535,12 @@ True).</li>
 positions of the lines (the lines parameter) are considered to
 be exact and only need to be shifted. Positions are thus
 covarying. Very useful but the initial estimation of the line
-relative positions must be very precise (default False).</li>
+relative positions must be very precise. This parameter can also
+be a tuple of the same length as the number of lines to
+distinguish the covarying lines. Covarying lines must share the
+same number. e.g. on 4 lines, [NII]6548, Halpha, [NII]6584,
+[SII]6717, [SII]6731, if each ion has a different velocity
+cov_pos can be : [0,1,0,2,2]. (default False).</li>
 <li><span class="target" id="utils.fit_lines_in_vector.params.reguess_positions"></span><strong>reguess_positions</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.reguess_positions">¶</a> &#8211; (Optional) If True, positions are
 guessed again. Useful if the given estimations really are rough
 ones. Note that this must not be used with cov_pos set to True
@@ -591,6 +596,48 @@ depending on the option return_fitted_vector.</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.fit_map">
+<tt class="descclassname">utils.</tt><tt class="descname">fit_map</tt><big>(</big><em>data_map</em>, <em>err_map</em>, <em>smooth_deg</em><big>)</big><a class="headerlink" href="#utils.fit_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit map with low order polynomials</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="utils.fit_map.params.data_map"></span><strong>data_map</strong><a class="paramlink headerlink reference internal" href="#utils.fit_map.params.data_map">¶</a> &#8211; data map</li>
+<li><span class="target" id="utils.fit_map.params.err_map"></span><strong>err_map</strong><a class="paramlink headerlink reference internal" href="#utils.fit_map.params.err_map">¶</a> &#8211; error map</li>
+<li><span class="target" id="utils.fit_map.params.smooth_deg"></span><strong>smooth_deg</strong><a class="paramlink headerlink reference internal" href="#utils.fit_map.params.smooth_deg">¶</a> &#8211; Degree of fit smoothing (beware of high
+smoothing degrees)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(fitted data map, error map, fit error)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.flambda2ABmag">
+<tt class="descclassname">utils.</tt><tt class="descname">flambda2ABmag</tt><big>(</big><em>flambda</em>, <em>lam</em><big>)</big><a class="headerlink" href="#utils.flambda2ABmag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return AB magnitude from flux in erg/cm2/s/A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.flambda2ABmag.params.flambda"></span><strong>flambda</strong><a class="paramlink headerlink reference internal" href="#utils.flambda2ABmag.params.flambda">¶</a> &#8211; Flux in erg/cm2/s/A. Can be an array.</li>
+<li><span class="target" id="utils.flambda2ABmag.params.lambda"></span><strong>lambda</strong><a class="paramlink headerlink reference internal" href="#utils.flambda2ABmag.params.lambda">¶</a> &#8211; Wavelength in A of the Flux. If flambda is an array
+lambda must have the same shape.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.fnu2flambda">
 <tt class="descclassname">utils.</tt><tt class="descname">fnu2flambda</tt><big>(</big><em>fnu</em>, <em>nu</em><big>)</big><a class="headerlink" href="#utils.fnu2flambda" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a flux in erg/cm2/s/Hz to a flux in erg/cm2/s/A</p>
@@ -601,6 +648,25 @@ depending on the option return_fitted_vector.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.fnu2flambda.params.fnu"></span><strong>fnu</strong><a class="paramlink headerlink reference internal" href="#utils.fnu2flambda.params.fnu">¶</a> &#8211; Flux in erg/cm2/s/Hz</li>
 <li><span class="target" id="utils.fnu2flambda.params.nu"></span><strong>nu</strong><a class="paramlink headerlink reference internal" href="#utils.fnu2flambda.params.nu">¶</a> &#8211; frequency in Hz</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.fwhm_cm12nm">
+<tt class="descclassname">utils.</tt><tt class="descname">fwhm_cm12nm</tt><big>(</big><em>fwhm_cm1</em>, <em>cm1</em><big>)</big><a class="headerlink" href="#utils.fwhm_cm12nm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a FWHM in cm-1 to a FWHM in nm.</p>
+<p>The central wavelength in cm-1 of the line must also be given</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.fwhm_cm12nm.params.fwhm_cm1"></span><strong>fwhm_cm1</strong><a class="paramlink headerlink reference internal" href="#utils.fwhm_cm12nm.params.fwhm_cm1">¶</a> &#8211; FWHM in cm-1</li>
+<li><span class="target" id="utils.fwhm_cm12nm.params.cm1"></span><strong>cm1</strong><a class="paramlink headerlink reference internal" href="#utils.fwhm_cm12nm.params.cm1">¶</a> &#8211; Wavelength in cm-1 where the FWHM is evaluated</li>
 </ul>
 </td>
 </tr>
@@ -1849,7 +1915,7 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

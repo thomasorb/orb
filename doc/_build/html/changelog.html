@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; Orb 1.2.2 documentation</title>
+    <title>Changelog &mdash; Orb 1.2.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.2',
+        VERSION:     '1.2.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
     <link rel="prev" title="Astrometry module" href="astrometry_module.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -59,11 +59,23 @@
 <li><a class="reference internal" href="#usno-b1-based-star-detection">USNO-B1 based star detection</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-2">v1.2</a></li>
+<li><a class="reference internal" href="#v1-2">v1.2</a><ul>
 <li><a class="reference internal" href="#v1-2-1">v1.2.1</a></li>
 <li><a class="reference internal" href="#v1-2-2">v1.2.2</a><ul>
 <li><a class="reference internal" href="#orcs-integration">ORCS integration</a></li>
 <li><a class="reference internal" href="#orb-s-scripts">ORB&#8217;s scripts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-2-3">v1.2.3</a></li>
+<li><a class="reference internal" href="#v1-2-4">v1.2.4</a><ul>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+<li><a class="reference internal" href="#sitelle-data">SITELLE data</a><ul>
+<li><a class="reference internal" href="#sitelle-image-mode">Sitelle image mode</a></li>
+<li><a class="reference internal" href="#prebinning">Prebinning</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -145,9 +157,8 @@ version ready for release.</li>
 <li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></tt></a> initial estimation enhanced (more
 robust and precise)</li>
 </ul>
-</div>
 <div class="section" id="v1-2-1">
-<h2>v1.2.1<a class="headerlink" href="#v1-2-1" title="Permalink to this headline">¶</a></h2>
+<h3>v1.2.1<a class="headerlink" href="#v1-2-1" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference internal" href="utils_module.html#utils.transform_spectrum" title="utils.transform_spectrum"><tt class="xref py py-meth docutils literal"><span class="pre">transform_spectrum()</span></tt></a> and
 <a class="reference internal" href="utils_module.html#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">transform_interferogram()</span></tt></a> adjusted to lose no energy
@@ -161,15 +172,17 @@ space back and forth)&#8217;</li>
 </ul>
 </div>
 <div class="section" id="v1-2-2">
-<h2>v1.2.2<a class="headerlink" href="#v1-2-2" title="Permalink to this headline">¶</a></h2>
+<h3>v1.2.2<a class="headerlink" href="#v1-2-2" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><tt class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></tt> and
-<tt class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></tt> Cythonised.</li>
+<li><a class="reference internal" href="utils_module.html#utils.spectrum_mean_energy" title="utils.spectrum_mean_energy"><tt class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></tt></a> and
+<a class="reference internal" href="utils_module.html#utils.interf_mean_energy" title="utils.interf_mean_energy"><tt class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></tt></a> Cythonised to
+<a class="reference internal" href="cutils_module.html#cutils.spectrum_mean_energy" title="cutils.spectrum_mean_energy"><tt class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></tt></a> and
+<a class="reference internal" href="cutils_module.html#cutils.interf_mean_energy" title="cutils.interf_mean_energy"><tt class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></tt></a>.</li>
 <li><a class="reference internal" href="core_module.html#core.OptionFile" title="core.OptionFile"><tt class="xref py py-class docutils literal"><span class="pre">OptionFile</span></tt></a> enhanced to be used by
 <tt class="xref py py-meth docutils literal"><span class="pre">orbs.Orbs.__init__()</span></tt>.</li>
 </ul>
 <div class="section" id="orcs-integration">
-<h3>ORCS integration<a class="headerlink" href="#orcs-integration" title="Permalink to this headline">¶</a></h3>
+<h4>ORCS integration<a class="headerlink" href="#orcs-integration" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>new keywords in config.orb: OBS_LAT, OBS_LON, OBS_ALT for ORCS.</li>
 <li>new general keyword in OptionFile: INCLUDE, used to include the
@@ -183,13 +196,124 @@ method accessible to ORCS.</li>
 </ul>
 </div>
 <div class="section" id="orb-s-scripts">
-<h3>ORB&#8217;s scripts<a class="headerlink" href="#orb-s-scripts" title="Permalink to this headline">¶</a></h3>
+<h4>ORB&#8217;s scripts<a class="headerlink" href="#orb-s-scripts" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>move ORB&#8217;s scripts (dstack, combine, rollxz, rollyz, reduce) from
 orbs/scripts to orb/scripts so that only ORBS specific scripts are
 in orbs/scripts.</li>
 <li>create <strong>unstack</strong> script to unstack a cube into a set of frames</li>
 </ul>
+</div>
+</div>
+<div class="section" id="v1-2-3">
+<h3>v1.2.3<a class="headerlink" href="#v1-2-3" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>add <a class="reference internal" href="utils_module.html#utils.flambda2ABmag" title="utils.flambda2ABmag"><tt class="xref py py-meth docutils literal"><span class="pre">flambda2ABmag()</span></tt></a></li>
+<li>change file globals.py for constants.py</li>
+<li>add <a class="reference internal" href="core_module.html#core.Tools._get_basic_spectrum_header" title="core.Tools._get_basic_spectrum_header"><tt class="xref py py-meth docutils literal"><span class="pre">_get_basic_spectrum_header()</span></tt></a> to return a
+header for a 1D spectrum.</li>
+<li><a class="reference internal" href="core_module.html#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">write_fits()</span></tt></a> updated to create ds9 readable 1D
+FITS files.</li>
+<li><a class="reference internal" href="utils_module.html#utils.fit_lines_in_vector" title="utils.fit_lines_in_vector"><tt class="xref py py-meth docutils literal"><span class="pre">fit_lines_in_vector()</span></tt></a> accepts a tuple for the
+parameter cov_pos. This tuple gives the lines that are
+covarying. This way, [NII] and Halpha can have different velocities,
+but the [NII] lines will share the same velocity, improving a lot
+the precision on their estimated velocity without being biased by
+the Halpha velocity.</li>
+<li><a class="reference internal" href="utils_module.html#utils.fit_map" title="utils.fit_map"><tt class="xref py py-meth docutils literal"><span class="pre">fit_map()</span></tt></a> created. This function is a generalization
+of the old <tt class="xref py py-meth docutils literal"><span class="pre">orbs.process.Phase.fit_phase_map()</span></tt> which now use
+this general function also. The fitting process has been enhanced
+and is now more robust and use NaNs instead of zeros.</li>
+</ul>
+</div>
+<div class="section" id="v1-2-4">
+<h3>v1.2.4<a class="headerlink" href="#v1-2-4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="miscellaneous">
+<h4>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>all scripts have been renamed to orb-*</li>
+<li>&#8211;nostar and &#8211;flat bug fixed. Cosmic ray detection will not be done
+if those options are given.</li>
+</ul>
+</div>
+<div class="section" id="sitelle-data">
+<h4>SITELLE data<a class="headerlink" href="#sitelle-data" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><p class="first">new command: <strong>orb-conf</strong>. Its general purpose is to help the
+administrator to quickly change ORB configuration. Its first use is
+to change the configuration file depending on the used
+instrument. To change the configration file from spiomm to sitelle
+just type:</p>
+<div class="highlight-python"><pre>orb-conf -i sitelle</pre>
+</div>
+<p>This command avoid the painful manual change of the config file. At
+each new version this command can be run to quickly (and safely)
+reconfigure ORB. Note that this function requires write rights on
+the ORB installation folder.</p>
+</li>
+</ul>
+<div class="section" id="sitelle-image-mode">
+<h5>Sitelle image mode<a class="headerlink" href="#sitelle-image-mode" title="Permalink to this headline">¶</a></h5>
+<ul>
+<li><p class="first">if ORBS is in <strong>sitelle mode</strong> (if the configuration file points to
+config.sitelle.orb), SITELLE&#8217;s data frames are handled at the core
+level. <a class="reference internal" href="core_module.html#core.Tools.read_fits" title="core.Tools.read_fits"><tt class="xref py py-meth docutils literal"><span class="pre">read_fits()</span></tt></a> accepts two new options:
+image_mode and chip_index. If image_mode is set to &#8216;sitelle&#8217; and the
+chip index is 1 or 2, then the read_fits function will return only
+of the 2 chips (depending on the chip index). <strong>Chip slicing</strong> is
+handled by
+<a class="reference internal" href="core_module.html#core.Tools._read_sitelle_chip" title="core.Tools._read_sitelle_chip"><tt class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></tt></a>. <a class="reference internal" href="core_module.html#core.Cube.__getitem__" title="core.Cube.__getitem__"><tt class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></tt></a>
+has also been modified in the same way with the same new options. A
+parameter line can now be added to the very first line of the image
+list passed to the <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><tt class="xref py py-class docutils literal"><span class="pre">Cube</span></tt></a>. This line must be
+something like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># sitelle 1</span>
+</pre></div>
+</div>
+<p>If the first keyword is sitelle, the second keyword is understood as
+the chip index to read. This way, <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><tt class="xref py py-class docutils literal"><span class="pre">Cube</span></tt></a> understand
+that the data is SITELLE&#8217;s data and what chip has to be read.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="core_module.html#core.Tools._create_list_from_dir" title="core.Tools._create_list_from_dir"><tt class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></tt></a> now accepts the options
+image_mode and chip_index and creates the parameter line at the very
+beginning of the output file list.</p>
+</li>
+<li><p class="first"><strong>overscan</strong> <a class="reference internal" href="core_module.html#core.Tools._read_sitelle_chip" title="core.Tools._read_sitelle_chip"><tt class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></tt></a> automatically
+substract the bias level given by the overscan areas of the returned
+image. This default behaviour can be canceled in the future.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="prebinning">
+<h5>Prebinning<a class="headerlink" href="#prebinning" title="Permalink to this headline">¶</a></h5>
+<p>Used for faster computation of big data set. It
+can also be useful if the user simply wants binned data. At the user
+level only one option must be passed to the option file:</p>
+<div class="highlight-python"><pre>PREBINNING 2 # Data is prebinned by 2</pre>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The real binning of the original data must be kept to the
+same values. The user must no modify the the values of BINCAM1 and
+BINCAM2.</p>
+</div>
+<ul>
+<li><p class="first">if this option is set <a class="reference internal" href="core_module.html#core.Tools._create_list_from_dir" title="core.Tools._create_list_from_dir"><tt class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></tt></a>
+just adds the following directive at the beginning of the image list
+file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># prebinning 2</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference internal" href="core_module.html#core.Tools.read_fits" title="core.Tools.read_fits"><tt class="xref py py-meth docutils literal"><span class="pre">read_fits()</span></tt></a> accepts the option
+&#8216;binning&#8217;. <a class="reference internal" href="core_module.html#core.Tools._image_binning" title="core.Tools._image_binning"><tt class="xref py py-meth docutils literal"><span class="pre">_image_binning()</span></tt></a> has been created to
+bin 2D data efficiently. <a class="reference internal" href="core_module.html#core.Cube.__getitem__" title="core.Cube.__getitem__"><tt class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></tt></a> has been
+modified to read and treat transparently the new prebinning
+directive that is added at the beginning of an image list file.</p>
+</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -212,7 +336,7 @@ in orbs/scripts.</li>
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

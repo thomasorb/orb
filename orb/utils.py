@@ -598,8 +598,7 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
         args=(frames[divs[ijob]:divs[ijob+1],:,:],
               combine, reject, sigma, True, False),
         modules=("import numpy as np",
-                 "from orbs.utils import create_master_frame",
-                 "from orbs.cutils import master_combine")))
+                 "import orb.cutils as cutils")))
             for ijob in range(ncpus)]
     
     for ijob, job in jobs:
@@ -610,7 +609,7 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
     return result
 
 
-def check_frames(frames, sigma_reject=2.):
+def check_frames(frames, sigma_reject=2.5):
     """Check and reject deviating frames based on their median level.
 
     Frames with a too deviant median level are discarded. This
@@ -618,7 +617,7 @@ def check_frames(frames, sigma_reject=2.):
 
     :param frames: Set of frames to check
     
-    :param sigma_reject: (Optional) Rejection coefficient (default 2.)
+    :param sigma_reject: (Optional) Rejection coefficient (default 2.5)
     
     """
     z_median = np.array([bn.nanmedian(frames[:,:,iframe])
@@ -2822,8 +2821,13 @@ def transform_interferogram(interf, nm_laser,
     # 11 - Off-axis effect correction with maxima map   
     # Irregular wavelength axis creation
     correction_coeff = float(calibration_coeff) / nm_laser
-    nm_axis_ireg = create_nm_axis_ireg(spectrum_corr.shape[0], step, order,
-                                       nm_max=nm_max, corr=correction_coeff)
+    if not wavenumber:
+        base_axis = create_nm_axis_ireg(
+            spectrum_corr.shape[0], step, order,
+            nm_max=nm_max, corr=correction_coeff)
+    else:
+        base_axis = create_cm1_axis(
+            spectrum_corr.shape[0], step, order, corr=correction_coeff)
     
     # Spectrum is returned if folding order is even
     if int(order) & 1:
@@ -2836,20 +2840,19 @@ def transform_interferogram(interf, nm_laser,
     if not wavenumber:
         final_axis = create_nm_axis(final_step_nb, step, order, nm_max=nm_max)
     else:
-        final_axis = create_nm_axis_ireg(final_step_nb, step, order,
-                                         nm_max=nm_max, corr=1.)
+        final_axis = create_cm1_axis(final_step_nb, step, order, corr=1.)
  
     # spectrum interpolation
     if not (wavenumber and correction_coeff == 1.):
         spectrum = interpolate_axis(spectrum_corr, final_axis, 5,
-                                    old_axis=nm_axis_ireg)
+                                    old_axis=base_axis)
     else:
         spectrum = spectrum_corr
 
 
     # Extrapolated parts of the spectrum are set to NaN
-    spectrum[np.nonzero(final_axis > np.max(nm_axis_ireg))] = np.nan
-    spectrum[np.nonzero(final_axis < np.min(nm_axis_ireg))] = np.nan
+    spectrum[np.nonzero(final_axis > np.max(base_axis))] = np.nan
+    spectrum[np.nonzero(final_axis < np.min(base_axis))] = np.nan
 
 
     if conserve_energy:

@@ -22,6 +22,8 @@ Contents
     cutils.robust_average
     cutils.gaussian1d
     cutils.sinc1d
+    cutils.interf_mean_energy
+    cutils.spectrum_mean_energy
     cutils.fft_filter
     cutils.low_pass_image_filter
     cutils.fast_gaussian_kernel
@@ -56,6 +58,8 @@ Cutils
 .. autofunction:: robust_average
 .. autofunction:: gaussian1d
 .. autofunction:: sinc1d
+.. autofunction:: interf_mean_energy
+.. autofunction:: spectrum_mean_energy
 .. autofunction:: fft_filter
 .. autofunction:: low_pass_image_filter
 .. autofunction:: fast_gaussian_kernel

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: dstack
+# File: combine
 
 ## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -21,22 +21,22 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 #############################################
-############ DSTACK script ##################
+############ COMBINE script ##################
 #############################################
 
-# This script helps the user to stack a set of frames in a cube. A
+# This script helps the user to combine a set of frames. A
 # list of frames path must be given. List files created by ORBS can be
 # used. Custom lists can be created using the command:
 # 'ls /path/to/file/*.fits > list'
 
-
+import os, sys
 from orb.core import Cube
-import sys, os
 
 def usage(): 
-    print """usage: dstack LIST_OF_FITS CUBE_NAME
+    print """usage: combine LIST_OF_FITS IMAGE_NAME
     
-    Convert a list of fits frames in a cube.
+    Combine a set of frames in one frame.
+    
     Frames must have the same shape."""
   
     sys.exit(2)
@@ -46,10 +46,11 @@ def main():
     if len(sys.argv) < 3: usage()
 
     list_of_fits_path = sys.argv[1]
-    cube_name = sys.argv[2]
+    im_name = sys.argv[2]
     if os.path.exists(list_of_fits_path):
         cube = Cube(list_of_fits_path, no_log=True)
-        cube.export(cube_name)
+        im = cube.get_mean_image()
+        cube.write_fits(im_name, im)
     else:
         print "The list file does not exist"
        

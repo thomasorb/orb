@@ -941,7 +941,7 @@ class Astrometry(Tools):
             stack_nb = self.detect_stack
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
-                
+
             if not self.BIG_DATA:
                 im = utils.create_master_frame(
                     self.data[:,:,
@@ -1590,7 +1590,7 @@ class Astrometry(Tools):
         self._print_msg("Detecting stars", color=True)
 
         im = self._get_combined_frame()
-      
+        
         # high pass filtering of the image to remove nebulosities   
         self._print_msg("Filtering master image")
         hp_im = utils.high_pass_diff_image_filter(im, deg=1)

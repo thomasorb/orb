@@ -39,6 +39,7 @@ import time
 import math
 import traceback
 import inspect
+import re
 
 ## MODULES IMPORTS
 
@@ -807,22 +808,70 @@ class Tools(object):
         else:
             return default_value
 
-    def _create_list_from_dir(self, dir_path, list_file_path):
+    def _create_list_from_dir(self, dir_path, list_file_path,
+                              image_mode=None, chip_index=None,
+                              prebinning=None):
         """Create a file containing the list of all FITS files at
         a specified directory and returns the path to the list 
         file.
 
         :param dir_path: Directory containing the FITS files
+        
         :param list_file_path: Path to the list file to be created
+
+        :param image_mode: (Optional) Image mode. If not None the
+          given string will be written at the first line of the file
+          along with the chip index.
+
+        :param chip_index: (Optional) Index of the chip, must be an
+          integer. Used in conjonction with image mode to write the
+          first directive line of the file which indicates the image
+          mode.
+
+        :param prebinning: (Optional) If not None, must be an
+          integer. Add another directive line for data prebinning
+          (default None).
+        
         :returns: Path to the created list file
         """
+
+        def sort_image_list(file_list):
+            
+            file_list = [path for path in file_list if '.fits' in path]
+            # get all numbers
+            file_keys = np.array([re.findall("[0-9]+", path)
+                                  for path in file_list if '.fits' in path],
+                                 dtype=int)
+            
+            # get changing column
+            test = np.sum(file_keys == file_keys[0,:], axis=0)
+            if np.min(test) > 1:
+                self._print_error('Image list cannot be safely sorted. Two images at least have the same index')
+            else:
+                column_index = np.argmin(test)
+            
+            file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
+                column_index]))
+            return file_list
+
         if dir_path[-1] != os.sep:
             dir_path += os.sep
         dir_path = os.path.dirname(str(dir_path))
         if os.path.exists(dir_path):
             list_file = self.open_file(list_file_path)
+
+            # print image mode directive line
+            if image_mode is not None:
+                list_file.write('# {} {}\n'.format(image_mode, chip_index))
+
+            # print prebinning directive line
+            if prebinning is not None:
+                list_file.write('# prebinning {}\n'.format(int(prebinning)))
+
             file_list = os.listdir(dir_path)
-            file_list.sort()
+            # image list sort
+            file_list = sort_image_list(file_list)
+            
             first_file = True
             file_nb = 0
             self._print_msg('Cheking {}'.format(dir_path))
@@ -1032,7 +1081,8 @@ class Tools(object):
     def read_fits(self, fits_name, no_error=False, nan_filter=False, 
                   return_header=False, return_hdu_only=False,
                   return_mask=False, silent=False, delete_after=False,
-                  data_index=0):
+                  data_index=0, image_mode='classic', chip_index=None,
+                  binning=None):
         """Read a FITS data file and returns its data.
         
         :param fits_name: Path to the file, can be either
@@ -1062,6 +1112,20 @@ class Tools(object):
 
         :param data_index: (Optional) Index of data in the header data
           unit (Default 0).
+
+        :param image_mode: (Optional) Can be 'sitelle' or
+          'classic'. If in 'sitelle' mode, the parameter
+          chip_index must also be set to 0 or 1. In this mode only
+          one of both SITELLE quadrants is returned. In 'classic' mode
+          the whole frame is returned (default 'classic').
+
+        :param chip_index: (Optional) Index of the chip of the
+          SITELLE image. Used only if image_mode is set to 'sitelle'
+          In this case, must be 1 or 2. Else must be None (default
+          None).
+
+        :param binning: (Optional) If not None, returned data is
+          binned by this amount (must be an integer >= 1)
         
         .. note:: Please refer to
           http://www.stsci.edu/institute/software_hardware/pyfits/ for
@@ -1090,12 +1154,24 @@ class Tools(object):
         if return_hdu_only:
             return hdulist
         else:
-            fits_data = np.array(
-                hdulist[data_index].data.transpose()).astype(float)
+            if image_mode == 'classic':
+                fits_data = np.array(
+                    hdulist[data_index].data.transpose()).astype(float)
+            elif image_mode == 'sitelle':
+                fits_data = self._read_sitelle_chip(hdulist, chip_index)
+                
+            else:
+                self._print_error(
+                    "Image_mode must be set to 'sitelle' or 'classic'")
+                
+        hdulist.close
         
+        if binning is not None:
+            fits_data = self._image_binning(fits_data, binning)
+            
         if (nan_filter):
             fits_data = np.nan_to_num(fits_data)
-        hdulist.close
+        
         
         if delete_after:
             try:
@@ -1108,6 +1184,92 @@ class Tools(object):
             return np.squeeze(fits_data), fits_header
         else:
             return np.squeeze(fits_data)
+
+    def _image_binning(self, a, binning):
+        """Return mean binned image. 
+
+        :param image: 2d array to bin.
+
+        :param binning: binning (must be an integer >= 1).
+
+        ..note:: Only the complete sets of rows or columns are binned
+          so that depending on the bin size and the image size the
+          last columns or rows can be ignored. This ensures that the
+          binning surface is the same for every pixel in the binned
+          array.
+        """
+        binning = int(binning)
+
+        if binning < 1: self._print_error('binning must be an integer >= 1')
+        if binning == 1: return a
+        
+        if a.dtype is not np.float:
+            a = a.astype(np.float)
+            
+        # x_bin
+        xslices = np.arange(0, a.shape[0]+1, binning).astype(np.int)
+        a = np.add.reduceat(a[0:xslices[-1],:], xslices[:-1], axis=0)
+
+        # y_bin
+        yslices = np.arange(0, a.shape[1]+1, binning).astype(np.int)
+        a = np.add.reduceat(a[:,0:yslices[-1]], yslices[:-1], axis=1)
+        
+        return a / (binning**2.)
+
+    def _read_sitelle_chip(self, hdu, chip_index, substract_bias=True):
+        """Return chip data of a SITELLE FITS image.
+
+        :param hdu: pyfits.HDU Instance of the SITELLE image
+        
+        :param chip_index: Index of the chip to read. Must be 1 or 2.
+
+        :param substract_bias: If True bias is automatically
+          substracted by using the overscan area (default True).
+        """
+        def get_slice(key, index):
+            key = '{}{}'.format(key, index)
+            if key not in hdu[0].header: self._print_error(
+            'Bad SITELLE image header')
+            chip_section = hdu[0].header[key]
+            chip_section = chip_section[1:-1].split(',')
+            x_min = int(chip_section[0].split(':')[0]) - 1
+            x_max = int(chip_section[0].split(':')[1])
+            y_min = int(chip_section[1].split(':')[0]) - 1
+            y_max = int(chip_section[1].split(':')[1])
+            return slice(x_min,x_max,1), slice(y_min,y_max,1)
+
+        def get_data(key, index, frame):
+            xslice, yslice = get_slice(key, index)
+            return np.copy(frame[yslice, xslice]).transpose()
+
+        if int(chip_index) not in (1,2): self._print_error(
+            'Chip index must be 1 or 2')
+
+        frame = hdu[0].data.astype(np.float)
+        
+        # get data without bias substraction
+        if not substract_bias:
+            return get_data('DSEC', chip_index, frame)
+
+        if chip_index == 1:
+            amps = ['A', 'B', 'C', 'D']
+        elif chip_index == 2:
+            amps = ['E', 'F', 'G', 'H']
+            
+        xchip, ychip = get_slice('DSEC', chip_index)
+        data = np.empty((xchip.stop - xchip.start, ychip.stop - ychip.start),
+                        dtype=float)
+        
+        for iamp in amps:
+            xamp, yamp = get_slice('DSEC', iamp)
+            amp_data = get_data('DSEC', iamp, frame)
+            bias_data = get_data('BSEC', iamp, frame)
+            bias_data = np.mean(bias_data, axis=0)
+            amp_data = amp_data - bias_data
+            data[xamp.start - xchip.start: xamp.stop - xchip.start,
+                 yamp.start - ychip.start: yamp.stop - ychip.start] = amp_data
+            
+        return data
 
     def open_file(self, file_name, mode='w'):
         """Open a file in write mode (by default) and return a file
@@ -1189,6 +1351,12 @@ class Cube(Tools):
     
     _return_mask = False # When True, __get_item__ return mask data
                          # instead of 'normal' data
+
+    # read directives
+    _image_mode = 'classic' # opening mode. can be sitelle or classic
+    _chip_index = None # in sitelle mode, this gives the index of
+                       # the chip to read
+    _prebinning = None # prebinning directive
 
     def __init__(self, image_list_path, data_prefix="temp_data_",
                  config_file_name="config.orb", project_header=list(),
@@ -1273,26 +1441,45 @@ class Cube(Tools):
         self.QUAD_NB = self.DIV_NB**2L
         self.image_list_path = image_list_path
 
+        self._image_mode = 'classic'
+        self._chip_index = None
+        self._prebinning = None
+
         if (self.image_list_path != ""):
-        # read image list and get cube dimensions  
+            # read image list and get cube dimensions  
             image_list_file = self.open_file(self.image_list_path, "r")
             image_name_list = image_list_file.readlines()
             if len(image_name_list) == 0:
                 self._print_error('No image path in the given image list')
             is_first_image = True
+            
             for image_name in image_name_list:
                 image_name = (image_name.splitlines())[0]
-                if is_first_image:          
-                    self.image_list = [image_name]
-                    image_data = self.read_fits(image_name)
-                    self.dimx = image_data.shape[0]
-                    self.dimy = image_data.shape[1]
-                    is_first_image = False
-                    # check if masked frame exists
-                    if os.path.exists(self._get_mask_path(image_name)):
-                        self._mask_exists = True
+                if is_first_image:
+                    # check list parameter
+                    if '#' in image_name:
+                        image_name = image_name.split()
+                        if 'sitelle' in image_name:
+                            self._image_mode = 'sitelle'
+                            self._chip_index = int(image_name[-1])
+                        elif 'prebinning':
+                            self._prebinning = int(image_name[-1])
+                            
                     else:
-                        self._mask_exists = False
+                        self.image_list = [image_name]
+                        image_data = self.read_fits(
+                            image_name,
+                            image_mode=self._image_mode,
+                            chip_index=self._chip_index,
+                            binning=self._prebinning)
+                        self.dimx = image_data.shape[0]
+                        self.dimy = image_data.shape[1]
+                        is_first_image = False
+                        # check if masked frame exists
+                        if os.path.exists(self._get_mask_path(image_name)):
+                            self._mask_exists = True
+                        else:
+                            self._mask_exists = False
                 elif self._MASK_FRAME_TAIL not in image_name:
                     self.image_list.append(image_name)
 
@@ -1353,12 +1540,27 @@ class Cube(Tools):
                 self._print_error("Type error: list indices must be integers or slices")
             return slice(slice_min, slice_max, 1)
         
-        def _get_frame_section(cube, x_slice, y_slice, frame_index):
+        def _get_frame_section(cube, x_slice, y_slice, frame_index,
+                               image_mode, chip_index, prebinning):
             hdu = cube.read_fits(cube.image_list[frame_index],
                                  return_hdu_only=True,
                                  return_mask=cube._return_mask)
-            section = np.copy(hdu[0].section[y_slice, x_slice].transpose())
+            if image_mode == 'sitelle':
+                section = cube._read_sitelle_chip(hdu, chip_index)
+                section = cube._image_binning(section, prebinning)[
+                        x_slice, y_slice]
+                
+            else:
+                if prebinning is not None:
+                    section = np.copy(
+                        hdu[0].data.transpose())
+                    section = cube._image_binning(section, prebinning)[
+                        x_slice, y_slice]
+                else:
+                    section = np.copy(
+                        hdu[0].section[y_slice, x_slice].transpose())
             del hdu
+            
             cube._return_mask = False # always reset self._return_mask to False
             return section
 
@@ -1373,7 +1575,10 @@ class Cube(Tools):
         z_slice = _get_default_slice(key[2], self.dimz)
         
         # get first frame
-        data = _get_frame_section(self, x_slice, y_slice, z_slice.start)
+        data = _get_frame_section(self, x_slice, y_slice, z_slice.start,
+                                  self._image_mode, self._chip_index,
+                                  self._prebinning)
+        
         # return this frame if only one frame is wanted
         if z_slice.stop == z_slice.start + 1L:
             return data
@@ -1394,7 +1599,9 @@ class Cube(Tools):
 
             jobs = [(ijob, job_server.submit(
                 _get_frame_section,
-                args=(self, x_slice, y_slice, ik+ijob),
+                args=(self, x_slice, y_slice, ik+ijob,
+                      self._image_mode, self._chip_index,
+                      self._prebinning),
                 modules=("numpy as np",)))
                     for ijob in range(ncpus)]
 
