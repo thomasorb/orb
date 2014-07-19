@@ -412,7 +412,7 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
     
     cdef np.ndarray[np.float64_t, ndim=2] mean2d = np.zeros((dimx, dimy))
     cdef np.ndarray[np.float64_t, ndim=2] std2d = np.zeros((dimx, dimy))
-    
+       
     frames = np.sort(frames, axis=2)
     mean2d = bn.nanmean(frames[:,:,1:-1], axis=2)
     std2d = bn.nanstd(frames[:,:,1:-1], axis=2)
@@ -428,12 +428,21 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
                          * bn.nanmean(std2d / sqrtmean2d, axis=1)).T
 
             framesdiff = np.abs((frames.T - mean2d.T).T)
-            argmax2d = bn.nanargmax(framesdiff, axis=2)
             max2d = bn.nanmax(framesdiff, axis=2)
+            
+            # remove all-NaN slices
+            nans = np.nonzero(np.isnan(max2d))
+            # NaNs in framesdiff are set to 0 to avoid a ValueError
+            framesdiff[nans] = 0.
+            # All Nan slices are set to a value which will always reject them
+            max2d[nans] = std2d[nans] * sigma * 2
+            
+            argmax2d = bn.nanargmax(framesdiff, axis=2)
             mask2d = np.nonzero(np.logical_and(max2d > std2d * sigma,
                                                rejects2d < dimz - nkeep))
             rejpix = (mask2d[0], mask2d[1], argmax2d[mask2d])
             frames[rejpix] = np.nan
+            
             new_rejects2d[mask2d] += 1
             
             if np.all(new_rejects2d == rejects2d):

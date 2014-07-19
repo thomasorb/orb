@@ -1594,7 +1594,7 @@ class Astrometry(Tools):
         # high pass filtering of the image to remove nebulosities   
         self._print_msg("Filtering master image")
         hp_im = utils.high_pass_diff_image_filter(im, deg=1)
-
+        
         # preselection
         mean_hp_im = np.mean(hp_im)
         std_hp_im = np.std(hp_im)
