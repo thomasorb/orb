@@ -207,3 +207,16 @@ level only one option must be passed to the option file::
   bin 2D data efficiently. :py:meth:`~core.Cube.__getitem__` has been
   modified to read and treat transparently the new prebinning
   directive that is added at the beginning of an image list file.
+
+
+v1.2.4.1
+========
+
+* Enhanced frame
+  registration. :py:meth:`~astrometry.Astrometry.register` now takes
+  full advantage of the multi fit of stars and filters the best stars
+  by SNR. A double fit is also done at the beginning to ensure that
+  the positions pattern is the best possible.
+
+* bug fix, minimum number of good fitted pixels in a column for a
+  phase fit lowered to 1/3 of the column length instead of 1/2.

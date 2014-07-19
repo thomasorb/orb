@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
@@ -2306,7 +2307,8 @@ def fit_map(data_map, err_map, smooth_deg):
         imap = data_map[:,ij]
         ierr = err_map[:,ij]
         w = (1./ierr)**2.
-        if np.sum(~np.isnan(imap)) > dimy/2.:
+        # reject columns with too much NaNs
+        if np.sum(~np.isnan(imap)) > dimy/3.:
             vect, coeffs = polyfit1d(imap, smooth_deg, w=w,
                                      return_coeffs=True)
             coeffs_list.append(coeffs[0])
@@ -2322,7 +2324,9 @@ def fit_map(data_map, err_map, smooth_deg):
     coeffs_list = np.array(coeffs_list)
     err_list = np.array(err_list)
 
-
+    if np.all(np.isnan(coeffs_list)):
+        self._print_error('All fit coeffs are NaNs !')
+        
     ## Smooth fit parameters 
     params_fit_list = list()
     fit_coeffs_list = list()

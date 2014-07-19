@@ -38,6 +38,7 @@ import math
 import urllib2
 import StringIO
 import pywcs
+import bottleneck as bn
 
 import utils
 import cutils
@@ -1998,42 +1999,47 @@ class Astrometry(Tools):
         star_list_pix = list()
         for istar in star_list_deg:
             pos = wcs.wcs_sky2pix(istar[0], istar[1], 0)
-            star_list_pix.append((pos[0][0], pos[1][0]))
-
-        ## # Save stars coords
-        ## f = self.open_file(self._get_stars_coords_path(), 'w')
-        ## for istar in star_list_deg:
-        ##     f.write("%f %f\n"%(istar[0],
-        ##                        istar[1]))
+            posx = pos[0][0] ; posy = pos[1][0]
+            if posx > 0 and posx < self.dimx and posy > 0 and posy < self.dimy:
+                star_list_pix.append((posx, posy))
+            else:
+                star_list_pix.append((np.nan, np.nan))
+            
 
         star_list_pix = np.array(star_list_pix)
         
         # Fit stars from computed position in the image
+        # 1st fit pass
         self.reset_star_list(star_list_pix)
         fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
                                              multi_fit=True, enable_zoom=True,
                                              enable_rotation=True)
         star_list_fit = fit_params.get_star_list(all_params=True)
-        self.reset_star_list(star_list_pix)
+        
+        self.reset_star_list(star_list_fit)
+        # 2nd fit pass
+        fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
+                                             multi_fit=True, enable_zoom=True,
+                                             enable_rotation=True)
+        star_list_fit = fit_params.get_star_list(all_params=True)
+        self.reset_star_list(star_list_fit)
+        
         fwhm_pix = utils.robust_median(fit_params[:,'fwhm_pix'])
         self.reset_fwhm_arc(self.pix2arc(fwhm_pix))
         if self.dimz > 1:
             self.fit_results[:,0] = fit_params
         else:
             self.fit_results = fit_params
-        
-        # get median difference on the position to remove bad fitted
-        # stars from all the lists
-        delta_pos = (star_list_pix - star_list_fit)**2.
-        delta_pos = np.sqrt(delta_pos[:,0] + delta_pos[:,1])
-        
-        delta_med = utils.robust_mean(delta_pos)
+
+        # get median snr to remove bad fitted stars from all the lists
+        snr = fit_params[:,'snr']
+        snr_med = utils.robust_median(snr)
         
         star_list_deg_temp = list()
         star_list_pix_temp = list()
         star_list_fit_temp = list()
-        for istar in range(len(delta_pos)):
-            if np.mean(np.array(delta_pos[istar])) < delta_med:
+        for istar in range(len(snr)):
+            if snr[istar] > snr_med:
                 star_list_deg_temp.append(star_list_deg[istar])
                 star_list_pix_temp.append(star_list_pix[istar])
                 star_list_fit_temp.append(star_list_fit[istar])
@@ -2042,8 +2048,8 @@ class Astrometry(Tools):
         star_list_pix = star_list_pix_temp
         star_list_fit = star_list_fit_temp
 
-        self._print_msg("Best fitted stars: %d (threshold: %f)"%(
-            len(star_list_deg), delta_med))
+        self._print_msg("Best stars: %d (SNR threshold: %f)"%(
+            len(star_list_deg), snr_med))
         
         # Optimization of the transformation parameters
         progress = ProgressBar(0)
@@ -2060,20 +2066,6 @@ class Astrometry(Tools):
                                  ftol=1e-3, xtol=1e-3, disp=False))
         progress.end()
         
-        final_error = get_transformation_error(
-            [self.wcs_rotation, self.target_x, self.target_y, delta],
-            star_list_deg, star_list_fit,
-            self.target_ra, self.target_dec)
-
-        self._print_msg("Final error after optimization: %f"%final_error)
-        self._print_msg("Optimization parameters:\n"
-                        + "> Rotation angle: %f\n"%self.wcs_rotation
-                        + "> Target position: (%f, %f)\n"%(self.target_x,
-                                                           self.target_y)
-                        + "> Scale (arcseconds/pixel): %f"%(delta*3600.))
-
-        self.reset_scale(delta*3600.)
-        
         # update WCS
         wcs = pywcs.WCS(naxis=2)
         wcs.wcs.crpix = [self.target_x, self.target_y]
@@ -2081,9 +2073,48 @@ class Astrometry(Tools):
         wcs.wcs.crval = [self.target_ra, self.target_dec]
         wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
         wcs.wcs.crota = [self.wcs_rotation, self.wcs_rotation]
-
-        self._print_msg('Corrected WCS computed')
         
+
+        # compute astrometrical precision
+        star_list_pix = list()
+        for istar in star_list_deg:
+            pos = wcs.wcs_sky2pix(istar[0], istar[1], 0)
+            star_list_pix.append((pos[0][0], pos[1][0]))
+            
+        self.reset_star_list(star_list_pix)
+        fit_params = self.fit_stars_in_frame(
+            deep_frame, local_background=False,
+            multi_fit=False, enable_zoom=False,
+            enable_rotation=False)
+        
+        precision = np.sqrt(utils.robust_median(utils.sigmacut(
+            (fit_params[:, 'dx'] + fit_params[:, 'dy'])**2.)))
+        precision_err = np.sqrt(utils.robust_median(utils.sigmacut(
+            (fit_params[:, 'x_err'] + fit_params[:, 'y_err'])**2.)))
+        
+        precision *= delta * 3600.
+        precision_err *= delta * 3600.
+        fwhm = utils.robust_median(fit_params[:, 'fwhm']) * delta * 3600.
+        fwhm_std = utils.robust_std(fit_params[:, 'fwhm']) * delta * 3600.
+        
+        self._print_msg(
+            "Astrometrical precision [in arcsec]: {:.3f} [+/-{:.3f}]".format(
+                precision, precision_err))
+        self._print_msg(
+            "Stars FWHM [in arcsec]: {:.3f} [+/-{:.3f}]".format(
+                fwhm, fwhm_std))
+       
+        self._print_msg(
+            "Optimization parameters:\n"
+            + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
+            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                self.target_x, self.target_y)
+            + "> Scale (arcsec/pixel): {:.3f}".format(
+                delta * 3600.))
+
+        self.reset_scale(delta * 3600.)
+        
+        self._print_msg('Corrected WCS computed')
         return wcs
 
 ########################################
@@ -2624,7 +2655,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
       
       * Multi fit mode [multi_fit=True]: Stars are fitted all together
         considering that the position pattern is well known, the same
-        shift in x and y will be applied. Optionaly the pattern can be
+        shift in x and y will be applied. Optionally the pattern can be
         rotated and zoomed. The FWHM is also considered to be the
         same. This option is far more robust and precise for alignment
         purpose.
