@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core module &mdash; Orb 1.2.4 documentation</title>
+    <title>Core module &mdash; Orb 1.2.4.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4',
+        VERSION:     '1.2.4.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
     <link rel="next" title="Utils module" href="utils_module.html" />
     <link rel="prev" title="Python for ORB users" href="python_for_orb.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -722,6 +722,28 @@ substracted by using the overscan area (default True).</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._read_spiomm_data">
+<tt class="descname">_read_spiomm_data</tt><big>(</big><em>hdu</em>, <em>image_path</em>, <em>substract_bias=True</em><big>)</big><a class="headerlink" href="#core.Tools._read_spiomm_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return data of an SpIOMM FITS image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._read_spiomm_data.params.hdu"></span><strong>hdu</strong><a class="paramlink headerlink reference internal" href="#core.Tools._read_spiomm_data.params.hdu">¶</a> &#8211; pyfits.HDU Instance of the SpIOMM image</li>
+<li><span class="target" id="core.Tools._read_spiomm_data.params.image_path"></span><strong>image_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._read_spiomm_data.params.image_path">¶</a> &#8211; Image path</li>
+<li><span class="target" id="core.Tools._read_spiomm_data.params.substract_bias"></span><strong>substract_bias</strong><a class="paramlink headerlink reference internal" href="#core.Tools._read_spiomm_data.params.substract_bias">¶</a> &#8211; If True bias is automatically
+substracted by using the associated bias frame as an
+overscan frame. Mean bias level is thus computed along the y
+axis of the bias frame (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._update_fits_key">
 <tt class="descname">_update_fits_key</tt><big>(</big><em>fits_name</em>, <em>key</em>, <em>value</em>, <em>comment</em><big>)</big><a class="headerlink" href="#core.Tools._update_fits_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update one key of a FITS file. If the key doesn&#8217;t exist
@@ -801,8 +823,8 @@ except if an error is raised (default False).</li>
 reading (default False).</li>
 <li><span class="target" id="core.Tools.read_fits.params.data_index"></span><strong>data_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.data_index">¶</a> &#8211; (Optional) Index of data in the header data
 unit (Default 0).</li>
-<li><span class="target" id="core.Tools.read_fits.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.image_mode">¶</a> &#8211; (Optional) Can be &#8216;sitelle&#8217; or
-&#8216;classic&#8217;. If in &#8216;sitelle&#8217; mode, the parameter
+<li><span class="target" id="core.Tools.read_fits.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.image_mode">¶</a> &#8211; (Optional) Can be &#8216;sitelle&#8217;, &#8216;spiomm&#8217; or
+&#8216;classic&#8217;. In &#8216;sitelle&#8217; mode, the parameter
 chip_index must also be set to 0 or 1. In this mode only
 one of both SITELLE quadrants is returned. In &#8216;classic&#8217; mode
 the whole frame is returned (default &#8216;classic&#8217;).</li>
@@ -1663,7 +1685,7 @@ Halpha       656.461  656.280
 
 <dl class="attribute">
 <dt id="core.Lines.air_lines_nm">
-<tt class="descname">air_lines_nm</tt><em class="property"> = {'[OII]3726': 372.603, '[OII]3729': 372.882, '[OIII]5007': 500.684, '[SII]6716': 671.647, 'Hbeta': 486.133, 'Hdelta': 410.176, '[OIII]4959': 495.892, '[NII]6548': 654.803, 'Hepsilon': 397.007, 'Halpha': 656.28, 'Hgamma': 434.047, '[OIII]4363': 436.321, '[SII]6731': 673.085, '[NII]6583': 658.341}</em><a class="headerlink" href="#core.Lines.air_lines_nm" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">air_lines_nm</tt><em class="property"> = {'[OII]3726': 372.603, '[SII]6731': 673.085, '[OIII]5007': 500.684, '[SII]6716': 671.647, '[NeIII]3869': 386.875, '[OIII]4959': 495.891, '[SIII]6312': 631.21, '[ArIII]7751': 775.112, 'HeI5876': 587.567, '[OII]7120': 731.965, 'HeI7065': 706.528, '[OI]6300': 630.03, '[ArIII]7136': 713.578, '[OII]3729': 372.882, '[NII]6583': 658.341, '[NII]6548': 654.803, 'Hbeta': 486.133, 'Hdelta': 410.176, '[OII]7130': 733.016, 'Hepsilon': 397.007, 'Halpha': 656.28, 'Hgamma': 434.047, '[OIII]4363': 436.321, 'HeI6678': 667.815}</em><a class="headerlink" href="#core.Lines.air_lines_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Air emission lines wavelength</p>
 </dd></dl>
 
@@ -1991,7 +2013,7 @@ True).</li>
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

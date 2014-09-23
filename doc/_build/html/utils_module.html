@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.2.4 documentation</title>
+    <title>Utils module &mdash; Orb 1.2.4.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4',
+        VERSION:     '1.2.4.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -715,6 +715,25 @@ lambda must have the same shape.</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.get_axis_from_hdr">
+<tt class="descclassname">utils.</tt><tt class="descname">get_axis_from_hdr</tt><big>(</big><em>hdr</em>, <em>axis_index=1</em><big>)</big><a class="headerlink" href="#utils.get_axis_from_hdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return axis from a classic FITS header</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.get_axis_from_hdr.params.hdr"></span><strong>hdr</strong><a class="paramlink headerlink reference internal" href="#utils.get_axis_from_hdr.params.hdr">¶</a> &#8211; FITS header</li>
+<li><span class="target" id="utils.get_axis_from_hdr.params.axis_index"></span><strong>axis_index</strong><a class="paramlink headerlink reference internal" href="#utils.get_axis_from_hdr.params.axis_index">¶</a> &#8211; (Optional) Index of the axis to retrieve
+(default 1)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.get_box_coords">
 <tt class="descclassname">utils.</tt><tt class="descname">get_box_coords</tt><big>(</big><em>ix</em>, <em>iy</em>, <em>box_size</em>, <em>x_lim_min</em>, <em>x_lim_max</em>, <em>y_lim_min</em>, <em>y_lim_max</em><big>)</big><a class="headerlink" href="#utils.get_box_coords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the coordinates of a box given the center of the box,
@@ -954,6 +973,29 @@ filter. Must be &gt; 0 (default 2).</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.indft">
+<tt class="descclassname">utils.</tt><tt class="descname">indft</tt><big>(</big><em>a</em>, <em>x</em><big>)</big><a class="headerlink" href="#utils.indft" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse Non-uniform Discret Fourier Transform.</p>
+<p>Compute the irregularly sampled interferogram from a regularly
+sampled spectrum.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.indft.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#utils.indft.params.a">¶</a> &#8211; regularly sampled spectrum.</li>
+<li><span class="target" id="utils.indft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.indft.params.x">¶</a> &#8211; positions of the interferogram samples. If x =
+range(size(a)), this function is equivalent to an idft or a
+ifft. Note that the ifft is of course much faster to
+compute. This vector may have any length.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.interf_mean_energy">
 <tt class="descclassname">utils.</tt><tt class="descname">interf_mean_energy</tt><big>(</big><em>interf</em><big>)</big><a class="headerlink" href="#utils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean energy of an interferogram by step.</p>
@@ -1005,14 +1047,14 @@ this value (default np.nan)</li>
 
 <dl class="function">
 <dt id="utils.interpolate_map">
-<tt class="descclassname">utils.</tt><tt class="descname">interpolate_map</tt><big>(</big><em>calibration_map</em>, <em>dimx</em>, <em>dimy</em><big>)</big><a class="headerlink" href="#utils.interpolate_map" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">interpolate_map</tt><big>(</big><em>m</em>, <em>dimx</em>, <em>dimy</em><big>)</big><a class="headerlink" href="#utils.interpolate_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate 2D data map.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="utils.interpolate_map.params.calibration_map"></span><strong>calibration_map</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.calibration_map">¶</a> &#8211; Map</li>
+<li><span class="target" id="utils.interpolate_map.params.m"></span><strong>m</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.m">¶</a> &#8211; Map</li>
 <li><span class="target" id="utils.interpolate_map.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.dimx">¶</a> &#8211; X dimension of the result</li>
 <li><span class="target" id="utils.interpolate_map.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#utils.interpolate_map.params.dimy">¶</a> &#8211; Y dimension of the result</li>
 </ul>
@@ -1601,7 +1643,7 @@ stars use order 1 (linear interpolation).</p>
 
 <dl class="function">
 <dt id="utils.sigmacut">
-<tt class="descclassname">utils.</tt><tt class="descname">sigmacut</tt><big>(</big><em>x</em>, <em>sigma=3.0</em>, <em>min_values=3</em>, <em>central_value=None</em>, <em>warn=False</em><big>)</big><a class="headerlink" href="#utils.sigmacut" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">sigmacut</tt><big>(</big><em>x</em>, <em>sigma=3.0</em>, <em>min_values=3</em>, <em>central_value=None</em>, <em>warn=False</em>, <em>return_index_list=False</em><big>)</big><a class="headerlink" href="#utils.sigmacut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a distribution after a sigma cut rejection
 of the too deviant values.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1619,6 +1661,8 @@ the central value of the cut. Else the median of the
 distribution is used as the central value (default None)</li>
 <li><span class="target" id="utils.sigmacut.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.warn">¶</a> &#8211; (Optional) If False no warning message is printed
 (default False).</li>
+<li><span class="target" id="utils.sigmacut.params.return_index_list"></span><strong>return_index_list</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.return_index_list">¶</a> &#8211; (Optional) If True the list of the non
+rejected values is returned also (default False).</li>
 </ul>
 </td>
 </tr>
@@ -1715,7 +1759,7 @@ transformed (default None).</li>
 
 <dl class="function">
 <dt id="utils.transform_interferogram">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=True</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1783,7 +1827,7 @@ which is not the case if the spectrum is projected onto a, more
 convenient, regular wavelength axis) (default False).</li>
 <li><span class="target" id="utils.transform_interferogram.params.low_order_correction"></span><strong>low_order_correction</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.low_order_correction">¶</a> &#8211; (Optional) If True substract a low
 order polynomial to remove low frequency noise. Useful for
-unperfectly corrected interferograms (default True).</li>
+unperfectly corrected interferograms (default False).</li>
 <li><span class="target" id="utils.transform_interferogram.params.conserve_energy"></span><strong>conserve_energy</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.conserve_energy">¶</a> &#8211; (Optional) If True the energy is conserved
 in the transformation (default False).</li>
 </ul>
@@ -1799,7 +1843,7 @@ in the transformation (default False).</li>
 
 <dl class="function">
 <dt id="utils.transform_spectrum">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_spectrum</tt><big>(</big><em>spectrum</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>nm_max=None</em>, <em>ext_phase=None</em>, <em>return_complex=False</em>, <em>wavenumber=False</em>, <em>final_step_nb=None</em><big>)</big><a class="headerlink" href="#utils.transform_spectrum" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">utils.</tt><tt class="descname">transform_spectrum</tt><big>(</big><em>spectrum</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>nm_max=None</em>, <em>ext_phase=None</em>, <em>return_complex=False</em>, <em>wavenumber=False</em>, <em>final_step_nb=None</em>, <em>sampling_vector=None</em><big>)</big><a class="headerlink" href="#utils.transform_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform a spectrum into an interferogram.</p>
 <p>This function is the inverse of <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>.</p>
 <p>So that to get the initial interferogram, the same options used in
@@ -1810,7 +1854,7 @@ in <a class="reference internal" href="#utils.transform_interferogram" title="ut
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><span class="target" id="utils.transform_spectrum.params.spectrum"></span><strong>spectrum</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.spectrum">¶</a> &#8211; Spectrum to transform</li>
 <li><span class="target" id="utils.transform_spectrum.params.nm_laser"></span><strong>nm_laser</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.nm_laser">¶</a> &#8211; Wavelength of the laser used for calibration.</li>
 <li><span class="target" id="utils.transform_spectrum.params.calibration_coeff"></span><strong>calibration_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.calibration_coeff">¶</a> &#8211; Wavelength of the laser emission line
@@ -1841,6 +1885,15 @@ interferogram. Must be less than the size of the original
 spectrum. If None the final size of the interferogram is the
 same as the size of the original spectrum (default None).</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Sampling_vector:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">(Optional) If the samples of the interferogram
+are not uniformly distributed, a vector giving the positions of
+the samples can be passed. In this case an inverse NDFT is
+computed which may be really slow for long vectors. A uniformly
+sampled vector would be range(final_step_nb). The size of the
+vector must be equal to final_step_nb (default None).</p>
 </td>
 </tr>
 </tbody>
@@ -1915,7 +1968,7 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

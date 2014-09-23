@@ -51,6 +51,21 @@ import bottleneck as bn
 #### MISC  #######################################
 ##################################################
 
+def get_axis_from_hdr(hdr, axis_index=1):
+    """Return axis from a classic FITS header
+
+    :param hdr: FITS header
+
+    :param axis_index: (Optional) Index of the axis to retrieve
+      (default 1)
+    """
+    naxis = int(hdr['NAXIS{}'.format(axis_index)])
+    crpix = float(hdr['CRPIX{}'.format(axis_index)])
+    crval = float(hdr['CRVAL{}'.format(axis_index)])
+    cdelt = float(hdr['CDELT{}'.format(axis_index)])
+    return (np.arange(naxis, dtype=float) + 1. - crpix) * cdelt + crval
+    
+    
 def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
     """Read one line of a ds9 region file and return the list of
     pixels in the region.
@@ -222,23 +237,24 @@ def compute_obs_params(nm_min_filter, nm_max_filter,
     :return: A tuple (order, step size, max wavelength)
     """
     def get_step(nm_min, n, cos_min):
-        return int(nm_min * ((n+1)/(2*cos_min)))
+        return int(nm_min * ((n+1.)/(2.*cos_min)))
 
     def get_nm_max(step, n, cos_max):
         return 2. * step * cos_max / float(n)
+    
     cos_min = math.cos(math.radians(theta_min))
     cos_max = math.cos(math.radians(theta_max))
 
-    n = 1
+    n = 0
     order_found = False
     while n < 100 and not order_found:
+        n += 1
         step = get_step(nm_min_filter, n, cos_min)
         nm_max = get_nm_max(step, n, cos_max)
         if nm_max <= nm_max_filter:
             order_found = True
             order = n - 1
-        n += 1
-
+       
     step = get_step(nm_min_filter, order, cos_min)
     nm_max = get_nm_max(step, order, cos_max)
     
@@ -532,7 +548,8 @@ def robust_median(a, warn=True):
         
     return result
 
-def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False):
+def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False,
+             return_index_list=False):
     """Return a distribution after a sigma cut rejection
     of the too deviant values.
 
@@ -550,6 +567,9 @@ def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False):
 
     :param warn: (Optional) If False no warning message is printed
       (default False).
+
+    :param return_index_list: (Optional) If True the list of the non
+      rejected values is returned also (default False).
     """
     if central_value is None:
         central_value = 0.
@@ -563,7 +583,8 @@ def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False):
         return x
         
     return cutils.sigmacut(np.array(x).astype(float).flatten(), central_value,
-                           use_central_value, sigma, min_values)
+                           use_central_value, sigma, min_values,
+                           return_index_list=return_index_list)
     
 
 def pp_create_master_frame(frames, combine='average', reject='avsigclip',
@@ -722,13 +743,15 @@ def create_master_frame(frames, combine='average', reject='avsigclip',
     if check:
         frames = check_frames(frames)
     
-    master, reject_count_frame = cutils.master_combine(
-        frames, sigma, NKEEP, combine_mode, reject_mode)
+    master, reject_count_frame, std_frame = cutils.master_combine(
+        frames, sigma, NKEEP, combine_mode, reject_mode, return_std_frame=True)
 
     if reject in ['sigclip', 'avsigclip']:
         if not silent: Tools()._print_msg("Maximum number of rejected pixels: %d"%np.max(reject_count_frame))
         if not silent: Tools()._print_msg("Mean number of rejected pixels: %f"%np.mean(reject_count_frame))
 
+    Tools()._print_msg("median std of combined frames: {}".format(
+        robust_median(std_frame)))
     
     return master
 
@@ -2367,23 +2390,22 @@ def fit_map(data_map, err_map, smooth_deg):
     return fitted_data_map, error_map, fit_error
 
     
-def interpolate_map(calibration_map, dimx, dimy):
+def interpolate_map(m, dimx, dimy):
     """Interpolate 2D data map.
     
-    :param calibration_map: Map
+    :param m: Map
     
     :param dimx: X dimension of the result
     
     :param dimy: Y dimension of the result
     """
-    x_map = np.arange(calibration_map.shape[0])
-    y_map = np.arange(calibration_map.shape[1])
-    x_int = np.linspace(0, calibration_map.shape[0], dimx,
+    x_map = np.arange(m.shape[0])
+    y_map = np.arange(m.shape[1])
+    x_int = np.linspace(0, m.shape[0], dimx,
                         endpoint=False)
-    y_int = np.linspace(0, calibration_map.shape[1], dimy,
+    y_int = np.linspace(0, m.shape[1], dimy,
                         endpoint=False)
-    interp = interpolate.RectBivariateSpline(x_map, y_map,
-                                             calibration_map)
+    interp = interpolate.RectBivariateSpline(x_map, y_map, m)
     return interp(x_int, y_int)
     
 def interpolate_size(a, size, deg):
@@ -2545,7 +2567,7 @@ def transform_interferogram(interf, nm_laser,
                             balanced=True, bad_frames_vector=None,
                             smoothing_deg=2, return_complex=False,
                             final_step_nb=None, wavenumber=False,
-                            low_order_correction=True,
+                            low_order_correction=False,
                             conserve_energy=False):
     
     """Transform an interferogram into a spectrum.
@@ -2630,7 +2652,7 @@ def transform_interferogram(interf, nm_laser,
 
     :param low_order_correction: (Optional) If True substract a low
       order polynomial to remove low frequency noise. Useful for
-      unperfectly corrected interferograms (default True).
+      unperfectly corrected interferograms (default False).
 
     :param conserve_energy: (Optional) If True the energy is conserved
       in the transformation (default False).
@@ -2875,7 +2897,7 @@ def transform_interferogram(interf, nm_laser,
 def transform_spectrum(spectrum, nm_laser, calibration_coeff,
                        step, order, window_type, zpd_shift, nm_max=None,
                        ext_phase=None, return_complex=False, wavenumber=False,
-                       final_step_nb=None):
+                       final_step_nb=None, sampling_vector=None):
     """Transform a spectrum into an interferogram.
 
     This function is the inverse of :py:meth:`utils.transform_interferogram`.
@@ -2926,9 +2948,15 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
       spectrum. If None the final size of the interferogram is the
       same as the size of the original spectrum (default None).
 
+    :sampling_vector: (Optional) If the samples of the interferogram
+      are not uniformly distributed, a vector giving the positions of
+      the samples can be passed. In this case an inverse NDFT is
+      computed which may be really slow for long vectors. A uniformly
+      sampled vector would be range(final_step_nb). The size of the
+      vector must be equal to final_step_nb (default None).
+    
     .. note:: Interferogram can be complex
     """
-    INTERPOLATION_COEFF = 1 # must be an interger >= 1
 
     spectrum = np.copy(spectrum)
     spectrum = spectrum.astype(np.complex)
@@ -2980,11 +3008,18 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     spectrum = zeros_spectrum
 
     # IFFT and re-shift + center burst
-    interf = np.fft.ifft(spectrum)
-    interf = np.roll(interf, step_nb - zpd_shift)
-    interf = interf[
-        step_nb-(final_step_nb/2) - final_step_nb%2:
-        step_nb+(final_step_nb/2)]
+    if sampling_vector is None:
+        interf = np.fft.ifft(spectrum)
+        interf = np.roll(interf, step_nb - zpd_shift)
+        interf = interf[
+            step_nb-(final_step_nb/2) - final_step_nb%2:
+            step_nb+(final_step_nb/2)]
+        
+    else:
+        if sampling_vector.shape[0] != final_step_nb: Tools()._print_error(
+            'Sampling vector size must be equal to the final_step_nb')
+        
+        interf = indft(spectrum, sampling_vector)
     
     interf = np.array(interf)
 
@@ -3001,6 +3036,20 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     else:
         return interf.real
 
+def indft(a, x):
+    """Inverse Non-uniform Discret Fourier Transform.
+
+    Compute the irregularly sampled interferogram from a regularly
+    sampled spectrum.
+
+    :param a: regularly sampled spectrum.
+    
+    :param x: positions of the interferogram samples. If x =
+      range(size(a)), this function is equivalent to an idft or a
+      ifft. Note that the ifft is of course much faster to
+      compute. This vector may have any length.
+    """
+    return cutils.indft(a.astype(float), x.astype(float))
 
 def spectrum_mean_energy(spectrum):
     """Return the mean energy of a spectrum by channel.
@@ -3050,3 +3099,5 @@ def variable_me(n, params):
      me.real = (me_real * np.cos(phi) - me_imag * np.sin(phi)) * a + (1. - a)
      me.imag = (me_imag * np.cos(phi) + me_real * np.sin(phi)) * a
      return me
+
+

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUtils module &mdash; Orb 1.2.4 documentation</title>
+    <title>CUtils module &mdash; Orb 1.2.4.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4',
+        VERSION:     '1.2.4.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
     <link rel="next" title="Astrometry module" href="astrometry_module.html" />
     <link rel="prev" title="Utils module" href="utils_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -176,6 +176,12 @@
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.multi_fit_stars</span></tt></a></td>
 <td>Fit multiple stars at the same time.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.part_value" title="cutils.part_value"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.part_value</span></tt></a></td>
+<td>Return the value lying between two parts of a partition</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.indft" title="cutils.indft"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.indft</span></tt></a></td>
+<td>Inverse Non-uniform Discret Fourier Transform.</td>
 </tr>
 </tbody>
 </table>
@@ -309,7 +315,7 @@ better but the longer too)</li>
 
 <dl class="function">
 <dt id="cutils.sigmacut">
-<tt class="descclassname">cutils.</tt><tt class="descname">sigmacut</tt><big>(</big><em>ndarray x</em>, <em>double central_value</em>, <em>int use_central_value</em>, <em>double sigma</em>, <em>int min_values</em><big>)</big><a class="headerlink" href="#cutils.sigmacut" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">cutils.</tt><tt class="descname">sigmacut</tt><big>(</big><em>ndarray x</em>, <em>double central_value</em>, <em>int use_central_value</em>, <em>double sigma</em>, <em>int min_values</em>, <em>return_index_list=False</em><big>)</big><a class="headerlink" href="#cutils.sigmacut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a distribution after a sigma cut rejection
 of the too deviant values.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -326,6 +332,8 @@ central value of the cut. Else the median of the distribution is
 used as the central value</li>
 <li><span class="target" id="cutils.sigmacut.params.use_central_value"></span><strong>use_central_value</strong><a class="paramlink headerlink reference internal" href="#cutils.sigmacut.params.use_central_value">¶</a> &#8211; If True central value is used instead of
 the median.</li>
+<li><span class="target" id="cutils.sigmacut.params.return_index_list"></span><strong>return_index_list</strong><a class="paramlink headerlink reference internal" href="#cutils.sigmacut.params.return_index_list">¶</a> &#8211; (Optional) If True the list of the non
+rejected values is returned also (default False).</li>
 </ul>
 </td>
 </tr>
@@ -356,7 +364,7 @@ deviant</li>
 
 <dl class="function">
 <dt id="cutils.master_combine">
-<tt class="descclassname">cutils.</tt><tt class="descname">master_combine</tt><big>(</big><em>ndarray frames</em>, <em>double sigma</em>, <em>int nkeep</em>, <em>int combine_mode</em>, <em>int reject_mode</em><big>)</big><a class="headerlink" href="#cutils.master_combine" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">cutils.</tt><tt class="descname">master_combine</tt><big>(</big><em>ndarray frames</em>, <em>double sigma</em>, <em>int nkeep</em>, <em>int combine_mode</em>, <em>int reject_mode</em>, <em>return_std_frame=False</em><big>)</big><a class="headerlink" href="#cutils.master_combine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a master frame from a set a frames.</p>
 <p>This method has been inspired by the <strong>IRAF</strong> function
 combine.</p>
@@ -371,6 +379,8 @@ combine.</p>
 combining operation</li>
 <li><span class="target" id="cutils.master_combine.params.combine_mode"></span><strong>combine_mode</strong><a class="paramlink headerlink reference internal" href="#cutils.master_combine.params.combine_mode">¶</a> &#8211; 0, mean ; 1, median.</li>
 <li><span class="target" id="cutils.master_combine.params.reject_mode"></span><strong>reject_mode</strong><a class="paramlink headerlink reference internal" href="#cutils.master_combine.params.reject_mode">¶</a> &#8211; 0, avsigclip ; 1, sigclip ; 2, minmax.</li>
+<li><span class="target" id="cutils.master_combine.params.return_std"></span><strong>return_std</strong><a class="paramlink headerlink reference internal" href="#cutils.master_combine.params.return_std">¶</a> &#8211; If True, the std frame is also returned
+(default False).</li>
 </ul>
 </td>
 </tr>
@@ -741,6 +751,50 @@ stars. ron and dcl parameters are thus not used (default True).</li>
 </table>
 </dd></dl>
 
+<dl class="function">
+<dt id="cutils.part_value">
+<tt class="descclassname">cutils.</tt><tt class="descname">part_value</tt><big>(</big><em>ndarray distrib</em>, <em>double coeff</em><big>)</big><a class="headerlink" href="#cutils.part_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value lying between two parts of a partition</p>
+<p>The partition process is nan robusts. It is made over a
+distribution cleaned from nans.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="cutils.part_value.params.distrib"></span><strong>distrib</strong><a class="paramlink headerlink reference internal" href="#cutils.part_value.params.distrib">¶</a> &#8211; A 1D array of floats.</li>
+<li><span class="target" id="cutils.part_value.params.coeff"></span><strong>coeff</strong><a class="paramlink headerlink reference internal" href="#cutils.part_value.params.coeff">¶</a> &#8211; Partition coefficient (must be &gt;= 0. and &lt;= 1.). If
+0 return the min of the distribution and if 1 return the max.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cutils.indft">
+<tt class="descclassname">cutils.</tt><tt class="descname">indft</tt><big>(</big><em>ndarray a</em>, <em>ndarray x</em><big>)</big><a class="headerlink" href="#cutils.indft" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse Non-uniform Discret Fourier Transform.</p>
+<p>Compute the irregularly sampled interferogram from a regularly
+sampled spectrum.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="cutils.indft.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#cutils.indft.params.a">¶</a> &#8211; regularly sampled spectrum.</li>
+<li><span class="target" id="cutils.indft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#cutils.indft.params.x">¶</a> &#8211; positions of the interferogram samples. If x =
+range(size(a)), this function is equivalent to an idft or a
+ifft. Note that the ifft is of course much faster to
+compute. This vector may have any length.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 </div>
 
@@ -765,7 +819,7 @@ stars. ron and dcl parameters are thus not used (default True).</li>
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

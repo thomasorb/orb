@@ -220,3 +220,58 @@ v1.2.4.1
 
 * bug fix, minimum number of good fitted pixels in a column for a
   phase fit lowered to 1/3 of the column length instead of 1/2.
+
+v1.2.4.2
+========
+
+Astropy
+-------
+
+Astropy (http://www.astropy.org/) is definitly needed, pyfits and
+pywcs standalone modules are not needed anymore by ORBS (but they
+still can be used by other modules ;) even modules imported by ORBS so
+becarefull before removing them)
+
+* PYFITS: now imported from astropy.io.fits
+* PYWCS: now imported from astropy.wcs
+
+
+Better Star fit
+---------------
+
+* :py:meth:`~cutils.multi_fit_stars`: tilted background added to the model
+
+* detected stars are selected not too far from the center of the
+  frame
+
+* star box coeff set to 10 instead of 7 to get a better sky statistic
+  around stars.
+
+
+SpIOMM bias overscan for camera 2
+---------------------------------
+
+When it exists, the bias overscan created with each frame of the
+camera 2 is used to remove automatically the bias. Note that in this
+case **the path to the bias frames must not be given to ORBS** because
+ORBS will try to create a master bias and remove it at step 3. In
+fact, the mean of the master bias will be near 0 because the overscan
+is removed from the bias frames also. The impact of giving the path to
+the bias frame is thus not dramatic. But it is better not to give it.
+
+Miscellaneous
+-------------
+* :py:meth:`~astrometry.Astrometry.register` optimization routine is
+  based on a least square fit instead of a powell algorithm.
+
+* transfered :py:meth:`~cutils.part_value` from OACS cutils.
+
+* :py:meth:`~astrometry.Astrometry.get_alignment_vectors` simplified
+  because the multi fit mode is now robust enough to remove all which
+  was written for the preceding individual fit mode.
+
+* :py:meth:`~utils.indft`, :py:meth:`~cutils.indft` added to compute
+  Inverse Non-uniform Discret Fourier Transform (INDFT). New option
+  **sampling_vector** in :py:meth:`~utils.transform_spectrum` to give
+  the possibility to compute an INDFT by giving a non-uniform sampling
+  vector.

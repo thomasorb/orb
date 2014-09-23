@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; Orb 1.2.4 documentation</title>
+    <title>Changelog &mdash; Orb 1.2.4.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4',
+        VERSION:     '1.2.4.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
     <link rel="prev" title="Astrometry module" href="astrometry_module.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -74,6 +74,14 @@
 <li><a class="reference internal" href="#prebinning">Prebinning</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-2-4-1">v1.2.4.1</a></li>
+<li><a class="reference internal" href="#v1-2-4-2">v1.2.4.2</a><ul>
+<li><a class="reference internal" href="#astropy">Astropy</a></li>
+<li><a class="reference internal" href="#better-star-fit">Better Star fit</a></li>
+<li><a class="reference internal" href="#spiomm-bias-overscan-for-camera-2">SpIOMM bias overscan for camera 2</a></li>
+<li><a class="reference internal" href="#id1">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -315,6 +323,68 @@ directive that is added at the beginning of an image list file.</p>
 </div>
 </div>
 </div>
+<div class="section" id="v1-2-4-1">
+<h3>v1.2.4.1<a class="headerlink" href="#v1-2-4-1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Enhanced frame
+registration. <a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><tt class="xref py py-meth docutils literal"><span class="pre">register()</span></tt></a> now takes
+full advantage of the multi fit of stars and filters the best stars
+by SNR. A double fit is also done at the beginning to ensure that
+the positions pattern is the best possible.</li>
+<li>bug fix, minimum number of good fitted pixels in a column for a
+phase fit lowered to 1/3 of the column length instead of 1/2.</li>
+</ul>
+</div>
+<div class="section" id="v1-2-4-2">
+<h3>v1.2.4.2<a class="headerlink" href="#v1-2-4-2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="astropy">
+<h4>Astropy<a class="headerlink" href="#astropy" title="Permalink to this headline">¶</a></h4>
+<p>Astropy (<a class="reference external" href="http://www.astropy.org/">http://www.astropy.org/</a>) is definitly needed, pyfits and
+pywcs standalone modules are not needed anymore by ORBS (but they
+still can be used by other modules ;) even modules imported by ORBS so
+becarefull before removing them)</p>
+<ul class="simple">
+<li>PYFITS: now imported from astropy.io.fits</li>
+<li>PYWCS: now imported from astropy.wcs</li>
+</ul>
+</div>
+<div class="section" id="better-star-fit">
+<h4>Better Star fit<a class="headerlink" href="#better-star-fit" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></tt></a>: tilted background added to the model</li>
+<li>detected stars are selected not too far from the center of the
+frame</li>
+<li>star box coeff set to 10 instead of 7 to get a better sky statistic
+around stars.</li>
+</ul>
+</div>
+<div class="section" id="spiomm-bias-overscan-for-camera-2">
+<h4>SpIOMM bias overscan for camera 2<a class="headerlink" href="#spiomm-bias-overscan-for-camera-2" title="Permalink to this headline">¶</a></h4>
+<p>When it exists, the bias overscan created with each frame of the
+camera 2 is used to remove automatically the bias. Note that in this
+case <strong>the path to the bias frames must not be given to ORBS</strong> because
+ORBS will try to create a master bias and remove it at step 3. In
+fact, the mean of the master bias will be near 0 because the overscan
+is removed from the bias frames also. The impact of giving the path to
+the bias frame is thus not dramatic. But it is better not to give it.</p>
+</div>
+<div class="section" id="id1">
+<h4>Miscellaneous<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><tt class="xref py py-meth docutils literal"><span class="pre">register()</span></tt></a> optimization routine is
+based on a least square fit instead of a powell algorithm.</li>
+<li>transfered <a class="reference internal" href="cutils_module.html#cutils.part_value" title="cutils.part_value"><tt class="xref py py-meth docutils literal"><span class="pre">part_value()</span></tt></a> from OACS cutils.</li>
+<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.get_alignment_vectors" title="astrometry.Astrometry.get_alignment_vectors"><tt class="xref py py-meth docutils literal"><span class="pre">get_alignment_vectors()</span></tt></a> simplified
+because the multi fit mode is now robust enough to remove all which
+was written for the preceding individual fit mode.</li>
+<li><a class="reference internal" href="utils_module.html#utils.indft" title="utils.indft"><tt class="xref py py-meth docutils literal"><span class="pre">indft()</span></tt></a>, <tt class="xref py py-meth docutils literal"><span class="pre">indft()</span></tt> added to compute
+Inverse Non-uniform Discret Fourier Transform (INDFT). New option
+<strong>sampling_vector</strong> in <a class="reference internal" href="utils_module.html#utils.transform_spectrum" title="utils.transform_spectrum"><tt class="xref py py-meth docutils literal"><span class="pre">transform_spectrum()</span></tt></a> to give
+the possibility to compute an INDFT by giving a non-uniform sampling
+vector.</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 
@@ -336,7 +406,7 @@ directive that is added at the beginning of an image list file.</p>
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

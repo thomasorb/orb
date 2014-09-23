@@ -43,17 +43,10 @@ import re
 
 ## MODULES IMPORTS
 
+import cutils
 import numpy as np
 import bottleneck as bn
-
-try:
-    import astropy.io.fits as pyfits
-except:
-    import pyfits
-    import warnings
-    warnings.warn('PyFITS is now a part of Astropy (http://www.astropy.org/). PyFITS support as a standalone module will be stopped soon. It is better to install Astropy. You can still keep PyFITS for other applications.', FutureWarning)
-    
-
+import astropy.io.fits as pyfits
 from scipy import interpolate
 import pp
 
@@ -785,7 +778,6 @@ class Tools(object):
         """
         return os.path.splitext(path)[0] + self._MASK_FRAME_TAIL
 
-
     def _get_tuning_parameter(self, parameter_name, default_value):
         """Return the value of the tuning parameter if it exists. In
         the other case return the default value.
@@ -835,9 +827,15 @@ class Tools(object):
         :returns: Path to the created list file
         """
 
-        def sort_image_list(file_list):
+        def sort_image_list(file_list, image_mode):
             
             file_list = [path for path in file_list if '.fits' in path]
+            if len(file_list) == 0: return None
+
+            if image_mode == 'spiomm':
+                file_list = [path for path in file_list
+                             if not '_bias.fits' in path]
+
             # get all numbers
             file_keys = np.array([re.findall("[0-9]+", path)
                                   for path in file_list if '.fits' in path],
@@ -845,6 +843,7 @@ class Tools(object):
             
             # get changing column
             test = np.sum(file_keys == file_keys[0,:], axis=0)
+            
             if np.min(test) > 1:
                 self._print_error('Image list cannot be safely sorted. Two images at least have the same index')
             else:
@@ -870,7 +869,10 @@ class Tools(object):
 
             file_list = os.listdir(dir_path)
             # image list sort
-            file_list = sort_image_list(file_list)
+            file_list = sort_image_list(file_list, image_mode)
+            if file_list is None:
+                 self._print_error('There is no *.fits file in {}'.format(
+                     dir_path))
             
             first_file = True
             file_nb = 0
@@ -897,6 +899,7 @@ class Tools(object):
                     else:
                         self._print_error(str(file_path) + " does not exists !")
             if file_nb > 0:
+                self._print_msg('{} Images found'.format(file_nb))
                 return list_file_path
             else:
                 self._print_error('No FITS file in the folder: %s'%dir_path)
@@ -1015,7 +1018,7 @@ class Tools(object):
                                       update=True, end=True)
                     # Remove 3rd axis related keywords if there is no
                     # 3rd axis
-                    if hdu.header['NAXIS'] == 2:
+                    if len(fits_data.shape) <= 2:
                         for ikey in range(len(hdu.header)):
                             if isinstance(hdu.header[ikey], str):
                                 if ('Wavelength axis' in hdu.header[ikey]):
@@ -1113,8 +1116,8 @@ class Tools(object):
         :param data_index: (Optional) Index of data in the header data
           unit (Default 0).
 
-        :param image_mode: (Optional) Can be 'sitelle' or
-          'classic'. If in 'sitelle' mode, the parameter
+        :param image_mode: (Optional) Can be 'sitelle', 'spiomm' or
+          'classic'. In 'sitelle' mode, the parameter
           chip_index must also be set to 0 or 1. In this mode only
           one of both SITELLE quadrants is returned. In 'classic' mode
           the whole frame is returned (default 'classic').
@@ -1159,10 +1162,11 @@ class Tools(object):
                     hdulist[data_index].data.transpose()).astype(float)
             elif image_mode == 'sitelle':
                 fits_data = self._read_sitelle_chip(hdulist, chip_index)
-                
+            elif image_mode == 'spiomm':
+                fits_data, fits_header = self._read_spiomm_data(
+                    hdulist, fits_name)
             else:
-                self._print_error(
-                    "Image_mode must be set to 'sitelle' or 'classic'")
+                self._print_error("Image_mode must be set to 'sitelle', 'spiomm' or 'classic'")
                 
         hdulist.close
         
@@ -1270,6 +1274,49 @@ class Tools(object):
                  yamp.start - ychip.start: yamp.stop - ychip.start] = amp_data
             
         return data
+
+
+    def _read_spiomm_data(self, hdu, image_path, substract_bias=True):
+        """Return data of an SpIOMM FITS image.
+
+        :param hdu: pyfits.HDU Instance of the SpIOMM image
+
+        :param image_path: Image path
+        
+        :param substract_bias: If True bias is automatically
+          substracted by using the associated bias frame as an
+          overscan frame. Mean bias level is thus computed along the y
+          axis of the bias frame (default True).
+        """
+        CENTER_SIZE_COEFF = 0.1
+        
+        frame = np.array(hdu[0].data.transpose()).astype(np.float)
+        hdr = hdu[0].header
+        # check presence of a bias
+        bias_path = os.path.splitext(image_path)[0] + '_bias.fits'
+        if os.path.exists(bias_path):
+            bias_frame = self.read_fits(bias_path)
+            if substract_bias:
+                ## create overscan line
+                overscan = cutils.meansigcut2d(bias_frame, axis=1)
+                frame = (frame.T - overscan.T).T
+            
+            x_min = int(frame.shape[0]/2.
+                        - CENTER_SIZE_COEFF * frame.shape[0])
+            x_max = int(frame.shape[0]/2.
+                        + CENTER_SIZE_COEFF * frame.shape[0] + 1)
+            y_min = int(frame.shape[1]/2.
+                        - CENTER_SIZE_COEFF * frame.shape[1])
+            y_max = int(frame.shape[1]/2.
+                        + CENTER_SIZE_COEFF * frame.shape[1] + 1)
+            
+            hdr['BIAS-LVL'] = (
+                bn.nanmedian(
+                    bias_frame[x_min:x_max, y_min:y_max]),
+                'Bias level (moment, at the center of the frame)')
+            
+        return frame, hdr
+        
 
     def open_file(self, file_name, mode='w'):
         """Open a file in write mode (by default) and return a file
@@ -1443,7 +1490,7 @@ class Cube(Tools):
 
         self._image_mode = 'classic'
         self._chip_index = None
-        self._prebinning = None
+        self._prebinning = 1  # prebinning set to 1 by default
 
         if (self.image_list_path != ""):
             # read image list and get cube dimensions  
@@ -1462,7 +1509,10 @@ class Cube(Tools):
                         if 'sitelle' in image_name:
                             self._image_mode = 'sitelle'
                             self._chip_index = int(image_name[-1])
-                        elif 'prebinning':
+                        elif 'spiomm' in image_name:
+                            self._image_mode = 'spiomm'
+                            self._chip_index = None
+                        elif 'prebinning' in image_name:
                             self._prebinning = int(image_name[-1])
                             
                     else:
@@ -1548,10 +1598,16 @@ class Cube(Tools):
             if image_mode == 'sitelle':
                 section = cube._read_sitelle_chip(hdu, chip_index)
                 section = cube._image_binning(section, prebinning)[
-                        x_slice, y_slice]
+                    x_slice, y_slice]
+                
+            elif image_mode == 'spiomm':
+                section, header = cube._read_spiomm_data(
+                    hdu, cube.image_list[frame_index])
+                section = cube._image_binning(section, prebinning)[
+                    x_slice, y_slice]
                 
             else:
-                if prebinning is not None:
+                if prebinning == 1:
                     section = np.copy(
                         hdu[0].data.transpose())
                     section = cube._image_binning(section, prebinning)[
@@ -2399,18 +2455,28 @@ class Lines(Tools):
     
     air_lines_nm = {'[OII]3726':372.603,
                     '[OII]3729':372.882,
+                    '[NeIII]3869':386.875,
                     'Hepsilon':397.007,
                     'Hdelta':410.176,
                     'Hgamma':434.047,
                     '[OIII]4363':436.321,
                     'Hbeta':486.133,
-                    '[OIII]4959':495.892,
+                    '[OIII]4959':495.891,
                     '[OIII]5007':500.684,
+                    'HeI5876':587.567,
+                    '[OI]6300':630.030,
+                    '[SIII]6312':631.21,
                     '[NII]6548':654.803,
                     'Halpha':656.280,
                     '[NII]6583':658.341,
+                    'HeI6678':667.815,
                     '[SII]6716':671.647,
-                    '[SII]6731':673.085}
+                    '[SII]6731':673.085,
+                    'HeI7065':706.528,
+                    '[ArIII]7136':713.578,
+                    '[OII]7120':731.965,
+                    '[OII]7130':733.016,
+                    '[ArIII]7751':775.112}
     """Air emission lines wavelength"""
 
     vac_lines_name = None

@@ -250,7 +250,8 @@ def surface_value(int dimx, int dimy, double xc, double yc, double rmin,
 
 
 def sigmacut(np.ndarray[np.float64_t, ndim=1] x, double central_value,
-             int use_central_value, double sigma, int min_values):
+             int use_central_value, double sigma, int min_values,
+             return_index_list=False):
     """Return a distribution after a sigma cut rejection
     of the too deviant values.
 
@@ -267,14 +268,22 @@ def sigmacut(np.ndarray[np.float64_t, ndim=1] x, double central_value,
 
     :param use_central_value: If True central value is used instead of
       the median.
+
+    :param return_index_list: (Optional) If True the list of the non
+      rejected values is returned also (default False).
     """
     cdef int still_rejection = 1
     cdef double central_x
     cdef int new_sz
     cdef int sz
     
+    if return_index_list:
+        index_list = np.arange(np.size(x))
+        
     if bn.anynan(x):
         x = x[np.nonzero(~np.isnan(x))]
+        if return_index_list:
+            index_list = index_list[np.nonzero(~np.isnan(x))]
     
     while still_rejection:
         sz = np.size(x)
@@ -286,15 +295,54 @@ def sigmacut(np.ndarray[np.float64_t, ndim=1] x, double central_value,
         std_x = bn.nanstd(x)
         new_x = x[np.nonzero((x < central_x + sigma * std_x)
                              * (x > central_x - sigma * std_x))]
+        if return_index_list:
+            index_list = index_list[
+                np.nonzero((x < central_x + sigma * std_x)
+                           * (x > central_x - sigma * std_x))]
         
         new_sz = np.size(new_x)
         if new_sz == sz or new_sz <= min_values:
             still_rejection = 0
         else:
             x = new_x
-    return x
+    if not return_index_list:
+        return x
+    else:
+        return x, index_list
 
+def meansigcut2d(np.ndarray[np.float64_t, ndim=2] x, double sigma=3,
+                 int min_values=3, int axis=0):
+    """Return the sigma cut mean of a 2d array along a given axis.
 
+    :param x: The 2d array
+    
+    :param sigma: Number of sigma above which values are considered as
+      deviant
+
+    :param min_values: Minimum number of values to return
+
+    :param axis: Axis number. Must be 0 or 1.
+    """
+    cdef int i = 0
+    cdef int coaxis
+    if axis == 0: coaxis = 1
+    else: coaxis = 0
+    cdef int n = x.shape[coaxis]
+    
+    cdef np.ndarray[np.float64_t, ndim=1] line = np.empty(n, dtype=float)
+    cdef np.ndarray[np.float64_t, ndim=1] iline = np.empty(x.shape[axis],
+                                                           dtype=float)
+    
+    for i in range(n):
+        if axis == 0:
+            iline = x[:,i]
+        else:
+            iline = x[i,:]
+        line[i] = bn.nanmean(sigmacut(iline, 0, False,
+                                      sigma, min_values,
+                                      return_index_list=False))
+    return line
+    
 
 def sigmaclip(np.ndarray[np.float64_t, ndim=1] x, double sigma,
               int min_values):
@@ -345,7 +393,8 @@ def sigmaclip(np.ndarray[np.float64_t, ndim=1] x, double sigma,
     return x[min_mask:max_mask+1]
 
 def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
-                   int nkeep, int combine_mode, int reject_mode):
+                   int nkeep, int combine_mode, int reject_mode,
+                   return_std_frame=False):
     """
     Create a master frame from a set a frames.
 
@@ -362,6 +411,9 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
     :param combine_mode: 0, mean ; 1, median.
     
     :param reject_mode: 0, avsigclip ; 1, sigclip ; 2, minmax.
+
+    :param return_std: If True, the std frame is also returned
+      (default False).
 
     .. note:: Rejection operations:
 
@@ -460,10 +512,14 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
 
     ## Combination
     if combine_mode == 0:
-        return bn.nanmean(frames, axis=2), rejects2d
+        result = bn.nanmean(frames, axis=2)
     elif combine_mode == 1:
-        return bn.nanmedian(frames, axis=2), rejects2d
+        result = bn.nanmedian(frames, axis=2)
     else: raise Exception('Bad combining mode. Must be 0 or 1')
+    if not return_std_frame:
+        return result, rejects2d
+    else:
+        return result, rejects2d, bn.nanstd(frames, axis=2)
 
 
 def _robust_format(np.ndarray x):
@@ -1128,12 +1184,17 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                   + (<double> box_size / 2.) - 0.5)
             dy = (params[istar,3] - <double> int_posy
                   + (<double> box_size / 2.) - 0.5)
-            
-            star = gaussian_array2d(params[istar,0],
+
+            # star
+            star = gaussian_array2d(0.,
                                     params[istar,1],
                                     dx, dy,
                                     params[istar,4],
                                     box_size, box_size)
+            # background
+            xx, xy = np.mgrid[0 - dx: star.shape[0] - dx,
+                              0 - dy: star.shape[1] - dy]
+            star += params[istar,0] + params[istar,5] * xy
 
             x_min, x_max, y_min, y_max = get_box_coords(
                 int_posx, int_posy, box_size,
@@ -1151,9 +1212,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
             if star.shape[0] > 1 and star.shape[1] > 1:
                 data = frame[x_min:x_max, y_min:y_max]
                 star = (star - data) / sigma(data, noise[istar], dcl)
+            
                 if normalize:
-                    star /= np.max(star)
-                
+                    star /= np.nanmax(star)
+                 
                 if not transpose:
                     res[istar * box_size:
                         istar * box_size + star.shape[0],
@@ -1219,10 +1281,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     # stop here if no star positions are in the frame
     if np.size(new_pos) == 0:
         return []
-    
+    cdef int PARAMS_NB = 6
     cdef int star_nb = new_pos.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
-        (star_nb, 5), dtype=float) # [STARS_NB * (H,A,DX,DY,FWHM)]
+        (star_nb, PARAMS_NB), dtype=float) # [STARS_NB * (H,A,DX,DY,FWHM,GRAD)]
     cdef np.ndarray[np.float64_t, ndim=2] stars_err = np.zeros_like(
         stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=2] new_stars_p = np.zeros(
@@ -1230,7 +1292,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cdef np.ndarray[np.float64_t, ndim=2] new_stars_err = np.zeros_like(
         new_stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] stars_p_mask = np.ones(
-        5, dtype=float)
+        PARAMS_NB, dtype=float)
     
     cdef np.ndarray[np.float64_t, ndim=2] test_p = np.zeros_like(
         stars_p, dtype=float)
@@ -1356,9 +1418,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         sky_pixels = box * S_sky
         sky_pixels = np.sort(sky_pixels[np.nonzero(sky_pixels)])[1:-1]
         # guess background
-        stars_p[istar,0] = bn.nanmean(sky_pixels)
+        stars_p[istar,0] = bn.nanmedian(sky_pixels)
         # guess noise
-        noise_guess[istar] = bn.nanstd(sky_pixels) - sqrt(stars_p[istar,0])
+        noise_guess[istar] = bn.nanstd(sky_pixels) #- sqrt(stars_p[istar,0])
 
     if not np.isnan(height_guess):
         stars_p[:,0] = height_guess
@@ -1374,7 +1436,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         
     if np.isnan(dcl) or estimate_local_noise:
         dcl = 0.
-    
+
     # define masks
     cov_p_mask.fill(0)
     stars_p_mask.fill(1)
@@ -1409,17 +1471,18 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     ### CHECK FIT RESULTS ###
     if fit[-1] <= 4:
+        
         returned_data = dict()
         last_diff = fit[2]['fvec']
         stars_p, cov_p = params_vect2arrays(
             fit[0], fixed_p, stars_p_mask, cov_p_mask, star_nb)
-            
+       
         # compute reduced chi square
         chisq = np.sum(last_diff**2.)
         red_chisq = chisq / (np.sum(frame_mask) - np.size(free_p))
         returned_data['reduced-chi-square'] = red_chisq
         returned_data['chi-square'] = chisq
-
+        
         # cov height and fwhm
         stars_p[:,0] += cov_p[0] - added_height
         stars_p[:,4] += cov_p[3]
@@ -1449,7 +1512,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
             stars_err[:,0] += cov_err[0] # HEIGHT
             stars_err[:,4] += cov_err[3] # FWHM
 
-            # compute transformed postitions + error
+            # compute transformed positions + error
             for istar in range(stars_p.shape[0]):
                 (stars_p[istar,2], stars_p[istar,3],
                  stars_err[istar,2], stars_err[istar,3]) = transform_A_to_B(
@@ -1483,5 +1546,62 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         return []
         
 
+def part_value(np.ndarray[np.float64_t, ndim=1] distrib, double coeff):
+    """Return the value lying between two parts of a partition 
+
+    The partition process is nan robusts. It is made over a
+    distribution cleaned from nans.
+    
+    :param distrib: A 1D array of floats.
+    
+    :param coeff: Partition coefficient (must be >= 0. and <= 1.). If
+      0 return the min of the distribution and if 1 return the max.
+    """
+    cdef np.ndarray[np.float64_t, ndim=1] cleaned_distrib = distrib[
+        np.nonzero(~np.isnan(distrib))]
+    cdef int k
+
+    coeff = max(0., min(1., coeff)) # coeff is coerced between 0 and 1
+    
+    if coeff == 0:
+        return bn.nanmin(distrib)
+    if coeff == 1:
+        return bn.nanmax(distrib)
+    
+    k = max(1, (min(<int> (coeff * np.size(cleaned_distrib)),
+                    np.size(cleaned_distrib) - 1)))
+    
+    return bn.partsort(cleaned_distrib, k)[k]
+
+def indft(np.ndarray[np.float64_t, ndim=1] a,
+          np.ndarray[np.float64_t, ndim=1] x):
+    """Inverse Non-uniform Discret Fourier Transform.
+
+    Compute the irregularly sampled interferogram from a regularly
+    sampled spectrum.
+
+    :param a: regularly sampled spectrum.
+    
+    :param x: positions of the interferogram samples. If x =
+      range(size(a)), this function is equivalent to an idft or a
+      ifft. Note that the ifft is of course much faster to
+      compute. This vector may have any length.
+    """
+    cdef int N = a.shape[0]
+    cdef int M = x.shape[0]
+    cdef float angle = 0.
+    f = np.zeros(M, dtype=complex)
+    cdef np.ndarray[np.float64_t, ndim=1] freal = np.zeros(M, dtype=float)
+    cdef np.ndarray[np.float64_t, ndim=1] fimag = np.zeros(M, dtype=float)
+    for m in xrange(M):
+        for n in xrange(N):
+            angle = 2. * M_PI * x[m] * n / N
+            freal[m] += a[n] * cos(angle)
+            fimag[m] += a[n] * sin(angle)
+    f.real = freal
+    f.imag = fimag
+    return f / N
 
 
+
+          

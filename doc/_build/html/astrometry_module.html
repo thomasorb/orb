@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Astrometry module &mdash; Orb 1.2.4 documentation</title>
+    <title>Astrometry module &mdash; Orb 1.2.4.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4',
+        VERSION:     '1.2.4.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
     <link rel="next" title="Changelog" href="changelog.html" />
     <link rel="prev" title="CUtils module" href="cutils_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="cutils_module.html" title="CUtils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -197,7 +197,7 @@ used for star detection</p>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.detect_stars">
-<tt class="descname">detect_stars</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em>, <em>try_catalogue=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">detect_stars</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em>, <em>try_catalogue=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detect star positions in data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -217,7 +217,8 @@ intensity far from it (default 35000).</li>
 <li><span class="target" id="astrometry.Astrometry.detect_stars.params.try_catalogue"></span><strong>try_catalogue</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.detect_stars.params.try_catalogue">¶</a> &#8211; If True, try to use a star catalogue
 (e.g. USNO-B1) to detect stars if target_ra, target_dec,
 target_x, target_y and wcs_rotation parameters have been
-given (see <a class="reference internal" href="#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.query_vizier()</span></tt></a>).</li>
+given (see <a class="reference internal" href="#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.query_vizier()</span></tt></a>,
+default False).</li>
 </ul>
 </td>
 </tr>
@@ -480,7 +481,7 @@ fitted to assume a good enough calculated disalignment
 
 <dl class="method">
 <dt id="astrometry.Astrometry.query_vizier">
-<tt class="descname">query_vizier</tt><big>(</big><em>radius=7</em>, <em>catalog='USNO-B1.0'</em>, <em>max_stars=100</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.query_vizier" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">query_vizier</tt><big>(</big><em>catalog='USNO-B1.0'</em>, <em>max_stars=100</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.query_vizier" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of star coordinates around an object in a
 given radius based on a query to VizieR Services
 (<a class="reference external" href="http://vizier.u-strasbg.fr/viz-bin/VizieR">http://vizier.u-strasbg.fr/viz-bin/VizieR</a>)</p>
@@ -533,7 +534,7 @@ rejection</p>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.register">
-<tt class="descname">register</tt><big>(</big><em>max_stars=50</em>, <em>full_deep_frame=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.register" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">register</tt><big>(</big><em>max_stars=100</em>, <em>full_deep_frame=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register data and return a corrected pywcs.WCS object.</p>
 <p>Precise RA/DEC positions of the stars in the field are
 recorded from a catalog of the VIZIER server.</p>
@@ -1121,7 +1122,7 @@ star box.</p>
 independantly.</li>
 <li>Multi fit mode [multi_fit=True]: Stars are fitted all together
 considering that the position pattern is well known, the same
-shift in x and y will be applied. Optionaly the pattern can be
+shift in x and y will be applied. Optionally the pattern can be
 rotated and zoomed. The FWHM is also considered to be the
 same. This option is far more robust and precise for alignment
 purpose.</li>
@@ -1377,7 +1378,7 @@ estimation is returned (default False).</li>
         <li class="right" >
           <a href="cutils_module.html" title="CUtils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

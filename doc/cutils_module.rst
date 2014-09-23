@@ -31,7 +31,8 @@ Contents
     cutils.get_box_coords
     cutils.point_inside_polygon
     cutils.multi_fit_stars
-
+    cutils.part_value
+    cutils.indft
 
 
 Cutils
@@ -67,4 +68,6 @@ Cutils
 .. autofunction:: get_box_coords
 .. autofunction:: point_inside_polygon
 .. autofunction:: multi_fit_stars
+.. autofunction:: part_value
+.. autofunction:: indft
 
