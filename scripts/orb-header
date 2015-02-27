@@ -1,0 +1,115 @@
+#!/usr/bin/python
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File: orb-header
+
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+#############################################
+############ HEADER script ##################
+#############################################
+
+# This script helps the user to manipulate the header of a frame. 
+
+import os, sys
+from orb.core import Tools
+import getopt
+import warnings
+
+
+def usage(): 
+    print """usage: orb-header FITS_NAME
+    
+    Manipulate the header of a FITS file.
+
+     -p: Print header content
+     
+     -i INDEX: Change HDU index
+
+     -d KEYWORD: Delete keyword (Warning: File will be overwritten) 
+     """
+  
+    sys.exit(2)
+
+def main():
+
+    warnings.filterwarnings(
+                'ignore', message='Overwriting existing file.*',
+                module='astropy.io.*')
+
+    to = Tools(no_log=True)
+
+    print_header = False
+    hdu_index = 0
+    del_keyword = None
+    
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "pi:d:", [])
+        
+    except getopt.GetoptError, err:
+        print str(err)
+        usage()
+
+    if len(sys.argv) < 2: usage()
+
+    for opt, arg in opts:
+        
+        if opt in ('-i'):
+            try:
+                hdu_index = int(arg)
+            except Exception, e:
+                print ' > ERROR on given HDU index'
+                print e
+                sys.exit(2)
+            if hdu_index < 0:
+                print ' > ERROR: HDU index must be > 0'
+                sys.exit(2)
+                
+        if opt in ('-p'):
+            print_header = True
+
+
+        if opt in ('-d'):
+            del_keyword = arg
+
+    fits_path = str(args[0])
+
+    if os.path.exists(fits_path):
+        hdulist = to.read_fits(fits_path, return_hdu_only=True,
+                               fix_header=False)
+        if hdu_index + 1 > len(hdulist):
+            print ' > ERROR: given HDU index is too high, file only contains {} HDU'.format(len(hdulist))
+            hdulist.info()
+            sys.exit(2)
+            
+        hdu = hdulist[hdu_index]
+        if print_header:
+            print repr(hdu.header)
+        elif del_keyword is not None:
+            if del_keyword in hdu.header:
+                del hdu.header[del_keyword]
+                hdulist.writeto(fits_path, clobber=True)
+            else:
+                print ' > ERROR: keyword {} does not exist'.format(del_keyword)
+        else: hdulist.info()
+            
+    else:
+        print "The file does not exist"
+       
+if __name__ == "__main__":
+    main()

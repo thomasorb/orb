@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
@@ -46,11 +45,116 @@ from scipy import interpolate, signal, ndimage, optimize
 import scipy.ndimage.filters
 import math
 import bottleneck as bn
+import urllib2
+from xml.dom import minidom
 
 ##################################################
 #### MISC  #######################################
 ##################################################
 
+
+def query_sesame(object_name, verbose=True):
+    """Query the SESAME Database to get RA/DEC given the name of an
+    object.
+    
+    :param object_name: Name of the object
+    
+    :returns: [RA, DEC]
+    """
+    if verbose:
+        Tools()._print_msg("asking data from CDS server for : " + object_name)
+    words = object_name.split()
+    object_name = words[0]
+    if (len(words) > 1):
+        for iword in range(1, len(words)):
+            object_name += "+" + words[iword]
+    
+    url = constants.SESAME_URL + '{}'.format(object_name)
+    xml_result = urllib2.urlopen(url).read()
+    dom = minidom.parseString(xml_result)
+    node_list = dom.getElementsByTagName("jpos")
+    if (node_list.length > 0):
+        object_position = node_list[0].childNodes[0].data
+    else:
+        return []
+    [ra, dec] = object_position.split()
+    if verbose:
+        Tools()._print_msg("{} RA: {}".format(object_name, ra))
+        Tools()._print_msg("{} DEC: {}".format(object_name, dec))
+    ra = ra.split(":")
+    dec = dec.split(":")
+    return ra, dec
+
+
+def compute_line_fwhm(step_nb, step, order, apod_coeff=1., wavenumber=False):
+    """Return the expected FWHM (in nm or in cm-1) of a line given the
+    observation parameters.
+
+    :param step_nb: Number of steps
+    
+    :param step: Step size in nm
+    
+    :param order: Folding order
+    
+    :param apod_coeff: (Optional) Apodization coefficient. 1. stand
+      for no apodization and gives the FWHM of the central lobe of the
+      sinc (default 1.)
+    
+    :param wavenumber: (Optional) If True the result is returned in cm-1,
+      else it is returned in nm.
+    """
+    nm_axis = create_nm_axis(step_nb, step, order)
+    nm_mean = (nm_axis[-1] + nm_axis[0])/2.
+    opd_max = step_nb * step
+    if not wavenumber:
+        return nm_mean**2. * 1.2067 / opd_max * apod_coeff
+    else:
+        return 1.2067 / opd_max * apod_coeff * 1e7
+    
+
+def compute_line_shift(velocity, step_nb, step, order, wavenumber=False):
+    """Return the line shift given its velocity in nm or in cm-1.
+
+    :param velocity: Line velocity in km.s-1
+    
+    :param step_nb: Number of steps
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param wavenumber: (Optional) If True the result is returned in cm-1,
+      else it is returned in nm.
+    """
+    if not wavenumber:
+        nm_axis = create_nm_axis(step_nb, step, order)
+        mean = (nm_axis[-1] + nm_axis[0])/2.
+    else:
+        cm1_axis = create_cm1_axis(step_nb, step, order)
+        mean = (cm1_axis[-1] + cm1_axis[0])/2.
+        
+    return line_shift(velocity, mean, wavenumber=wavenumber)
+        
+
+def compute_radial_velocity(line, rest_line, wavenumber=False):
+    """
+    Return radial velocity in km.s-1
+
+    V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0
+
+    :param line: Emission line wavelength/wavenumber (can be a numpy
+      array)
+    
+    :param rest_line: Rest-frame wavelength/wavenumber (can be a numpy
+      array but must have the same size as line)
+
+    :param wavenumber: (Optional) If True the result is returned in cm-1,
+      else it is returned in nm.
+    """
+    vel = (constants.LIGHT_VEL_KMS) * (line - rest_line) / rest_line
+    if wavenumber: return -vel
+    else: return vel
+    
 def get_axis_from_hdr(hdr, axis_index=1):
     """Return axis from a classic FITS header
 
@@ -247,7 +351,7 @@ def compute_obs_params(nm_min_filter, nm_max_filter,
 
     n = 0
     order_found = False
-    while n < 100 and not order_found:
+    while n < 200 and not order_found:
         n += 1
         step = get_step(nm_min_filter, n, cos_min)
         nm_max = get_nm_max(step, n, cos_max)
@@ -620,7 +724,9 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
         args=(frames[divs[ijob]:divs[ijob+1],:,:],
               combine, reject, sigma, True, False),
         modules=("import numpy as np",
-                 "import orb.cutils as cutils")))
+                 "import orb.cutils as cutils",
+                 "from orb.core import Tools",
+                 "from orb.utils import *")))
             for ijob in range(ncpus)]
     
     for ijob, job in jobs:
@@ -717,6 +823,10 @@ def create_master_frame(frames, combine='average', reject='avsigclip',
         return frames
 
     if frames.shape[2] < 3:
+        if frames.shape[2] == 1:
+            Tools()._print_warning("Only one image to create a master frame. No combining method can be used.")
+            return np.squeeze(frames)
+        
         if not silent: Tools()._print_warning("Not enough frames to use a rejection method (%d < 3)"%frames.shape[2])
         reject = None
 
@@ -1446,7 +1556,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                       # fwhm can be.
 
     x = np.copy(vector)
-    
+
     if np.all(np.isnan(x)):
         return []
     
@@ -1484,15 +1594,19 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
 
             # convert lines position from a regular axis to an irregular one
             lines = nm2pix(axis, pix2nm(nm_axis, lines))
+            
             if signal_range is not None:
                 signal_range = nm2pix(axis, pix2nm(
                     nm_axis, signal_range))
+                signal_range_min = math.ceil(np.min(signal_range))
+                signal_range_max = math.floor(np.max(signal_range))
+                signal_range = [signal_range_min, signal_range_max]
 
         else:
             axis = create_cm1_axis(x.size, step, order)
     else:
         axis = None
-
+        
     # remove parts out of the signal range
     x_size_orig = np.size(x)
     if signal_range is not None:
@@ -1771,6 +1885,40 @@ def get_open_fds():
 #### IMAGE TOOLS #################################
 ##################################################
 
+def correct_hot_pixels(im, hp_map, box_size=3, std_filter_coeff=1.5):
+    """Correct hot pixels in an image given a map of their position.
+
+    The algorithm used replaces a hot pixel value by the median of the
+    pixels in a box around it. Pixels values which are not too much
+    different from the values around are not modified.
+
+    :param im: Image to correct
+    
+    :param hp_map: Hot pixels map (1 for hot pixels, 0 for normal
+      pixel)
+
+    :param box_size: (Optional) Size of the correction box (default
+      3).
+
+    :param std_filter_coeff: (Optional) Coefficient on the std used to
+      check if the value of a hot pixel must be changed (default 1.5).
+    """
+    im_temp = np.copy(im)
+    hp_list = np.nonzero(hp_map)
+    
+    for i in range(len(hp_list[0])):
+        ix, iy = hp_list[0][i], hp_list[1][i]
+        x_min, x_max, y_min, y_max = get_box_coords(ix, iy, box_size,
+                                    0, im.shape[0], 0, im.shape[1])
+        im_temp[ix,iy] = np.nan
+        box = im_temp[x_min:x_max,y_min:y_max]
+        std = robust_std(box)
+        med = robust_median(box)
+        if (im[ix,iy] > med + std_filter_coeff * std
+            or im[ix,iy] <  med - std_filter_coeff * std):
+            im[ix,iy] = med
+    return im
+
 def transform_frame(frame, x_min, x_max, y_min, y_max, 
                     d, rc, zoom_factor, interp_order, 
                     mask=None, fill_value=np.nan):
@@ -1932,8 +2080,12 @@ def fft_filter(a, cutoff_coeff, width_coeff=0.2, filter_type='high_pass'):
 #### SPECTRUM COMPUTATION  #######################
 ##################################################
 
-def raw_fft(x, apod=None, inverse=False):
-    """Compute the raw FFT of a vector
+def raw_fft(x, apod=None, inverse=False, return_complex=False,
+            return_phase=False):
+    """
+    Compute the raw FFT of a vector.
+
+    Return the absolute value of the complex vector by default.
     
     :param x: Interferogram.
     
@@ -1942,6 +2094,13 @@ def raw_fft(x, apod=None, inverse=False):
 
     :param inverse: (Optional) If True compute the inverse FFT
       (default False).
+
+    :param return_complex: (Optional) If True, the complex vector is
+      returned (default False).
+
+    :param return_phase: (Optional) If True, the phase is
+      returned.(default False)
+    
     """
     x = np.copy(x)
     windows = ['1.1', '1.2', '1.3', '1.4', '1.5',
@@ -1967,10 +2126,16 @@ def raw_fft(x, apod=None, inverse=False):
     
     # FFT
     if not inverse:
-        x_fft = np.abs((np.fft.fft(zv))[:N])
+        x_fft = (np.fft.fft(zv))[:N]
     else:
-        x_fft = np.abs((np.fft.ifft(zv))[:N])
-    return x_fft
+        x_fft = (np.fft.ifft(zv))[:N]
+        
+    if return_complex:
+        return x_fft
+    elif return_phase:
+        return np.unwrap(np.angle(x_fft))
+    else:
+        return np.abs(x_fft)
      
 def cube_raw_fft(x, apod=None):
     """Compute the raw FFT of a cube (the last axis
@@ -3018,7 +3183,6 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     else:
         if sampling_vector.shape[0] != final_step_nb: Tools()._print_error(
             'Sampling vector size must be equal to the final_step_nb')
-        
         interf = indft(spectrum, sampling_vector)
     
     interf = np.array(interf)

@@ -212,11 +212,11 @@ class Tools(object):
     def _init_logfile_name(self, logfile_name):
         """Initialize logfile name."""
         memfile = MemFile(self._memfile_name)
-        if logfile_name != None:
+        if logfile_name is not None:
             self._logfile_name = logfile_name
             memfile['LOGFILENAME'] = self._logfile_name
 
-        if logfile_name == None:
+        if logfile_name is None:
             if 'LOGFILENAME' in memfile:
                 self._logfile_name = memfile['LOGFILENAME']
 
@@ -303,7 +303,7 @@ class Tools(object):
         for iline in std_table:
             iline = iline.split()
             if len(iline) == 3:
-                if group == None:
+                if group is None:
                     std_list.append(iline[0])
                 elif iline[1] == group:
                     std_list.append(iline[0])
@@ -364,6 +364,12 @@ class Tools(object):
              PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
              PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
         """
+        ### config file test 
+        if  self._get_config_file_path() == '/home/thomas/Astro/Python/ORB/Orb/orb/data/config.orb' and param_key != 'NCPUS':
+            self._print_warning(' '.join(['CHECK:', self._get_config_file_path(), param_key]))
+            self._print_caller_traceback()
+        ######## to be removed
+            
         f = self.open_file(
             self._get_config_file_path(), 'r')
         for line in f:
@@ -809,7 +815,8 @@ class Tools(object):
 
         :param dir_path: Directory containing the FITS files
         
-        :param list_file_path: Path to the list file to be created
+        :param list_file_path: Path to the list file to be created. If
+          None a list of the lines is returned.
 
         :param image_mode: (Optional) Image mode. If not None the
           given string will be written at the first line of the file
@@ -826,50 +833,24 @@ class Tools(object):
         
         :returns: Path to the created list file
         """
-
-        def sort_image_list(file_list, image_mode):
-            
-            file_list = [path for path in file_list if '.fits' in path]
-            if len(file_list) == 0: return None
-
-            if image_mode == 'spiomm':
-                file_list = [path for path in file_list
-                             if not '_bias.fits' in path]
-
-            # get all numbers
-            file_keys = np.array([re.findall("[0-9]+", path)
-                                  for path in file_list if '.fits' in path],
-                                 dtype=int)
-            
-            # get changing column
-            test = np.sum(file_keys == file_keys[0,:], axis=0)
-            
-            if np.min(test) > 1:
-                self._print_error('Image list cannot be safely sorted. Two images at least have the same index')
-            else:
-                column_index = np.argmin(test)
-            
-            file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
-                column_index]))
-            return file_list
-
         if dir_path[-1] != os.sep:
             dir_path += os.sep
         dir_path = os.path.dirname(str(dir_path))
         if os.path.exists(dir_path):
-            list_file = self.open_file(list_file_path)
+            list_file_str = list()
 
             # print image mode directive line
             if image_mode is not None:
-                list_file.write('# {} {}\n'.format(image_mode, chip_index))
+                list_file_str.append('# {} {}'.format(image_mode, chip_index))
 
             # print prebinning directive line
             if prebinning is not None:
-                list_file.write('# prebinning {}\n'.format(int(prebinning)))
-
+                list_file_str.append(
+                    '# prebinning {}'.format(int(prebinning)))
+    
             file_list = os.listdir(dir_path)
             # image list sort
-            file_list = sort_image_list(file_list, image_mode)
+            file_list = self.sort_image_list(file_list, image_mode)
             if file_list is None:
                  self._print_error('There is no *.fits file in {}'.format(
                      dir_path))
@@ -892,7 +873,8 @@ class Tools(object):
                         if (dims == 2
                             and fits_hdu[0].header['NAXIS1'] == dimx
                             and fits_hdu[0].header['NAXIS2'] == dimy):
-                            list_file.write(str(file_path)  + "\n")
+                            
+                            list_file_str.append(str(file_path))
                             file_nb += 1
                         else:
                             self._print_error("All FITS files in the directory %s do not have the same shape. Please remove bad files."%str(dir_path))
@@ -900,7 +882,13 @@ class Tools(object):
                         self._print_error(str(file_path) + " does not exists !")
             if file_nb > 0:
                 self._print_msg('{} Images found'.format(file_nb))
-                return list_file_path
+                if list_file_path is not None:
+                    with self.open_file(list_file_path) as list_file:
+                        for iline in list_file_str:
+                            list_file.write(iline + "\n")
+                    return list_file_path
+                else:
+                    return list_file_str
             else:
                 self._print_error('No FITS file in the folder: %s'%dir_path)
         else:
@@ -962,7 +950,7 @@ class Tools(object):
           http://fits.gsfc.nasa.gov/ for more information on FITS
           files.
         """
-        if mask != None:
+        if mask is not None:
             if np.shape(mask) != np.shape(fits_data):
                 self._print_error('Mask must have the same shape as data')
                 
@@ -1002,7 +990,7 @@ class Tools(object):
                 else:
                     hdu = pyfits.PrimaryHDU(fits_data[np.newaxis, :])
                     
-                if mask != None:
+                if mask is not None:
                     # mask conversion to only zeros or ones
                     mask = mask.astype(float)
                     mask[np.nonzero(np.isnan(mask))] = 1.
@@ -1013,7 +1001,7 @@ class Tools(object):
                                                  # type
                     hdu_mask = pyfits.PrimaryHDU(mask.transpose())
                 # add header optional keywords
-                if fits_header != None:
+                if fits_header is not None:
                     hdu.header.extend(fits_header, strip=False,
                                       update=True, end=True)
                     # Remove 3rd axis related keywords if there is no
@@ -1066,7 +1054,7 @@ class Tools(object):
                 # write FITS file
                 hdu.writeto(fits_name, clobber=overwrite)
                 
-                if mask != None:
+                if mask is not None:
                     hdu_mask.header = hdu.header
                     hdu_mask.header.set('MASK', 'True', '', after=6)
                     mask_name = self._get_mask_path(fits_name)
@@ -1085,7 +1073,7 @@ class Tools(object):
                   return_header=False, return_hdu_only=False,
                   return_mask=False, silent=False, delete_after=False,
                   data_index=0, image_mode='classic', chip_index=None,
-                  binning=None):
+                  binning=None, fix_header=True, memmap=False, dtype=float):
         """Read a FITS data file and returns its data.
         
         :param fits_name: Path to the file, can be either
@@ -1129,6 +1117,17 @@ class Tools(object):
 
         :param binning: (Optional) If not None, returned data is
           binned by this amount (must be an integer >= 1)
+
+        :param fix_header: (Optional) If True, fits header is
+          fixed to avoid errors due to header inconsistencies
+          (e.g. WCS errors) (default True).
+
+        :param memmap: (Optional) If True, use the memory mapping
+          option of pyfits. This is useful to avoid loading a full cube
+          in memory when opening a large data cube (default False).
+
+        :param dtype: (Optional) Data is converted to
+          the given dtype (e.g. np.float32, default float).
         
         .. note:: Please refer to
           http://www.stsci.edu/institute/software_hardware/pyfits/ for
@@ -1141,7 +1140,7 @@ class Tools(object):
             fits_name = self._get_mask_path(fits_name)
             
         try:
-            hdulist = pyfits.open(fits_name)
+            hdulist = pyfits.open(fits_name, memmap=memmap)
             fits_header = hdulist[data_index].header
         except:
             if not no_error:
@@ -1154,12 +1153,21 @@ class Tools(object):
                         "The file '%s' could not be opened"%fits_name)
                 return None
 
+        # Correct header
+        if fix_header:
+            if fits_header['NAXIS'] == 2:
+                if 'CTYPE3' in fits_header: del fits_header['CTYPE3']
+                if 'CRVAL3' in fits_header: del fits_header['CRVAL3']
+                if 'CUNIT3' in fits_header: del fits_header['CUNIT3']
+                if 'CRPIX3' in fits_header: del fits_header['CRPIX3']
+                if 'CROTA3' in fits_header: del fits_header['CROTA3']
+                
         if return_hdu_only:
             return hdulist
         else:
             if image_mode == 'classic':
                 fits_data = np.array(
-                    hdulist[data_index].data.transpose()).astype(float)
+                    hdulist[data_index].data.transpose()).astype(dtype)
             elif image_mode == 'sitelle':
                 fits_data = self._read_sitelle_chip(hdulist, chip_index)
             elif image_mode == 'spiomm':
@@ -1301,20 +1309,22 @@ class Tools(object):
                 overscan = cutils.meansigcut2d(bias_frame, axis=1)
                 frame = (frame.T - overscan.T).T
             
-            x_min = int(frame.shape[0]/2.
-                        - CENTER_SIZE_COEFF * frame.shape[0])
-            x_max = int(frame.shape[0]/2.
-                        + CENTER_SIZE_COEFF * frame.shape[0] + 1)
-            y_min = int(frame.shape[1]/2.
-                        - CENTER_SIZE_COEFF * frame.shape[1])
-            y_max = int(frame.shape[1]/2.
-                        + CENTER_SIZE_COEFF * frame.shape[1] + 1)
+            x_min = int(bias_frame.shape[0]/2.
+                        - CENTER_SIZE_COEFF * bias_frame.shape[0])
+            x_max = int(bias_frame.shape[0]/2.
+                        + CENTER_SIZE_COEFF * bias_frame.shape[0] + 1)
+            y_min = int(bias_frame.shape[1]/2.
+                        - CENTER_SIZE_COEFF * bias_frame.shape[1])
+            y_max = int(bias_frame.shape[1]/2.
+                        + CENTER_SIZE_COEFF * bias_frame.shape[1] + 1)
+
+            bias_level = bn.nanmedian(bias_frame[x_min:x_max, y_min:y_max])
             
-            hdr['BIAS-LVL'] = (
-                bn.nanmedian(
-                    bias_frame[x_min:x_max, y_min:y_max]),
-                'Bias level (moment, at the center of the frame)')
-            
+            if bias_level is not np.nan:
+                hdr['BIAS-LVL'] = (
+                    bias_level,
+                    'Bias level (moment, at the center of the frame)')
+                
         return frame, hdr
         
 
@@ -1343,6 +1353,38 @@ class Tools(object):
                                     # default to handle Windows files.
                                     
         return open(file_name, mode)
+
+    def sort_image_list(self, file_list, image_mode):
+        """Sort a list of fits files.
+
+        :param file_list: A list of file names
+
+        :param image_mode: Image mode, can be 'sitelle' or 'spiomm'.
+        """
+        file_list = [path for path in file_list if '.fits' in path]
+        if len(file_list) == 0: return None
+
+        if image_mode == 'spiomm':
+            file_list = [path for path in file_list
+                         if not '_bias.fits' in path]
+
+        # get all numbers
+        file_keys = np.array([re.findall("[0-9]+", path)
+                              for path in file_list if '.fits' in path],
+                             dtype=int)
+            
+        # get changing column
+        test = np.sum(file_keys == file_keys[0,:], axis=0)
+        
+        if np.min(test) > 1:
+            self._print_error('Images list cannot be safely sorted. Two images at least have the same index')
+        else:
+            column_index = np.argmin(test)
+            
+        file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
+            column_index]))
+        return file_list
+    
             
 ##################################################
 #### CLASS Cube ##################################
@@ -1351,17 +1393,6 @@ class Tools(object):
 class Cube(Tools):
     """
     Generate and manage a **virtual frame-divided cube**.
-    
-    :param image_list_path: Path to the list of images which form the
-        virtual cube. If ``image_list_path`` is set to '' then this
-        class will not try to load any data.  Can be useful when the
-        user don't want to use or process any data.
-   
-    :param config_file_name: (Optional) name of the config file to
-        use. Must be located in orb/data/
-
-    :param data_prefix: (Optional) Prefix used to determine the header
-        of the name of each created file (default 'temp_data')
 
     .. note:: A **frame-divided cube** is a set of frames grouped
       together by a list.  It avoids storing a data cube in one large
@@ -1400,24 +1431,47 @@ class Cube(Tools):
                          # instead of 'normal' data
 
     # read directives
-    _image_mode = 'classic' # opening mode. can be sitelle or classic
+    _image_mode = 'classic' # opening mode. can be sitelle, spiomm or classic
     _chip_index = None # in sitelle mode, this gives the index of
                        # the chip to read
     _prebinning = None # prebinning directive
 
-    def __init__(self, image_list_path, data_prefix="temp_data_",
+    def __init__(self, image_list_path, image_mode='classic',
+                 chip_index=1, binning=1, data_prefix="temp_data_",
                  config_file_name="config.orb", project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, silent_init=False, no_log=False,
-                 tuning_parameters=dict(), indexer=None, logfile_name=None):
+                 tuning_parameters=dict(), indexer=None,
+                 logfile_name=None):
+        
         """
         Initialize Cube class.
-        
+       
         :param image_list_path: Path to the list of images which form
           the virtual cube. If ``image_list_path`` is set to '' then
           this class will not try to load any data.  Can be useful
           when the user don't want to use or process any data.
 
+        :param image_mode: (Optional) Image mode. Can be 'spiomm',
+          'sitelle' or 'classic'. In 'sitelle' mode bias, is
+          automatically substracted and the overscan regions are not
+          present in the data cube. The chip index option can also be
+          used in this mode to read only one of the two chips
+          (i.e. one of the 2 cameras). In 'spiomm' mode, if
+          '*_bias.fits' frames are present along with the image
+          frames, bias is substracted from the image frames, this
+          option is used to precisely correct the bias of the camera
+          2. In 'classic' mode, the whole array is extracted in its
+          raw form (default 'classic').
+
+        :param chip_index: (Optional) Useful only in 'sitelle' mode
+          (see image_mode option). Gives the number of the ship to
+          read. Must be an 1 or 2 (default 1).
+
+        :param binning: (Optional) Data is pre-binned numerically by
+          this amount. i.e. 1000x1000xN raw frames with a prebinning
+          of 2 will give a cube of 500x500xN (default 1).
+    
         :param config_file_name: (Optional) name of the config file to
           use. Must be located in orb/data/ (default 'config.orb').
 
@@ -1488,9 +1542,9 @@ class Cube(Tools):
         self.QUAD_NB = self.DIV_NB**2L
         self.image_list_path = image_list_path
 
-        self._image_mode = 'classic'
-        self._chip_index = None
-        self._prebinning = 1  # prebinning set to 1 by default
+        self._image_mode = image_mode
+        self._chip_index = chip_index
+        self._prebinning = binning
 
         if (self.image_list_path != ""):
             # read image list and get cube dimensions  
@@ -1502,20 +1556,24 @@ class Cube(Tools):
             
             for image_name in image_name_list:
                 image_name = (image_name.splitlines())[0]
+
+                if self._image_mode == 'spiomm' and '_bias' in image_name:
+                    spiomm_bias_frame = True
+                else: spiomm_bias_frame = False
+                
                 if is_first_image:
                     # check list parameter
                     if '#' in image_name:
-                        image_name = image_name.split()
                         if 'sitelle' in image_name:
                             self._image_mode = 'sitelle'
-                            self._chip_index = int(image_name[-1])
+                            self._chip_index = int(image_name.split()[-1])
                         elif 'spiomm' in image_name:
                             self._image_mode = 'spiomm'
                             self._chip_index = None
                         elif 'prebinning' in image_name:
-                            self._prebinning = int(image_name[-1])
+                            self._prebinning = int(image_name.split()[-1])
                             
-                    else:
+                    elif not spiomm_bias_frame:
                         self.image_list = [image_name]
                         image_data = self.read_fits(
                             image_name,
@@ -1530,12 +1588,20 @@ class Cube(Tools):
                             self._mask_exists = True
                         else:
                             self._mask_exists = False
-                elif self._MASK_FRAME_TAIL not in image_name:
+                            
+                elif (self._MASK_FRAME_TAIL not in image_name
+                      and not spiomm_bias_frame):
                     self.image_list.append(image_name)
 
             image_list_file.close()
+
+            # image list is sorted
+            self.image_list = self.sort_image_list(self.image_list,
+                                                   self._image_mode)
+            
             self.image_list = np.array(self.image_list)
             self.dimz = self.image_list.shape[0]
+            
             if (self.dimx) and (self.dimy) and (self.dimz):
                 if not silent_init:
                     self._print_msg("Data shape : (" + str(self.dimx) 
@@ -1557,7 +1623,7 @@ class Cube(Tools):
         """
         def _get_default_slice(_slice, _max):
             if isinstance(_slice, slice):
-                if _slice.start != None:
+                if _slice.start is not None:
                     if (isinstance(_slice.start, int)
                         or isinstance(_slice.start, long)):
                         if (_slice.start >= 0) and (_slice.start <= _max):
@@ -1569,7 +1635,7 @@ class Cube(Tools):
                         self._print_error("Type error: list indices of slice must be integers")
                 else: slice_min = 0
 
-                if _slice.stop != None:
+                if _slice.stop is not None:
                     if (isinstance(_slice.stop, int)
                         or isinstance(_slice.stop, long)):
                         if ((_slice.stop >= 0) and (_slice.stop <= _max)
@@ -1795,6 +1861,57 @@ class Cube(Tools):
                              return_hdu_only=True)
         return hdu[0].header
 
+    
+    def get_cube_header(self):
+        """
+        Return the header of a cube from the header of the first frame
+        by keeping only the general keywords.
+        """
+        def del_key(key, header):
+            if '*' in key:
+                key = key[:key.index('*')]
+                for k in header.keys():
+                    if key in k:
+                        header.remove(k)
+            else:
+                while key in header:
+                    header.remove(key)
+            return header
+                
+        cube_header = self.get_frame_header(0)
+        cube_header = del_key('COMMENT', cube_header)
+        cube_header = del_key('EXPNUM', cube_header)
+        cube_header = del_key('BSEC*', cube_header)
+        cube_header = del_key('DSEC*', cube_header)
+        cube_header = del_key('FILENAME', cube_header)
+        cube_header = del_key('PATHNAME', cube_header)
+        cube_header = del_key('OBSID', cube_header)
+        cube_header = del_key('IMAGEID', cube_header)
+        cube_header = del_key('CHIPID', cube_header)
+        cube_header = del_key('DETSIZE', cube_header)
+        cube_header = del_key('RASTER', cube_header)
+        cube_header = del_key('AMPLIST', cube_header)
+        cube_header = del_key('CCDSIZE', cube_header)
+        cube_header = del_key('DATASEC', cube_header)
+        cube_header = del_key('BIASSEC', cube_header)
+        cube_header = del_key('CSEC1', cube_header)
+        cube_header = del_key('CSEC2', cube_header)
+        cube_header = del_key('TIME-OBS', cube_header)
+        cube_header = del_key('DATEEND', cube_header)
+        cube_header = del_key('TIMEEND', cube_header)
+        cube_header = del_key('SITNEXL', cube_header)
+        cube_header = del_key('SITPZ*', cube_header)
+        cube_header = del_key('SITSTEP', cube_header)
+        cube_header = del_key('SITFRING', cube_header)
+        
+        return cube_header
+
+
+    def get_size_on_disk(self):
+        """Return the expected size of the cube if saved on disk in Mo.
+        """
+        return self.dimx * self.dimy * self.dimz * 4 / 1e6 # 4 octets in float32
+
     def get_resized_frame(self, index, size_x, size_y, degree=3):
         """Return a resized frame using spline interpolation.
 
@@ -1887,7 +2004,7 @@ class Cube(Tools):
 
         .. note:: In this process NaNs are considered as zeros.
         """
-        if self.mean_image == None:
+        if self.mean_image is None:
             mean_im = np.zeros((self.dimx, self.dimy), dtype=float)
             progress = ProgressBar(self.dimz)
             for _ik in range(self.dimz):
@@ -1989,15 +2106,15 @@ class Cube(Tools):
             ymax = self.dimy
 
         if stat == 'mean':
-            if self.z_mean == None: stat_key = 'MEAN'
+            if self.z_mean is None: stat_key = 'MEAN'
             else: return self.z_mean
             
         elif stat == 'median':
-            if self.z_median == None: stat_key = 'MEDIAN'
+            if self.z_median is None: stat_key = 'MEDIAN'
             else: return self.z_median
             
         elif stat == 'std':
-            if self.z_std == None: stat_key = 'STD'
+            if self.z_std is None: stat_key = 'STD'
             else: return self.z_std
             
         else: self._print_error(
@@ -2052,11 +2169,11 @@ class Cube(Tools):
         :param dimy: (Optional) Use another y axis dimension. Other
           than the axis dimension of the managed data cube
         """
-        if div_nb == None: 
+        if div_nb is None: 
             div_nb = self.DIV_NB
         quad_nb = div_nb**2
-        if dimx == None: dimx = self.dimx
-        if dimy == None: dimy = self.dimy
+        if dimx is None: dimx = self.dimx
+        if dimy is None: dimy = self.dimy
 
         if (quad_number < 0) or (quad_number > quad_nb - 1L):
             self._print_error("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
@@ -2091,21 +2208,21 @@ class Cube(Tools):
         
         :param z_range: Tuple (z_min, z_max)
         """
-        if x_range == None:
+        if x_range is None:
             xmin = 0
             xmax = self.dimx
         else:
             xmin = np.min(x_range)
             xmax = np.max(x_range)
             
-        if y_range == None:
+        if y_range is None:
             ymin = 0
             ymax = self.dimy
         else:
             ymin = np.min(y_range)
             ymax = np.max(y_range)
 
-        if z_range == None:
+        if z_range is None:
             zmin = 0
             zmax = self.dimz
         else:
@@ -2309,7 +2426,7 @@ class Indexer(Tools):
         :param file_path: Path to the file
         """
         
-        if self.file_group != None:
+        if self.file_group is not None:
             file_key = self.file_group + '.' + file_key
         self.index[file_key] = file_path
         self.update_index()
@@ -2355,7 +2472,7 @@ class Indexer(Tools):
             file_key = file_group + '.' + file_key
         elif (file_group in self.file_group_indexes):
             file_key = self._index2group(file_group) + '.' + file_key
-        elif file_group != None:
+        elif file_group is not None:
             self._print_error('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
 
         if file_key in self.index:
@@ -2377,7 +2494,7 @@ class Indexer(Tools):
         if (file_group in self.file_group_indexes):
             file_group = self._index2group(file_group)
             
-        if (file_group in self.file_groups) or (file_group == None):
+        if (file_group in self.file_groups) or (file_group is None):
             self.file_group = file_group
             
         else: self._print_error(
@@ -2482,9 +2599,12 @@ class Lines(Tools):
     vac_lines_name = None
     air_lines_name = None
     
-    def __init__(self):
-        """Lines class constructor"""
-        Tools.__init__(self)
+    def __init__(self, **kwargs):
+        """Lines class constructor.
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        Tools.__init__(self, **kwargs)
 
         # create corresponding inverted dicts
         self.air_lines_name = dict()
@@ -2499,7 +2619,7 @@ class Lines(Tools):
         
 
     def _read_sky_file(self):
-        """Return sky file (sky_lines.orb) as a dict.   
+        """Return sky file (sky_lines.orb) as a dict.
         """
         sky_lines_file_path = self._get_orb_data_file_path(
             self.sky_lines_file_name)
@@ -2515,37 +2635,57 @@ class Lines(Tools):
         finally:
             f.close()
 
-    def get_sky_lines(self, nm_min, nm_max, delta_nm, line_nb=0):
+    def get_sky_lines(self, nm_min, nm_max, delta_nm, line_nb=0,
+                      get_names=False):
         """Return sky lines in a range of optical wavelength.
 
-        :param nm_min: min wavelength of the lines in nm
+        :param nm_min: min Wavelength of the lines in nm
         
-        :param nm_max: max wavelength of the lines in nm
+        :param nm_max: max Wavelength of the lines in nm
 
-        :param delta_nm: wavelength resolution in nm as the minimum
+        :param delta_nm: Wavelength resolution in nm as the minimum
           wavelength interval of the spectrum. Lines comprises in half
           of this interval are merged.
         
-        :param line_nb: (Optional) number of the most intense lines to
-          retrive. If 0 all lines are given (default 0).
+        :param line_nb: (Optional) Number of the most intense lines to
+          retrieve. If 0 all lines are given (default 0).
+
+        :param get_name: (Optional) If True return lines name also.
         """
         def merge(merged_lines):
-            merged_lines = np.array(merged_lines)
-            return (np.sum(merged_lines[:,0] * merged_lines[:,1])
-                   /np.sum(merged_lines[:,1]),
-                   np.sum(merged_lines[:,1]))
+            
+            merged_lines_nm = np.array([line[1] for line in merged_lines])
+           
+            
+            merged_lines_nm = (np.sum(merged_lines_nm[:,0]
+                                      * merged_lines_nm[:,1])
+                               /np.sum(merged_lines_nm[:,1]),
+                               np.sum(merged_lines_nm[:,1]))
 
-        lines = [line_nm for line_nm in self.air_sky_lines_nm.itervalues()
-                 if (line_nm[0] >= nm_min and line_nm[0] <= nm_max)]
+            merged_lines_name = [line[0] for line in merged_lines]
+            temp_list = list()
+            
+            for name in merged_lines_name:
+                if 'MEAN' in name:
+                    name = name[5:-1]
+                temp_list.append(name)
+            merged_lines_name = 'MEAN[' + ','.join(temp_list) + ']'
+            return (merged_lines_name, merged_lines_nm)
 
+        lines = [(line_name, self.air_sky_lines_nm[line_name])
+                 for line_name in self.air_sky_lines_nm
+                 if (self.air_sky_lines_nm[line_name][0] >= nm_min
+                     and self.air_sky_lines_nm[line_name][0] <= nm_max)]
         
-
-        lines.sort(key=lambda l: l[0])
+        lines.sort(key=lambda l: l[1][0])
+    
         merged_lines = list()
         final_lines = list()
+        
         for iline in range(len(lines)):
             if iline + 1 < len(lines):
-                if abs(lines[iline][0] - lines[iline+1][0]) < delta_nm / 2.:
+                if (abs(lines[iline][1][0] - lines[iline+1][1][0])
+                    < delta_nm / 2.):
                     merged_lines.append(lines[iline])
                 else:
                     if len(merged_lines) > 0:
@@ -2557,29 +2697,38 @@ class Lines(Tools):
                         
         # correct a border effect if the last lines of the list are to
         # be merged
-        if len(merged_lines) > 0: 
+        if len(merged_lines) > 0:
             merged_lines.append(lines[iline])
-            merged_line = merge(merged_lines)
             final_lines.append(merge(merged_lines))
 
         lines = final_lines
         
         # get only the most intense lines
         if line_nb > 0:
-            lines.sort(key=lambda l: l[1], reverse=True)
+            lines.sort(key=lambda l: l[1][1], reverse=True)
             lines = lines[:line_nb]
 
-        lines = list(np.array(lines)[:,0])
-
+        lines_nm = list(np.array([line[1] for line in lines])[:,0])
+        lines_name = [line[0] for line in lines]
+        
         # add balmer lines
         balmer_lines = ['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'Hepsilon']
         for iline in balmer_lines:
             if (self.air_lines_nm[iline] >= nm_min
                 and self.air_lines_nm[iline] <= nm_max):
-                lines.append(self.air_lines_nm[iline])
-                
-        lines.sort()
-        return lines
+                lines_nm.append(self.air_lines_nm[iline])
+                lines_name.append(iline)
+
+        if not get_names:
+            lines_nm.sort()
+            return lines_nm
+        else:
+            lines = [(lines_name[iline], lines_nm[iline])
+                     for iline in range(len(lines_nm))]
+            lines.sort(key=lambda l: l[1])
+            lines_nm = [line[1] for line in lines]
+            lines_name = [line[0] for line in lines]
+            return lines_nm, lines_name
         
 
     def get_line_nm(self, lines_name, air=True, round_ang=False):
@@ -2676,6 +2825,9 @@ class OptionFile(Tools):
 
     .. note:: Repeated keywords override themselves. Only the
       protected keywords ('REG', 'TUNE') are all kept.
+
+    .. note:: The first line starting with '##' is considered as a header
+      of the file and can be used to give a description of the file.
     """
 
     option_file = None # the option file object
@@ -2685,18 +2837,35 @@ class OptionFile(Tools):
     protected_keys = ['REG', 'TUNE'] # special keywords that can be
                                      # used mulitple times without
                                      # being overriden.
+
+    header_line = None
     
-    def __init__(self, option_file_path):
+    def __init__(self, option_file_path, protected_keys=[], **kwargs):
         """Initialize class
 
         :param option_file_path: Path to the option file
+
+        :param protected_keys: (Optional) Add other protected keys to
+          the basic ones (default []).
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
+        Tools.__init__(self, **kwargs)
+        
+        # append new protected keys
+        for key in protected_keys:
+            self.protected_keys.append(key) 
+        
         self.option_file = self.open_file(option_file_path, 'r')
         self.options = dict()
-        self.lines = Lines()
+        self.lines = Lines(config_file_name=self.config_file_name)
         for line in self.option_file:
             if len(line) > 2:
-                if line[0] != '#':
+                if line[0:2] == '##':
+                    if self.header_line is None:
+                        self.header_line = line[2:-1]
+                    
+                if line[0] != '#': # check if line is commented
                     if '#' in line:
                         line = line[:line.find('#')]
                     line = line.split()
@@ -2807,7 +2976,7 @@ class OptionFile(Tools):
         Defined for the special keyword 'FILTER_EDGES'.
         """
         filter_edges = self['FILTER_EDGES']
-        if filter_edges != None:
+        if filter_edges is not None:
             filter_edges = filter_edges.split(',')
             if len(filter_edges) == 2:
                 return np.array(filter_edges).astype(float)
@@ -2879,7 +3048,7 @@ class ParamsFile(Tools):
 
     f = None
     
-    def __init__(self, file_path, reset=True):
+    def __init__(self, file_path, reset=True, **kwargs):
         """Init ParamsFile class.
 
         :param file_path: Path of the output file where all
@@ -2890,7 +3059,11 @@ class ParamsFile(Tools):
           overwritten. If False and if the output file already exists
           data in the file are read and new data is appended (default
           True).
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
+        Tools.__init__(self, **kwargs)
+        
         self._params_list = list()
         if not reset and os.path.exists(file_path):
             self.f = self.open_file(file_path, 'r')

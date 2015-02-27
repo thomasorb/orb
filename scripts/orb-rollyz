@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: dstack
+# File: orb-rollyz
 
 ## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -21,13 +21,8 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 #############################################
-############ DSTACK script ##################
+############ ROLLYZ script ##################
 #############################################
-
-# This script helps the user to stack a set of frames in a cube. A
-# list of frames path must be given. List files created by ORBS can be
-# used. Custom lists can be created using the command:
-# 'ls /path/to/file/*.fits > list'
 
 
 import numpy as np

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: dstack
+# File: orb-reduce
 
 ## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -21,13 +21,10 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 #############################################
-############ DSTACK script ##################
+############ REDUCE script ##################
 #############################################
 
-# This script helps the user to stack a set of frames in a cube. A
-# list of frames path must be given. List files created by ORBS can be
-# used. Custom lists can be created using the command:
-# 'ls /path/to/file/*.fits > list'
+# This script reduce the size of a spectral cube by removing zeros/NaNs frames.
 
 
 import numpy as np
@@ -38,7 +35,7 @@ from orb.core import Tools
 def usage(): 
     print """usage: orb-reduce CUBE_NAME REDUCED_CUBE_NAME
     
-    Reduce the size of a spectral cube by removing zeros frames."""
+    Reduce the size of a spectral cube by removing zeros/NaNs frames."""
   
     sys.exit(2)
 

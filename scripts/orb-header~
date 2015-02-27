@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: orb-rollxz
+# File: combine
 
 ## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -21,34 +21,38 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 #############################################
-############ ROLLXZ script ##################
+############ COMBINE script ##################
 #############################################
 
+# This script helps the user to combine a set of frames. A
+# list of frames path must be given. List files created by ORBS can be
+# used. Custom lists can be created using the command:
+# 'ls /path/to/file/*.fits > list'
 
-import numpy as np
-
-from orb.core import Tools
+import os, sys
+from orb.core import Cube
 
 def usage(): 
-    print """usage: orb-rollxz CUBE_NAME
+    print """usage: orb-combine LIST_OF_FITS IMAGE_NAME
     
-    Roll axes of a cube in order to have frames along XZ. Y being the
-    third axis"""
+    Combine a set of frames in one frame.
+    
+    Frames must have the same shape."""
   
     sys.exit(2)
 
 def main():
 
-    if len(sys.argv) < 2: usage()
+    if len(sys.argv) < 3: usage()
 
-    cube_name = sys.argv[1]
-    if os.path.exists(cube_name):
-        data = Tools().read_fits(cube_name)
-        data = np.rollaxis(data, 2, 1)
-        Tools().write_fits(os.path.splitext(cube_name)[0] + '.xz.fits', data,
-                           silent=True)
+    list_of_fits_path = sys.argv[1]
+    im_name = sys.argv[2]
+    if os.path.exists(list_of_fits_path):
+        cube = Cube(list_of_fits_path, no_log=True)
+        im = cube.get_mean_image()
+        cube.write_fits(im_name, im)
     else:
-        print "File does not exist"
+        print "The list file does not exist"
        
 if __name__ == "__main__":
     main()

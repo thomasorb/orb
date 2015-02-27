@@ -72,7 +72,7 @@ v1.2.2
   :py:meth:`~cutils.interf_mean_energy`.
 
 * :py:class:`~core.OptionFile` enhanced to be used by
-  :py:meth:`orbs.Orbs.__init__`.
+  :py:meth:`orbs.orbs.Orbs.__init__`.
 
 ORCS integration
 ----------------
@@ -85,7 +85,7 @@ ORCS integration
 * Warning messages are not displayed anymore when using the silent
   option with :py:class:`~core.Tools`
 
-* move :py:meth:`orbs.Orbs._create_list_from_dir` to
+* move :py:meth:`orbs.orbs.Orbs._create_list_from_dir` to
   :py:meth:`~core.Tools._create_list_from_dir` to make this useful
   method accessible to ORCS.
 
@@ -275,3 +275,53 @@ Miscellaneous
   **sampling_vector** in :py:meth:`~utils.transform_spectrum` to give
   the possibility to compute an INDFT by giving a non-uniform sampling
   vector.
+
+v1.3 Start of CFHT integration
+******************************
+
+v1.3.0 ORB-Viewer
+=================
+
+A viewer based on Ginga (https://github.com/ejeschke/ginga) has been
+added to ORB (scripts/**orb-viewer**). It can be used to analyse
+reduced data cube (spectral cube) or raw interferometric cubes. Basic
+functionalities (fft, spectrum fit, image operations ...)  have been
+implemented.
+
+v1.3.1
+======
+
+orb-header
+----------
+
+script **orb-header** added to display and manipulate headers of FITS
+files.
+
+
+Miscellaneous
+-------------
+
+* All classes which inherit from :py:class:`~core.Tools` can be passed
+  all Tools arguments even if the __init__ method has been
+  reimplemented (a new cofiguration file path can thus be defined
+  easily)
+
+* :py:meth:`~astrometry.Astrometry.register` enhanced to compute scale
+  only at the center of the frame. This function can now be used to
+  compute the optical distorsion pattern of an image.
+
+* :py:meth:`~astrometry.fit_star`: 'saturation' option added to avoid
+  saturated pixels during a the fit of a star. Allows for saturated
+  star reconstruction of the real flux.
+
+
+* :py:meth:`~utils.compute_line_fwhm`,
+  py:meth:`~utils.compute_line_shift`
+  py:meth:`~utils.compute_radial_velocity` transfered from ORCS to
+  ORB.
+
+
+* script **orb-dstack** can be given a directory instead of a file
+  list. It is now able to filter SITELLE files to get only the
+  'object', 'dark' or 'flat' type files.
+

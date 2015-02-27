@@ -1011,7 +1011,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                     double dcl=np.nan,
                     bool enable_zoom=False,
                     bool enable_rotation=False,
-                    bool estimate_local_noise=True):
+                    bool estimate_local_noise=True,
+                    double saturation=0):
     """Fit multiple stars at the same time.
 
     Useful if the relative positions of the stars are well known. In
@@ -1074,6 +1075,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     :param estimate_local_noise: (Optional) If True, the level of
       noise is computed from the background pixels around the
       stars. ron and dcl parameters are thus not used (default True).
+
+    :param saturation: (Optional) If not 0, all pixels above the
+      saturation level are removed from the fit (default 0).
     """
 
     def params_arrays2vect(np.ndarray[np.float64_t, ndim=2] stars_p,
@@ -1155,7 +1159,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     def model_diff(int dimx, int dimy, np.ndarray[np.float64_t, ndim=2] params,
                    int box_size, np.ndarray[np.float64_t, ndim=2] frame,
                    np.ndarray[np.float64_t, ndim=1] noise, double dcl,
-                   transpose=False, normalize=False):
+                   double saturation, transpose=False, normalize=False):
         """params is an array (star_nb, 5) with the 5 parameters of
         each star in this order : height, amplitude, posx, posy, fwhm
         """
@@ -1212,6 +1216,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
             if star.shape[0] > 1 and star.shape[1] > 1:
                 data = frame[x_min:x_max, y_min:y_max]
                 star = (star - data) / sigma(data, noise[istar], dcl)
+                if saturation > 0.:
+                    star[np.nonzero(data >= saturation)] = np.nan
             
                 if normalize:
                     star /= np.nanmax(star)
@@ -1232,7 +1238,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
              np.ndarray[np.float64_t, ndim=1] cov_p_mask,
              np.ndarray[np.float64_t, ndim=2] frame,
              int box_size, int star_nb,
-             np.ndarray[np.float64_t, ndim=1] noise, double dcl):
+             np.ndarray[np.float64_t, ndim=1] noise, double dcl,
+             double saturation):
 
         cdef np.ndarray[np.float64_t, ndim=2] params = np.zeros(
             (star_nb, np.size(stars_p_mask)), dtype=float)
@@ -1260,7 +1267,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                 cov_p[5], 0., 0., rcx, rcy, cov_p[4])
         
         res = model_diff(frame.shape[0], frame.shape[1],
-                         params, box_size, frame, noise, dcl)
+                         params, box_size, frame, noise, dcl,
+                         saturation)
            
         return res[np.nonzero(~np.isnan(res))]
     
@@ -1351,12 +1359,12 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     test_x = np.abs(bn.nansum(model_diff(frame.shape[0], frame.shape[1],
                                          test_p, box_size, frame,
                                          noise_guess * 0.,
-                                         0., transpose=True,
+                                         0., saturation, transpose=True,
                                          normalize=True), axis=1))
     test_y = np.abs(bn.nansum(model_diff(frame.shape[0], frame.shape[1],
                                          test_p, box_size, frame,
                                          noise_guess * 0.,
-                                         0., transpose=False,
+                                         0., saturation, transpose=False,
                                          normalize=True), axis=0))
     test_x = test_x - np.min(test_x)
     test_y = test_y - np.min(test_y)
@@ -1465,7 +1473,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     fit = scipy.optimize.leastsq(diff, free_p,
                                  args=(fixed_p, stars_p_mask, cov_p_mask,
                                        np.copy(frame), box_size, star_nb,
-                                       noise_guess, dcl),
+                                       noise_guess, dcl, saturation),
                                  maxfev=500, full_output=True,
                                  xtol=fit_tol)
 

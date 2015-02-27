@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUtils module &mdash; Orb 1.2.4.2 documentation</title>
+    <title>CUtils module &mdash; Orb 1.3.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4.2',
+        VERSION:     '1.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.1 documentation" href="index.html" />
     <link rel="next" title="Astrometry module" href="astrometry_module.html" />
     <link rel="prev" title="Utils module" href="utils_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -172,7 +172,7 @@
 <td>Return the coordinates of a box given the center of the box, its size and the limits of the range along x and y axes.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#cutils.point_inside_polygon" title="cutils.point_inside_polygon"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.point_inside_polygon</span></tt></a></td>
-<td>Determine if a point is inside a given polygon or not</td>
+<td>Determine if a point is inside a given polygon or not Polygon is a list of (x,y) pairs.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.multi_fit_stars</span></tt></a></td>
 <td>Fit multiple stars at the same time.</td>
@@ -695,7 +695,7 @@ Polygon is a list of (x,y) pairs.</p>
 
 <dl class="function">
 <dt id="cutils.multi_fit_stars">
-<tt class="descclassname">cutils.</tt><tt class="descname">multi_fit_stars</tt><big>(</big><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em><big>)</big><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">cutils.</tt><tt class="descname">multi_fit_stars</tt><big>(</big><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em><big>)</big><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit multiple stars at the same time.</p>
 <p>Useful if the relative positions of the stars are well known. In
 this case the pattern of position can be shifted, zoomed and
@@ -744,6 +744,8 @@ can be rotated (default False).</li>
 <li><span class="target" id="cutils.multi_fit_stars.params.estimate_local_noise"></span><strong>estimate_local_noise</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.estimate_local_noise">¶</a> &#8211; (Optional) If True, the level of
 noise is computed from the background pixels around the
 stars. ron and dcl parameters are thus not used (default True).</li>
+<li><span class="target" id="cutils.multi_fit_stars.params.saturation"></span><strong>saturation</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.saturation">¶</a> &#8211; (Optional) If not 0, all pixels above the
+saturation level are removed from the fit (default 0).</li>
 </ul>
 </td>
 </tr>
@@ -819,12 +821,12 @@ compute. This vector may have any length.</li>
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

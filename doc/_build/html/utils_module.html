@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.2.4.2 documentation</title>
+    <title>Utils module &mdash; Orb 1.3.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.4.2',
+        VERSION:     '1.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.2.4.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.1 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -211,6 +211,53 @@ in cm-1.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.compute_line_fwhm">
+<tt class="descclassname">utils.</tt><tt class="descname">compute_line_fwhm</tt><big>(</big><em>step_nb</em>, <em>step</em>, <em>order</em>, <em>apod_coeff=1.0</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.compute_line_fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the expected FWHM (in nm or in cm-1) of a line given the
+observation parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.compute_line_fwhm.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.step_nb">¶</a> &#8211; Number of steps</li>
+<li><span class="target" id="utils.compute_line_fwhm.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="utils.compute_line_fwhm.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="utils.compute_line_fwhm.params.apod_coeff"></span><strong>apod_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.apod_coeff">¶</a> &#8211; (Optional) Apodization coefficient. 1. stand
+for no apodization and gives the FWHM of the central lobe of the
+sinc (default 1.)</li>
+<li><span class="target" id="utils.compute_line_fwhm.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.wavenumber">¶</a> &#8211; (Optional) If True the result is returned in cm-1,
+else it is returned in nm.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.compute_line_shift">
+<tt class="descclassname">utils.</tt><tt class="descname">compute_line_shift</tt><big>(</big><em>velocity</em>, <em>step_nb</em>, <em>step</em>, <em>order</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.compute_line_shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the line shift given its velocity in nm or in cm-1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.compute_line_shift.params.velocity"></span><strong>velocity</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_shift.params.velocity">¶</a> &#8211; Line velocity in km.s-1</li>
+<li><span class="target" id="utils.compute_line_shift.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_shift.params.step_nb">¶</a> &#8211; Number of steps</li>
+<li><span class="target" id="utils.compute_line_shift.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_shift.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="utils.compute_line_shift.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_shift.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="utils.compute_line_shift.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_shift.params.wavenumber">¶</a> &#8211; (Optional) If True the result is returned in cm-1,
+else it is returned in nm.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.compute_obs_params">
 <tt class="descclassname">utils.</tt><tt class="descname">compute_obs_params</tt><big>(</big><em>nm_min_filter</em>, <em>nm_max_filter</em>, <em>theta_min=5.01</em>, <em>theta_max=11.28</em><big>)</big><a class="headerlink" href="#utils.compute_obs_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute observation parameters (order, step size) given the
@@ -237,6 +284,29 @@ filter bandpass.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.compute_radial_velocity">
+<tt class="descclassname">utils.</tt><tt class="descname">compute_radial_velocity</tt><big>(</big><em>line</em>, <em>rest_line</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.compute_radial_velocity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return radial velocity in km.s-1</p>
+<p>V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.compute_radial_velocity.params.line"></span><strong>line</strong><a class="paramlink headerlink reference internal" href="#utils.compute_radial_velocity.params.line">¶</a> &#8211; Emission line wavelength/wavenumber (can be a numpy
+array)</li>
+<li><span class="target" id="utils.compute_radial_velocity.params.rest_line"></span><strong>rest_line</strong><a class="paramlink headerlink reference internal" href="#utils.compute_radial_velocity.params.rest_line">¶</a> &#8211; Rest-frame wavelength/wavenumber (can be a numpy
+array but must have the same size as line)</li>
+<li><span class="target" id="utils.compute_radial_velocity.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.compute_radial_velocity.params.wavenumber">¶</a> &#8211; (Optional) If True the result is returned in cm-1,
+else it is returned in nm.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.correct_bad_frames_vector">
 <tt class="descclassname">utils.</tt><tt class="descname">correct_bad_frames_vector</tt><big>(</big><em>bad_frames_vector</em>, <em>dimz</em><big>)</big><a class="headerlink" href="#utils.correct_bad_frames_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove bad indexes of the bad frame vector.</p>
@@ -247,6 +317,32 @@ filter bandpass.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.correct_bad_frames_vector.params.bad_frames_vector"></span><strong>bad_frames_vector</strong><a class="paramlink headerlink reference internal" href="#utils.correct_bad_frames_vector.params.bad_frames_vector">¶</a> &#8211; The vector of indexes to correct</li>
 <li><span class="target" id="utils.correct_bad_frames_vector.params.dimz"></span><strong>dimz</strong><a class="paramlink headerlink reference internal" href="#utils.correct_bad_frames_vector.params.dimz">¶</a> &#8211; Dimension of the cube along the 3rd axis.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.correct_hot_pixels">
+<tt class="descclassname">utils.</tt><tt class="descname">correct_hot_pixels</tt><big>(</big><em>im</em>, <em>hp_map</em>, <em>box_size=3</em>, <em>std_filter_coeff=1.5</em><big>)</big><a class="headerlink" href="#utils.correct_hot_pixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Correct hot pixels in an image given a map of their position.</p>
+<p>The algorithm used replaces a hot pixel value by the median of the
+pixels in a box around it. Pixels values which are not too much
+different from the values around are not modified.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.correct_hot_pixels.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#utils.correct_hot_pixels.params.im">¶</a> &#8211; Image to correct</li>
+<li><span class="target" id="utils.correct_hot_pixels.params.hp_map"></span><strong>hp_map</strong><a class="paramlink headerlink reference internal" href="#utils.correct_hot_pixels.params.hp_map">¶</a> &#8211; Hot pixels map (1 for hot pixels, 0 for normal
+pixel)</li>
+<li><span class="target" id="utils.correct_hot_pixels.params.box_size"></span><strong>box_size</strong><a class="paramlink headerlink reference internal" href="#utils.correct_hot_pixels.params.box_size">¶</a> &#8211; (Optional) Size of the correction box (default
+3).</li>
+<li><span class="target" id="utils.correct_hot_pixels.params.std_filter_coeff"></span><strong>std_filter_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.correct_hot_pixels.params.std_filter_coeff">¶</a> &#8211; (Optional) Coefficient on the std used to
+check if the value of a hot pixel must be changed (default 1.5).</li>
 </ul>
 </td>
 </tr>
@@ -1458,9 +1554,27 @@ small data set (&lt; 500 x 500 x 10).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.query_sesame">
+<tt class="descclassname">utils.</tt><tt class="descname">query_sesame</tt><big>(</big><em>object_name</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#utils.query_sesame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the SESAME Database to get RA/DEC given the name of an
+object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="utils.query_sesame.params.object_name"></span><strong>object_name</strong><a class="paramlink headerlink reference internal" href="#utils.query_sesame.params.object_name">¶</a> &#8211; Name of the object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">[RA, DEC]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.raw_fft">
-<tt class="descclassname">utils.</tt><tt class="descname">raw_fft</tt><big>(</big><em>x</em>, <em>apod=None</em>, <em>inverse=False</em><big>)</big><a class="headerlink" href="#utils.raw_fft" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the raw FFT of a vector</p>
+<tt class="descclassname">utils.</tt><tt class="descname">raw_fft</tt><big>(</big><em>x</em>, <em>apod=None</em>, <em>inverse=False</em>, <em>return_complex=False</em>, <em>return_phase=False</em><big>)</big><a class="headerlink" href="#utils.raw_fft" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the raw FFT of a vector.</p>
+<p>Return the absolute value of the complex vector by default.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1471,6 +1585,10 @@ small data set (&lt; 500 x 500 x 10).</p>
 <a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><tt class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></tt></a> (default None)</li>
 <li><span class="target" id="utils.raw_fft.params.inverse"></span><strong>inverse</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.inverse">¶</a> &#8211; (Optional) If True compute the inverse FFT
 (default False).</li>
+<li><span class="target" id="utils.raw_fft.params.return_complex"></span><strong>return_complex</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.return_complex">¶</a> &#8211; (Optional) If True, the complex vector is
+returned (default False).</li>
+<li><span class="target" id="utils.raw_fft.params.return_phase"></span><strong>return_phase</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.return_phase">¶</a> &#8211; (Optional) If True, the phase is
+returned.(default False)</li>
 </ul>
 </td>
 </tr>
@@ -1502,7 +1620,7 @@ space character. The first column contains the wavelength axis
 in nm. The second column contains the transmission
 coefficients. Comments are preceded with a #.  Filter edges can
 be specified using the keywords : FILTER_MIN and FILTER_MAX:</p>
-<div class="last highlight-python"><pre>## ORBS filter file 
+<div class="last highlight-python"><div class="highlight"><pre>## ORBS filter file 
 # Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;
 # Filter name : SpIOMM_R
 # Wavelength in nm | Transmission percentage
@@ -1512,7 +1630,8 @@ be specified using the keywords : FILTER_MIN and FILTER_MAX:</p>
 999.7999878 0.009733387269
 999.5999756 -0.0004460749624
 999.4000244 0.01378122438
-999.2000122 0.002538740868</pre>
+999.2000122 0.002538740868
+</pre></div>
 </div>
 </div>
 </dd></dl>
@@ -1968,12 +2087,12 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.2.4.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Orb 1.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

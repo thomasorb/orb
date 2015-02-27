@@ -36,6 +36,7 @@ import numpy as np
 from scipy import optimize
 import math
 import urllib2
+import socket
 import StringIO
 import astropy.wcs as pywcs
 import bottleneck as bn
@@ -64,7 +65,7 @@ class StarsParams(Tools):
     
 
     def __init__(self, star_nb=1, frame_nb=1, logfile_name=None,
-                 silent=False):
+                 **kwargs):
         """StarsParams init
 
         :param star_nb: (Optional) Number of stars (default 1)
@@ -74,11 +75,11 @@ class StarsParams(Tools):
         :param logfile_name: (Optional) Give a specific name to the
           logfile (default None).
 
-        :param silent: (Optional) If True no message is displayed
-          (default False).
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
-        self._silent = silent
-        if logfile_name != None:
+        Tools.__init__(self, **kwargs)
+        
+        if logfile_name is not None:
             self._logfile_name = logfile_name
             
         if isinstance(star_nb, int):
@@ -129,7 +130,7 @@ class StarsParams(Tools):
                     self.data[key, 0] = item[:,0]
                 elif isinstance(item, dict):
                     self.data[key, 0] = item
-                elif item == None:
+                elif item is None:
                     self.data[key, 0] = None
                 else:
                     self._print_error("item to set is neither a StarsParams instance or a dict")
@@ -138,7 +139,7 @@ class StarsParams(Tools):
                     self.data[0, key] = item[:,0]
                 elif isinstance(item, dict):
                     self.data[0, key] = item
-                elif item == None:
+                elif item is None:
                     self.data[0, key] = None
                 else:
                     self._print_error("item to set is neither a StarsParams instance or a dict")
@@ -167,7 +168,7 @@ class StarsParams(Tools):
                 sliced_data = np.atleast_2d(self.data[data_key])
                 for ik in range(sliced_data.shape[0]):
                     for jk in range(sliced_data.shape[1]):
-                        if sliced_data[ik,jk] != None:
+                        if sliced_data[ik,jk] is not None:
                             sliced_data[ik,jk][param] = item
                         else:
                             sliced_data[ik,jk] = dict()
@@ -188,7 +189,7 @@ class StarsParams(Tools):
             data_key = key[:-1]
             param = key[-1]
             if np.size(self.data[data_key]) == 1:
-                if np.atleast_1d(np.squeeze(self.data[data_key]))[0] != None:
+                if np.atleast_1d(np.squeeze(self.data[data_key]))[0] is not None:
                     return np.atleast_1d(np.squeeze(self.data[data_key]))[0][param]
                 else:
                     return np.nan
@@ -197,7 +198,7 @@ class StarsParams(Tools):
                 ret_data = np.empty_like(sliced_data)
                 for ik in range(sliced_data.shape[0]):
                     for jk in range(sliced_data.shape[1]):
-                        if sliced_data[ik,jk] != None:
+                        if sliced_data[ik,jk] is not None:
                             if param in sliced_data[ik,jk]:
                                 ret_data[ik,jk] = sliced_data[ik,jk][param]
                             else:
@@ -225,12 +226,13 @@ class StarsParams(Tools):
             frame_nb = data.shape[1]
             new_params = StarsParams(star_nb, frame_nb,
                                      logfile_name=self._logfile_name,
-                                     silent=self._silent)
+                                     silent=self._silent,
+                                     config_file_name=self.config_file_name)
             for ik in range(star_nb):
                 for jk in range(frame_nb):
                     if isinstance(data[ik,jk], dict):
                         new_params[ik,jk] = data[ik,jk]
-                    elif data[ik,jk] == None:
+                    elif data[ik,jk] is None:
                         new_params[ik,jk] = None
                     else:
                         self._print_error("Error occuring in data conversion. Data may be corrupted.")
@@ -262,7 +264,7 @@ class StarsParams(Tools):
         
         for index in range(self.frame_nb):
             for istar in range(self.star_nb):
-                if self[istar, index] != None:
+                if self[istar, index] is not None:
                     params = ''
                     for ikey in self.keys:
                         if ikey in self[istar, index].keys():
@@ -301,10 +303,10 @@ class StarsParams(Tools):
                 if 'FRAME_NB' in line:
                     frame_nb = int(line.split()[-1])
                     
-        if star_nb == None or keys == None or frame_nb == None:
+        if star_nb is None or keys is None or frame_nb is None:
             self._print_error('Bad star parameters file')
             
-        if self.star_nb != None:
+        if self.star_nb is not None:
             if star_nb != self.star_nb:
                 self._print_warning('The number of stars in the loaded stars parameters and in the star list are not the same ! The star list will be erased')
                 self.star_list = None
@@ -345,7 +347,7 @@ class StarsParams(Tools):
         """
         star_list = list()
         for istar in range(self.star_nb):
-            if self[istar, index] != None:
+            if self[istar, index] is not None:
                 if 'x' in self[istar, index] and 'y' in self[istar, index]:
                     if (not np.isnan(self[istar,index,'x'])
                         and not np.isnan(self[istar,index,'y'])):
@@ -430,7 +432,7 @@ class Moffat(PSF):
     
     alpha = None # Alpha: coefficient defined from beta and FWHM
 
-    def __init__(self, params, logfile_name=None):
+    def __init__(self, params, logfile_name=None, **kwargs):
         """Init Moffat profile parameters
 
         :param params: Input parameters of the Moffat profile. Input
@@ -441,8 +443,12 @@ class Moffat(PSF):
 
         :param logfile_name: (Optional) Give a specific name to the
           logfile (default None).
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
-        if logfile_name != None:
+        Tools.__init__(self, **kwargs)
+        
+        if logfile_name is not None:
             self._logfile_name = logfile_name
             
         MAX_BETA = 30.
@@ -557,7 +563,7 @@ class Gaussian(PSF):
     width = None # Width = FWHM / abs(2.*sqrt(2. * log(2.)))
 
 
-    def __init__(self, params, logfile_name=None):
+    def __init__(self, params, logfile_name=None, **kwargs):
         """Init Gaussian profile parameters
 
         :param params: Input parameters of the Gaussian profile. Input
@@ -568,8 +574,12 @@ class Gaussian(PSF):
 
         :param logfile_name: (Optional) Give a specific name to the
           logfile (default None).
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
-        if logfile_name != None:
+        Tools.__init__(self, **kwargs)
+        
+        if logfile_name is not None:
             self._logfile_name = logfile_name
             
         self.params = dict()
@@ -737,7 +747,7 @@ class Astrometry(Tools):
     base_url = "http://webviz.u-strasbg.fr/viz-bin/"
     """Beginning of the URL to the Vizier server"""
 
-    BASE_URL = base_url_ca
+    BASE_URL = base_url
     """Beginning of the URL to the Vizer server by default"""
 
     
@@ -888,7 +898,7 @@ class Astrometry(Tools):
         self.default_beta = moffat_beta
 
         # load star list
-        if star_list_path != None:
+        if star_list_path is not None:
             self.load_star_list(star_list_path)
         
         # set scale and all dependant parameters
@@ -932,12 +942,19 @@ class Astrometry(Tools):
         results."""
         return self._data_path_hdr + "fit_results"
 
-    def _get_combined_frame(self):
-        """Return a combined frame to work on"""
-        
+    def _get_combined_frame(self, use_deep_frame=False):
+        """Return a combined frame to work on.
+
+        :param use_deep_frame: (Optional) If True returned frame is a
+          deep frame instead of a combination of the first frames only
+          (default False)
+        """
         # If we have 3D data we work on a combined image of the first
         # frames to detect stars
         if self.dimz > 1:
+            if use_deep_frame:
+                return self.data.get_mean_image()
+            
             stack_nb = self.detect_stack
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
@@ -992,7 +1009,8 @@ class Astrometry(Tools):
         # create an empty StarsParams array
         self.fit_results = StarsParams(self.star_nb, self.frame_nb,
                                        logfile_name=self._logfile_name,
-                                       silent=self._silent)
+                                       silent=self._silent,
+                                       config_file_name=self.config_file_name)
         return self.star_list
     
     def reset_scale(self, scale):
@@ -1031,7 +1049,7 @@ class Astrometry(Tools):
 
         :param x: a value or a vector in pixel
         """
-        if self.scale != None:
+        if self.scale is not None:
             return np.array(x).astype(float) / self.scale
         else:
             self._print_error("Scale not defined")
@@ -1041,7 +1059,7 @@ class Astrometry(Tools):
 
         :param x: a value or a vector in arcsec
         """
-        if self.scale != None:
+        if self.scale is not None:
             return np.array(x).astype(float) * self.scale
         else:
             self._print_error("Scale not defined")
@@ -1054,7 +1072,7 @@ class Astrometry(Tools):
 
     def load_fit_results(self, fit_results_path=None):
         """Load a file containing the fit results"""
-        if fit_results_path == None:
+        if fit_results_path is None:
             fit_results_path = self._get_fit_results_path()
         self.fit_results.load_stars_params(fit_results_path)
     
@@ -1071,8 +1089,7 @@ class Astrometry(Tools):
         
         return self.star_list
 
-    def fit_stars_in_frame(self, index, save=True,
-                           **kwargs):
+    def fit_stars_in_frame(self, index, save=True, **kwargs):
         """
         Fit stars in one frame.
 
@@ -1109,10 +1126,10 @@ class Astrometry(Tools):
             * dark_current_level
           
         """
-        if self.data == None: self._print_error(
+        if self.data is None: self._print_error(
             "Some data must be loaded first")
         
-        if self.star_list == None: self._print_error(
+        if self.star_list is None: self._print_error(
             "A star list must be loaded or created first")
 
         if isinstance(index, np.ndarray):
@@ -1166,7 +1183,8 @@ class Astrometry(Tools):
                           aper_coeff=3., blur=False, 
                           no_fit=False,
                           estimate_local_noise=True, multi_fit=False,
-                          enable_zoom=False, enable_rotation=False):
+                          enable_zoom=False, enable_rotation=False,
+                          saturation=None):
         
         """Fit stars in the cube.
 
@@ -1258,6 +1276,10 @@ class Astrometry(Tools):
         :param enable_rotation: (Optional) see
           :paramref:`astrometry.fit_stars_in_frame.enable_rotation`
           (default False).
+  
+        :param saturation: (Optional) see
+          :paramref:`astrometry.fit_stars_in_frame.saturation`
+          (default None).
         """
         def get_index_mean_dev(index):
             dx = utils.robust_mean(utils.sigmacut(
@@ -1272,10 +1294,10 @@ class Astrometry(Tools):
         
         self._print_msg("Fitting stars in cube", color=True)
 
-        if self.data == None: self._print_error(
+        if self.data is None: self._print_error(
             "Some data must be loaded first")
         
-        if self.star_list == None: self._print_error(
+        if self.star_list is None: self._print_error(
             "A star list must be loaded or created first")
 
         if self.dimz < 2: self._print_error(
@@ -1285,7 +1307,7 @@ class Astrometry(Tools):
         else:
             fix_aperture_fwhm_pix = None
 
-        if add_cube != None:
+        if add_cube is not None:
             if np.size(add_cube) == 2:
                 added_cube = add_cube[0]
                 added_cube_scale = add_cube[1]
@@ -1296,7 +1318,8 @@ class Astrometry(Tools):
                 
         self.fit_results = StarsParams(self.star_nb, self.frame_nb,
                                        logfile_name=self._logfile_name,
-                                       silent=self._silent)
+                                       silent=self._silent,
+                                       config_file_name=self.config_file_name)
 
         # Init of the multiprocessing server
         job_server, ncpus = self._init_pp_server()
@@ -1358,7 +1381,7 @@ class Astrometry(Tools):
 
             for ijob in range(ncpus):
                 frame = np.copy(self.data[:,:,ik+ijob])
-                if add_cube != None:
+                if add_cube is not None:
                     frame += added_cube[:,:,ik+ijob] * added_cube_scale
                 if self._check_mask:
                     if self.data._mask_exists:
@@ -1381,7 +1404,7 @@ class Astrometry(Tools):
                       local_background, no_aperture_photometry,
                       precise_guess,
                       aper_coeff, blur, no_fit, estimate_local_noise,
-                      multi_fit, enable_zoom, enable_rotation),
+                      multi_fit, enable_zoom, enable_rotation, saturation),
                 modules=("from orb.astrometry import fit_star, StarsParams, sky_background_level, aperture_photometry, get_profile",
                          "import numpy as np",
                          "import math",
@@ -1496,7 +1519,8 @@ class Astrometry(Tools):
 
 
     def detect_stars(self, min_star_number=4, no_save=False,
-                     saturation_threshold=35000, try_catalogue=False):
+                     saturation_threshold=35000, try_catalogue=False,
+                     use_deep_frame=False):
         """Detect star positions in data.
 
         :param index: Minimum index of the images used for star detection.
@@ -1505,19 +1529,25 @@ class Astrometry(Tools):
           detect. Must be greater or equal to 4 (minimum star number
           for any alignment process).
 
-        :param no_save: if True do not save the list of detected stars
-          in a file, only return a list (default False).
+        :param no_save: (Optional) If True do not save the list of
+          detected stars in a file, only return a list (default
+          False).
 
-        :param saturation_threshold: Number of counts above which the
-          star can be considered as saturated. Very low by default
-          because at the ZPD the intensity of a star can be twice the
-          intensity far from it (default 35000).
+        :param saturation_threshold: (Optional) Number of counts above
+          which the star can be considered as saturated. Very low by
+          default because at the ZPD the intensity of a star can be
+          twice the intensity far from it (default 35000).
 
-        :param try_catalogue: If True, try to use a star catalogue
-          (e.g. USNO-B1) to detect stars if target_ra, target_dec,
-          target_x, target_y and wcs_rotation parameters have been
-          given (see :py:meth:`astrometry.Astrometry.query_vizier`,
-          default False).
+        :param try_catalogue: (Optional) If True, try to use a star
+          catalogue (e.g. USNO-B1) to detect stars if target_ra,
+          target_dec, target_x, target_y and wcs_rotation parameters
+          have been given (see
+          :py:meth:`astrometry.Astrometry.query_vizier`, default
+          False).
+
+        :param use_deep_frame: (Optional) If True a deep frame of the
+          cube is used instead of combinig only the first frames
+          (default False).
 
         :return: (star_list_path, mean_fwhm_arc) : (a path to a list
           of the dected stars, the mean FWHM of the stars in arcsec)
@@ -1604,8 +1634,8 @@ class Astrometry(Tools):
          
 
         self._print_msg("Detecting stars", color=True)
-
-        im = self._get_combined_frame()
+        
+        im = self._get_combined_frame(use_deep_frame=use_deep_frame)
         
         # high pass filtering of the image to remove nebulosities   
         self._print_msg("Filtering master image")
@@ -1769,10 +1799,10 @@ class Astrometry(Tools):
         # Filter frames before alignment
         HPFILTER = int(self._get_tuning_parameter('HPFILTER', 0))
         
-        if self.data == None: self._print_error(
+        if self.data is None: self._print_error(
             "Some data must be loaded first")
         
-        if self.star_list == None: self._print_error(
+        if self.star_list is None: self._print_error(
             "A star list must be loaded or created first")
     
         if fit_cube:
@@ -1817,7 +1847,6 @@ class Astrometry(Tools):
                 
         return alignment_vector_x, alignment_vector_y, alignment_error
 
-
     def query_vizier(self, catalog='USNO-B1.0', max_stars=100):
         """Return a list of star coordinates around an object in a
         given radius based on a query to VizieR Services
@@ -1846,6 +1875,8 @@ class Astrometry(Tools):
           'I/259/TYC2' - Tycho-2 main catalog (2000)
           'I/311/HIP2' - Hipparcos main catalog, new reduction (2007)
         """
+        MAX_RETRY = 5
+        
         radius = self.fov / 2.
 
         if self.target_ra is None or self.target_dec is None:
@@ -1862,7 +1893,28 @@ class Astrometry(Tools):
                + '&-out=_RAJ2000,_DEJ2000,R1mag&-sort=R1mag'
                + '&-out.max=%d'%max_stars)
         
-        query_result = urllib2.urlopen(URL).read()
+        retry = 0
+        while retry <= MAX_RETRY:
+            try:
+                query_result = urllib2.urlopen(URL, timeout=5)
+                break
+            
+            except urllib2.URLError:
+                retry += 1
+                self._print_warning(
+                    'Vizier timeout, retrying ... {}/{}'.format(
+                        retry, MAX_RETRY))
+            except socket.timeout:
+                retry += 1
+                self._print_warning(
+                    'Vizier timeout, retrying ... {}/{}'.format(
+                        retry, MAX_RETRY))
+                
+        if retry > MAX_RETRY:
+            self._print_error(
+                'Vizier server unreachable, try again later')
+            
+        query_result = query_result.read()
         output = StringIO.StringIO(query_result)
         star_list = list()
         for iline in output:
@@ -1883,7 +1935,9 @@ class Astrometry(Tools):
 
 
 
-    def register(self, max_stars=100, full_deep_frame=False):
+    def register(self, max_stars=100, full_deep_frame=False,
+                 return_fit_params=False, rscale_coeff=1.,
+                 compute_precision=True):
         """Register data and return a corrected pywcs.WCS object.
         
         Precise RA/DEC positions of the stars in the field are
@@ -1899,6 +1953,16 @@ class Astrometry(Tools):
           the cube are used to create a deep frame. Use it only when
           the frames in the cube are aligned. In the other case only
           the first frames are combined together (default False).
+
+        :param return_fit_params: (Optional) If True return final fit
+          parameters instead of wcs (default False).
+
+        :param rscale_coeff: (Optional) Coefficient on the maximum
+          radius of the fitted stars to compute scale. When rscale_coeff
+          = 1, rmax is half the longer side of the image (default 1).
+
+        :param compute_precision: (Optional) If True, astrometrical
+          precision is computed (default True).
         """
         def get_transformation_error(guess, deg_list, fit_list,
                                      target_ra, target_dec):
@@ -1918,7 +1982,21 @@ class Astrometry(Tools):
                               dtype=float)
             result = np.sqrt(np.sum(result**2., axis=1))
             return result[np.nonzero(~np.isnan(result))]
-                              
+
+        def radius_filter(star_list, rmax):
+            star_list = np.array(star_list)
+            star_list = [[star_list[i,0], star_list[i,1]]
+                         for i in range(star_list.shape[0])]
+            final_star_list = list()
+            for istar in star_list:
+                posx = istar[0] ; posy = istar[1]
+                r = math.sqrt((posx - self.dimx/2.)**2.
+                              + (posy - self.dimy/2)**2.)
+                if r <= rmax:
+                    final_star_list.append((posx, posy))
+                else:
+                    final_star_list.append((np.nan, np.nan))
+            return np.array(final_star_list)
         
       
         MIN_STAR_NB = 5 # Minimum number of stars to get a correct WCS
@@ -1927,9 +2005,9 @@ class Astrometry(Tools):
         if not (self.target_ra is not None and self.target_dec is not None
                 and self.target_x is not None and self.target_y is not None
                 and self.wcs_rotation is not None):
-            self._print_error("Not enough parameters to register the data. Please give target_xy, target_radec and wcs_rotation options at the init")
+            self._print_error("Not enough parameters to register data. Please set target_xy, target_radec and wcs_rotation parameters at Astrometry init")
         
-        self._print_msg('Computing correct WCS', color=True)
+        self._print_msg('Computing WCS', color=True)
 
 
         # get deep frame
@@ -1939,6 +2017,11 @@ class Astrometry(Tools):
             deep_frame = self.data.get_mean_image()
 
         delta = self.scale / 3600. # arcdeg per pixel
+
+        # get FWHM
+        star_list, fwhm_arc = self.detect_stars(min_star_number=10,
+                                                use_deep_frame=full_deep_frame)
+        self.reset_fwhm_arc(fwhm_arc)
         
         # Query to get reference star positions in degrees
         star_list = self.query_vizier(max_stars=10 * max_stars)
@@ -1959,36 +2042,50 @@ class Astrometry(Tools):
         
         # Compute initial star positions from initial transformation
         # parameters
-        star_list_pix = list()
-        rmax = max(self.dimx, self.dimy) / 2.
+        full_star_list_pix = list()
         for istar in star_list_deg:
             pos = wcs.wcs_world2pix(istar[0], istar[1], 0)
             posx = pos[0] ; posy = pos[1]
-            r = math.sqrt((posx - self.dimx/2.)**2. + (posy - self.dimy/2)**2.)
-            if r <= rmax:
-                star_list_pix.append((posx, posy))
-            else:
-                star_list_pix.append((np.nan, np.nan))
-            
-        star_list_pix = np.array(star_list_pix)
+            full_star_list_pix.append((posx, posy))
+        full_star_list_pix = np.array(full_star_list_pix)
+
+        rmax = max(self.dimx, self.dimy) / 2.
+        star_list_pix = radius_filter(full_star_list_pix, rmax)
         
         # Fit stars from computed position in the image
         # 1st fit pass
+        self._print_msg('First fit pass: get rotation angle')
         self.reset_star_list(star_list_pix)
         fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
                                              multi_fit=True, enable_zoom=True,
-                                             enable_rotation=True)
+                                             enable_rotation=True, save=False,
+                                             fix_fwhm=True, fix_pos=False)
         star_list_fit = fit_params.get_star_list(all_params=True)
         
         self.reset_star_list(star_list_fit)
-        # 2nd fit pass
-        fit_params = self.fit_stars_in_frame(deep_frame, local_background=True,
+        fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
                                              multi_fit=True, enable_zoom=True,
-                                             enable_rotation=True)
+                                             enable_rotation=True, save=False,
+                                             fix_fwhm=False, fix_pos=False)
         star_list_fit = fit_params.get_star_list(all_params=True)
-        self.reset_star_list(star_list_fit)
+
+        if rscale_coeff < 1.:
+            # 2nd fit pass
+            self._print_msg(
+                'Second fit pass: get scale at the center of the frame')
+            star_list_fit = radius_filter(star_list_fit, rmax * rscale_coeff)
+            self.reset_star_list(star_list_fit)
+            fit_params = self.fit_stars_in_frame(
+                deep_frame, local_background=True,
+                multi_fit=True, enable_zoom=True,
+                enable_rotation=False, save=False,
+                fix_fwhm=False, fix_pos=False)
+
+            star_list_fit = fit_params.get_star_list(all_params=True)
+            self.reset_star_list(star_list_fit)
         
         fwhm_pix = utils.robust_median(fit_params[:,'fwhm_pix'])
+        
         self.reset_fwhm_arc(self.pix2arc(fwhm_pix))
         if self.dimz > 1:
             self.fit_results[:,0] = fit_params
@@ -1997,6 +2094,7 @@ class Astrometry(Tools):
 
         # get median snr to remove bad fitted stars from all the lists
         snr = fit_params[:,'snr']
+    
         # min SNR must be > 3
         snr_med = max(utils.robust_median(snr), 3.)
 
@@ -2038,7 +2136,7 @@ class Astrometry(Tools):
             [self.wcs_rotation, self.target_x, self.target_y, delta] = optim[0]
         else:
             self._print_error('Bad optimization of transformation parameters')
-        
+    
         # update WCS
         wcs = pywcs.WCS(naxis=2)
         wcs.wcs.crpix = [self.target_x, self.target_y]
@@ -2048,39 +2146,37 @@ class Astrometry(Tools):
         wcs.wcs.crota = [self.wcs_rotation, self.wcs_rotation]
         
         # compute astrometrical precision
+        
+        star_list_deg = star_list[:4*max_stars]
         star_list_pix = list()
         for istar in star_list_deg:
             pos = wcs.wcs_world2pix(istar[0], istar[1], 0)
             star_list_pix.append((pos[0], pos[1]))
             
         self.reset_star_list(star_list_pix)
-        fit_params = self.fit_stars_in_frame(
-            deep_frame, local_background=True,
-            multi_fit=False, enable_zoom=False,
-            enable_rotation=False)
+        
+        if compute_precision:
+            fit_params = self.fit_stars_in_frame(
+                deep_frame, local_background=True,
+                multi_fit=False, enable_zoom=False,
+                enable_rotation=False, fix_fwhm=True)
+        
+            precision = np.sqrt(
+                fit_params[:, 'dx']**2. + fit_params[:, 'dy']**2.)
 
-        ## import pylab as pl
-        ## cut = utils.sigmacut(deep_frame)
-        ## pl.imshow(deep_frame, vmin=np.min(cut), vmax=np.max(cut))
-        ## for i in star_list_pix:
-        ##     pl.scatter(i[1], i[0])
-        ## pl.show()
-        
-        precision = np.sqrt(
-            fit_params[:, 'dx']**2. + fit_params[:, 'dy']**2.)
 
-        # mean precision is the weighted mean
-        precision_cut = utils.sigmacut(precision, sigma=2.)
-        
-        precision_mean = utils.robust_median(precision_cut)
-        precision_err_mean = utils.robust_std(precision_cut)
-        
-        precision_mean *= delta * 3600.
-        precision_err_mean *= delta * 3600.
-        
-        self._print_msg(
-            "Astrometrical precision [in arcsec]: {:.3f} [+/-{:.3f}]".format(
-                precision_mean, precision_err_mean))
+            # mean precision is the weighted mean
+            precision_cut = utils.sigmacut(precision, sigma=2.)
+
+            precision_mean = utils.robust_median(precision_cut)
+            precision_err_mean = utils.robust_std(precision_cut)
+
+            precision_mean *= delta * 3600.
+            precision_err_mean *= delta * 3600.
+
+            self._print_msg(
+                "Astrometrical precision [in arcsec]: {:.3f} [+/-{:.3f}]".format(
+                    precision_mean, precision_err_mean))
        
         self._print_msg(
             "Optimization parameters:\n"
@@ -2093,7 +2189,10 @@ class Astrometry(Tools):
         self.reset_scale(delta * 3600.)
         
         self._print_msg('Corrected WCS computed')
-        return wcs
+        if not return_fit_params:
+            return wcs
+        else:
+            return fit_params
 
 ########################################
 ######## ASTROMETRY UTILS ##############
@@ -2131,7 +2230,7 @@ def guess(star_box, pos=None, height=None, precise_pos=False):
 
     :return: [height,amplitude,x,y,width]
     """
-    if pos != None:
+    if pos is not None:
         x_guess = pos[0]
         y_guess = pos[1]
     else:
@@ -2156,7 +2255,7 @@ def guess(star_box, pos=None, height=None, precise_pos=False):
             x_guess = np.argmax(np.sum(star_box, axis=1))
             y_guess = np.argmax(np.sum(star_box, axis=0))
             
-    if height != None:
+    if height is not None:
         h_guess = height
     else:
         h_guess = sky_background_level(star_box)
@@ -2173,7 +2272,8 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
              fix_fwhm=False, fix_pos=False,
              fit_tol=1e-3, check=True, fwhm_min=0.5,
              check_reject=False, ron=10., dcl=0.,
-             estimate_local_noise=True, precise_guess=False):
+             estimate_local_noise=True, precise_guess=False,
+             saturation=None):
 
     """Fit a single star
 
@@ -2240,27 +2340,17 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
     :param precise_guess: (Optional) If True, the fit guess will be
       more precise but this can lead to errors if the stars positions
       are not already well known (default False).
+
+    :param saturation: (Optional) If not None, all pixels above the
+      saturation level are removed from the fit (default None).
     """
-    star_box = star_box.astype(float)
-    if np.any(np.isnan(star_box)):
-        return []
-    if np.all(star_box == 0):
-        return []
-
-    # correct star_box level if the background level is < 0
-    if np.median(star_box) < 0:
-        level_correction = np.min(star_box)
-        star_box -= level_correction
-    else:
-        level_correction = 0.
-
     def get_background_noise(data, fwhm, posx, posy):
         FWHM_SKY_COEFF = 1.5
         SUB_DIV = 10
         # background noise is computed from the std of 'sky'
         # pixels around the object. The poisson noise is removed
         # because it is added when the real sigma is calculated.
-        if fwhm != None:
+        if fwhm is not None:
             # if FWHM is known sky pixels are considered to be at more
             # than 3 sigma of the guessed star position
             S_sky = cutils.surface_value(
@@ -2287,29 +2377,46 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
         # current level)
         return np.sqrt(abs(data) + (ron)**2. + dcl)
         
-    def diff(free_p, free_i, fixed_p, profile, data, sig):
+    def diff(free_p, free_i, fixed_p, profile, data, sig, saturation):
         data_dimx = data.shape[0]
         data_dimy = data.shape[1]
         params = fixed_p
         params[free_i] = free_p
         prof = profile(params)
-        result = (data - prof.array2d(data_dimx, data_dimy)) / sig
+        model = prof.array2d(data_dimx, data_dimy)
+        result = (data - model) / sig
+        if saturation is not None:
+            result[np.nonzero(data >= saturation)] = np.nan
         result = result[np.nonzero(~np.isnan(result))]
         result = result[np.nonzero(~np.isinf(result))]
         return result.flatten()
+
+
+    star_box = star_box.astype(float)
+    if np.any(np.isnan(star_box)):
+        return []
+    if np.all(star_box == 0):
+        return []
+
+    # correct star_box level if the background level is < 0
+    if np.median(star_box) < 0:
+        level_correction = np.min(star_box)
+        star_box -= level_correction
+    else:
+        level_correction = 0.
 
     # Get parameters guess
     guess_params = guess(star_box, pos=pos, height=height,
                          precise_pos=precise_guess)
 
     # Guessed params are replaced by given values (if not None)
-    if height != None:
+    if height is not None:
         guess_params[0] = height
-    if amp != None:
+    if amp is not None:
         guess_params[1] = amp
-    if fwhm_pix != None:
+    if fwhm_pix is not None:
         guess_params[4] = fwhm_pix
-    if pos != None:
+    if pos is not None:
         if np.size(pos) == 2:
             guess_params[2] = pos[0]
             guess_params[3] = pos[1]
@@ -2350,8 +2457,9 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
 
     fit_params = optimize.leastsq(diff, free_params,
                                   args=(free_index, fixed_params,
-                                        profile, star_box, sigma(star_box,
-                                                                 ron, dcl)),
+                                        profile, star_box, sigma(
+                                            star_box, ron, dcl),
+                                        saturation),
                                   maxfev=100, full_output=True,
                                   xtol=fit_tol)
     if fit_params[-1] <= 4:
@@ -2396,7 +2504,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
         # reduced chi-square
         fit_params['chi-square'] = np.sum(
             diff([],[], fixed_params, profile, star_box,
-                 sigma(star_box, ron, dcl))**2.)
+                 sigma(star_box, ron, dcl), saturation)**2.)
             
         fit_params['reduced-chi-square'] = (
             fit_params['chi-square']
@@ -2428,7 +2536,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
             fit_params['beta_err'] = 0.
         fit_params['flux_err'] = 0.
 
-        if cov_x != None:
+        if cov_x is not None:
             cov_x *= fit_params['reduced-chi-square']
             for ip in range(len(free_index)):
                 err = math.sqrt(abs(cov_x[ip,ip]))
@@ -2533,9 +2641,9 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
             
     box_dimx = star_box.shape[0]
     box_dimy = star_box.shape[1]
-    if x_guess == None:
+    if x_guess is None:
         x_guess = box_dimx / 2. - 0.5
-    if y_guess == None:
+    if y_guess is None:
         y_guess = box_dimy / 2. - 0.5
                                      
     # Aperture radius
@@ -2554,7 +2662,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
         return np.nan, np.nan, np.nan, np.nan
     
     # Estimation of the background
-    if background_guess == None:
+    if background_guess is None:
         ann_rmin = math.floor(C_IN * fwhm_guess) + 0.5
 
         # C_OUT definition just does not work well at small radii, so the
@@ -2618,8 +2726,9 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        precise_guess=False, aper_coeff=3., blur=False,
                        no_fit=False, estimate_local_noise=True,
                        multi_fit=False, enable_zoom=False,
-                       enable_rotation=False, nozero=False,
-                       silent=True):
+                       enable_rotation=False, saturation=None,
+                       fix_pos=False,
+                       nozero=False, silent=True):
 
     ## WARNING : DO NOT CHANGE THE ORDER OF THE ARGUMENTS OR TAKE CARE
     ## OF THE CALL IN astrometry.Astrometry.fit_stars_in_cube()
@@ -2670,6 +2779,9 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     :param fix_fwhm: (Optional) Fix FWHM to the given value or the
       estimated value (default False).
+
+    :param fix_pos: (Optional) Fix x,y positions of the stars to the
+      given value.
 
     :param fit_tol: (Optional) Tolerance on the paramaters fit (the
       lower the better but the longer too) (default 1e-2).
@@ -2748,6 +2860,9 @@ def fit_stars_in_frame(frame, star_list, box_size,
       noise is computed from the background pixels around the
       stars. readout_noise and dark_current_level are thus not used
       (default True).
+
+    :param saturation: (Optional) If not None, all pixels above the
+      saturation level are removed from the fit (default None).
     
     :return: Parameters of a 2D fit of the stars positions.
 
@@ -2758,9 +2873,8 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     .. seealso:: :meth:`astrometry.fit_star` and
       :meth:`cutils.multi_fit_stars`
-    
-    
-    """        
+
+    """
     BOX_COEFF = 7. # Coefficient to redefine the box size if the
                    # fitted FWHM is too large
     
@@ -2814,7 +2928,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
     ## Profile fitting
     if not no_fit:
         if multi_fit:
-            
+            if saturation is None: saturation = 0
             fit_params = cutils.multi_fit_stars(
                 np.array(fit_frame, dtype=float), np.array(star_list), box_size,
                 height_guess=np.array(background, dtype=np.float),
@@ -2823,14 +2937,15 @@ def fit_stars_in_frame(frame, star_list, box_size,
                 cov_pos=True,
                 cov_fwhm=True,
                 fix_height=fix_height,
-                fix_pos=False,
+                fix_pos=fix_pos,
                 fix_fwhm=fix_fwhm,
                 fit_tol=fit_tol,
                 ron=np.array(readout_noise, dtype=np.float),
                 dcl=np.array(dark_current_level, dtype=np.float),
                 enable_zoom=enable_zoom,
                 enable_rotation=enable_rotation,
-                estimate_local_noise=estimate_local_noise)
+                estimate_local_noise=estimate_local_noise,
+                saturation=saturation)
 
             # save results as a StarsParams instance
             for istar in range(star_list.shape[0]):
@@ -2859,9 +2974,11 @@ def fit_stars_in_frame(frame, star_list, box_size,
                         star_params).flux()
                     star_params['dx'] = star_params['x'] - star_list[istar,0]
                     star_params['dy'] = star_params['y'] - star_list[istar,1]
-                    if scale != None:
+                    if scale is not None:
                         star_params['fwhm_arc'] = (
                             float(star_params['fwhm_pix']) * scale)
+                        star_params['fwhm_arc_err'] = (
+                            float(star_params['fwhm_err']) * scale)
                     
                     fit_results[istar] = dict(star_params)
                 else:
@@ -2926,7 +3043,8 @@ def fit_stars_in_frame(frame, star_list, box_size,
                             ron=readout_noise,
                             dcl=dark_current_level,
                             precise_guess=precise_guess,
-                            estimate_local_noise=estimate_local_noise)
+                            estimate_local_noise=estimate_local_noise,
+                            saturation=saturation)
                 else:
                     fit_params = []
 
@@ -2942,9 +3060,11 @@ def fit_stars_in_frame(frame, star_list, box_size,
                     fit_params['dy'] = fit_params['y'] - y_test
 
                     # compute FWHM in arcsec
-                    if scale != None:
+                    if scale is not None:
                         fit_params['fwhm_arc'] = (float(fit_params['fwhm_pix'])
                                                   * scale)
+                        fit_params['fwhm_arc_err'] = (
+                            float(fit_params['fwhm_err']) * scale)
 
                     # save results as a StarsParams instance
                     fit_results[istar] = dict(fit_params)
@@ -2956,7 +3076,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
         
         if not no_fit:
             # get mean FWHM in the frame
-            if fix_aperture_fwhm_pix != None:
+            if fix_aperture_fwhm_pix is not None:
                 if fix_aperture_fwhm_pix > 0.:
                     mean_fwhm = fix_aperture_fwhm_pix
                 else:
@@ -2976,7 +3096,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
         
         # get aperture given the mean FWHM
         for istar in range(star_list.shape[0]):
-            if (fit_results[istar] != None) or (no_fit):
+            if (fit_results[istar] is not None) or (no_fit):
                 new_box_size = BOX_COEFF * mean_fwhm
                 aperture_box_size = BIG_BOX_COEFF * max(box_size, new_box_size)
                

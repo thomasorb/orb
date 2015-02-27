@@ -48,6 +48,23 @@ The following modules are optional.
 
   * Cython_ : Needed to compile Cython_ functions in cutils.pyx
 
+To use the Viewer (orb-viewer)
+------------------------------
+
+`Ginga <http://ejeschke.github.io/ginga/>`_ must be installed and the GTK backend must be compiled inside matplotlib:
+
+1 - Install Ginga
+
+  sudo pip install ginga
+
+2 - Install development libraries for gtk2
+
+  sudo apt-get install python-gtk2-dev
+
+3 - Rebuild matlplotlib
+
+  sudo pip install --upgrade matplotlib
+
 
 To check if a module is installed just try the following::
 

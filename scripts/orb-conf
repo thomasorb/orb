@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: combine
+# File: orb-conf
 
 ## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -24,10 +24,7 @@
 ############ CONF script ####################
 #############################################
 
-# This script helps the user to combine a set of frames. A
-# list of frames path must be given. List files created by ORBS can be
-# used. Custom lists can be created using the command:
-# 'ls /path/to/file/*.fits > list'
+# This script helps the user to configure ORB.
 
 import os, sys
 import getopt
