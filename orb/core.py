@@ -365,9 +365,9 @@ class Tools(object):
              PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
         """
         ### config file test 
-        if  self._get_config_file_path() == '/home/thomas/Astro/Python/ORB/Orb/orb/data/config.orb' and param_key != 'NCPUS':
-            self._print_warning(' '.join(['CHECK:', self._get_config_file_path(), param_key]))
-            self._print_caller_traceback()
+        #if  self._get_config_file_path() == '/home/thomas/Astro/Python/ORB/Orb/orb/data/config.orb' and param_key != 'NCPUS':
+        #    self._print_warning(' '.join(['CHECK:', self._get_config_file_path(), param_key]))
+        #    self._print_caller_traceback()
         ######## to be removed
             
         f = self.open_file(
