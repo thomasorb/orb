@@ -1,0 +1,311 @@
+#!/usr/bin/python -W ignore::FutureWarning
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca> based on
+#   Ginga created by Eric Jeschke (eric@naoj.org) 
+# File: orb-aligner
+
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# BASIC IMPORTS
+import sys, os
+import logging
+import threading
+import argparse
+from argparse import ArgumentParser
+
+
+# GINGA IMPORTS
+from ginga.gtkw.ImageViewCanvasGtk import ImageViewCanvas
+from ginga.gtkw.ImageViewCanvasTypesGtk import DrawingCanvas, Point
+import ginga.gtkw.Widgets
+from ginga.gtkw import FileSelection, Plot
+from ginga import AstroImage
+from matplotlib.widgets import SpanSelector, RectangleSelector
+from ginga.util import wcsmod
+from ginga.util.wcsmod import AstropyWCS
+wcsmod.use('astropy')
+
+# ORB IMPORTS
+from orb.core import Tools, Cube, Lines
+import orb.utils
+from orb.astrometry import Astrometry
+
+
+# OTHER IMPORTS
+import gtk, gobject, glib
+import gtk.gdk
+import numpy as np
+from  matplotlib.backends.backend_gtkcairo import FigureCanvasGTKCairo as FigureCanvas
+import astropy.wcs as pywcs
+
+
+###########################################
+###  ALIGNER ##############################
+###########################################
+
+class Aligner(object):
+
+    tools = None
+    im1 = None
+    im2 = None
+
+    bin1 = None
+    bin2 = None
+
+    dx = None
+    dy = None
+    dr = None
+    da = None
+    db = None
+    rc = None
+
+    init_set = None
+
+    IMAGE_SIZE = 300
+    DRAW_COLOR_DEFAULT = 'green'
+    CAM1_SIZE = (1340, 1300)
+    CAM2_SIZE = (2048, 2048)
+    
+    def __init__(self, logger, fits_path_1, fits_path_2,
+                 config_file_name='config.orb'):
+        
+        self.logger = logger
+        self.tools = Tools(no_log=True)
+        self.init_set = True
+        
+        self.im1 = self.tools.read_fits(fits_path_1)
+        self.im2 = self.tools.read_fits(fits_path_2)
+
+        # get binning
+        self.bin1 = 1
+        while self.im1.shape[0] <= self.CAM1_SIZE[0]/self.bin1:
+            self.bin1 += 1
+        self.bin1 -= 1
+        
+        self.bin2 = 1
+        while self.im2.shape[0] <= self.CAM2_SIZE[0]/self.bin2:
+            self.bin2 += 1
+        self.bin2 -= 1
+
+        # get initial parameters
+        self.dx = float(self.tools._get_config_parameter('INIT_DX')) / self.bin2
+        self.dy = float(self.tools._get_config_parameter('INIT_DY')) / self.bin2
+        self.dr = float(self.tools._get_config_parameter('INIT_ANGLE'))
+        self.da = 0.
+        self.db = 0.
+        self.rc = [(float(self.im2.shape[0]) / 2.), 
+                   (float(self.im2.shape[1]) / 2.)]
+        self.zoom_factor = 1. / (
+            (float(self.tools._get_config_parameter('PIX_SIZE_CAM1'))
+             * self.bin1)
+            / (float(self.tools._get_config_parameter('PIX_SIZE_CAM2'))
+               * self.bin2))
+        
+        # Define GTK GUI
+        root = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        root.set_title("ORB-Aligner")
+        root.set_border_width(2)
+        root.connect("delete_event", lambda w, e: self.quit(w))
+        self.root = root
+
+        # define ImageView
+        fi = ImageViewCanvas(logger)
+        fake_image = AstroImage.AstroImage(logger=self.logger)
+        fake_image.set_data(np.zeros((10,10), dtype=float))
+        fi.set_image(fake_image)
+        fi.enable_autocuts('on')
+        
+        fi.set_autocut_params('zscale')
+        
+        fi.enable_autozoom('on')
+        fi.set_bg(0.2, 0.2, 0.2)
+        
+        fi.ui_setActive(True)
+        self.fitsimage = fi
+        self.autocut_methods = self.fitsimage.get_autocut_methods()
+        
+        bd = fi.get_bindings()
+        bd.enable_all(True)
+        bm = fi.get_bindmap()
+        bm.add_callback('mode-set', self._mode_change_cb)
+        
+        # canvas that we will draw on
+        canvas = DrawingCanvas()
+        canvas.enable_draw(False)
+        canvas.set_drawtype(
+            'rectangle', color=self.DRAW_COLOR_DEFAULT, alpha=1)
+        canvas.setSurface(fi)
+        self.canvas = canvas
+        # add canvas to view
+        fi.add(canvas)
+        canvas.ui_setActive(True)
+
+        w = fi.get_widget()
+        w.set_size_request(self.IMAGE_SIZE, self.IMAGE_SIZE)
+
+        # BIG BOX
+        bigbox = gtk.VBox(spacing=2)
+
+        shiftbox = gtk.HBox()
+        wshiftxlabel = gtk.Label('dx')
+        self.wshiftx = gtk.SpinButton(climb_rate=1., digits=1)
+        self.wshiftx.set_range(-2000,2000)
+        self.wshiftx.set_increments(1,10)
+        self.wshiftx.set_value(self.dx)
+        self.wshiftx.connect('value-changed', self._update_params_cb)
+        shiftbox.pack_start(wshiftxlabel, fill=False, expand=False)
+        shiftbox.pack_start(self.wshiftx, fill=False, expand=False)
+        wshiftylabel = gtk.Label('dy')
+        self.wshifty = gtk.SpinButton(climb_rate=1., digits=1)
+        self.wshifty.set_range(-2000,2000)
+        self.wshifty.set_increments(1,10)
+        self.wshifty.set_value(self.dy)
+        self.wshifty.connect('value-changed', self._update_params_cb)
+        shiftbox.pack_start(wshiftylabel, fill=False, expand=False)
+        shiftbox.pack_start(self.wshifty, fill=False, expand=False)
+        wrotationlabel = gtk.Label('dr')
+        self.wrotation = gtk.SpinButton(climb_rate=1., digits=1)
+        self.wrotation.set_range(-180,180)
+        self.wrotation.set_increments(0.1,1)
+        self.wrotation.set_value(self.dr)
+        self.wrotation.connect('value-changed', self._update_params_cb)
+        shiftbox.pack_start(wrotationlabel, fill=False, expand=False)
+        shiftbox.pack_start(self.wrotation, fill=False, expand=False)
+
+        # CONFIGBOX
+        configbox =  gtk.HBox()
+        self.configlabel = gtk.Label('')
+        self.configlabel.set_alignment(0, 0.5)
+        configbox.pack_start(self.configlabel)
+
+
+        # PACK BIGBOX
+        bigbox.pack_start(w)
+        bigbox.pack_start(shiftbox, fill=True, expand=False)
+        bigbox.pack_start(configbox, fill=True, expand=False)
+        
+        root.add(bigbox)
+        self.update_image()
+
+
+    def _mode_change_cb(self, bindmap, mode, modetype):
+        self.mode = mode
+        if mode in ['shift', 'ctrl']:
+            self.canvas.enable_draw(False)
+        else:
+            self.canvas.enable_draw(True)
+
+    def _update_params_cb(self, w):
+        self.dx = float(self.wshiftx.get_value())
+        self.dy = float(self.wshifty.get_value())
+        self.dr = float(self.wrotation.get_value())
+        
+        self.update_image()
+        
+    def get_widget(self):
+        return self.root
+
+
+    def update_image(self):
+
+        self.im2_t = orb.utils.transform_frame(
+            self.im2, 0, self.im1.shape[0],
+            0, self.im1.shape[1],
+            [self.dx, self.dy, self.dr, self.da, self.db],
+            self.rc, self.zoom_factor, 1)
+        
+        self.image_data = self.im1 - self.im2_t
+        if self.image_data is None:
+            self.image_data = np.zeros((self.dimx, self.dimy))
+        
+        image = AstroImage.AstroImage(logger=self.logger)
+        image.set_data(self.image_data)
+        
+            
+        if self.fitsimage is not None:
+            if not self.init_set:
+                self.fitsimage.enable_autozoom('off')
+                self.fitsimage.set_autocenter('off')
+                self.fitsimage.set_image(image)
+            else:
+                self.fitsimage.transform(False, False, True)
+                self.fitsimage.set_image(image)
+
+        if self.init_set:
+            self.init_set = False
+
+        self.configlabel.set_text(
+            'INIT_ANGLE {}\nINIT_DX {}\n INIT_DY {}'.format(
+                self.dr, self.dx * self.bin2, self.dy * self.bin2))
+
+    
+
+
+    def quit(self, w):
+        gtk.main_quit()
+        return True
+
+
+
+        
+
+###########################################
+### MAIN ##################################
+###########################################
+    
+def main(args):
+
+    STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcName)s) | %(message)s'
+    
+    logger = logging.getLogger("orb-aligner")
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter(STD_FORMAT)
+    
+    stderrHdlr = logging.StreamHandler()
+    stderrHdlr.setLevel(logging.INFO)
+    stderrHdlr.setFormatter(fmt)
+    logger.addHandler(stderrHdlr)
+
+    cv = Aligner(logger, args.fits_path_1, args.fits_path_2)
+    root = cv.get_widget()
+    root.show_all()
+
+    gtk.main()
+
+if __name__ == "__main__":
+
+   
+   parser = ArgumentParser(version=('ORB-version {}'.format(
+                              orb.core.__version__)),
+                            description=
+                            "Help to manually aligning two images.")
+
+
+   parser.add_argument('fits_path_1', help='Path to the FITS image CAM1')
+   parser.add_argument('fits_path_2', help='Path to the FITS image CAM2')
+
+   if len(sys.argv) < 2:
+        parser.print_usage()
+        sys.exit(2)
+        
+   args = parser.parse_args()
+
+   main(args)
+# END
+

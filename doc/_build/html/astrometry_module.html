@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Astrometry module &mdash; Orb 1.3.1.1 documentation</title>
+    <title>Astrometry module &mdash; Orb 1.3.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.1.1',
+        VERSION:     '1.3.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,14 +24,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
     <link rel="next" title="Changelog" href="changelog.html" />
     <link rel="prev" title="CUtils module" href="cutils_module.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -46,10 +46,10 @@
         <li class="right" >
           <a href="cutils_module.html" title="CUtils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/logo.png" alt="Logo"/>
@@ -73,12 +73,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="changelog.html"
                         title="next chapter">Changelog</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/astrometry_module.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/astrometry_module.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -97,7 +99,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="astrometry-module">
 <h1><a class="toc-backref" href="#id1">Astrometry module</a><a class="headerlink" href="#astrometry-module" title="Permalink to this headline">¶</a></h1>
@@ -119,26 +121,26 @@
 <h2><a class="toc-backref" href="#id2">Astrometry class</a><a class="headerlink" href="#astrometry-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Astrometry">
-<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Astrometry</tt><big>(</big><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='moffat'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=3.0</em>, <em>data_prefix=''</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>target_radec=None</em>, <em>target_xy=None</em>, <em>wcs_rotation=None</em>, <em>config_file_name='config.orb'</em>, <em>logfile_name=None</em>, <em>tuning_parameters={}</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Astrometry</code><span class="sig-paren">(</span><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='moffat'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=3.0</em>, <em>data_prefix=''</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>target_radec=None</em>, <em>target_xy=None</em>, <em>wcs_rotation=None</em>, <em>config_file_name='config.orb'</em>, <em>logfile_name=None</em>, <em>tuning_parameters={}</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage all astrometrical processes that can be made on a single
 frame of a whole cube.</p>
 <p>This class can detect stars in the given data and return fit
 parameters. Fit parameters are returned as a
-<a class="reference internal" href="#astrometry.StarsParams" title="astrometry.StarsParams"><tt class="xref py py-class docutils literal"><span class="pre">StarsParams</span></tt></a> object used to store and access
+<a class="reference internal" href="#astrometry.StarsParams" title="astrometry.StarsParams"><code class="xref py py-class docutils literal"><span class="pre">StarsParams</span></code></a> object used to store and access
 fit parameters.</p>
 <p>Possible fitting profiles are at least Gaussian and Moffat. Other
-profiles can be created by expanding <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">PSF</span></tt></a>
+profiles can be created by expanding <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><code class="xref py py-class docutils literal"><span class="pre">PSF</span></code></a>
 class.</p>
 <dl class="attribute">
 <dt id="astrometry.Astrometry.BASE_URL">
-<tt class="descname">BASE_URL</tt><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.BASE_URL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">BASE_URL</code><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.BASE_URL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Beginning of the URL to the Vizer server by default</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry._get_combined_frame">
-<tt class="descname">_get_combined_frame</tt><big>(</big><em>use_deep_frame=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_combined_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_combined_frame</code><span class="sig-paren">(</span><em>use_deep_frame=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry._get_combined_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a combined frame to work on.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -154,20 +156,20 @@ deep frame instead of a combination of the first frames only
 
 <dl class="method">
 <dt id="astrometry.Astrometry._get_fit_results_path">
-<tt class="descname">_get_fit_results_path</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_fit_results_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_fit_results_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry._get_fit_results_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the default path to the file containing all fit
 results.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry._get_star_list_path">
-<tt class="descname">_get_star_list_path</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry._get_star_list_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_star_list_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry._get_star_list_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the default path to the star list file.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.arc2pix">
-<tt class="descname">arc2pix</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.arc2pix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">arc2pix</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.arc2pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert pixels in arcseconds</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -181,33 +183,33 @@ results.</p>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.base_url">
-<tt class="descname">base_url</tt><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url" title="Permalink to this definition">¶</a></dt>
+<code class="descname">base_url</code><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Beginning of the URL to the Vizier server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.base_url_ca">
-<tt class="descname">base_url_ca</tt><em class="property"> = 'http://vizier.hia.nrc.ca/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url_ca" title="Permalink to this definition">¶</a></dt>
+<code class="descname">base_url_ca</code><em class="property"> = 'http://vizier.hia.nrc.ca/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url_ca" title="Permalink to this definition">¶</a></dt>
 <dd><p>Beginning of the URL to the Vizier server in Canada</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.dark_current_level">
-<tt class="descname">dark_current_level</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.dark_current_level" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dark_current_level</code><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.dark_current_level" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dark current level in ADU/pixel (can be computed from dark frames:
 median(master_dark_frame))</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.detect_stack">
-<tt class="descname">detect_stack</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.detect_stack" title="Permalink to this definition">¶</a></dt>
+<code class="descname">detect_stack</code><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.detect_stack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of frames stacked together to create one median frame
 used for star detection</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.detect_stars">
-<tt class="descname">detect_stars</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em>, <em>try_catalogue=False</em>, <em>use_deep_frame=False</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
+<code class="descname">detect_stars</code><span class="sig-paren">(</span><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em>, <em>try_catalogue=False</em>, <em>use_deep_frame=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.detect_stars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detect star positions in data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -229,7 +231,7 @@ twice the intensity far from it (default 35000).</li>
 catalogue (e.g. USNO-B1) to detect stars if target_ra,
 target_dec, target_x, target_y and wcs_rotation parameters
 have been given (see
-<a class="reference internal" href="#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.query_vizier()</span></tt></a>, default
+<a class="reference internal" href="#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.query_vizier()</span></code></a>, default
 False).</li>
 <li><span class="target" id="astrometry.Astrometry.detect_stars.params.use_deep_frame"></span><strong>use_deep_frame</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.detect_stars.params.use_deep_frame">¶</a> &#8211; (Optional) If True a deep frame of the
 cube is used instead of combinig only the first frames
@@ -259,7 +261,7 @@ eventually taken.</li>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.detect_stars_from_catalogue">
-<tt class="descname">detect_stars_from_catalogue</tt><big>(</big><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.detect_stars_from_catalogue" title="Permalink to this definition">¶</a></dt>
+<code class="descname">detect_stars_from_catalogue</code><span class="sig-paren">(</span><em>min_star_number=4</em>, <em>no_save=False</em>, <em>saturation_threshold=35000</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.detect_stars_from_catalogue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detect star positions in data from a catalogue.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -289,14 +291,14 @@ of the dected stars, the mean FWHM of the stars in arcsec)</p>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.fit_results">
-<tt class="descname">fit_results</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.fit_results" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fit_results</code><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.fit_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array containing all the resulting parameters (as dictionaries)
 of the fit of each star in each frame</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.fit_stars_in_cube">
-<tt class="descname">fit_stars_in_cube</tt><big>(</big><em>correct_alignment=False</em>, <em>save=True</em>, <em>add_cube=None</em>, <em>hpfilter=False</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fwhm_min=0.5</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>fix_aperture_size=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>saturation=None</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_cube" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fit_stars_in_cube</code><span class="sig-paren">(</span><em>correct_alignment=False</em>, <em>save=True</em>, <em>add_cube=None</em>, <em>hpfilter=False</em>, <em>fix_height=True</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fwhm_min=0.5</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>fix_aperture_size=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>saturation=None</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_cube" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in the cube.</p>
 <p>Frames must not be too disaligned. Disalignment can be
 corrected as the cube is fitted by setting correct_alignment
@@ -308,7 +310,7 @@ option to True.</p>
 * Multi fit mode [multi_fit=True]
 </pre></div>
 </div>
-<p class="last">see <a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></tt></a> for more
+<p class="last">see <a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></code></a> for more
 information.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -330,52 +332,52 @@ before fitting stars. Useful for alignment purpose if there
 are too much nebulosities in the frames. This option must
 not be used for photometry (default False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.fix_height"></span><strong>fix_height</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.fix_height">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_height" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_height</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_height" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_height</span></code></a>
 (default True)</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.fix_beta"></span><strong>fix_beta</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.fix_beta">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_beta" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_beta</span></tt></a> (default
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_beta" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_beta</span></code></a> (default
 True).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.fix_fwhm"></span><strong>fix_fwhm</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.fix_fwhm">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_fwhm" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_fwhm</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_fwhm" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_fwhm</span></code></a>
 (default False)</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.fwhm_min"></span><strong>fwhm_min</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.fwhm_min">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_min" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_min</span></tt></a> (default
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_min" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_min</span></code></a> (default
 0.5)</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.local_background"></span><strong>local_background</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.local_background">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.local_background" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.local_background</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.local_background" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.local_background</span></code></a>
 (default True).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.no_aperture_photometry"></span><strong>no_aperture_photometry</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.no_aperture_photometry">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.no_aperture_photometry" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.no_aperture_photometry</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.no_aperture_photometry" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.no_aperture_photometry</span></code></a>
 (default False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.fix_aperture_size"></span><strong>fix_aperture_size</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.fix_aperture_size">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_aperture_size" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_aperture_size</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.fix_aperture_size" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.fix_aperture_size</span></code></a>
 (default False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.precise_guess"></span><strong>precise_guess</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.precise_guess">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.precise_guess" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.precise_guess</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.precise_guess" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.precise_guess</span></code></a>
 (default False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.aper_coeff"></span><strong>aper_coeff</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.aper_coeff">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.aper_coeff" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.aper_coeff</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.aper_coeff" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.aper_coeff</span></code></a>
 (default 3).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.blur"></span><strong>blur</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.blur">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.blur" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.blur</span></tt></a> (default
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.blur" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.blur</span></code></a> (default
 False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.no_fit"></span><strong>no_fit</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.no_fit">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.no_fit" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.no_fit</span></tt></a> (default
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.no_fit" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.no_fit</span></code></a> (default
 False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.estimate_local_noise"></span><strong>estimate_local_noise</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.estimate_local_noise">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.estimate_local_noise" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.estimate_local_noise</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.estimate_local_noise" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.estimate_local_noise</span></code></a>
 (default True).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.multi_fit"></span><strong>multi_fit</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.multi_fit">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.multi_fit" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.multi_fit</span></tt></a> (default
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.multi_fit" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.multi_fit</span></code></a> (default
 False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.enable_zoom"></span><strong>enable_zoom</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.enable_zoom">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.enable_zoom" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.enable_zoom</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.enable_zoom" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.enable_zoom</span></code></a>
 (default False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.enable_rotation"></span><strong>enable_rotation</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.enable_rotation">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.enable_rotation" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.enable_rotation</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.enable_rotation" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.enable_rotation</span></code></a>
 (default False).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_cube.params.saturation"></span><strong>saturation</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_cube.params.saturation">¶</a> &#8211; (Optional) see
-<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.saturation" title="astrometry.fit_stars_in_frame"><tt class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.saturation</span></tt></a>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame.params.saturation" title="astrometry.fit_stars_in_frame"><code class="xref py py-paramref docutils literal"><span class="pre">astrometry.fit_stars_in_frame.saturation</span></code></a>
 (default None).</li>
 </ul>
 </td>
@@ -386,10 +388,10 @@ False).</li>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.fit_stars_in_frame">
-<tt class="descname">fit_stars_in_frame</tt><big>(</big><em>index</em>, <em>save=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fit_stars_in_frame</code><span class="sig-paren">(</span><em>index</em>, <em>save=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in one frame.</p>
 <p>This function is basically a wrapper around
-<a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></tt></a>.</p>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></code></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>2 fitting modes are possible:</p>
@@ -397,7 +399,7 @@ False).</li>
 * Multi fit mode [multi_fit=True]
 </pre></div>
 </div>
-<p class="last">see <a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></tt></a> for more
+<p class="last">see <a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></code></a> for more
 information.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -410,7 +412,7 @@ this frame is used instead.</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_frame.params.save"></span><strong>save</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_frame.params.save">¶</a> &#8211; (Optional) If True save the fit results in a file
 (default True).</li>
 <li><span class="target" id="astrometry.Astrometry.fit_stars_in_frame.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fit_stars_in_frame.params.kwargs">¶</a> &#8211; Same optional arguments as for
-<a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></tt></a>.</li>
+<a class="reference internal" href="#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></code></a>.</li>
 </ul>
 </td>
 </tr>
@@ -435,13 +437,13 @@ optional arguments thus cannot be passed:</p>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.fit_tol">
-<tt class="descname">fit_tol</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.fit_tol" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fit_tol</code><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.fit_tol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tolerance on the fit parameters</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.get_alignment_vectors">
-<tt class="descname">get_alignment_vectors</tt><big>(</big><em>fit_cube=False</em>, <em>min_coeff=0.2</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.get_alignment_vectors" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_alignment_vectors</code><span class="sig-paren">(</span><em>fit_cube=False</em>, <em>min_coeff=0.2</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.get_alignment_vectors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return alignement vectors</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -464,13 +466,13 @@ fitted to assume a good enough calculated disalignment
 
 <dl class="method">
 <dt id="astrometry.Astrometry.load_fit_results">
-<tt class="descname">load_fit_results</tt><big>(</big><em>fit_results_path=None</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.load_fit_results" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_fit_results</code><span class="sig-paren">(</span><em>fit_results_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.load_fit_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a file containing the fit results</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.load_star_list">
-<tt class="descname">load_star_list</tt><big>(</big><em>star_list_path</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.load_star_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_star_list</code><span class="sig-paren">(</span><em>star_list_path</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.load_star_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a list of stars coordinates</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -482,13 +484,13 @@ fitted to assume a good enough calculated disalignment
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#astrometry.load_star_list" title="astrometry.load_star_list"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.load_star_list()</span></tt></a></p>
+<p class="last"><a class="reference internal" href="#astrometry.load_star_list" title="astrometry.load_star_list"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.load_star_list()</span></code></a></p>
 </div>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.pix2arc">
-<tt class="descname">pix2arc</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.pix2arc" title="Permalink to this definition">¶</a></dt>
+<code class="descname">pix2arc</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.pix2arc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert arcseconds in pixels</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -502,7 +504,7 @@ fitted to assume a good enough calculated disalignment
 
 <dl class="method">
 <dt id="astrometry.Astrometry.query_vizier">
-<tt class="descname">query_vizier</tt><big>(</big><em>catalog='USNO-B1.0'</em>, <em>max_stars=100</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.query_vizier" title="Permalink to this definition">¶</a></dt>
+<code class="descname">query_vizier</code><span class="sig-paren">(</span><em>catalog='USNO-B1.0'</em>, <em>max_stars=100</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.query_vizier" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of star coordinates around an object in a
 given radius based on a query to VizieR Services
 (<a class="reference external" href="http://vizier.u-strasbg.fr/viz-bin/VizieR">http://vizier.u-strasbg.fr/viz-bin/VizieR</a>)</p>
@@ -541,21 +543,21 @@ database (see notes) (default &#8216;USNO-B1&#8217;)</li>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.readout_noise">
-<tt class="descname">readout_noise</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.readout_noise" title="Permalink to this definition">¶</a></dt>
+<code class="descname">readout_noise</code><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.readout_noise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Readout noise in ADU/pixel (can be computed from bias frames:
 std(master_bias_frame))</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="astrometry.Astrometry.reduced_chi_square_limit">
-<tt class="descname">reduced_chi_square_limit</tt><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.reduced_chi_square_limit" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reduced_chi_square_limit</code><em class="property"> = None</em><a class="headerlink" href="#astrometry.Astrometry.reduced_chi_square_limit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coefficient on the reduced chi square for bad quality fits
 rejection</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.register">
-<tt class="descname">register</tt><big>(</big><em>max_stars=100</em>, <em>full_deep_frame=False</em>, <em>return_fit_params=False</em>, <em>rscale_coeff=1.0</em>, <em>compute_precision=True</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.register" title="Permalink to this definition">¶</a></dt>
+<code class="descname">register</code><span class="sig-paren">(</span><em>max_stars=100</em>, <em>full_deep_frame=False</em>, <em>return_fit_params=False</em>, <em>rscale_coeff=1.0</em>, <em>compute_precision=True</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register data and return a corrected pywcs.WCS object.</p>
 <p>Precise RA/DEC positions of the stars in the field are
 recorded from a catalog of the VIZIER server.</p>
@@ -588,14 +590,14 @@ precision is computed (default True).</li>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.reset_box_size">
-<tt class="descname">reset_box_size</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_box_size" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_box_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.reset_box_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset box size attribute. Useful if FWHM or scale has been
 modified after class init.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.reset_fwhm_arc">
-<tt class="descname">reset_fwhm_arc</tt><big>(</big><em>fwhm_arc</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_fwhm_arc" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_fwhm_arc</code><span class="sig-paren">(</span><em>fwhm_arc</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.reset_fwhm_arc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset FWHM of stars in arcsec</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -609,7 +611,7 @@ modified after class init.</p>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.reset_fwhm_pix">
-<tt class="descname">reset_fwhm_pix</tt><big>(</big><em>fwhm_pix</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_fwhm_pix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_fwhm_pix</code><span class="sig-paren">(</span><em>fwhm_pix</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.reset_fwhm_pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset FWHM of stars in pixels</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -623,7 +625,7 @@ modified after class init.</p>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.reset_profile_name">
-<tt class="descname">reset_profile_name</tt><big>(</big><em>profile_name</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_profile_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_profile_name</code><span class="sig-paren">(</span><em>profile_name</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.reset_profile_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the name of the profile used.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -638,7 +640,7 @@ fitting. Can be &#8216;moffat&#8217; or &#8216;gaussian&#8217;.</td>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.reset_scale">
-<tt class="descname">reset_scale</tt><big>(</big><em>scale</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_scale" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_scale</code><span class="sig-paren">(</span><em>scale</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.reset_scale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset scale attribute.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -652,7 +654,7 @@ fitting. Can be &#8216;moffat&#8217; or &#8216;gaussian&#8217;.</td>
 
 <dl class="method">
 <dt id="astrometry.Astrometry.reset_star_list">
-<tt class="descname">reset_star_list</tt><big>(</big><em>star_list</em><big>)</big><a class="headerlink" href="#astrometry.Astrometry.reset_star_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_star_list</code><span class="sig-paren">(</span><em>star_list</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.reset_star_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the list of stars</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -672,8 +674,8 @@ positions in x and y of the stars.</td>
 <h2><a class="toc-backref" href="#id3">StarsParams class</a><a class="headerlink" href="#starsparams-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.StarsParams">
-<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">StarsParams</tt><big>(</big><em>star_nb=1</em>, <em>frame_nb=1</em>, <em>logfile_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">StarsParams</code><span class="sig-paren">(</span><em>star_nb=1</em>, <em>frame_nb=1</em>, <em>logfile_name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>StarsParams manage the parameters of each star in each frame of
 a cube.</p>
 <p>It can be accessed as a simple 3D array of shape (star_number,
@@ -681,13 +683,13 @@ frame_nb, parameter).</p>
 <p>Additional methods provide an easy access to the data.</p>
 <dl class="method">
 <dt id="astrometry.StarsParams.convert">
-<tt class="descname">convert</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.convert" title="Permalink to this definition">¶</a></dt>
+<code class="descname">convert</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams.convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert StarsParams data to a new StarsParams instance.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.StarsParams.get_star_list">
-<tt class="descname">get_star_list</tt><big>(</big><em>index=0</em>, <em>all_params=False</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.get_star_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_star_list</code><span class="sig-paren">(</span><em>index=0</em>, <em>all_params=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams.get_star_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an array of the positions of the stars in one frame</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -707,7 +709,7 @@ returned. Bad params are returned as NaN values.</li>
 
 <dl class="method">
 <dt id="astrometry.StarsParams.load_stars_params">
-<tt class="descname">load_stars_params</tt><big>(</big><em>params_file_path</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.load_stars_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_stars_params</code><span class="sig-paren">(</span><em>params_file_path</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams.load_stars_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a file containing stars parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -726,13 +728,13 @@ returned. Bad params are returned as NaN values.</li>
 
 <dl class="method">
 <dt id="astrometry.StarsParams.reset_data">
-<tt class="descname">reset_data</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.StarsParams.reset_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams.reset_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset StarsParams data to an empty array</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.StarsParams.save_stars_params">
-<tt class="descname">save_stars_params</tt><big>(</big><em>params_file_path</em><big>)</big><a class="headerlink" href="#astrometry.StarsParams.save_stars_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">save_stars_params</code><span class="sig-paren">(</span><em>params_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams.save_stars_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save stars parameters in one file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -751,12 +753,12 @@ returned. Bad params are returned as NaN values.</li>
 <h2><a class="toc-backref" href="#id4">PSF class</a><a class="headerlink" href="#psf-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.PSF">
-<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">PSF</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.PSF" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">PSF</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.PSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>General class of inheritance for point spread functions (PSFs)</p>
 <dl class="method">
 <dt id="astrometry.PSF.array2d">
-<tt class="descname">array2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.PSF.array2d" title="Permalink to this definition">¶</a></dt>
+<code class="descname">array2d</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.PSF.array2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 2D profile given the size of the returned
 array.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -775,7 +777,7 @@ array.</p>
 
 <dl class="method">
 <dt id="astrometry.PSF.varray2d">
-<tt class="descname">varray2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.PSF.varray2d" title="Permalink to this definition">¶</a></dt>
+<code class="descname">varray2d</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.PSF.varray2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a vectorized 2D profile given the size of the returned
 array.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -799,8 +801,8 @@ array.</p>
 <h2><a class="toc-backref" href="#id5">Gaussian class</a><a class="headerlink" href="#gaussian-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Gaussian">
-<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Gaussian</tt><big>(</big><em>params</em>, <em>logfile_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#astrometry.Gaussian" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Gaussian</code><span class="sig-paren">(</span><em>params</em>, <em>logfile_name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><code class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></code></a></p>
 <p>Class implementing the gaussian profile</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -813,7 +815,7 @@ array.</p>
 </div>
 <dl class="method">
 <dt id="astrometry.Gaussian.array2d">
-<tt class="descname">array2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.Gaussian.array2d" title="Permalink to this definition">¶</a></dt>
+<code class="descname">array2d</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Gaussian.array2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 2D profile given the size of the returned
 array.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -832,7 +834,7 @@ array.</p>
 
 <dl class="method">
 <dt id="astrometry.Gaussian.flux">
-<tt class="descname">flux</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Gaussian.flux" title="Permalink to this definition">¶</a></dt>
+<code class="descname">flux</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Gaussian.flux" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the total flux under the 2D profile.</p>
 <p>The total flux F under a 2D profile is :
 <span class="math">\(F = 2 \pi A W^2\)</span></p>
@@ -844,7 +846,7 @@ array.</p>
 
 <dl class="method">
 <dt id="astrometry.Gaussian.flux_error">
-<tt class="descname">flux_error</tt><big>(</big><em>amplitude_err</em>, <em>width_err</em><big>)</big><a class="headerlink" href="#astrometry.Gaussian.flux_error" title="Permalink to this definition">¶</a></dt>
+<code class="descname">flux_error</code><span class="sig-paren">(</span><em>amplitude_err</em>, <em>width_err</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Gaussian.flux_error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return flux error.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -862,13 +864,13 @@ array.</p>
 
 <dl class="attribute">
 <dt id="astrometry.Gaussian.input_params">
-<tt class="descname">input_params</tt><em class="property"> = ['height', 'amplitude', 'x', 'y', 'fwhm']</em><a class="headerlink" href="#astrometry.Gaussian.input_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">input_params</code><em class="property"> = ['height', 'amplitude', 'x', 'y', 'fwhm']</em><a class="headerlink" href="#astrometry.Gaussian.input_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Keys of the input parameters</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="astrometry.Gaussian.params">
-<tt class="descname">params</tt><em class="property"> = {}</em><a class="headerlink" href="#astrometry.Gaussian.params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">params</code><em class="property"> = {}</em><a class="headerlink" href="#astrometry.Gaussian.params" title="Permalink to this definition">¶</a></dt>
 <dd><p>dictionary containing the parameters of the profile</p>
 </dd></dl>
 
@@ -879,8 +881,8 @@ array.</p>
 <h2><a class="toc-backref" href="#id6">Moffat class</a><a class="headerlink" href="#moffat-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Moffat">
-<em class="property">class </em><tt class="descclassname">astrometry.</tt><tt class="descname">Moffat</tt><big>(</big><em>params</em>, <em>logfile_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#astrometry.Moffat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><tt class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Moffat</code><span class="sig-paren">(</span><em>params</em>, <em>logfile_name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Moffat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><code class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></code></a></p>
 <p>Class implementing the Moffat profile.</p>
 <p>This profile is useful to fit stars on CCD arrays.</p>
 <div class="admonition note">
@@ -898,7 +900,7 @@ from Trujillo et al. (2001) MNRAS, 977. The PSF:</p>
 </div>
 <dl class="method">
 <dt id="astrometry.Moffat.array2d">
-<tt class="descname">array2d</tt><big>(</big><em>nx</em>, <em>ny</em><big>)</big><a class="headerlink" href="#astrometry.Moffat.array2d" title="Permalink to this definition">¶</a></dt>
+<code class="descname">array2d</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Moffat.array2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 2D profile given the size of the returned
 array.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -917,13 +919,13 @@ array.</p>
 
 <dl class="method">
 <dt id="astrometry.Moffat.flux">
-<tt class="descname">flux</tt><big>(</big><big>)</big><a class="headerlink" href="#astrometry.Moffat.flux" title="Permalink to this definition">¶</a></dt>
+<code class="descname">flux</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Moffat.flux" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the total flux under the 2D profile.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="astrometry.Moffat.flux_error">
-<tt class="descname">flux_error</tt><big>(</big><em>amplitude_err</em>, <em>width_err</em><big>)</big><a class="headerlink" href="#astrometry.Moffat.flux_error" title="Permalink to this definition">¶</a></dt>
+<code class="descname">flux_error</code><span class="sig-paren">(</span><em>amplitude_err</em>, <em>width_err</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Moffat.flux_error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return flux error.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -945,13 +947,13 @@ array.</p>
 
 <dl class="attribute">
 <dt id="astrometry.Moffat.input_params">
-<tt class="descname">input_params</tt><em class="property"> = ['height', 'amplitude', 'x', 'y', 'fwhm', 'beta']</em><a class="headerlink" href="#astrometry.Moffat.input_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">input_params</code><em class="property"> = ['height', 'amplitude', 'x', 'y', 'fwhm', 'beta']</em><a class="headerlink" href="#astrometry.Moffat.input_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Keys of the input parameters</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="astrometry.Moffat.params">
-<tt class="descname">params</tt><em class="property"> = {}</em><a class="headerlink" href="#astrometry.Moffat.params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">params</code><em class="property"> = {}</em><a class="headerlink" href="#astrometry.Moffat.params" title="Permalink to this definition">¶</a></dt>
 <dd><p>dictionary containing the parameters of the profile</p>
 </dd></dl>
 
@@ -962,7 +964,7 @@ array.</p>
 <h2><a class="toc-backref" href="#id7">Astrometry functions</a><a class="headerlink" href="#astrometry-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="astrometry.mag">
-<tt class="descclassname">astrometry.</tt><tt class="descname">mag</tt><big>(</big><em>flux</em><big>)</big><a class="headerlink" href="#astrometry.mag" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">mag</code><span class="sig-paren">(</span><em>flux</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.mag" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Return the instrumental magnitude of a given flux (magnitude 0</dt>
 <dd>is set to 1 e-)</dd>
@@ -979,7 +981,7 @@ array.</p>
 
 <dl class="function">
 <dt id="astrometry.guess">
-<tt class="descclassname">astrometry.</tt><tt class="descname">guess</tt><big>(</big><em>star_box</em>, <em>pos=None</em>, <em>height=None</em>, <em>precise_pos=False</em><big>)</big><a class="headerlink" href="#astrometry.guess" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">guess</code><span class="sig-paren">(</span><em>star_box</em>, <em>pos=None</em>, <em>height=None</em>, <em>precise_pos=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.guess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an estimation of the star parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1013,7 +1015,7 @@ False).</li>
 
 <dl class="function">
 <dt id="astrometry.fit_star">
-<tt class="descclassname">astrometry.</tt><tt class="descname">fit_star</tt><big>(</big><em>star_box</em>, <em>profile_name='gaussian'</em>, <em>fwhm_pix=None</em>, <em>amp=None</em>, <em>beta=3.5</em>, <em>height=None</em>, <em>pos=None</em>, <em>fix_height=False</em>, <em>fix_amp=False</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fix_pos=False</em>, <em>fit_tol=0.001</em>, <em>check=True</em>, <em>fwhm_min=0.5</em>, <em>check_reject=False</em>, <em>ron=10.0</em>, <em>dcl=0.0</em>, <em>estimate_local_noise=True</em>, <em>precise_guess=False</em>, <em>saturation=None</em><big>)</big><a class="headerlink" href="#astrometry.fit_star" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">fit_star</code><span class="sig-paren">(</span><em>star_box</em>, <em>profile_name='gaussian'</em>, <em>fwhm_pix=None</em>, <em>amp=None</em>, <em>beta=3.5</em>, <em>height=None</em>, <em>pos=None</em>, <em>fix_height=False</em>, <em>fix_amp=False</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>fix_pos=False</em>, <em>fit_tol=0.001</em>, <em>check=True</em>, <em>fwhm_min=0.5</em>, <em>check_reject=False</em>, <em>ron=10.0</em>, <em>dcl=0.0</em>, <em>estimate_local_noise=True</em>, <em>precise_guess=False</em>, <em>saturation=None</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.fit_star" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a single star</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1075,7 +1077,7 @@ saturation level are removed from the fit (default None).</li>
 
 <dl class="function">
 <dt id="astrometry.aperture_photometry">
-<tt class="descclassname">astrometry.</tt><tt class="descname">aperture_photometry</tt><big>(</big><em>star_box</em>, <em>fwhm_guess</em>, <em>background_guess=None</em>, <em>background_guess_err=0.0</em>, <em>aper_coeff=3.0</em>, <em>warn=True</em>, <em>x_guess=None</em>, <em>y_guess=None</em><big>)</big><a class="headerlink" href="#astrometry.aperture_photometry" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">aperture_photometry</code><span class="sig-paren">(</span><em>star_box</em>, <em>fwhm_guess</em>, <em>background_guess=None</em>, <em>background_guess_err=0.0</em>, <em>aper_coeff=3.0</em>, <em>warn=True</em>, <em>x_guess=None</em>, <em>y_guess=None</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.aperture_photometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the aperture photometry of a star centered in a star box.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1105,8 +1107,9 @@ None, star is assumed to lie at the very center of the frame
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Tuple (flux, aperture surface, bad). If bad estimation:
-bad set to 1, else bad set to 0.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Tuple (flux, flux_error, aperture surface,
+bad_estimation_flag). If the estimation is bad,
+bad_estimation_flat is set to 1, else it is set to 0.</p>
 </td>
 </tr>
 </tbody>
@@ -1142,7 +1145,7 @@ star box.</p>
 
 <dl class="function">
 <dt id="astrometry.fit_stars_in_frame">
-<tt class="descclassname">astrometry.</tt><tt class="descname">fit_stars_in_frame</tt><big>(</big><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=None</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>saturation=None</em>, <em>fix_pos=False</em>, <em>nozero=False</em>, <em>silent=True</em><big>)</big><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">fit_stars_in_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=None</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>saturation=None</em>, <em>fix_pos=False</em>, <em>nozero=False</em>, <em>silent=True</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in a frame.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -1261,21 +1264,21 @@ saturation level are removed from the fit (default None).</li>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#astrometry.Astrometry.load_star_list" title="astrometry.Astrometry.load_star_list"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.load_star_list()</span></tt></a> to load
+<p class="last"><a class="reference internal" href="#astrometry.Astrometry.load_star_list" title="astrometry.Astrometry.load_star_list"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.load_star_list()</span></code></a> to load
 a predefined list of stars or
-<a class="reference internal" href="#astrometry.Astrometry.detect_stars" title="astrometry.Astrometry.detect_stars"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.detect_stars()</span></tt></a> to automatically
+<a class="reference internal" href="#astrometry.Astrometry.detect_stars" title="astrometry.Astrometry.detect_stars"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.detect_stars()</span></code></a> to automatically
 create it.</p>
 </div>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#astrometry.fit_star" title="astrometry.fit_star"><tt class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_star()</span></tt></a> and
-<a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-meth docutils literal"><span class="pre">cutils.multi_fit_stars()</span></tt></a></p>
+<p class="last"><a class="reference internal" href="#astrometry.fit_star" title="astrometry.fit_star"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_star()</span></code></a> and
+<a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">cutils.multi_fit_stars()</span></code></a></p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="astrometry.load_star_list">
-<tt class="descclassname">astrometry.</tt><tt class="descname">load_star_list</tt><big>(</big><em>star_list_path</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#astrometry.load_star_list" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">load_star_list</code><span class="sig-paren">(</span><em>star_list_path</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.load_star_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a list of stars coordinates</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1322,7 +1325,7 @@ more you select, the better will be the alignment)</li>
 
 <dl class="function">
 <dt id="astrometry.get_profile">
-<tt class="descclassname">astrometry.</tt><tt class="descname">get_profile</tt><big>(</big><em>profile_name</em><big>)</big><a class="headerlink" href="#astrometry.get_profile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">get_profile</code><span class="sig-paren">(</span><em>profile_name</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.get_profile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the PSF profile class corresponding to the given profile name.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1337,7 +1340,7 @@ or &#8216;gaussian&#8217;.</td>
 
 <dl class="function">
 <dt id="astrometry.radial_profile">
-<tt class="descclassname">astrometry.</tt><tt class="descname">radial_profile</tt><big>(</big><em>a</em>, <em>xc</em>, <em>yc</em>, <em>rmax</em><big>)</big><a class="headerlink" href="#astrometry.radial_profile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">radial_profile</code><span class="sig-paren">(</span><em>a</em>, <em>xc</em>, <em>yc</em>, <em>rmax</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.radial_profile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the averaged radial profile on a region of a 2D array.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1361,7 +1364,7 @@ axis and the corresponding values axis.</p>
 
 <dl class="function">
 <dt id="astrometry.sky_background_level">
-<tt class="descclassname">astrometry.</tt><tt class="descname">sky_background_level</tt><big>(</big><em>im</em>, <em>smooth_coeff=0.1</em>, <em>return_mode=False</em>, <em>bins=25</em>, <em>return_error=False</em><big>)</big><a class="headerlink" href="#astrometry.sky_background_level" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">sky_background_level</code><span class="sig-paren">(</span><em>im</em>, <em>smooth_coeff=0.1</em>, <em>return_mode=False</em>, <em>bins=25</em>, <em>return_error=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.sky_background_level" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the level of the sky background based on the maximum of
 the histogram of the pixels distribution in the image.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1398,7 +1401,7 @@ estimation is returned (default False).</li>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1413,12 +1416,12 @@ estimation is returned (default False).</li>
         <li class="right" >
           <a href="cutils_module.html" title="CUtils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

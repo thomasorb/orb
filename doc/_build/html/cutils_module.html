@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUtils module &mdash; Orb 1.3.1.1 documentation</title>
+    <title>CUtils module &mdash; Orb 1.3.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.1.1',
+        VERSION:     '1.3.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,14 +24,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
     <link rel="next" title="Astrometry module" href="astrometry_module.html" />
     <link rel="prev" title="Utils module" href="utils_module.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -46,10 +46,10 @@
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/logo.png" alt="Logo"/>
@@ -69,12 +69,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="astrometry_module.html"
                         title="next chapter">Astrometry module</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/cutils_module.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cutils_module.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -93,7 +95,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="cutils-module">
 <h1>CUtils module<a class="headerlink" href="#cutils-module" title="Permalink to this headline">¶</a></h1>
@@ -105,84 +107,6 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.radians" title="cutils.radians"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.radians</span></tt></a></td>
-<td>Convert degrees to radians</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.transform_A_to_B" title="cutils.transform_A_to_B"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.transform_A_to_B</span></tt></a></td>
-<td>Transform star positions in camera A to the same star position</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.gaussian_array2d" title="cutils.gaussian_array2d"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.gaussian_array2d</span></tt></a></td>
-<td>Return the 2D profile of a gaussian</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.moffat_array2d" title="cutils.moffat_array2d"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.moffat_array2d</span></tt></a></td>
-<td>Return the 2D profile of a moffat</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.surface_value" title="cutils.surface_value"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.surface_value</span></tt></a></td>
-<td>Return an approximation of the surface value of a pixel given the min and max radius of an annulus in pixels.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.sigmacut" title="cutils.sigmacut"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.sigmacut</span></tt></a></td>
-<td>Return a distribution after a sigma cut rejection of the too deviant values.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.sigmaclip" title="cutils.sigmaclip"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.sigmaclip</span></tt></a></td>
-<td>Return a distribution after a sigma clipping rejection of the too deviant values.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.master_combine" title="cutils.master_combine"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.master_combine</span></tt></a></td>
-<td>Create a master frame from a set a frames.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.robust_mean" title="cutils.robust_mean"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.robust_mean</span></tt></a></td>
-<td>Compute robust mean of a numpy ndarray (NaNs are skipped)</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.robust_median" title="cutils.robust_median"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.robust_median</span></tt></a></td>
-<td>Compute robust median of a numpy ndarray (NaNs are skipped)</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.robust_sum" title="cutils.robust_sum"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.robust_sum</span></tt></a></td>
-<td>Compute robust sum of a numpy ndarray (NaNs are skipped)</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.robust_std" title="cutils.robust_std"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.robust_std</span></tt></a></td>
-<td>Compute robust std of a numpy ndarray (NaNs are skipped)</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.robust_average" title="cutils.robust_average"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.robust_average</span></tt></a></td>
-<td>Compute robust average of a numpy ndarray (NaNs are skipped)</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.gaussian1d" title="cutils.gaussian1d"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.gaussian1d</span></tt></a></td>
-<td>Return a 1D gaussian given a set of parameters.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.sinc1d" title="cutils.sinc1d"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.sinc1d</span></tt></a></td>
-<td>Return a 1D sinc given a set of parameters.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.interf_mean_energy" title="cutils.interf_mean_energy"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.interf_mean_energy</span></tt></a></td>
-<td>Return the mean energy of an interferogram by step.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.spectrum_mean_energy" title="cutils.spectrum_mean_energy"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.spectrum_mean_energy</span></tt></a></td>
-<td>Return the mean energy of a spectrum by channel.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.fft_filter" title="cutils.fft_filter"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.fft_filter</span></tt></a></td>
-<td>Simple lowpass or highpass FFT filter (high pass or low pass)</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.low_pass_image_filter" title="cutils.low_pass_image_filter"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.low_pass_image_filter</span></tt></a></td>
-<td>Low pass image filter by convolution with a gaussian kernel.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.fast_gaussian_kernel" title="cutils.fast_gaussian_kernel"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.fast_gaussian_kernel</span></tt></a></td>
-<td>Return a fast gaussian kernel.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.gaussian_kernel" title="cutils.gaussian_kernel"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.gaussian_kernel</span></tt></a></td>
-<td>Return a gaussian kernel.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.get_box_coords" title="cutils.get_box_coords"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.get_box_coords</span></tt></a></td>
-<td>Return the coordinates of a box given the center of the box, its size and the limits of the range along x and y axes.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.point_inside_polygon" title="cutils.point_inside_polygon"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.point_inside_polygon</span></tt></a></td>
-<td>Determine if a point is inside a given polygon or not Polygon is a list of (x,y) pairs.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.multi_fit_stars</span></tt></a></td>
-<td>Fit multiple stars at the same time.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.part_value" title="cutils.part_value"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.part_value</span></tt></a></td>
-<td>Return the value lying between two parts of a partition</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.indft" title="cutils.indft"><tt class="xref py py-obj docutils literal"><span class="pre">cutils.indft</span></tt></a></td>
-<td>Inverse Non-uniform Discret Fourier Transform.</td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -198,13 +122,13 @@
 </div>
 <dl class="function">
 <dt id="cutils.radians">
-<tt class="descclassname">cutils.</tt><tt class="descname">radians</tt><big>(</big><em>double deg</em><big>)</big><a class="headerlink" href="#cutils.radians" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">radians</code><span class="sig-paren">(</span><em>double deg</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.radians" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert degrees to radians</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="cutils.transform_A_to_B">
-<tt class="descclassname">cutils.</tt><tt class="descname">transform_A_to_B</tt><big>(</big><em>double x1</em>, <em>double y1</em>, <em>double dx</em>, <em>double dy</em>, <em>double dr</em>, <em>double da</em>, <em>double db</em>, <em>double xrc</em>, <em>double yrc</em>, <em>double z</em>, <em>double x1_err=0.0</em>, <em>double y1_err=0.0</em>, <em>double dx_err=0.0</em>, <em>double dy_err=0.0</em>, <em>double dr_err=0.0</em>, <em>double z_err=0.0</em>, <em>bool return_err=False</em><big>)</big><a class="headerlink" href="#cutils.transform_A_to_B" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">transform_A_to_B</code><span class="sig-paren">(</span><em>double x1</em>, <em>double y1</em>, <em>double dx</em>, <em>double dy</em>, <em>double dr</em>, <em>double da</em>, <em>double db</em>, <em>double xrc</em>, <em>double yrc</em>, <em>double z</em>, <em>double x1_err=0.0</em>, <em>double y1_err=0.0</em>, <em>double dx_err=0.0</em>, <em>double dy_err=0.0</em>, <em>double dr_err=0.0</em>, <em>double z_err=0.0</em>, <em>bool return_err=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.transform_A_to_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform star positions in camera A to the same star position
 in camera B given the transformation parameters</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -243,7 +167,7 @@ return_err is True.</p>
 
 <dl class="function">
 <dt id="cutils.gaussian_array2d">
-<tt class="descclassname">cutils.</tt><tt class="descname">gaussian_array2d</tt><big>(</big><em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double dy</em>, <em>double fwhm</em>, <em>int nx</em>, <em>int ny</em><big>)</big><a class="headerlink" href="#cutils.gaussian_array2d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">gaussian_array2d</code><span class="sig-paren">(</span><em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double dy</em>, <em>double fwhm</em>, <em>int nx</em>, <em>int ny</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.gaussian_array2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the 2D profile of a gaussian</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -266,7 +190,7 @@ return_err is True.</p>
 
 <dl class="function">
 <dt id="cutils.moffat_array2d">
-<tt class="descclassname">cutils.</tt><tt class="descname">moffat_array2d</tt><big>(</big><em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double dy</em>, <em>double fwhm</em>, <em>double beta</em>, <em>int nx</em>, <em>int ny</em><big>)</big><a class="headerlink" href="#cutils.moffat_array2d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">moffat_array2d</code><span class="sig-paren">(</span><em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double dy</em>, <em>double fwhm</em>, <em>double beta</em>, <em>int nx</em>, <em>int ny</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.moffat_array2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the 2D profile of a moffat</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -290,7 +214,7 @@ return_err is True.</p>
 
 <dl class="function">
 <dt id="cutils.surface_value">
-<tt class="descclassname">cutils.</tt><tt class="descname">surface_value</tt><big>(</big><em>int dimx</em>, <em>int dimy</em>, <em>double xc</em>, <em>double yc</em>, <em>double rmin</em>, <em>double rmax</em>, <em>long sub_div</em><big>)</big><a class="headerlink" href="#cutils.surface_value" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">surface_value</code><span class="sig-paren">(</span><em>int dimx</em>, <em>int dimy</em>, <em>double xc</em>, <em>double yc</em>, <em>double rmin</em>, <em>double rmax</em>, <em>long sub_div</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.surface_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an approximation of the surface value of a pixel given
 the min and max radius of an annulus in pixels.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -315,7 +239,7 @@ better but the longer too)</li>
 
 <dl class="function">
 <dt id="cutils.sigmacut">
-<tt class="descclassname">cutils.</tt><tt class="descname">sigmacut</tt><big>(</big><em>ndarray x</em>, <em>double central_value</em>, <em>int use_central_value</em>, <em>double sigma</em>, <em>int min_values</em>, <em>return_index_list=False</em><big>)</big><a class="headerlink" href="#cutils.sigmacut" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">sigmacut</code><span class="sig-paren">(</span><em>ndarray x</em>, <em>double central_value</em>, <em>int use_central_value</em>, <em>double sigma</em>, <em>int min_values</em>, <em>return_index_list=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.sigmacut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a distribution after a sigma cut rejection
 of the too deviant values.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -343,7 +267,7 @@ rejected values is returned also (default False).</li>
 
 <dl class="function">
 <dt id="cutils.sigmaclip">
-<tt class="descclassname">cutils.</tt><tt class="descname">sigmaclip</tt><big>(</big><em>ndarray x</em>, <em>double sigma</em>, <em>int min_values</em><big>)</big><a class="headerlink" href="#cutils.sigmaclip" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">sigmaclip</code><span class="sig-paren">(</span><em>ndarray x</em>, <em>double sigma</em>, <em>int min_values</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.sigmaclip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a distribution after a sigma clipping rejection
 of the too deviant values.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -364,7 +288,7 @@ deviant</li>
 
 <dl class="function">
 <dt id="cutils.master_combine">
-<tt class="descclassname">cutils.</tt><tt class="descname">master_combine</tt><big>(</big><em>ndarray frames</em>, <em>double sigma</em>, <em>int nkeep</em>, <em>int combine_mode</em>, <em>int reject_mode</em>, <em>return_std_frame=False</em><big>)</big><a class="headerlink" href="#cutils.master_combine" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">master_combine</code><span class="sig-paren">(</span><em>ndarray frames</em>, <em>double sigma</em>, <em>int nkeep</em>, <em>int combine_mode</em>, <em>int reject_mode</em>, <em>return_std_frame=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.master_combine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a master frame from a set a frames.</p>
 <p>This method has been inspired by the <strong>IRAF</strong> function
 combine.</p>
@@ -418,7 +342,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="cutils.robust_mean">
-<tt class="descclassname">cutils.</tt><tt class="descname">robust_mean</tt><big>(</big><em>ndarray x</em><big>)</big><a class="headerlink" href="#cutils.robust_mean" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">robust_mean</code><span class="sig-paren">(</span><em>ndarray x</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.robust_mean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute robust mean of a numpy ndarray (NaNs are skipped)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -432,7 +356,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="cutils.robust_median">
-<tt class="descclassname">cutils.</tt><tt class="descname">robust_median</tt><big>(</big><em>ndarray x</em><big>)</big><a class="headerlink" href="#cutils.robust_median" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">robust_median</code><span class="sig-paren">(</span><em>ndarray x</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.robust_median" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute robust median of a numpy ndarray (NaNs are skipped)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -446,7 +370,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="cutils.robust_sum">
-<tt class="descclassname">cutils.</tt><tt class="descname">robust_sum</tt><big>(</big><em>ndarray x</em><big>)</big><a class="headerlink" href="#cutils.robust_sum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">robust_sum</code><span class="sig-paren">(</span><em>ndarray x</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.robust_sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute robust sum of a numpy ndarray (NaNs are skipped)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -460,7 +384,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="cutils.robust_std">
-<tt class="descclassname">cutils.</tt><tt class="descname">robust_std</tt><big>(</big><em>ndarray x</em><big>)</big><a class="headerlink" href="#cutils.robust_std" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">robust_std</code><span class="sig-paren">(</span><em>ndarray x</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.robust_std" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute robust std of a numpy ndarray (NaNs are skipped)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -474,7 +398,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="cutils.robust_average">
-<tt class="descclassname">cutils.</tt><tt class="descname">robust_average</tt><big>(</big><em>ndarray x</em>, <em>ndarray w</em><big>)</big><a class="headerlink" href="#cutils.robust_average" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">robust_average</code><span class="sig-paren">(</span><em>ndarray x</em>, <em>ndarray w</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.robust_average" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute robust average of a numpy ndarray (NaNs are skipped)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -492,7 +416,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="cutils.gaussian1d">
-<tt class="descclassname">cutils.</tt><tt class="descname">gaussian1d</tt><big>(</big><em>ndarray x</em>, <em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double fwhm</em><big>)</big><a class="headerlink" href="#cutils.gaussian1d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">gaussian1d</code><span class="sig-paren">(</span><em>ndarray x</em>, <em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.gaussian1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 1D gaussian given a set of parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -514,7 +438,7 @@ gaussian is evaluated</li>
 
 <dl class="function">
 <dt id="cutils.sinc1d">
-<tt class="descclassname">cutils.</tt><tt class="descname">sinc1d</tt><big>(</big><em>ndarray x</em>, <em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double fwhm</em><big>)</big><a class="headerlink" href="#cutils.sinc1d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">sinc1d</code><span class="sig-paren">(</span><em>ndarray x</em>, <em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.sinc1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 1D sinc given a set of parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -536,7 +460,7 @@ sinc is evaluated</li>
 
 <dl class="function">
 <dt id="cutils.interf_mean_energy">
-<tt class="descclassname">cutils.</tt><tt class="descname">interf_mean_energy</tt><big>(</big><em>ndarray interf</em><big>)</big><a class="headerlink" href="#cutils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">interf_mean_energy</code><span class="sig-paren">(</span><em>ndarray interf</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean energy of an interferogram by step.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -552,7 +476,7 @@ sinc is evaluated</li>
 compute only the modulation energy. This is the modulation
 energy which must be conserved in the resulting spectrum. Note
 that the interferogram transformation function (see
-<a class="reference internal" href="utils_module.html#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>) remove the mean of the
+<a class="reference internal" href="utils_module.html#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></code></a>) remove the mean of the
 interferogram before computing its FFT.</p>
 </div>
 <div class="admonition note">
@@ -563,7 +487,7 @@ interferogram before computing its FFT.</p>
 
 <dl class="function">
 <dt id="cutils.spectrum_mean_energy">
-<tt class="descclassname">cutils.</tt><tt class="descname">spectrum_mean_energy</tt><big>(</big><em>ndarray spectrum</em><big>)</big><a class="headerlink" href="#cutils.spectrum_mean_energy" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">spectrum_mean_energy</code><span class="sig-paren">(</span><em>ndarray spectrum</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.spectrum_mean_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean energy of a spectrum by channel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -581,7 +505,7 @@ interferogram before computing its FFT.</p>
 
 <dl class="function">
 <dt id="cutils.fft_filter">
-<tt class="descclassname">cutils.</tt><tt class="descname">fft_filter</tt><big>(</big><em>ndarray a</em>, <em>double cutoff</em>, <em>double width</em>, <em>bool lowpass</em><big>)</big><a class="headerlink" href="#cutils.fft_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">fft_filter</code><span class="sig-paren">(</span><em>ndarray a</em>, <em>double cutoff</em>, <em>double width</em>, <em>bool lowpass</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.fft_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple lowpass or highpass FFT filter (high pass or low pass)</p>
 <p>Filter shape is a gaussian.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -606,7 +530,7 @@ if False.</li>
 
 <dl class="function">
 <dt id="cutils.low_pass_image_filter">
-<tt class="descclassname">cutils.</tt><tt class="descname">low_pass_image_filter</tt><big>(</big><em>ndarray im</em>, <em>int deg</em><big>)</big><a class="headerlink" href="#cutils.low_pass_image_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">low_pass_image_filter</code><span class="sig-paren">(</span><em>ndarray im</em>, <em>int deg</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.low_pass_image_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Low pass image filter by convolution with a gaussian kernel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -624,7 +548,7 @@ if False.</li>
 
 <dl class="function">
 <dt id="cutils.fast_gaussian_kernel">
-<tt class="descclassname">cutils.</tt><tt class="descname">fast_gaussian_kernel</tt><big>(</big><em>int deg</em><big>)</big><a class="headerlink" href="#cutils.fast_gaussian_kernel" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">fast_gaussian_kernel</code><span class="sig-paren">(</span><em>int deg</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.fast_gaussian_kernel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a fast gaussian kernel.</p>
 <p>The value of each pixel is just the value of the gaussian at the
 center of the pixel.</p>
@@ -641,7 +565,7 @@ center of the pixel.</p>
 
 <dl class="function">
 <dt id="cutils.gaussian_kernel">
-<tt class="descclassname">cutils.</tt><tt class="descname">gaussian_kernel</tt><big>(</big><em>double deg</em><big>)</big><a class="headerlink" href="#cutils.gaussian_kernel" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">gaussian_kernel</code><span class="sig-paren">(</span><em>double deg</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.gaussian_kernel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a gaussian kernel.</p>
 <p>The value of each pixel is the integral of the gaussian over the
 whole pixel because the shape of the gaussian is not linear at
@@ -660,7 +584,7 @@ sub-pixels.</p>
 
 <dl class="function">
 <dt id="cutils.get_box_coords">
-<tt class="descclassname">cutils.</tt><tt class="descname">get_box_coords</tt><big>(</big><em>int ix</em>, <em>int iy</em>, <em>int box_size</em>, <em>int x_lim_min</em>, <em>int x_lim_max</em>, <em>int y_lim_min</em>, <em>int y_lim_max</em><big>)</big><a class="headerlink" href="#cutils.get_box_coords" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">get_box_coords</code><span class="sig-paren">(</span><em>int ix</em>, <em>int iy</em>, <em>int box_size</em>, <em>int x_lim_min</em>, <em>int x_lim_max</em>, <em>int y_lim_min</em>, <em>int y_lim_max</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.get_box_coords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the coordinates of a box given the center of the box,
 its size and the limits of the range along x and y axes.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -686,7 +610,7 @@ size of the box cannot be guaranteed.</li>
 
 <dl class="function">
 <dt id="cutils.point_inside_polygon">
-<tt class="descclassname">cutils.</tt><tt class="descname">point_inside_polygon</tt><big>(</big><em>double x</em>, <em>double y</em>, <em>list poly</em><big>)</big><a class="headerlink" href="#cutils.point_inside_polygon" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">point_inside_polygon</code><span class="sig-paren">(</span><em>double x</em>, <em>double y</em>, <em>list poly</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.point_inside_polygon" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine if a point is inside a given polygon or not
 Polygon is a list of (x,y) pairs.</p>
 <p>This function has been taken from
@@ -695,7 +619,7 @@ Polygon is a list of (x,y) pairs.</p>
 
 <dl class="function">
 <dt id="cutils.multi_fit_stars">
-<tt class="descclassname">cutils.</tt><tt class="descname">multi_fit_stars</tt><big>(</big><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em><big>)</big><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">multi_fit_stars</code><span class="sig-paren">(</span><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit multiple stars at the same time.</p>
 <p>Useful if the relative positions of the stars are well known. In
 this case the pattern of position can be shifted, zoomed and
@@ -755,7 +679,7 @@ saturation level are removed from the fit (default 0).</li>
 
 <dl class="function">
 <dt id="cutils.part_value">
-<tt class="descclassname">cutils.</tt><tt class="descname">part_value</tt><big>(</big><em>ndarray distrib</em>, <em>double coeff</em><big>)</big><a class="headerlink" href="#cutils.part_value" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">part_value</code><span class="sig-paren">(</span><em>ndarray distrib</em>, <em>double coeff</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.part_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the value lying between two parts of a partition</p>
 <p>The partition process is nan robusts. It is made over a
 distribution cleaned from nans.</p>
@@ -776,7 +700,7 @@ distribution cleaned from nans.</p>
 
 <dl class="function">
 <dt id="cutils.indft">
-<tt class="descclassname">cutils.</tt><tt class="descname">indft</tt><big>(</big><em>ndarray a</em>, <em>ndarray x</em><big>)</big><a class="headerlink" href="#cutils.indft" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">indft</code><span class="sig-paren">(</span><em>ndarray a</em>, <em>ndarray x</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.indft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inverse Non-uniform Discret Fourier Transform.</p>
 <p>Compute the irregularly sampled interferogram from a regularly
 sampled spectrum.</p>
@@ -806,7 +730,7 @@ compute. This vector may have any length.</li>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -821,12 +745,12 @@ compute. This vector may have any length.</li>
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

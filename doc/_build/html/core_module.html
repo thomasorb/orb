@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core module &mdash; Orb 1.3.1.1 documentation</title>
+    <title>Core module &mdash; Orb 1.3.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.1.1',
+        VERSION:     '1.3.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,14 +24,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
     <link rel="next" title="Utils module" href="utils_module.html" />
     <link rel="prev" title="Python for ORB users" href="python_for_orb.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -46,10 +46,10 @@
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/logo.png" alt="Logo"/>
@@ -76,12 +76,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="utils_module.html"
                         title="next chapter">Utils module</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/core_module.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/core_module.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -100,7 +102,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="core-module">
 <h1><a class="toc-backref" href="#id3">Core module</a><a class="headerlink" href="#core-module" title="Permalink to this headline">¶</a></h1>
@@ -125,15 +127,15 @@
 <h2><a class="toc-backref" href="#id4">Tools class</a><a class="headerlink" href="#tools-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Tools">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Tools</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Tools</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Parent class of all classes of orb.</p>
 <p>Implement basic methods to read and write FITS data, display
 messages, feed a logfile and manage the server for parallel
 processing.</p>
 <dl class="method">
 <dt id="core.Tools.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.Tools.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize Tools class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -143,6 +145,7 @@ processing.</p>
 <li><span class="target" id="core.Tools.params.data_prefix"></span><strong>data_prefix</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.data_prefix">¶</a> &#8211; (Optional) Prefix used to determine the
 header of the name of each created file (default
 &#8216;temp_data&#8217;)</li>
+<li><span class="target" id="core.Tools.params.logfile_name"></span><strong>logfile_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.logfile_name">¶</a> &#8211; (Optional) Name of the log file (if None).</li>
 <li><span class="target" id="core.Tools.params.no_log"></span><strong>no_log</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.no_log">¶</a> &#8211; (Optional) If True no log file is created
 (default False).</li>
 <li><span class="target" id="core.Tools.params.tuning_parameters"></span><strong>tuning_parameters</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.tuning_parameters">¶</a> &#8211; (Optional) Some parameters of the
@@ -152,7 +155,7 @@ dictionary must contains the full parameter name
 {&#8216;InterferogramMerger.find_alignment.BOX_SIZE&#8217;: 7}. Note
 that only some parameters can be tuned. This possibility is
 implemented into the method itself with the method
-<a class="reference internal" href="#core.Tools._get_tuning_parameter" title="core.Tools._get_tuning_parameter"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_tuning_parameter()</span></tt></a>.</li>
+<a class="reference internal" href="#core.Tools._get_tuning_parameter" title="core.Tools._get_tuning_parameter"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_tuning_parameter()</span></code></a>.</li>
 <li><span class="target" id="core.Tools.params.config_file_name"></span><strong>config_file_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.config_file_name">¶</a> &#8211; (Optional) name of the config file to
 use. Must be located in orb/data/.</li>
 <li><span class="target" id="core.Tools.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.silent">¶</a> &#8211; If True only error messages will be diplayed on
@@ -166,13 +169,38 @@ screen (default False).</li>
 
 <dl class="attribute">
 <dt id="core.Tools.__weakref__">
-<tt class="descname">__weakref__</tt><a class="headerlink" href="#core.Tools.__weakref__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__weakref__</code><a class="headerlink" href="#core.Tools.__weakref__" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of weak references to the object (if defined)</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._bin_image">
+<code class="descname">_bin_image</code><span class="sig-paren">(</span><em>a</em>, <em>binning</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._bin_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mean binned image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._bin_image.params.image"></span><strong>image</strong><a class="paramlink headerlink reference internal" href="#core.Tools._bin_image.params.image">¶</a> &#8211; 2d array to bin.</li>
+<li><span class="target" id="core.Tools._bin_image.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#core.Tools._bin_image.params.binning">¶</a> &#8211; binning (must be an integer &gt;= 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>..note:: Only the complete sets of rows or columns are binned</dt>
+<dd>so that depending on the bin size and the image size the
+last columns or rows can be ignored. This ensures that the
+binning surface is the same for every pixel in the binned
+array.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._close_pp_server">
-<tt class="descname">_close_pp_server</tt><big>(</big><em>js</em><big>)</big><a class="headerlink" href="#core.Tools._close_pp_server" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_close_pp_server</code><span class="sig-paren">(</span><em>js</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._close_pp_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Destroy the parallel python job server to avoid too much
 opened files.</p>
 <div class="admonition note">
@@ -184,7 +212,7 @@ sources and information on Parallel Python software.</p>
 
 <dl class="method">
 <dt id="core.Tools._create_list_from_dir">
-<tt class="descname">_create_list_from_dir</tt><big>(</big><em>dir_path</em>, <em>list_file_path</em>, <em>image_mode=None</em>, <em>chip_index=None</em>, <em>prebinning=None</em><big>)</big><a class="headerlink" href="#core.Tools._create_list_from_dir" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_create_list_from_dir</code><span class="sig-paren">(</span><em>dir_path</em>, <em>list_file_path</em>, <em>image_mode=None</em>, <em>chip_index=None</em>, <em>prebinning=None</em>, <em>check=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._create_list_from_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a file containing the list of all FITS files at
 a specified directory and returns the path to the list 
 file.</p>
@@ -194,18 +222,18 @@ file.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><span class="target" id="core.Tools._create_list_from_dir.params.dir_path"></span><strong>dir_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.dir_path">¶</a> &#8211; Directory containing the FITS files</li>
-<li><span class="target" id="core.Tools._create_list_from_dir.params.list_file_path"></span><strong>list_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.list_file_path">¶</a> &#8211; Path to the list file to be created. If
-None a list of the lines is returned.</li>
-<li><span class="target" id="core.Tools._create_list_from_dir.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.image_mode">¶</a> &#8211; (Optional) Image mode. If not None the
-given string will be written at the first line of the file
-along with the chip index.</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.list_file_path"></span><strong>list_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.list_file_path">¶</a> &#8211; Path to the list file to be created. If None a
+list of the lines is returned.</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.image_mode">¶</a> &#8211; (Optional) Image mode. If not None the given string
+will be written at the first line of the file along with the chip
+index.</li>
 <li><span class="target" id="core.Tools._create_list_from_dir.params.chip_index"></span><strong>chip_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.chip_index">¶</a> &#8211; (Optional) Index of the chip, must be an
-integer. Used in conjonction with image mode to write the
-first directive line of the file which indicates the image
-mode.</li>
-<li><span class="target" id="core.Tools._create_list_from_dir.params.prebinning"></span><strong>prebinning</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.prebinning">¶</a> &#8211; (Optional) If not None, must be an
-integer. Add another directive line for data prebinning
-(default None).</li>
+integer. Used in conjonction with image mode to write the first
+directive line of the file which indicates the image mode.</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.prebinning"></span><strong>prebinning</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.prebinning">¶</a> &#8211; (Optional) If not None, must be an integer. Add
+another directive line for data prebinning (default None).</li>
+<li><span class="target" id="core.Tools._create_list_from_dir.params.check"></span><strong>check</strong><a class="paramlink headerlink reference internal" href="#core.Tools._create_list_from_dir.params.check">¶</a> &#8211; (Optional) If True, files dimensions are checked. Else no
+check is done. this is faster but less safe (default True).</li>
 </ul>
 </td>
 </tr>
@@ -218,15 +246,15 @@ integer. Add another directive line for data prebinning
 
 <dl class="method">
 <dt id="core.Tools._get_basic_frame_header">
-<tt class="descname">_get_basic_frame_header</tt><big>(</big><em>dimx</em>, <em>dimy</em>, <em>config_file_name='config.orb'</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_frame_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_basic_frame_header</code><span class="sig-paren">(</span><em>dimx</em>, <em>dimy</em>, <em>config_file_name='config.orb'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_basic_frame_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a specific part of a header that can be used for image
 files or frames. It creates a false WCS useful to get a rough
 idea of the angular separation between two objects in the
 image.</p>
 <p>The header is returned as a list of tuples (key, value,
 comment) that can be added to any FITS file created by
-<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
-basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a></p>
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></code></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></code></a></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -245,10 +273,10 @@ file (config.orb by default).</li>
 
 <dl class="method">
 <dt id="core.Tools._get_basic_header">
-<tt class="descname">_get_basic_header</tt><big>(</big><em>file_type</em>, <em>config_file_name='config.orb'</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_basic_header</code><span class="sig-paren">(</span><em>file_type</em>, <em>config_file_name='config.orb'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_basic_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a basic header as a list of tuples (key, value,
 comment) that can be added to any FITS file created by
-<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>.</p>
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -266,14 +294,14 @@ file (config.orb by default).</li>
 
 <dl class="method">
 <dt id="core.Tools._get_basic_spectrum_cube_header">
-<tt class="descname">_get_basic_spectrum_cube_header</tt><big>(</big><em>axis</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_cube_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_basic_spectrum_cube_header</code><span class="sig-paren">(</span><em>axis</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_basic_spectrum_cube_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a specific part of a header that can be used for
 a spectral cube. It creates the wavelength axis of the cube.</p>
 <p>The header is returned as a list of tuples (key, value,
 comment) that can be added to any FITS file created by
-<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
-basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a>
-and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></tt></p>
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></code></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></code></a>
+and <code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></code></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -294,15 +322,15 @@ in wavelength (nm) (default False).</li>
 
 <dl class="method">
 <dt id="core.Tools._get_basic_spectrum_frame_header">
-<tt class="descname">_get_basic_spectrum_frame_header</tt><big>(</big><em>frame_index</em>, <em>axis</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_frame_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_basic_spectrum_frame_header</code><span class="sig-paren">(</span><em>frame_index</em>, <em>axis</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_basic_spectrum_frame_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a specific part of a header that can be used for
 independant frames of a spectral cube. It gives the wavelength
 position of the frame.</p>
 <p>The header is returned as a list of tuples (key, value,
 comment) that can be added to any FITS file created by
-<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
-basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a>
-and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></tt></p>
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></code></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></code></a>
+and <code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></code></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -324,14 +352,14 @@ in wavelength (nm) (default False).</li>
 
 <dl class="method">
 <dt id="core.Tools._get_basic_spectrum_header">
-<tt class="descname">_get_basic_spectrum_header</tt><big>(</big><em>axis</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_basic_spectrum_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_basic_spectrum_header</code><span class="sig-paren">(</span><em>axis</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_basic_spectrum_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a specific part of a header that can be used for
 a 1D spectrum. It creates the wavelength axis.</p>
 <p>The header is returned as a list of tuples (key, value,
 comment) that can be added to any FITS file created by
-<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></tt></a>. You can add this part to the
-basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></tt></a>
-and <tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></tt></p>
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></code></a>. You can add this part to the
+basic header returned by <a class="reference internal" href="#core.Tools._get_basic_header" title="core.Tools._get_basic_header"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_basic_header()</span></code></a>
+and <code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_frame_header()</span></code></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -352,7 +380,7 @@ in wavelength (nm) (default False).</li>
 
 <dl class="method">
 <dt id="core.Tools._get_config_file_path">
-<tt class="descname">_get_config_file_path</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_config_file_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_config_file_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_config_file_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the full path to the configuration file given its name.</p>
 <p>The configuration file must exist and it must be located in
 orb/data/.</p>
@@ -368,7 +396,7 @@ orb/data/.</p>
 
 <dl class="method">
 <dt id="core.Tools._get_config_parameter">
-<tt class="descname">_get_config_parameter</tt><big>(</big><em>param_key</em>, <em>optional=False</em><big>)</big><a class="headerlink" href="#core.Tools._get_config_parameter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_config_parameter</code><span class="sig-paren">(</span><em>param_key</em>, <em>optional=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_config_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Return a parameter written in a config file located in</dt>
 <dd>orb/data/</dd>
@@ -409,20 +437,20 @@ PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um
 
 <dl class="method">
 <dt id="core.Tools._get_data_path_hdr">
-<tt class="descname">_get_data_path_hdr</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_data_path_hdr" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_data_path_hdr</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_data_path_hdr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of the created files.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Tools._get_date_str">
-<tt class="descname">_get_date_str</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_date_str" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_date_str</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_date_str" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return local date and hour as a short string 
 for messages</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Tools._get_fft_params_header">
-<tt class="descname">_get_fft_params_header</tt><big>(</big><em>apodization_function</em><big>)</big><a class="headerlink" href="#core.Tools._get_fft_params_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_fft_params_header</code><span class="sig-paren">(</span><em>apodization_function</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_fft_params_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a specific part of the header containing the
 parameters of the FFT.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -437,7 +465,7 @@ parameters of the FFT.</p>
 
 <dl class="method">
 <dt id="core.Tools._get_filter_file_path">
-<tt class="descname">_get_filter_file_path</tt><big>(</big><em>filter_name</em><big>)</big><a class="headerlink" href="#core.Tools._get_filter_file_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_filter_file_path</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_filter_file_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the full path to the filter file given the name of
 the filter.</p>
 <p>The filter file name must be filter_FILTER_NAME and it must be
@@ -453,8 +481,22 @@ located in orb/data/.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._get_hdu_data_index">
+<code class="descname">_get_hdu_data_index</code><span class="sig-paren">(</span><em>hdul</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdu_data_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the index of the first header data unit (HDU) containing data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_hdu_data_index.params.hdul"></span><strong>hdul</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdu_data_index.params.hdul">¶</a> &#8211; A pyfits.HDU instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._get_mask_path">
-<tt class="descname">_get_mask_path</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#core.Tools._get_mask_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_mask_path</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_mask_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the path to the mask given the path to the original
 FITS file.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -469,13 +511,13 @@ FITS file.</p>
 
 <dl class="method">
 <dt id="core.Tools._get_msg_class_hdr">
-<tt class="descname">_get_msg_class_hdr</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._get_msg_class_hdr" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_msg_class_hdr</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_msg_class_hdr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of the displayed messages.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Tools._get_orb_data_file_path">
-<tt class="descname">_get_orb_data_file_path</tt><big>(</big><em>file_name</em><big>)</big><a class="headerlink" href="#core.Tools._get_orb_data_file_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_orb_data_file_path</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_orb_data_file_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the path to a file in ORB data folder: orb/data/file_name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -489,7 +531,7 @@ FITS file.</p>
 
 <dl class="method">
 <dt id="core.Tools._get_standard_file_path">
-<tt class="descname">_get_standard_file_path</tt><big>(</big><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em><big>)</big><a class="headerlink" href="#core.Tools._get_standard_file_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_standard_file_path</code><span class="sig-paren">(</span><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_file_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a standard spectrum file path.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -513,7 +555,7 @@ can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
 
 <dl class="method">
 <dt id="core.Tools._get_standard_list">
-<tt class="descname">_get_standard_list</tt><big>(</big><em>standard_table_name='std_table.orb'</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#core.Tools._get_standard_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_standard_list</code><span class="sig-paren">(</span><em>standard_table_name='std_table.orb'</em>, <em>group=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the list of standards recorded in the standard table</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -528,7 +570,7 @@ table file (default std_table.orb).</td>
 
 <dl class="method">
 <dt id="core.Tools._get_standard_table_path">
-<tt class="descname">_get_standard_table_path</tt><big>(</big><em>standard_table_name</em><big>)</big><a class="headerlink" href="#core.Tools._get_standard_table_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_standard_table_path</code><span class="sig-paren">(</span><em>standard_table_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_table_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the full path to the standard table giving name,
 location and type of the recorded standard spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -543,7 +585,7 @@ location and type of the recorded standard spectra.</p>
 
 <dl class="method">
 <dt id="core.Tools._get_tuning_parameter">
-<tt class="descname">_get_tuning_parameter</tt><big>(</big><em>parameter_name</em>, <em>default_value</em><big>)</big><a class="headerlink" href="#core.Tools._get_tuning_parameter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_tuning_parameter</code><span class="sig-paren">(</span><em>parameter_name</em>, <em>default_value</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_tuning_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the value of the tuning parameter if it exists. In
 the other case return the default value.</p>
 <p>This method is used to help in setting some tuning parameters
@@ -568,39 +610,14 @@ be a string.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.Tools._image_binning">
-<tt class="descname">_image_binning</tt><big>(</big><em>a</em>, <em>binning</em><big>)</big><a class="headerlink" href="#core.Tools._image_binning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return mean binned image.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="core.Tools._image_binning.params.image"></span><strong>image</strong><a class="paramlink headerlink reference internal" href="#core.Tools._image_binning.params.image">¶</a> &#8211; 2d array to bin.</li>
-<li><span class="target" id="core.Tools._image_binning.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#core.Tools._image_binning.params.binning">¶</a> &#8211; binning (must be an integer &gt;= 1).</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="docutils">
-<dt>..note:: Only the complete sets of rows or columns are binned</dt>
-<dd>so that depending on the bin size and the image size the
-last columns or rows can be ignored. This ensures that the
-binning surface is the same for every pixel in the binned
-array.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
 <dt id="core.Tools._init_logfile_name">
-<tt class="descname">_init_logfile_name</tt><big>(</big><em>logfile_name</em><big>)</big><a class="headerlink" href="#core.Tools._init_logfile_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_init_logfile_name</code><span class="sig-paren">(</span><em>logfile_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._init_logfile_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize logfile name.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Tools._init_pp_server">
-<tt class="descname">_init_pp_server</tt><big>(</big><em>silent=False</em><big>)</big><a class="headerlink" href="#core.Tools._init_pp_server" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_init_pp_server</code><span class="sig-paren">(</span><em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._init_pp_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a server for parallel processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -620,14 +637,14 @@ sources and information on Parallel Python software</p>
 
 <dl class="method">
 <dt id="core.Tools._print_caller_traceback">
-<tt class="descname">_print_caller_traceback</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Tools._print_caller_traceback" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_print_caller_traceback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_caller_traceback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print the traceback of the calling function and log it into
 the log file.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Tools._print_error">
-<tt class="descname">_print_error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#core.Tools._print_error" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_print_error</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print an error message and raise an exception which will
 stop the execution of the program.</p>
 <p>Error messages are written in the log file.</p>
@@ -643,7 +660,7 @@ stop the execution of the program.</p>
 
 <dl class="method">
 <dt id="core.Tools._print_msg">
-<tt class="descname">_print_msg</tt><big>(</big><em>message</em>, <em>color=False</em>, <em>no_hdr=False</em><big>)</big><a class="headerlink" href="#core.Tools._print_msg" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_print_msg</code><span class="sig-paren">(</span><em>message</em>, <em>color=False</em>, <em>no_hdr=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_msg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print a simple message.</p>
 <p>Simple messages are written in the log file.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -665,7 +682,7 @@ as it is, without any header.</li>
 
 <dl class="method">
 <dt id="core.Tools._print_traceback">
-<tt class="descname">_print_traceback</tt><big>(</big><em>no_hdr=False</em><big>)</big><a class="headerlink" href="#core.Tools._print_traceback" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_print_traceback</code><span class="sig-paren">(</span><em>no_hdr=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_traceback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print a traceback and log it into the logfile.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -685,7 +702,7 @@ been raised.</p>
 
 <dl class="method">
 <dt id="core.Tools._print_warning">
-<tt class="descname">_print_warning</tt><big>(</big><em>message</em>, <em>traceback=False</em><big>)</big><a class="headerlink" href="#core.Tools._print_warning" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_print_warning</code><span class="sig-paren">(</span><em>message</em>, <em>traceback=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_warning" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print a warning message. No exception is raised.</p>
 <p>Warning  messages are written in the log file.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -705,7 +722,7 @@ False)</li>
 
 <dl class="method">
 <dt id="core.Tools._read_sitelle_chip">
-<tt class="descname">_read_sitelle_chip</tt><big>(</big><em>hdu</em>, <em>chip_index</em>, <em>substract_bias=True</em><big>)</big><a class="headerlink" href="#core.Tools._read_sitelle_chip" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_read_sitelle_chip</code><span class="sig-paren">(</span><em>hdu</em>, <em>chip_index</em>, <em>substract_bias=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._read_sitelle_chip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return chip data of a SITELLE FITS image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -725,7 +742,7 @@ substracted by using the overscan area (default True).</li>
 
 <dl class="method">
 <dt id="core.Tools._read_spiomm_data">
-<tt class="descname">_read_spiomm_data</tt><big>(</big><em>hdu</em>, <em>image_path</em>, <em>substract_bias=True</em><big>)</big><a class="headerlink" href="#core.Tools._read_spiomm_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_read_spiomm_data</code><span class="sig-paren">(</span><em>hdu</em>, <em>image_path</em>, <em>substract_bias=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._read_spiomm_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return data of an SpIOMM FITS image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -747,7 +764,7 @@ axis of the bias frame (default True).</li>
 
 <dl class="method">
 <dt id="core.Tools._update_fits_key">
-<tt class="descname">_update_fits_key</tt><big>(</big><em>fits_name</em>, <em>key</em>, <em>value</em>, <em>comment</em><big>)</big><a class="headerlink" href="#core.Tools._update_fits_key" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_update_fits_key</code><span class="sig-paren">(</span><em>fits_name</em>, <em>key</em>, <em>value</em>, <em>comment</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._update_fits_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update one key of a FITS file. If the key doesn&#8217;t exist
 create one.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -777,7 +794,7 @@ files.</p>
 
 <dl class="method">
 <dt id="core.Tools.open_file">
-<tt class="descname">open_file</tt><big>(</big><em>file_name</em>, <em>mode='w'</em><big>)</big><a class="headerlink" href="#core.Tools.open_file" title="Permalink to this definition">¶</a></dt>
+<code class="descname">open_file</code><span class="sig-paren">(</span><em>file_name</em>, <em>mode='w'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.open_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open a file in write mode (by default) and return a file
 object.</p>
 <p>Create the file if it doesn&#8217;t exist (only in write mode).</p>
@@ -799,7 +816,7 @@ read mode and &#8216;a&#8217; for append mode.</li>
 
 <dl class="method">
 <dt id="core.Tools.read_fits">
-<tt class="descname">read_fits</tt><big>(</big><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=False</em>, <em>dtype=&lt;type 'float'&gt;</em><big>)</big><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">read_fits</code><span class="sig-paren">(</span><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=True</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a FITS data file and returns its data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -841,7 +858,7 @@ fixed to avoid errors due to header inconsistencies
 (e.g. WCS errors) (default True).</li>
 <li><span class="target" id="core.Tools.read_fits.params.memmap"></span><strong>memmap</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.memmap">¶</a> &#8211; (Optional) If True, use the memory mapping
 option of pyfits. This is useful to avoid loading a full cube
-in memory when opening a large data cube (default False).</li>
+in memory when opening a large data cube (default True).</li>
 <li><span class="target" id="core.Tools.read_fits.params.dtype"></span><strong>dtype</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.dtype">¶</a> &#8211; (Optional) Data is converted to
 the given dtype (e.g. np.float32, default float).</li>
 </ul>
@@ -861,7 +878,7 @@ files.</p>
 
 <dl class="method">
 <dt id="core.Tools.sort_image_list">
-<tt class="descname">sort_image_list</tt><big>(</big><em>file_list</em>, <em>image_mode</em><big>)</big><a class="headerlink" href="#core.Tools.sort_image_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sort_image_list</code><span class="sig-paren">(</span><em>file_list</em>, <em>image_mode</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.sort_image_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sort a list of fits files.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -879,7 +896,7 @@ files.</p>
 
 <dl class="method">
 <dt id="core.Tools.write_fits">
-<tt class="descname">write_fits</tt><big>(</big><em>fits_name</em>, <em>fits_data</em>, <em>fits_header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>mask=None</em>, <em>replace=False</em>, <em>record_stats=False</em><big>)</big><a class="headerlink" href="#core.Tools.write_fits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_fits</code><span class="sig-paren">(</span><em>fits_name</em>, <em>fits_data</em>, <em>fits_header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>mask=None</em>, <em>replace=False</em>, <em>record_stats=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.write_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write data in FITS format. If the file doesn&#8217;t exist create
 it with its directories.</p>
 <p>If the file already exists add a number to its name before the
@@ -944,8 +961,8 @@ files.</p>
 <h2><a class="toc-backref" href="#id5">Cube class</a><a class="headerlink" href="#cube-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Cube">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Cube</tt><big>(</big><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='temp_data_'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><big>)</big><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Generate and manage a <strong>virtual frame-divided cube</strong>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -955,7 +972,7 @@ data file and loading an entire cube to process it.</p>
 </div>
 <dl class="method">
 <dt id="core.Cube.__getitem__">
-<tt class="descname">__getitem__</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#core.Cube.__getitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of self[key].</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -970,7 +987,7 @@ Cube()._silent_load to True.</p>
 
 <dl class="method">
 <dt id="core.Cube.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='temp_data_'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><big>)</big><a class="headerlink" href="#core.Cube.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize Cube class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -978,7 +995,7 @@ Cube()._silent_load to True.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="core.Cube.params.image_list_path"></span><strong>image_list_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.image_list_path">¶</a> &#8211; Path to the list of images which form
-the virtual cube. If <tt class="docutils literal"><span class="pre">image_list_path</span></tt> is set to &#8216;&#8217; then
+the virtual cube. If <code class="docutils literal"><span class="pre">image_list_path</span></code> is set to &#8216;&#8217; then
 this class will not try to load any data.  Can be useful
 when the user don&#8217;t want to use or process any data.</li>
 <li><span class="target" id="core.Cube.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.image_mode">¶</a> &#8211; (Optional) Image mode. Can be &#8216;spiomm&#8217;,
@@ -1026,8 +1043,8 @@ dictionary must contains the full parameter name
 {&#8216;InterferogramMerger.find_alignment.BOX_SIZE&#8217;: 7}. Note
 that only some parameters can be tuned. This possibility is
 implemented into the method itself with the method
-<a class="reference internal" href="#core.Tools._get_tuning_parameter" title="core.Tools._get_tuning_parameter"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_tuning_parameter()</span></tt></a>.</li>
-<li><span class="target" id="core.Cube.params.indexer"></span><strong>indexer</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.indexer">¶</a> &#8211; (Optional) Must be a <a class="reference internal" href="#core.Indexer" title="core.Indexer"><tt class="xref py py-class docutils literal"><span class="pre">core.Indexer</span></tt></a>
+<a class="reference internal" href="#core.Tools._get_tuning_parameter" title="core.Tools._get_tuning_parameter"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools._get_tuning_parameter()</span></code></a>.</li>
+<li><span class="target" id="core.Cube.params.indexer"></span><strong>indexer</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.indexer">¶</a> &#8211; (Optional) Must be a <a class="reference internal" href="#core.Indexer" title="core.Indexer"><code class="xref py py-class docutils literal"><span class="pre">core.Indexer</span></code></a>
 instance. If not None created files can be indexed by this
 instance.</li>
 <li><span class="target" id="core.Cube.params.logfile_name"></span><strong>logfile_name</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.logfile_name">¶</a> &#8211; (Optional) Give a specific name to the
@@ -1041,7 +1058,7 @@ logfile (default None).</li>
 
 <dl class="method">
 <dt id="core.Cube.export">
-<tt class="descname">export</tt><big>(</big><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>fits_header=None</em>, <em>overwrite=False</em><big>)</big><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
+<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>fits_header=None</em>, <em>overwrite=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
 <dd><p>Export cube as one FITS file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1061,7 +1078,7 @@ logfile (default None).</li>
 
 <dl class="method">
 <dt id="core.Cube.get_all_data">
-<tt class="descname">get_all_data</tt><big>(</big><em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_all_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_all_data</code><span class="sig-paren">(</span><em>mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_all_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the whole data cube</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1075,7 +1092,7 @@ logfile (default None).</li>
 
 <dl class="method">
 <dt id="core.Cube.get_column_data">
-<tt class="descname">get_column_data</tt><big>(</big><em>icol</em>, <em>silent=True</em>, <em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_column_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_column_data</code><span class="sig-paren">(</span><em>icol</em>, <em>silent=True</em>, <em>mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_column_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return data as a slice along x axis</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1095,14 +1112,14 @@ during data loading (default True)</li>
 
 <dl class="method">
 <dt id="core.Cube.get_cube_header">
-<tt class="descname">get_cube_header</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_cube_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_cube_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_cube_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of a cube from the header of the first frame
 by keeping only the general keywords.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Cube.get_data">
-<tt class="descname">get_data</tt><big>(</big><em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>z_min</em>, <em>z_max</em>, <em>silent=False</em>, <em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_data</code><span class="sig-paren">(</span><em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>z_min</em>, <em>z_max</em>, <em>silent=False</em>, <em>mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a part of the data cube.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1127,7 +1144,7 @@ during data loading (default False)</li>
 
 <dl class="method">
 <dt id="core.Cube.get_data_frame">
-<tt class="descname">get_data_frame</tt><big>(</big><em>index</em>, <em>silent=False</em>, <em>mask=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_data_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_data_frame</code><span class="sig-paren">(</span><em>index</em>, <em>silent=False</em>, <em>mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_data_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return one frame of the cube.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1147,7 +1164,7 @@ during data loading (default False)</li>
 
 <dl class="method">
 <dt id="core.Cube.get_frame_header">
-<tt class="descname">get_frame_header</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#core.Cube.get_frame_header" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_frame_header</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_frame_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of a frame given its index in the list.</p>
 <p>The header is returned as an instance of pyfits.Header().</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1170,13 +1187,13 @@ files.</p>
 
 <dl class="method">
 <dt id="core.Cube.get_interf_energy_map">
-<tt class="descname">get_interf_energy_map</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_interf_energy_map" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_interf_energy_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_interf_energy_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the energy map of an interferogram cube</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Cube.get_mean_image">
-<tt class="descname">get_mean_image</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_mean_image" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_mean_image</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_mean_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean image of a cube (corresponding to a deep
 frame for an interferogram cube or a specral cube).</p>
 <div class="admonition note">
@@ -1187,7 +1204,7 @@ frame for an interferogram cube or a specral cube).</p>
 
 <dl class="method">
 <dt id="core.Cube.get_quadrant_dims">
-<tt class="descname">get_quadrant_dims</tt><big>(</big><em>quad_number</em>, <em>div_nb=None</em>, <em>dimx=None</em>, <em>dimy=None</em><big>)</big><a class="headerlink" href="#core.Cube.get_quadrant_dims" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_quadrant_dims</code><span class="sig-paren">(</span><em>quad_number</em>, <em>div_nb=None</em>, <em>dimx=None</em>, <em>dimy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_quadrant_dims" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the indices of a quadrant along x and y axes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1211,7 +1228,7 @@ than the axis dimension of the managed data cube</li>
 
 <dl class="method">
 <dt id="core.Cube.get_resized_data">
-<tt class="descname">get_resized_data</tt><big>(</big><em>size_x</em>, <em>size_y</em><big>)</big><a class="headerlink" href="#core.Cube.get_resized_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_resized_data</code><span class="sig-paren">(</span><em>size_x</em>, <em>size_y</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_resized_data" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Resize the data cube and return it using spline</dt>
 <dd>interpolation.</dd>
@@ -1241,7 +1258,7 @@ be done in this case).</p>
 
 <dl class="method">
 <dt id="core.Cube.get_resized_frame">
-<tt class="descname">get_resized_frame</tt><big>(</big><em>index</em>, <em>size_x</em>, <em>size_y</em>, <em>degree=3</em><big>)</big><a class="headerlink" href="#core.Cube.get_resized_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_resized_frame</code><span class="sig-paren">(</span><em>index</em>, <em>size_x</em>, <em>size_y</em>, <em>degree=3</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_resized_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a resized frame using spline interpolation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1267,13 +1284,13 @@ star-like objects a linear interpolation must be done
 
 <dl class="method">
 <dt id="core.Cube.get_size_on_disk">
-<tt class="descname">get_size_on_disk</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_size_on_disk" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_size_on_disk</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_size_on_disk" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the expected size of the cube if saved on disk in Mo.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Cube.get_spectrum_energy_map">
-<tt class="descname">get_spectrum_energy_map</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Cube.get_spectrum_energy_map" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_spectrum_energy_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_spectrum_energy_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the energy map of a spectrum cube.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -1283,7 +1300,7 @@ star-like objects a linear interpolation must be done
 
 <dl class="method">
 <dt id="core.Cube.get_zmean">
-<tt class="descname">get_zmean</tt><big>(</big><em>nozero=False</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zmean" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_zmean</code><span class="sig-paren">(</span><em>nozero=False</em>, <em>center=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_zmean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a vector containing frames median.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1304,7 +1321,7 @@ compute median.</li>
 
 <dl class="method">
 <dt id="core.Cube.get_zmedian">
-<tt class="descname">get_zmedian</tt><big>(</big><em>nozero=False</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zmedian" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_zmedian</code><span class="sig-paren">(</span><em>nozero=False</em>, <em>center=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_zmedian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a vector containing frames mean.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1325,7 +1342,7 @@ compute mean.</li>
 
 <dl class="method">
 <dt id="core.Cube.get_zstat">
-<tt class="descname">get_zstat</tt><big>(</big><em>nozero=False</em>, <em>stat='mean'</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zstat" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_zstat</code><span class="sig-paren">(</span><em>nozero=False</em>, <em>stat='mean'</em>, <em>center=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_zstat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a vector containing frames stat (mean, median or
 std).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1349,7 +1366,7 @@ compute stat.</li>
 
 <dl class="method">
 <dt id="core.Cube.get_zstd">
-<tt class="descname">get_zstd</tt><big>(</big><em>nozero=False</em>, <em>center=False</em><big>)</big><a class="headerlink" href="#core.Cube.get_zstd" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_zstd</code><span class="sig-paren">(</span><em>nozero=False</em>, <em>center=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_zstd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a vector containing frames std.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1370,7 +1387,7 @@ compute std.</li>
 
 <dl class="method">
 <dt id="core.Cube.is_same_2D_size">
-<tt class="descname">is_same_2D_size</tt><big>(</big><em>cube_test</em><big>)</big><a class="headerlink" href="#core.Cube.is_same_2D_size" title="Permalink to this definition">¶</a></dt>
+<code class="descname">is_same_2D_size</code><span class="sig-paren">(</span><em>cube_test</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.is_same_2D_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if another cube has the same dimensions along x and y
 axes.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1385,7 +1402,7 @@ axes.</p>
 
 <dl class="method">
 <dt id="core.Cube.is_same_3D_size">
-<tt class="descname">is_same_3D_size</tt><big>(</big><em>cube_test</em><big>)</big><a class="headerlink" href="#core.Cube.is_same_3D_size" title="Permalink to this definition">¶</a></dt>
+<code class="descname">is_same_3D_size</code><span class="sig-paren">(</span><em>cube_test</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.is_same_3D_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if another cube has the same dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1404,7 +1421,7 @@ axes.</p>
 <h2><a class="toc-backref" href="#id6">TextColor class</a><a class="headerlink" href="#textcolor-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.TextColor">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">TextColor</tt><a class="headerlink" href="#core.TextColor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">TextColor</code><a class="headerlink" href="#core.TextColor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define ANSI Escape sequences to display text with colors.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -1413,7 +1430,7 @@ disable() function to disable coloured text.</p>
 </div>
 <dl class="method">
 <dt id="core.TextColor.disable">
-<tt class="descname">disable</tt><big>(</big><big>)</big><a class="headerlink" href="#core.TextColor.disable" title="Permalink to this definition">¶</a></dt>
+<code class="descname">disable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.TextColor.disable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disable ANSI Escape sequences for windows portability</p>
 </dd></dl>
 
@@ -1424,7 +1441,7 @@ disable() function to disable coloured text.</p>
 <h2><a class="toc-backref" href="#id7">ProgressBar class</a><a class="headerlink" href="#progressbar-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.ProgressBar">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">ProgressBar</tt><big>(</big><em>max_index</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.ProgressBar" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">ProgressBar</code><span class="sig-paren">(</span><em>max_index</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display a simple progress bar in the terminal</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1436,7 +1453,7 @@ disable() function to disable coloured text.</p>
 </table>
 <dl class="method">
 <dt id="core.ProgressBar.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>max_index</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.ProgressBar.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>max_index</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize ProgressBar class</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1456,13 +1473,13 @@ disable() function to disable coloured text.</p>
 
 <dl class="method">
 <dt id="core.ProgressBar._erase_line">
-<tt class="descname">_erase_line</tt><big>(</big><big>)</big><a class="headerlink" href="#core.ProgressBar._erase_line" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_erase_line</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar._erase_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Erase the progress bar</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.ProgressBar._time_str_convert">
-<tt class="descname">_time_str_convert</tt><big>(</big><em>sec</em><big>)</big><a class="headerlink" href="#core.ProgressBar._time_str_convert" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_time_str_convert</code><span class="sig-paren">(</span><em>sec</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar._time_str_convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a number of seconds in a human readable string</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1476,7 +1493,7 @@ disable() function to disable coloured text.</p>
 
 <dl class="method">
 <dt id="core.ProgressBar.end">
-<tt class="descname">end</tt><big>(</big><em>silent=False</em><big>)</big><a class="headerlink" href="#core.ProgressBar.end" title="Permalink to this definition">¶</a></dt>
+<code class="descname">end</code><span class="sig-paren">(</span><em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar.end" title="Permalink to this definition">¶</a></dt>
 <dd><p>End the progress bar and display the total time needed to
 complete the process.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1493,7 +1510,7 @@ progress bar.</td>
 
 <dl class="method">
 <dt id="core.ProgressBar.update">
-<tt class="descname">update</tt><big>(</big><em>index</em>, <em>info=''</em><big>)</big><a class="headerlink" href="#core.ProgressBar.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>index</em>, <em>info=''</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the progress bar.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1518,7 +1535,7 @@ comments</li>
 <h2><a class="toc-backref" href="#id8">MemFile class</a><a class="headerlink" href="#memfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.MemFile">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">MemFile</tt><big>(</big><em>memfile_path</em><big>)</big><a class="headerlink" href="#core.MemFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">MemFile</code><span class="sig-paren">(</span><em>memfile_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manage memory file.</p>
 <p>A memory file is a file containing options that must be shared by
 multiple classes. Options in this file are temporary.</p>
@@ -1526,13 +1543,13 @@ multiple classes. Options in this file are temporary.</p>
 memory file on the disk.</p>
 <dl class="method">
 <dt id="core.MemFile.__getitem__">
-<tt class="descname">__getitem__</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#core.MemFile.__getitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of self[key]</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.MemFile.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>memfile_path</em><big>)</big><a class="headerlink" href="#core.MemFile.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>memfile_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Init Memfile Class</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1546,19 +1563,19 @@ memory file on the disk.</p>
 
 <dl class="method">
 <dt id="core.MemFile.__iter__">
-<tt class="descname">__iter__</tt><big>(</big><big>)</big><a class="headerlink" href="#core.MemFile.__iter__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__iter__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an iterator object</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.MemFile.__setitem__">
-<tt class="descname">__setitem__</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#core.MemFile.__setitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__setitem__</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__setitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of self[key] = value</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.MemFile.update">
-<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#core.MemFile.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update memory file with the data contained in self.mem</p>
 </dd></dl>
 
@@ -1569,18 +1586,18 @@ memory file on the disk.</p>
 <h2><a class="toc-backref" href="#id9">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Indexer">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Indexer</tt><big>(</big><em>data_prefix='temp_data'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Indexer</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage locations of created files.</p>
 <p>All files locations are stored in a text-like file: the index
 file. This file is the &#8216;real&#8217; counterpart of the index (which is
-&#8216;virtual&#8217; until <a class="reference internal" href="#core.Indexer.update_index" title="core.Indexer.update_index"><tt class="xref py py-meth docutils literal"><span class="pre">core.Indexer.update_index()</span></tt></a> is
+&#8216;virtual&#8217; until <a class="reference internal" href="#core.Indexer.update_index" title="core.Indexer.update_index"><code class="xref py py-meth docutils literal"><span class="pre">core.Indexer.update_index()</span></code></a> is
 called). This method is called each time
-<a class="reference internal" href="#core.Indexer.__setitem__" title="core.Indexer.__setitem__"><tt class="xref py py-meth docutils literal"><span class="pre">core.Indexer.__setitem__()</span></tt></a> is called.</p>
+<a class="reference internal" href="#core.Indexer.__setitem__" title="core.Indexer.__setitem__"><code class="xref py py-meth docutils literal"><span class="pre">core.Indexer.__setitem__()</span></code></a> is called.</p>
 <p>This class can be accessed like a dictionary.</p>
 <dl class="method">
 <dt id="core.Indexer.__getitem__">
-<tt class="descname">__getitem__</tt><big>(</big><em>file_key</em><big>)</big><a class="headerlink" href="#core.Indexer.__getitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>file_key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of self[file_key]</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1594,7 +1611,7 @@ called). This method is called each time
 
 <dl class="method">
 <dt id="core.Indexer.__setitem__">
-<tt class="descname">__setitem__</tt><big>(</big><em>file_key</em>, <em>file_path</em><big>)</big><a class="headerlink" href="#core.Indexer.__setitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__setitem__</code><span class="sig-paren">(</span><em>file_key</em>, <em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.__setitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of self[file_key] = file_path</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1612,26 +1629,26 @@ called). This method is called each time
 
 <dl class="method">
 <dt id="core.Indexer.__str__">
-<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer.__str__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of str(self)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Indexer._get_index_path">
-<tt class="descname">_get_index_path</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer._get_index_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_index_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer._get_index_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return path of the index</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Indexer._index2group">
-<tt class="descname">_index2group</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#core.Indexer._index2group" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_index2group</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer._index2group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert an integer (0, 1 or 2) to a group of files
 (&#8216;merged&#8217;, &#8216;cam1&#8217; or &#8216;cam2&#8217;).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Indexer.get_path">
-<tt class="descname">get_path</tt><big>(</big><em>file_key</em>, <em>file_group=None</em>, <em>err=False</em><big>)</big><a class="headerlink" href="#core.Indexer.get_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_path</code><span class="sig-paren">(</span><em>file_key</em>, <em>file_group=None</em>, <em>err=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.get_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the path of a file recorded in the index.</p>
 <p>Equivalent to self[file_key] if the option file_group is not used.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1655,13 +1672,13 @@ the file is not indexed.</li>
 
 <dl class="method">
 <dt id="core.Indexer.load_index">
-<tt class="descname">load_index</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer.load_index" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_index</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.load_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load index file and rebuild index of already located files</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Indexer.set_file_group">
-<tt class="descname">set_file_group</tt><big>(</big><em>file_group</em><big>)</big><a class="headerlink" href="#core.Indexer.set_file_group" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_file_group</code><span class="sig-paren">(</span><em>file_group</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.set_file_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the group of the next files to be recorded. All given
 file keys will be prefixed by the file group.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1678,7 +1695,7 @@ set to None.</td>
 
 <dl class="method">
 <dt id="core.Indexer.update_index">
-<tt class="descname">update_index</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Indexer.update_index" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update_index</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer.update_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update index files with data in the virtual index</p>
 </dd></dl>
 
@@ -1689,8 +1706,8 @@ set to None.</td>
 <h2><a class="toc-backref" href="#id10">Lines class</a><a class="headerlink" href="#lines-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Lines">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">Lines</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#core.Lines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Lines</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>This class manages emission lines names and wavelengths.</p>
 <p>Spectral lines rest wavelength:</p>
 <div class="highlight-python"><div class="highlight"><pre>============ ======== =======
@@ -1714,13 +1731,13 @@ Halpha       656.461  656.280
 </div>
 <dl class="method">
 <dt id="core.Lines.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#core.Lines.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lines class constructor.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Lines.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.Lines.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></tt></a> properties.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Lines.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.Lines.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</td>
 </tr>
 </tbody>
 </table>
@@ -1728,25 +1745,25 @@ Halpha       656.461  656.280
 
 <dl class="method">
 <dt id="core.Lines._read_sky_file">
-<tt class="descname">_read_sky_file</tt><big>(</big><big>)</big><a class="headerlink" href="#core.Lines._read_sky_file" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_read_sky_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines._read_sky_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return sky file (sky_lines.orb) as a dict.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="core.Lines.air_lines_nm">
-<tt class="descname">air_lines_nm</tt><em class="property"> = {'[OII]3726': 372.603, '[SII]6731': 673.085, '[OIII]5007': 500.684, '[SII]6716': 671.647, '[NeIII]3869': 386.875, '[OIII]4959': 495.891, '[SIII]6312': 631.21, '[ArIII]7751': 775.112, 'HeI5876': 587.567, '[OII]7120': 731.965, 'HeI7065': 706.528, '[OI]6300': 630.03, '[ArIII]7136': 713.578, '[OII]3729': 372.882, '[NII]6583': 658.341, '[NII]6548': 654.803, 'Hbeta': 486.133, 'Hdelta': 410.176, '[OII]7130': 733.016, 'Hepsilon': 397.007, 'Halpha': 656.28, 'Hgamma': 434.047, '[OIII]4363': 436.321, 'HeI6678': 667.815}</em><a class="headerlink" href="#core.Lines.air_lines_nm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">air_lines_nm</code><em class="property"> = {'[OII]3726': 372.603, '[SII]6731': 673.085, '[OIII]5007': 500.684, '[SII]6716': 671.647, '[NeIII]3869': 386.875, '[OIII]4959': 495.891, '[SIII]6312': 631.21, '[ArIII]7751': 775.112, 'HeI5876': 587.567, '[OII]7120': 731.965, 'HeI7065': 706.528, '[OI]6300': 630.03, '[ArIII]7136': 713.578, '[OII]3729': 372.882, '[NII]6583': 658.341, '[NII]6548': 654.803, 'Hbeta': 486.133, 'Hdelta': 410.176, '[OII]7130': 733.016, 'Hepsilon': 397.007, 'Halpha': 656.28, 'Hgamma': 434.047, '[OIII]4363': 436.321, 'HeI6678': 667.815}</em><a class="headerlink" href="#core.Lines.air_lines_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Air emission lines wavelength</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="core.Lines.air_sky_lines_nm">
-<tt class="descname">air_sky_lines_nm</tt><em class="property"> = None</em><a class="headerlink" href="#core.Lines.air_sky_lines_nm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">air_sky_lines_nm</code><em class="property"> = None</em><a class="headerlink" href="#core.Lines.air_sky_lines_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Air sky lines wavelength</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.Lines.get_line_name">
-<tt class="descname">get_line_name</tt><big>(</big><em>lines</em>, <em>air=True</em><big>)</big><a class="headerlink" href="#core.Lines.get_line_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_line_name</code><span class="sig-paren">(</span><em>lines</em>, <em>air=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines.get_line_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the name of a line or a list of lines given their
 wavelength.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1767,7 +1784,7 @@ vacuum (default True).</li>
 
 <dl class="method">
 <dt id="core.Lines.get_line_nm">
-<tt class="descname">get_line_nm</tt><big>(</big><em>lines_name</em>, <em>air=True</em>, <em>round_ang=False</em><big>)</big><a class="headerlink" href="#core.Lines.get_line_nm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_line_nm</code><span class="sig-paren">(</span><em>lines_name</em>, <em>air=True</em>, <em>round_ang=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines.get_line_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the wavelength of a line or a list of lines</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1789,7 +1806,7 @@ wavelength of the line in angstrom (default False)</li>
 
 <dl class="method">
 <dt id="core.Lines.get_sky_lines">
-<tt class="descname">get_sky_lines</tt><big>(</big><em>nm_min</em>, <em>nm_max</em>, <em>delta_nm</em>, <em>line_nb=0</em>, <em>get_names=False</em><big>)</big><a class="headerlink" href="#core.Lines.get_sky_lines" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_sky_lines</code><span class="sig-paren">(</span><em>nm_min</em>, <em>nm_max</em>, <em>delta_nm</em>, <em>line_nb=0</em>, <em>get_names=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines.get_sky_lines" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return sky lines in a range of optical wavelength.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1813,7 +1830,7 @@ retrieve. If 0 all lines are given (default 0).</li>
 
 <dl class="method">
 <dt id="core.Lines.round_nm2ang">
-<tt class="descname">round_nm2ang</tt><big>(</big><em>nm</em><big>)</big><a class="headerlink" href="#core.Lines.round_nm2ang" title="Permalink to this definition">¶</a></dt>
+<code class="descname">round_nm2ang</code><span class="sig-paren">(</span><em>nm</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines.round_nm2ang" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a wavelength in nm into a rounded value in angstrom</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1827,13 +1844,13 @@ retrieve. If 0 all lines are given (default 0).</li>
 
 <dl class="attribute">
 <dt id="core.Lines.sky_lines_file_name">
-<tt class="descname">sky_lines_file_name</tt><em class="property"> = 'sky_lines.orb'</em><a class="headerlink" href="#core.Lines.sky_lines_file_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sky_lines_file_name</code><em class="property"> = 'sky_lines.orb'</em><a class="headerlink" href="#core.Lines.sky_lines_file_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the sky lines data file.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="core.Lines.vac_lines_nm">
-<tt class="descname">vac_lines_nm</tt><em class="property"> = {'[OII]3726': 372.709, '[OII]3729': 372.988, '[OIII]5007': 500.824, '[SII]6716': 671.832, 'Hbeta': 486.269, 'Hdelta': 410.292, '[OIII]4959': 496.03, '[NII]6548': 654.984, 'Hepsilon': 397.119, 'Halpha': 656.461, 'Hgamma': 434.169, '[OIII]4363': 436.444, '[SII]6731': 673.271, '[NII]6583': 658.523}</em><a class="headerlink" href="#core.Lines.vac_lines_nm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">vac_lines_nm</code><em class="property"> = {'[OII]3726': 372.709, '[OII]3729': 372.988, '[OIII]5007': 500.824, '[SII]6716': 671.832, 'Hbeta': 486.269, 'Hdelta': 410.292, '[OIII]4959': 496.03, '[NII]6548': 654.984, 'Hepsilon': 397.119, 'Halpha': 656.461, 'Hgamma': 434.169, '[OIII]4363': 436.444, '[SII]6731': 673.271, '[NII]6583': 658.523}</em><a class="headerlink" href="#core.Lines.vac_lines_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Vacuum emission lines wavelength</p>
 </dd></dl>
 
@@ -1844,8 +1861,8 @@ retrieve. If 0 all lines are given (default 0).</li>
 <h2><a class="toc-backref" href="#id11">OptionFile class</a><a class="headerlink" href="#optionfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.OptionFile">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">OptionFile</tt><big>(</big><em>option_file_path</em>, <em>protected_keys=[]</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#core.OptionFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">OptionFile</code><span class="sig-paren">(</span><em>option_file_path</em>, <em>protected_keys=[]</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage an option file.</p>
 <p>An option file is a file containing keywords and values and
 optionally some comments indicated by &#8216;#&#8217;, e.g.:</p>
@@ -1879,13 +1896,13 @@ of the file and can be used to give a description of the file.</p>
 </div>
 <dl class="method">
 <dt id="core.OptionFile.__getitem__">
-<tt class="descname">__getitem__</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#core.OptionFile.__getitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement the evaluation of self[key].</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.OptionFile.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>option_file_path</em>, <em>protected_keys=[]</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#core.OptionFile.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>option_file_path</em>, <em>protected_keys=[]</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize class</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1895,7 +1912,7 @@ of the file and can be used to give a description of the file.</p>
 <li><span class="target" id="core.OptionFile.params.option_file_path"></span><strong>option_file_path</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.params.option_file_path">¶</a> &#8211; Path to the option file</li>
 <li><span class="target" id="core.OptionFile.params.protected_keys"></span><strong>protected_keys</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.params.protected_keys">¶</a> &#8211; (Optional) Add other protected keys to
 the basic ones (default []).</li>
-<li><span class="target" id="core.OptionFile.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></tt></a> properties.</li>
+<li><span class="target" id="core.OptionFile.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.OptionFile.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</li>
 </ul>
 </td>
 </tr>
@@ -1905,7 +1922,7 @@ the basic ones (default []).</li>
 
 <dl class="method">
 <dt id="core.OptionFile.get">
-<tt class="descname">get</tt><big>(</big><em>key</em>, <em>cast=&lt;type 'str'&gt;</em><big>)</big><a class="headerlink" href="#core.OptionFile.get" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get</code><span class="sig-paren">(</span><em>key</em>, <em>cast=&lt;type 'str'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the value associated to a keyword.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1924,28 +1941,28 @@ the basic ones (default []).</li>
 
 <dl class="method">
 <dt id="core.OptionFile.get_bad_frames">
-<tt class="descname">get_bad_frames</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.get_bad_frames" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_bad_frames</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get_bad_frames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get bad frames.</p>
 <p>Defined for the special keyword &#8216;BAD_FRAMES&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.OptionFile.get_filter_edges">
-<tt class="descname">get_filter_edges</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.get_filter_edges" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_filter_edges</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get_filter_edges" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get filter eges parameters.</p>
 <p>Defined for the special keyword &#8216;FILTER_EDGES&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.OptionFile.get_fringes">
-<tt class="descname">get_fringes</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.get_fringes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_fringes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get_fringes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get fringes</p>
 <p>Defined for the special keyword &#8216;FRINGES&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.OptionFile.get_lines">
-<tt class="descname">get_lines</tt><big>(</big><em>nm_min=None</em>, <em>nm_max=None</em>, <em>delta_nm=None</em><big>)</big><a class="headerlink" href="#core.OptionFile.get_lines" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_lines</code><span class="sig-paren">(</span><em>nm_min=None</em>, <em>nm_max=None</em>, <em>delta_nm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get_lines" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get lines parameters.</p>
 <p>Defined for the special keyword &#8216;LINES&#8217;.</p>
 <p>All optional keywords are only used if the keyword SKY is
@@ -1971,21 +1988,21 @@ of this interval are merged (default None).</li>
 
 <dl class="method">
 <dt id="core.OptionFile.get_regions_parameters">
-<tt class="descname">get_regions_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.get_regions_parameters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_regions_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get_regions_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get regions parameters.</p>
 <p>Defined for the special keyword &#8216;REG&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.OptionFile.get_tuning_parameters">
-<tt class="descname">get_tuning_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.get_tuning_parameters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_tuning_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.get_tuning_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the list of tuning parameters.</p>
 <p>Defined for the special keyword &#8216;TUNE&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.OptionFile.iteritems">
-<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#core.OptionFile.iteritems" title="Permalink to this definition">¶</a></dt>
+<code class="descname">iteritems</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile.iteritems" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implement iteritems function often used with iterable objects</p>
 </dd></dl>
 
@@ -1996,25 +2013,25 @@ of this interval are merged (default None).</li>
 <h2><a class="toc-backref" href="#id12">ParamsFile class</a><a class="headerlink" href="#paramsfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.ParamsFile">
-<em class="property">class </em><tt class="descclassname">core.</tt><tt class="descname">ParamsFile</tt><big>(</big><em>file_path</em>, <em>reset=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#core.ParamsFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-class docutils literal"><span class="pre">core.Tools</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">ParamsFile</code><span class="sig-paren">(</span><em>file_path</em>, <em>reset=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage the correspondance between multiple dict containing the
 same parameters and a file on the disk.</p>
 <dl class="method">
 <dt id="core.ParamsFile.__del__">
-<tt class="descname">__del__</tt><big>(</big><big>)</big><a class="headerlink" href="#core.ParamsFile.__del__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__del__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile.__del__" title="Permalink to this definition">¶</a></dt>
 <dd><p>ParamsFile destructor</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.ParamsFile.__getitem__">
-<tt class="descname">__getitem__</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#core.ParamsFile.__getitem__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>implement Instance[key]</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.ParamsFile.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>file_path</em>, <em>reset=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#core.ParamsFile.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>file_path</em>, <em>reset=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Init ParamsFile class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2028,7 +2045,7 @@ automatically be overwritten if reset is set to True).</li>
 overwritten. If False and if the output file already exists
 data in the file are read and new data is appended (default
 True).</li>
-<li><span class="target" id="core.ParamsFile.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.ParamsFile.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><tt class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></tt></a> properties.</li>
+<li><span class="target" id="core.ParamsFile.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.ParamsFile.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</li>
 </ul>
 </td>
 </tr>
@@ -2038,7 +2055,7 @@ True).</li>
 
 <dl class="method">
 <dt id="core.ParamsFile.append">
-<tt class="descname">append</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#core.ParamsFile.append" title="Permalink to this definition">¶</a></dt>
+<code class="descname">append</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile.append" title="Permalink to this definition">¶</a></dt>
 <dd><p>Append a dict to the file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2061,7 +2078,7 @@ True).</li>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -2076,12 +2093,12 @@ True).</li>
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.3.1.1 documentation</title>
+    <title>Utils module &mdash; Orb 1.3.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.1.1',
+        VERSION:     '1.3.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,14 +24,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.1.1 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -46,10 +46,10 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/logo.png" alt="Logo"/>
@@ -60,12 +60,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="cutils_module.html"
                         title="next chapter">CUtils module</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/utils_module.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/utils_module.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -84,7 +86,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="module-utils">
 <span id="utils-module"></span><h1>Utils module<a class="headerlink" href="#module-utils" title="Permalink to this headline">¶</a></h1>
@@ -92,7 +94,7 @@
 classes of ORBS</p>
 <dl class="function">
 <dt id="utils.ABmag2flambda">
-<tt class="descclassname">utils.</tt><tt class="descname">ABmag2flambda</tt><big>(</big><em>ABmag</em>, <em>lam</em><big>)</big><a class="headerlink" href="#utils.ABmag2flambda" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">ABmag2flambda</code><span class="sig-paren">(</span><em>ABmag</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.ABmag2flambda" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert AB magnitude to flux in erg/cm2/s/A</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -110,7 +112,7 @@ classes of ORBS</p>
 
 <dl class="function">
 <dt id="utils.ABmag2fnu">
-<tt class="descclassname">utils.</tt><tt class="descname">ABmag2fnu</tt><big>(</big><em>ABmag</em><big>)</big><a class="headerlink" href="#utils.ABmag2fnu" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">ABmag2fnu</code><span class="sig-paren">(</span><em>ABmag</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.ABmag2fnu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return flux in erg/cm2/s/Hz from AB magnitude (Oke, ApJS, 27,
 21, 1974)</p>
 <p>ABmag = -2.5 * log10(f_nu) - 48.60
@@ -134,13 +136,13 @@ on the ESO website (<a class="reference external" href="https://www.eso.org/sci/
 
 <dl class="function">
 <dt id="utils.amplitude">
-<tt class="descclassname">utils.</tt><tt class="descname">amplitude</tt><big>(</big><em>a</em><big>)</big><a class="headerlink" href="#utils.amplitude" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">amplitude</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.amplitude" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the amplitude of a complex number</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.border_cut_window">
-<tt class="descclassname">utils.</tt><tt class="descname">border_cut_window</tt><big>(</big><em>n</em>, <em>coeff=0.2</em><big>)</big><a class="headerlink" href="#utils.border_cut_window" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">border_cut_window</code><span class="sig-paren">(</span><em>n</em>, <em>coeff=0.2</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.border_cut_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a window function with only the edges cut by a nice
 gaussian shape function.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -159,10 +161,10 @@ gaussian shape function.</p>
 
 <dl class="function">
 <dt id="utils.check_frames">
-<tt class="descclassname">utils.</tt><tt class="descname">check_frames</tt><big>(</big><em>frames</em>, <em>sigma_reject=2.5</em><big>)</big><a class="headerlink" href="#utils.check_frames" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">check_frames</code><span class="sig-paren">(</span><em>frames</em>, <em>sigma_reject=2.5</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.check_frames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check and reject deviating frames based on their median level.</p>
 <p>Frames with a too deviant median level are discarded. This
-function is used by <a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><tt class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></tt></a>.</p>
+function is used by <a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><code class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -179,7 +181,7 @@ function is used by <a class="reference internal" href="#utils.create_master_fra
 
 <dl class="function">
 <dt id="utils.cm12nm">
-<tt class="descclassname">utils.</tt><tt class="descname">cm12nm</tt><big>(</big><em>cm1</em><big>)</big><a class="headerlink" href="#utils.cm12nm" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">cm12nm</code><span class="sig-paren">(</span><em>cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.cm12nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a wavenumber in cm-1 to a wavelength in nm.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -193,7 +195,7 @@ function is used by <a class="reference internal" href="#utils.create_master_fra
 
 <dl class="function">
 <dt id="utils.cm12pix">
-<tt class="descclassname">utils.</tt><tt class="descname">cm12pix</tt><big>(</big><em>cm1_axis</em>, <em>cm1</em><big>)</big><a class="headerlink" href="#utils.cm12pix" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">cm12pix</code><span class="sig-paren">(</span><em>cm1_axis</em>, <em>cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.cm12pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a wavenumber in cm-1 to a pixel position given an axis
 in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -212,7 +214,7 @@ in cm-1.</p>
 
 <dl class="function">
 <dt id="utils.compute_line_fwhm">
-<tt class="descclassname">utils.</tt><tt class="descname">compute_line_fwhm</tt><big>(</big><em>step_nb</em>, <em>step</em>, <em>order</em>, <em>apod_coeff=1.0</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.compute_line_fwhm" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">compute_line_fwhm</code><span class="sig-paren">(</span><em>step_nb</em>, <em>step</em>, <em>order</em>, <em>apod_coeff=1.0</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.compute_line_fwhm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the expected FWHM (in nm or in cm-1) of a line given the
 observation parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -237,7 +239,7 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="utils.compute_line_shift">
-<tt class="descclassname">utils.</tt><tt class="descname">compute_line_shift</tt><big>(</big><em>velocity</em>, <em>step_nb</em>, <em>step</em>, <em>order</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.compute_line_shift" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">compute_line_shift</code><span class="sig-paren">(</span><em>velocity</em>, <em>step_nb</em>, <em>step</em>, <em>order</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.compute_line_shift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the line shift given its velocity in nm or in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -259,7 +261,7 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="utils.compute_obs_params">
-<tt class="descclassname">utils.</tt><tt class="descname">compute_obs_params</tt><big>(</big><em>nm_min_filter</em>, <em>nm_max_filter</em>, <em>theta_min=5.01</em>, <em>theta_max=11.28</em><big>)</big><a class="headerlink" href="#utils.compute_obs_params" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">compute_obs_params</code><span class="sig-paren">(</span><em>nm_min_filter</em>, <em>nm_max_filter</em>, <em>theta_min=5.01</em>, <em>theta_max=11.28</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.compute_obs_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute observation parameters (order, step size) given the
 filter bandpass.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -285,7 +287,7 @@ filter bandpass.</p>
 
 <dl class="function">
 <dt id="utils.compute_radial_velocity">
-<tt class="descclassname">utils.</tt><tt class="descname">compute_radial_velocity</tt><big>(</big><em>line</em>, <em>rest_line</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.compute_radial_velocity" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">compute_radial_velocity</code><span class="sig-paren">(</span><em>line</em>, <em>rest_line</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.compute_radial_velocity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return radial velocity in km.s-1</p>
 <p>V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -308,7 +310,7 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="utils.correct_bad_frames_vector">
-<tt class="descclassname">utils.</tt><tt class="descname">correct_bad_frames_vector</tt><big>(</big><em>bad_frames_vector</em>, <em>dimz</em><big>)</big><a class="headerlink" href="#utils.correct_bad_frames_vector" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">correct_bad_frames_vector</code><span class="sig-paren">(</span><em>bad_frames_vector</em>, <em>dimz</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.correct_bad_frames_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove bad indexes of the bad frame vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -326,7 +328,7 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="utils.correct_hot_pixels">
-<tt class="descclassname">utils.</tt><tt class="descname">correct_hot_pixels</tt><big>(</big><em>im</em>, <em>hp_map</em>, <em>box_size=3</em>, <em>std_filter_coeff=1.5</em><big>)</big><a class="headerlink" href="#utils.correct_hot_pixels" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">correct_hot_pixels</code><span class="sig-paren">(</span><em>im</em>, <em>hp_map</em>, <em>box_size=3</em>, <em>std_filter_coeff=1.5</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.correct_hot_pixels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Correct hot pixels in an image given a map of their position.</p>
 <p>The algorithm used replaces a hot pixel value by the median of the
 pixels in a box around it. Pixels values which are not too much
@@ -352,7 +354,7 @@ check if the value of a hot pixel must be changed (default 1.5).</li>
 
 <dl class="function">
 <dt id="utils.correct_map2d">
-<tt class="descclassname">utils.</tt><tt class="descname">correct_map2d</tt><big>(</big><em>map2d</em>, <em>bad_value=nan</em><big>)</big><a class="headerlink" href="#utils.correct_map2d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">correct_map2d</code><span class="sig-paren">(</span><em>map2d</em>, <em>bad_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.correct_map2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Correct a map of values by interpolation along columns.</p>
 <p>The bad value must be specified.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -372,7 +374,7 @@ np.nan).</li>
 
 <dl class="function">
 <dt id="utils.correct_vector">
-<tt class="descclassname">utils.</tt><tt class="descname">correct_vector</tt><big>(</big><em>vector</em>, <em>bad_value=nan</em>, <em>deg=3</em>, <em>polyfit=False</em><big>)</big><a class="headerlink" href="#utils.correct_vector" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">correct_vector</code><span class="sig-paren">(</span><em>vector</em>, <em>bad_value=nan</em>, <em>deg=3</em>, <em>polyfit=False</em>, <em>smoothing=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.correct_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Correct a given vector for non valid values by interpolation or
 polynomial fit.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -395,7 +397,7 @@ interpolation (default False)</li>
 
 <dl class="function">
 <dt id="utils.count_nonzeros">
-<tt class="descclassname">utils.</tt><tt class="descname">count_nonzeros</tt><big>(</big><em>a</em><big>)</big><a class="headerlink" href="#utils.count_nonzeros" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">count_nonzeros</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.count_nonzeros" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the length of nonzeros parts in a vector as a vector of
 the same length with the length of each part at each occurence of
 a nonzero number.</p>
@@ -412,7 +414,7 @@ a nonzero number.</p>
 
 <dl class="function">
 <dt id="utils.create_cm1_axis">
-<tt class="descclassname">utils.</tt><tt class="descname">create_cm1_axis</tt><big>(</big><em>n</em>, <em>step</em>, <em>order</em>, <em>corr=1.0</em><big>)</big><a class="headerlink" href="#utils.create_cm1_axis" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">create_cm1_axis</code><span class="sig-paren">(</span><em>n</em>, <em>step</em>, <em>order</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.create_cm1_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a regular wavenumber axis in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -432,7 +434,7 @@ a nonzero number.</p>
 
 <dl class="function">
 <dt id="utils.create_master_frame">
-<tt class="descclassname">utils.</tt><tt class="descname">create_master_frame</tt><big>(</big><em>frames</em>, <em>combine='average'</em>, <em>reject='avsigclip'</em>, <em>sigma=3.0</em>, <em>silent=False</em>, <em>check=True</em><big>)</big><a class="headerlink" href="#utils.create_master_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">create_master_frame</code><span class="sig-paren">(</span><em>frames</em>, <em>combine='average'</em>, <em>reject='avsigclip'</em>, <em>sigma=3.0</em>, <em>silent=False</em>, <em>check=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.create_master_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a master frame from a set a frames.</p>
 <p>This method has been inspired by the <strong>IRAF</strong> function
 combine.</p>
@@ -489,7 +491,7 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="utils.create_nm_axis">
-<tt class="descclassname">utils.</tt><tt class="descname">create_nm_axis</tt><big>(</big><em>n</em>, <em>step</em>, <em>order</em>, <em>nm_max=None</em>, <em>corr=1.0</em><big>)</big><a class="headerlink" href="#utils.create_nm_axis" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">create_nm_axis</code><span class="sig-paren">(</span><em>n</em>, <em>step</em>, <em>order</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.create_nm_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a regular wavelength axis in nm.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -498,25 +500,18 @@ than 3 frames.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.create_nm_axis.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.n">¶</a> &#8211; Number of steps on the axis</li>
 <li><span class="target" id="utils.create_nm_axis.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.step">¶</a> &#8211; Step size in nm</li>
-<li><span class="target" id="utils.create_nm_axis.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.order">¶</a> &#8211; Folding order</li>
-<li><span class="target" id="utils.create_nm_axis.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.nm_max">¶</a> &#8211; (Optional) Must be given if order is 0 (default None)</li>
+<li><span class="target" id="utils.create_nm_axis.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.order">¶</a> &#8211; Folding order (cannot be 0)</li>
 <li><span class="target" id="utils.create_nm_axis.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis.params.corr">¶</a> &#8211; (Optional) Coefficient of correction (default 1.)</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">If the order is equal to zero, nm_max (the maximum
-wavelength observed) must be specified because in cannot be
-defined using only the the step and order arguments.</p>
-</div>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.create_nm_axis_ireg">
-<tt class="descclassname">utils.</tt><tt class="descname">create_nm_axis_ireg</tt><big>(</big><em>n</em>, <em>step</em>, <em>order</em>, <em>nm_max=None</em>, <em>corr=1.0</em><big>)</big><a class="headerlink" href="#utils.create_nm_axis_ireg" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">create_nm_axis_ireg</code><span class="sig-paren">(</span><em>n</em>, <em>step</em>, <em>order</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.create_nm_axis_ireg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an irregular wavelength axis from the regular wavenumber
 axis in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -526,8 +521,7 @@ axis in cm-1.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.create_nm_axis_ireg.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.n">¶</a> &#8211; Number of steps on the axis</li>
 <li><span class="target" id="utils.create_nm_axis_ireg.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.step">¶</a> &#8211; Step size in nm</li>
-<li><span class="target" id="utils.create_nm_axis_ireg.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.order">¶</a> &#8211; Folding order</li>
-<li><span class="target" id="utils.create_nm_axis_ireg.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.nm_max">¶</a> &#8211; (Optional) Must be given if order is 0 (default None)</li>
+<li><span class="target" id="utils.create_nm_axis_ireg.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.order">¶</a> &#8211; Folding order (must be &gt; 0)</li>
 <li><span class="target" id="utils.create_nm_axis_ireg.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#utils.create_nm_axis_ireg.params.corr">¶</a> &#8211; (Optional) Coefficient of correction (default 1.)</li>
 </ul>
 </td>
@@ -538,7 +532,7 @@ axis in cm-1.</p>
 
 <dl class="function">
 <dt id="utils.cube_raw_fft">
-<tt class="descclassname">utils.</tt><tt class="descname">cube_raw_fft</tt><big>(</big><em>x</em>, <em>apod=None</em><big>)</big><a class="headerlink" href="#utils.cube_raw_fft" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">cube_raw_fft</code><span class="sig-paren">(</span><em>x</em>, <em>apod=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.cube_raw_fft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the raw FFT of a cube (the last axis
 beeing the interferogram axis)</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -548,7 +542,7 @@ beeing the interferogram axis)</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.cube_raw_fft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.cube_raw_fft.params.x">¶</a> &#8211; Interferogram cube</li>
 <li><span class="target" id="utils.cube_raw_fft.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#utils.cube_raw_fft.params.apod">¶</a> &#8211; (Optional) Apodization function used. See
-<a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><tt class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></tt></a> (default None)</li>
+<a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><code class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></code></a> (default None)</li>
 </ul>
 </td>
 </tr>
@@ -558,7 +552,7 @@ beeing the interferogram axis)</p>
 
 <dl class="function">
 <dt id="utils.fft_filter">
-<tt class="descclassname">utils.</tt><tt class="descname">fft_filter</tt><big>(</big><em>a</em>, <em>cutoff_coeff</em>, <em>width_coeff=0.2</em>, <em>filter_type='high_pass'</em><big>)</big><a class="headerlink" href="#utils.fft_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fft_filter</code><span class="sig-paren">(</span><em>a</em>, <em>cutoff_coeff</em>, <em>width_coeff=0.2</em>, <em>filter_type='high_pass'</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fft_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple lowpass or highpass FFT filter (high pass or low pass)</p>
 <p>Filter shape is a gaussian.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -583,7 +577,7 @@ length) (default 0.2)</li>
 
 <dl class="function">
 <dt id="utils.find_zpd">
-<tt class="descclassname">utils.</tt><tt class="descname">find_zpd</tt><big>(</big><em>interf</em>, <em>step_number=None</em>, <em>return_zpd_shift=False</em><big>)</big><a class="headerlink" href="#utils.find_zpd" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">find_zpd</code><span class="sig-paren">(</span><em>interf</em>, <em>step_number=None</em>, <em>return_zpd_shift=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.find_zpd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the ZPD along the z axis.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -604,7 +598,7 @@ instead of ZPD index (default False).</li>
 
 <dl class="function">
 <dt id="utils.fit_lines_in_vector">
-<tt class="descclassname">utils.</tt><tt class="descname">fit_lines_in_vector</tt><big>(</big><em>vector</em>, <em>lines</em>, <em>fwhm_guess=3.5</em>, <em>cont_guess=None</em>, <em>shift_guess=0.0</em>, <em>fix_cont=False</em>, <em>fix_fwhm=False</em>, <em>cov_fwhm=True</em>, <em>cov_pos=True</em>, <em>reguess_positions=False</em>, <em>return_fitted_vector=False</em>, <em>fit_tol=0.001</em>, <em>no_absorption=False</em>, <em>poly_order=0</em>, <em>fmodel='gaussian'</em>, <em>sig_noise=None</em>, <em>observation_params=None</em>, <em>signal_range=None</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fit_lines_in_vector</code><span class="sig-paren">(</span><em>vector</em>, <em>lines</em>, <em>fwhm_guess=3.5</em>, <em>cont_guess=None</em>, <em>shift_guess=0.0</em>, <em>fix_cont=False</em>, <em>fix_fwhm=False</em>, <em>cov_fwhm=True</em>, <em>cov_pos=True</em>, <em>reguess_positions=False</em>, <em>return_fitted_vector=False</em>, <em>fit_tol=0.001</em>, <em>no_absorption=False</em>, <em>poly_order=0</em>, <em>fmodel='gaussian'</em>, <em>sig_noise=None</em>, <em>observation_params=None</em>, <em>signal_range=None</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit multiple gaussian shaped emission lines in a spectrum vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -693,7 +687,7 @@ depending on the option return_fitted_vector.</li>
 
 <dl class="function">
 <dt id="utils.fit_map">
-<tt class="descclassname">utils.</tt><tt class="descname">fit_map</tt><big>(</big><em>data_map</em>, <em>err_map</em>, <em>smooth_deg</em><big>)</big><a class="headerlink" href="#utils.fit_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fit_map</code><span class="sig-paren">(</span><em>data_map</em>, <em>err_map</em>, <em>smooth_deg</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fit_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit map with low order polynomials</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -716,7 +710,7 @@ smoothing degrees)</li>
 
 <dl class="function">
 <dt id="utils.flambda2ABmag">
-<tt class="descclassname">utils.</tt><tt class="descname">flambda2ABmag</tt><big>(</big><em>flambda</em>, <em>lam</em><big>)</big><a class="headerlink" href="#utils.flambda2ABmag" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">flambda2ABmag</code><span class="sig-paren">(</span><em>flambda</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.flambda2ABmag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return AB magnitude from flux in erg/cm2/s/A</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -735,7 +729,7 @@ lambda must have the same shape.</li>
 
 <dl class="function">
 <dt id="utils.fnu2flambda">
-<tt class="descclassname">utils.</tt><tt class="descname">fnu2flambda</tt><big>(</big><em>fnu</em>, <em>nu</em><big>)</big><a class="headerlink" href="#utils.fnu2flambda" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fnu2flambda</code><span class="sig-paren">(</span><em>fnu</em>, <em>nu</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fnu2flambda" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a flux in erg/cm2/s/Hz to a flux in erg/cm2/s/A</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -753,7 +747,7 @@ lambda must have the same shape.</li>
 
 <dl class="function">
 <dt id="utils.fwhm_cm12nm">
-<tt class="descclassname">utils.</tt><tt class="descname">fwhm_cm12nm</tt><big>(</big><em>fwhm_cm1</em>, <em>cm1</em><big>)</big><a class="headerlink" href="#utils.fwhm_cm12nm" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fwhm_cm12nm</code><span class="sig-paren">(</span><em>fwhm_cm1</em>, <em>cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fwhm_cm12nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a FWHM in cm-1 to a FWHM in nm.</p>
 <p>The central wavelength in cm-1 of the line must also be given</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -772,7 +766,7 @@ lambda must have the same shape.</li>
 
 <dl class="function">
 <dt id="utils.fwhm_nm2cm1">
-<tt class="descclassname">utils.</tt><tt class="descname">fwhm_nm2cm1</tt><big>(</big><em>fwhm_nm</em>, <em>nm</em><big>)</big><a class="headerlink" href="#utils.fwhm_nm2cm1" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fwhm_nm2cm1</code><span class="sig-paren">(</span><em>fwhm_nm</em>, <em>nm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fwhm_nm2cm1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a FWHM in nm to a FWHM in cm-1.</p>
 <p>The central wavelength in nm of the line must also be given</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -791,7 +785,7 @@ lambda must have the same shape.</li>
 
 <dl class="function">
 <dt id="utils.gaussian1d">
-<tt class="descclassname">utils.</tt><tt class="descname">gaussian1d</tt><big>(</big><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em><big>)</big><a class="headerlink" href="#utils.gaussian1d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">gaussian1d</code><span class="sig-paren">(</span><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.gaussian1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 1D gaussian given a set of parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -812,7 +806,7 @@ lambda must have the same shape.</li>
 
 <dl class="function">
 <dt id="utils.get_axis_from_hdr">
-<tt class="descclassname">utils.</tt><tt class="descname">get_axis_from_hdr</tt><big>(</big><em>hdr</em>, <em>axis_index=1</em><big>)</big><a class="headerlink" href="#utils.get_axis_from_hdr" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_axis_from_hdr</code><span class="sig-paren">(</span><em>hdr</em>, <em>axis_index=1</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_axis_from_hdr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return axis from a classic FITS header</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -831,7 +825,7 @@ lambda must have the same shape.</li>
 
 <dl class="function">
 <dt id="utils.get_box_coords">
-<tt class="descclassname">utils.</tt><tt class="descname">get_box_coords</tt><big>(</big><em>ix</em>, <em>iy</em>, <em>box_size</em>, <em>x_lim_min</em>, <em>x_lim_max</em>, <em>y_lim_min</em>, <em>y_lim_max</em><big>)</big><a class="headerlink" href="#utils.get_box_coords" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_box_coords</code><span class="sig-paren">(</span><em>ix</em>, <em>iy</em>, <em>box_size</em>, <em>x_lim_min</em>, <em>x_lim_max</em>, <em>y_lim_min</em>, <em>y_lim_max</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_box_coords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the coordinates of a box given the center of the box,
 its size and the limits of the range along x and y axes.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -857,7 +851,7 @@ size of the box cannot be guaranteed.</li>
 
 <dl class="function">
 <dt id="utils.get_filter_edges_pix">
-<tt class="descclassname">utils.</tt><tt class="descname">get_filter_edges_pix</tt><big>(</big><em>filter_file_path</em>, <em>correction_factor</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>filter_min=None</em>, <em>filter_max=None</em><big>)</big><a class="headerlink" href="#utils.get_filter_edges_pix" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_filter_edges_pix</code><span class="sig-paren">(</span><em>filter_file_path</em>, <em>correction_factor</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>filter_min=None</em>, <em>filter_max=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_filter_edges_pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the position in pixels of the edges of a filter
 corrected for the off-axis effect.</p>
 <p>Note that the axis is assumed to be in wavenumber. Spectra are
@@ -886,13 +880,13 @@ filter_min and filter_max must be specified.</li>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#utils.read_filter_file" title="utils.read_filter_file"><tt class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></tt></a></p>
+<p class="last"><a class="reference internal" href="#utils.read_filter_file" title="utils.read_filter_file"><code class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></code></a></p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.get_filter_function">
-<tt class="descclassname">utils.</tt><tt class="descname">get_filter_function</tt><big>(</big><em>filter_file_path</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.get_filter_function" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_filter_function</code><span class="sig-paren">(</span><em>filter_file_path</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_filter_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a filter file and return its function interpolated over
 the desired number of points. Return also the edges position over
 its axis in pixels.</p>
@@ -919,13 +913,13 @@ and max edges are given in pixels over the interpolation axis.</p>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#utils.read_filter_file" title="utils.read_filter_file"><tt class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></tt></a></p>
+<p class="last"><a class="reference internal" href="#utils.read_filter_file" title="utils.read_filter_file"><code class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></code></a></p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.get_lr_phase">
-<tt class="descclassname">utils.</tt><tt class="descname">get_lr_phase</tt><big>(</big><em>interf</em>, <em>n_phase=None</em>, <em>return_lr_spectrum=False</em><big>)</big><a class="headerlink" href="#utils.get_lr_phase" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_lr_phase</code><span class="sig-paren">(</span><em>interf</em>, <em>n_phase=None</em>, <em>return_lr_spectrum=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_lr_phase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a low resolution phase from a given interferogram vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -948,7 +942,7 @@ resolution spectrum from which phase is computed (Default False).</li>
 
 <dl class="function">
 <dt id="utils.get_mask_from_ds9_region_file">
-<tt class="descclassname">utils.</tt><tt class="descname">get_mask_from_ds9_region_file</tt><big>(</big><em>reg_path</em>, <em>x_range=None</em>, <em>y_range=None</em><big>)</big><a class="headerlink" href="#utils.get_mask_from_ds9_region_file" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_mask_from_ds9_region_file</code><span class="sig-paren">(</span><em>reg_path</em>, <em>x_range=None</em>, <em>y_range=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_mask_from_ds9_region_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the indices of the elements inside &#8216;box&#8217;, &#8216;circle&#8217; and
 &#8216;polygon&#8217; regions.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -982,7 +976,7 @@ coordinates in degrees (ra, dec)</p>
 
 <dl class="function">
 <dt id="utils.get_mask_from_ds9_region_line">
-<tt class="descclassname">utils.</tt><tt class="descname">get_mask_from_ds9_region_line</tt><big>(</big><em>reg_line</em>, <em>x_range=None</em>, <em>y_range=None</em><big>)</big><a class="headerlink" href="#utils.get_mask_from_ds9_region_line" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_mask_from_ds9_region_line</code><span class="sig-paren">(</span><em>reg_line</em>, <em>x_range=None</em>, <em>y_range=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_mask_from_ds9_region_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read one line of a ds9 region file and return the list of
 pixels in the region.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1016,7 +1010,7 @@ coordinates in degrees (ra, dec)</p>
 
 <dl class="function">
 <dt id="utils.get_open_fds">
-<tt class="descclassname">utils.</tt><tt class="descname">get_open_fds</tt><big>(</big><big>)</big><a class="headerlink" href="#utils.get_open_fds" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">get_open_fds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#utils.get_open_fds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of open file descriptors</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -1030,7 +1024,7 @@ coordinates in degrees (ra, dec)</p>
 
 <dl class="function">
 <dt id="utils.high_pass_diff_image_filter">
-<tt class="descclassname">utils.</tt><tt class="descname">high_pass_diff_image_filter</tt><big>(</big><em>im</em>, <em>deg=1</em><big>)</big><a class="headerlink" href="#utils.high_pass_diff_image_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">high_pass_diff_image_filter</code><span class="sig-paren">(</span><em>im</em>, <em>deg=1</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.high_pass_diff_image_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a high pass filtered image using the method of low pass
 diffrence filtering given by Mighell (1999).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1050,7 +1044,7 @@ filter. Must be &gt; 0 (default 2).</li>
 
 <dl class="function">
 <dt id="utils.high_pass_image_filter">
-<tt class="descclassname">utils.</tt><tt class="descname">high_pass_image_filter</tt><big>(</big><em>im</em><big>)</big><a class="headerlink" href="#utils.high_pass_image_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">high_pass_image_filter</code><span class="sig-paren">(</span><em>im</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.high_pass_image_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a high pass filtered image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1064,13 +1058,13 @@ filter. Must be &gt; 0 (default 2).</li>
 
 <dl class="function">
 <dt id="utils.imag">
-<tt class="descclassname">utils.</tt><tt class="descname">imag</tt><big>(</big><em>amp</em>, <em>pha</em><big>)</big><a class="headerlink" href="#utils.imag" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">imag</code><span class="sig-paren">(</span><em>amp</em>, <em>pha</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.imag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the imaginary part from amplitude and phase</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.indft">
-<tt class="descclassname">utils.</tt><tt class="descname">indft</tt><big>(</big><em>a</em>, <em>x</em><big>)</big><a class="headerlink" href="#utils.indft" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">indft</code><span class="sig-paren">(</span><em>a</em>, <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.indft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inverse Non-uniform Discret Fourier Transform.</p>
 <p>Compute the irregularly sampled interferogram from a regularly
 sampled spectrum.</p>
@@ -1093,7 +1087,7 @@ compute. This vector may have any length.</li>
 
 <dl class="function">
 <dt id="utils.interf_mean_energy">
-<tt class="descclassname">utils.</tt><tt class="descname">interf_mean_energy</tt><big>(</big><em>interf</em><big>)</big><a class="headerlink" href="#utils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">interf_mean_energy</code><span class="sig-paren">(</span><em>interf</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean energy of an interferogram by step.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1109,7 +1103,7 @@ compute. This vector may have any length.</li>
 compute only the modulation energy. This is the modulation
 energy which must be conserved in the resulting spectrum. Note
 that the interferogram transformation function (see
-<a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>) remove the mean of the
+<a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></code></a>) remove the mean of the
 interferogram before computing its FFT.</p>
 </div>
 <div class="admonition note">
@@ -1120,7 +1114,7 @@ interferogram before computing its FFT.</p>
 
 <dl class="function">
 <dt id="utils.interpolate_axis">
-<tt class="descclassname">utils.</tt><tt class="descname">interpolate_axis</tt><big>(</big><em>a</em>, <em>new_axis</em>, <em>deg</em>, <em>old_axis=None</em>, <em>fill_value=nan</em><big>)</big><a class="headerlink" href="#utils.interpolate_axis" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">interpolate_axis</code><span class="sig-paren">(</span><em>a</em>, <em>new_axis</em>, <em>deg</em>, <em>old_axis=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.interpolate_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate a vector along a new axis.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1143,7 +1137,7 @@ this value (default np.nan)</li>
 
 <dl class="function">
 <dt id="utils.interpolate_map">
-<tt class="descclassname">utils.</tt><tt class="descname">interpolate_map</tt><big>(</big><em>m</em>, <em>dimx</em>, <em>dimy</em><big>)</big><a class="headerlink" href="#utils.interpolate_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">interpolate_map</code><span class="sig-paren">(</span><em>m</em>, <em>dimx</em>, <em>dimy</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.interpolate_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate 2D data map.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1162,7 +1156,7 @@ this value (default np.nan)</li>
 
 <dl class="function">
 <dt id="utils.interpolate_size">
-<tt class="descclassname">utils.</tt><tt class="descname">interpolate_size</tt><big>(</big><em>a</em>, <em>size</em>, <em>deg</em><big>)</big><a class="headerlink" href="#utils.interpolate_size" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">interpolate_size</code><span class="sig-paren">(</span><em>a</em>, <em>size</em>, <em>deg</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.interpolate_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Change size of a vector by interpolation</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1181,7 +1175,7 @@ this value (default np.nan)</li>
 
 <dl class="function">
 <dt id="utils.lambda2nu">
-<tt class="descclassname">utils.</tt><tt class="descname">lambda2nu</tt><big>(</big><em>lam</em><big>)</big><a class="headerlink" href="#utils.lambda2nu" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">lambda2nu</code><span class="sig-paren">(</span><em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.lambda2nu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert lambda in Ang to nu in Hz</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1195,7 +1189,7 @@ this value (default np.nan)</li>
 
 <dl class="function">
 <dt id="utils.learner95_window">
-<tt class="descclassname">utils.</tt><tt class="descname">learner95_window</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#utils.learner95_window" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">learner95_window</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.learner95_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the apodization function described in Learner et al.,
 J. Opt. Soc. Am. A, 12, (1995).</p>
 <p>This function is closely related to the minimum four-term
@@ -1213,7 +1207,7 @@ Blackman-Harris window.</p>
 
 <dl class="function">
 <dt id="utils.line_shift">
-<tt class="descclassname">utils.</tt><tt class="descname">line_shift</tt><big>(</big><em>velocity</em>, <em>line</em>, <em>wavenumber=False</em><big>)</big><a class="headerlink" href="#utils.line_shift" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">line_shift</code><span class="sig-paren">(</span><em>velocity</em>, <em>line</em>, <em>wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.line_shift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the line shift given its velocity in nm or in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1234,7 +1228,7 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="utils.low_pass_image_filter">
-<tt class="descclassname">utils.</tt><tt class="descname">low_pass_image_filter</tt><big>(</big><em>im</em>, <em>deg</em><big>)</big><a class="headerlink" href="#utils.low_pass_image_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">low_pass_image_filter</code><span class="sig-paren">(</span><em>im</em>, <em>deg</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.low_pass_image_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a low pass filtered image using a gaussian kernel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1252,7 +1246,7 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="utils.next_power_of_two">
-<tt class="descclassname">utils.</tt><tt class="descname">next_power_of_two</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#utils.next_power_of_two" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">next_power_of_two</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.next_power_of_two" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the next power of two greater than n.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1267,7 +1261,7 @@ computed. Can be an array of numbers.</td>
 
 <dl class="function">
 <dt id="utils.nm2cm1">
-<tt class="descclassname">utils.</tt><tt class="descname">nm2cm1</tt><big>(</big><em>nm</em><big>)</big><a class="headerlink" href="#utils.nm2cm1" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">nm2cm1</code><span class="sig-paren">(</span><em>nm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.nm2cm1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a wavelength in nm to a wavenumber in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1281,7 +1275,7 @@ computed. Can be an array of numbers.</td>
 
 <dl class="function">
 <dt id="utils.nm2pix">
-<tt class="descclassname">utils.</tt><tt class="descname">nm2pix</tt><big>(</big><em>nm_axis</em>, <em>nm</em><big>)</big><a class="headerlink" href="#utils.nm2pix" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">nm2pix</code><span class="sig-paren">(</span><em>nm_axis</em>, <em>nm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.nm2pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a wavelength in nm to a pixel position given an axis
 in nm</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1300,7 +1294,7 @@ in nm</p>
 
 <dl class="function">
 <dt id="utils.norton_beer_window">
-<tt class="descclassname">utils.</tt><tt class="descname">norton_beer_window</tt><big>(</big><em>fwhm='1.6'</em>, <em>n=1000</em><big>)</big><a class="headerlink" href="#utils.norton_beer_window" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">norton_beer_window</code><span class="sig-paren">(</span><em>fwhm='1.6'</em>, <em>n=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.norton_beer_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an extended Norton-Beer window function (see <a class="reference internal" href="#nay2007" id="id1">[NAY2007]</a>).</p>
 <p>Returned window is symmetrical.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1434,13 +1428,13 @@ Optical Society of America A.</td></tr>
 
 <dl class="function">
 <dt id="utils.phase">
-<tt class="descclassname">utils.</tt><tt class="descname">phase</tt><big>(</big><em>a</em><big>)</big><a class="headerlink" href="#utils.phase" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">phase</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.phase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the phase of a complex number</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.pix2cm1">
-<tt class="descclassname">utils.</tt><tt class="descname">pix2cm1</tt><big>(</big><em>cm1_axis</em>, <em>pix</em><big>)</big><a class="headerlink" href="#utils.pix2cm1" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">pix2cm1</code><span class="sig-paren">(</span><em>cm1_axis</em>, <em>pix</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.pix2cm1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a wavenumber in cm-1 to a pixel position given an axis
 in cm-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1459,7 +1453,7 @@ in cm-1.</p>
 
 <dl class="function">
 <dt id="utils.pix2nm">
-<tt class="descclassname">utils.</tt><tt class="descname">pix2nm</tt><big>(</big><em>nm_axis</em>, <em>pix</em><big>)</big><a class="headerlink" href="#utils.pix2nm" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">pix2nm</code><span class="sig-paren">(</span><em>nm_axis</em>, <em>pix</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.pix2nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a pixel position to a wavelength in nm given an axis
 in nm</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1478,7 +1472,7 @@ in nm</p>
 
 <dl class="function">
 <dt id="utils.polar_map2d">
-<tt class="descclassname">utils.</tt><tt class="descname">polar_map2d</tt><big>(</big><em>f</em>, <em>n</em>, <em>corner=False</em>, <em>circle=True</em><big>)</big><a class="headerlink" href="#utils.polar_map2d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">polar_map2d</code><span class="sig-paren">(</span><em>f</em>, <em>n</em>, <em>corner=False</em>, <em>circle=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.polar_map2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Map a function over a square matrix in polar coordinates. The
 origin is placed at the center of the map by default.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1502,7 +1496,7 @@ shape as the matrix (default True).</li>
 
 <dl class="function">
 <dt id="utils.polyfit1d">
-<tt class="descclassname">utils.</tt><tt class="descname">polyfit1d</tt><big>(</big><em>a</em>, <em>deg</em>, <em>w=None</em>, <em>return_coeffs=False</em><big>)</big><a class="headerlink" href="#utils.polyfit1d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">polyfit1d</code><span class="sig-paren">(</span><em>a</em>, <em>deg</em>, <em>w=None</em>, <em>return_coeffs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.polyfit1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a polynomial to a 1D vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1526,8 +1520,8 @@ None)</li>
 
 <dl class="function">
 <dt id="utils.pp_create_master_frame">
-<tt class="descclassname">utils.</tt><tt class="descname">pp_create_master_frame</tt><big>(</big><em>frames</em>, <em>combine='average'</em>, <em>reject='avsigclip'</em>, <em>sigma=3.0</em><big>)</big><a class="headerlink" href="#utils.pp_create_master_frame" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run a parallelized version of <a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><tt class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></tt></a>.</p>
+<code class="descclassname">utils.</code><code class="descname">pp_create_master_frame</code><span class="sig-paren">(</span><em>frames</em>, <em>combine='average'</em>, <em>reject='avsigclip'</em>, <em>sigma=3.0</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.pp_create_master_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a parallelized version of <a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><code class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></code></a>.</p>
 <p>Use it only for big data set because it can be much slower for a
 small data set (&lt; 500 x 500 x 10).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1549,13 +1543,13 @@ small data set (&lt; 500 x 500 x 10).</p>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><tt class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></tt></a></p>
+<p class="last"><a class="reference internal" href="#utils.create_master_frame" title="utils.create_master_frame"><code class="xref py py-meth docutils literal"><span class="pre">utils.create_master_frame()</span></code></a></p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.query_sesame">
-<tt class="descclassname">utils.</tt><tt class="descname">query_sesame</tt><big>(</big><em>object_name</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#utils.query_sesame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">query_sesame</code><span class="sig-paren">(</span><em>object_name</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.query_sesame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Query the SESAME Database to get RA/DEC given the name of an
 object.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1572,7 +1566,7 @@ object.</p>
 
 <dl class="function">
 <dt id="utils.raw_fft">
-<tt class="descclassname">utils.</tt><tt class="descname">raw_fft</tt><big>(</big><em>x</em>, <em>apod=None</em>, <em>inverse=False</em>, <em>return_complex=False</em>, <em>return_phase=False</em><big>)</big><a class="headerlink" href="#utils.raw_fft" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">raw_fft</code><span class="sig-paren">(</span><em>x</em>, <em>apod=None</em>, <em>inverse=False</em>, <em>return_complex=False</em>, <em>return_phase=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.raw_fft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the raw FFT of a vector.</p>
 <p>Return the absolute value of the complex vector by default.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1582,7 +1576,7 @@ object.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.raw_fft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.x">¶</a> &#8211; Interferogram.</li>
 <li><span class="target" id="utils.raw_fft.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.apod">¶</a> &#8211; (Optional) Apodization function used. See
-<a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><tt class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></tt></a> (default None)</li>
+<a class="reference internal" href="#utils.norton_beer_window" title="utils.norton_beer_window"><code class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></code></a> (default None)</li>
 <li><span class="target" id="utils.raw_fft.params.inverse"></span><strong>inverse</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.inverse">¶</a> &#8211; (Optional) If True compute the inverse FFT
 (default False).</li>
 <li><span class="target" id="utils.raw_fft.params.return_complex"></span><strong>return_complex</strong><a class="paramlink headerlink reference internal" href="#utils.raw_fft.params.return_complex">¶</a> &#8211; (Optional) If True, the complex vector is
@@ -1598,7 +1592,7 @@ returned.(default False)</li>
 
 <dl class="function">
 <dt id="utils.read_filter_file">
-<tt class="descclassname">utils.</tt><tt class="descname">read_filter_file</tt><big>(</big><em>filter_file_path</em><big>)</big><a class="headerlink" href="#utils.read_filter_file" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">read_filter_file</code><span class="sig-paren">(</span><em>filter_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.read_filter_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a file containing a the filter transmission function.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1638,19 +1632,19 @@ be specified using the keywords : FILTER_MIN and FILTER_MAX:</p>
 
 <dl class="function">
 <dt id="utils.real">
-<tt class="descclassname">utils.</tt><tt class="descname">real</tt><big>(</big><em>amp</em>, <em>pha</em><big>)</big><a class="headerlink" href="#utils.real" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">real</code><span class="sig-paren">(</span><em>amp</em>, <em>pha</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.real" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the real part from amplitude and phase</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.restore_error_settings">
-<tt class="descclassname">utils.</tt><tt class="descname">restore_error_settings</tt><big>(</big><em>old_settings</em><big>)</big><a class="headerlink" href="#utils.restore_error_settings" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">restore_error_settings</code><span class="sig-paren">(</span><em>old_settings</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.restore_error_settings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restore old floating point error settings of numpy.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="utils.robust_mean">
-<tt class="descclassname">utils.</tt><tt class="descname">robust_mean</tt><big>(</big><em>a</em>, <em>weights=None</em>, <em>warn=True</em><big>)</big><a class="headerlink" href="#utils.robust_mean" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">robust_mean</code><span class="sig-paren">(</span><em>a</em>, <em>weights=None</em>, <em>warn=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.robust_mean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the mean of a distribution even with NaN values</p>
 <p>This is based on bottleneck module. See:
 <a class="reference external" href="https://pypi.python.org/pypi/Bottleneck">https://pypi.python.org/pypi/Bottleneck</a></p>
@@ -1673,7 +1667,7 @@ length as a). If None, weights are all considered equal to 1
 
 <dl class="function">
 <dt id="utils.robust_median">
-<tt class="descclassname">utils.</tt><tt class="descname">robust_median</tt><big>(</big><em>a</em>, <em>warn=True</em><big>)</big><a class="headerlink" href="#utils.robust_median" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">robust_median</code><span class="sig-paren">(</span><em>a</em>, <em>warn=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.robust_median" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the median of a distribution (skip NaN values).</p>
 <p>This is based on bottleneck module. See:
 <a class="reference external" href="https://pypi.python.org/pypi/Bottleneck">https://pypi.python.org/pypi/Bottleneck</a></p>
@@ -1693,7 +1687,7 @@ length as a). If None, weights are all considered equal to 1
 
 <dl class="function">
 <dt id="utils.robust_std">
-<tt class="descclassname">utils.</tt><tt class="descname">robust_std</tt><big>(</big><em>a</em>, <em>warn=True</em><big>)</big><a class="headerlink" href="#utils.robust_std" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">robust_std</code><span class="sig-paren">(</span><em>a</em>, <em>warn=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.robust_std" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the std of a distribution even with NaN values</p>
 <p>This is based on bottleneck module. See:
 <a class="reference external" href="https://pypi.python.org/pypi/Bottleneck">https://pypi.python.org/pypi/Bottleneck</a></p>
@@ -1713,7 +1707,7 @@ length as a). If None, weights are all considered equal to 1
 
 <dl class="function">
 <dt id="utils.robust_sum">
-<tt class="descclassname">utils.</tt><tt class="descname">robust_sum</tt><big>(</big><em>a</em>, <em>warn=True</em><big>)</big><a class="headerlink" href="#utils.robust_sum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">robust_sum</code><span class="sig-paren">(</span><em>a</em>, <em>warn=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.robust_sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the sum of a distribution (skip NaN values)</p>
 <p>This is based on bottleneck module. See:
 <a class="reference external" href="https://pypi.python.org/pypi/Bottleneck">https://pypi.python.org/pypi/Bottleneck</a></p>
@@ -1733,7 +1727,7 @@ length as a). If None, weights are all considered equal to 1
 
 <dl class="function">
 <dt id="utils.shift_frame">
-<tt class="descclassname">utils.</tt><tt class="descname">shift_frame</tt><big>(</big><em>frame</em>, <em>dx</em>, <em>dy</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>order</em>, <em>fill_value=nan</em><big>)</big><a class="headerlink" href="#utils.shift_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">shift_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>dx</em>, <em>dy</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>order</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.shift_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a shifted frame wit the same dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1762,7 +1756,7 @@ stars use order 1 (linear interpolation).</p>
 
 <dl class="function">
 <dt id="utils.sigmacut">
-<tt class="descclassname">utils.</tt><tt class="descname">sigmacut</tt><big>(</big><em>x</em>, <em>sigma=3.0</em>, <em>min_values=3</em>, <em>central_value=None</em>, <em>warn=False</em>, <em>return_index_list=False</em><big>)</big><a class="headerlink" href="#utils.sigmacut" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">sigmacut</code><span class="sig-paren">(</span><em>x</em>, <em>sigma=3.0</em>, <em>min_values=3</em>, <em>central_value=None</em>, <em>warn=False</em>, <em>return_index_list=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.sigmacut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a distribution after a sigma cut rejection
 of the too deviant values.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1791,7 +1785,7 @@ rejected values is returned also (default False).</li>
 
 <dl class="function">
 <dt id="utils.sinc1d">
-<tt class="descclassname">utils.</tt><tt class="descname">sinc1d</tt><big>(</big><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em><big>)</big><a class="headerlink" href="#utils.sinc1d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">sinc1d</code><span class="sig-paren">(</span><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.sinc1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a 1D sinc 
 :param _sphinx_paramlinks_utils.sinc1d.x: Array giving the positions where the function is evaluated
 :param _sphinx_paramlinks_utils.sinc1d.h: Height
@@ -1802,7 +1796,7 @@ rejected values is returned also (default False).</li>
 
 <dl class="function">
 <dt id="utils.smooth">
-<tt class="descclassname">utils.</tt><tt class="descname">smooth</tt><big>(</big><em>a</em>, <em>deg=2</em>, <em>kind='gaussian'</em>, <em>keep_sides=True</em><big>)</big><a class="headerlink" href="#utils.smooth" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">smooth</code><span class="sig-paren">(</span><em>a</em>, <em>deg=2</em>, <em>kind='gaussian'</em>, <em>keep_sides=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.smooth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Smooth a given vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1834,7 +1828,7 @@ effect when convolving).</p>
 
 <dl class="function">
 <dt id="utils.spectrum_mean_energy">
-<tt class="descclassname">utils.</tt><tt class="descname">spectrum_mean_energy</tt><big>(</big><em>spectrum</em><big>)</big><a class="headerlink" href="#utils.spectrum_mean_energy" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">spectrum_mean_energy</code><span class="sig-paren">(</span><em>spectrum</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.spectrum_mean_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean energy of a spectrum by channel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1848,7 +1842,7 @@ effect when convolving).</p>
 
 <dl class="function">
 <dt id="utils.transform_frame">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_frame</tt><big>(</big><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em>, <em>fill_value=nan</em><big>)</big><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">transform_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform one frame or a part of it using transformation
 coefficients.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1878,7 +1872,7 @@ transformed (default None).</li>
 
 <dl class="function">
 <dt id="utils.transform_interferogram">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_interferogram</tt><big>(</big><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>nm_max=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>conserve_energy=False</em><big>)</big><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>conserve_energy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1890,7 +1884,9 @@ transformed (default None).</li>
 <li><span class="target" id="utils.transform_interferogram.params.calibration_coeff"></span><strong>calibration_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.calibration_coeff">¶</a> &#8211; Wavelength of the laser emission line
 corresponding to the computed interferogram.</li>
 <li><span class="target" id="utils.transform_interferogram.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
-<li><span class="target" id="utils.transform_interferogram.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.order">¶</a> &#8211; Folding order (can be 0 but nm_max must be specified).</li>
+<li><span class="target" id="utils.transform_interferogram.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.order">¶</a> &#8211; Folding order (if 0 the result cannot be projected
+on an axis in nm, i.e. wavenumber option is automatically set to
+True).</li>
 <li><span class="target" id="utils.transform_interferogram.params.window_type"></span><strong>window_type</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.window_type">¶</a> &#8211; Name of the apodization function.</li>
 <li><span class="target" id="utils.transform_interferogram.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.zpd_shift">¶</a> &#8211; Shift of the interferogram to center the ZPD.</li>
 <li><span class="target" id="utils.transform_interferogram.params.bad_frames_vector"></span><strong>bad_frames_vector</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.bad_frames_vector">¶</a> &#8211; (Optional) Mask-like vector containing
@@ -1907,8 +1903,6 @@ length (default None).</li>
 <li><span class="target" id="utils.transform_interferogram.params.ext_phase"></span><strong>ext_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.ext_phase">¶</a> &#8211; (Optional) External phase vector. If given this
 phase vector is used instead of a low-resolution one. It must be
 as long as the interferogram.</li>
-<li><span class="target" id="utils.transform_interferogram.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.nm_max">¶</a> &#8211; (Optional) Maximum wavelength of the spectrum. Must be
-specified if order is equal to 0 (default None).</li>
 <li><span class="target" id="utils.transform_interferogram.params.return_phase"></span><strong>return_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.return_phase">¶</a> &#8211; (Optional) If True, compute only the phase of
 the interferogram and return it. If polyfit_deg is &gt;= 0, return
 the coefficients of the fitted phase (default False). Note that
@@ -1962,13 +1956,13 @@ in the transformation (default False).</li>
 
 <dl class="function">
 <dt id="utils.transform_spectrum">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_spectrum</tt><big>(</big><em>spectrum</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>nm_max=None</em>, <em>ext_phase=None</em>, <em>return_complex=False</em>, <em>wavenumber=False</em>, <em>final_step_nb=None</em>, <em>sampling_vector=None</em><big>)</big><a class="headerlink" href="#utils.transform_spectrum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">transform_spectrum</code><span class="sig-paren">(</span><em>spectrum</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>ext_phase=None</em>, <em>return_complex=False</em>, <em>wavenumber=False</em>, <em>final_step_nb=None</em>, <em>sampling_vector=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform a spectrum into an interferogram.</p>
-<p>This function is the inverse of <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>.</p>
+<p>This function is the inverse of <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></code></a>.</p>
 <p>So that to get the initial interferogram, the same options used in
 transform interferogram must be passed to this function. The
 spectrum must also be the complex form (use return_complex option
-in <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a>)</p>
+in <a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></code></a>)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1979,18 +1973,17 @@ in <a class="reference internal" href="#utils.transform_interferogram" title="ut
 <li><span class="target" id="utils.transform_spectrum.params.calibration_coeff"></span><strong>calibration_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.calibration_coeff">¶</a> &#8211; Wavelength of the laser emission line
 corresponding to the computed interferogram.</li>
 <li><span class="target" id="utils.transform_spectrum.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.step">¶</a> &#8211; Step size of the moving mirror in nm.</li>
-<li><span class="target" id="utils.transform_spectrum.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.order">¶</a> &#8211; Folding order (can be 0 but nm_max must be specified).</li>
+<li><span class="target" id="utils.transform_spectrum.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.order">¶</a> &#8211; Folding order (can be 0 but the input must be in
+wavenumber).</li>
 <li><span class="target" id="utils.transform_spectrum.params.window_type"></span><strong>window_type</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.window_type">¶</a> &#8211; Name of the apodization function.</li>
 <li><span class="target" id="utils.transform_spectrum.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.zpd_shift">¶</a> &#8211; Shift of the interferogram to decenter the ZPD.</li>
-<li><span class="target" id="utils.transform_spectrum.params.nm_max"></span><strong>nm_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.nm_max">¶</a> &#8211; (Optional) Maximum wavelength of the spectrum. Must be
-specified if order is equal to 0 (default None).</li>
 <li><span class="target" id="utils.transform_spectrum.params.ext_phase"></span><strong>ext_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.ext_phase">¶</a> &#8211; (Optional) External phase vector. If given this
 phase vector is used in place of the original phase of the
 spectrum. Useful to add a phase to an interferogram. Note that
 this phase is intended to be used to inverse transform an
 already transformed interferogram. The computed phase correction
 can thus be used directly. As the phase vector given by
-<a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><tt class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></tt></a> is not reversed for
+<a class="reference internal" href="#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">utils.transform_interferogram()</span></code></a> is not reversed for
 even orders, it is reversed here in this function.</li>
 <li><span class="target" id="utils.transform_spectrum.params.return_complex"></span><strong>return_complex</strong><a class="paramlink headerlink reference internal" href="#utils.transform_spectrum.params.return_complex">¶</a> &#8211; (Optional) If True return a complex
 interferogram. Else return the real part of it (default False).</li>
@@ -2025,7 +2018,7 @@ vector must be equal to final_step_nb (default None).</p>
 
 <dl class="function">
 <dt id="utils.transform_star_position_A_to_B">
-<tt class="descclassname">utils.</tt><tt class="descname">transform_star_position_A_to_B</tt><big>(</big><em>star_list_A</em>, <em>params</em>, <em>rc</em>, <em>zoom_factor</em><big>)</big><a class="headerlink" href="#utils.transform_star_position_A_to_B" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">transform_star_position_A_to_B</code><span class="sig-paren">(</span><em>star_list_A</em>, <em>params</em>, <em>rc</em>, <em>zoom_factor</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_star_position_A_to_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform star positions in camera A to the same star position
 in camera B given the transformation parameters</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -2046,7 +2039,7 @@ in camera B given the transformation parameters</p>
 
 <dl class="function">
 <dt id="utils.variable_me">
-<tt class="descclassname">utils.</tt><tt class="descname">variable_me</tt><big>(</big><em>n</em>, <em>params</em><big>)</big><a class="headerlink" href="#utils.variable_me" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">variable_me</code><span class="sig-paren">(</span><em>n</em>, <em>params</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.variable_me" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a sinusoidal function representing a variable
 modulation efficiency.</p>
 <p>This function is used to correct for fringes.</p>
@@ -2072,7 +2065,7 @@ can be a single float or a vector of size n</td>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -2087,12 +2080,12 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li><a href="index.html">Orb 1.3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Thomas Martin (thomas.martin.1@ulaval.ca).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

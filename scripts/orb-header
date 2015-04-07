@@ -27,89 +27,94 @@
 # This script helps the user to manipulate the header of a frame. 
 
 import os, sys
+import orb.core
 from orb.core import Tools
-import getopt
+import argparse
+from argparse import ArgumentParser
 import warnings
 
 
-def usage(): 
-    print """usage: orb-header FITS_NAME
+def main(args):
     
-    Manipulate the header of a FITS file.
-
-     -p: Print header content
-     
-     -i INDEX: Change HDU index
-
-     -d KEYWORD: Delete keyword (Warning: File will be overwritten) 
-     """
-  
-    sys.exit(2)
-
-def main():
-
     warnings.filterwarnings(
                 'ignore', message='Overwriting existing file.*',
                 module='astropy.io.*')
 
     to = Tools(no_log=True)
 
-    print_header = False
-    hdu_index = 0
-    del_keyword = None
-    
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "pi:d:", [])
-        
-    except getopt.GetoptError, err:
-        print str(err)
-        usage()
 
-    if len(sys.argv) < 2: usage()
-
-    for opt, arg in opts:
-        
-        if opt in ('-i'):
-            try:
-                hdu_index = int(arg)
-            except Exception, e:
-                print ' > ERROR on given HDU index'
-                print e
-                sys.exit(2)
-            if hdu_index < 0:
-                print ' > ERROR: HDU index must be > 0'
-                sys.exit(2)
-                
-        if opt in ('-p'):
-            print_header = True
-
-
-        if opt in ('-d'):
-            del_keyword = arg
-
-    fits_path = str(args[0])
-
-    if os.path.exists(fits_path):
-        hdulist = to.read_fits(fits_path, return_hdu_only=True,
-                               fix_header=False)
-        if hdu_index + 1 > len(hdulist):
-            print ' > ERROR: given HDU index is too high, file only contains {} HDU'.format(len(hdulist))
-            hdulist.info()
-            sys.exit(2)
+    if os.path.isfile(args.fits_path):
+        if not 'fits' in args.fits_path:
+            with open(args.fits_path, 'r') as f:
+                fits_list = [filename for filename in f]
+                fits_list = to.sort_image_list(fits_list, 'spiomm')
+        else:
+            fits_list = [args.fits_path]
             
-        hdu = hdulist[hdu_index]
-        if print_header:
-            print repr(hdu.header)
-        elif del_keyword is not None:
-            if del_keyword in hdu.header:
-                del hdu.header[del_keyword]
-                hdulist.writeto(fits_path, clobber=True)
-            else:
-                print ' > ERROR: keyword {} does not exist'.format(del_keyword)
-        else: hdulist.info()
             
+        for fits_path in fits_list:
+
+            hdulist = to.read_fits(fits_path, return_hdu_only=True,
+                                   fix_header=False)
+
+            if args.hdu_index + 1 > len(hdulist):
+                print ' > ERROR: given HDU index is too high, file only contains {} HDU'.format(len(hdulist))
+                hdulist.info()
+                sys.exit(2)
+
+            hdu = hdulist[args.hdu_index]
+            if args.subparser_name == 'print':
+                print repr(hdu.header)
+            elif args.subparser_name == 'key':
+                if args.keyword in hdu.header:
+                    print hdu.header[args.keyword]
+                else:
+                    print ' > ERROR: keyword {} does not exist.'.format(
+                        args.keyword)
+            elif args.subparser_name == 'del':
+                if args.keyword in hdu.header:
+                    del hdu.header[args.keyword]
+                    hdulist.writeto(fits_path, clobber=True)
+                else:
+                    print ' > ERROR: keyword {} does not exist.'.format(
+                        args.keyword)
+            elif args.subparser_name == 'info':
+                hdulist.info()
+        
     else:
-        print "The file does not exist"
+        print " > ERROR: File {} does not exist.".format(args.fits_path)
        
 if __name__ == "__main__":
-    main()
+
+    parser = ArgumentParser(version=('ORB-version {}'.format(
+                              orb.core.__version__)),
+                            description=
+                            "Manipulate the header of a FITS file.")
+
+
+    parser.add_argument('-i', dest="hdu_index", default=0, type=int,
+                        help="Change HDU index")
+
+    subparsers = parser.add_subparsers(help='operation type', dest='subparser_name')
+
+    parser_print = subparsers.add_parser('print', help='Print header content')
+
+    parser_key = subparsers.add_parser('key', help='Print key value')
+
+    parser_key.add_argument('keyword', help='Keyword to print')
+
+    parser_del = subparsers.add_parser('del', help='Delete keyword (Warning: File will be overwritten)')
+    
+    parser_del.add_argument('keyword', help='Keyword to delete')
+
+    parser_del = subparsers.add_parser('info', help='Print basic header info')
+
+    parser.add_argument('fits_path', help='Path to the FITS file')
+
+    if len(sys.argv) < 2:
+        parser.print_usage()
+        sys.exit(2)
+        
+    args=parser.parse_args()
+    
+    main(args)

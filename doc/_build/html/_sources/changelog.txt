@@ -325,3 +325,40 @@ Miscellaneous
   list. It is now able to filter SITELLE files to get only the
   'object', 'dark' or 'flat' type files.
 
+v1.3.2
+======
+
+* :py:meth:`~core.Tools._read_sitelle_chip` : bias is now computed on
+  half of the overscan part, because the pixel on the very border of
+  the overscan have a bad value.
+
+* order 0: all functions in :py:mod:`~utils` which need the order
+  parameter have been modified to accept order 0 only when possible
+  (e.g. :py:meth:`~utils.transform_interferogram` cannot give an
+  output in nm at order 0). If the order 0 is not possible, those
+  functions raise an Exception.
+
+* :py:meth:`~cutils.map_me` added to map the modulation efficiency on
+  a laser frame.
+
+* :py:meth:`~astrometry.aperture_photometry` has been made more robust
+  to NaNs
+
+* config files updated for SpIOMM and SITELLE.
+
+scripts
+-------
+
+* **orb-aligner**: graphical inteface created to help in
+  manually align images if needed.
+
+* **orb-bin**: script made to bin images.
+
+
+
+* **orb-header** changed a lot to manage list of files and output list
+  of keyword values.
+
+* **orb-viewer** updated to manage SITELLE's files better
+
+

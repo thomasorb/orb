@@ -52,6 +52,9 @@ PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
 MOFFAT_BETA 3.5 # default beta parameter for the Moffat PSF
 DETECT_STACK 5 # Number of frames to combine for star detection
 
+## Detectors parameters
+SATURATION_THRESHOLD 65000
+
 # Calibrated activation energy of the dark frames.  Used to correct
 # for varying dark level of the camera 2 of SpIOMM. Used only if
 # OPTIM_DARK_CAM2 is not 0.

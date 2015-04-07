@@ -37,4 +37,5 @@ LIGHT_VEL_KMS = 299792.458
 # Max length of a FITS string card
 FITS_CARD_MAX_STR_LENGTH = 18
 
+# Sesame URL
 SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/NSV?"

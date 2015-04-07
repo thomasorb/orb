@@ -1368,10 +1368,10 @@ class Astrometry(Tools):
                 star_list = self.star_list
 
             # follow FWHM variations
-            if ik > FOLLOW_NB - 1:
+            if ik > FOLLOW_NB - 1 and not no_fit:
                 fwhm_mean = utils.robust_median(
                     [utils.robust_mean(utils.sigmacut(
-                        self.fit_results[:,ik-ifol-1,'fwhm']))
+                        self.fit_results[:,ik-ifol-1,'fwhm_pix']))
                      for ifol in np.arange(FOLLOW_NB)])
                 
                 if np.isnan(fwhm_mean):
@@ -2597,8 +2597,9 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
       None, star is assumed to lie at the very center of the frame
       (default None).
 
-    :return: A Tuple (flux, aperture surface, bad). If bad estimation:
-      bad set to 1, else bad set to 0.
+    :return: A Tuple (flux, flux_error, aperture surface,
+      bad_estimation_flag). If the estimation is bad,
+      bad_estimation_flat is set to 1, else it is set to 0.
     
     .. note:: Best aperture for maximum S/N: 1. FWHM (Howell 1989,
       Howell 1992). But that works only when the PSF is well sampled
@@ -2653,9 +2654,17 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     aperture_surface = cutils.surface_value(box_dimx, box_dimy,
                                             x_guess, y_guess,
                                             0., aper_rmax, SUR_VAL_COEFF)
-    total_aperture = np.sum(star_box * aperture_surface)
-
-    if np.sum(aperture_surface) < MIN_APER_SIZE:
+    
+    aperture_surface[np.nonzero(np.isnan(star_box))] = 0.
+    aperture = star_box * aperture_surface
+    total_aperture = np.nansum(aperture)
+    
+    # compute number of nans
+    aperture[np.nonzero(aperture_surface == 0.)] = 0.
+    aperture_nan_nb = np.sum(np.isnan(aperture))
+    
+    
+    if np.nansum(aperture_surface) < MIN_APER_SIZE:
         if warn:
             Tools()._print_warning(
                 'Not enough pixels in the aperture')
@@ -2688,7 +2697,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
 
         # background in counts / pixel
         if (np.sum(annulus) >
-            float(MIN_BACK_COEFF) *  np.sum(aperture_surface)):
+            float(MIN_BACK_COEFF) *  np.nansum(aperture_surface)):
             background_pixels = star_box[np.nonzero(annulus)]
             # background level is computed from the mode of the sky
             # pixels distribution
@@ -2709,10 +2718,10 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
         background = background_guess
         background_err = background_guess_err
 
-    aperture_flux = total_aperture - (background *  np.sum(aperture_surface))
-    aperture_flux_error = background_err * np.sum(aperture_surface)
-    
-    return aperture_flux, aperture_flux_error, np.sum(aperture_surface), bad
+    aperture_flux = total_aperture - (background *  np.nansum(aperture_surface))
+    aperture_flux_error = background_err * np.nansum(aperture_surface)
+
+    return aperture_flux, aperture_flux_error, np.nansum(aperture_surface), bad
 
 
 def fit_stars_in_frame(frame, star_list, box_size,

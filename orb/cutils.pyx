@@ -41,6 +41,7 @@ cimport numpy as np
 import time
 import scipy.ndimage.filters
 import scipy.optimize
+import scipy.interpolate
 
 import bottleneck as bn # https://pypi.python.org/pypi/Bottleneck
 from cpython cimport bool
@@ -1470,12 +1471,16 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                                          cov_p, cov_p_mask)
     
     ### FIT ###
-    fit = scipy.optimize.leastsq(diff, free_p,
-                                 args=(fixed_p, stars_p_mask, cov_p_mask,
-                                       np.copy(frame), box_size, star_nb,
-                                       noise_guess, dcl, saturation),
-                                 maxfev=500, full_output=True,
-                                 xtol=fit_tol)
+    try:
+        fit = scipy.optimize.leastsq(diff, free_p,
+                                     args=(fixed_p, stars_p_mask, cov_p_mask,
+                                           np.copy(frame), box_size, star_nb,
+                                           noise_guess, dcl, saturation),
+                                     maxfev=500, full_output=True,
+                                     xtol=fit_tol)
+    except Exception, e:
+        print 'Exception raised during least square fit of cutils.multi_fit_stars:', e
+        fit = [5]
 
     ### CHECK FIT RESULTS ###
     if fit[-1] <= 4:
@@ -1598,6 +1603,8 @@ def indft(np.ndarray[np.float64_t, ndim=1] a,
     cdef int N = a.shape[0]
     cdef int M = x.shape[0]
     cdef float angle = 0.
+    cdef int m, n
+    
     f = np.zeros(M, dtype=complex)
     cdef np.ndarray[np.float64_t, ndim=1] freal = np.zeros(M, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] fimag = np.zeros(M, dtype=float)
@@ -1613,3 +1620,41 @@ def indft(np.ndarray[np.float64_t, ndim=1] a,
 
 
           
+def map_me(np.ndarray[np.float64_t, ndim=2] frame):
+    """Create a map of the modulation efficiency from a laser frame.
+
+    The more fringes the best are the results.
+
+    :param frame: laser frame.
+    """
+
+    cdef np.ndarray[np.float64_t, ndim=2] me = np.empty_like(frame)
+    cdef np.ndarray[np.float64_t, ndim=1] icol = np.empty(frame.shape[1],
+                                                          dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] sign = np.empty_like(icol)
+    cdef np.ndarray[np.float64_t, ndim=1] diff = np.empty(frame.shape[1] - 1,
+                                                          dtype=np.float64)
+    
+    cdef int ii, ij, imin, imax
+    cdef double vmin, vmax
+    
+    me.fill(np.nan)
+    
+    for ii in range(frame.shape[0]):
+        icol = frame[ii,:]
+        sign = np.sign(np.gradient(icol))
+        diff = np.diff(sign)
+        nans = diff[np.nonzero(np.isnan(diff))] = 0
+        maxs = np.nonzero(np.abs(diff) > 0)[0]
+        
+        maxs = np.concatenate([maxs, np.array([frame.shape[1]-1])])
+
+        for ij in range(maxs.shape[0] - 1):
+            imin = maxs[ij]
+            imax = maxs[ij+1]
+            vmin = np.nanmin(icol[imin:imax])
+            vmax = np.nanmax(icol[imin:imax])
+            if vmax != 0.:
+                me[ii, imin:imax] = (vmax-vmin)/vmax
+        
+    return me

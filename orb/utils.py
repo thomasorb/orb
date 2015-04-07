@@ -62,7 +62,7 @@ def query_sesame(object_name, verbose=True):
     :returns: [RA, DEC]
     """
     if verbose:
-        Tools()._print_msg("asking data from CDS server for : " + object_name)
+        print "asking data from CDS server for : " + object_name
     words = object_name.split()
     object_name = words[0]
     if (len(words) > 1):
@@ -79,8 +79,8 @@ def query_sesame(object_name, verbose=True):
         return []
     [ra, dec] = object_position.split()
     if verbose:
-        Tools()._print_msg("{} RA: {}".format(object_name, ra))
-        Tools()._print_msg("{} DEC: {}".format(object_name, dec))
+        print "{} RA: {}".format(object_name, ra)
+        print "{} DEC: {}".format(object_name, dec)
     ra = ra.split(":")
     dec = dec.split(":")
     return ra, dec
@@ -194,7 +194,7 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
     y_list = list()
 
     if len(reg_line) <= 3:
-        Tools._print_warning('Bad region line')
+        warnings.warn('Bad region line')
         return None
         
     if reg_line[:3] == 'box':
@@ -208,7 +208,7 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
         if ',' in reg_line:
             box_coords = np.array(reg_line.split(","), dtype=float)
         else:
-            Tools()._print_error('Bad coordinates, check if coordinates are in pixels')
+            raise Exception('Bad coordinates, check if coordinates are in pixels')
 
         x_min = round(box_coords[0] - (box_coords[2] / 2.) - 1.5)
         x_max = round(box_coords[0] + (box_coords[2] / 2.) + .5)
@@ -307,7 +307,7 @@ def get_mask_from_ds9_region_file(reg_path, x_range=None,
     .. note:: Coordinates can be image coordinates (x,y) or sky
         coordinates in degrees (ra, dec)
     """
-    f = Tools().open_file(reg_path, 'r')
+    f = open(reg_path, 'r')
     x_list = list()
     y_list = list()
                     
@@ -515,17 +515,18 @@ def find_zpd(interf, step_number=None,
         np.nonzero(interf == 0)] = np.median(interf)
 
     # filtering vector to remove low and high frequency patterns (e.g. sunrise)
-    interf = fft_filter(interf, 0.3, filter_type='high_pass')
     interf = fft_filter(interf, 0.5, filter_type='low_pass')
+    interf = fft_filter(interf, 0.3, filter_type='high_pass')
     
     full_interf = np.zeros(dimz, dtype=float)
     full_interf[:interf.shape[0]] = interf
     
     # vector is weighted so that the center part is prefered
-    full_interf *= norton_beer_window(fwhm='2.0', n=dimz)
+    full_interf *= norton_beer_window(fwhm='1.5', n=dimz)
+    
     # absolute value of the vector
     full_interf = np.sqrt(full_interf**2.)
-
+    
     # ZPD is defined to be at the maximum of the vector
     zpd_index = np.argmax(full_interf)
 
@@ -588,7 +589,7 @@ def robust_mean(a, weights=None, warn=True):
         result = cutils.robust_average(a, weights)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        Tools()._print_warning('Only NaN values found in the given array')
+        warnings.warn('Only NaN values found in the given array')
         
     return result
 
@@ -608,7 +609,7 @@ def robust_std(a, warn=True):
     result = cutils.robust_std(a)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        Tools()._print_warning('Only NaN values found in the given array')
+        warnings.warn('Only NaN values found in the given array')
         
     return result
 
@@ -628,7 +629,7 @@ def robust_sum(a, warn=True):
     result = cutils.robust_sum(a)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        Tools()._print_warning('Only NaN values found in the given array')
+        warnings.warn('Only NaN values found in the given array')
         
     return result
 
@@ -648,7 +649,7 @@ def robust_median(a, warn=True):
     result = cutils.robust_median(a)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        Tools()._print_warning('Only NaN values found in the given array')
+        warnings.warn('Only NaN values found in the given array')
         
     return result
 
@@ -683,7 +684,7 @@ def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False,
 
     if np.size(x) <= min_values:
         if warn:
-            Tools()._print_warning("No sigma-cut done because the number of values (%d) is too low"%np.size(x))
+            warnings.warn("No sigma-cut done because the number of values (%d) is too low"%np.size(x))
         return x
         
     return cutils.sigmacut(np.array(x).astype(float).flatten(), central_value,
@@ -733,7 +734,6 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
         result[divs[ijob]:divs[ijob+1],:] = job()
         
     to._close_pp_server(job_server)
-    
     return result
 
 
@@ -754,9 +754,9 @@ def check_frames(frames, sigma_reject=2.5):
     bad_frames = (z_median > (robust_median(z_median_cut)
                          + sigma_reject * robust_std(z_median_cut)))
     if np.any(bad_frames):
-        Tools()._print_warning('Some frames (%d) appear to be much different from the others. They have been removed before being combined. Please check the frames.'%np.sum(bad_frames))
-        Tools()._print_msg('Median levels: %s'%str(z_median))
-        Tools()._print_msg('Rejected: %s'%str(bad_frames))
+        warnings.warn('Some frames (%d) appear to be much different from the others. They have been removed before being combined. Please check the frames.'%np.sum(bad_frames))
+        print 'Median levels: %s'%str(z_median)
+        print 'Rejected: %s'%str(bad_frames)
         frames = np.dstack([frames[:,:,iframe]
                             for iframe in range(frames.shape[2])
                             if not bad_frames[iframe]])
@@ -819,24 +819,24 @@ def create_master_frame(frames, combine='average', reject='avsigclip',
     frames = np.array(frames)
 
     if len(frames.shape) == 2: # only one image
-        if not silent: Tools()._print_warning("Only one image to create a master frame. No combining method can be used.")
+        if not silent: warnings.warn("Only one image to create a master frame. No combining method can be used.")
         return frames
 
     if frames.shape[2] < 3:
         if frames.shape[2] == 1:
-            Tools()._print_warning("Only one image to create a master frame. No combining method can be used.")
+            warnings.warn("Only one image to create a master frame. No combining method can be used.")
             return np.squeeze(frames)
         
-        if not silent: Tools()._print_warning("Not enough frames to use a rejection method (%d < 3)"%frames.shape[2])
+        if not silent: warnings.warn("Not enough frames to use a rejection method (%d < 3)"%frames.shape[2])
         reject = None
 
     if reject not in ['sigclip', 'minmax', 'avsigclip']:
-        Tools()._print_error("Rejection operation must be 'sigclip', 'minmax' or None")
+        raise Exception("Rejection operation must be 'sigclip', 'minmax' or None")
     if combine not in ['median', 'average']:
-        Tools()._print_error("Combining operation must be 'average' or 'median'")
+        raise Exception("Combining operation must be 'average' or 'median'")
 
-    if not silent: Tools()._print_msg("Rejection operation: %s"%reject)
-    if not silent: Tools()._print_msg("Combining operation: %s"%combine)
+    if not silent: print "Rejection operation: %s"%reject
+    if not silent: print "Combining operation: %s"%combine
 
     if reject == 'avsigclip':
         reject_mode = 0
@@ -857,11 +857,11 @@ def create_master_frame(frames, combine='average', reject='avsigclip',
         frames, sigma, NKEEP, combine_mode, reject_mode, return_std_frame=True)
 
     if reject in ['sigclip', 'avsigclip']:
-        if not silent: Tools()._print_msg("Maximum number of rejected pixels: %d"%np.max(reject_count_frame))
-        if not silent: Tools()._print_msg("Mean number of rejected pixels: %f"%np.mean(reject_count_frame))
+        if not silent: print "Maximum number of rejected pixels: %d"%np.max(reject_count_frame)
+        if not silent: print "Mean number of rejected pixels: %f"%np.mean(reject_count_frame)
 
-    Tools()._print_msg("median std of combined frames: {}".format(
-        robust_median(std_frame)))
+    print "median std of combined frames: {}".format(
+        robust_median(std_frame))
     
     return master
 
@@ -994,7 +994,7 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
     else:
         smoothed_a = np.copy(a)
         for ii in range(a.shape[0]):
-            weights = np.copy(kernel)
+            if (kind=="gaussian"): weights = np.copy(kernel)
             x_min = ii-deg
             if x_min < 0:
                 if (kind=="gaussian"):
@@ -1013,7 +1013,7 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
                 smoothed_a[ii] = np.mean(box) 
             elif (kind=="gaussian"):
                 smoothed_a[ii] = np.average(box, weights=weights)
-            else: Tools()._print_error("kind parameter must be 'median', 'mean', 'gaussian', 'gaussian_conv' or 'cos_conv'")
+            else: raise Exception("kind parameter must be 'median', 'mean', 'gaussian', 'gaussian_conv' or 'cos_conv'")
     if keep_sides:
         return smoothed_a[deg:-deg]
     else:
@@ -1021,7 +1021,7 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
 
 
 def correct_vector(vector, bad_value=np.nan, deg=3,
-                   polyfit=False):
+                   polyfit=False, smoothing=True):
     """Correct a given vector for non valid values by interpolation or
     polynomial fit.
 
@@ -1040,24 +1040,42 @@ def correct_vector(vector, bad_value=np.nan, deg=3,
     vector = vector.astype(float)
     if not np.isnan(bad_value):
         vector[np.nonzero(vector == bad_value)] = np.nan
-        
+
     if np.all(np.isnan(vector)):
-        Tools()._print_error("The given vector has only bad values")
+        raise Exception("The given vector has only bad values")
+
+    # vector used to fit is smoothed
+    if smoothing:
+        smooth_vector = smooth(vector, deg=5)
+    else: smooth_vector = np.copy(vector)
 
     # create vectors containing only valid values for interpolation
-    x = np.arange(n)[np.nonzero(~np.isnan(vector))]
-    new_vector = vector[np.nonzero(~np.isnan(vector))]
+    x = np.arange(n)[np.nonzero(~np.isnan(smooth_vector))]
+    new_vector = vector[np.nonzero(~np.isnan(smooth_vector))]
  
     if not polyfit:
         finterp = interpolate.UnivariateSpline(x, new_vector, k=deg, s=0)
-        return finterp(np.arange(n))
+        result = finterp(np.arange(n))
     else:
         coeffs = np.polynomial.polynomial.polyfit(
             x, new_vector, deg, w=None, full=True)
         fit = np.polynomial.polynomial.polyval(
             np.arange(n), coeffs[0])
-        vector[np.nonzero(np.isnan(vector))] = fit[np.nonzero(np.isnan(vector))]
-        return vector
+        result = np.copy(vector)
+        result[np.nonzero(np.isnan(vector))] = fit[np.nonzero(np.isnan(vector))]
+
+    # borders around the corrected points are smoothed
+    if smoothing:
+        zeros_vector = np.zeros_like(result)
+        zeros_vector[np.nonzero(np.isnan(vector))] = 1.
+        zeros_vector = smooth(zeros_vector, deg=10,
+                              kind='cos_conv')
+        zeros_vector[np.nonzero(np.isnan(vector))] = 1.
+        
+        vector[np.nonzero(np.isnan(vector))] = 0.
+        result = result*zeros_vector + vector*(1.-zeros_vector)
+        
+    return result
     
 
 def read_filter_file(filter_file_path):
@@ -1090,7 +1108,7 @@ def read_filter_file(filter_file_path):
         999.2000122 0.002538740868
 
     """
-    filter_file = Tools().open_file(filter_file_path, 'r')
+    filter_file = open(filter_file_path, 'r')
     filter_trans_list = list()
     filter_nm_list = list()
     filter_min = None
@@ -1149,7 +1167,7 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
         (filter_nm, filter_trans,
          filter_min, filter_max) = read_filter_file(filter_file_path)
     elif (filter_min is None or filter_max is None):
-        Tools()._print_error("filter_min and filter_max must be specified if filter_file_path is None")
+        raise Exception("filter_min and filter_max must be specified if filter_file_path is None")
     
     nm_axis_ireg = create_nm_axis_ireg(n, step, order,
                                        corr=correction_factor)
@@ -1233,9 +1251,9 @@ def get_filter_function(filter_file_path, step, order, n,
         ok_values = np.nonzero(filter_function > filter_threshold)
         filter_min = np.min(ok_values)
         filter_max = np.max(ok_values)
-        Tools()._print_warning("Filter edges (%f -- %f nm) determined automatically using a threshold of %f %% transmission coefficient"%(f_axis(filter_min), f_axis(filter_max), filter_threshold*100.))
+        warnings.warn("Filter edges (%f -- %f nm) determined automatically using a threshold of %f %% transmission coefficient"%(f_axis(filter_min), f_axis(filter_max), filter_threshold*100.))
     else:
-        Tools()._print_msg("Filter edges read from filter file: %f -- %f"%(filter_min, filter_max))
+        print "Filter edges read from filter file: %f -- %f"%(filter_min, filter_max)
         # filter edges converted to index of the filter vector
         filter_min = int(fpix_axis(filter_min))
         filter_max = int(fpix_axis(filter_max))
@@ -1507,9 +1525,9 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                     pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
                     lines_p[iline, 2])
             elif fmodel == 'sinc2':
-               mod += np.sqrt(sinc1d(
-                   pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
-                   lines_p[iline, 2])**2.)
+                mod += np.sqrt(sinc1d(
+                    pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
+                    lines_p[iline, 2])**2.)
             else:
                 mod += gaussian1d(
                     pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
@@ -1562,7 +1580,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     
     if np.any(np.iscomplex(x)):
         x = x.real
-        Tools()._print_warning(
+        warnings.warn(
             'Complex vector. Only the real part will be fitted')
 
     lines = np.array(lines, dtype=float)
@@ -1659,7 +1677,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     # polynomial guess of the continuum
     if (cont_guess is None) or (np.size(cont_guess) != poly_order + 1):
         if (cont_guess is not None) and np.size(cont_guess) != poly_order + 1:
-            Tools()._print_warning('Bad continuum guess shape')
+            warnings.warn('Bad continuum guess shape')
         if poly_order > 0:
             w = np.ones_like(noise_vector)
             nans = np.nonzero(np.isnan(noise_vector))
@@ -1687,7 +1705,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
 
     if np.size(cov_pos) > 1:
         if np.size(cov_pos) != lines_nb:
-            Tools()._print_error('If cov_pos is not True or False it must be a tuple of the same length as the lines number')
+            raise Exception('If cov_pos is not True or False it must be a tuple of the same length as the lines number')
         cov_pos_list = list()
         cov_pos_mask_list = list()
         for i in cov_pos:
@@ -2035,10 +2053,10 @@ def low_pass_image_filter(im, deg):
     :param deg: Radius of the kernel. Must be > 0.
     """
     if not deg > 0:
-        Tools()._print_error('Kernel degree must be > 0')
+        raise Exception('Kernel degree must be > 0')
 
     if 2 * deg >= max(im.shape):
-        Tools()._print_error('Kernel degree is too high given the image size')
+        raise Exception('Kernel degree is too high given the image size')
 
     return cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
@@ -2062,16 +2080,16 @@ def fft_filter(a, cutoff_coeff, width_coeff=0.2, filter_type='high_pass'):
       'high_pass' or 'low_pass'.
     """
     if cutoff_coeff < 0. or cutoff_coeff > 1.:
-        Tools()._print_error('cutoff_coeff must be between 0. and 1.')
+        raise Exception('cutoff_coeff must be between 0. and 1.')
     if width_coeff < 0. or width_coeff > 1.:
-        Tools()._print_error('width_coeff must be between 0. and 1.')
+        raise Exception('width_coeff must be between 0. and 1.')
         
     if filter_type == 'low_pass':
         lowpass = True
     elif filter_type == 'high_pass':
         lowpass = False
     else:
-        Tools()._print_error(
+        raise Exception(
             "Bad filter type. Must be 'low_pass' or 'high_pass'")
     
     return cutils.fft_filter(a, cutoff_coeff, width_coeff, lowpass)
@@ -2114,8 +2132,8 @@ def raw_fft(x, apod=None, inverse=False, return_complex=False,
     if apod in windows:
         x *= norton_beer_window(apod, N)
     elif apod is not None:
-        Tools()._print_error("Unknown apodization function try %s"%
-                             str(windows))
+        raise Exception("Unknown apodization function try %s"%
+                        str(windows))
         
     # zero padding
     zv = np.zeros(N*2, dtype=float)
@@ -2156,7 +2174,7 @@ def cube_raw_fft(x, apod=None):
     if apod in windows:
         x *= norton_beer_window(apod, N)
     elif apod is not None:
-        Tools()._print_error("Unknown apodization function try %s"%
+        raise Exception("Unknown apodization function try %s"%
                              str(windows))
     # zero padding
     zv_shape = np.array(x.shape)
@@ -2217,7 +2235,7 @@ def norton_beer_window(fwhm='1.6', n=1000):
     if fwhm in fwhm_list:
         fwhm_index = fwhm_list.index(fwhm)
     else:
-        Tools()._print_error("Bad extended Norton-Beer window FWHM. Must be in : " + str(fwhm_list))
+        raise Exception("Bad extended Norton-Beer window FWHM. Must be in : " + str(fwhm_list))
 
     x = np.linspace(-1., 1., n)
 
@@ -2243,26 +2261,21 @@ def learner95_window(n):
             + 0.144234 * np.cos(2.*math.pi*x)
             + 0.012605 * np.cos(3.*math.pi*x))
 
-def create_nm_axis(n, step, order, nm_max=None, corr=1.):
+def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.
 
     :param n: Number of steps on the axis
     :param step: Step size in nm
-    :param order: Folding order
-    :param nm_max: (Optional) Must be given if order is 0 (default None)
+    :param order: Folding order (cannot be 0)
     :param corr: (Optional) Coefficient of correction (default 1.)
-    
-    .. warning:: If the order is equal to zero, nm_max (the maximum
-      wavelength observed) must be specified because in cannot be
-      defined using only the the step and order arguments.
     """
     
     nm_min = 2. * step / (order + 1.) / corr
     if (order > 0): 
         nm_max = 2. * step / order / corr
-    elif (nm_max is None):
-        raise Exception("If order is 0, 'nm_max' must be specified")
-    return np.linspace(nm_min, nm_max, n)
+        return np.linspace(nm_min, nm_max, n)
+    else:
+        raise Exception("order must be > 0")
         
 
 def create_cm1_axis(n, step, order, corr=1.):
@@ -2278,27 +2291,21 @@ def create_cm1_axis(n, step, order, corr=1.):
     return np.linspace(cm1_min, cm1_max, n)
     
     
-def create_nm_axis_ireg(n, step, order, nm_max=None, corr=1.):
+def create_nm_axis_ireg(n, step, order, corr=1.):
     """Create an irregular wavelength axis from the regular wavenumber
     axis in cm-1.
 
     :param n: Number of steps on the axis
     :param step: Step size in nm
-    :param order: Folding order
-    :param nm_max: (Optional) Must be given if order is 0 (default None)
+    :param order: Folding order (must be > 0)
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    if nm_max is None:
-        if order > 0:
-            cm1_min = float(order) / (2.* step) * corr
-        else:
-            raise Exception("If order is 0, 'nm_max' must be specified")
+    if order > 0:
+        return (1. / create_cm1_axis(n, step, order, corr=corr) * 1e7)
     else:
-        cm1_min = 1. / nm_max * corr
+        raise Exception("Order must be > 0")
         
-    cm1_max = float(order + 1) / (2. * step) * corr
-    cm1_axis = np.linspace(cm1_min, cm1_max, n)
-    return (1. / cm1_axis)
+    
     
 def pix2nm(nm_axis, pix):
      """Convert a pixel position to a wavelength in nm given an axis
@@ -2425,13 +2432,22 @@ def polyfit1d(a, deg, w=None, return_coeffs=False):
       None)
     """
     n = a.shape[0]
-    nonans = np.nonzero(~np.isnan(a))
-    x = np.arange(n)[nonans]
+    nonans = ~np.isnan(a) * ~np.isinf(a)
+    nonans_ind = np.nonzero(nonans)
+    
     if w is not None:
-        w = w[nonans]
-    a = a[nonans]
+        w = np.array(w, dtype=float)
+        nonans *= (~np.isnan(w) * ~np.isinf(w))
+        nonans_ind = np.nonzero(nonans)
+        w = w[nonans_ind]
+        
+    x = np.arange(n)[nonans_ind]
+    
+    a = a[nonans_ind]
+    
     coeffs = np.polynomial.polynomial.polyfit(
         x, a, deg, w=w, full=True)
+        
     fit = np.polynomial.polynomial.polyval(
         np.arange(n), coeffs[0])
     if not return_coeffs:
@@ -2495,8 +2511,12 @@ def fit_map(data_map, err_map, smooth_deg):
         imap = data_map[:,ij]
         ierr = err_map[:,ij]
         w = (1./ierr)**2.
+        
+        w[np.nonzero(np.isinf(w))] = np.nan
+        
+        
         # reject columns with too much NaNs
-        if np.sum(~np.isnan(imap)) > dimy/3.:
+        if np.sum(~np.isnan(imap)* ~np.isnan(w)) > dimy/3.:
             vect, coeffs = polyfit1d(imap, smooth_deg, w=w,
                                      return_coeffs=True)
             coeffs_list.append(coeffs[0])
@@ -2539,7 +2559,7 @@ def fit_map(data_map, err_map, smooth_deg):
         fitted_data_map = model(fit[0], smooth_deg, dimx, dimy)
     
     else:
-        Tools()._print_error('Fit could not be optimized')
+        raise Exception('Fit could not be optimized')
 
     ## Error computation
     # Creation of the error map: The error map gives the 
@@ -2728,7 +2748,7 @@ def transform_interferogram(interf, nm_laser,
                             calibration_coeff, step, order, 
                             window_type, zpd_shift, n_phase=None,
                             return_phase=False, ext_phase=None,
-                            nm_max=None, weights=None, polyfit_deg=1,
+                            weights=None, polyfit_deg=1,
                             balanced=True, bad_frames_vector=None,
                             smoothing_deg=2, return_complex=False,
                             final_step_nb=None, wavenumber=False,
@@ -2746,7 +2766,9 @@ def transform_interferogram(interf, nm_laser,
 
     :param step: Step size of the moving mirror in nm.
 
-    :param order: Folding order (can be 0 but nm_max must be specified).
+    :param order: Folding order (if 0 the result cannot be projected
+      on an axis in nm, i.e. wavenumber option is automatically set to
+      True).
 
     :param window_type: Name of the apodization function.
 
@@ -2768,9 +2790,6 @@ def transform_interferogram(interf, nm_laser,
     :param ext_phase: (Optional) External phase vector. If given this
       phase vector is used instead of a low-resolution one. It must be
       as long as the interferogram.
-    
-    :param nm_max: (Optional) Maximum wavelength of the spectrum. Must be
-      specified if order is equal to 0 (default None).
       
     :param return_phase: (Optional) If True, compute only the phase of
       the interferogram and return it. If polyfit_deg is >= 0, return
@@ -2826,6 +2845,10 @@ def transform_interferogram(interf, nm_laser,
     """
     MIN_ZEROS_LENGTH = 8 # Minimum length of a zeros band to smooth it
     interf = np.copy(interf)
+
+    if order == 0 and not wavenumber:
+        warnings.warn("order 0: Wavenumber output automatically set to True. Please set manually wavenumber option to True ifyou don't want this warning message to be printed.")
+        wavenumber = True
    
     if return_phase and n_phase == 0:
         raise Exception("Phase cannot be computed with 0 points, return_phase=True and n_phase=0 options are not compatible !")
@@ -3015,7 +3038,7 @@ def transform_interferogram(interf, nm_laser,
     if not wavenumber:
         base_axis = create_nm_axis_ireg(
             spectrum_corr.shape[0], step, order,
-            nm_max=nm_max, corr=correction_coeff)
+            corr=correction_coeff)
     else:
         base_axis = create_cm1_axis(
             spectrum_corr.shape[0], step, order, corr=correction_coeff)
@@ -3029,7 +3052,7 @@ def transform_interferogram(interf, nm_laser,
     
     # regular axis creation (in nm, if step is in nm)
     if not wavenumber:
-        final_axis = create_nm_axis(final_step_nb, step, order, nm_max=nm_max)
+        final_axis = create_nm_axis(final_step_nb, step, order)
     else:
         final_axis = create_cm1_axis(final_step_nb, step, order, corr=1.)
  
@@ -3060,7 +3083,7 @@ def transform_interferogram(interf, nm_laser,
 
 
 def transform_spectrum(spectrum, nm_laser, calibration_coeff,
-                       step, order, window_type, zpd_shift, nm_max=None,
+                       step, order, window_type, zpd_shift,
                        ext_phase=None, return_complex=False, wavenumber=False,
                        final_step_nb=None, sampling_vector=None):
     """Transform a spectrum into an interferogram.
@@ -3081,14 +3104,12 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
 
     :param step: Step size of the moving mirror in nm.
 
-    :param order: Folding order (can be 0 but nm_max must be specified).
+    :param order: Folding order (can be 0 but the input must be in
+      wavenumber).
 
     :param window_type: Name of the apodization function.
 
     :param zpd_shift: Shift of the interferogram to decenter the ZPD.
-
-    :param nm_max: (Optional) Maximum wavelength of the spectrum. Must be
-      specified if order is equal to 0 (default None).
       
     :param ext_phase: (Optional) External phase vector. If given this
       phase vector is used in place of the original phase of the
@@ -3122,7 +3143,9 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     
     .. note:: Interferogram can be complex
     """
-
+    if order ==0 and not wavenumber:
+        wavenumber = True
+        warnings.warn("Order 0: spectrum input automatically set to wavenumber. Please set manually wavenumber option to True if you don't want this warning message to be printed.")
     spectrum = np.copy(spectrum)
     spectrum = spectrum.astype(np.complex)
     step_nb = spectrum.shape[0]
@@ -3136,14 +3159,13 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     correction_coeff = calibration_coeff / nm_laser
     
     if not wavenumber:
-        base_axis = create_nm_axis(step_nb, step, order, nm_max=nm_max)
+        base_axis = create_nm_axis(step_nb, step, order)
     else:
         base_axis = create_nm_axis_ireg(step_nb, step, order,
-                                        corr=1., nm_max=nm_max)
+                                        corr=1.)
     
     nm_axis_ireg = create_nm_axis_ireg(step_nb, step, order,
-                                       corr=correction_coeff,
-                                       nm_max=nm_max)
+                                       corr=correction_coeff)
     if not (wavenumber and correction_coeff == 1.):
         spectrum = interpolate_axis(spectrum, nm_axis_ireg[::-1], 5,
                                     old_axis=base_axis, fill_value=0.)
@@ -3181,7 +3203,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
             step_nb+(final_step_nb/2)]
         
     else:
-        if sampling_vector.shape[0] != final_step_nb: Tools()._print_error(
+        if sampling_vector.shape[0] != final_step_nb: raise Exception(
             'Sampling vector size must be equal to the final_step_nb')
         interf = indft(spectrum, sampling_vector)
     

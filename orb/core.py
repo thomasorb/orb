@@ -93,13 +93,14 @@ class MemFile:
     memory file on the disk.
     """
 
-    mem = dict()
+    mem = None
 
     def __init__(self, memfile_path):
         """Init Memfile Class
 
         :param memfile_path: Path to the memory file.
         """
+        self.mem = dict()
         self.memfile_path = memfile_path
         if os.path.exists(self.memfile_path):
             memfile = open(memfile_path, 'r')
@@ -170,7 +171,7 @@ class Tools(object):
 
     _silent = False # If True only error messages will be diplayed on screen
 
-    def __init__(self, data_prefix="temp_data", no_log=False,
+    def __init__(self, data_prefix="./temp/data.", no_log=False,
                  tuning_parameters=dict(), logfile_name=None,
                  config_file_name='config.orb', silent=False):
         """Initialize Tools class.
@@ -178,6 +179,8 @@ class Tools(object):
         :param data_prefix: (Optional) Prefix used to determine the
           header of the name of each created file (default
           'temp_data')
+
+        :param logfile_name: (Optional) Name of the log file (if None).
 
         :param no_log: (Optional) If True no log file is created
           (default False).
@@ -808,28 +811,30 @@ class Tools(object):
 
     def _create_list_from_dir(self, dir_path, list_file_path,
                               image_mode=None, chip_index=None,
-                              prebinning=None):
+                              prebinning=None, check=True):
         """Create a file containing the list of all FITS files at
         a specified directory and returns the path to the list 
         file.
 
         :param dir_path: Directory containing the FITS files
         
-        :param list_file_path: Path to the list file to be created. If
-          None a list of the lines is returned.
+        :param list_file_path: Path to the list file to be created. If None a
+          list of the lines is returned.
 
-        :param image_mode: (Optional) Image mode. If not None the
-          given string will be written at the first line of the file
-          along with the chip index.
+        :param image_mode: (Optional) Image mode. If not None the given string
+          will be written at the first line of the file along with the chip
+          index.
 
         :param chip_index: (Optional) Index of the chip, must be an
-          integer. Used in conjonction with image mode to write the
-          first directive line of the file which indicates the image
-          mode.
+          integer. Used in conjonction with image mode to write the first
+          directive line of the file which indicates the image mode.
 
-        :param prebinning: (Optional) If not None, must be an
-          integer. Add another directive line for data prebinning
-          (default None).
+        :param prebinning: (Optional) If not None, must be an integer. Add
+          another directive line for data prebinning (default None).
+
+
+        :param check: (Optional) If True, files dimensions are checked. Else no
+          check is done. this is faster but less safe (default True).
         
         :returns: Path to the created list file
         """
@@ -857,27 +862,41 @@ class Tools(object):
             
             first_file = True
             file_nb = 0
-            self._print_msg('Cheking {}'.format(dir_path))
+            if check:
+                self._print_msg('Reading and checking {}'.format(dir_path))
+            else:
+                self._print_msg('Reading {}'.format(dir_path))
             for filename in file_list:
                 if (os.path.splitext(filename)[1] == ".fits"
                     and '_bias.fits' not in filename):
                     file_path = os.path.join(dir_path, filename)
                     if os.path.exists(file_path):
-                        fits_hdu = self.read_fits(file_path,
-                                                  return_hdu_only=True)
-                        dims = fits_hdu[0].header['NAXIS']
+                        
                         if first_file:
-                            dimx = fits_hdu[0].header['NAXIS1']
-                            dimy = fits_hdu[0].header['NAXIS2']
+                            fits_hdul = self.read_fits(
+                                file_path, return_hdu_only=True)
+                            hdu_data_index = self._get_hdu_data_index(
+                                fits_hdul)
+                                                     
+                            fits_hdu = fits_hdul[hdu_data_index]
+                            dimx = fits_hdu.header['NAXIS1']
+                            dimy = fits_hdu.header['NAXIS2']
                             first_file = False
-                        if (dims == 2
-                            and fits_hdu[0].header['NAXIS1'] == dimx
-                            and fits_hdu[0].header['NAXIS2'] == dimy):
+
+                        elif check:
+                            fits_hdu = self.read_fits(
+                                file_path, return_hdu_only=True)[hdu_data_index]
                             
-                            list_file_str.append(str(file_path))
-                            file_nb += 1
-                        else:
-                            self._print_error("All FITS files in the directory %s do not have the same shape. Please remove bad files."%str(dir_path))
+                            dims = fits_hdu.header['NAXIS']
+                            if not (
+                                dims == 2
+                                or fits_hdu.header['NAXIS1'] == dimx
+                                or fits_hdu.header['NAXIS2'] == dimy):
+                                self._print_error("All FITS files in the directory %s do not have the same shape. Please remove bad files."%str(dir_path))
+                            
+                        list_file_str.append(str(file_path))
+                        file_nb += 1
+                            
                     else:
                         self._print_error(str(file_path) + " does not exists !")
             if file_nb > 0:
@@ -894,7 +913,19 @@ class Tools(object):
         else:
             self._print_error(str(dir_path) + " does not exists !")
         
-    
+
+    def _get_hdu_data_index(self, hdul):
+        """Return the index of the first header data unit (HDU) containing data.
+
+        :param hdul: A pyfits.HDU instance
+        """
+        hdu_data_index = 0
+        while (hdul[hdu_data_index].data is None):
+            hdu_data_index += 1
+            if hdu_data_index >= len(hdul):
+                self._print_error('No data recorded in FITS file')
+        return hdu_data_index
+        
     def write_fits(self, fits_name, fits_data, fits_header=None,
                     silent=False, overwrite=False, mask=None,
                     replace=False, record_stats=False):
@@ -1068,14 +1099,14 @@ class Tools(object):
                              "_" + str(index) + 
                              os.path.splitext(base_fits_name)[1])
                 index += 1
-        
+
     def read_fits(self, fits_name, no_error=False, nan_filter=False, 
                   return_header=False, return_hdu_only=False,
                   return_mask=False, silent=False, delete_after=False,
                   data_index=0, image_mode='classic', chip_index=None,
-                  binning=None, fix_header=True, memmap=False, dtype=float):
+                  binning=None, fix_header=True, memmap=True, dtype=float):
         """Read a FITS data file and returns its data.
-        
+    
         :param fits_name: Path to the file, can be either
           relative or absolut.
         
@@ -1124,7 +1155,7 @@ class Tools(object):
 
         :param memmap: (Optional) If True, use the memory mapping
           option of pyfits. This is useful to avoid loading a full cube
-          in memory when opening a large data cube (default False).
+          in memory when opening a large data cube (default True).
 
         :param dtype: (Optional) Data is converted to
           the given dtype (e.g. np.float32, default float).
@@ -1166,6 +1197,9 @@ class Tools(object):
             return hdulist
         else:
             if image_mode == 'classic':
+                # avoid bugs fits with no data in the first hdu
+                data_index = self._get_hdu_data_index(hdulist)
+                
                 fits_data = np.array(
                     hdulist[data_index].data.transpose()).astype(dtype)
             elif image_mode == 'sitelle':
@@ -1179,7 +1213,7 @@ class Tools(object):
         hdulist.close
         
         if binning is not None:
-            fits_data = self._image_binning(fits_data, binning)
+            fits_data = self._bin_image(fits_data, binning)
             
         if (nan_filter):
             fits_data = np.nan_to_num(fits_data)
@@ -1197,7 +1231,7 @@ class Tools(object):
         else:
             return np.squeeze(fits_data)
 
-    def _image_binning(self, a, binning):
+    def _bin_image(self, a, binning):
         """Return mean binned image. 
 
         :param image: 2d array to bin.
@@ -1217,7 +1251,7 @@ class Tools(object):
         
         if a.dtype is not np.float:
             a = a.astype(np.float)
-            
+    
         # x_bin
         xslices = np.arange(0, a.shape[0]+1, binning).astype(np.int)
         a = np.add.reduceat(a[0:xslices[-1],:], xslices[:-1], axis=0)
@@ -1271,13 +1305,22 @@ class Tools(object):
         xchip, ychip = get_slice('DSEC', chip_index)
         data = np.empty((xchip.stop - xchip.start, ychip.stop - ychip.start),
                         dtype=float)
-        
+
+        # removing bias
         for iamp in amps:
             xamp, yamp = get_slice('DSEC', iamp)
             amp_data = get_data('DSEC', iamp, frame)
             bias_data = get_data('BSEC', iamp, frame)
-            bias_data = np.mean(bias_data, axis=0)
+    
+            if iamp in ['A', 'C', 'E', 'G']:
+                bias_data = bias_data[int(bias_data.shape[0]/2):,:]
+            else:
+                bias_data = bias_data[:int(bias_data.shape[0]/2),:]
+            
+            bias_data = np.median(bias_data, axis=0)
+            
             amp_data = amp_data - bias_data
+
             data[xamp.start - xchip.start: xamp.stop - xchip.start,
                  yamp.start - ychip.start: yamp.stop - ychip.start] = amp_data
             
@@ -1298,12 +1341,15 @@ class Tools(object):
         """
         CENTER_SIZE_COEFF = 0.1
         
-        frame = np.array(hdu[0].data.transpose()).astype(np.float)
-        hdr = hdu[0].header
+        data_index = self._get_hdu_data_index(hdu)
+        frame = np.array(hdu[data_index].data.transpose()).astype(np.float)
+        hdr = hdu[data_index].header
         # check presence of a bias
         bias_path = os.path.splitext(image_path)[0] + '_bias.fits'
+    
         if os.path.exists(bias_path):
             bias_frame = self.read_fits(bias_path)
+            
             if substract_bias:
                 ## create overscan line
                 overscan = cutils.meansigcut2d(bias_frame, axis=1)
@@ -1369,9 +1415,14 @@ class Tools(object):
                          if not '_bias.fits' in path]
 
         # get all numbers
-        file_keys = np.array([re.findall("[0-9]+", path)
-                              for path in file_list if '.fits' in path],
-                             dtype=int)
+        file_seq = [re.findall("[0-9]+", path)
+                        for path in file_list if '.fits' in path]
+        try:
+            file_keys = np.array(file_seq, dtype=int)
+        except Exception, e:
+            self._print_error('Malformed sequence of files: {}:\n{}'.format(
+                e, file_seq))
+                             
             
         # get changing column
         test = np.sum(file_keys == file_keys[0,:], axis=0)
@@ -1437,7 +1488,7 @@ class Cube(Tools):
     _prebinning = None # prebinning directive
 
     def __init__(self, image_list_path, image_mode='classic',
-                 chip_index=1, binning=1, data_prefix="temp_data_",
+                 chip_index=1, binning=1, data_prefix="./temp/data.",
                  config_file_name="config.orb", project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, silent_init=False, no_log=False,
@@ -1574,6 +1625,7 @@ class Cube(Tools):
                             self._prebinning = int(image_name.split()[-1])
                             
                     elif not spiomm_bias_frame:
+                        
                         self.image_list = [image_name]
                         image_data = self.read_fits(
                             image_name,
@@ -1661,28 +1713,56 @@ class Cube(Tools):
             hdu = cube.read_fits(cube.image_list[frame_index],
                                  return_hdu_only=True,
                                  return_mask=cube._return_mask)
+            image = None
+            stored_file_path = None
+            if prebinning > 1:
+                # already binned data is stored in a specific folder
+                # to avoid loading more than one time the same image.
+                # check if already binned data exists
+                
+                stored_file_path = os.path.join(
+                    os.path.split(cube._get_data_path_hdr())[0],
+                    'STORED',
+                    (os.path.splitext(
+                        os.path.split(cube.image_list[frame_index])[1])[0]
+                     + '.{}.bin{}.fits'.format(image_mode, prebinning)))
+            
+                if os.path.exists(stored_file_path):
+                    image = cube.read_fits(stored_file_path)
+                
+                    
             if image_mode == 'sitelle':
-                section = cube._read_sitelle_chip(hdu, chip_index)
-                section = cube._image_binning(section, prebinning)[
-                    x_slice, y_slice]
+                if image is None:
+                    image = cube._read_sitelle_chip(hdu, chip_index)
+                    image = cube._bin_image(image, prebinning)
+                section = image[x_slice, y_slice]
                 
             elif image_mode == 'spiomm':
-                section, header = cube._read_spiomm_data(
-                    hdu, cube.image_list[frame_index])
-                section = cube._image_binning(section, prebinning)[
-                    x_slice, y_slice]
+                if image is None:
+                    image, header = cube._read_spiomm_data(
+                        hdu, cube.image_list[frame_index])
+                    image = cube._bin_image(image, prebinning)
+                section = image[x_slice, y_slice]
                 
             else:
-                if prebinning == 1:
-                    section = np.copy(
-                        hdu[0].data.transpose())
-                    section = cube._image_binning(section, prebinning)[
-                        x_slice, y_slice]
+                if prebinning > 1:
+                    if image is None:
+                        image = np.copy(
+                            hdu[0].data.transpose())
+                        image = cube._bin_image(image, prebinning)
+                    section = image[x_slice, y_slice]
                 else:
-                    section = np.copy(
-                        hdu[0].section[y_slice, x_slice].transpose())
+                    if image is None:
+                        section = np.copy(
+                            hdu[0].section[y_slice, x_slice].transpose())
+                    else:
+                        section = image[y_slice, x_slice].transpose()
             del hdu
-            
+
+            if stored_file_path is not None and image is not None:
+                cube.write_fits(stored_file_path, image, overwrite=True,
+                                silent=True)
+                
             cube._return_mask = False # always reset self._return_mask to False
             return section
 
