@@ -28,6 +28,7 @@
 import numpy as np
 
 from orb.core import Tools
+import os, sys
 
 def usage(): 
     print """usage: orb-rollxz CUBE_NAME

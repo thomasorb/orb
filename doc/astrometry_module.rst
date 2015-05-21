@@ -11,6 +11,14 @@ Astrometry class
     :private-members:
     :show-inheritance:
 
+Aligner class
+-------------
+
+.. autoclass:: astrometry.Aligner
+    :members:
+    :private-members:
+    :show-inheritance:
+
 StarsParams class
 -----------------
 

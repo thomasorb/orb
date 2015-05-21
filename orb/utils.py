@@ -884,31 +884,85 @@ def get_box_coords(ix, iy, box_size,
     :param y_lim_min: Minimum limit of the range along y.
     :param y_lim_max: Maximum limit of the range along y.
 
+    :return: x_min, x_max, y_min, y_max
     """
     return cutils.get_box_coords(int(ix), int(iy), int(box_size),
                                  int(x_lim_min), int(x_lim_max),
                                  int(y_lim_min), int(y_lim_max))
 
-def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor):
-    """Transform star positions in camera A to the same star position
-    in camera B given the transformation parameters
+
+def sip_im2pix(im_coords, sip, tolerance=1e-8):
+    """Transform perfect pixel positions to distorded pixels positions 
+
+    :param im_coords: perfect pixel positions as an Nx2 array of floats.
+    :param sip: pywcs.WCS() instance containing SIP parameters.
+    :param tolerance: tolerance on the iterative method.
+    """
+    return cutils.sip_im2pix(im_coords, sip, tolerance=1e-8)
+
+def sip_pix2im(pix_coords, sip):
+    """Transform distorded pixel positions to perfect pixels positions 
+
+    :param pix_coords: distorded pixel positions as an Nx2 array of floats.
+    :param sip: pywcs.WCS() instance containing SIP parameters.
+    """
+    return cutils.sip_pix2im(pix_coords, sip)
+
+def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
+                                   sip_A=None, sip_B=None):
+    """Transform star positions in camera A to the positions in camera
+    B given the transformation parameters.
+
+    Optionally SIP distorsion parameters can be given.
+
+    The transformation steps are::
+    
+      dist_pix_camA -> perf_pix_camA -> geometric transformation_A2B
+      -> perf_pix_camB -> dist_pix_camB
 
     :param star_list_A: List of star coordinates in the cube A.
     :param params: Transformation parameters [dx, dy, dr, da, db].
     :param rc: Rotation center coordinates.
-    :param zoom_factor: Zooming factor between the two cameras.
+    
+    :param zoom_factor: Zooming factor between the two cameras. Can be
+      a couple (zx, zy).
+    
+    :param sip_A: (Optional) pywcs.WCS instance containing SIP
+      parameters of the frame A (default None).
+    :param sip_B: (Optional) pywcs.WCS instance containing SIP
+      parameters of the frame B (default None).
     """
+    if np.size(zoom_factor) == 2:
+        zx = zoom_factor[0]
+        zy = zoom_factor[1]
+    else:
+        zx = float(zoom_factor)
+        zy = float(zoom_factor)
+        
     if not isinstance(star_list_A, np.ndarray):
         star_list_A = np.array(star_list_A)
     if star_list_A.dtype != np.dtype(float):
         star_list_A.astype(float)
+
+    star_list_B = np.empty((star_list_A.shape[0], 2), dtype=float)
+
+    # dist_pix_camA -> perf_pix_camA
+    if sip_A is not None:
+        star_list_A = sip_pix2im(star_list_A, sip_A)
         
-    star_list_B = np.empty_like(star_list_A)
-    for istar in range(star_list_A.shape[0]):
-        star_list_B[istar,:] = cutils.transform_A_to_B(
-            star_list_A[istar,0], star_list_A[istar,1],
-            params[0], params[1], params[2], params[3], params[4],
-            rc[0], rc[1], zoom_factor)
+    # geometric transformation_A2B
+    if np.any(params):
+        for istar in range(star_list_A.shape[0]):
+            star_list_B[istar,:] = cutils.transform_A_to_B(
+                star_list_A[istar,0], star_list_A[istar,1],
+                params[0], params[1], params[2], params[3], params[4],
+                rc[0], rc[1], zx, zy)
+    else:
+        star_list_B = np.copy(star_list_A)
+        
+    # perf_pix_camB -> dist_pix_camB
+    if sip_B is not None:
+      star_list_B = sip_im2pix(star_list_B, sip_B)
         
     return star_list_B
 
@@ -1939,7 +1993,8 @@ def correct_hot_pixels(im, hp_map, box_size=3, std_filter_coeff=1.5):
 
 def transform_frame(frame, x_min, x_max, y_min, y_max, 
                     d, rc, zoom_factor, interp_order, 
-                    mask=None, fill_value=np.nan):
+                    mask=None, fill_value=np.nan,
+                    sip_A=None, sip_B=None):
     """Transform one frame or a part of it using transformation
     coefficients.
 
@@ -1957,7 +2012,7 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
     
     :param rc: Rotation center of the frame [rc_x, rc_y]
     
-    :param zoom_factor: Zoom on the image
+    :param zoom_factor: Zoom on the image. Can be a couple (zx, zy).
     
     :param interp_order: Interpolation order
     
@@ -1966,13 +2021,30 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
 
     :param fill_value: (Optional) Fill value for extrapolated points
       (default np.nan).
+
+    :param sip_A: (Optional) pywcs.WCS() instance containing SIP parameters of
+      the output image (default None).
+      
+    :param sip_B: (Optional) pywcs.WCS() instance containing SIP parameters of
+      the input image (default None).
     """
-    def trans(coords, d, rc, zoom_factor):
-        return cutils.transform_A_to_B(
-            coords[0], coords[1],
-            d[0], d[1], d[2], d[3], d[4], rc[0],
-            rc[1], zoom_factor)
-       
+
+    def mapping(coords, transx, transy):
+        return (transx[coords[0], coords[1]], transy[coords[0], coords[1]])
+
+    if np.size(zoom_factor) == 2:
+        zx = zoom_factor[0]
+        zy = zoom_factor[1]
+    else:
+        zx = float(zoom_factor)
+        zy = float(zoom_factor)
+        
+    ## create transform maps for mapping function
+    transx, transy = cutils.create_transform_maps(
+        frame.shape[0], frame.shape[1], d[0], d[1], d[2], d[3], d[4], rc[0],
+        rc[1], zx, zy, sip_A, sip_B)
+    
+    
     if frame.dtype != np.dtype(float):
         frame = frame.astype(float)
     
@@ -1980,12 +2052,12 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
         mask = mask.astype(float)
     
     frame = ndimage.interpolation.geometric_transform(
-        frame, trans, extra_arguments=(d, rc, zoom_factor),
+        frame, mapping, extra_arguments=(transx, transy),
         order=interp_order, mode='constant', cval=fill_value)
 
     if mask is not None:
         mask = ndimage.interpolation.geometric_transform(
-            mask, trans, extra_arguments=(d, rc, zoom_factor),
+            mask, mapping, extra_arguments=(transx, transy),
             order=interp_order, mode='constant', cval=fill_value)
 
     if mask is not None:
@@ -2329,13 +2401,13 @@ def nm2pix(nm_axis, nm):
      :param nm: Wavelength in nm
      """
      x = np.arange(nm_axis.shape[0])
-     reversed = False
+     inverted = False
      if nm_axis[0] > nm_axis[-1]:
          nm_axis = np.copy(nm_axis[::-1])
          x = x[::-1]
-         reversed = True
+         inverted = True
      f = interpolate.interp1d(nm_axis, x, bounds_error=False, fill_value=np.nan)
-     if not reversed:
+     if not inverted:
          return f(nm)
      else:
          return f(nm)[::-1]

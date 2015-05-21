@@ -96,6 +96,7 @@ def get_Balmer_ratio(tem, den, nu=3, try_fast=True,
 
                 test = np.empty((2,1), dtype=float)
                 test[:,0] = [tem_pix, den_pix]
+                
                 result = ndimage.map_coordinates(table, test)
                 return ndimage.map_coordinates(table, test)[0]
     

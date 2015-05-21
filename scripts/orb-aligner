@@ -44,6 +44,7 @@ wcsmod.use('astropy')
 # ORB IMPORTS
 from orb.core import Tools, Cube, Lines
 import orb.utils
+import orb.cutils
 from orb.astrometry import Astrometry
 
 
@@ -77,31 +78,70 @@ class Aligner(object):
 
     init_set = None
 
+    add = None
+
     IMAGE_SIZE = 300
     DRAW_COLOR_DEFAULT = 'green'
-    CAM1_SIZE = (1340, 1300)
-    CAM2_SIZE = (2048, 2048)
+    CAM1_SIZE_SPIOMM = (1340, 1300)
+    CAM2_SIZE_SPIOMM = (2048, 2048)
+    CAM1_SIZE_SITELLE = (2048, 2064)
+    CAM2_SIZE_SITELLE = (2048, 2064)
     
-    def __init__(self, logger, fits_path_1, fits_path_2,
-                 config_file_name='config.orb'):
+    def __init__(self, logger, fits_path_1, fits_path_2):
+
+        if args.mode == 'spiomm':
+            cam1_size = self.CAM1_SIZE_SPIOMM
+            cam2_size = self.CAM2_SIZE_SPIOMM
+            config_file_name = 'config.spiomm.orb'
+        elif args.mode == 'sitelle':
+            cam1_size = self.CAM1_SIZE_SITELLE
+            cam2_size = self.CAM2_SIZE_SITELLE
+            config_file_name = 'config.sitelle.orb'
+
+        self.add = args.add
         
         self.logger = logger
-        self.tools = Tools(no_log=True)
+        self.tools = Tools(
+            no_log=True, config_file_name=config_file_name)
         self.init_set = True
         
         self.im1 = self.tools.read_fits(fits_path_1)
         self.im2 = self.tools.read_fits(fits_path_2)
-
+            
         # get binning
         self.bin1 = 1
-        while self.im1.shape[0] <= self.CAM1_SIZE[0]/self.bin1:
+        while self.im1.shape[0] <= cam1_size[0]/self.bin1:
             self.bin1 += 1
         self.bin1 -= 1
         
         self.bin2 = 1
-        while self.im2.shape[0] <= self.CAM2_SIZE[0]/self.bin2:
+        while self.im2.shape[0] <= cam2_size[0]/self.bin2:
             self.bin2 += 1
         self.bin2 -= 1
+
+        if self.bin1 <= 0 or self.bin2 <= 0:
+            raise Exception('Bad detected binning: check the image mode')
+        else:
+            print 'Detected binning: CAM1 = {} CAM2 = {}'.format(
+                self.bin1, self.bin2)
+
+        if args.center is not None:
+            if args.center < 0. or args.center > 1.:
+                raise ValueError('center coefficient must be between 0. and 1.')
+            x_min, x_max, y_min, y_max = orb.utils.get_box_coords(
+                (float(self.im1.shape[0]) / 2.),
+                (float(self.im1.shape[1]) / 2.),
+                args.center * max(self.im1.shape[0], self.im1.shape[1]),
+                0, self.im1.shape[0], 0, self.im1.shape[1])
+            self.im1 = self.im1[x_min:x_max, y_min:y_max]
+            x_min, x_max, y_min, y_max = orb.utils.get_box_coords(
+                (float(self.im2.shape[0]) / 2.),
+                (float(self.im2.shape[1]) / 2.),
+                args.center * max(self.im2.shape[0], self.im2.shape[1]),
+                0, self.im2.shape[0], 0, self.im2.shape[1])
+            self.im2 = self.im2[x_min:x_max, y_min:y_max]
+
+            
 
         # get initial parameters
         self.dx = float(self.tools._get_config_parameter('INIT_DX')) / self.bin2
@@ -229,8 +269,12 @@ class Aligner(object):
             0, self.im1.shape[1],
             [self.dx, self.dy, self.dr, self.da, self.db],
             self.rc, self.zoom_factor, 1)
-        
-        self.image_data = self.im1 - self.im2_t
+
+        if self.add:
+            self.image_data = self.im1 + self.im2_t
+        else:
+            self.image_data = self.im1 - self.im2_t
+            
         if self.image_data is None:
             self.image_data = np.zeros((self.dimx, self.dimy))
         
@@ -251,11 +295,8 @@ class Aligner(object):
             self.init_set = False
 
         self.configlabel.set_text(
-            'INIT_ANGLE {}\nINIT_DX {}\n INIT_DY {}'.format(
+            'INIT_ANGLE {}\nINIT_DX {}\nINIT_DY {}'.format(
                 self.dr, self.dx * self.bin2, self.dy * self.bin2))
-
-    
-
 
     def quit(self, w):
         gtk.main_quit()
@@ -299,7 +340,20 @@ if __name__ == "__main__":
 
    parser.add_argument('fits_path_1', help='Path to the FITS image CAM1')
    parser.add_argument('fits_path_2', help='Path to the FITS image CAM2')
+   parser.add_argument('-m', '--mode', dest='mode',
+                       help="Mode: must be 'sitelle' or 'spiomm'",
+                       action='store',
+                       default='spiomm', choices=['sitelle', 'spiomm'])
+   parser.add_argument('-c', '--center', dest='center',
+                       help="Size coefficient of the portion around the center of the image to use for alignement (better for big images). Must be between 0 and 1 (e.g. 0.2).",
+                       action='store',
+                       default=None, type=float)
 
+   parser.add_argument('--add', dest='add',
+                       help="Frames are added instead of being substracted",
+                       action='store_true',
+                       default=False)
+   
    if len(sys.argv) < 2:
         parser.print_usage()
         sys.exit(2)

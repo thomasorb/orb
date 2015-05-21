@@ -49,7 +49,7 @@ EXT_ILLUMINATION 1 # Compute external illumination
 DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
 INIT_FWHM 2.5 # Rough estimate of the usual stars FWHM [in arcsecond]
 PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
-MOFFAT_BETA 3.5 # default beta parameter for the Moffat PSF
+MOFFAT_BETA 2.1 # default beta parameter for the Moffat PSF
 DETECT_STACK 5 # Number of frames to combine for star detection
 
 ## Detectors parameters

@@ -11,20 +11,19 @@ OBS_LON -155.468761 # Observatory longitude
 OBS_ALT 4215. # Observatory altitude
 
 ## Instrumental parameters
-FIELD_OF_VIEW 12. # Size of the field of view of the camera 1 in
-		   # arc-minutes along the largest axis
-FIELD_OF_VIEW_2 12 # Size of the field of view of the camera 2 in
-	             # arc-minutes along the largest axis
+FIELD_OF_VIEW 11. # Size of the field of view of the camera 1 in
+		  # arc-minutes along the largest axis
+FIELD_OF_VIEW_2 11. # Size of the field of view of the camera 2 in
+	            # arc-minutes along the largest axis
 PIX_SIZE_CAM1 15 # Size of one pixel of the camera 1 in um
 PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um
 BALANCED_CAM 1 # Number of the camera on the balanced port
 
 ## Disalignment guess
-INIT_ANGLE 0. # Rough angle between images of the camera 1 and
-		# images of the camera 2 [in degree] (set it to
-		# 85. when cameras are orthogonal)
-INIT_DX 0. # Rough x axis disalignment [in pixel] (unbinned)
-INIT_DY 0. # Rough y axis disalignment [in pixel] (unbinned)
+INIT_ANGLE -0.6 # Rough angle between images of the camera 1 and
+		# images of the camera 2 [in degree]
+INIT_DX 45. # Rough x axis disalignment [in pixel] (unbinned)
+INIT_DY -11. # Rough y axis disalignment [in pixel] (unbinned)
 
 ## Calibration parameters
 CALIB_NM_LASER 543.5 # Wavelength of the calibration laser [in nm]

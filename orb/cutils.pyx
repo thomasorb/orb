@@ -63,13 +63,15 @@ def radians(double deg):
     return deg * M_PI / 180.
 
 def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
-                     double da, double db, double xrc, double yrc, double z,
+                     double da, double db, double xrc, double yrc, double zx,
+                     double zy,
                      double x1_err=0.,
                      double y1_err=0.,
                      double dx_err=0.,
                      double dy_err=0.,
                      double dr_err=0.,
-                     double z_err=0.,
+                     double zx_err=0.,
+                     double zy_err=0.,
                      bool return_err=False):
     """Transform star positions in camera A to the same star position
     in camera B given the transformation parameters
@@ -83,13 +85,15 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
     :param db: tilt angle
     :param xrc: x coordinate of the rotation center
     :param yrc: y coordinate of the rotation center
-    :param z: zoom coefficient
+    :param zx: zoom coefficient along x
+    :param zy: zoom coefficient along y
     :param x1_err: (Optional) Error on x1 estimate (default 0.)
     :param y1_err: (Optional) Error on y1 estimate (default 0.)
     :param dx_err: (Optional) Error on dx estimate (default 0.)
     :param dy_err: (Optional) Error on dy estimate (default 0.)
     :param dr_err: (Optional) Error on dr estimate (default 0.)
-    :param z_err: (Optional) Error on z estimate (default 0.)  
+    :param zx_err: (Optional) Error on zx estimate (default 0.)
+    :param zy_err: (Optional) Error on zy estimate (default 0.)  
     :param return_err: (Optional) If True, the error on the estimate
       of x2 and y2 is returned.
 
@@ -107,13 +111,15 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
     dr = radians(dr)
     da = radians(da)
     db = radians(db)
-    
-    x1 = x1 / cos(da) / z
-    y1 = y1 / cos(db) / z
-    
+
+    # da, db, zx, zy
+    x1 = x1 / cos(da) / zx
+    y1 = y1 / cos(db) / zy
+
+
     if return_err:
-        x1_err = x1 * sqrt((z_err / z)**2. + (x1_err / x1_orig)**2.)
-        y1_err = y1 * sqrt((z_err / z)**2. + (y1_err / y1_orig)**2.)
+        x1_err = x1 * sqrt((zx_err / zx)**2. + (x1_err / x1_orig)**2.)
+        y1_err = y1 * sqrt((zy_err / zy)**2. + (y1_err / y1_orig)**2.)
         
     x1 = x1 - dx
     y1 = y1 - dy
@@ -121,7 +127,8 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
     if return_err:
         x1_err = sqrt(x1_err**2. + dx_err**2.)
         y1_err = sqrt(y1_err**2. + dy_err**2.)
-        
+
+    # rotation
     x2 = (x1 - xrc) * cos(-dr) - (y1 - yrc) * sin(-dr) + xrc
     y2 = (y1 - yrc) * cos(-dr) + (x1 - xrc) * sin(-dr) + yrc
     
@@ -144,6 +151,106 @@ def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
         return x2, y2, x2_err, y2_err
     
     return x2, y2
+
+def sip_im2pix(np.ndarray[np.float64_t, ndim=2] im_coords, sip,
+               tolerance=1e-8):
+    """Transform perfect pixel positions to distorded pixels positions 
+
+    :param im_coords: perfect pixel positions as an Nx2 array of floats.
+    :param sip: pywcs.WCS() instance containing SIP parameters.
+    :param tolerance: tolerance on the iterative method.
+    """
+    cdef np.ndarray[np.float64_t, ndim=1] xcoord = np.empty(
+        im_coords.shape[0], dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] ycoord = np.empty(
+        im_coords.shape[0], dtype=np.float64)
+    
+    xcoord, ycoord = sip.wcs_pix2world(im_coords[:,1], im_coords[:,0], 0)
+    xcoord, ycoord = sip.all_world2pix(xcoord, ycoord, 0, tolerance=tolerance)
+   
+    return np.array([ycoord, xcoord]).T
+
+def sip_pix2im(np.ndarray[np.float64_t, ndim=2] pix_coords, sip):
+    """Transform distorded pixel positions to perfect pixels positions 
+
+    :param pix_coords: distorded pixel positions as an Nx2 array of floats.
+    :param sip: pywcs.WCS() instance containing SIP parameters.
+    """
+    cdef np.ndarray[np.float64_t, ndim=1] xcoord = np.empty(
+        pix_coords.shape[0], dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] ycoord = np.empty(
+        pix_coords.shape[0], dtype=np.float64)
+    
+    xcoord, ycoord = sip.all_pix2world(pix_coords[:,1], pix_coords[:,0], 0)
+    xcoord, ycoord = sip.wcs_world2pix(xcoord, ycoord, 0)
+    
+    return np.array([ycoord, xcoord]).T
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_transform_maps(int nx, int ny, double dx, double dy,
+                          double dr, double da, double db, double xrc,
+                          double yrc, double zx, double zy, sip_A, sip_B):
+    """Create the 2 transformation maps used to compute the
+    geometrical transformation.
+
+    :param nx: size of the frame along x axis
+    :param ny: size of the frame along y axis
+    :param dx: translation along x
+    :param dy: translation along y
+    :param dr: rotation in the plane of the image
+    :param da: tip angle
+    :param db: tilt angle
+    :param xrc: x coordinate of the rotation center
+    :param yrc: y coordinate of the rotation center
+    :param zx: zoom coefficient along x
+    :param zy: zoom coefficient along y
+    
+    :param sip_A: pywcs.WCS() instance containing SIP parameters of
+      the output image.
+    :param sip_B: pywcs.WCS() instance containing SIP parameters of
+      the input image.
+    """
+
+    cdef np.ndarray[np.float64_t, ndim=2] outx = np.zeros(
+        (nx, ny), dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] outy = np.zeros(
+        (nx, ny), dtype=np.float64)
+
+    cdef np.ndarray[np.float64_t, ndim=2] coords = np.zeros(
+        (nx*ny, 2), dtype=np.float64)
+    
+    cdef int ii, ij
+
+            
+    if sip_A is not None:  
+        outx, outy = np.mgrid[0:nx:1, 0:ny:1].astype(np.float64)
+        coords[:,0] = outx.flatten()
+        coords[:,1] = outy.flatten()
+        coords = sip_pix2im(coords, sip_A)
+        outx = np.reshape(coords[:,0], [outx.shape[0], outx.shape[1]])
+        outy = np.reshape(coords[:,1], [outy.shape[0], outy.shape[1]])
+        
+        
+    for ii in range(nx):
+        for ij in range(ny):
+            if sip_A is None:
+                outx[ii,ij], outy[ii,ij] = transform_A_to_B(
+                    ii, ij, dx, dy, dr, da, db, xrc, yrc, zx, zy)
+            else:
+                outx[ii,ij], outy[ii,ij] = transform_A_to_B(
+                    outx[ii,ij], outy[ii,ij],
+                    dx, dy, dr, da, db, xrc, yrc, zx, zy)
+
+    if sip_B is not None:
+        coords[:,0] = outx.flatten()
+        coords[:,1] = outy.flatten()
+        coords = sip_im2pix(coords, sip_B)
+        outx = np.reshape(coords[:,0], [outx.shape[0], outx.shape[1]])
+        outy = np.reshape(coords[:,1], [outy.shape[0], outy.shape[1]])
+        
+    return outx, outy
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -637,11 +744,14 @@ def robust_std(np.ndarray x):
         return np.nanstd(x)
 
 def robust_average(np.ndarray x,
-                    np.ndarray w):
+                   np.ndarray w):
     """Compute robust average of a numpy ndarray (NaNs are skipped)
 
     :param x: a numpy ndarray
     :param w: a numpy ndarray of weigths
+
+    .. note:: To get a weighted average the MEAN of the weights must
+      be equal to 1.
     """
     cdef bool flagx
     cdef bool flagw
@@ -949,6 +1059,7 @@ def get_box_coords(int ix, int iy, int box_size,
     :param y_lim_min: Minimum limit of the range along y.
     :param y_lim_max: Maximum limit of the range along y.
 
+    :return: x_min, x_max, y_min, y_max
     """
     cdef int x_min, x_max, y_min, y_max
 
@@ -1013,7 +1124,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                     bool enable_zoom=False,
                     bool enable_rotation=False,
                     bool estimate_local_noise=True,
-                    double saturation=0):
+                    double saturation=0,
+                    sip=None):
     """Fit multiple stars at the same time.
 
     Useful if the relative positions of the stars are well known. In
@@ -1079,8 +1191,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     :param saturation: (Optional) If not 0, all pixels above the
       saturation level are removed from the fit (default 0).
-    """
 
+    :param sip: (Optional) A pywcs.WCS instance containing SIP
+      distorsion correction (default None).
+    """    
     def params_arrays2vect(np.ndarray[np.float64_t, ndim=2] stars_p,
                            np.ndarray[np.float64_t, ndim=1] stars_p_mask,
                            np.ndarray[np.float64_t, ndim=1] cov_p,
@@ -1240,7 +1354,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
              np.ndarray[np.float64_t, ndim=2] frame,
              int box_size, int star_nb,
              np.ndarray[np.float64_t, ndim=1] noise, double dcl,
-             double saturation):
+             double saturation, sip):
 
         cdef np.ndarray[np.float64_t, ndim=2] params = np.zeros(
             (star_nb, np.size(stars_p_mask)), dtype=float)
@@ -1265,7 +1379,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         for istar in range(stars_p.shape[0]):
             params[istar,2],  params[istar,3] = transform_A_to_B(
                 params[istar,2], params[istar,3], -cov_p[1], -cov_p[2],
-                cov_p[5], 0., 0., rcx, rcy, cov_p[4])
+                cov_p[6], 0., 0., rcx, rcy, cov_p[4], cov_p[5])
+
+        if sip is not None:
+            params[:,2:4] = sip_im2pix(params[:,2:4], sip)
         
         res = model_diff(frame.shape[0], frame.shape[1],
                          params, box_size, frame, noise, dcl,
@@ -1287,6 +1404,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     new_pos = pos[np.nonzero(pos_mask)]
 
+        
     # stop here if no star positions are in the frame
     if np.size(new_pos) == 0:
         return []
@@ -1306,7 +1424,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cdef np.ndarray[np.float64_t, ndim=2] test_p = np.zeros_like(
         stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] cov_p = np.zeros(
-        6, dtype=float) # COV_P: HEIGHT, POSX, POSY, FWHM, ZOOM, ROT
+        7, dtype=float) # COV_P: HEIGHT, POSX, POSY, FWHM, ZOOMX, ZOOMY, ROT
     cdef np.ndarray[np.float64_t, ndim=1] cov_err = np.zeros_like(
         cov_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] cov_p_mask = np.zeros_like(
@@ -1450,7 +1568,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cov_p_mask.fill(0)
     stars_p_mask.fill(1)
     cov_p[4] = 1.
-    cov_p[5] = 0.
+    cov_p[5] = 1.
+    cov_p[6] = 0.
     
     if cov_height and not fix_height:
         cov_p_mask[0] = 1
@@ -1464,8 +1583,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     if fix_height:  stars_p_mask[0] = 0
     if fix_pos: stars_p_mask[2:4] = 0
     if fix_fwhm: stars_p_mask[4] = 0
-    if enable_zoom: cov_p_mask[4] = 1
-    if enable_rotation: cov_p_mask[5] = 1
+    if enable_zoom: cov_p_mask[4:6] = 1
+    if enable_rotation: cov_p_mask[6] = 1
         
     free_p, fixed_p = params_arrays2vect(stars_p, stars_p_mask,
                                          cov_p, cov_p_mask)
@@ -1475,7 +1594,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         fit = scipy.optimize.leastsq(diff, free_p,
                                      args=(fixed_p, stars_p_mask, cov_p_mask,
                                            np.copy(frame), box_size, star_nb,
-                                           noise_guess, dcl, saturation),
+                                           noise_guess, dcl, saturation,
+                                           sip),
                                      maxfev=500, full_output=True,
                                      xtol=fit_tol)
     except Exception, e:
@@ -1495,6 +1615,11 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         red_chisq = chisq / (np.sum(frame_mask) - np.size(free_p))
         returned_data['reduced-chi-square'] = red_chisq
         returned_data['chi-square'] = chisq
+        returned_data['cov_angle'] = cov_p[6]
+        returned_data['cov_zx'] = cov_p[4]
+        returned_data['cov_zy'] = cov_p[5]
+        returned_data['cov_dx'] = cov_p[1]
+        returned_data['cov_dy'] = cov_p[2]
         
         # cov height and fwhm
         stars_p[:,0] += cov_p[0] - added_height
@@ -1510,7 +1635,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
             for istar in range(stars_p.shape[0]):
                 stars_p[istar,2], stars_p[istar,3] = transform_A_to_B(
                     stars_p[istar,2], stars_p[istar,3], -cov_p[1], -cov_p[2],
-                    cov_p[5], 0., 0., rcx, rcy, cov_p[4])
+                    cov_p[6], 0., 0., rcx, rcy, cov_p[4], cov_p[5])
+            if sip is not None:
+                stars_p[:,2:4] = sip_im2pix(stars_p[:,2:4], sip)
+
             
         else:
             cov_matrix *= returned_data['reduced-chi-square']
@@ -1530,14 +1658,17 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                 (stars_p[istar,2], stars_p[istar,3],
                  stars_err[istar,2], stars_err[istar,3]) = transform_A_to_B(
                     stars_p[istar,2], stars_p[istar,3], -cov_p[1], -cov_p[2],
-                    cov_p[5], 0., 0., rcx, rcy, cov_p[4],
+                    cov_p[6], 0., 0., rcx, rcy, cov_p[4], cov_p[5],
                     x1_err=stars_err[istar,2],
                     y1_err=stars_err[istar,3],
                     dx_err=cov_err[1],
                     dy_err=cov_err[2],
-                    z_err=cov_err[4],
-                    dr_err=cov_err[5],
+                    zx_err=cov_err[4],
+                    zy_err=cov_err[5],
+                    dr_err=cov_err[6],
                     return_err=True)
+            if sip is not None:
+                stars_p[:,2:4] = sip_im2pix(stars_p[:,2:4], sip)
             
         # put nan in place of filtered stars
         new_stars_p.fill(np.nan)

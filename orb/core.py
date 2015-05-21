@@ -31,7 +31,6 @@ import version
 __version__ = version.__version__
 
 ## BASIC IMPORTS
-
 import os
 import sys
 import warnings
@@ -40,15 +39,19 @@ import math
 import traceback
 import inspect
 import re
+import datetime
 
 ## MODULES IMPORTS
-
-import cutils
 import numpy as np
 import bottleneck as bn
 import astropy.io.fits as pyfits
+import astropy.wcs as pywcs
 from scipy import interpolate
 import pp
+import h5py
+
+import cutils
+
 
 #################################################
 #### CLASS TextColor ############################
@@ -211,6 +214,7 @@ class Tools(object):
         self._tuning_parameters = tuning_parameters
         self.ncpus = int(self._get_config_parameter("NCPUS"))
         self._silent = silent
+        warnings.showwarning = self._custom_warn
 
     def _init_logfile_name(self, logfile_name):
         """Initialize logfile name."""
@@ -437,6 +441,17 @@ class Tools(object):
             print "\r" + TextColor.WARNING + warning_msg + TextColor.END
         if not self._no_log:
             self.open_file(self._logfile_name, "a").write(warning_msg + "\n")
+
+    def _custom_warn(self, message, category, filename, lineno,
+                     file=None, line=None):
+        """Redirect warnings thrown by external functions
+        (e.g. :py:mod:`orb.utils`) to :py:meth:`orb._print_warning`.
+
+        The parameters are the same parameters as the method
+        warnings.showwarning (see the python module warnings).
+        """
+        self._print_warning(warnings.formatwarning(
+            message, category, filename, lineno))
 
     def _print_msg(self, message, color=False, no_hdr=False):
         """Print a simple message.
@@ -1104,7 +1119,7 @@ class Tools(object):
                   return_header=False, return_hdu_only=False,
                   return_mask=False, silent=False, delete_after=False,
                   data_index=0, image_mode='classic', chip_index=None,
-                  binning=None, fix_header=True, memmap=True, dtype=float):
+                  binning=None, fix_header=True, memmap=False, dtype=float):
         """Read a FITS data file and returns its data.
     
         :param fits_name: Path to the file, can be either
@@ -1262,6 +1277,24 @@ class Tools(object):
         
         return a / (binning**2.)
 
+
+    def _get_sitelle_slice(self, slice_str):
+        """
+        Strip a string containing SITELLE like slice coordinates.
+
+        :param slice_str: Slice string.
+        """
+        if "'" in slice_str:
+            slice_str = slice_str[1:-1]
+        
+        section = slice_str[1:-1].split(',')
+        x_min = int(section[0].split(':')[0]) - 1
+        x_max = int(section[0].split(':')[1])
+        y_min = int(section[1].split(':')[0]) - 1
+        y_max = int(section[1].split(':')[1])
+        return slice(x_min,x_max,1), slice(y_min,y_max,1)
+
+
     def _read_sitelle_chip(self, hdu, chip_index, substract_bias=True):
         """Return chip data of a SITELLE FITS image.
 
@@ -1277,12 +1310,7 @@ class Tools(object):
             if key not in hdu[0].header: self._print_error(
             'Bad SITELLE image header')
             chip_section = hdu[0].header[key]
-            chip_section = chip_section[1:-1].split(',')
-            x_min = int(chip_section[0].split(':')[0]) - 1
-            x_max = int(chip_section[0].split(':')[1])
-            y_min = int(chip_section[1].split(':')[0]) - 1
-            y_max = int(chip_section[1].split(':')[1])
-            return slice(x_min,x_max,1), slice(y_min,y_max,1)
+            return self._get_sitelle_slice(chip_section)
 
         def get_data(key, index, frame):
             xslice, yslice = get_slice(key, index)
@@ -1435,7 +1463,77 @@ class Tools(object):
         file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
             column_index]))
         return file_list
+
+    def _clean_sip(self, hdr):
+        """Clean a hdr from all but the SIP keywords.
+
+        :param hdr: The header to clean
+        """
+        ## sip_keys = ('WCSAXES', 'CRPIX1', 'CRPIX2', 'CTYPE1', 'CTYPE2',
+        ##             'BP_ORDER', 'A_1_1', 'BP_2_0', 'B_1_1', 'B_ORDER',
+        ##             'B_2_0', 'BP_0_2', 'AP_2_0', 'A_0_2', 'BP_1_1',
+        ##             'BP_1_0', 'A_2_0', 'A_ORDER', 'AP_1_0', 'AP_1_1',
+        ##             'AP_ORDER', 'BP_0_1', 'AP_0_1', 'B_0_2', 'AP_0_2')
+
+        if 'CTYPE1' in hdr:
+            if hdr['CTYPE1'] != 'RA---TAN-SIP':
+                self._print_error('This file does not contain any SIP transformation parameters')
+                
+        clean_hdr = pywcs.WCS(hdr).to_fits(relax=True)[0].header
+     
+        return clean_hdr
+
+    def save_sip(self, fits_path, hdr, overwrite=True):
+        """Save SIP parameters from a header to a blanck FITS file.
+
+        :param fits_path: Path to the FITS file
+        :param hdr: header from which SIP parameters must be read
+        :param overwrite: (Optional) Overwrite the FITS file.
+        """    
+        clean_hdr = self._clean_sip(hdr)
+        data = np.empty((1,1))
+        data.fill(np.nan)
+        self.write_fits(
+            fits_path, data, fits_header=clean_hdr, overwrite=overwrite)
+
+    def load_sip(self, fits_path):
+        """Return a astropy.wcs.WCS object from a FITS file containing
+        SIP parameters.
     
+        :param fits_path: Path to the FITS file    
+        """
+        hdr = self.read_fits(fits_path, return_hdu_only=True)[0].header
+        clean_hdr = self._clean_sip(hdr)
+        return pywcs.WCS(clean_hdr)
+
+
+    def open_hdf5(self, file_path, mode):
+        """Return a :py:class:`h5py.File` instance with some
+        informations.
+
+        :param file_path: Path to the hdf5 file.
+        
+        :param mode: Opening mode. Can be 'r', 'r+', 'w', 'w-', 'x',
+          'a'.
+        """
+        if mode in ['w', 'a', 'w-', 'x']:
+            # create folder if it does not exist
+            dirname = os.path.dirname(file_path)
+            if dirname != '':
+                if not os.path.exists(dirname): 
+                    os.makedirs(dirname)
+
+        f = h5py.File(file_path, mode)
+        
+        if mode in ['w', 'a', 'w-', 'x', 'r+']:
+            f.attrs['program'] = 'Generated by ORB version {}'.format(
+                __version__)
+            f.attrs['class'] = str(self.__class__.__name__)
+            f.attrs['author'] = 'Thomas Martin (thomas.martin.1@ulaval.ca)'
+            f.attrs['date'] = str(datetime.datetime.now())
+            
+        return f
+
             
 ##################################################
 #### CLASS Cube ##################################
@@ -3121,6 +3219,8 @@ class OptionFile(Tools):
 class ParamsFile(Tools):
     """Manage the correspondance between multiple dict containing the
     same parameters and a file on the disk.
+
+    Its behaviour is similar to :py:class:`astrometry.StarsParams`.
     """
 
     _params_list = None
@@ -3207,8 +3307,4 @@ class ParamsFile(Tools):
 
     def get_data(self):
         return self._params_list
-                
-        
-
-        
 
