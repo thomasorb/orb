@@ -254,7 +254,8 @@ class StarsParams(Tools):
         :param group: (Optional) Group path into the HDF5 file. If
           None the group will be '/' (default None).
         """
-        self._print_msg("Saving stars parameters")
+        self._print_msg("Saving stars parameters in {}".format(
+            params_file_path))
 
         with self.open_hdf5(params_file_path, 'a') as f:
 
@@ -1103,7 +1104,7 @@ class Astrometry(Tools):
         
         return self.star_list
 
-    def fit_stars_in_frame(self, index, save=True, **kwargs):
+    def fit_stars_in_frame(self, index, save=False, **kwargs):
         """
         Fit stars in one frame.
 
@@ -1187,7 +1188,7 @@ class Astrometry(Tools):
         return fit_results
 
 
-    def fit_stars_in_cube(self, correct_alignment=False, save=True,
+    def fit_stars_in_cube(self, correct_alignment=False, save=False,
                           add_cube=None, hpfilter=False,
                           fix_height=True, fix_beta=True,
                           fix_fwhm=False,
@@ -1481,7 +1482,8 @@ class Astrometry(Tools):
 
         deep_frame = self._get_combined_frame()
         fit_params = self.fit_stars_in_frame(deep_frame, multi_fit=False,
-                                             local_background=True)
+                                             local_background=True,
+                                             save=False)
         
         fitted_star_list = [[istar['x'], istar['y'],
                              istar['flux'], istar['snr']]
@@ -1831,7 +1833,7 @@ class Astrometry(Tools):
             self.fit_stars_in_cube(correct_alignment=True,
                                    no_aperture_photometry=True,
                                    hpfilter=HPFILTER, multi_fit=True,
-                                   fix_height=False)
+                                   fix_height=False, save=False)
       
         if self.star_nb < 4: 
             self._print_error("Not enough stars to align properly : %d (must be >= 3)"%self.star_nb)
@@ -2156,8 +2158,6 @@ class Astrometry(Tools):
             deep_frame,
             star_list_pix, x_range, y_range, r_range,
             [self.target_x, self.target_y], 1)
-
-        self.write_fits('guess.fits', guess_matrix, overwrite=True)
 
         self.wcs_rotation -= dr
         self.target_x -= dx
@@ -2934,7 +2934,7 @@ class Aligner(Tools):
             0, no_aperture_photometry=True,
             multi_fit=True, enable_zoom=False,
             enable_rotation=True, fix_fwhm=True,
-            sip=self.sip2)
+            sip=self.sip2, save=False)
         
         [self.dx, self.dy, self.dr, self.da, self.db] = match_star_lists(
             guess, np.copy(self.astro1.star_list), fit_results.get_star_list(
@@ -2980,7 +2980,7 @@ class Aligner(Tools):
                 0, no_aperture_photometry=True,
                 multi_fit=False, enable_zoom=False,
                 enable_rotation=False, 
-                fix_fwhm=False, sip=None)
+                fix_fwhm=False, sip=None, save=False)
             err = fit_results[:,'x_err']
 
 
@@ -3002,7 +3002,7 @@ class Aligner(Tools):
                 0, no_aperture_photometry=True,
                 multi_fit=False, enable_zoom=False,
                 enable_rotation=False, 
-                fix_fwhm=False, sip=None)
+                fix_fwhm=False, sip=None, save=False)
 
             fitted_star_nb = float(np.sum(~np.isnan(
                 fit_results.get_star_list(all_params=True)[:,0])))

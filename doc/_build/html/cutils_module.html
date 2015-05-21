@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUtils module &mdash; Orb 1.3.2 documentation</title>
+    <title>CUtils module &mdash; Orb 1.3.3.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.2',
+        VERSION:     '1.3.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.3.1 documentation" href="index.html" />
     <link rel="next" title="Astrometry module" href="astrometry_module.html" />
     <link rel="prev" title="Utils module" href="utils_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -128,7 +128,7 @@
 
 <dl class="function">
 <dt id="cutils.transform_A_to_B">
-<code class="descclassname">cutils.</code><code class="descname">transform_A_to_B</code><span class="sig-paren">(</span><em>double x1</em>, <em>double y1</em>, <em>double dx</em>, <em>double dy</em>, <em>double dr</em>, <em>double da</em>, <em>double db</em>, <em>double xrc</em>, <em>double yrc</em>, <em>double z</em>, <em>double x1_err=0.0</em>, <em>double y1_err=0.0</em>, <em>double dx_err=0.0</em>, <em>double dy_err=0.0</em>, <em>double dr_err=0.0</em>, <em>double z_err=0.0</em>, <em>bool return_err=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.transform_A_to_B" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">transform_A_to_B</code><span class="sig-paren">(</span><em>double x1</em>, <em>double y1</em>, <em>double dx</em>, <em>double dy</em>, <em>double dr</em>, <em>double da</em>, <em>double db</em>, <em>double xrc</em>, <em>double yrc</em>, <em>double zx</em>, <em>double zy</em>, <em>double x1_err=0.0</em>, <em>double y1_err=0.0</em>, <em>double dx_err=0.0</em>, <em>double dy_err=0.0</em>, <em>double dr_err=0.0</em>, <em>double zx_err=0.0</em>, <em>double zy_err=0.0</em>, <em>bool return_err=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.transform_A_to_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform star positions in camera A to the same star position
 in camera B given the transformation parameters</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -145,13 +145,15 @@ in camera B given the transformation parameters</p>
 <li><span class="target" id="cutils.transform_A_to_B.params.db"></span><strong>db</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.db">¶</a> &#8211; tilt angle</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.xrc"></span><strong>xrc</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.xrc">¶</a> &#8211; x coordinate of the rotation center</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.yrc"></span><strong>yrc</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.yrc">¶</a> &#8211; y coordinate of the rotation center</li>
-<li><span class="target" id="cutils.transform_A_to_B.params.z"></span><strong>z</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.z">¶</a> &#8211; zoom coefficient</li>
+<li><span class="target" id="cutils.transform_A_to_B.params.zx"></span><strong>zx</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.zx">¶</a> &#8211; zoom coefficient along x</li>
+<li><span class="target" id="cutils.transform_A_to_B.params.zy"></span><strong>zy</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.zy">¶</a> &#8211; zoom coefficient along y</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.x1_err"></span><strong>x1_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.x1_err">¶</a> &#8211; (Optional) Error on x1 estimate (default 0.)</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.y1_err"></span><strong>y1_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.y1_err">¶</a> &#8211; (Optional) Error on y1 estimate (default 0.)</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.dx_err"></span><strong>dx_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.dx_err">¶</a> &#8211; (Optional) Error on dx estimate (default 0.)</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.dy_err"></span><strong>dy_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.dy_err">¶</a> &#8211; (Optional) Error on dy estimate (default 0.)</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.dr_err"></span><strong>dr_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.dr_err">¶</a> &#8211; (Optional) Error on dr estimate (default 0.)</li>
-<li><span class="target" id="cutils.transform_A_to_B.params.z_err"></span><strong>z_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.z_err">¶</a> &#8211; (Optional) Error on z estimate (default 0.)</li>
+<li><span class="target" id="cutils.transform_A_to_B.params.zx_err"></span><strong>zx_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.zx_err">¶</a> &#8211; (Optional) Error on zx estimate (default 0.)</li>
+<li><span class="target" id="cutils.transform_A_to_B.params.zy_err"></span><strong>zy_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.zy_err">¶</a> &#8211; (Optional) Error on zy estimate (default 0.)</li>
 <li><span class="target" id="cutils.transform_A_to_B.params.return_err"></span><strong>return_err</strong><a class="paramlink headerlink reference internal" href="#cutils.transform_A_to_B.params.return_err">¶</a> &#8211; (Optional) If True, the error on the estimate
 of x2 and y2 is returned.</li>
 </ul>
@@ -412,6 +414,11 @@ than 3 frames.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To get a weighted average the MEAN of the weights must
+be equal to 1.</p>
+</div>
 </dd></dl>
 
 <dl class="function">
@@ -591,7 +598,7 @@ its size and the limits of the range along x and y axes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><span class="target" id="cutils.get_box_coords.params.ix"></span><strong>ix</strong><a class="paramlink headerlink reference internal" href="#cutils.get_box_coords.params.ix">¶</a> &#8211; center of the box along x axis</li>
 <li><span class="target" id="cutils.get_box_coords.params.iy"></span><strong>iy</strong><a class="paramlink headerlink reference internal" href="#cutils.get_box_coords.params.iy">¶</a> &#8211; center of the box along y axis</li>
 <li><span class="target" id="cutils.get_box_coords.params.box_size"></span><strong>box_size</strong><a class="paramlink headerlink reference internal" href="#cutils.get_box_coords.params.box_size">¶</a> &#8211; Size of the box. The final size of the box will
@@ -602,6 +609,9 @@ size of the box cannot be guaranteed.</li>
 <li><span class="target" id="cutils.get_box_coords.params.y_lim_min"></span><strong>y_lim_min</strong><a class="paramlink headerlink reference internal" href="#cutils.get_box_coords.params.y_lim_min">¶</a> &#8211; Minimum limit of the range along y.</li>
 <li><span class="target" id="cutils.get_box_coords.params.y_lim_max"></span><strong>y_lim_max</strong><a class="paramlink headerlink reference internal" href="#cutils.get_box_coords.params.y_lim_max">¶</a> &#8211; Maximum limit of the range along y.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">x_min, x_max, y_min, y_max</p>
 </td>
 </tr>
 </tbody>
@@ -619,7 +629,7 @@ Polygon is a list of (x,y) pairs.</p>
 
 <dl class="function">
 <dt id="cutils.multi_fit_stars">
-<code class="descclassname">cutils.</code><code class="descname">multi_fit_stars</code><span class="sig-paren">(</span><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">multi_fit_stars</code><span class="sig-paren">(</span><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em>, <em>sip=None</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit multiple stars at the same time.</p>
 <p>Useful if the relative positions of the stars are well known. In
 this case the pattern of position can be shifted, zoomed and
@@ -670,6 +680,8 @@ noise is computed from the background pixels around the
 stars. ron and dcl parameters are thus not used (default True).</li>
 <li><span class="target" id="cutils.multi_fit_stars.params.saturation"></span><strong>saturation</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.saturation">¶</a> &#8211; (Optional) If not 0, all pixels above the
 saturation level are removed from the fit (default 0).</li>
+<li><span class="target" id="cutils.multi_fit_stars.params.sip"></span><strong>sip</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.sip">¶</a> &#8211; (Optional) A pywcs.WCS instance containing SIP
+distorsion correction (default None).</li>
 </ul>
 </td>
 </tr>
@@ -745,7 +757,7 @@ compute. This vector may have any length.</li>
         <li class="right" >
           <a href="utils_module.html" title="Utils module"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core module &mdash; Orb 1.3.2 documentation</title>
+    <title>Core module &mdash; Orb 1.3.3.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.2',
+        VERSION:     '1.3.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.3.1 documentation" href="index.html" />
     <link rel="next" title="Utils module" href="utils_module.html" />
     <link rel="prev" title="Python for ORB users" href="python_for_orb.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -199,6 +199,20 @@ array.</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._clean_sip">
+<code class="descname">_clean_sip</code><span class="sig-paren">(</span><em>hdr</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._clean_sip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean a hdr from all but the SIP keywords.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._clean_sip.params.hdr"></span><strong>hdr</strong><a class="paramlink headerlink reference internal" href="#core.Tools._clean_sip.params.hdr">¶</a> &#8211; The header to clean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._close_pp_server">
 <code class="descname">_close_pp_server</code><span class="sig-paren">(</span><em>js</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._close_pp_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Destroy the parallel python job server to avoid too much
@@ -242,6 +256,15 @@ check is done. this is faster but less safe (default True).</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._custom_warn">
+<code class="descname">_custom_warn</code><span class="sig-paren">(</span><em>message</em>, <em>category</em>, <em>filename</em>, <em>lineno</em>, <em>file=None</em>, <em>line=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._custom_warn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redirect warnings thrown by external functions
+(e.g. <code class="xref py py-mod docutils literal"><span class="pre">orb.utils</span></code>) to <code class="xref py py-meth docutils literal"><span class="pre">orb._print_warning()</span></code>.</p>
+<p>The parameters are the same parameters as the method
+warnings.showwarning (see the python module warnings).</p>
 </dd></dl>
 
 <dl class="method">
@@ -530,6 +553,20 @@ FITS file.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._get_sitelle_slice">
+<code class="descname">_get_sitelle_slice</code><span class="sig-paren">(</span><em>slice_str</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_sitelle_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strip a string containing SITELLE like slice coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_sitelle_slice.params.slice_str"></span><strong>slice_str</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_sitelle_slice.params.slice_str">¶</a> &#8211; Slice string.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._get_standard_file_path">
 <code class="descname">_get_standard_file_path</code><span class="sig-paren">(</span><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_file_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a standard spectrum file path.</p>
@@ -793,6 +830,21 @@ files.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools.load_sip">
+<code class="descname">load_sip</code><span class="sig-paren">(</span><em>fits_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.load_sip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a astropy.wcs.WCS object from a FITS file containing
+SIP parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools.load_sip.params.fits_path"></span><strong>fits_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.load_sip.params.fits_path">¶</a> &#8211; Path to the FITS file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools.open_file">
 <code class="descname">open_file</code><span class="sig-paren">(</span><em>file_name</em>, <em>mode='w'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.open_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open a file in write mode (by default) and return a file
@@ -815,8 +867,28 @@ read mode and &#8216;a&#8217; for append mode.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools.open_hdf5">
+<code class="descname">open_hdf5</code><span class="sig-paren">(</span><em>file_path</em>, <em>mode</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.open_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <code class="xref py py-class docutils literal"><span class="pre">h5py.File</span></code> instance with some
+informations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools.open_hdf5.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.open_hdf5.params.file_path">¶</a> &#8211; Path to the hdf5 file.</li>
+<li><span class="target" id="core.Tools.open_hdf5.params.mode"></span><strong>mode</strong><a class="paramlink headerlink reference internal" href="#core.Tools.open_hdf5.params.mode">¶</a> &#8211; Opening mode. Can be &#8216;r&#8217;, &#8216;r+&#8217;, &#8216;w&#8217;, &#8216;w-&#8216;, &#8216;x&#8217;,
+&#8216;a&#8217;.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools.read_fits">
-<code class="descname">read_fits</code><span class="sig-paren">(</span><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=True</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">read_fits</code><span class="sig-paren">(</span><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=False</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a FITS data file and returns its data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -874,6 +946,25 @@ more information on PyFITS module. And
 <a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
 files.</p>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools.save_sip">
+<code class="descname">save_sip</code><span class="sig-paren">(</span><em>fits_path</em>, <em>hdr</em>, <em>overwrite=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.save_sip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save SIP parameters from a header to a blanck FITS file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools.save_sip.params.fits_path"></span><strong>fits_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.save_sip.params.fits_path">¶</a> &#8211; Path to the FITS file</li>
+<li><span class="target" id="core.Tools.save_sip.params.hdr"></span><strong>hdr</strong><a class="paramlink headerlink reference internal" href="#core.Tools.save_sip.params.hdr">¶</a> &#8211; header from which SIP parameters must be read</li>
+<li><span class="target" id="core.Tools.save_sip.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.Tools.save_sip.params.overwrite">¶</a> &#8211; (Optional) Overwrite the FITS file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -2017,6 +2108,7 @@ of this interval are merged (default None).</li>
 <dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage the correspondance between multiple dict containing the
 same parameters and a file on the disk.</p>
+<p>Its behaviour is similar to <a class="reference internal" href="astrometry_module.html#astrometry.StarsParams" title="astrometry.StarsParams"><code class="xref py py-class docutils literal"><span class="pre">astrometry.StarsParams</span></code></a>.</p>
 <dl class="method">
 <dt id="core.ParamsFile.__del__">
 <code class="descname">__del__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile.__del__" title="Permalink to this definition">¶</a></dt>
@@ -2093,7 +2185,7 @@ True).</li>
         <li class="right" >
           <a href="python_for_orb.html" title="Python for ORB users"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

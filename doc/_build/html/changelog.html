@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; Orb 1.3.2 documentation</title>
+    <title>Changelog &mdash; Orb 1.3.3.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.2',
+        VERSION:     '1.3.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.3.1 documentation" href="index.html" />
     <link rel="prev" title="Astrometry module" href="astrometry_module.html" /> 
   </head>
   <body role="document">
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -95,6 +95,12 @@
 </li>
 <li><a class="reference internal" href="#v1-3-2">v1.3.2</a><ul>
 <li><a class="reference internal" href="#scripts">scripts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-3-3">v1.3.3</a><ul>
+<li><a class="reference internal" href="#alignement">Alignement</a></li>
+<li><a class="reference internal" href="#sip-distorsion">SIP/Distorsion</a></li>
+<li><a class="reference internal" href="#hdf5">HDF5</a></li>
 </ul>
 </li>
 </ul>
@@ -472,6 +478,33 @@ of keyword values.</li>
 </ul>
 </div>
 </div>
+<div class="section" id="v1-3-3">
+<h3>v1.3.3<a class="headerlink" href="#v1-3-3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="alignement">
+<h4>Alignement<a class="headerlink" href="#alignement" title="Permalink to this headline">¶</a></h4>
+<p>The alignment procedure has been completely changed and is now more
+than ten times faster. Two steps only are required: One brute force
+step (<code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.brute_force()</span></code>) based on fast
+photometry and a fine fit step to get all alignment parameters.</p>
+<p><a class="reference internal" href="astrometry_module.html#astrometry.Aligner" title="astrometry.Aligner"><code class="xref py py-class docutils literal"><span class="pre">astrometry.Aligner</span></code></a> has been created which manage the
+alignment procedure.</p>
+</div>
+<div class="section" id="sip-distorsion">
+<h4>SIP/Distorsion<a class="headerlink" href="#sip-distorsion" title="Permalink to this headline">¶</a></h4>
+<p>Computation of the SIP (Simple Imaging Polynomial) distorsion
+correction has been implemented in
+<a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.register()</span></code></a>. All the geometrical
+transformation functions in <a href="#id3"><span class="problematic" id="id4">:py:module:`utils`</span></a> and the multi star
+fitting procedure <a class="reference internal" href="astrometry_module.html#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></code></a> have been
+updated.</p>
+</div>
+<div class="section" id="hdf5">
+<h4>HDF5<a class="headerlink" href="#hdf5" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="astrometry_module.html#astrometry.StarsParams" title="astrometry.StarsParams"><code class="xref py py-class docutils literal"><span class="pre">astrometry.StarsParams</span></code></a> saves its data in HDF5 format to
+provide an easier and more robust way of accessing and viewing the
+parameters. The module h5py is now required to use ORB.</p>
+</div>
+</div>
 </div>
 </div>
 
@@ -493,7 +526,7 @@ of keyword values.</li>
         <li class="right" >
           <a href="astrometry_module.html" title="Astrometry module"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

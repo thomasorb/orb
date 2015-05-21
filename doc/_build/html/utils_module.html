@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utils module &mdash; Orb 1.3.2 documentation</title>
+    <title>Utils module &mdash; Orb 1.3.3.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.2',
+        VERSION:     '1.3.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/logo.ico"/>
-    <link rel="top" title="Orb 1.3.2 documentation" href="index.html" />
+    <link rel="top" title="Orb 1.3.3.1 documentation" href="index.html" />
     <link rel="next" title="CUtils module" href="cutils_module.html" />
     <link rel="prev" title="Core module" href="core_module.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="core_module.html" title="Core module"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -832,7 +832,7 @@ its size and the limits of the range along x and y axes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><span class="target" id="utils.get_box_coords.params.ix"></span><strong>ix</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.ix">¶</a> &#8211; center of the box along x axis</li>
 <li><span class="target" id="utils.get_box_coords.params.iy"></span><strong>iy</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.iy">¶</a> &#8211; center of the box along y axis</li>
 <li><span class="target" id="utils.get_box_coords.params.box_size"></span><strong>box_size</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.box_size">¶</a> &#8211; Size of the box. The final size of the box will
@@ -843,6 +843,9 @@ size of the box cannot be guaranteed.</li>
 <li><span class="target" id="utils.get_box_coords.params.y_lim_min"></span><strong>y_lim_min</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.y_lim_min">¶</a> &#8211; Minimum limit of the range along y.</li>
 <li><span class="target" id="utils.get_box_coords.params.y_lim_max"></span><strong>y_lim_max</strong><a class="paramlink headerlink reference internal" href="#utils.get_box_coords.params.y_lim_max">¶</a> &#8211; Maximum limit of the range along y.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">x_min, x_max, y_min, y_max</p>
 </td>
 </tr>
 </tbody>
@@ -1795,6 +1798,43 @@ rejected values is returned also (default False).</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.sip_im2pix">
+<code class="descclassname">utils.</code><code class="descname">sip_im2pix</code><span class="sig-paren">(</span><em>im_coords</em>, <em>sip</em>, <em>tolerance=1e-08</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.sip_im2pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform perfect pixel positions to distorded pixels positions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.sip_im2pix.params.im_coords"></span><strong>im_coords</strong><a class="paramlink headerlink reference internal" href="#utils.sip_im2pix.params.im_coords">¶</a> &#8211; perfect pixel positions as an Nx2 array of floats.</li>
+<li><span class="target" id="utils.sip_im2pix.params.sip"></span><strong>sip</strong><a class="paramlink headerlink reference internal" href="#utils.sip_im2pix.params.sip">¶</a> &#8211; pywcs.WCS() instance containing SIP parameters.</li>
+<li><span class="target" id="utils.sip_im2pix.params.tolerance"></span><strong>tolerance</strong><a class="paramlink headerlink reference internal" href="#utils.sip_im2pix.params.tolerance">¶</a> &#8211; tolerance on the iterative method.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.sip_pix2im">
+<code class="descclassname">utils.</code><code class="descname">sip_pix2im</code><span class="sig-paren">(</span><em>pix_coords</em>, <em>sip</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.sip_pix2im" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform distorded pixel positions to perfect pixels positions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.sip_pix2im.params.pix_coords"></span><strong>pix_coords</strong><a class="paramlink headerlink reference internal" href="#utils.sip_pix2im.params.pix_coords">¶</a> &#8211; distorded pixel positions as an Nx2 array of floats.</li>
+<li><span class="target" id="utils.sip_pix2im.params.sip"></span><strong>sip</strong><a class="paramlink headerlink reference internal" href="#utils.sip_pix2im.params.sip">¶</a> &#8211; pywcs.WCS() instance containing SIP parameters.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.smooth">
 <code class="descclassname">utils.</code><code class="descname">smooth</code><span class="sig-paren">(</span><em>a</em>, <em>deg=2</em>, <em>kind='gaussian'</em>, <em>keep_sides=True</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.smooth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Smooth a given vector.</p>
@@ -1842,7 +1882,7 @@ effect when convolving).</p>
 
 <dl class="function">
 <dt id="utils.transform_frame">
-<code class="descclassname">utils.</code><code class="descname">transform_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">transform_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em>, <em>fill_value=nan</em>, <em>sip_A=None</em>, <em>sip_B=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform one frame or a part of it using transformation
 coefficients.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1857,12 +1897,16 @@ coefficients.</p>
 <li><span class="target" id="utils.transform_frame.params.y_max"></span><strong>y_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_max">¶</a> &#8211; Upper y boundary of the frame to transform</li>
 <li><span class="target" id="utils.transform_frame.params.d"></span><strong>d</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.d">¶</a> &#8211; Transformation coefficients [dx, dy, dr, da, db]</li>
 <li><span class="target" id="utils.transform_frame.params.rc"></span><strong>rc</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.rc">¶</a> &#8211; Rotation center of the frame [rc_x, rc_y]</li>
-<li><span class="target" id="utils.transform_frame.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.zoom_factor">¶</a> &#8211; Zoom on the image</li>
+<li><span class="target" id="utils.transform_frame.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.zoom_factor">¶</a> &#8211; Zoom on the image. Can be a couple (zx, zy).</li>
 <li><span class="target" id="utils.transform_frame.params.interp_order"></span><strong>interp_order</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.interp_order">¶</a> &#8211; Interpolation order</li>
 <li><span class="target" id="utils.transform_frame.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.mask">¶</a> &#8211; (Optional) If a mask frame is passed is is also
 transformed (default None).</li>
 <li><span class="target" id="utils.transform_frame.params.fill_value"></span><strong>fill_value</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.fill_value">¶</a> &#8211; (Optional) Fill value for extrapolated points
 (default np.nan).</li>
+<li><span class="target" id="utils.transform_frame.params.sip_A"></span><strong>sip_A</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.sip_A">¶</a> &#8211; (Optional) pywcs.WCS() instance containing SIP parameters of
+the output image (default None).</li>
+<li><span class="target" id="utils.transform_frame.params.sip_B"></span><strong>sip_B</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.sip_B">¶</a> &#8211; (Optional) pywcs.WCS() instance containing SIP parameters of
+the input image (default None).</li>
 </ul>
 </td>
 </tr>
@@ -2018,9 +2062,15 @@ vector must be equal to final_step_nb (default None).</p>
 
 <dl class="function">
 <dt id="utils.transform_star_position_A_to_B">
-<code class="descclassname">utils.</code><code class="descname">transform_star_position_A_to_B</code><span class="sig-paren">(</span><em>star_list_A</em>, <em>params</em>, <em>rc</em>, <em>zoom_factor</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_star_position_A_to_B" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform star positions in camera A to the same star position
-in camera B given the transformation parameters</p>
+<code class="descclassname">utils.</code><code class="descname">transform_star_position_A_to_B</code><span class="sig-paren">(</span><em>star_list_A</em>, <em>params</em>, <em>rc</em>, <em>zoom_factor</em>, <em>sip_A=None</em>, <em>sip_B=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_star_position_A_to_B" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform star positions in camera A to the positions in camera
+B given the transformation parameters.</p>
+<p>Optionally SIP distorsion parameters can be given.</p>
+<p>The transformation steps are:</p>
+<div class="highlight-python"><div class="highlight"><pre>dist_pix_camA -&gt; perf_pix_camA -&gt; geometric transformation_A2B
+-&gt; perf_pix_camB -&gt; dist_pix_camB
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2029,7 +2079,12 @@ in camera B given the transformation parameters</p>
 <li><span class="target" id="utils.transform_star_position_A_to_B.params.star_list_A"></span><strong>star_list_A</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.star_list_A">¶</a> &#8211; List of star coordinates in the cube A.</li>
 <li><span class="target" id="utils.transform_star_position_A_to_B.params.params"></span><strong>params</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.params">¶</a> &#8211; Transformation parameters [dx, dy, dr, da, db].</li>
 <li><span class="target" id="utils.transform_star_position_A_to_B.params.rc"></span><strong>rc</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.rc">¶</a> &#8211; Rotation center coordinates.</li>
-<li><span class="target" id="utils.transform_star_position_A_to_B.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.zoom_factor">¶</a> &#8211; Zooming factor between the two cameras.</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.zoom_factor">¶</a> &#8211; Zooming factor between the two cameras. Can be
+a couple (zx, zy).</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.sip_A"></span><strong>sip_A</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.sip_A">¶</a> &#8211; (Optional) pywcs.WCS instance containing SIP
+parameters of the frame A (default None).</li>
+<li><span class="target" id="utils.transform_star_position_A_to_B.params.sip_B"></span><strong>sip_B</strong><a class="paramlink headerlink reference internal" href="#utils.transform_star_position_A_to_B.params.sip_B">¶</a> &#8211; (Optional) pywcs.WCS instance containing SIP
+parameters of the frame B (default None).</li>
 </ul>
 </td>
 </tr>
@@ -2080,7 +2135,7 @@ can be a single float or a vector of size n</td>
         <li class="right" >
           <a href="core_module.html" title="Core module"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Orb 1.3.3.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

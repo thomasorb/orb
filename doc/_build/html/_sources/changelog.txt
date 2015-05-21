@@ -361,4 +361,35 @@ scripts
 
 * **orb-viewer** updated to manage SITELLE's files better
 
+v1.3.3
+======
 
+Alignement
+----------
+
+The alignment procedure has been completely changed and is now more
+than ten times faster. Two steps only are required: One brute force
+step (:py:meth:`astrometry.Astrometry.brute_force`) based on fast
+photometry and a fine fit step to get all alignment parameters.
+
+:py:class:`astrometry.Aligner` has been created which manage the
+alignment procedure.
+
+
+SIP/Distorsion
+--------------
+
+Computation of the SIP (Simple Imaging Polynomial) distorsion
+correction has been implemented in
+:py:meth:`astrometry.Astrometry.register`. All the geometrical
+transformation functions in :py:module:`utils` and the multi star
+fitting procedure :py:meth:`astrometry.fit_stars_in_frame` have been
+updated.
+
+
+HDF5
+----
+
+:py:class:`astrometry.StarsParams` saves its data in HDF5 format to
+provide an easier and more robust way of accessing and viewing the
+parameters. The module h5py is now required to use ORB.
