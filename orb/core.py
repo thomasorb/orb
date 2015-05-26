@@ -1522,7 +1522,7 @@ class Tools(object):
             if dirname != '':
                 if not os.path.exists(dirname): 
                     os.makedirs(dirname)
-
+                    
         f = h5py.File(file_path, mode)
         
         if mode in ['w', 'a', 'w-', 'x', 'r+']:

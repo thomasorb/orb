@@ -955,7 +955,7 @@ class Astrometry(Tools):
     def _get_fit_results_path(self):
         """Return the default path to the file containing all fit
         results."""
-        return self._data_path_hdr + "fit_results"
+        return self._data_path_hdr + "fit_results.hdf5"
 
     def _get_combined_frame(self, use_deep_frame=False):
         """Return a combined frame to work on.

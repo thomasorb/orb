@@ -382,7 +382,7 @@ SIP/Distorsion
 Computation of the SIP (Simple Imaging Polynomial) distorsion
 correction has been implemented in
 :py:meth:`astrometry.Astrometry.register`. All the geometrical
-transformation functions in :py:module:`utils` and the multi star
+transformation functions in :py:mod:`utils` and the multi star
 fitting procedure :py:meth:`astrometry.fit_stars_in_frame` have been
 updated.
 
@@ -393,3 +393,21 @@ HDF5
 :py:class:`astrometry.StarsParams` saves its data in HDF5 format to
 provide an easier and more robust way of accessing and viewing the
 parameters. The module h5py is now required to use ORB.
+
+
+v1.3.3.1
+========
+
+Binning detection
+-----------------
+
+* keywords **CAM1_DETECTOR_SIZE_X**, **CAM1_DETECTOR_SIZE_Y**,
+  **CAM2_DETECTOR_SIZE_X**, **CAM2_DETECTOR_SIZE_Y** added to the
+  configuration file to help automatic detection of the image
+  binning.
+
+* :py:meth:`~utils.compute_binning` added to compute image binning.
+
+
+
+

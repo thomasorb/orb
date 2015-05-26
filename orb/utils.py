@@ -52,6 +52,20 @@ from xml.dom import minidom
 #### MISC  #######################################
 ##################################################
 
+def compute_binning(image_shape, detector_shape):
+    """Return binning along both axis given the image shape and the
+    detector shape.
+
+    :param image_size: Tuple [x,y] giving the image shape
+    
+    :param detector_shape: Tuple [x,y] giving the detector shape
+      (i.e. maximum numbers of pixels along the x and y axis.)
+    """
+    binning = np.floor(
+        np.array(detector_shape, dtype=float)
+        / np.array(image_shape, dtype=float)).astype(int)
+    if np.all(binning > 0): return binning
+    else: raise Exception('Bad binning value (must be > 0)')
 
 def query_sesame(object_name, verbose=True):
     """Query the SESAME Database to get RA/DEC given the name of an
@@ -1067,7 +1081,7 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
                 smoothed_a[ii] = np.mean(box) 
             elif (kind=="gaussian"):
                 smoothed_a[ii] = np.average(box, weights=weights)
-            else: raise Exception("kind parameter must be 'median', 'mean', 'gaussian', 'gaussian_conv' or 'cos_conv'")
+            else: raise Exception("Kind parameter must be 'median', 'mean', 'gaussian', 'gaussian_conv' or 'cos_conv'")
     if keep_sides:
         return smoothed_a[deg:-deg]
     else:
