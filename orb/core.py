@@ -2052,8 +2052,11 @@ class Cube(Tools):
                             self.dimy = image_data.shape[1]
                             
                             hdul = self.read_fits(
-                                image_name, return_hdu_only = True)
-                            self._original_dtype = np.dtype(hdul.info(output=False)[0][5])
+                                image_name, return_hdu_only=True)
+                   
+                            self._original_dtype = np.dtype(
+                                hdul.info(output=False)[
+                                    self._get_hdu_data_index(hdul)][5])
                             
                         else:
                             with self.open_hdf5(image_name, 'r') as f:
