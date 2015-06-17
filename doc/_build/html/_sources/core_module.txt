@@ -21,6 +21,26 @@ Cube class
    :special-members:
    :show-inheritance:
 
+HDFCube class
+-------------
+
+.. autoclass:: core.HDFCube
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+
+OutHDFCube class
+----------------
+
+.. autoclass:: core.OutHDFCube
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+
 TextColor class
 ---------------
 

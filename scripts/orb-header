@@ -28,7 +28,7 @@
 
 import os, sys
 import orb.core
-from orb.core import Tools
+from orb.core import Tools, HDFCube
 import argparse
 from argparse import ArgumentParser
 import warnings
@@ -44,40 +44,83 @@ def main(args):
 
 
     if os.path.isfile(args.fits_path):
-        if not 'fits' in args.fits_path:
+        if (not 'fits' in args.fits_path) and (not 'hdf5' in args.fits_path):
             with open(args.fits_path, 'r') as f:
                 fits_list = [filename for filename in f]
                 fits_list = to.sort_image_list(fits_list, 'spiomm')
         else:
             fits_list = [args.fits_path]
             
-            
         for fits_path in fits_list:
 
-            hdulist = to.read_fits(fits_path, return_hdu_only=True,
-                                   fix_header=False)
-
-            if args.hdu_index + 1 > len(hdulist):
-                print ' > ERROR: given HDU index is too high, file only contains {} HDU'.format(len(hdulist))
-                hdulist.info()
+            if 'hdf5' in fits_path:
+                cube = HDFCube(fits_path)
+                if args.hdu_index + 1 > cube.dimz:
+                    print ' > ERROR: given frame index is too high, file only contains {} frames'.format(cube.dimz)
+                    sys.exit(2)
+                file_type = 'hdf5'
+                
+            elif 'fits' in fits_path:
+                hdulist = to.read_fits(fits_path, return_hdu_only=True,
+                                       fix_header=False)
+                if args.hdu_index + 1 > len(hdulist):
+                    print ' > ERROR: given HDU index is too high, file only contains {} HDU'.format(len(hdulist))
+                    hdulist.info()
+                    sys.exit(2)
+                    
+                hdu = hdulist[args.hdu_index]
+                file_type = 'fits'
+                
+            else:
+                print ' > ERROR: bad formatted file. Must be a FITS or HDF5'
                 sys.exit(2)
-
-            hdu = hdulist[args.hdu_index]
+            
             if args.subparser_name == 'print':
-                print repr(hdu.header)
+                if file_type == 'fits':
+                    print repr(hdu.header)
+                if file_type == 'hdf5':
+                    print repr(cube.get_frame_header(args.hdu_index))
+                
             elif args.subparser_name == 'key':
-                if args.keyword in hdu.header:
-                    print hdu.header[args.keyword]
-                else:
-                    print ' > ERROR: keyword {} does not exist.'.format(
-                        args.keyword)
+                if file_type == 'fits':
+                    if args.keyword in hdu.header:
+                        print hdu.header[args.keyword]
+                    else:
+                        print ' > ERROR: keyword {} does not exist.'.format(
+                            args.keyword)
+                        sys.exit(2)
+                        
+                if file_type == 'hdf5':
+                    if args.keyword in cube.get_frame_header(args.hdu_index):
+                        print cube.get_frame_header(args.hdu_index)[args.keyword]
+                    else:
+                        print ' > ERROR: keyword {} does not exist.'.format(
+                            args.keyword)
+                        sys.exit(2)
+                        
             elif args.subparser_name == 'del':
-                if args.keyword in hdu.header:
-                    del hdu.header[args.keyword]
-                    hdulist.writeto(fits_path, clobber=True)
-                else:
-                    print ' > ERROR: keyword {} does not exist.'.format(
-                        args.keyword)
+                if file_type == 'fits':
+                    if args.keyword in hdu.header:
+                        del hdu.header[args.keyword]
+                        hdulist.writeto(fits_path, clobber=True)
+                    else:
+                        print ' > ERROR: keyword {} does not exist.'.format(
+                            args.keyword)
+                        sys.exit(2)
+                        
+                if file_type == 'hdf5':
+                    with to.open_hdf5(fits_path, 'a') as f:
+                        hdr = cube.get_frame_header(args.hdu_index)
+                        if args.keyword in hdr:
+                            del hdr[args.keyword]
+                            del f[to._get_hdf5_header_path(args.hdu_index)]
+                            f[to._get_hdf5_header_path(args.hdu_index)] = (
+                                to._header_fits2hdf5(hdr))
+                        else:
+                            print ' > ERROR: keyword {} does not exist.'.format(
+                                args.keyword)
+                            sys.exit(2)
+                         
             elif args.subparser_name == 'info':
                 hdulist.info()
         
@@ -89,12 +132,13 @@ if __name__ == "__main__":
     parser = ArgumentParser(version=('ORB-version {}'.format(
                               orb.core.__version__)),
                             description=
-                            "Manipulate the header of a FITS file.")
+                            "Manipulate the header of a FITS/HDF5 file.")
 
+    parser.add_argument('fits_path', help='Path to the FITS file')
 
     parser.add_argument('-i', dest="hdu_index", default=0, type=int,
                         help="Change HDU index")
-
+    
     subparsers = parser.add_subparsers(help='operation type', dest='subparser_name')
 
     parser_print = subparsers.add_parser('print', help='Print header content')
@@ -108,8 +152,8 @@ if __name__ == "__main__":
     parser_del.add_argument('keyword', help='Keyword to delete')
 
     parser_del = subparsers.add_parser('info', help='Print basic header info')
-
-    parser.add_argument('fits_path', help='Path to the FITS file')
+    
+    
 
     if len(sys.argv) < 2:
         parser.print_usage()

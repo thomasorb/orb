@@ -52,6 +52,7 @@ from xml.dom import minidom
 #### MISC  #######################################
 ##################################################
 
+
 def compute_binning(image_shape, detector_shape):
     """Return binning along both axis given the image shape and the
     detector shape.
@@ -2014,13 +2015,17 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
 
     :param frame: Frame to transform
     
-    :param x_min: Lower x boundary of the frame to transform
+    :param x_min: Lower x boundary of the transformed section (can be
+      a tuple in order to get multiple sections)
     
-    :param x_max: Upper x boundary of the frame to transform
+    :param x_max: Upper x boundary of the transformed section (can be
+      a tuple in order to get multiple sections)
     
-    :param y_min: Lower y boundary of the frame to transform
+    :param y_min: Lower y boundary of the transformed section (can be
+      a tuple in order to get multiple sections)
     
-    :param y_max: Upper y boundary of the frame to transform
+    :param y_max: Upper y boundary of the transformed section (can be
+      a tuple in order to get multiple sections)
     
     :param d: Transformation coefficients [dx, dy, dr, da, db]
     
@@ -2030,8 +2035,8 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
     
     :param interp_order: Interpolation order
     
-    :param mask: (Optional) If a mask frame is passed is is also
-      transformed (default None).
+    :param mask: (Optional) If a mask frame is passed it is
+      transformed also (default None).
 
     :param fill_value: (Optional) Fill value for extrapolated points
       (default np.nan).
@@ -2043,8 +2048,15 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
       the input image (default None).
     """
 
-    def mapping(coords, transx, transy):
-        return (transx[coords[0], coords[1]], transy[coords[0], coords[1]])
+    def mapping(coords, transx, transy, x_min, y_min):
+        if (x_min + coords[0] < transx.shape[0]
+            and y_min + coords[1] < transx.shape[1]):
+            return (transx[x_min + coords[0],
+                           y_min + coords[1]],
+                    transy[x_min + coords[0],
+                           y_min + coords[1]])
+        else:
+            return (np.nan, np.nan)
 
     if np.size(zoom_factor) == 2:
         zx = zoom_factor[0]
@@ -2057,29 +2069,55 @@ def transform_frame(frame, x_min, x_max, y_min, y_max,
     transx, transy = cutils.create_transform_maps(
         frame.shape[0], frame.shape[1], d[0], d[1], d[2], d[3], d[4], rc[0],
         rc[1], zx, zy, sip_A, sip_B)
-    
-    
+
     if frame.dtype != np.dtype(float):
         frame = frame.astype(float)
     
     if mask is not None:
         mask = mask.astype(float)
-    
-    frame = ndimage.interpolation.geometric_transform(
-        frame, mapping, extra_arguments=(transx, transy),
-        order=interp_order, mode='constant', cval=fill_value)
+
+    if not (isinstance(x_min, tuple) or isinstance(x_min, list)):
+        x_min = [x_min]
+        y_min = [y_min]
+        x_max = [x_max]
+        y_max = [y_max]
+
+    if not ((len(x_min) == len(x_max))
+            and (len(y_min) == len(y_max))
+            and (len(x_min) == len(y_min))):
+        self._print_error('x_min, y_min, x_max, y_max must have the same length')
+    sections = list()
+    sections_mask = list()
+    for i in range(len(x_min)):
+        x_size = x_max[i] - x_min[i]
+        y_size = y_max[i] - y_min[i]
+        output_shape = (x_size, y_size) # accelerate the process (unused
+                                        # data points are not computed)
+
+        sections.append(ndimage.interpolation.geometric_transform(
+            frame, mapping, extra_arguments=(transx, transy,
+                                             x_min[i], y_min[i]),
+            output_shape=output_shape,
+            order=interp_order, mode='constant', cval=fill_value))
+
+        if mask is not None:
+            sections_mask.append(ndimage.interpolation.geometric_transform(
+                mask, mapping, extra_arguments=(transx, transy,
+                                                x_min[i], y_min[i]),
+                output_shape=output_shape,
+                order=interp_order, mode='constant', cval=fill_value))
+            
 
     if mask is not None:
-        mask = ndimage.interpolation.geometric_transform(
-            mask, mapping, extra_arguments=(transx, transy),
-            order=interp_order, mode='constant', cval=fill_value)
-
-    if mask is not None:
-        return (frame[x_min:x_max, y_min:y_max],
-                mask[x_min:x_max, y_min:y_max])
+        if len(x_min) == 1:
+            return (sections[0], sections_mask[0])
+        else:
+            return sections, sections_mask
     else:
-        return frame[x_min:x_max, y_min:y_max]
-
+        if len(x_min) == 1:
+            return sections[0]
+        else:
+            return sections
 
 def shift_frame(frame, dx, dy, x_min, x_max, 
                 y_min, y_max, order, fill_value=np.nan):
@@ -3373,3 +3411,27 @@ def variable_me(n, params):
      return me
 
 
+def optimize_phase(interf, step, order, zpd_shift):
+    """Return an optimized linear phase vector basez on the
+    minimization of the imaginary part.
+
+    :param interf: Interferogram
+    :param step: Step size (in nm)
+    :param order: Alisasing order
+    :param zpd_shift: ZPD shift
+    """
+    def fft(p, interf, return_imag, step, order, zpd_shift):
+        ext_phase = np.polyval(p, np.arange(np.size(interf)))
+        a_fft = transform_interferogram(
+            interf, 1., 1., step, order, '2.0', zpd_shift,
+            wavenumber=True,
+            ext_phase=ext_phase,
+            return_complex=True)
+        if return_imag:
+            return a_fft.imag
+        else:
+            return a_fft.real
+    optim = scipy.optimize.leastsq(fft, [0., 0.], args=(
+        interf, True, step, order, zpd_shift))
+    
+    return np.polyval(optim[0], np.arange(np.size(interf)))

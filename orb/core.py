@@ -44,6 +44,7 @@ import datetime
 ## MODULES IMPORTS
 import numpy as np
 import bottleneck as bn
+import bottleneck.func
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
@@ -819,7 +820,14 @@ class Tools(object):
         caller_name = (self.__class__.__name__ + '.'
                        + sys._getframe(1).f_code.co_name)
         full_parameter_name = caller_name + '.' + parameter_name
+        self._print_msg('looking for tuning parameter: {}'.format(
+            full_parameter_name))
         if full_parameter_name in self._tuning_parameters:
+            self._print_warning(
+                'Tuning parameter {} changed to {} (default {})'.format(
+                    full_parameter_name,
+                    self._tuning_parameters[full_parameter_name],
+                    default_value))
             return self._tuning_parameters[full_parameter_name]
         else:
             return default_value
@@ -996,6 +1004,11 @@ class Tools(object):
           http://fits.gsfc.nasa.gov/ for more information on FITS
           files.
         """
+        start_time = time.time()
+        # change extension if nescessary
+        if os.path.splitext(fits_name)[1] != '.fits':
+            fits_name = os.path.splitext(fits_name)[0] + '.fits'
+        
         if mask is not None:
             if np.shape(mask) != np.shape(fits_data):
                 self._print_error('Mask must have the same shape as data')
@@ -1107,7 +1120,8 @@ class Tools(object):
                     hdu_mask.writeto(mask_name, clobber=overwrite)
                 
                 if not (silent):
-                    self._print_msg("data written as : " + fits_name)
+                    self._print_msg("Data written as {} in {:.2f} s ".format(
+                        fits_name, time.time() - start_time))
                 return fits_name
             else :
                 fits_name = (os.path.splitext(base_fits_name)[0] + 
@@ -1170,7 +1184,7 @@ class Tools(object):
 
         :param memmap: (Optional) If True, use the memory mapping
           option of pyfits. This is useful to avoid loading a full cube
-          in memory when opening a large data cube (default True).
+          in memory when opening a large data cube (default False).
 
         :param dtype: (Optional) Data is converted to
           the given dtype (e.g. np.float32, default float).
@@ -1435,7 +1449,8 @@ class Tools(object):
 
         :param image_mode: Image mode, can be 'sitelle' or 'spiomm'.
         """
-        file_list = [path for path in file_list if '.fits' in path]
+        file_list = [path for path in file_list if
+                     (('.fits' in path) or ('.hdf5' in path))]
         if len(file_list) == 0: return None
 
         if image_mode == 'spiomm':
@@ -1444,7 +1459,8 @@ class Tools(object):
 
         # get all numbers
         file_seq = [re.findall("[0-9]+", path)
-                        for path in file_list if '.fits' in path]
+                        for path in file_list if
+                    (('.fits' in path) or ('.hdf5' in path))]
         try:
             file_keys = np.array(file_seq, dtype=int)
         except Exception, e:
@@ -1515,6 +1531,8 @@ class Tools(object):
         
         :param mode: Opening mode. Can be 'r', 'r+', 'w', 'w-', 'x',
           'a'.
+
+        .. note:: Please refer to http://www.h5py.org/.
         """
         if mode in ['w', 'a', 'w-', 'x']:
             # create folder if it does not exist
@@ -1534,11 +1552,278 @@ class Tools(object):
             
         return f
 
+    def write_hdf5(self, file_path, data, header=None,
+                   silent=False, overwrite=False, max_hdu_check=True,
+                   compress=False):
+
+        """    
+        Write data in HDF5 format.
+
+        A header can be added to the data. This method is useful to
+        handle an HDF5 data file like a FITS file. It implements most
+        of the functionality of the method
+        :py:meth:`core.Tools.write_fits`.
+
+        .. note:: The output HDF5 file can contain mutiple data header
+          units (HDU). Each HDU is in a spcific group named 'hdu*', *
+          being the index of the HDU. The first HDU is named
+          HDU0. Each HDU contains one data group (HDU*/data) which
+          contains a numpy.ndarray and one header group
+          (HDU*/header). Each subgroup of a header group is a keyword
+          and its associated value, comment and type.
+
+        :param file_path: Path to the HDF5 file to create
+
+        :param data: A numpy array (numpy.ndarray instance) of numeric
+          values. If a list of arrays is given, each array will be
+          placed in a specific HDU. The header keyword must also be
+          set to a list of headers of the same length.
+
+        :param header: (Optional) Optional keywords to update or
+          create. It can be a pyfits.Header() instance or a list of
+          tuples [(KEYWORD_1, VALUE_1, COMMENT_1), (KEYWORD_2,
+          VALUE_2, COMMENT_2), ...]. Standard keywords like SIMPLE,
+          BITPIX, NAXIS, EXTEND does not have to be passed (default
+          None). It can also be a list of headers if a list of arrays
+          has been passed to the option 'data'.    
+
+        :param max_hdu_check: (Optional): When True, ff the input data
+          is a list (interpreted as a list of data unit), check if
+          it's length is not too long to make sure that the input list
+          is not a single data array that has not been converted to a
+          numpy.ndarray format. If the number of HDU to create is
+          indeed very long this can be set to False (default True).
+        
+        :param silent: (Optional) If True turn this function won't
+          display any message (default False)
+
+        :param overwrite: (Optional) If True overwrite the output file
+          if it exists (default False).
+
+        :param compress: (Optional) If True data is compressed using
+          the SZIP library (see
+          https://www.hdfgroup.org/doc_resource/SZIP/). SZIP library
+          must be installed (default False).
+    
+
+        .. note:: Please refer to http://www.h5py.org/.
+        """
+        MAX_HDUS = 3
+
+        start_time = time.time()
+        
+        # change extension if nescessary
+        if os.path.splitext(file_path)[1] != '.hdf5':
+            file_path = os.path.splitext(file_path)[0] + '.hdf5'
+    
+        # Check if data is a list of arrays.
+        if not isinstance(data, list):
+            data = [data]
+
+        if max_hdu_check and len(data) > MAX_HDUS:
+            self._print_error('Data list length is > {}. As a list is interpreted has a list of data unit make sure to pass a numpy.ndarray instance instead of a list. '.format(MAX_HDUS))
+
+        # Check header format
+        if header is not None:
+        
+            if isinstance(header, pyfits.Header):
+                header = [header]
+                
+            elif isinstance(header, list):
+                
+                if (isinstance(header[0], list)
+                    or isinstance(header[0], tuple)):
+                    
+                    header_seems_ok = False
+                    if (isinstance(header[0][0], list)
+                        or isinstance(header[0][0], tuple)):
+                        # we have a list of headers
+                        if len(header) == len(data):
+                            header_seems_ok = True
+                            
+                    elif isinstance(header[0][0], str):
+                        # we only have one header
+                        if len(header[0]) > 2:
+                            header = [header]
+                            header_seems_ok = True
+                            
+                    if not header_seems_ok:
+                        self._print_error('Badly formated header')
+                            
+                elif not isinstance(header[0], pyfits.Header):
+                    
+                    self._print_error('Header must be a pyfits.Header instance or a list')
+
+            else:
+                self._print_error('Header must be a pyfits.Header instance or a list')
+            
+
+            if len(header) != len(data):
+                self._print_error('The number of headers must be the same as the number of data units.')
+            
+
+        # change path if file exists and must not be overwritten
+        new_file_path = str(file_path)
+        if not overwrite and os.path.exists(new_file_path):
+            index = 0
+            while os.path.exists(new_file_path):
+                new_file_path = (os.path.splitext(file_path)[0] + 
+                                 "_" + str(index) + 
+                                 os.path.splitext(file_path)[1])
+                index += 1
+                
+
+        # open file
+        with self.open_hdf5(new_file_path, 'w') as f:
+        
+            ## add data + header
+            for i in range(len(data)):
+
+                idata = data[i]
+                
+                # Check if data has a valid format.
+                if not isinstance(idata, np.ndarray):
+                    try:
+                        idata = np.array(idata, dtype=float)
+                    except Exception, e:
+                        self._print_error('Data to write must be convertible to a numpy array of numeric values: {}'.format(e))
+
+
+                # convert data to float32
+                if idata.dtype == np.float64:
+                    idata = idata.astype(np.float32)
+
+                # hdu name
+                hdu_group_name = 'hdu{}'.format(i)
+                if compress:
+                    data_group = f.create_dataset(
+                        hdu_group_name + '/data', data=idata,
+                        compression='szip', compression_opts=('nn', 32))
+                else:
+                    data_group = f.create_dataset(
+                        hdu_group_name + '/data', data=idata)
+                
+                # add header
+                if header is not None:
+                    iheader = header[i]
+                    if not isinstance(iheader, pyfits.Header):
+                        iheader = pyfits.Header(iheader)
+
+                    f[hdu_group_name + '/header'] = self._header_fits2hdf5(
+                        iheader)
+
+        self._print_msg('Data written as {} in {:.2f} s'.format(
+            new_file_path, time.time() - start_time))
+        
+        return new_file_path
+
+    def _header_fits2hdf5(self, fits_header):
+        """convert a pyfits.Header() instance to a header for an hdf5 file
+
+        :param fits_header: Header of the FITS file
+        """
+        hdf5_header = list()
+        
+        for ikey in range(len(fits_header)):
+            _tstr = str(type(fits_header[ikey]))
+            ival = np.array(
+                (fits_header.keys()[ikey], str(fits_header[ikey]),
+                 fits_header.comments[ikey], _tstr))
+            
+            hdf5_header.append(ival)
+        return np.array(hdf5_header)
+
+    def _header_hdf52fits(self, hdf5_header):
+        """convert an hdf5 header to a pyfits.Header() instance.
+
+        :param hdf5_header: Header of the HDF5 file
+        """
+        def cast(a, t_str):
+            for _t in [int, float, bool, str, np.int64, np.float64]:
+                if t_str == repr(_t):
+                    return _t(a)
+            raise Exception('Bad type string {}'.format(t_str))
+                    
+        fits_header = pyfits.Header()
+        for i in range(hdf5_header.shape[0]):
+            ival = hdf5_header[i,:]
+            if ival[3] != 'comment':
+                fits_header[ival[0]] = (cast(ival[1], ival[3]), str(ival[2]))
+            else:
+                fits_header['comment'] = ival[1]
+        return fits_header
+        
+    def read_hdf5(self, file_path, return_header=False, dtype=float):
+        
+        """Read an HDF5 data file created with
+        :py:meth:`core.Tools.write_hdf5`.
+        
+        :param file_path: Path to the file, can be either
+          relative or absolute.        
+
+        :param return_header: (Optional) If True return a tuple (data,
+           header) (default False).
+    
+        :param dtype: (Optional) Data is converted to the given type
+          (e.g. np.float32, default float).
+        
+        .. note:: Please refer to http://www.h5py.org/."""
+        
+        
+        with self.open_hdf5(file_path, 'r') as f:
+            data = list()
+            header = list()
+            for hdu_name in f:
+                data.append(f[hdu_name + '/data'][:].astype(dtype))
+                if return_header:
+                    if hdu_name + '/header' in f:
+                        # extract header
+                        header.append(
+                            self._header_hdf52fits(f[hdu_name + '/header'][:]))
+                    else: header.append(None)
+
+        if len(data) == 1:
+            if return_header:
+                return data[0], header[0]
+            else:
+                return data[0]
+        else:
+            if return_header:
+                return data, header
+            else:
+                return data
+            
+    def _get_hdf5_data_path(self, frame_index, mask=False):
+        """Return path to the data of a given frame in an HDF5 cube.
+
+        :param frame_index: Index of the frame
+        
+        :param mask: (Optional) If True, path to the masked frame is
+          returned (default False).
+        """
+        if mask: return self._get_hdf5_frame_path(frame_index) + '/mask'
+        else: return self._get_hdf5_frame_path(frame_index) + '/data'
+
+    def _get_hdf5_header_path(self, frame_index):
+        """Return path to the header of a given frame in an HDF5 cube.
+
+        :param frame_index: Index of the frame
+        """
+        return self._get_hdf5_frame_path(frame_index) + '/header'
+
+    def _get_hdf5_frame_path(self, frame_index):
+        """Return path to a given frame in an HDF5 cube.
+
+        :param frame_index: Index of the frame.
+        """
+        return 'frame{:05d}'.format(frame_index)
+        
+            
+        
             
 ##################################################
 #### CLASS Cube ##################################
 ##################################################
-
 class Cube(Tools):
     """
     Generate and manage a **virtual frame-divided cube**.
@@ -1546,6 +1831,16 @@ class Cube(Tools):
     .. note:: A **frame-divided cube** is a set of frames grouped
       together by a list.  It avoids storing a data cube in one large
       data file and loading an entire cube to process it.
+
+    This class has been designed to handle large data cubes. Its data
+    can be accessed virtually as if it was loaded in memory.
+
+    .. code-block:: python
+      :linenos:
+
+      cube = Cube('liste') # A simple list is enough to initialize a Cube instance
+      quadrant = Cube[25:50, 25:50, :] # Here you just load a small quadrant
+      spectrum = Cube[84,58,:] # load spectrum at pixel [84,58]
     """
     # Processing
     ncpus = None # number of CPUs to use for parallel processing
@@ -1566,7 +1861,9 @@ class Cube(Tools):
     mean_image = None
 
     overwrite = None
-    
+
+    _hdf5 = None
+    _original_dtype = None # dtype of the original data
     _data_prefix = None
     _project_header = None
     _calibration_laser_header = None
@@ -1585,6 +1882,10 @@ class Cube(Tools):
                        # the chip to read
     _prebinning = None # prebinning directive
 
+    
+    _parallel_access_to_data = None # authorize parallel access to
+                                    # data (False for HDF5)
+
     def __init__(self, image_list_path, image_mode='classic',
                  chip_index=1, binning=1, data_prefix="./temp/data.",
                  config_file_name="config.orb", project_header=list(),
@@ -1597,7 +1898,7 @@ class Cube(Tools):
         Initialize Cube class.
        
         :param image_list_path: Path to the list of images which form
-          the virtual cube. If ``image_list_path`` is set to '' then
+          the virtual cube. If image_list_path is set to '' then
           this class will not try to load any data.  Can be useful
           when the user don't want to use or process any data.
 
@@ -1607,7 +1908,7 @@ class Cube(Tools):
           present in the data cube. The chip index option can also be
           used in this mode to read only one of the two chips
           (i.e. one of the 2 cameras). In 'spiomm' mode, if
-          '*_bias.fits' frames are present along with the image
+          :file:`*_bias.fits` frames are present along with the image
           frames, bias is substracted from the image frames, this
           option is used to precisely correct the bias of the camera
           2. In 'classic' mode, the whole array is extracted in its
@@ -1695,6 +1996,8 @@ class Cube(Tools):
         self._chip_index = chip_index
         self._prebinning = binning
 
+        self._parallel_access_to_data = True
+
         if (self.image_list_path != ""):
             # read image list and get cube dimensions  
             image_list_file = self.open_file(self.image_list_path, "r")
@@ -1704,8 +2007,8 @@ class Cube(Tools):
             is_first_image = True
             
             for image_name in image_name_list:
-                image_name = (image_name.splitlines())[0]
-
+                image_name = (image_name.splitlines())[0]    
+                
                 if self._image_mode == 'spiomm' and '_bias' in image_name:
                     spiomm_bias_frame = True
                 else: spiomm_bias_frame = False
@@ -1723,15 +2026,45 @@ class Cube(Tools):
                             self._prebinning = int(image_name.split()[-1])
                             
                     elif not spiomm_bias_frame:
-                        
                         self.image_list = [image_name]
-                        image_data = self.read_fits(
-                            image_name,
-                            image_mode=self._image_mode,
-                            chip_index=self._chip_index,
-                            binning=self._prebinning)
-                        self.dimx = image_data.shape[0]
-                        self.dimy = image_data.shape[1]
+
+                        # detect if hdf5 format or not
+                        if os.path.splitext(image_name)[1] == '.hdf5':
+                            self._hdf5 = True
+                        elif os.path.splitext(image_name)[1] == '.fits':
+                            self._hdf5 = False
+                        else:
+                            self._print_error("Unrecognized extension of file {}. File extension must be '*.fits' or '*.hdf5' depending on its format.".format(image_name))
+
+                        if self._hdf5 :
+                            if self._image_mode != 'classic': self._print_warning("Image mode changed to 'classic' because 'spiomm' and 'sitelle' modes are not supported in hdf5 format.")
+                            if self._prebinning != 1: self._print_warning("Prebinning is not supported for images in hdf5 format")
+                            self._image_mode = 'classic'
+                            self._prebinning = 1
+        
+                        if not self._hdf5:
+                            image_data = self.read_fits(
+                                image_name,
+                                image_mode=self._image_mode,
+                                chip_index=self._chip_index,
+                                binning=self._prebinning)
+                            self.dimx = image_data.shape[0]
+                            self.dimy = image_data.shape[1]
+                            
+                            hdul = self.read_fits(
+                                image_name, return_hdu_only = True)
+                            self._original_dtype = np.dtype(hdul.info(output=False)[0][5])
+                            
+                        else:
+                            with self.open_hdf5(image_name, 'r') as f:
+                                if 'hdu0/data' in f:
+                                    shape = f['hdu0/data'].shape
+                                    self._original_dtype = f['hdu0/data'].dtype
+                                    if len(shape) == 2:
+                                        self.dimx, self.dimy = shape
+                                    else: self._print_error('Image shape must have 2 dimensions: {}'.format(shape))
+                                else: self._print_error('Bad formatted hdf5 file. Use Tools.write_hdf5 to get a correct hdf5 file for ORB.')
+                            
                         is_first_image = False
                         # check if masked frame exists
                         if os.path.exists(self._get_mask_path(image_name)):
@@ -1752,6 +2085,7 @@ class Cube(Tools):
             self.image_list = np.array(self.image_list)
             self.dimz = self.image_list.shape[0]
             
+            
             if (self.dimx) and (self.dimy) and (self.dimz):
                 if not silent_init:
                     self._print_msg("Data shape : (" + str(self.dimx) 
@@ -1770,152 +2104,192 @@ class Cube(Tools):
         
         .. note:: To make this function silent just set
           Cube()._silent_load to True.
-        """
-        def _get_default_slice(_slice, _max):
-            if isinstance(_slice, slice):
-                if _slice.start is not None:
-                    if (isinstance(_slice.start, int)
-                        or isinstance(_slice.start, long)):
-                        if (_slice.start >= 0) and (_slice.start <= _max):
-                            slice_min = int(_slice.start)
-                        else:
-                            self._print_error(
-                                "Index error: list index out of range")
-                    else:
-                        self._print_error("Type error: list indices of slice must be integers")
-                else: slice_min = 0
-
-                if _slice.stop is not None:
-                    if (isinstance(_slice.stop, int)
-                        or isinstance(_slice.stop, long)):
-                        if ((_slice.stop >= 0) and (_slice.stop <= _max)
-                            and _slice.stop > slice_min):
-                            slice_max = int(_slice.stop)
-                        else:
-                            self._print_error(
-                                "Index error: list index out of range")
-                        
-                    else:
-                        self._print_error("Type error: list indices of slice must be integers")
-                else: slice_max = _max
-                    
-            elif isinstance(_slice, int) or isinstance(_slice, long):
-                slice_min = _slice
-                slice_max = slice_min + 1
-            else:
-                self._print_error("Type error: list indices must be integers or slices")
-            return slice(slice_min, slice_max, 1)
-        
-        def _get_frame_section(cube, x_slice, y_slice, frame_index,
-                               image_mode, chip_index, prebinning):
-            hdu = cube.read_fits(cube.image_list[frame_index],
-                                 return_hdu_only=True,
-                                 return_mask=cube._return_mask)
-            image = None
-            stored_file_path = None
-            if prebinning > 1:
-                # already binned data is stored in a specific folder
-                # to avoid loading more than one time the same image.
-                # check if already binned data exists
-                
-                stored_file_path = os.path.join(
-                    os.path.split(cube._get_data_path_hdr())[0],
-                    'STORED',
-                    (os.path.splitext(
-                        os.path.split(cube.image_list[frame_index])[1])[0]
-                     + '.{}.bin{}.fits'.format(image_mode, prebinning)))
-            
-                if os.path.exists(stored_file_path):
-                    image = cube.read_fits(stored_file_path)
-                
-                    
-            if image_mode == 'sitelle':
-                if image is None:
-                    image = cube._read_sitelle_chip(hdu, chip_index)
-                    image = cube._bin_image(image, prebinning)
-                section = image[x_slice, y_slice]
-                
-            elif image_mode == 'spiomm':
-                if image is None:
-                    image, header = cube._read_spiomm_data(
-                        hdu, cube.image_list[frame_index])
-                    image = cube._bin_image(image, prebinning)
-                section = image[x_slice, y_slice]
-                
-            else:
-                if prebinning > 1:
-                    if image is None:
-                        image = np.copy(
-                            hdu[0].data.transpose())
-                        image = cube._bin_image(image, prebinning)
-                    section = image[x_slice, y_slice]
-                else:
-                    if image is None:
-                        section = np.copy(
-                            hdu[0].section[y_slice, x_slice].transpose())
-                    else:
-                        section = image[y_slice, x_slice].transpose()
-            del hdu
-
-            if stored_file_path is not None and image is not None:
-                cube.write_fits(stored_file_path, image, overwrite=True,
-                                silent=True)
-                
-            cube._return_mask = False # always reset self._return_mask to False
-            return section
-
-
+        """        
         # check return mask possibility
         if self._return_mask and not self._mask_exists:
             self._print_error("No mask found with data, cannot return mask")
         
         # produce default values for slices
-        x_slice = _get_default_slice(key[0], self.dimx)
-        y_slice = _get_default_slice(key[1], self.dimy)
-        z_slice = _get_default_slice(key[2], self.dimz)
+        x_slice = self._get_default_slice(key[0], self.dimx)
+        y_slice = self._get_default_slice(key[1], self.dimy)
+        z_slice = self._get_default_slice(key[2], self.dimz)
         
         # get first frame
-        data = _get_frame_section(self, x_slice, y_slice, z_slice.start,
-                                  self._image_mode, self._chip_index,
-                                  self._prebinning)
+        data = self._get_frame_section(x_slice, y_slice, z_slice.start)
         
         # return this frame if only one frame is wanted
         if z_slice.stop == z_slice.start + 1L:
             return data
 
-        # load other frames
-        job_server, ncpus = self._init_pp_server(silent=self._silent_load) 
+        if self._parallel_access_to_data:
+            # load other frames
+            job_server, ncpus = self._init_pp_server(silent=self._silent_load) 
 
-        if not self._silent_load:
-            progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
-        for ik in range(z_slice.start + 1L, z_slice.stop, ncpus):
-            # No more jobs than frames to compute
-            if (ik + ncpus >= z_slice.stop): 
-                ncpus = z_slice.stop - ik
-
-            added_data = np.empty((x_slice.stop - x_slice.start,
-                                   y_slice.stop - y_slice.start, ncpus),
-                                  dtype=float)
-
-            jobs = [(ijob, job_server.submit(
-                _get_frame_section,
-                args=(self, x_slice, y_slice, ik+ijob,
-                      self._image_mode, self._chip_index,
-                      self._prebinning),
-                modules=("numpy as np",)))
-                    for ijob in range(ncpus)]
-
-            for ijob, job in jobs:
-                added_data[:,:,ijob] = job()
-
-            data = np.dstack((data, added_data))
             if not self._silent_load:
-                progress.update(ik - z_slice.start, info="Loading data")
-        if not self._silent_load:
-            progress.end()
-        self._close_pp_server(job_server)
+                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
             
-        return data
+            for ik in range(z_slice.start + 1L, z_slice.stop, ncpus):
+                # No more jobs than frames to compute
+                if (ik + ncpus >= z_slice.stop): 
+                    ncpus = z_slice.stop - ik
+
+                added_data = np.empty((x_slice.stop - x_slice.start,
+                                       y_slice.stop - y_slice.start, ncpus),
+                                      dtype=float)
+
+                jobs = [(ijob, job_server.submit(
+                    self._get_frame_section,
+                    args=(x_slice, y_slice, ik+ijob),
+                    modules=("numpy as np",)))
+                        for ijob in range(ncpus)]
+
+                for ijob, job in jobs:
+                    added_data[:,:,ijob] = job()
+
+                data = np.dstack((data, added_data))
+                if not self._silent_load:
+                    progress.update(ik - z_slice.start, info="Loading data")
+            if not self._silent_load:
+                progress.end()
+            self._close_pp_server(job_server)
+        else:
+            if not self._silent_load:
+                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+            
+            for ik in range(z_slice.start + 1L, z_slice.stop):
+
+                added_data = self._get_frame_section(x_slice, y_slice, ik)
+
+                data = np.dstack((data, added_data))
+                if not self._silent_load:
+                    progress.update(ik - z_slice.start, info="Loading data")
+            if not self._silent_load:
+                progress.end()
+            
+        return np.squeeze(data)
+
+    def _get_default_slice(self, _slice, _max):
+        """Utility function used by __getitem__. Return a valid slice
+        object given an integer or slice.
+
+        :param _slice: a slice object or an integer
+        :param _max: size of the considered axis of the slice.
+        """
+        if isinstance(_slice, slice):
+            if _slice.start is not None:
+                if (isinstance(_slice.start, int)
+                    or isinstance(_slice.start, long)):
+                    if (_slice.start >= 0) and (_slice.start <= _max):
+                        slice_min = int(_slice.start)
+                    else:
+                        self._print_error(
+                            "Index error: list index out of range")
+                else:
+                    self._print_error("Type error: list indices of slice must be integers")
+            else: slice_min = 0
+
+            if _slice.stop is not None:
+                if (isinstance(_slice.stop, int)
+                    or isinstance(_slice.stop, long)):
+                    if ((_slice.stop >= 0) and (_slice.stop <= _max)
+                        and _slice.stop > slice_min):
+                        slice_max = int(_slice.stop)
+                    else:
+                        self._print_error(
+                            "Index error: list index out of range")
+
+                else:
+                    self._print_error("Type error: list indices of slice must be integers")
+            else: slice_max = _max
+
+        elif isinstance(_slice, int) or isinstance(_slice, long):
+            slice_min = _slice
+            slice_max = slice_min + 1
+        else:
+            self._print_error("Type error: list indices must be integers or slices")
+        return slice(slice_min, slice_max, 1)
+
+    def _get_frame_section(self, x_slice, y_slice, frame_index):
+        """Utility function used by __getitem__.
+
+        Return a section of one frame in the cube.
+
+        :param x_slice: slice object along x axis.
+        :param y_slice: slice object along y axis.
+        :param frame_index: Index of the frame.
+
+        .. warning:: This function must only be used by
+           __getitem__. To get a frame section please use the method
+           :py:meth:`orb.core.get_data_frame` or
+           :py:meth:`orb.core.get_data`.
+        """
+        if not self._hdf5:
+            hdu = self.read_fits(self.image_list[frame_index],
+                                 return_hdu_only=True,
+                                 return_mask=self._return_mask)
+        else:
+            hdu = self.open_hdf5(self.image_list[frame_index], 'r')
+        image = None
+        stored_file_path = None
+        if self._prebinning > 1:
+            # already binned data is stored in a specific folder
+            # to avoid loading more than one time the same image.
+            # check if already binned data exists
+
+            if not self._hdf5:
+                stored_file_path = os.path.join(
+                    os.path.split(self._get_data_path_hdr())[0],
+                    'STORED',
+                    (os.path.splitext(
+                        os.path.split(self.image_list[frame_index])[1])[0]
+                     + '.{}.bin{}.fits'.format(self._image_mode, self._prebinning)))
+            else:
+                raise Exception(
+                    'prebinned data is not handled for hdf5 cubes')
+
+            if os.path.exists(stored_file_path):
+                image = self.read_fits(stored_file_path)
+
+
+        if self._image_mode == 'sitelle': # FITS only
+            if image is None:
+                image = self._read_sitelle_chip(hdu, self._chip_index)
+                image = self._bin_image(image, self._prebinning)
+            section = image[x_slice, y_slice]
+
+        elif self._image_mode == 'spiomm': # FITS only
+            if image is None:
+                image, header = self._read_spiomm_data(
+                    hdu, self.image_list[frame_index])
+                image = self._bin_image(image, self._prebinning)
+            section = image[x_slice, y_slice]
+
+        else:
+            if self._prebinning > 1: # FITS only
+                if image is None:
+                    image = np.copy(
+                        hdu[0].data.transpose())
+                    image = self._bin_image(image, self._prebinning)
+                section = image[x_slice, y_slice]
+            else:
+                if image is None: # HDF5 and FITS
+                    if not self._hdf5:
+                        section = np.copy(
+                            hdu[0].section[y_slice, x_slice].transpose())
+                    else:
+                        section = hdu['hdu0/data'][x_slice, y_slice]
+
+                else: # FITS only
+                    section = image[y_slice, x_slice].transpose()
+        del hdu
+
+         # FITS only
+        if stored_file_path is not None and image is not None:
+            self.write_fits(stored_file_path, image, overwrite=True,
+                            silent=True)
+
+        self._return_mask = False # always reset self._return_mask to False
+        return section
 
     def is_same_2D_size(self, cube_test):
         """Check if another cube has the same dimensions along x and y
@@ -2035,9 +2409,15 @@ class Cube(Tools):
           http://fits.gsfc.nasa.gov/ for more information on FITS
           files.
         """
-        hdu = self.read_fits(self.image_list[index],
-                             return_hdu_only=True)
-        return hdu[0].header
+        if not self._hdf5:
+            hdu = self.read_fits(self.image_list[index],
+                                 return_hdu_only=True)
+            return hdu[0].header
+        else:
+            hdu = self.open_hdf5(self.image_list[index], 'r')
+            if 'hdu0/header' in hdu:
+                return hdu['hdu0/header']
+            else: return pyfits.Header()
 
     
     def get_cube_header(self):
@@ -2230,6 +2610,37 @@ class Cube(Tools):
         """
         return self.get_zstat(nozero=nozero, center=center, stat='median')
 
+
+    def _get_frame_stat(self, ik, nozero, stat_key, center,
+                        xmin, xmax, ymin, ymax):
+        """Utilitary function for :py:meth:`orb.orb.Cube.get_zstat`
+        which returns the stats of a frame in a box.
+
+        Check if the frame stats are not already in the header of the
+        frame.    
+        """
+        if not nozero and not center:
+            frame_hdr = self.get_frame_header(ik)
+            if stat_key in frame_hdr:
+                if not np.isnan(float(frame_hdr[stat_key])):
+                    return float(frame_hdr[stat_key])
+
+        frame = np.copy(self.get_data(
+            xmin, xmax, ymin, ymax, ik, ik+1)).astype(float)
+
+        if nozero: # zeros filtering
+            frame[np.nonzero(frame == 0)] = np.nan
+
+        if np.all(np.isnan(frame)):
+            return np.nan
+        if stat_key == 'MEDIAN':
+            statf, a = bn.func.nanmedian_selector(frame, None)
+        elif stat_key == 'MEAN':
+            statf, a = bn.func.nanmean_selector(frame, None)
+        elif stat_key == 'STD':
+            statf, a = bn.func.nanstd_selector(frame, None)
+        return statf(a)
+
     def get_zstat(self, nozero=False, stat='mean', center=False):
         """Return a vector containing frames stat (mean, median or
         std).
@@ -2244,32 +2655,6 @@ class Cube(Tools):
         :param center: If True only the center of the frame is used to
           compute stat.
         """
-        
-        def get_frame_stat(cube, ik, nozero, stat_key, center,
-                           xmin, xmax, ymin, ymax):
-            if not nozero and not center:
-                frame_hdr = cube.get_frame_header(ik)
-                if stat_key in frame_hdr:
-                    if not np.isnan(float(frame_hdr[stat_key])):
-                        return float(frame_hdr[stat_key])
-                        
-            frame = np.copy(cube.get_data(
-                xmin, xmax, ymin, ymax, ik, ik+1)).astype(float)
-            
-            if nozero: # zeros filtering
-                frame[np.nonzero(frame == 0)] = np.nan
-                
-            if np.all(np.isnan(frame)):
-                return np.nan
-            if stat_key == 'MEDIAN':
-                statf, a = bn.func.nanmedian_selector(frame, None)
-            elif stat_key == 'MEAN':
-                statf, a = bn.func.nanmean_selector(frame, None)
-            elif stat_key == 'STD':
-                statf, a = bn.func.nanstd_selector(frame, None)
-            return statf(a)
-
-
         BORDER_COEFF = 0.15
         
         if center:
@@ -2307,11 +2692,12 @@ class Cube(Tools):
                 ncpus = self.dimz - ik
 
             jobs = [(ijob, job_server.submit(
-                get_frame_stat, 
-                args=(self, ik + ijob, nozero, stat_key, center,
+                self._get_frame_stat, 
+                args=(ik + ijob, nozero, stat_key, center,
                       xmin, xmax, ymin, ymax),
                 modules=("import numpy as np",
-                         "import bottleneck as bn")))
+                         "import bottleneck as bn",
+                         "import bottleneck.func")))
                     for ijob in range(ncpus)]
 
             for ijob, job in jobs:
@@ -2374,17 +2760,32 @@ class Cube(Tools):
 
         return x_min, x_max, y_min, y_max
        
-    def export(self, export_path, x_range=None, y_range=None, z_range=None,
-               fits_header=None, overwrite=False):
-        """Export cube as one FITS file.
+    def export(self, export_path, x_range=None, y_range=None,
+               z_range=None, header=None, overwrite=False,
+               force_hdf5=False):
+        
+        """Export cube as one FITS/HDF5 file.
 
         :param export_path: Path of the exported FITS file
 
-        :param x_range: Tuple (x_min, x_max)
+        :param x_range: (Optional) Tuple (x_min, x_max) (default
+          None).
         
-        :param y_range: Tuple (y_min, y_max)
+        :param y_range: (Optional) Tuple (y_min, y_max) (default
+          None).
         
-        :param z_range: Tuple (z_min, z_max)
+        :param z_range: (Optional) Tuple (z_min, z_max) (default
+          None).
+
+        :param header: (Optional) Header of the output file (default
+          None).
+
+        :param overwrite: (Optional) Overwrite output file (default
+          False).
+
+        :param force_hdf5: (Optional) If True, output is in HDF5
+          format even if the input files are FITS files. If False it
+          will be in the format of the input files (default False).   
         """
         if x_range is None:
             xmin = 0
@@ -2406,30 +2807,87 @@ class Cube(Tools):
         else:
             zmin = np.min(z_range)
             zmax = np.max(z_range)
+            
+        if self._hdf5 or force_hdf5: # HDF5 export
+            
+            outcube = OutHDFCube(
+                export_path,
+                (xmax - xmin, ymax - ymin, zmax - zmin),
+                overwrite=overwrite)
+            
+            outcube.append_image_list(self.image_list)
+          
+            job_server, ncpus = self._init_pp_server()
+            progress = ProgressBar(zmax-zmin)
 
-        data = np.empty((xmax-xmin, ymax-ymin, zmax-zmin), dtype=float)
-        
-        job_server, ncpus = self._init_pp_server()
-        progress = ProgressBar(zmax-zmin)
-        for iframe in range(0, zmax-zmin, ncpus):
-            progress.update(iframe, info='exporting data')
-            if iframe + ncpus >= zmax - zmin:
+            data_frames = np.empty((xmax - xmin, ymax - ymin, ncpus),
+                                   dtype=self._original_dtype)
+            
+            for iframe in range(0, zmax-zmin, ncpus):
+                progress.update(
+                    iframe, info='exporting data frame {}'.format(
+                        iframe))
+                if iframe + ncpus >= zmax - zmin:
                     ncpus = zmax - zmin - iframe
 
-            jobs = [(ijob, job_server.submit(
-                self.get_data, 
-                args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
-                      zmin + iframe +ijob + 1)))
-                    for ijob in range(ncpus)]
-
-            for ijob, job in jobs:
-                data[:,:,iframe+ijob] = job()
+                # get data
+                jobs = [(ijob, job_server.submit(
+                    self.get_data, 
+                    args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
+                          zmin + iframe +ijob + 1)))
+                        for ijob in range(ncpus)]
+                for ijob, job in jobs:
+                    data_frames[:,:,ijob] = job()
+                    
+                # get header
+                jobs = [(ijob, job_server.submit(
+                    self.get_frame_header, 
+                    args=(zmin + iframe +ijob,)))
+                        for ijob in range(ncpus)]
                 
-        progress.end()        
-        self._close_pp_server(job_server)
+                # write data + header
+                for ijob, job in jobs:
+                    outcube.write_frame(zmin + iframe + ijob,
+                                        data=data_frames[:,:,ijob],
+                                        header=job(),
+                                        force_float32=False)
+                      
+                progress.update(
+                    iframe,
+                    info='exporting data frame {}'.format(iframe))
+            progress.end()
+            self._close_pp_server(job_server)
 
-        self.write_fits(export_path, data, overwrite=overwrite,
-                        fits_header=fits_header)
+            outcube.close()
+            del outcube
+                
+        else: # FITS export
+            data = np.empty((xmax-xmin, ymax-ymin, zmax-zmin), dtype=float)
+        
+            job_server, ncpus = self._init_pp_server()
+            progress = ProgressBar(zmax-zmin)
+            for iframe in range(0, zmax-zmin, ncpus):
+                progress.update(iframe,
+                                info='exporting data frame {}'.format(
+                    iframe))
+                if iframe + ncpus >= zmax - zmin:
+                    ncpus = zmax - zmin - iframe
+
+                jobs = [(ijob, job_server.submit(
+                    self.get_data, 
+                    args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
+                          zmin + iframe +ijob + 1)))
+                        for ijob in range(ncpus)]
+
+                for ijob, job in jobs:
+                    data[:,:,iframe+ijob] = job()
+                
+            progress.end()        
+            self._close_pp_server(job_server)
+        
+            self.write_fits(export_path, data, overwrite=overwrite,
+                            fits_header=header)
+
 
 ##################################################
 #### CLASS ProgressBar ###########################
@@ -2439,7 +2897,7 @@ class Cube(Tools):
 class ProgressBar:
     """Display a simple progress bar in the terminal
 
-    :param max_index: The index considered as 100%
+    :param max_index: Index representing a 100% completed task.
     """
 
     REFRESH_COUNT = 3L # number of steps used to calculate a remaining time
@@ -2481,9 +2939,12 @@ class ProgressBar:
         
         :param sec: Number of seconds to convert
         """
-        
-        if (sec < 60.):
-            return str(int(sec)) + "s"
+        if (sec < 1):
+            return '{:.3f} s'.format(sec)
+        elif (sec < 5):
+            return '{:.2f} s'.format(sec)
+        elif (sec < 60.):
+            return '{:.1f} s'.format(sec)
         elif (sec < 3600.):
             minutes = int(math.floor(sec/60.))
             seconds = int(sec - (minutes * 60.))
@@ -2495,14 +2956,17 @@ class ProgressBar:
             return str(hours) + "h" + str(minutes) + "m" + str(seconds) + "s"
 
 
-    def update(self, index, info=""):
+    def update(self, index, info="", remains=True):
         """Update the progress bar.
 
         :param index: Index representing the progress of the
           process. Must be less than index_max.
           
         :param info: (Optional) Information to be displayed as
-          comments
+          comments (default '').
+          
+        :param remains: (Optional) If True, remaining time is
+          displayed (default True).
         """
         if (self._max_index > 0):
             self._count += 1
@@ -2523,8 +2987,14 @@ class ProgressBar:
             line = (TextColor.BLUE + "\r [" + "="*int(math.floor(pos)) + 
                     " "*int(self._bar_length - math.floor(pos)) + 
                     "] [%d%%] [" %(pos*100./self._bar_length) + 
-                    str(info) +"] [remains: " + 
-                    self._time_str_convert(time_to_end) + "]" + TextColor.END)
+                    str(info) +"]")
+            if remains:
+                line += (" [remains: " + 
+                         self._time_str_convert(time_to_end) + "]"
+                         + TextColor.END)
+            else:
+                line += TextColor.END
+            
         else:
             line = (TextColor.GREEN + "\r [please wait] [" +
                     str(info) +"]" + TextColor.END)
@@ -2550,14 +3020,16 @@ class ProgressBar:
         if not silent:
             self._erase_line()
             self.update(self._max_index, info="completed in " +
-                        self._time_str_convert(time.time() -
-                                               self._start_time))
+                        self._time_str_convert(
+                            time.time() - self._start_time),
+                        remains=False)
             if not self._silent:
                 sys.stdout.write("\n")
         else:
             self._erase_line()
             self.update(self._max_index, info="completed in " +
-                        self._time_str_convert(time.time() - self._start_time))
+                        self._time_str_convert(time.time() - self._start_time),
+                        remains=False)
             if not self._silent:
                 sys.stdout.flush()
 
@@ -3192,7 +3664,6 @@ class OptionFile(Tools):
         bad_frames_list = list()
         try:
             for ibad in bad_frames:
-                print ibad
                 if (ibad.find(":") > 0):
                     min_bad = int(ibad.split(":")[0])
                     max_bad = int(ibad.split(":")[1])+1
@@ -3307,4 +3778,485 @@ class ParamsFile(Tools):
 
     def get_data(self):
         return self._params_list
+
+
+#################################################
+#### CLASS HDFCube ##############################
+#################################################
+
+
+class HDFCube(Cube):
+    """ This class implements the use of an HDF5 cube.
+
+    An HDF5 cube is similar to the *frame-divided cube* implemented by
+    the class :py:class:`orb.core.Cube` but it makes use of the really
+    fast data access provided by HDF5 files. The "frame-divided"
+    concept is keeped but all the frames are grouped into one hdf5
+    file.
+
+    An HDF5 cube must have a certain architecture:
+    
+    * Each frame has its own group called 'frameIIIII', IIIII being a
+      integer giving the position of the frame on 5 characters filled
+      with zeros. e.g. the first frame group is called frame00000
+
+    * Each frame group is divided into at least 2 datasets: **data**
+      and *header* (e.g. the data of the first frame will be in the
+      dataset *frame00000/data*)
+
+    * A **mask** dataset can be added to each frame.
+    """
+
+    _hdf5f = None # Instance of h5py.File
+    _silent_load = False
+    
+    def __init__(self, cube_path, project_header=list(),
+                 wcs_header=list(), calibration_laser_header=list(),
+                 overwrite=False, indexer=None, silent_init=False,
+                 **kwargs):
+        
+        """
+        Initialize HDFCube class.
+        
+        :param cube_path: Path to the HDF5 cube.
+
+        :param project_header: (Optional) header section describing
+          the observation parameters that can be added to each output
+          files (an empty list() by default).
+
+        :param wcs_header: (Optional) header section describing WCS
+          that can be added to each created image files (an empty
+          list() by default).
+
+        :param calibration_laser_header: (Optional) header section
+          describing the calibration laser parameters that can be
+          added to the concerned output files e.g. calibration laser map,
+          spectral cube (an empty list() by default).
+
+        :param overwrite: (Optional) If True existing FITS files will
+          be overwritten (default False).
+
+        :param indexer: (Optional) Must be a :py:class:`core.Indexer`
+          instance. If not None created files can be indexed by this
+          instance.
+
+        :param silent_init: (Optional) If True Init is silent (default False).
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+ 
+        Tools.__init__(self, **kwargs)
+        self.overwrite = overwrite
+        self.indexer = indexer
+        self._project_header = project_header
+        self._wcs_header = wcs_header
+        self._calibration_laser_header = calibration_laser_header
+        
+        self.DIV_NB = int(self._get_config_parameter(
+            "DIV_NB"))
+        self.QUAD_NB = self.DIV_NB**2L
+        self.BIG_DATA = bool(int(self._get_config_parameter(
+            "BIG_DATA")))
+        
+        self._parallel_access_to_data = False
+        
+        with self.open_hdf5(cube_path, 'r') as f:
+            self.cube_path = cube_path
+            self.dimz = self._get_attribute('dimz')
+
+            # check frame nb
+            frame_nb = len([igrp
+                            for igrp in f
+                            if 'frame' == igrp[:5]])
+
+            if frame_nb != self.dimz:
+                self._print_error("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
+                
+            self.dimx = self._get_attribute('dimx')
+            self.dimy = self._get_attribute('dimy')
+            
+            self.shape = (self.dimx, self.dimy, self.dimz)
+            
+            if self._get_hdf5_frame_path(0) in f:                
+                if ((self.dimx, self.dimy)
+                    != f[self._get_hdf5_data_path(0)].shape):
+                    self._print_error('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
+
+                if self._get_hdf5_data_path(0, mask=True) in f:
+                    self._mask_exists = True
+                else:
+                    self._mask_exists = False
+            else:
+                self._print_error('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
+                    self._get_hdf5_frame_path(0)))
+
+        if (self.dimx) and (self.dimy) and (self.dimz):
+            if not silent_init:
+                self._print_msg("Data shape : (" + str(self.dimx) 
+                                + ", " + str(self.dimy) + ", " 
+                                + str(self.dimz) + ")")
+        else:
+            self._print_error("Incorrect data shape : (" 
+                            + str(self.dimx) + ", " + str(self.dimy) 
+                              + ", " +str(self.dimz) + ")")
+
+    def __getitem__(self, key):
+        """Implement the evaluation of self[key].
+
+        .. note:: There is no interpretation of the negative indexes.
+        
+        .. note:: To make this function silent just set
+          Cube()._silent_load to True.
+        """        
+        # check return mask possibility
+        if self._return_mask and not self._mask_exists:
+            self._print_error("No mask found with data, cannot return mask")
+        
+        # produce default values for slices
+        x_slice = self._get_default_slice(key[0], self.dimx)
+        y_slice = self._get_default_slice(key[1], self.dimy)
+        z_slice = self._get_default_slice(key[2], self.dimz)
+
+        data = np.empty((x_slice.stop - x_slice.start,
+                         y_slice.stop - y_slice.start,
+                         z_slice.stop - z_slice.start), dtype=float)
+
+        if z_slice.stop - z_slice.start == 1:
+            only_one_frame = True
+        else:
+            only_one_frame = False
+
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if not self._silent_load and not only_one_frame:
+                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+            for ik in range(z_slice.start, z_slice.stop):
+                data[0:x_slice.stop - x_slice.start,
+                     0:y_slice.stop - y_slice.start,
+                     ik - z_slice.start] = f[
+                    self._get_hdf5_data_path(
+                        ik, mask=self._return_mask)][x_slice, y_slice]
+                
+            if not self._silent_load and not only_one_frame:
+                progress.update(ik - z_slice.start, info="Loading data")
+        if not self._silent_load and not only_one_frame:
+            progress.end()
+            
+        return np.squeeze(data)
+
+    def _get_attribute(self, attr, optional=False):
+        """Return the value of an attribute of the HDF5 cube
+
+        :param attr: Attribute to return
+        
+        :param optional: If True and if the attribute does not exist
+          only a warning is raised. If False the HDF5 cube is
+          considered as invalid and an exception is raised.
+        """
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if attr in f.attrs:
+                return f.attrs[attr]
+            else:
+                if not optional:
+                    self._print_error('Attribute {} is missing. The HDF5 cube seems badly formatted. Try to create it again with the last version of ORB.'.format(attr))
+                else:
+                    return None
+
+    def get_frame_header(self, index):
+        """Return the header of a frame given its index in the list.
+
+        The header is returned as an instance of pyfits.Header().
+
+        :param index: Index of the frame
+        """
+        
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            return self._header_hdf52fits(
+                f[self._get_hdf5_header_path(index)][:])
+
+    def get_cube_header(self):
+        """Return the header of a the cube.
+
+        The header is returned as an instance of pyfits.Header().
+        """
+        
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if 'header' in f:
+                return self._header_hdf52fits(f['header'][:])
+            else:
+                return pyfits.Header()
+           
+    def get_mean_image(self):
+        """Return the deep frame of the cube.
+
+        If a deep frame has already been computed ('deep_frame'
+        dataset) return it directly.
+        """
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if 'deep_frame' in f:
+                return f['deep_frame'][:]
+            else:
+                return Cube.get_mean_image(self)
+
+    def get_interf_energy_map(self):
+        """Return the energy map of an interferogram cube.
+
+        If an energy map has already been computed ('energy_map'
+        dataset) return it directly.
+        """
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if 'energy_map' in f:
+                return f['energy_map'][:]
+            else:
+                return Cube.get_interf_energy_map(self)
+    
+    def get_spectrum_energy_map(self):
+        """Return the energy map of a spectral cube.
+
+        If an energy map has already been computed ('energy_map'
+        dataset) return it directly.
+        """
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if 'energy_map' in f:
+                return f['energy_map'][:]
+            else:
+                return Cube.get_spectrum_energy_map(self)
+
+        
+##################################################
+#### CLASS OutHDFCube ############################
+##################################################           
+
+class OutHDFCube(Tools):
+    """Output HDF5 Cube class.
+
+    This class must be used to output a valid HDF5 cube.
+    
+    .. warning:: The underlying dataset is not readonly and might be
+      overwritten.
+
+    .. note:: This class has been created because
+      :py:class:`orb.core.HDFCube` must not be able to change its
+      underlying dataset (the HDF5 cube is always read-only).
+    """
+    
+    def __init__(self, export_path, shape, overwrite=False,
+                 reset=False, **kwargs):
+        """Init OutHDFCube class.
+
+        :param export_path: Path ot the output HDF5 cube to create.
+
+        :param shape: Data shape. Must be a 3-Tuple (dimx, dimy, dimz)
+
+        :param overwrite: (Optional) If True data will be overwritten
+          but existing data will not be removed (default False).
+
+        :param reset: (Optional) If True and if the file already
+          exists, it is deleted (default False).
+        
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        Tools.__init__(self, **kwargs)
+        
+        # change path if file exists and must not be overwritten
+        self.export_path = str(export_path)
+        if reset and os.path.exists(self.export_path):
+            os.remove(self.export_path)
+        
+        if not overwrite and os.path.exists(self.export_path):
+            index = 0
+            while os.path.exists(self.export_path):
+                self.export_path = (os.path.splitext(export_path)[0] + 
+                                   "_" + str(index) + 
+                                   os.path.splitext(export_path)[1])
+                index += 1
+        if self.export_path != export_path:
+            self._print_warning('Cube path changed to {} to avoid overwritting an already existing file'.format(self.export_path))
+
+        if len(shape) == 3: self.shape = shape
+        else: self._print_error('An HDF5 cube shape must be a tuple (dimx, dimy, dimz)')
+
+        try:
+            self.f = self.open_hdf5(self.export_path, 'a')
+        except IOError, e:
+            if overwrite:
+                os.remove(self.export_path)
+                self.f = self.open_hdf5(self.export_path, 'a')
+            else:
+                self._print_error(
+                    'IOError while opening HDF5 cube: {}'.format(e))
+                
+        self._print_msg('Opening OutHDFCube {} ({},{},{})'.format(
+            self.export_path, *self.shape))
+        
+        # add attributes
+        self.f.attrs['dimx'] = self.shape[0]
+        self.f.attrs['dimy'] = self.shape[1]
+        self.f.attrs['dimz'] = self.shape[2]
+
+        self.imshape = (self.shape[0], self.shape[1])
+
+    def write_frame(self, index, data=None, header=None, mask=None,
+                    record_stats=False, force_float32=True, section=None):
+        """Write a frame
+
+        :param index: Index of the frame
+        
+        :param data: (Optional) Frame data (default None).
+        
+        :param header: (Optional) Frame header (default None).
+        
+        :param mask: (Optional) Frame mask (default None).
+        
+        :param record_stats: (Optional) If True Mean and Median of the
+          frame are appended as attributes (data must be set) (defaut
+          False).
+
+        :param force_float23: (Optional) If True, data type is forced
+          to numpy.float32 (default True).
+
+        .. note:: by default Data is saved as float32 to save space.
+        """
+
+        def _replace(name, dat):
+            if name == 'data':
+                if force_float32: dat = dat.astype(np.float32)
+                dat_path = self._get_hdf5_data_path(index)
+            if name == 'mask':
+                dat_path = self._get_hdf5_data_path(index, mask=True)
+            if name == 'header':
+                dat_path = self._get_hdf5_header_path(index)
+                
+            if name == 'data' or name == 'mask':
+                if section is not None:
+                    old_dat = None
+                    if  dat_path in self.f:
+                        if (self.f[dat_path].shape == self.imshape):
+                            old_dat = self.f[dat_path][:]
+                    if old_dat is None:
+                        frame = np.empty(self.imshape, dtype=dat.dtype)
+                        frame.fill(np.nan)
+                    else:
+                        frame = np.copy(old_dat)
+                    frame[section[0]:section[1],section[2]:section[3]] = dat
+                else:
+                    if dat.shape == self.imshape:
+                        frame = dat
+                    else:
+                        self._print_error(
+                            "Bad data shape {}. Must be {}".format(
+                                dat.shape, self.imshape))
+                dat = frame
+                    
+            if dat_path in self.f: del self.f[dat_path]
+            self.f[dat_path] = dat
+            return dat
+            
+        if data is None and header is None and mask is None:
+            self._print_warning('Nothing to write in the frame {}').format(
+                index)
+            return
+        
+        if data is not None:
+            data = _replace('data', data)
+            
+            if record_stats:
+                mean = bn.nanmean(data)
+                median = bn.nanmedian(data)
+                self.f[self._get_hdf5_frame_path(index)].attrs['mean'] = (
+                    mean)
+                self.f[self._get_hdf5_frame_path(index)].attrs['median'] = (
+                    mean)
+            else:
+                mean = None
+                median = None
+                
+        if mask is not None:
+            mask = mask.astype(np.bool_)
+            _replace('mask', mask)
+
+
+        # Creating pyfits.ImageHDU instance to format header
+        if header is not None:
+            if not isinstance(header, pyfits.Header):
+                header = pyfits.Header(header)
+
+        if data.dtype != np.bool:
+            hdu = pyfits.ImageHDU(data=data, header=header)
+        else:
+            hdu = pyfits.ImageHDU(data=data.astype(np.uint8), header=header)
+            
+        
+        if hdu is not None:
+            if record_stats:
+                if mean is not None:
+                    if not np.isnan(mean):
+                        hdu.header.set('MEAN', mean,
+                                       'Mean of data (NaNs filtered)',
+                                       after=5)
+                if median is not None:
+                    if not np.isnan(median):
+                        hdu.header.set('MEDIAN', median,
+                                       'Median of data (NaNs filtered)',
+                                       after=5)
+            
+            hdu.verify(option=u'silentfix')
+                
+            
+            _replace('header', self._header_fits2hdf5(hdu.header))
+            
+
+               
+
+    def append_image_list(self, image_list):
+        """Append an image list to the HDF5 cube.
+
+        :param image_list: Image list to append.
+        """
+        if 'image_list' in self.f:
+            del self.f['image_list']
+            
+        self.f['image_list'] = np.array(image_list)
+        
+
+    def append_deep_frame(self, deep_frame):
+        """Append a deep frame to the HDF5 cube.
+
+        :param deep_frame: Deep frame to append.
+        """
+        if 'deep_frame' in self.f:
+            del self.f['deep_frame']
+            
+        self.f['deep_frame'] = deep_frame
+
+    def append_energy_map(self, energy_map):
+        """Append an energy map to the HDF5 cube.
+
+        :param energy_map: Energy map to append.
+        """
+        if 'energy_map' in self.f:
+            del self.f['energy_map']
+            
+        self.f['energy_map'] = energy_map
+
+    def append_header(self, header):
+        """Append a header to the HDF5 cube.
+
+        :param header: header to append.
+        """
+        if 'header' in self.f:
+            del self.f['header']
+            
+        self.f['header'] = self._header_fits2hdf5(header)
+        
+    def close(self):
+        """Close the HDF5 cube. Class cannot work properly once this
+        method is called so delete it. e.g.::
+        
+          outhdfcube.close()
+          del outhdfcube
+        """
+        try:
+            self.f.close()
+        except Exception:
+            pass
 

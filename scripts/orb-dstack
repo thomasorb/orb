@@ -31,6 +31,7 @@
 
 from orb.core import Cube, Tools
 import orb.core
+import resource
 
 import sys, os
 from argparse import ArgumentParser
@@ -43,7 +44,6 @@ tools = Tools(no_log=True)
 
 
 def main(args):
-    
 
     def filter_files(file_list, file_type):
         ending = file_type + '.fits'
@@ -51,8 +51,6 @@ def main(args):
         for ifile in file_list:
             if ending in ifile: filtered_list.append(ifile)
         return filtered_list
-            
-
         
     path = args.list_path
     cube_name = args.cube_name
@@ -75,7 +73,7 @@ def main(args):
         cube = Cube(path, image_mode=args.mode,
                     chip_index=args.chip_index, binning=args.binning,
                     no_log=True)
-
+        
         sz = cube.get_size_on_disk()
         if args.quadrant is not None:
             x_min, x_max, y_min, y_max = cube.get_quadrant_dims(
@@ -87,14 +85,16 @@ def main(args):
             x_range = None
             y_range = None
 
-        
-
         print 'Expected size on disk: {} Mo'.format(sz)
-
         try:
             cube.export(cube_name, x_range=x_range, y_range=y_range,
-                        fits_header=cube.get_cube_header(),
-                        overwrite=args.overwrite)
+                        header=cube.get_cube_header(),
+                        overwrite=args.overwrite, force_hdf5=args.hdf5)
+            
+            print 'Max memory used {} Mo'.format(
+                (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + 
+                 resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)/1000.)
+            
         except MemoryError:
             print 'ERROR: Not enough memory ! try to create a smaller cube ...'
             sys.exit(2)
@@ -106,7 +106,7 @@ def main(args):
 if __name__ == "__main__":
 
     parser = ArgumentParser(version=('ORB-version {}'.format(
-                              orb.core.__version__)),
+        orb.core.__version__)),
                             description=
                             "Convert a list of FITS images or a folder into a data cube. The images must have the same shape.")
     
@@ -130,6 +130,10 @@ if __name__ == "__main__":
     parser.add_argument('-o', "--overwrite", dest="overwrite",
                       action="store_true", default=False,
                       help="Overwrite destination file.")
+    
+    parser.add_argument("--hdf5", dest="hdf5",
+                      action="store_true", default=False,
+                      help="Force export in hdf5 cube format (Recommended for big data sets). Avoid memory error if the total size of the data cube to be exported is larger than the available RAM because the whole data has not to be fully loaded in memory.")
     
     parser.add_argument('list_path', help='Path to a list of FITS file or a directory.')
 

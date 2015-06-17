@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; Orb 1.3.4.0 documentation</title>
+  <title>Changelog &mdash; Orb 1.4.0 documentation</title>
   
 
   
@@ -34,8 +34,8 @@
   
 
   
-    <link rel="top" title="Orb 1.3.4.0 documentation" href="index.html"/>
-        <link rel="prev" title="Astrometry module" href="astrometry_module.html"/> 
+    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
+        <link rel="prev" title="Visual module" href="visual_module.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -95,6 +95,12 @@
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#parallel-python">Parallel Python</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#pywcs">PyWCS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#bottleneck">Bottleneck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#h5py">h5py</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-szip">Install SZIP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-hdf5">Install HDF5</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-h5py-pip-cannot-be-used-directly">Install H5PY (pip cannot be used directly)</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#tkinter">Tkinter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#cython">Cython</a></li>
 </ul>
@@ -119,11 +125,20 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_analysis_with_orb.html#analyzing-interferometric-data">Analyzing interferometric data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_analysis_with_orb.html#creating-an-interferometric-cube">Creating an interferometric cube</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#tools-class">Tools class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#cube-class">Cube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#hdfcube-class">HDFCube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
@@ -147,6 +162,10 @@
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#gaussian-class">Gaussian class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#moffat-class">Moffat class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#astrometry-functions">Astrometry functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visual_module.html">Visual module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#baseviewer-class">BaseViewer class</a></li>
 </ul>
 </li>
 </ul>
@@ -198,10 +217,19 @@
 <li class="toctree-l4"><a class="reference internal" href="#hdf5">HDF5</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#v1-3-3-1">v1.3.3.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#v1-3-4-0">v1.3.4.0</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#binning-detection">Binning detection</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#v1-3-4-1">v1.3.4.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#doc-update">Doc update</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#v1-4-0">v1.4.0</a></li>
 </ul>
 </li>
 </ul>
@@ -608,8 +636,8 @@ provide an easier and more robust way of accessing and viewing the
 parameters. The module h5py is now required to use ORB.</p>
 </div>
 </div>
-<div class="section" id="v1-3-3-1">
-<h3>v1.3.3.1<a class="headerlink" href="#v1-3-3-1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="v1-3-4-0">
+<h3>v1.3.4.0<a class="headerlink" href="#v1-3-4-0" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="binning-detection">
 <h4>Binning detection<a class="headerlink" href="#binning-detection" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
@@ -621,6 +649,49 @@ binning.</li>
 </ul>
 </div>
 </div>
+<div class="section" id="v1-3-4-1">
+<h3>v1.3.4.1<a class="headerlink" href="#v1-3-4-1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="doc-update">
+<h4>Doc update<a class="headerlink" href="#doc-update" title="Permalink to this headline">¶</a></h4>
+</div>
+<div class="section" id="id3">
+<h4>Miscellaneous<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><a class="reference internal" href="utils_module.html#utils.optimize_phase" title="utils.optimize_phase"><code class="xref py py-meth docutils literal"><span class="pre">optimize_phase()</span></code></a> added to optimize a linear phase
+vector based on the minimization of the imaginary part. Can be used
+to get the phase of a laser spectrum (with no continuum emission).</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="v1-4-the-hdf5-miracle">
+<h2>v1.4 The HDF5 miracle<a class="headerlink" href="#v1-4-the-hdf5-miracle" title="Permalink to this headline">¶</a></h2>
+<p>All ORBS internal cubes used for computation have been passed to an
+HDF5 format which makes data loading incredibly faster. If those
+changes have small effects on small data cubes like SpIOMM data. It
+changes a lot the computation time on SITELLE&#8217;s data cubes.</p>
+<div class="section" id="v1-4-0">
+<h3>v1.4.0<a class="headerlink" href="#v1-4-0" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> created. It inherits of
+<a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a> but it is built over an HDF5 cube. An HDF5
+cube is similar to a frame-divided cube but all the frames are
+merged in one HDF5 file. Only some specific methods (especially the
+__getitem__ special method) had to be rewritten.</li>
+<li><a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> created. The classes
+<a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> and <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a> have been built
+to read data but not to write it.  <a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> has
+been designed to write an HDF5 cube containing the transformed data.</li>
+<li><a class="reference internal" href="core_module.html#core.Cube.export" title="core.Cube.export"><code class="xref py py-meth docutils literal"><span class="pre">export()</span></code></a> modified to export any cube (e.g. a
+frame divided FITS cube) in HDF5 format.</li>
+<li>script <strong>orb-dstack</strong> can also export a cube in hdf5 format.</li>
+<li>new module created <code class="xref py py-mod docutils literal"><span class="pre">visual</span></code> aimed to contain basic visual
+classes to construct viewer in other ORB softwares like ORBS, IRIS,
+ORCS...</li>
+<li><a class="reference internal" href="visual_module.html#visual.BaseViewer" title="visual.BaseViewer"><code class="xref py py-class docutils literal"><span class="pre">BaseViewer</span></code></a> created to display FITS/HDF5
+cubes.</li>
+</ul>
+</div>
 </div>
 </div>
 
@@ -631,7 +702,7 @@ binning.</li>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="astrometry_module.html" class="btn btn-neutral" title="Astrometry module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="visual_module.html" class="btn btn-neutral" title="Visual module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -661,7 +732,7 @@ binning.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.3.4.0',
+            VERSION:'1.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

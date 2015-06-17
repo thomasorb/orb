@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 1.3.4.0 documentation</title>
+  <title>Core module &mdash; Orb 1.4.0 documentation</title>
   
 
   
@@ -34,9 +34,9 @@
   
 
   
-    <link rel="top" title="Orb 1.3.4.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
-        <link rel="prev" title="Python for ORB users" href="python_for_orb.html"/> 
+        <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -96,6 +96,12 @@
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#parallel-python">Parallel Python</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#pywcs">PyWCS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#bottleneck">Bottleneck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#h5py">h5py</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-szip">Install SZIP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-hdf5">Install HDF5</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-h5py-pip-cannot-be-used-directly">Install H5PY (pip cannot be used directly)</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#tkinter">Tkinter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#cython">Cython</a></li>
 </ul>
@@ -120,11 +126,20 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_analysis_with_orb.html#analyzing-interferometric-data">Analyzing interferometric data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_analysis_with_orb.html#creating-an-interferometric-cube">Creating an interferometric cube</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="">Core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#tools-class">Tools class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cube-class">Cube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hdfcube-class">HDFCube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#progressbar-class">ProgressBar class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#memfile-class">MemFile class</a></li>
@@ -148,6 +163,10 @@
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#gaussian-class">Gaussian class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#moffat-class">Moffat class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#astrometry-functions">Astrometry functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visual_module.html">Visual module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#baseviewer-class">BaseViewer class</a></li>
 </ul>
 </li>
 </ul>
@@ -199,10 +218,19 @@
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5">HDF5</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-3-3-1">v1.3.3.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-3-4-0">v1.3.4.0</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#binning-detection">Binning detection</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-3-4-1">v1.3.4.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#doc-update">Doc update</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id3">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-4-0">v1.4.0</a></li>
 </ul>
 </li>
 </ul>
@@ -245,13 +273,15 @@
           <div role="main" class="document">
             
   <div class="section" id="core-module">
-<h1><a class="toc-backref" href="#id3">Core module</a><a class="headerlink" href="#core-module" title="Permalink to this headline">¶</a></h1>
+<h1><a class="toc-backref" href="#id1">Core module</a><a class="headerlink" href="#core-module" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#core-module" id="id3">Core module</a><ul>
-<li><a class="reference internal" href="#tools-class" id="id4">Tools class</a></li>
-<li><a class="reference internal" href="#cube-class" id="id5">Cube class</a></li>
+<li><a class="reference internal" href="#core-module" id="id1">Core module</a><ul>
+<li><a class="reference internal" href="#tools-class" id="id2">Tools class</a></li>
+<li><a class="reference internal" href="#cube-class" id="id3">Cube class</a></li>
+<li><a class="reference internal" href="#hdfcube-class" id="id4">HDFCube class</a></li>
+<li><a class="reference internal" href="#outhdfcube-class" id="id5">OutHDFCube class</a></li>
 <li><a class="reference internal" href="#textcolor-class" id="id6">TextColor class</a></li>
 <li><a class="reference internal" href="#progressbar-class" id="id7">ProgressBar class</a></li>
 <li><a class="reference internal" href="#memfile-class" id="id8">MemFile class</a></li>
@@ -264,7 +294,7 @@
 </ul>
 </div>
 <div class="section" id="tools-class">
-<h2><a class="toc-backref" href="#id4">Tools class</a><a class="headerlink" href="#tools-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Tools class</a><a class="headerlink" href="#tools-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Tools">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Tools</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
@@ -644,6 +674,53 @@ located in orb/data/.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._get_hdf5_data_path">
+<code class="descname">_get_hdf5_data_path</code><span class="sig-paren">(</span><em>frame_index</em>, <em>mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdf5_data_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path to the data of a given frame in an HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._get_hdf5_data_path.params.frame_index"></span><strong>frame_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_data_path.params.frame_index">¶</a> &#8211; Index of the frame</li>
+<li><span class="target" id="core.Tools._get_hdf5_data_path.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_data_path.params.mask">¶</a> &#8211; (Optional) If True, path to the masked frame is
+returned (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_hdf5_frame_path">
+<code class="descname">_get_hdf5_frame_path</code><span class="sig-paren">(</span><em>frame_index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdf5_frame_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path to a given frame in an HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_hdf5_frame_path.params.frame_index"></span><strong>frame_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_frame_path.params.frame_index">¶</a> &#8211; Index of the frame.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_hdf5_header_path">
+<code class="descname">_get_hdf5_header_path</code><span class="sig-paren">(</span><em>frame_index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdf5_header_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path to the header of a given frame in an HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_hdf5_header_path.params.frame_index"></span><strong>frame_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_header_path.params.frame_index">¶</a> &#8211; Index of the frame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._get_hdu_data_index">
 <code class="descname">_get_hdu_data_index</code><span class="sig-paren">(</span><em>hdul</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdu_data_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the first header data unit (HDU) containing data.</p>
@@ -781,6 +858,34 @@ be a string.</p>
 <li><span class="target" id="core.Tools._get_tuning_parameter.params.default_value"></span><strong>default_value</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_tuning_parameter.params.default_value">¶</a> &#8211; Default value.</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._header_fits2hdf5">
+<code class="descname">_header_fits2hdf5</code><span class="sig-paren">(</span><em>fits_header</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._header_fits2hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert a pyfits.Header() instance to a header for an hdf5 file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._header_fits2hdf5.params.fits_header"></span><strong>fits_header</strong><a class="paramlink headerlink reference internal" href="#core.Tools._header_fits2hdf5.params.fits_header">¶</a> &#8211; Header of the FITS file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._header_hdf52fits">
+<code class="descname">_header_hdf52fits</code><span class="sig-paren">(</span><em>hdf5_header</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._header_hdf52fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert an hdf5 header to a pyfits.Header() instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._header_hdf52fits.params.hdf5_header"></span><strong>hdf5_header</strong><a class="paramlink headerlink reference internal" href="#core.Tools._header_hdf52fits.params.hdf5_header">¶</a> &#8211; Header of the HDF5 file</td>
 </tr>
 </tbody>
 </table>
@@ -1024,6 +1129,10 @@ informations.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to <a class="reference external" href="http://www.h5py.org/">http://www.h5py.org/</a>.</p>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1070,7 +1179,7 @@ fixed to avoid errors due to header inconsistencies
 (e.g. WCS errors) (default True).</li>
 <li><span class="target" id="core.Tools.read_fits.params.memmap"></span><strong>memmap</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.memmap">¶</a> &#8211; (Optional) If True, use the memory mapping
 option of pyfits. This is useful to avoid loading a full cube
-in memory when opening a large data cube (default True).</li>
+in memory when opening a large data cube (default False).</li>
 <li><span class="target" id="core.Tools.read_fits.params.dtype"></span><strong>dtype</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.dtype">¶</a> &#8211; (Optional) Data is converted to
 the given dtype (e.g. np.float32, default float).</li>
 </ul>
@@ -1085,6 +1194,33 @@ the given dtype (e.g. np.float32, default float).</li>
 more information on PyFITS module. And
 <a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
 files.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools.read_hdf5">
+<code class="descname">read_hdf5</code><span class="sig-paren">(</span><em>file_path</em>, <em>return_header=False</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.read_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an HDF5 data file created with
+<a class="reference internal" href="#core.Tools.write_hdf5" title="core.Tools.write_hdf5"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_hdf5()</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools.read_hdf5.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_hdf5.params.file_path">¶</a> &#8211; Path to the file, can be either
+relative or absolute.</li>
+<li><span class="target" id="core.Tools.read_hdf5.params.return_header"></span><strong>return_header</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_hdf5.params.return_header">¶</a> &#8211; (Optional) If True return a tuple (data,
+header) (default False).</li>
+<li><span class="target" id="core.Tools.read_hdf5.params.dtype"></span><strong>dtype</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_hdf5.params.dtype">¶</a> &#8211; (Optional) Data is converted to the given type
+(e.g. np.float32, default float).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to <a class="reference external" href="http://www.h5py.org/">http://www.h5py.org/</a>.</p>
 </div>
 </dd></dl>
 
@@ -1185,11 +1321,71 @@ files.</p>
 </div>
 </dd></dl>
 
+<dl class="method">
+<dt id="core.Tools.write_hdf5">
+<code class="descname">write_hdf5</code><span class="sig-paren">(</span><em>file_path</em>, <em>data</em>, <em>header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>max_hdu_check=True</em>, <em>compress=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.write_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data in HDF5 format.</p>
+<p>A header can be added to the data. This method is useful to
+handle an HDF5 data file like a FITS file. It implements most
+of the functionality of the method
+<a class="reference internal" href="#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools.write_fits()</span></code></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The output HDF5 file can contain mutiple data header
+units (HDU). Each HDU is in a spcific group named &#8216;hdu*&#8217;, *
+being the index of the HDU. The first HDU is named
+HDU0. Each HDU contains one data group (HDU*/data) which
+contains a numpy.ndarray and one header group
+(HDU*/header). Each subgroup of a header group is a keyword
+and its associated value, comment and type.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools.write_hdf5.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.file_path">¶</a> &#8211; Path to the HDF5 file to create</li>
+<li><span class="target" id="core.Tools.write_hdf5.params.data"></span><strong>data</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.data">¶</a> &#8211; A numpy array (numpy.ndarray instance) of numeric
+values. If a list of arrays is given, each array will be
+placed in a specific HDU. The header keyword must also be
+set to a list of headers of the same length.</li>
+<li><span class="target" id="core.Tools.write_hdf5.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.header">¶</a> &#8211; (Optional) Optional keywords to update or
+create. It can be a pyfits.Header() instance or a list of
+tuples [(KEYWORD_1, VALUE_1, COMMENT_1), (KEYWORD_2,
+VALUE_2, COMMENT_2), ...]. Standard keywords like SIMPLE,
+BITPIX, NAXIS, EXTEND does not have to be passed (default
+None). It can also be a list of headers if a list of arrays
+has been passed to the option &#8216;data&#8217;.</li>
+<li><span class="target" id="core.Tools.write_hdf5.params.max_hdu_check"></span><strong>max_hdu_check</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.max_hdu_check">¶</a> &#8211; (Optional): When True, ff the input data
+is a list (interpreted as a list of data unit), check if
+it&#8217;s length is not too long to make sure that the input list
+is not a single data array that has not been converted to a
+numpy.ndarray format. If the number of HDU to create is
+indeed very long this can be set to False (default True).</li>
+<li><span class="target" id="core.Tools.write_hdf5.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.silent">¶</a> &#8211; (Optional) If True turn this function won&#8217;t
+display any message (default False)</li>
+<li><span class="target" id="core.Tools.write_hdf5.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.overwrite">¶</a> &#8211; (Optional) If True overwrite the output file
+if it exists (default False).</li>
+<li><span class="target" id="core.Tools.write_hdf5.params.compress"></span><strong>compress</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.compress">¶</a> &#8211; (Optional) If True data is compressed using
+the SZIP library (see
+<a class="reference external" href="https://www.hdfgroup.org/doc_resource/SZIP/">https://www.hdfgroup.org/doc_resource/SZIP/</a>). SZIP library
+must be installed (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to <a class="reference external" href="http://www.h5py.org/">http://www.h5py.org/</a>.</p>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="cube-class">
-<h2><a class="toc-backref" href="#id5">Cube class</a><a class="headerlink" href="#cube-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Cube class</a><a class="headerlink" href="#cube-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Cube">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
@@ -1201,6 +1397,15 @@ files.</p>
 together by a list.  It avoids storing a data cube in one large
 data file and loading an entire cube to process it.</p>
 </div>
+<p>This class has been designed to handle large data cubes. Its data
+can be accessed virtually as if it was loaded in memory.</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">cube</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">(</span><span class="s">&#39;liste&#39;</span><span class="p">)</span> <span class="c"># A simple list is enough to initialize a Cube instance</span>
+<span class="n">quadrant</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">[</span><span class="mi">25</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span> <span class="p">:]</span> <span class="c"># Here you just load a small quadrant</span>
+<span class="n">spectrum</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">[</span><span class="mi">84</span><span class="p">,</span><span class="mi">58</span><span class="p">,:]</span> <span class="c"># load spectrum at pixel [84,58]</span>
+</pre></div>
+</td></tr></table></div>
 <dl class="method">
 <dt id="core.Cube.__getitem__">
 <code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__getitem__" title="Permalink to this definition">¶</a></dt>
@@ -1226,7 +1431,7 @@ Cube()._silent_load to True.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="core.Cube.params.image_list_path"></span><strong>image_list_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.image_list_path">¶</a> &#8211; Path to the list of images which form
-the virtual cube. If <code class="docutils literal"><span class="pre">image_list_path</span></code> is set to &#8216;&#8217; then
+the virtual cube. If image_list_path is set to &#8216;&#8217; then
 this class will not try to load any data.  Can be useful
 when the user don&#8217;t want to use or process any data.</li>
 <li><span class="target" id="core.Cube.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.image_mode">¶</a> &#8211; (Optional) Image mode. Can be &#8216;spiomm&#8217;,
@@ -1235,7 +1440,7 @@ automatically substracted and the overscan regions are not
 present in the data cube. The chip index option can also be
 used in this mode to read only one of the two chips
 (i.e. one of the 2 cameras). In &#8216;spiomm&#8217; mode, if
-&#8216;<a href="#id1"><span class="problematic" id="id2">*</span></a>_bias.fits&#8217; frames are present along with the image
+<code class="file docutils literal"><span class="pre">*_bias.fits</span></code> frames are present along with the image
 frames, bias is substracted from the image frames, this
 option is used to precisely correct the bias of the camera
 2. In &#8216;classic&#8217; mode, the whole array is extracted in its
@@ -1288,18 +1493,83 @@ logfile (default None).</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Cube._get_default_slice">
+<code class="descname">_get_default_slice</code><span class="sig-paren">(</span><em>_slice</em>, <em>_max</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube._get_default_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function used by __getitem__. Return a valid slice
+object given an integer or slice.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Cube._get_default_slice.params._slice"></span><strong>_slice</strong><a class="paramlink headerlink reference internal" href="#core.Cube._get_default_slice.params._slice">¶</a> &#8211; a slice object or an integer</li>
+<li><span class="target" id="core.Cube._get_default_slice.params._max"></span><strong>_max</strong><a class="paramlink headerlink reference internal" href="#core.Cube._get_default_slice.params._max">¶</a> &#8211; size of the considered axis of the slice.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube._get_frame_section">
+<code class="descname">_get_frame_section</code><span class="sig-paren">(</span><em>x_slice</em>, <em>y_slice</em>, <em>frame_index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube._get_frame_section" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function used by __getitem__.</p>
+<p>Return a section of one frame in the cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Cube._get_frame_section.params.x_slice"></span><strong>x_slice</strong><a class="paramlink headerlink reference internal" href="#core.Cube._get_frame_section.params.x_slice">¶</a> &#8211; slice object along x axis.</li>
+<li><span class="target" id="core.Cube._get_frame_section.params.y_slice"></span><strong>y_slice</strong><a class="paramlink headerlink reference internal" href="#core.Cube._get_frame_section.params.y_slice">¶</a> &#8211; slice object along y axis.</li>
+<li><span class="target" id="core.Cube._get_frame_section.params.frame_index"></span><strong>frame_index</strong><a class="paramlink headerlink reference internal" href="#core.Cube._get_frame_section.params.frame_index">¶</a> &#8211; Index of the frame.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This function must only be used by
+__getitem__. To get a frame section please use the method
+<code class="xref py py-meth docutils literal"><span class="pre">orb.core.get_data_frame()</span></code> or
+<code class="xref py py-meth docutils literal"><span class="pre">orb.core.get_data()</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube._get_frame_stat">
+<code class="descname">_get_frame_stat</code><span class="sig-paren">(</span><em>ik</em>, <em>nozero</em>, <em>stat_key</em>, <em>center</em>, <em>xmin</em>, <em>xmax</em>, <em>ymin</em>, <em>ymax</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube._get_frame_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utilitary function for <code class="xref py py-meth docutils literal"><span class="pre">orb.orb.Cube.get_zstat()</span></code>
+which returns the stats of a frame in a box.</p>
+<p>Check if the frame stats are not already in the header of the
+frame.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Cube.export">
-<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>fits_header=None</em>, <em>overwrite=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
-<dd><p>Export cube as one FITS file.</p>
+<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>header=None</em>, <em>overwrite=False</em>, <em>force_hdf5=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export cube as one FITS/HDF5 file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="core.Cube.export.params.export_path"></span><strong>export_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.export_path">¶</a> &#8211; Path of the exported FITS file</li>
-<li><span class="target" id="core.Cube.export.params.x_range"></span><strong>x_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.x_range">¶</a> &#8211; Tuple (x_min, x_max)</li>
-<li><span class="target" id="core.Cube.export.params.y_range"></span><strong>y_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.y_range">¶</a> &#8211; Tuple (y_min, y_max)</li>
-<li><span class="target" id="core.Cube.export.params.z_range"></span><strong>z_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.z_range">¶</a> &#8211; Tuple (z_min, z_max)</li>
+<li><span class="target" id="core.Cube.export.params.x_range"></span><strong>x_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.x_range">¶</a> &#8211; (Optional) Tuple (x_min, x_max) (default
+None).</li>
+<li><span class="target" id="core.Cube.export.params.y_range"></span><strong>y_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.y_range">¶</a> &#8211; (Optional) Tuple (y_min, y_max) (default
+None).</li>
+<li><span class="target" id="core.Cube.export.params.z_range"></span><strong>z_range</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.z_range">¶</a> &#8211; (Optional) Tuple (z_min, z_max) (default
+None).</li>
+<li><span class="target" id="core.Cube.export.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.header">¶</a> &#8211; (Optional) Header of the output file (default
+None).</li>
+<li><span class="target" id="core.Cube.export.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.overwrite">¶</a> &#8211; (Optional) Overwrite output file (default
+False).</li>
+<li><span class="target" id="core.Cube.export.params.force_hdf5"></span><strong>force_hdf5</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.force_hdf5">¶</a> &#8211; (Optional) If True, output is in HDF5
+format even if the input files are FITS files. If False it
+will be in the format of the input files (default False).</li>
 </ul>
 </td>
 </tr>
@@ -1648,6 +1918,287 @@ axes.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="hdfcube-class">
+<h2><a class="toc-backref" href="#id4">HDFCube class</a><a class="headerlink" href="#hdfcube-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.HDFCube">
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">HDFCube</code><span class="sig-paren">(</span><em>cube_path</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>indexer=None</em>, <em>silent_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">core.Cube</span></code></a></p>
+<p>This class implements the use of an HDF5 cube.</p>
+<p>An HDF5 cube is similar to the <em>frame-divided cube</em> implemented by
+the class <code class="xref py py-class docutils literal"><span class="pre">orb.core.Cube</span></code> but it makes use of the really
+fast data access provided by HDF5 files. The &#8220;frame-divided&#8221;
+concept is keeped but all the frames are grouped into one hdf5
+file.</p>
+<p>An HDF5 cube must have a certain architecture:</p>
+<ul class="simple">
+<li>Each frame has its own group called &#8216;frameIIIII&#8217;, IIIII being a
+integer giving the position of the frame on 5 characters filled
+with zeros. e.g. the first frame group is called frame00000</li>
+<li>Each frame group is divided into at least 2 datasets: <strong>data</strong>
+and <em>header</em> (e.g. the data of the first frame will be in the
+dataset <em>frame00000/data</em>)</li>
+<li>A <strong>mask</strong> dataset can be added to each frame.</li>
+</ul>
+<dl class="method">
+<dt id="core.HDFCube.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implement the evaluation of self[key].</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">There is no interpretation of the negative indexes.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To make this function silent just set
+Cube()._silent_load to True.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>cube_path</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>indexer=None</em>, <em>silent_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize HDFCube class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.HDFCube.params.cube_path"></span><strong>cube_path</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.cube_path">¶</a> &#8211; Path to the HDF5 cube.</li>
+<li><span class="target" id="core.HDFCube.params.project_header"></span><strong>project_header</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.project_header">¶</a> &#8211; (Optional) header section describing
+the observation parameters that can be added to each output
+files (an empty list() by default).</li>
+<li><span class="target" id="core.HDFCube.params.wcs_header"></span><strong>wcs_header</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.wcs_header">¶</a> &#8211; (Optional) header section describing WCS
+that can be added to each created image files (an empty
+list() by default).</li>
+<li><span class="target" id="core.HDFCube.params.calibration_laser_header"></span><strong>calibration_laser_header</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.calibration_laser_header">¶</a> &#8211; (Optional) header section
+describing the calibration laser parameters that can be
+added to the concerned output files e.g. calibration laser map,
+spectral cube (an empty list() by default).</li>
+<li><span class="target" id="core.HDFCube.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.overwrite">¶</a> &#8211; (Optional) If True existing FITS files will
+be overwritten (default False).</li>
+<li><span class="target" id="core.HDFCube.params.indexer"></span><strong>indexer</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.indexer">¶</a> &#8211; (Optional) Must be a <a class="reference internal" href="#core.Indexer" title="core.Indexer"><code class="xref py py-class docutils literal"><span class="pre">core.Indexer</span></code></a>
+instance. If not None created files can be indexed by this
+instance.</li>
+<li><span class="target" id="core.HDFCube.params.silent_init"></span><strong>silent_init</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.silent_init">¶</a> &#8211; (Optional) If True Init is silent (default False).</li>
+<li><span class="target" id="core.HDFCube.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube._get_attribute">
+<code class="descname">_get_attribute</code><span class="sig-paren">(</span><em>attr</em>, <em>optional=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube._get_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of an attribute of the HDF5 cube</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.HDFCube._get_attribute.params.attr"></span><strong>attr</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube._get_attribute.params.attr">¶</a> &#8211; Attribute to return</li>
+<li><span class="target" id="core.HDFCube._get_attribute.params.optional"></span><strong>optional</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube._get_attribute.params.optional">¶</a> &#8211; If True and if the attribute does not exist
+only a warning is raised. If False the HDF5 cube is
+considered as invalid and an exception is raised.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.get_cube_header">
+<code class="descname">get_cube_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_cube_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the header of a the cube.</p>
+<p>The header is returned as an instance of pyfits.Header().</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.get_frame_header">
+<code class="descname">get_frame_header</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_frame_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the header of a frame given its index in the list.</p>
+<p>The header is returned as an instance of pyfits.Header().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.HDFCube.get_frame_header.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.get_frame_header.params.index">¶</a> &#8211; Index of the frame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.get_interf_energy_map">
+<code class="descname">get_interf_energy_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_interf_energy_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the energy map of an interferogram cube.</p>
+<p>If an energy map has already been computed (&#8216;energy_map&#8217;
+dataset) return it directly.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.get_mean_image">
+<code class="descname">get_mean_image</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_mean_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the deep frame of the cube.</p>
+<p>If a deep frame has already been computed (&#8216;deep_frame&#8217;
+dataset) return it directly.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.get_spectrum_energy_map">
+<code class="descname">get_spectrum_energy_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_spectrum_energy_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the energy map of a spectral cube.</p>
+<p>If an energy map has already been computed (&#8216;energy_map&#8217;
+dataset) return it directly.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="outhdfcube-class">
+<h2><a class="toc-backref" href="#id5">OutHDFCube class</a><a class="headerlink" href="#outhdfcube-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.OutHDFCube">
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">OutHDFCube</code><span class="sig-paren">(</span><em>export_path</em>, <em>shape</em>, <em>overwrite=False</em>, <em>reset=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
+<p>Output HDF5 Cube class.</p>
+<p>This class must be used to output a valid HDF5 cube.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The underlying dataset is not readonly and might be
+overwritten.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This class has been created because
+<code class="xref py py-class docutils literal"><span class="pre">orb.core.HDFCube</span></code> must not be able to change its
+underlying dataset (the HDF5 cube is always read-only).</p>
+</div>
+<dl class="method">
+<dt id="core.OutHDFCube.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>export_path</em>, <em>shape</em>, <em>overwrite=False</em>, <em>reset=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Init OutHDFCube class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OutHDFCube.params.export_path"></span><strong>export_path</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.params.export_path">¶</a> &#8211; Path ot the output HDF5 cube to create.</li>
+<li><span class="target" id="core.OutHDFCube.params.shape"></span><strong>shape</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.params.shape">¶</a> &#8211; Data shape. Must be a 3-Tuple (dimx, dimy, dimz)</li>
+<li><span class="target" id="core.OutHDFCube.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.params.overwrite">¶</a> &#8211; (Optional) If True data will be overwritten
+but existing data will not be removed (default False).</li>
+<li><span class="target" id="core.OutHDFCube.params.reset"></span><strong>reset</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.params.reset">¶</a> &#8211; (Optional) If True and if the file already
+exists, it is deleted (default False).</li>
+<li><span class="target" id="core.OutHDFCube.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.append_deep_frame">
+<code class="descname">append_deep_frame</code><span class="sig-paren">(</span><em>deep_frame</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_deep_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a deep frame to the HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.OutHDFCube.append_deep_frame.params.deep_frame"></span><strong>deep_frame</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_deep_frame.params.deep_frame">¶</a> &#8211; Deep frame to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.append_energy_map">
+<code class="descname">append_energy_map</code><span class="sig-paren">(</span><em>energy_map</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_energy_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append an energy map to the HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.OutHDFCube.append_energy_map.params.energy_map"></span><strong>energy_map</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_energy_map.params.energy_map">¶</a> &#8211; Energy map to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.append_header">
+<code class="descname">append_header</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a header to the HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.OutHDFCube.append_header.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_header.params.header">¶</a> &#8211; header to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.append_image_list">
+<code class="descname">append_image_list</code><span class="sig-paren">(</span><em>image_list</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_image_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append an image list to the HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.OutHDFCube.append_image_list.params.image_list"></span><strong>image_list</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_image_list.params.image_list">¶</a> &#8211; Image list to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the HDF5 cube. Class cannot work properly once this
+method is called so delete it. e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">outhdfcube</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">del</span> <span class="n">outhdfcube</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.write_frame">
+<code class="descname">write_frame</code><span class="sig-paren">(</span><em>index</em>, <em>data=None</em>, <em>header=None</em>, <em>mask=None</em>, <em>record_stats=False</em>, <em>force_float32=True</em>, <em>section=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.write_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a frame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OutHDFCube.write_frame.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.index">¶</a> &#8211; Index of the frame</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.data"></span><strong>data</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.data">¶</a> &#8211; (Optional) Frame data (default None).</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.header">¶</a> &#8211; (Optional) Frame header (default None).</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.mask">¶</a> &#8211; (Optional) Frame mask (default None).</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.record_stats"></span><strong>record_stats</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.record_stats">¶</a> &#8211; (Optional) If True Mean and Median of the
+frame are appended as attributes (data must be set) (defaut
+False).</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.force_float23"></span><strong>force_float23</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.force_float23">¶</a> &#8211; (Optional) If True, data type is forced
+to numpy.float32 (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">by default Data is saved as float32 to save space.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="textcolor-class">
 <h2><a class="toc-backref" href="#id6">TextColor class</a><a class="headerlink" href="#textcolor-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -1678,7 +2229,7 @@ disable() function to disable coloured text.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.ProgressBar.params.max_index"></span><strong>max_index</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.params.max_index">¶</a> &#8211; The index considered as 100%</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.ProgressBar.params.max_index"></span><strong>max_index</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.params.max_index">¶</a> &#8211; Index representing a 100% completed task.</td>
 </tr>
 </tbody>
 </table>
@@ -1741,7 +2292,7 @@ progress bar.</td>
 
 <dl class="method">
 <dt id="core.ProgressBar.update">
-<code class="descname">update</code><span class="sig-paren">(</span><em>index</em>, <em>info=''</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>index</em>, <em>info=''</em>, <em>remains=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the progress bar.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1751,7 +2302,9 @@ progress bar.</td>
 <li><span class="target" id="core.ProgressBar.update.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.update.params.index">¶</a> &#8211; Index representing the progress of the
 process. Must be less than index_max.</li>
 <li><span class="target" id="core.ProgressBar.update.params.info"></span><strong>info</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.update.params.info">¶</a> &#8211; (Optional) Information to be displayed as
-comments</li>
+comments (default &#8216;&#8217;).</li>
+<li><span class="target" id="core.ProgressBar.update.params.remains"></span><strong>remains</strong><a class="paramlink headerlink reference internal" href="#core.ProgressBar.update.params.remains">¶</a> &#8211; (Optional) If True, remaining time is
+displayed (default True).</li>
 </ul>
 </td>
 </tr>
@@ -2313,7 +2866,7 @@ True).</li>
         <a href="utils_module.html" class="btn btn-neutral float-right" title="Utils module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="python_for_orb.html" class="btn btn-neutral" title="Python for ORB users" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="data_analysis_with_orb.html" class="btn btn-neutral" title="Data analysis with ORB" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -2343,7 +2896,7 @@ True).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.3.4.0',
+            VERSION:'1.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

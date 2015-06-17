@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 1.3.4.0 documentation</title>
+  <title>Index &mdash; Orb 1.4.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
   
 
   
-    <link rel="top" title="Orb 1.3.4.0 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -95,6 +95,12 @@
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#parallel-python">Parallel Python</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#pywcs">PyWCS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#bottleneck">Bottleneck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#h5py">h5py</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-szip">Install SZIP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-hdf5">Install HDF5</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-h5py-pip-cannot-be-used-directly">Install H5PY (pip cannot be used directly)</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#tkinter">Tkinter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#cython">Cython</a></li>
 </ul>
@@ -119,11 +125,20 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_analysis_with_orb.html#analyzing-interferometric-data">Analyzing interferometric data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_analysis_with_orb.html#creating-an-interferometric-cube">Creating an interferometric cube</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#tools-class">Tools class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#cube-class">Cube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#hdfcube-class">HDFCube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
@@ -147,6 +162,13 @@
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#gaussian-class">Gaussian class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#moffat-class">Moffat class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#astrometry-functions">Astrometry functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visual_module.html">Visual module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#baseviewer-class">BaseViewer class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
 </ul>
 </li>
 </ul>
@@ -198,10 +220,19 @@
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5">HDF5</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-3-3-1">v1.3.3.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-3-4-0">v1.3.4.0</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#binning-detection">Binning detection</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-3-4-1">v1.3.4.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#doc-update">Doc update</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id3">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-4-0">v1.4.0</a></li>
 </ul>
 </li>
 </ul>
@@ -267,6 +298,7 @@
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
+ | <a href="#Z"><strong>Z</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -281,6 +313,10 @@
   </dt>
 
       <dd><dl>
+        
+  <dt><a href="core_module.html#core.HDFCube.__getitem__">(core.HDFCube method)</a>
+  </dt>
+
         
   <dt><a href="core_module.html#core.Indexer.__getitem__">(core.Indexer method)</a>
   </dt>
@@ -304,6 +340,10 @@
 
       <dd><dl>
         
+  <dt><a href="core_module.html#core.HDFCube.__init__">(core.HDFCube method)</a>
+  </dt>
+
+        
   <dt><a href="core_module.html#core.Lines.__init__">(core.Lines method)</a>
   </dt>
 
@@ -316,6 +356,10 @@
   </dt>
 
         
+  <dt><a href="core_module.html#core.OutHDFCube.__init__">(core.OutHDFCube method)</a>
+  </dt>
+
+        
   <dt><a href="core_module.html#core.ParamsFile.__init__">(core.ParamsFile method)</a>
   </dt>
 
@@ -325,6 +369,22 @@
 
         
   <dt><a href="core_module.html#core.Tools.__init__">(core.Tools method)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.__init__">(orb.visual.BaseViewer method)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.HeaderWindow.__init__">(orb.visual.HeaderWindow method)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.PopupWindow.__init__">(orb.visual.PopupWindow method)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.ZPlotWindow.__init__">(orb.visual.ZPlotWindow method)</a>
   </dt>
 
       </dl></dd>
@@ -350,6 +410,16 @@
   <dt><a href="core_module.html#core.Tools.__weakref__">__weakref__ (core.Tools attribute)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.__weakref__">(orb.visual.BaseViewer attribute)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.PopupWindow.__weakref__">(orb.visual.PopupWindow attribute)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="core_module.html#core.Tools._bin_image">_bin_image() (core.Tools method)</a>
   </dt>
@@ -371,7 +441,15 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._display_header_cb">_display_header_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.ProgressBar._erase_line">_erase_line() (core.ProgressBar method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.HDFCube._get_attribute">_get_attribute() (core.HDFCube method)</a>
   </dt>
 
       
@@ -415,6 +493,10 @@
   </dt>
 
       
+  <dt><a href="core_module.html#core.Cube._get_default_slice">_get_default_slice() (core.Cube method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Tools._get_fft_params_header">_get_fft_params_header() (core.Tools method)</a>
   </dt>
 
@@ -426,14 +508,32 @@
   <dt><a href="astrometry_module.html#astrometry.Astrometry._get_fit_results_path">_get_fit_results_path() (astrometry.Astrometry method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="core_module.html#core.Cube._get_frame_section">_get_frame_section() (core.Cube method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Cube._get_frame_stat">_get_frame_stat() (core.Cube method)</a>
+  </dt>
+
       
   <dt><a href="astrometry_module.html#astrometry.Aligner._get_guess_matrix_header">_get_guess_matrix_header() (astrometry.Aligner method)</a>
   </dt>
 
       
   <dt><a href="astrometry_module.html#astrometry.Aligner._get_guess_matrix_path">_get_guess_matrix_path() (astrometry.Aligner method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Tools._get_hdf5_data_path">_get_hdf5_data_path() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Tools._get_hdf5_frame_path">_get_hdf5_frame_path() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Tools._get_hdf5_header_path">_get_hdf5_header_path() (core.Tools method)</a>
   </dt>
 
       
@@ -444,12 +544,18 @@
   <dt><a href="core_module.html#core.Indexer._get_index_path">_get_index_path() (core.Indexer method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.Tools._get_mask_path">_get_mask_path() (core.Tools method)</a>
   </dt>
 
       
   <dt><a href="core_module.html#core.Tools._get_msg_class_hdr">_get_msg_class_hdr() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._get_new_object">_get_new_object() (orb.visual.BaseViewer method)</a>
   </dt>
 
       
@@ -481,6 +587,18 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.ZPlotWindow._get_zaxis">_get_zaxis() (orb.visual.ZPlotWindow method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Tools._header_fits2hdf5">_header_fits2hdf5() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Tools._header_hdf52fits">_header_hdf52fits() (core.Tools method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Indexer._index2group">_index2group() (core.Indexer method)</a>
   </dt>
 
@@ -490,6 +608,22 @@
 
       
   <dt><a href="core_module.html#core.Tools._init_pp_server">_init_pp_server() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._key_pressed_cb">_key_pressed_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._key_released_cb">_key_released_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._mode_change_cb">_mode_change_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._mouse_motion_cb">_mouse_motion_cb() (orb.visual.BaseViewer method)</a>
   </dt>
 
       
@@ -513,6 +647,10 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._quit_cb">_quit_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Tools._read_sitelle_chip">_read_sitelle_chip() (core.Tools method)</a>
   </dt>
 
@@ -522,6 +660,30 @@
 
       
   <dt><a href="core_module.html#core.Tools._read_spiomm_data">_read_spiomm_data() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._save_image_cb">_save_image_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._set_autocut_method_cb">_set_autocut_method_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._set_image_index_cb">_set_image_index_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._start_box_cb">_start_box_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._start_listener_daemon">_start_listener_daemon() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._stop_box_cb">_stop_box_cb() (orb.visual.BaseViewer method)</a>
   </dt>
 
       
@@ -562,14 +724,30 @@
   <dt><a href="utils_module.html#utils.amplitude">amplitude() (in module utils)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="astrometry_module.html#astrometry.aperture_photometry">aperture_photometry() (in module astrometry)</a>
   </dt>
 
       
   <dt><a href="core_module.html#core.ParamsFile.append">append() (core.ParamsFile method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="core_module.html#core.OutHDFCube.append_deep_frame">append_deep_frame() (core.OutHDFCube method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.OutHDFCube.append_energy_map">append_energy_map() (core.OutHDFCube method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.OutHDFCube.append_header">append_header() (core.OutHDFCube method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.OutHDFCube.append_image_list">append_image_list() (core.OutHDFCube method)</a>
   </dt>
 
       
@@ -615,6 +793,10 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="visual_module.html#orb.visual.BaseViewer">BaseViewer (class in orb.visual)</a>
+  </dt>
+
+      
   <dt><a href="utils_module.html#utils.border_cut_window">border_cut_window() (in module utils)</a>
   </dt>
 
@@ -630,6 +812,10 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.check_frames">check_frames() (in module utils)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.OutHDFCube.close">close() (core.OutHDFCube method)</a>
   </dt>
 
       
@@ -928,6 +1114,12 @@
   <dt><a href="core_module.html#core.Cube.get_cube_header">get_cube_header() (core.Cube method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.HDFCube.get_cube_header">(core.HDFCube method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="core_module.html#core.Cube.get_data">get_data() (core.Cube method)</a>
   </dt>
@@ -952,6 +1144,12 @@
   <dt><a href="core_module.html#core.Cube.get_frame_header">get_frame_header() (core.Cube method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.HDFCube.get_frame_header">(core.HDFCube method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="core_module.html#core.OptionFile.get_fringes">get_fringes() (core.OptionFile method)</a>
   </dt>
@@ -960,6 +1158,12 @@
   <dt><a href="core_module.html#core.Cube.get_interf_energy_map">get_interf_energy_map() (core.Cube method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.HDFCube.get_interf_energy_map">(core.HDFCube method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="core_module.html#core.Lines.get_line_name">get_line_name() (core.Lines method)</a>
   </dt>
@@ -968,12 +1172,12 @@
   <dt><a href="core_module.html#core.Lines.get_line_nm">get_line_nm() (core.Lines method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.OptionFile.get_lines">get_lines() (core.OptionFile method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.get_lr_phase">get_lr_phase() (in module utils)</a>
   </dt>
@@ -990,6 +1194,12 @@
   <dt><a href="core_module.html#core.Cube.get_mean_image">get_mean_image() (core.Cube method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.HDFCube.get_mean_image">(core.HDFCube method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="utils_module.html#utils.get_open_fds">get_open_fds() (in module utils)</a>
   </dt>
@@ -1030,12 +1240,22 @@
   <dt><a href="core_module.html#core.Cube.get_spectrum_energy_map">get_spectrum_energy_map() (core.Cube method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.HDFCube.get_spectrum_energy_map">(core.HDFCube method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="astrometry_module.html#astrometry.StarsParams.get_star_list">get_star_list() (astrometry.StarsParams method)</a>
   </dt>
 
       
   <dt><a href="core_module.html#core.OptionFile.get_tuning_parameters">get_tuning_parameters() (core.OptionFile method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.get_widget">get_widget() (orb.visual.BaseViewer method)</a>
   </dt>
 
       
@@ -1065,11 +1285,19 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="utils_module.html#utils.high_pass_diff_image_filter">high_pass_diff_image_filter() (in module utils)</a>
+  <dt><a href="core_module.html#core.HDFCube">HDFCube (class in core)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.HeaderWindow">HeaderWindow (class in orb.visual)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="utils_module.html#utils.high_pass_diff_image_filter">high_pass_diff_image_filter() (in module utils)</a>
+  </dt>
+
       
   <dt><a href="utils_module.html#utils.high_pass_image_filter">high_pass_image_filter() (in module utils)</a>
   </dt>
@@ -1164,6 +1392,10 @@
 
       
   <dt><a href="core_module.html#core.Lines">Lines (class in core)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.load_file">load_file() (orb.visual.BaseViewer method)</a>
   </dt>
 
       
@@ -1274,10 +1506,18 @@
   <dt><a href="core_module.html#core.Tools.open_hdf5">open_hdf5() (core.Tools method)</a>
   </dt>
 
+      
+  <dt><a href="utils_module.html#utils.optimize_phase">optimize_phase() (in module utils)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.OptionFile">OptionFile (class in core)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.OutHDFCube">OutHDFCube (class in core)</a>
   </dt>
 
   </dl></td>
@@ -1320,18 +1560,26 @@
   <dt><a href="utils_module.html#utils.pix2nm">pix2nm() (in module utils)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="cutils_module.html#cutils.point_inside_polygon">point_inside_polygon() (in module cutils)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.polar_map2d">polar_map2d() (in module utils)</a>
   </dt>
 
       
   <dt><a href="utils_module.html#utils.polyfit1d">polyfit1d() (in module utils)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.pop_file_chooser_dialog">pop_file_chooser_dialog() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.PopupWindow">PopupWindow (class in orb.visual)</a>
   </dt>
 
       
@@ -1393,6 +1641,10 @@
   </dt>
 
       
+  <dt><a href="core_module.html#core.Tools.read_hdf5">read_hdf5() (core.Tools method)</a>
+  </dt>
+
+      
   <dt><a href="astrometry_module.html#astrometry.Astrometry.readout_noise">readout_noise (astrometry.Astrometry attribute)</a>
   </dt>
 
@@ -1416,12 +1668,12 @@
   <dt><a href="astrometry_module.html#astrometry.StarsParams.reset_data">reset_data() (astrometry.StarsParams method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="astrometry_module.html#astrometry.Astrometry.reset_fwhm_arc">reset_fwhm_arc() (astrometry.Astrometry method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="astrometry_module.html#astrometry.Astrometry.reset_fwhm_pix">reset_fwhm_pix() (astrometry.Astrometry method)</a>
   </dt>
@@ -1497,6 +1749,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.save_image">save_image() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Tools.save_sip">save_sip() (core.Tools method)</a>
   </dt>
 
@@ -1510,6 +1766,10 @@
 
       
   <dt><a href="utils_module.html#utils.shift_frame">shift_frame() (in module utils)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.PopupWindow.show">show() (orb.visual.PopupWindow method)</a>
   </dt>
 
       
@@ -1536,12 +1796,12 @@
   </dt>
 
       </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.sip_im2pix">sip_im2pix() (in module utils)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.sip_pix2im">sip_pix2im() (in module utils)</a>
   </dt>
@@ -1631,13 +1891,21 @@
   <dt><a href="core_module.html#core.ProgressBar.update">(core.ProgressBar method)</a>
   </dt>
 
+        
+  <dt><a href="visual_module.html#orb.visual.ZPlotWindow.update">(orb.visual.ZPlotWindow method)</a>
+  </dt>
+
       </dl></dd>
       
-  <dt><a href="core_module.html#core.Indexer.update_index">update_index() (core.Indexer method)</a>
+  <dt><a href="visual_module.html#orb.visual.BaseViewer.update_image">update_image() (orb.visual.BaseViewer method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="core_module.html#core.Indexer.update_index">update_index() (core.Indexer method)</a>
+  </dt>
+
       
   <dt><a href="utils_module.html#module-utils">utils (module)</a>
   </dt>
@@ -1670,6 +1938,26 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.Tools.write_fits">write_fits() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.OutHDFCube.write_frame">write_frame() (core.OutHDFCube method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="core_module.html#core.Tools.write_hdf5">write_hdf5() (core.Tools method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="Z">Z</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="visual_module.html#orb.visual.ZPlotWindow">ZPlotWindow (class in orb.visual)</a>
   </dt>
 
   </dl></td>
@@ -1706,7 +1994,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.3.4.0',
+            VERSION:'1.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

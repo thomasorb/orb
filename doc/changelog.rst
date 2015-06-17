@@ -354,8 +354,6 @@ scripts
 
 * **orb-bin**: script made to bin images.
 
-
-
 * **orb-header** changed a lot to manage list of files and output list
   of keyword values.
 
@@ -395,7 +393,7 @@ provide an easier and more robust way of accessing and viewing the
 parameters. The module h5py is now required to use ORB.
 
 
-v1.3.3.1
+v1.3.4.0
 ========
 
 Binning detection
@@ -410,4 +408,54 @@ Binning detection
 
 
 
+v1.3.4.1
+========
 
+
+Doc update
+----------
+
+
+Miscellaneous
+-------------
+
+* :py:meth:`~utils.optimize_phase` added to optimize a linear phase
+  vector based on the minimization of the imaginary part. Can be used
+  to get the phase of a laser spectrum (with no continuum emission).
+
+
+
+v1.4 The HDF5 miracle
+*********************
+
+All ORBS internal cubes used for computation have been passed to an
+HDF5 format which makes data loading incredibly faster. If those
+changes have small effects on small data cubes like SpIOMM data. It
+changes a lot the computation time on SITELLE's data cubes.
+
+
+v1.4.0
+======
+
+* :py:class:`~core.HDFCube` created. It inherits of
+  :py:class:`~core.Cube` but it is built over an HDF5 cube. An HDF5
+  cube is similar to a frame-divided cube but all the frames are
+  merged in one HDF5 file. Only some specific methods (especially the
+  __getitem__ special method) had to be rewritten.
+
+* :py:class:`~core.OutHDFCube` created. The classes
+  :py:class:`~core.HDFCube` and :py:class:`~core.Cube` have been built
+  to read data but not to write it.  :py:class:`~core.OutHDFCube` has
+  been designed to write an HDF5 cube containing the transformed data.
+
+* :py:meth:`~core.Cube.export` modified to export any cube (e.g. a
+  frame divided FITS cube) in HDF5 format.
+
+* script **orb-dstack** can also export a cube in hdf5 format.
+
+* new module created :py:mod:`~visual` aimed to contain basic visual
+  classes to construct viewer in other ORB softwares like ORBS, IRIS,
+  ORCS...
+
+* :py:class:`~visual.BaseViewer` created to display FITS/HDF5
+  cubes.

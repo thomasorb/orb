@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Search &mdash; Orb 1.4.0 documentation</title>
+  <title>Data analysis with ORB &mdash; Orb 1.4.0 documentation</title>
   
 
   
@@ -34,7 +34,9 @@
   
 
   
-    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
+        <link rel="next" title="Core module" href="core_module.html"/>
+        <link rel="prev" title="Python for ORB users" href="python_for_orb.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -62,7 +64,7 @@
 
         
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="#" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -107,7 +109,7 @@
 </ul>
 </li>
 </ul>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="python_for_orb.html">Python for ORB users</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="python_for_orb.html#the-basics">The basics</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="python_for_orb.html#hello-world">Hello world</a></li>
@@ -124,9 +126,9 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_analysis_with_orb.html#analyzing-interferometric-data">Analyzing interferometric data</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="data_analysis_with_orb.html#creating-an-interferometric-cube">Creating an interferometric cube</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Data analysis with ORB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#analyzing-interferometric-data">Analyzing interferometric data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-an-interferometric-cube">Creating an interferometric cube</a></li>
 </ul>
 </li>
 </ul>
@@ -136,8 +138,6 @@
 <li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#tools-class">Tools class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#cube-class">Cube class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#hdfcube-class">HDFCube class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
@@ -161,13 +161,6 @@
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#gaussian-class">Gaussian class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#moffat-class">Moffat class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#astrometry-functions">Astrometry functions</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="visual_module.html">Visual module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="visual_module.html#baseviewer-class">BaseViewer class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
 </ul>
 </li>
 </ul>
@@ -260,8 +253,12 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li></li>
+    <li>Data analysis with ORB</li>
       <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/data_analysis_with_orb.txt" rel="nofollow"> View page source</a>
+          
         
       </li>
   </ul>
@@ -269,22 +266,31 @@
 </div>
           <div role="main" class="document">
             
-  <noscript>
-  <div id="fallback" class="admonition warning">
-    <p class="last">
-      Please activate JavaScript to enable the search
-      functionality.
-    </p>
-  </div>
-  </noscript>
+  <div class="section" id="data-analysis-with-orb">
+<h1>Data analysis with ORB<a class="headerlink" href="#data-analysis-with-orb" title="Permalink to this headline">¶</a></h1>
+<p>ORB is a powerful tool for SpIOMM/SITELLE&#8217;s data analysis. I will
+describe here some possible usage or ORB libraries and scripts.</p>
+<div class="section" id="analyzing-interferometric-data">
+<h2>Analyzing interferometric data<a class="headerlink" href="#analyzing-interferometric-data" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="creating-an-interferometric-cube">
+<h3>Creating an interferometric cube<a class="headerlink" href="#creating-an-interferometric-cube" title="Permalink to this headline">¶</a></h3>
+<p>It is generally faster to create a real 3D cube to work with.</p>
+</div>
+</div>
+</div>
 
-  
-  <div id="search-results">
-  
-  </div>
 
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="core_module.html" class="btn btn-neutral float-right" title="Core module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="python_for_orb.html" class="btn btn-neutral" title="Python for ORB users" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -322,7 +328,6 @@
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-      <script type="text/javascript" src="_static/searchtools.js"></script>
 
   
 
@@ -338,14 +343,7 @@
           SphinxRtdTheme.StickyNav.enable();
       });
   </script>
-  
-  <script type="text/javascript">
-    jQuery(function() { Search.loadIndex("searchindex.js"); });
-  </script>
-  
-  <script type="text/javascript" id="searchindexloader"></script>
    
-
 
 </body>
 </html>

@@ -1,0 +1,14 @@
+Visual module
+=============
+
+.. contents::
+
+BaseViewer class
+----------------
+
+.. autoclass:: orb.visual.BaseViewer
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+

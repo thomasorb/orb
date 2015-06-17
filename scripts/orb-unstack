@@ -42,16 +42,31 @@ def main():
     if len(sys.argv) < 2: usage()
     
     cube_name = sys.argv[1]
+    if os.path.splitext(cube_name)[1] == '.fits': hdf5 = False
+    elif os.path.splitext(cube_name)[1] == '.hdf5': hdf5 = True
+    else: raise Exception("Unknown extension. Make sure that your file has a correct extension ('*.fits' or '*.hdf5' depending on its format.)")
+        
     if os.path.exists(cube_name):
-        cube, hdr = Tools(no_log=True).read_fits(cube_name, return_header=True)
+        if not hdf5:
+            cube, hdr = Tools(no_log=True).read_fits(cube_name,
+                                                     return_header=True)
+        else:
+            cube, hdr = Tools(no_log=True).read_hdf5(cube_name,
+                                                     return_header=True)
         for iframe in range(cube.shape[2]):
             frame_path = (os.path.splitext(cube_name)[0]
                           + os.sep + 'frame_{:04d}'.format(iframe)) + '.fits'
-            
-            Tools(no_log=True).write_fits(frame_path,
-                                          cube[:,:,iframe],
-                                          fits_header=hdr,
-                                          overwrite=True)
+
+            if not hdf5:
+                Tools(no_log=True).write_fits(frame_path,
+                                              cube[:,:,iframe],
+                                              fits_header=hdr,
+                                              overwrite=True)
+            else:
+                Tools(no_log=True).write_hdf5(frame_path,
+                                              cube[:,:,iframe],
+                                              header=hdr,
+                                              overwrite=True)
     else:
         print "File does not exist"
        

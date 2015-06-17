@@ -39,6 +39,8 @@ the **latest version**) :
   * Parallel_ Python (v1.6.4)
   * PyWCS_ (v1.11) 
   * Bottleneck_ (v0.8.0)
+  * h5py_ (v2.5.0)
+  * Cython_ : Needed to compile Cython_ functions in cutils.pyx
 
 The following modules are optional. 
 
@@ -46,7 +48,7 @@ The following modules are optional.
     which can help you creating an option file. But you don't need it
     to run the reduction.
 
-  * Cython_ : Needed to compile Cython_ functions in cutils.pyx
+  
 
 To use the Viewer (orb-viewer)
 ------------------------------
@@ -155,6 +157,53 @@ uncompressed directory run::
 
   sudo python setup.py install
 
+h5py
+----
+
+Installation must be manual because the SZIP library must be installed
+and linked to hdf5 which can finally be linked to h5py.
+
+
+Install SZIP
+~~~~~~~~~~~~
+
+You can find SZIP `here
+<http://www.hdfgroup.org/ftp/lib-external/szip/2.1/src/szip-2.1.tar.gz>`_
+and info on SZIP compression in HDF5 `here
+<https://www.hdfgroup.org/doc_resource/SZIP/>`_. Then after the
+extraction you can go in the extracted folder and do::
+
+  sudo ./configure --prefix=/usr/local/lib/szip
+  sudo make
+  sudo make check
+  sudo make install
+
+.. note:: folder :file:`/usr/local/lib/szip` can be changed as long as
+          you also change it in the following installation steps.
+
+Install HDF5
+~~~~~~~~~~~~
+
+You can find HDF5 sources `here
+<https://www.hdfgroup.org/HDF5/release/obtainsrc.html>`_. Then extract the
+sources and jump into the extracted folder before typing::
+
+  sudo ./configure --prefix=/usr/local/lib/hdf5 --with-szlib=/usr/local/lib/szip
+  sudo make
+  sudo make check
+  sudo make install
+
+Install H5PY (pip cannot be used directly)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can find h5py sources `here
+<https://pypi.python.org/pypi/h5py/2.5.0>`_. After extraction, just
+run the following into the extracted folder::
+
+  sudo python setup.py configure --hdf5=/usr/local/lib/hdf5
+  sudo python setup.py build
+  sudo python setup.py install
+
 Tkinter_
 --------
 
@@ -188,3 +237,4 @@ To install Cython_::
 .. _PyWCS: http://stsdas.stsci.edu/astrolib/pywcs/
 .. _Bottleneck: https://pypi.python.org/pypi/Bottleneck
 .. _PIP: https://pypi.python.org/pypi/pip
+.. _h5py: https://pypi.python.org/pypi/h5py/2.5.0

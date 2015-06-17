@@ -29,12 +29,14 @@ __author__ = "Thomas Martin"
 __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
 __docformat__ = 'reStructuredText'
 
+import os
 import math
 import cmath
 import urllib2
 import socket
 import StringIO
 import warnings
+import time
 
 import numpy as np
 from scipy import optimize
@@ -253,9 +255,29 @@ class StarsParams(Tools):
 
         :param group: (Optional) Group path into the HDF5 file. If
           None the group will be '/' (default None).
+
+        .. warning:: if no group is given, the whole file will be
+          deleted if it already exists because new parameters will be
+          written in the root group.
         """
+        start_t = time.time()
         self._print_msg("Saving stars parameters in {}".format(
             params_file_path))
+        
+        # data restruct (much faster to save)
+        data_r = np.empty((self.star_nb, self.frame_nb, len(self.keys)))
+        
+        for istar in range(self.star_nb):
+            for index in range(self.frame_nb):
+                _d = self[istar, index]
+                for ikey in range(len(self.keys)):
+                    try:
+                        data_r[istar, index, ikey] = _d[self.keys[ikey]]
+                    except Exception:
+                        data_r[istar, index, ikey] = np.nan
+
+        if group is None and os.path.exists(params_file_path):
+            os.remove(params_file_path)
 
         with self.open_hdf5(params_file_path, 'a') as f:
 
@@ -265,29 +287,15 @@ class StarsParams(Tools):
                 grp = f.create_group(group)
             else:
                 grp = f['/']
-                
             
             grp.attrs['star_nb'] = self.star_nb
             grp.attrs['frame_nb'] = self.frame_nb
             grp.attrs['params'] = self.keys
                     
-            for ikey in self.keys:
-                if ikey in grp:
-                    del grp[ikey]
-                grp.create_dataset(ikey, (self.star_nb, self.frame_nb),
-                                   dtype='f64')
-
-                
-                for istar in range(self.star_nb):
-                    for index in range(self.frame_nb):
-                        if self[istar, index] is not None:
-                            if ikey in self[istar, index].keys():
-                                grp[ikey][istar, index] = self[
-                                    istar, index, ikey]
-                            else:
-                                grp[ikey][istar, index] = np.nan
-                        else:
-                            grp[ikey][istar, index] = np.nan
+            for ikey in range(len(self.keys)):
+                grp[self.keys[ikey]] = data_r[:,:,ikey]
+               
+        self._print_msg("Stars parameters saved in {:.2f} s".format(time.time() - start_t))
 
     def load_stars_params(self, params_file_path, group=None,
                           silent=False):
@@ -303,7 +311,8 @@ class StarsParams(Tools):
         """
         if not silent:
             self._print_msg('Loading stars parameters', color=True)
-        
+
+        start_t = time.time()
         with self.open_hdf5(params_file_path, 'r') as f:
         
             star_nb = None
@@ -339,16 +348,21 @@ class StarsParams(Tools):
             # reset data
             self.reset_data()
 
+            # load data (much faster if data is 'preloaded')
+            dat = dict()
+            for ikey in keys:
+                dat[ikey] = grp[ikey][:]
+                
             # fill data
             for index in range(self.frame_nb):
                 for istar in range(self.star_nb):
                     params = dict()
                     for ikey in keys:
-                        params[ikey] = grp[ikey][istar, index]
+                        params[ikey] = dat[ikey][istar, index]
                         self.data[istar, index] = params
 
             if not silent:
-                self._print_msg('Stars parameters loaded')
+                self._print_msg('Stars parameters loaded in {:.2f} s'.format(time.time() - start_t))
             
 
     def get_star_list(self, index=0, all_params=False):
@@ -1424,13 +1438,14 @@ class Astrometry(Tools):
                          "import numpy as np",
                          "import math",
                          "import orb.cutils as cutils",
-                         "import orb.utils as utils")))
+                         "import orb.utils as utils",
+                         "import bottleneck as bn",
+                         "import warnings")))
                     for ijob in range(ncpus)]
 
             for ijob, job in jobs:
                 self.fit_results[:, ik+ijob] = job()
                 
-
             progress.update(ik, info="frame : " + str(ik))
             
         self._close_pp_server(job_server)
@@ -1660,12 +1675,16 @@ class Astrometry(Tools):
         
         # high pass filtering of the image to remove nebulosities
         if filter_image:
+            start_time = time.time()
             self._print_msg("Filtering master image")
             hp_im = utils.high_pass_diff_image_filter(im, deg=1)
+            self._print_msg("Master image filtered in {} s".format(
+                time.time() - start_time))
         else:
             hp_im = np.copy(im)
         
         # preselection
+        self._print_msg("Stars preselection")
         mean_hp_im = np.nanmean(hp_im)
         std_hp_im = np.nanstd(hp_im)
         max_im = np.nanmax(im)
@@ -1706,7 +1725,7 @@ class Astrometry(Tools):
                 
         # first fit test to eliminate "bad" stars
         
-        self._print_msg("Fit stars")
+        self._print_msg("Bad stars rejection based on fitting")
         
         params_list = list()
         
@@ -1804,6 +1823,7 @@ class Astrometry(Tools):
                 "Not enough detected stars: %d < 4"%len(star_list))
 
         self.reset_star_list(np.array(star_list)[:,:2])
+        self.reset_fwhm_pix(mean_fwhm)
         
         return self._get_star_list_path(), self.pix2arc(mean_fwhm)
 
@@ -2528,27 +2548,38 @@ class Astrometry(Tools):
         :param zoom_factor: zoom_factor
         """
 
-        def get_total_flux(guess, image, star_list,
+        def get_total_flux(guess_list, image, star_list,
                            rc, zoom_factor, box_size, kernel):
             """Return the sum of the flux around a transformed list of
             star positions for a given set of parameters.        
             """
-            guess = (guess[0], guess[1], guess[2], 0., 0.)
-            star_list2 = orb.utils.transform_star_position_A_to_B(
-                star_list, guess, rc, zoom_factor)
+            result = np.empty((guess_list.shape[0], 4))
+            result.fill(np.nan)
+            
+            for ik in range(guess_list.shape[0]):
+                guess = (guess_list[ik, 0],
+                         guess_list[ik, 1],
+                         guess_list[ik, 2], 0., 0.)
 
-            total_flux = 0.
-            for istar in range(star_list.shape[0]):
-                ix, iy = star_list2[istar,:]
-                if not np.isnan(ix) and not np.isnan(iy):
-                    x_min, x_max, y_min, y_max = orb.utils.get_box_coords(
-                        ix, iy, box_size, 0, image.shape[0], 0, image.shape[1])
-                    if ((x_max - x_min == box_size)
-                        and (y_max - y_min == box_size)):
-                        total_flux += np.nansum(
-                            image[x_min:x_max, y_min:y_max] * kernel)
+                star_list2 = orb.utils.transform_star_position_A_to_B(
+                    np.copy(star_list), guess, rc, zoom_factor)
 
-            return total_flux
+                total_flux = 0.
+                for istar in range(star_list.shape[0]):
+                    ix, iy = star_list2[istar,:]
+                    if not np.isnan(ix) and not np.isnan(iy):
+                        x_min, x_max, y_min, y_max = orb.utils.get_box_coords(
+                            ix, iy, box_size,
+                            0, image.shape[0],
+                            0, image.shape[1])
+                        if ((x_max - x_min == box_size)
+                            and (y_max - y_min == box_size)):
+                            total_flux += np.nansum(
+                                image[x_min:x_max, y_min:y_max] * kernel)
+                result[ik, 0] = total_flux
+                result[ik, 1:] = guess_list[ik]
+        
+            return result
         
         self._print_msg('Brute force range:')
         if len(x_range) > 1:
@@ -2561,10 +2592,9 @@ class Astrometry(Tools):
             self._print_msg('R = {:.2f}:{:.2f}:{:.2f}'.format(
                 np.min(r_range), np.max(r_range), r_range[1] - r_range[0]))
         
-          
-        
         guess_list = list()
-        guess_matrix = np.empty((len(x_range), len(y_range),
+        guess_matrix = np.empty((len(x_range),
+                                 len(y_range),
                                  len(r_range)), dtype=float)
         guess_matrix_index_list = list()
 
@@ -2582,51 +2612,59 @@ class Astrometry(Tools):
                     guess_list.append(np.array([x_range[idx],
                                                 y_range[idy],
                                                 r_range[idr]]))
-               
+
+        guess_list = np.array(guess_list)
         # Init of the multiprocessing server
         job_server, ncpus = self._init_pp_server()
         ncpus_max = ncpus
 
-        total_flux_list = list()
-        progress = ProgressBar(int(len(guess_list)/ncpus_max))
+        # divide guess list in smaller lists for parallelization
+        pguess_cut_indexes = np.linspace(
+            0, guess_list.shape[0], ncpus_max+1).astype(int)
+        pguess_lists = [guess_list[
+            pguess_cut_indexes[i]:pguess_cut_indexes[i+1]]
+                        for i in range(ncpus_max)]
+        
+        total_flux_list = np.empty((guess_list.shape[0], 4), dtype=float)
 
-        for ik in range(0, len(guess_list), ncpus):
-            # no more jobs than frames to compute
-            if (ik + ncpus >= len(guess_list)):
-                ncpus = len(guess_list) - ik
-
-            # get total flux for each guess
-            jobs = [(ijob, job_server.submit(
-                get_total_flux, 
-                args=(guess_list[ik+ijob], image,
-                      star_list, rc, zoom_factor,
-                      box_size, kernel),
-                modules=("numpy as np",
-                         "import orb.utils"))) 
-                    for ijob in range(ncpus)]
-
-            for ijob, job in jobs:
-                total_flux_list.append((job(), guess_list[ik+ijob]))
-                guess_matrix[
-                    guess_matrix_index_list[ik+ijob][0],
-                    guess_matrix_index_list[ik+ijob][1],
-                    guess_matrix_index_list[ik+ijob][2]] = total_flux_list[-1][0]
+        # parallel processing of each guess list part
+        jobs = [(ijob, job_server.submit(
+            get_total_flux, 
+            args=(pguess_lists[ijob], image,
+                  star_list, rc, zoom_factor,
+                  box_size, kernel),
+            modules=("numpy as np",
+                     "import orb.utils"))) 
+                for ijob in range(ncpus)]
             
-            progress.update(int(ik/ncpus_max), info="guess : %d/%d"%(
-                ik,(int(len(x_range)*len(y_range)*len(r_range)))))
-            
+        for ijob, job in jobs:
+            total_flux_list[
+                pguess_cut_indexes[ijob]
+                :pguess_cut_indexes[ijob + 1], :] = job()
+        
         self._close_pp_server(job_server)
-        progress.end()
+
+        # rebuilding guess matrix
+        for ik in range(guess_list.shape[0]):
+            guess_matrix[
+                guess_matrix_index_list[ik][0],
+                guess_matrix_index_list[ik][1],
+                guess_matrix_index_list[ik][2]] = total_flux_list[ik, 0]
+
+        # avoid a negative guess matrix
+        guess_matrix -= np.nanmin(guess_matrix)
 
         # maximum value of the guess matrix is the best estimate
         rough_dx, rough_dy, rough_dr =  np.unravel_index(
             np.argmax(guess_matrix), guess_matrix.shape)
-        
-        dx, dy, dr = total_flux_list[
-           np.ravel_multi_index(
-                (rough_dx, rough_dy, rough_dr),
-                guess_matrix.shape)][1]
 
+        index1d = np.ravel_multi_index((rough_dx, rough_dy, rough_dr),
+                                       guess_matrix.shape)
+        
+        dx = total_flux_list[index1d, 1]
+        dy = total_flux_list[index1d, 2]
+        dr = total_flux_list[index1d, 3]
+        
         self._print_msg(
             'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
                 dx, dy, dr))
@@ -2663,6 +2701,11 @@ class Aligner(Tools):
     astro1 = None # Astrometry instance of the 1st image
     astro2 = None # Astrometry instance of the 2nd image
 
+    search_size_coeff = None # Define the range of pixels around the
+                             # initial shift values where the correct
+                             # shift parameters have to be found
+                             # (default 0.01).
+          
     # transformation parameters
     dx = None
     dy = None
@@ -2726,7 +2769,10 @@ class Aligner(Tools):
         Tools.__init__(self, **kwargs)
         self.overwrite = overwrite
         self._project_header = project_header
-
+        
+        self.range_coeff = float(self._get_tuning_parameter(
+            'RANGE_COEFF', float(self._get_config_parameter(
+            'ALIGNER_RANGE_COEFF'))))
         
         self.saturation_threshold = saturation_threshold
         
@@ -2834,10 +2880,13 @@ class Aligner(Tools):
                     sip_A=sip1, sip_B=sip2)
                 result = (slin_t - slout).flatten()
                 return result[np.nonzero(~np.isnan(result))]
-           
-            fit = optimize.leastsq(diff, p,
-                                   args=(slin, slout, rc, zf, sip1, sip2),
-                                   full_output=True, xtol=1e-6)
+
+            try:
+                fit = optimize.leastsq(diff, p,
+                                       args=(slin, slout, rc, zf, sip1, sip2),
+                                       full_output=True, xtol=1e-6)
+            except Exception(), e:
+                raise Exception('No matching parameters found: {}'.format(e))
             
             if fit[-1] <= 4:
                 match = np.sqrt(np.mean(fit[2]['fvec']**2.))
@@ -2864,15 +2913,13 @@ class Aligner(Tools):
         MIN_STAR_NB = 30 # Target number of star to detect to find the
                          # transformation parameters
 
-        XYRANGE_STEP_NB = 60 # Define the number of steps for the rough guess
-                             # STEP_SIZE = FWHM / STEP_DEG
-        
-        SIZE_COEFF = 0.05  # Define the range of pixels around the
-                           # initial value of shift where the correct
-                           # shift parameters must be found.
+        XYSTEP_SIZE = 0.5 # Pixel step size of the search range
 
         ANGLE_STEPS = 5 # Angle steps for brute force guess
         ANGLE_RANGE = .1 # Angle range for brute force guess
+        
+        # Skip fit checking
+        SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', 0)))
 
         if star_list_path1 is None:
             star_list_path1, fwhm_arc = self.astro1.detect_stars(
@@ -2894,16 +2941,24 @@ class Aligner(Tools):
             self._print_msg("Rough alignment")
 
             # define the ranges in x and y for the rough optimization
-            x_range_len = SIZE_COEFF * float(self.astro2.dimx)
-            y_range_len = SIZE_COEFF * float(self.astro2.dimy)
+            x_range_len = self.range_coeff * float(self.astro2.dimx)
+            y_range_len = self.range_coeff * float(self.astro2.dimy)
 
-            x_range = np.linspace(-x_range_len/2, x_range_len/2, XYRANGE_STEP_NB) + self.dx
-            y_range = np.linspace(-y_range_len/2, y_range_len/2, XYRANGE_STEP_NB) + self.dy
-            r_range = np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2., ANGLE_STEPS) + self.dr
+            x_hrange = np.arange(XYSTEP_SIZE, x_range_len/2, XYSTEP_SIZE)
+            x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + self.dx
+            
+            y_hrange = np.arange(XYSTEP_SIZE, y_range_len/2, XYSTEP_SIZE)
+            y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + self.dy
+            
+          
+            r_range = np.linspace(-ANGLE_RANGE/2.,
+                                  ANGLE_RANGE/2.,
+                                  ANGLE_STEPS) + self.dr
 
             (self.dx, self.dy, self.dr, guess_matrix) = (
                 self.astro2.brute_force_guess(
-                    self.image2, self.astro1.star_list, x_range, y_range, r_range,
+                    self.image2, self.astro1.star_list,
+                    x_range, y_range, r_range,
                     self.rc, self.zoom_factor))
             self.da = 0.
             self.db = 0.
@@ -2929,7 +2984,7 @@ class Aligner(Tools):
             sip_A=self.sip1)
 
         self.astro2.reset_star_list(star_list2)
-      
+
         fit_results = self.astro2.fit_stars_in_frame(
             0, no_aperture_photometry=True,
             multi_fit=True, enable_zoom=False,
@@ -3033,12 +3088,13 @@ class Aligner(Tools):
         dr_fit = np.sqrt(dx_fit**2. + dy_fit**2.)
         final_err = np.mean(utils.sigmacut(dr_fit))
 
-        if final_err < WARNING_DIST:
-            self._print_msg('Mean difference on star positions: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
-        elif final_err < ERROR_DIST:
-            self._print_warning('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
-        else:
-            self._print_error('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
+        if not SKIP_CHECK:
+            if final_err < WARNING_DIST:
+                self._print_msg('Mean difference on star positions: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
+            elif final_err < ERROR_DIST:
+                self._print_warning('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
+            else:
+                self._print_error('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
         
 
         ### PLOT ERROR ON STAR POSITIONS ###
@@ -3544,7 +3600,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
         if warn:
             Tools()._print_warning(
                 'Not enough pixels in the aperture')
-        return np.nan, np.nan, np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
     
     # Estimation of the background
     if background_guess is None:
@@ -3597,7 +3653,9 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     aperture_flux = total_aperture - (background *  np.nansum(aperture_surface))
     aperture_flux_error = background_err * np.nansum(aperture_surface)
 
-    return aperture_flux, aperture_flux_error, np.nansum(aperture_surface), bad
+    return (aperture_flux, aperture_flux_error,
+            np.nansum(aperture_surface), bad,
+            background, background_err)
 
 
 def fit_stars_in_frame(frame, star_list, box_size,
@@ -3789,6 +3847,12 @@ def fit_stars_in_frame(frame, star_list, box_size,
     if fix_height is None:
         if multi_fit: fix_height = False
         else: fix_height = True
+
+    frame_median = bn.nanmedian(frame)
+    
+    if frame_median < 0.:
+        frame -= frame_median
+        warnings.warn('frame median is < 0 ({}), a value of {} has been subtracted to have a median at 0.'.format(frame_median, frame_median))
     
     ## Frame background determination if wanted
     background = None
@@ -3798,7 +3862,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
         if precise_guess:
             background = sky_background_level(frame)
         else:
-            background = np.median(frame)
+            background = frame_median
         if not multi_fit:
             fix_height = True
         else:
@@ -4022,7 +4086,10 @@ def fit_stars_in_frame(frame, star_list, box_size,
                         fit_params = {'aperture_flux':photom_result[0],
                                       'aperture_flux_err':photom_result[1],
                                       'aperture_surface':photom_result[2],
-                                      'aperture_flux_bad':photom_result[3]}
+                                      'aperture_flux_bad':photom_result[3],
+                                      'aperture_background':photom_result[4],
+                                      'aperture_background_err':photom_result[5]}
+                        
                         fit_results[istar] = dict(fit_params)
 
                     else:
@@ -4034,7 +4101,12 @@ def fit_stars_in_frame(frame, star_list, box_size,
                             photom_result[2])
                         fit_results[istar, 'aperture_flux_bad'] = (
                             photom_result[3])
+                        fit_results[istar, 'aperture_background'] = (
+                            photom_result[4])
+                        fit_results[istar, 'aperture_background_err'] = (
+                            photom_result[5])
                         
+                    
         
     ## Print number of fitted stars
     if not silent:

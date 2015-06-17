@@ -43,13 +43,14 @@ Ubuntu.
    installing_python
 
 
-Python for ORB users
----------------------
+Using ORB
+---------
 
 .. toctree::
    :maxdepth: 2
 
    python_for_orb
+   data_analysis_with_orb
 
 Documentation
 -------------
@@ -61,6 +62,7 @@ Documentation
    utils_module
    cutils_module
    astrometry_module
+   visual_module
 
 Changelog
 ---------
