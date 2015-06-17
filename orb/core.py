@@ -1863,7 +1863,6 @@ class Cube(Tools):
     overwrite = None
 
     _hdf5 = None
-    _original_dtype = None # dtype of the original data
     _data_prefix = None
     _project_header = None
     _calibration_laser_header = None
@@ -2053,16 +2052,12 @@ class Cube(Tools):
                             
                             hdul = self.read_fits(
                                 image_name, return_hdu_only=True)
-                   
-                            self._original_dtype = np.dtype(
-                                hdul.info(output=False)[
-                                    self._get_hdu_data_index(hdul)][5])
                             
                         else:
                             with self.open_hdf5(image_name, 'r') as f:
                                 if 'hdu0/data' in f:
                                     shape = f['hdu0/data'].shape
-                                    self._original_dtype = f['hdu0/data'].dtype
+                                    
                                     if len(shape) == 2:
                                         self.dimx, self.dimy = shape
                                     else: self._print_error('Image shape must have 2 dimensions: {}'.format(shape))
@@ -2824,7 +2819,8 @@ class Cube(Tools):
             progress = ProgressBar(zmax-zmin)
 
             data_frames = np.empty((xmax - xmin, ymax - ymin, ncpus),
-                                   dtype=self._original_dtype)
+                                   dtype=float)
+            
             
             for iframe in range(0, zmax-zmin, ncpus):
                 progress.update(
@@ -2853,7 +2849,7 @@ class Cube(Tools):
                     outcube.write_frame(zmin + iframe + ijob,
                                         data=data_frames[:,:,ijob],
                                         header=job(),
-                                        force_float32=False)
+                                        force_float32=True)
                       
                 progress.update(
                     iframe,
@@ -4116,8 +4112,6 @@ class OutHDFCube(Tools):
 
         :param force_float23: (Optional) If True, data type is forced
           to numpy.float32 (default True).
-
-        .. note:: by default Data is saved as float32 to save space.
         """
 
         def _replace(name, dat):

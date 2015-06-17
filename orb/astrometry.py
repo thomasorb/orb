@@ -1362,7 +1362,7 @@ class Astrometry(Tools):
             # no more jobs than frames to compute
             if (ik + ncpus >= self.frame_nb):
                 ncpus = self.frame_nb - ik
-                
+    
             if correct_alignment:
                 if ik > 0:
                     old_x_corr = float(x_corr)
@@ -1407,6 +1407,7 @@ class Astrometry(Tools):
                     fwhm_mean = self.fwhm_pix
             else:
                 fwhm_mean = self.fwhm_pix
+          
 
             for ijob in range(ncpus):
                 frame = np.copy(self.data[:,:,ik+ijob])
@@ -3898,7 +3899,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
                 enable_rotation=enable_rotation,
                 estimate_local_noise=estimate_local_noise,
                 saturation=saturation, sip=sip)
-
+                
             # save results as a StarsParams instance
             for istar in range(star_list.shape[0]):
                 if fit_params != []:
