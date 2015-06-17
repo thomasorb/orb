@@ -686,7 +686,7 @@ class BaseViewer(object):
 
         if not reload:
             val = int(self.wimage_index.get_value())
-            if val < 0 or val >= self.cube.dimz:
+            if val < 0 or val >= self.cube.shape[2]:
                 val = 0
             image_data = self.cube[:,:,val]    
             self.update_image(image_data)
