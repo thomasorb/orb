@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: odat.py
+# File: data.py
 
 ## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -35,26 +35,57 @@ import numpy as np
 import math
 
 
+#################################################
+#### CLASS Data #################################
+#################################################
+class Data(object):
+    """Empty class that must be implemented by a particular Data class
+    depending on the data dimensions (e.g. :py:class:`data.Data1D`)"""
+    pass
+    
 
 #################################################
 #### CLASS Data1D ###############################
 #################################################
-class Data1D(Tools):
+class Data1D(Data):
+    """This class can be used as a substitute to a 1D numpy.ndarray to
+    store data.
 
+    Data can be stored with its error and general operations can be
+    used to propagate the uncertainty with no effort, e.g.:
+
+    .. code-block:: python
+
+      import orb.data as od
+      import numpy as np
+
+      x_dat = np.ones(5, dtype=float)
+      x_err = np.random.standard_normal(5)
+
+      a = od.array(x_dat, x_err)
+      b = od.array(x_dat, x_err)
+      c = a * b
+      print a
+      print od.mean(a)
+      print od.sum(od.log10(c))
+      print od.nanmean(a*b**2.)
+    
+    """
     ## properties
     # data
     # err
-    # snr
 
     _dat = None
     _err = None
-    _snr = None
     _dimx = None
-    _snr_NA = False
     
-    def __init__(self, dat, err=None, snr=None):
+    def __init__(self, dat, err=None):
+        """Init class
+        :param dat: Estimation array
+        :param err: (Optional) Uncertainty array (default None)
+        """
         dat = np.array(dat).astype(float)
-        if len(dat.shape) > 1: self._print_error('Data must be a 1D vector')
+        if len(dat.shape) > 1: raise ValueError('Data must be a 1D vector')
         self._dat = dat
         self._dimx = np.size(dat)
         
@@ -63,17 +94,16 @@ class Data1D(Tools):
         else:
             self._err = None
 
-        if snr is not None:
-            self._snr = self._check_data(snr)
-            self._snr_NA = True
-        else:
-            self._snr = None
-            self._snr_NA = False
-
     def __str__(self):
+        """Informal string representation, called by print"""
         return '{} ({})'.format(str(self.dat), str(self.err))
 
     def __mul__(self, b):
+        """Implement ``self * b``.
+
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         result = self.copy()
         result *= b
         return result
@@ -81,6 +111,11 @@ class Data1D(Tools):
     __rmul__ = __mul__ # commutativity
 
     def __imul__(self, b):
+        """Implement ``self *= b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         if isinstance(b, self.__class__):
             result = self._dat * b.dat
             # error propagation
@@ -100,11 +135,21 @@ class Data1D(Tools):
         return self
 
     def __div__(self, b):
+        """Implement ``self / b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         result = self.copy()
         result /= b
         return result
 
     def __rdiv__(self, b):
+        """Implement ``b / self``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         result = self.__class__(b)
         if result.err is None: result.err = np.zeros_like(result.dat)
         a = self.copy()
@@ -112,6 +157,11 @@ class Data1D(Tools):
         return result
 
     def __idiv__(self, b):
+        """Implement ``self /= b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         if isinstance(b, self.__class__):
             result = self._dat / b.dat
             # error propagation
@@ -131,6 +181,11 @@ class Data1D(Tools):
         return self
 
     def __add__(self, b):
+        """Implement ``self + b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         result = self.copy()
         result += b
         return result
@@ -138,6 +193,11 @@ class Data1D(Tools):
     __radd__ = __add__ # commutativity
 
     def __iadd__(self, b):
+        """Implement ``self += b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         if isinstance(b, self.__class__):
             result = self._dat + b.dat
             # error propagation
@@ -151,14 +211,29 @@ class Data1D(Tools):
         return self
 
     def __sub__(self, b):
+        """Implement ``self - b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         result = self.copy()
         result -= b
         return result
 
     def __rsub__(self, b):
+        """Implement ``b - self``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         return - (self - b)
 
     def __isub__(self, b):
+        """Implement ``self -= b``
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         if isinstance(b, self.__class__):
             result = self._dat - b.dat
             # error propagation
@@ -171,7 +246,12 @@ class Data1D(Tools):
 
         return self
 
-    def __pow__(self,b):
+    def __pow__(self, b):
+        """Implement ``self ** b``.
+        
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
         a = self.copy()
         if isinstance(b, self.__class__):
             result = a.dat ** b.dat
@@ -187,32 +267,29 @@ class Data1D(Tools):
         return a
 
     def __neg__(self):
+        """Implement ``- b``."""
         result = self.copy()
         result.dat = - result.dat
         return result
 
     def __pos__(self):
+        """Implement ``+ b``."""
         return self.copy()
         
     def _check_data(self, a):
+        """Check passed data
+
+        :param a: data
+        """
         a = np.array(a).astype(float)
-        if a.shape != self._dat.shape: self._print_error('Vector must have the same size as Data')
+        if a.shape != self._dat.shape: raise ValueError('Vector must have the same size as Data')
         return a
-    
-
-    def _get_snr(self):
-        if self._snr_NA:
-            return self._snr
-        elif self._err is not None:
-            return self._dat / self._err
-        else:
-            return None
-
-    def _set_snr(self, a):
-        self._snr = self._check_data(a)
-        self._snr_NA = True
 
     def _get_dat(self):
+        """Getter for dat property.
+
+        Called by ``a = self.dat``.
+        """
         if np.size(self._dat) > 1:
             return np.squeeze(self._dat)
         elif isinstance(self._dat, np.ndarray):
@@ -224,9 +301,19 @@ class Data1D(Tools):
             return float(self._dat)
 
     def _set_dat(self, a):
+        """Setter for dat property.
+
+        Called by ``self.dat = a``.
+
+        :param a: data
+        """
         self._dat = self._check_data(a)
 
     def _get_err(self):
+        """Getter for err property.
+
+        Called by ``a = self.err``.
+        """
         if np.size(self._err) > 1:
             return np.abs(np.squeeze(self._err))
         elif isinstance(self._err, np.ndarray):
@@ -239,78 +326,80 @@ class Data1D(Tools):
         
 
     def _set_err(self, a):
+        """Setter for err property.
+
+        Called by ``self.err = a``.
+
+        :param a: data
+        """
         self._err = self._check_data(a)
-        
-    snr = property(_get_snr, _set_snr)
+
+    def _get_shape(self):
+        """Getter for shape property.
+
+        Called by ``a = self.shape``.
+        """
+        return self._dat.shape
+    
     dat = property(_get_dat, _set_dat)
     err = property(_get_err, _set_err)
-
+    shape = property(_get_shape)
 
     def copy(self):
+        """Return a copy of self."""
         dat_copy = np.copy(self._dat)
         
         if self._err is not None:
             err_copy = np.copy(self._err)
         else:
             err_copy = None
-
-        if self._snr is not None and self._snr_NA:
-            snr_copy = np.copy(self._snr)
-        else:
-            snr_copy = None
             
-        return self.__class__(dat_copy, err=err_copy,
-                              snr=snr_copy)
+        return self.__class__(dat_copy, err=err_copy)
 
 
 #################################################
 #### CLASS Data2D ###############################
 #################################################
 class Data2D(Data1D):
-    """Manage data map, associated error map.
+    """This class can be used as a substitute to a 2D numpy.ndarray to
+    store data.
 
-    It is also possible to manage beam map and surface map created
-    after snr smoothing.
-    
-    Compute error propagation on basic data operations (addition,
-    substraction, multiplication, division, power)
+    Data can be stored with its error and general operations can be
+    used to propagate the uncertainty with no effort, e.g.:
+
+
+    .. code-block:: python
+
+      import orb.data as od
+      import numpy as np
+
+      x_dat = np.random.standard_normal((5, 5))
+      x_err = np.ones((5, 5), dtype=float)
+
+      a = od.array(x_dat, x_err)
+      b = od.array(x_dat, x_err)
+      c = a * b
+      print a
+      print od.mean(a)
+      print od.sum(od.log10(c))
+      print od.nanmean(a*b**2.)
+      
     """
     
     ## properties:
-    ## snr
     ## dat
     ## err
-    ## beam
-    ## surf
     ## shape
     
-    _dat = None
-    _err = None
-    _snr = None
-    _beam = None
-    _surf = None
-    _snr_NA = False
-    
-    dimx = None
     dimy = None
     
-    def __init__(self, dat, err=None, beam=None, surf=None, snr=None):
+    def __init__(self, dat, err=None):
         """
         Init of Data2D class.
         
         :param dat: Data map.
         
-        :param err: Absolute error map. Must have the same shape as dat.
-
-        :param beam: Beam map. Size of the beam (FWHM of the Gaussian
-          smoothing applied) at each pixel. If None given, the beam
-          size is considered to be of 1 pixel everywhere.
-
-        :param surf: Number of pixels used to get the SNR.
-        
-        :param snr: If not None the SNR map will not be computed from
-          dat/err. Useful when dat/err has no meaning (e.g. velocity
-          map)
+        :param err: Absolute error map. Must have the same shape as dat.    
         """
         if isinstance(dat, np.ndarray):
             if len(dat.shape) == 2:
@@ -318,33 +407,33 @@ class Data2D(Data1D):
                 self.dimx = self._dat.shape[0]
                 self.dimy = self._dat.shape[1]
             else:
-                self._print_error('Data must be a 2d array')
+                raise ValueError('Data must be a 2D array')
         else:
-            self._print_error('Data must be a numpy array')
+            raise ValueError('Data must be a numpy array')
 
         self._err = self._check_data(err)
-        self._beam = self._check_data(beam)
-        self._surf = self._check_data(surf)
-        self._snr = self._check_data(snr)
-        if self._snr is not None:
-            self._snr_NA = True
-        else:
-            self._snr_NA = False
+     
             
         
     def __getitem__(self, key):
+        """Implement self[key]
+
+        :param key: data slice.
+
+        :return: a :py:class:`data.Data2D` instance.
+        """
         dat_slice = self._dat[key]
         if self._err is not None: err_slice = self._err[key]
         else: err_slice = None
-        if self._beam is not None: beam_slice = self._beam[key]
-        else: beam_slice = None
-        if self._surf is not None: surf_slice = self._surf[key]
-        else: surf_slice = None
-        
-        return self.__class__(dat_slice, err=err_slice,
-                              beam=beam_slice, surf=surf_slice)
+      
+        return self.__class__(dat_slice, err=err_slice)
+
 
     def _check_data(self, m):
+        """Check passed data map
+
+        :param m: data map (a 2D array)
+        """
         if m is not None:
             if isinstance(m, np.ndarray):
                 if len(m.shape) == 2:
@@ -352,69 +441,57 @@ class Data2D(Data1D):
                         and m.shape[1] == self.dimy):
                         return m
                     else:
-                        self._print_error(
+                        raise ValueError(
                             'Bad map shape. Must be (%d, %d)'%(
                                 self.dimx, self.dimy))
                 else:
-                    self._print_error('Map must be a 2d array')
+                    raise ValueError('Map must be a 2D array')
             else:
-                self._print_error('Map must be a numpy array')
+                raise ValueError('Map must be a numpy array')
         else:
             return None
 
-    def _get_snr(self):
-        if self._snr_NA:
-            return np.copy(self._snr)
-        else:
-            return self._dat / self._err
-
-    def _set_snr(self, m):
-        self._snr = self._check_data(m)
-        self._snr_NA = True
 
     def _get_dat(self):
+        """Getter for dat property.
+
+        Called by ``a = self.dat``.
+        """
         return np.copy(self._dat)
 
     def _set_dat(self, m):
+        """Setter for dat property.
+
+        Called by ``self.dat = m``.
+
+        :param m: data map
+        """
         self._dat = self._check_data(m)
 
     def _get_err(self):
-        if self._err != None:
+        """Getter for err property.
+
+        Called by ``a = self.err``.
+        """
+        if self._err is not None:
             self._err = np.copy(np.abs(self._err))
         return self._err
 
     def _set_err(self, m):
+        """Setter for err property.
+
+        Called by ``self.err = m``.
+
+        :param m: uncertainty map
+        """
         self._err = self._check_data(m)
 
-    def _get_beam(self):
-        if self._beam is not None:
-            return np.copy(self._beam)
-        else:
-            return np.ones(self.shape, dtype=float)
-
-    def _set_beam(self, m):
-        self._beam = self._check_data(m)
-
-    def _get_surf(self):
-        if self._surf is not None:
-            return np.copy(self._surf)
-        else:
-            return np.ones(self.shape, dtype=float)
-
-    def _set_surf(self, m):
-        self._surf = self._check_data(m)
-
-    def _get_shape(self):
-        return (self.dimx, self.dimy)
-
-    snr = property(_get_snr, _set_snr)
     dat = property(_get_dat, _set_dat)
     err = property(_get_err, _set_err)
-    beam = property(_get_beam, _set_beam)
-    surf = property(_get_surf, _set_surf)
-    shape = property(_get_shape)
-    
+
+
     def copy(self):
+        """Return a copy of self."""
         dat_copy = np.copy(self._dat)
         
         if self._err is not None:
@@ -422,26 +499,45 @@ class Data2D(Data1D):
         else:
             err_copy = None
             
-        if self._beam is not None:
-            beam_copy = np.copy(self._beam)
-        else:
-            beam_copy = None
+        return self.__class__(dat_copy, err=err_copy)
 
-        if self._surf is not None:
-            surf_copy = np.copy(self._surf)
-        else:
-            surf_copy = None
 
-        if self._snr is not None and self._snr_NA:
-            snr_copy = np.copy(self._snr)
-        else:
-            snr_copy = None
-            
-        return self.__class__(dat_copy, err=err_copy,
-                              beam=beam_copy, surf=surf_copy,
-                              snr=snr_copy)
+#################################################
+#### Convenience functions ######################
+#################################################
+def array(a, e):
+    """Return a :py:class:`data.Data1D` or :py:class:`data.Data2D`
+    instance depending on the dimensions of the passed arrays.
 
+    :param a: Estimation. Must be convertible to a numpy.ndarray.
+
+    :param e: Uncertainty. Must be convertible to a numpy.ndarray and
+      must have the same shape as a.
+    """
+    if not isinstance(a, np.ndarray):
+        try:
+            a = np.array(a)
+        except Exception, err:
+            raise Exception('Estimation array cannot be converted to a numpy.ndarray: {}'.format(err))
+        
+    if not isinstance(e, np.ndarray):
+        try:
+            e = np.array(e)
+        except Exception, err:
+            raise Exception('Uncertainty array cannot be converted to a numpy.ndarray: {}'.format(err))
+
+    if a.shape != e.shape:
+        raise ValueError('Estimation array and Error array must have the same shape: {} != {}'.format(a.shape, e.shape))
     
+    if np.ndim(a) <= 1:
+        return Data1D(a, e)
+
+    if np.ndim(a) == 2:
+        return Data2D(a, e)
+
+    else:
+        raise ValueError('Array must be a scalar, 1D or 2D')
+
 #################################################
 #### Operations on Data #########################
 #################################################
@@ -449,7 +545,8 @@ class Data2D(Data1D):
 # propagation.
 
 def log10(a):
-    if isinstance(a, Data1D) or isinstance(a, Data2D):
+    """Log10 of a Data array"""
+    if isinstance(a, Data):
         result = a.copy()
         result.dat = np.log10(a.dat)
         result.err = (a.err / a.dat) * math.log10(math.exp(1))
@@ -458,20 +555,24 @@ def log10(a):
         return np.log10(a)
 
 def sum(a):
-    if isinstance(a, Data1D) or isinstance(a, Data2D):
-        return Data1D(np.sum(a.dat), math.sqrt(np.sum(a.err**2.)))
+    """Sum of a Data array"""
+    if isinstance(a, Data):
+        return array(np.sum(a.dat), math.sqrt(np.sum(a.err**2.)))
     else:
         return np.sum(a)
 
 def nansum(a):
-    if isinstance(a, Data1D) or isinstance(a, Data2D):
-        return Data1D(np.nansum(a.dat), math.sqrt(np.nansum(a.err**2.)))
+    """Nansum of a Data array"""
+    if isinstance(a, Data):
+        return array(np.nansum(a.dat), math.sqrt(np.nansum(a.err**2.)))
     else:
         return np.nansum(a)
 
 def mean(a):
+    """Mean of a Data array"""
     return sum(a) / a.dat.size
 
 def nanmean(a):
+    """Nanmean of a Data array"""
     return nansum(a) / np.sum(~np.isnan(a.dat))
 

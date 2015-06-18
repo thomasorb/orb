@@ -430,8 +430,12 @@ v1.4 The HDF5 miracle
 
 All ORBS internal cubes used for computation have been passed to an
 HDF5 format which makes data loading incredibly faster. If those
-changes have small effects on small data cubes like SpIOMM data. It
-changes a lot the computation time on SITELLE's data cubes.
+changes have small effects on small data cubes like SpIOMM data, it
+changes a lot the computation time on SITELLE's data cubes (passing
+from ~10 hours to 6.5 hours on a 16 procs machine).
+
+The HDF5 format is also very useful to display large data cubes with
+**orb-viewer** without loading the full cube in memory.
 
 
 v1.4.0
@@ -453,9 +457,32 @@ v1.4.0
 
 * script **orb-dstack** can also export a cube in hdf5 format.
 
-* new module created :py:mod:`~visual` aimed to contain basic visual
-  classes to construct viewer in other ORB softwares like ORBS, IRIS,
-  ORCS...
+Visual module
+-------------
 
-* :py:class:`~visual.BaseViewer` created to display FITS/HDF5
-  cubes.
+New module created :py:mod:`orb.visual` aimed to contain basic visual
+classes to construct viewer in other ORB softwares like ORBS, IRIS,
+ORCS...
+
+* :py:class:`orb.visual.BaseViewer`, :py:class:`orb.visual.PopupWindow`,
+  :py:class:`orb.visual.HeaderWindow`, :py:class:`orb.visual.ZPlotWindow`
+  created to display FITS/HDF5 cubes.
+
+Orb-viewer
+----------
+
+The basic viewer **orb-viewer** has been completly rewritten. It has
+less functionnality than the previous one, but it is nearly bug-free
+and much better coded. Its frame will serve as a basic frame for more
+specialized viewer (e.g. **iris-viewer** of IRIS and other to come for
+ORCS).
+
+
+Data module
+-----------
+
+Module :py:mod:`~data` used to propagate uncertainty when doing
+operations on 1D or 2D data. Useful for IRIS and OACS.
+
+* :py:class:`~data.Data1D`, :py:class:`~data.Data2D`,
+  :py:class:`~data.Data` and some convenience functions created.

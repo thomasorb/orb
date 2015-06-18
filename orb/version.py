@@ -1,1 +1,1 @@
-__version__ = '1.4.0-prerelease'
+__version__ = '1.4.0'

@@ -35,7 +35,7 @@
 
   
     <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
-        <link rel="prev" title="Visual module" href="visual_module.html"/> 
+        <link rel="prev" title="Data module" href="data_module.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -166,6 +166,16 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="visual_module.html">Visual module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#baseviewer-class">BaseViewer class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data-functions">Data functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data-class">Data class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data1d-class">Data1D class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data2d-class">Data2D class</a></li>
 </ul>
 </li>
 </ul>
@@ -229,7 +239,12 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#v1-4-0">v1.4.0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v1-4-0">v1.4.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#visual-module">Visual module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#orb-viewer">Orb-viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-module">Data module</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -668,8 +683,11 @@ to get the phase of a laser spectrum (with no continuum emission).</li>
 <h2>v1.4 The HDF5 miracle<a class="headerlink" href="#v1-4-the-hdf5-miracle" title="Permalink to this headline">¶</a></h2>
 <p>All ORBS internal cubes used for computation have been passed to an
 HDF5 format which makes data loading incredibly faster. If those
-changes have small effects on small data cubes like SpIOMM data. It
-changes a lot the computation time on SITELLE&#8217;s data cubes.</p>
+changes have small effects on small data cubes like SpIOMM data, it
+changes a lot the computation time on SITELLE&#8217;s data cubes (passing
+from ~10 hours to 6.5 hours on a 16 procs machine).</p>
+<p>The HDF5 format is also very useful to display large data cubes with
+<strong>orb-viewer</strong> without loading the full cube in memory.</p>
 <div class="section" id="v1-4-0">
 <h3>v1.4.0<a class="headerlink" href="#v1-4-0" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
@@ -685,12 +703,35 @@ been designed to write an HDF5 cube containing the transformed data.</li>
 <li><a class="reference internal" href="core_module.html#core.Cube.export" title="core.Cube.export"><code class="xref py py-meth docutils literal"><span class="pre">export()</span></code></a> modified to export any cube (e.g. a
 frame divided FITS cube) in HDF5 format.</li>
 <li>script <strong>orb-dstack</strong> can also export a cube in hdf5 format.</li>
-<li>new module created <code class="xref py py-mod docutils literal"><span class="pre">visual</span></code> aimed to contain basic visual
-classes to construct viewer in other ORB softwares like ORBS, IRIS,
-ORCS...</li>
-<li><a class="reference internal" href="visual_module.html#visual.BaseViewer" title="visual.BaseViewer"><code class="xref py py-class docutils literal"><span class="pre">BaseViewer</span></code></a> created to display FITS/HDF5
-cubes.</li>
 </ul>
+<div class="section" id="visual-module">
+<h4>Visual module<a class="headerlink" href="#visual-module" title="Permalink to this headline">¶</a></h4>
+<p>New module created <code class="xref py py-mod docutils literal"><span class="pre">orb.visual</span></code> aimed to contain basic visual
+classes to construct viewer in other ORB softwares like ORBS, IRIS,
+ORCS...</p>
+<ul class="simple">
+<li><a class="reference internal" href="visual_module.html#orb.visual.BaseViewer" title="orb.visual.BaseViewer"><code class="xref py py-class docutils literal"><span class="pre">orb.visual.BaseViewer</span></code></a>, <a class="reference internal" href="visual_module.html#orb.visual.PopupWindow" title="orb.visual.PopupWindow"><code class="xref py py-class docutils literal"><span class="pre">orb.visual.PopupWindow</span></code></a>,
+<a class="reference internal" href="visual_module.html#orb.visual.HeaderWindow" title="orb.visual.HeaderWindow"><code class="xref py py-class docutils literal"><span class="pre">orb.visual.HeaderWindow</span></code></a>, <a class="reference internal" href="visual_module.html#orb.visual.ZPlotWindow" title="orb.visual.ZPlotWindow"><code class="xref py py-class docutils literal"><span class="pre">orb.visual.ZPlotWindow</span></code></a>
+created to display FITS/HDF5 cubes.</li>
+</ul>
+</div>
+<div class="section" id="orb-viewer">
+<h4>Orb-viewer<a class="headerlink" href="#orb-viewer" title="Permalink to this headline">¶</a></h4>
+<p>The basic viewer <strong>orb-viewer</strong> has been completly rewritten. It has
+less functionnality than the previous one, but it is nearly bug-free
+and much better coded. Its frame will serve as a basic frame for more
+specialized viewer (e.g. <strong>iris-viewer</strong> of IRIS and other to come for
+ORCS).</p>
+</div>
+<div class="section" id="data-module">
+<h4>Data module<a class="headerlink" href="#data-module" title="Permalink to this headline">¶</a></h4>
+<p>Module <code class="xref py py-mod docutils literal"><span class="pre">data</span></code> used to propagate uncertainty when doing
+operations on 1D or 2D data. Useful for IRIS and OACS.</p>
+<ul class="simple">
+<li><a class="reference internal" href="data_module.html#data.Data1D" title="data.Data1D"><code class="xref py py-class docutils literal"><span class="pre">Data1D</span></code></a>, <a class="reference internal" href="data_module.html#data.Data2D" title="data.Data2D"><code class="xref py py-class docutils literal"><span class="pre">Data2D</span></code></a>,
+<a class="reference internal" href="data_module.html#data.Data" title="data.Data"><code class="xref py py-class docutils literal"><span class="pre">Data</span></code></a> and some convenience functions created.</li>
+</ul>
+</div>
 </div>
 </div>
 </div>
@@ -702,7 +743,7 @@ cubes.</li>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="visual_module.html" class="btn btn-neutral" title="Visual module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="data_module.html" class="btn btn-neutral" title="Data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

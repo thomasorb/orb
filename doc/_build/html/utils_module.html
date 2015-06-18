@@ -138,6 +138,8 @@
 <li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#tools-class">Tools class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#cube-class">Cube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#hdfcube-class">HDFCube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
@@ -161,6 +163,19 @@
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#gaussian-class">Gaussian class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#moffat-class">Moffat class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrometry_module.html#astrometry-functions">Astrometry functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visual_module.html">Visual module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#baseviewer-class">BaseViewer class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data-functions">Data functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data1d-class">Data1D class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data2d-class">Data2D class</a></li>
 </ul>
 </li>
 </ul>
@@ -2110,10 +2125,14 @@ coefficients.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.transform_frame.params.frame"></span><strong>frame</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.frame">¶</a> &#8211; Frame to transform</li>
-<li><span class="target" id="utils.transform_frame.params.x_min"></span><strong>x_min</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.x_min">¶</a> &#8211; Lower x boundary of the frame to transform</li>
-<li><span class="target" id="utils.transform_frame.params.x_max"></span><strong>x_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.x_max">¶</a> &#8211; Upper x boundary of the frame to transform</li>
-<li><span class="target" id="utils.transform_frame.params.y_min"></span><strong>y_min</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_min">¶</a> &#8211; Lower y boundary of the frame to transform</li>
-<li><span class="target" id="utils.transform_frame.params.y_max"></span><strong>y_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_max">¶</a> &#8211; Upper y boundary of the frame to transform</li>
+<li><span class="target" id="utils.transform_frame.params.x_min"></span><strong>x_min</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.x_min">¶</a> &#8211; Lower x boundary of the transformed section (can be
+a tuple in order to get multiple sections)</li>
+<li><span class="target" id="utils.transform_frame.params.x_max"></span><strong>x_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.x_max">¶</a> &#8211; Upper x boundary of the transformed section (can be
+a tuple in order to get multiple sections)</li>
+<li><span class="target" id="utils.transform_frame.params.y_min"></span><strong>y_min</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_min">¶</a> &#8211; Lower y boundary of the transformed section (can be
+a tuple in order to get multiple sections)</li>
+<li><span class="target" id="utils.transform_frame.params.y_max"></span><strong>y_max</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.y_max">¶</a> &#8211; Upper y boundary of the transformed section (can be
+a tuple in order to get multiple sections)</li>
 <li><span class="target" id="utils.transform_frame.params.d"></span><strong>d</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.d">¶</a> &#8211; Transformation coefficients [dx, dy, dr, da, db]</li>
 <li><span class="target" id="utils.transform_frame.params.rc"></span><strong>rc</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.rc">¶</a> &#8211; Rotation center of the frame [rc_x, rc_y]</li>
 <li><span class="target" id="utils.transform_frame.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#utils.transform_frame.params.zoom_factor">¶</a> &#8211; Zoom on the image. Can be a couple (zx, zy).</li>

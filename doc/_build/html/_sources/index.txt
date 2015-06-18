@@ -63,6 +63,7 @@ Documentation
    cutils_module
    astrometry_module
    visual_module
+   data_module
 
 Changelog
 ---------

@@ -348,10 +348,17 @@ class BaseViewer(object):
         root.add(bigbox)
 
     def _get_plugins(self):
+        """A list of plugins (returned as a list of gtk.Box instance)
+        may be defined and incerted here. It will be packed vartically
+        at the bottom of the basic view.
+        """
         return []
 
     def _reload_file(self):
-        print 'Reloading {}'.format(self.filepath)
+        """Reload a file and update the displayed data. The file might
+        have a new size.
+        """
+        print ' > Reloading {}'.format(self.filepath)
         self.load_file(self.filepath, reload=True)
         
     def _open_file_cb(self, c):
@@ -642,6 +649,9 @@ class BaseViewer(object):
         """Load the file to display. Can be a FITS or HDF5 cube.
 
         :param filepath: Path to the file.
+
+        :param reload: (Optional) Must be set to True if the file is
+          reloaded (default False)
         """
         if os.path.splitext(filepath)[-1] in ['.fits']:
             self.hdf5 = False

@@ -35,7 +35,7 @@
 
   
     <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Changelog" href="changelog.html"/>
+        <link rel="next" title="Data module" href="data_module.html"/>
         <link rel="prev" title="Astrometry module" href="astrometry_module.html"/> 
 
   
@@ -172,6 +172,12 @@
 <li class="toctree-l2"><a class="reference internal" href="#zplotwindow-class">ZPlotWindow class</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data-functions">Data functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data1d-class">Data1D class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data2d-class">Data2D class</a></li>
+</ul>
+</li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
@@ -293,7 +299,7 @@
 <h2><a class="toc-backref" href="#id2">BaseViewer class</a><a class="headerlink" href="#baseviewer-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="orb.visual.BaseViewer">
-<em class="property">class </em><code class="descclassname">orb.visual.</code><code class="descname">BaseViewer</code><span class="sig-paren">(</span><em>config_file_name='config.orb'</em>, <em>no_log=True</em>, <em>debug=False</em>, <em>daemon_port=9000</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">orb.visual.</code><code class="descname">BaseViewer</code><span class="sig-paren">(</span><em>config_file_name='config.orb'</em>, <em>no_log=True</em>, <em>debug=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>This class implements a basic viewer based on GINGA for FITS/HDF5
 cubes created with ORB modules.</p>
@@ -303,7 +309,7 @@ cubes created with ORB modules.</p>
 </div>
 <dl class="method">
 <dt id="orb.visual.BaseViewer.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>config_file_name='config.orb'</em>, <em>no_log=True</em>, <em>debug=False</em>, <em>daemon_port=9000</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>config_file_name='config.orb'</em>, <em>no_log=True</em>, <em>debug=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Init BaseViewer</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -340,6 +346,14 @@ printed on stdout (default False).</li>
 <dt id="orb.visual.BaseViewer._get_new_object">
 <code class="descname">_get_new_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._get_new_object" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return new boxes on the image display.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="orb.visual.BaseViewer._get_plugins">
+<code class="descname">_get_plugins</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._get_plugins" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of plugins (returned as a list of gtk.Box instance)
+may be defined and incerted here. It will be packed vartically
+at the bottom of the basic view.</p>
 </dd></dl>
 
 <dl class="method">
@@ -422,6 +436,13 @@ printed on stdout (default False).</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="orb.visual.BaseViewer._open_file_cb">
+<code class="descname">_open_file_cb</code><span class="sig-paren">(</span><em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._open_file_cb" title="Permalink to this definition">¶</a></dt>
+<dd><p>open-file callback</p>
+<p>Popup a File chooser dialog to open a new file</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="orb.visual.BaseViewer._quit_cb">
 <code class="descname">_quit_cb</code><span class="sig-paren">(</span><em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._quit_cb" title="Permalink to this definition">¶</a></dt>
 <dd><p>quit callback.</p>
@@ -434,6 +455,13 @@ printed on stdout (default False).</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="orb.visual.BaseViewer._reload_file">
+<code class="descname">_reload_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._reload_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reload a file and update the displayed data. The file might
+have a new size.</p>
 </dd></dl>
 
 <dl class="method">
@@ -508,25 +536,6 @@ self.autocut_methods list</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="orb.visual.BaseViewer._start_listener_daemon">
-<code class="descname">_start_listener_daemon</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._start_listener_daemon" title="Permalink to this definition">¶</a></dt>
-<dd><p>Launch a socket listener daemon to permit communication
-with the viewer from external processes.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p>If nescessary the listener may be stopped by sending the message &#8216;stop&#8217;, e.g.:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">socket</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span>
-                  <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
-<span class="n">s</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">(),</span> <span class="n">port</span><span class="p">))</span>
-<span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;stop&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">))</span>
-<span class="n">s</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</dd></dl>
-
-<dl class="method">
 <dt id="orb.visual.BaseViewer._stop_box_cb">
 <code class="descname">_stop_box_cb</code><span class="sig-paren">(</span><em>c</em>, <em>button</em>, <em>data_x</em>, <em>data_y</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer._stop_box_cb" title="Permalink to this definition">¶</a></dt>
 <dd><p>stop-drawing-box callback</p>
@@ -555,13 +564,18 @@ with the viewer from external processes.</p>
 
 <dl class="method">
 <dt id="orb.visual.BaseViewer.load_file">
-<code class="descname">load_file</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer.load_file" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_file</code><span class="sig-paren">(</span><em>filepath</em>, <em>reload=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.visual.BaseViewer.load_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the file to display. Can be a FITS or HDF5 cube.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.visual.BaseViewer.load_file.params.filepath"></span><strong>filepath</strong><a class="paramlink headerlink reference internal" href="#orb.visual.BaseViewer.load_file.params.filepath">¶</a> &#8211; Path to the file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.visual.BaseViewer.load_file.params.filepath"></span><strong>filepath</strong><a class="paramlink headerlink reference internal" href="#orb.visual.BaseViewer.load_file.params.filepath">¶</a> &#8211; Path to the file.</li>
+<li><span class="target" id="orb.visual.BaseViewer.load_file.params.reload"></span><strong>reload</strong><a class="paramlink headerlink reference internal" href="#orb.visual.BaseViewer.load_file.params.reload">¶</a> &#8211; (Optional) Must be set to True if the file is
+reloaded (default False)</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -751,7 +765,7 @@ wavelength, None otherwise.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="data_module.html" class="btn btn-neutral float-right" title="Data module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="astrometry_module.html" class="btn btn-neutral" title="Astrometry module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
