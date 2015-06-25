@@ -5,7 +5,7 @@
 #   Ginga (http://ejeschke.github.io/ginga/)
 # File: visual.py
 
-## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -211,6 +211,7 @@ class BaseViewer(object):
         imageframebox = gtk.VBox()
 
         # imageoptionsbox
+        # autocut
         imageoptionsbox = gtk.HBox()
         autocutbox = gtk.VBox()
         wautocuts = ginga.gtkw.Widgets.ComboBox()
@@ -224,7 +225,9 @@ class BaseViewer(object):
         autocutbox.pack_start(wautocuts.widget)
         imageoptionsbox.pack_start(autocutbox, fill=False, expand=False)
 
+        # index scale
         indexbox = gtk.VBox()
+        scalebox = gtk.HBox()
         self.wimage_index = gtk.Adjustment(value=0, lower=0,
                                            upper=100, step_incr=1,
                                            page_incr=10)
@@ -234,14 +237,21 @@ class BaseViewer(object):
         index_scale = gtk.HScale(self.wimage_index)
         index_scale.set_digits(0)
         index_scale.set_value_pos(gtk.POS_RIGHT)
+        index_scale.set_draw_value(False)
         indexbox.pack_start(self.index_label)
-        indexbox.pack_start(index_scale)
+        scalebox.pack_start(index_scale)
+        index_button = gtk.SpinButton(self.wimage_index)
+        index_button.set_digits(0)
+        scalebox.pack_start(index_button, expand=False)
+        indexbox.pack_start(scalebox)
         imageoptionsbox.pack_start(indexbox, fill=True, expand=True)
 
         
+        # space
         spacebox = gtk.HBox()
         imageoptionsbox.pack_start(spacebox, fill=True, expand=True)
 
+        # save button
         savebox = gtk.VBox()
         saveimage_label = gtk.Label('')
         saveimage = gtk.Button('Save Image')

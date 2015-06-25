@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: utils.py
 
-## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -1037,13 +1037,15 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
         x = (np.arange((deg*2)+1, dtype=float) - float(deg))/deg * math.pi
         return (np.cos(x) + 1.)/2.
 
+    deg = int(deg)
+    
     if keep_sides:
         a_large = np.empty(a.shape[0]+2*deg, dtype=float)
         a_large[deg:a.shape[0]+deg] = a
         a_large[:deg+1] = a[0]
         a_large[-deg:] = a[-1]
         a = np.copy(a_large)
-        
+
     if (kind=="gaussian") or (kind=="gaussian_conv"):
         kernel = np.array(gaussian1d(
             np.arange((deg*2)+1),0.,1.,deg,
@@ -1062,6 +1064,7 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
     
     else:
         smoothed_a = np.copy(a)
+        
         for ii in range(a.shape[0]):
             if (kind=="gaussian"): weights = np.copy(kernel)
             x_min = ii-deg
@@ -1077,11 +1080,11 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
             box = a[x_min:x_max]
 
             if (kind=="median"):
-                smoothed_a[ii] = np.median(box)
+                smoothed_a[ii] = robust_median(box)
             elif (kind=="mean"):
-                smoothed_a[ii] = np.mean(box) 
+                smoothed_a[ii] = robust_mean(box) 
             elif (kind=="gaussian"):
-                smoothed_a[ii] = np.average(box, weights=weights)
+                smoothed_a[ii] = robust_mean(box, weights=weights)
             else: raise Exception("Kind parameter must be 'median', 'mean', 'gaussian', 'gaussian_conv' or 'cos_conv'")
     if keep_sides:
         return smoothed_a[deg:-deg]
@@ -1115,12 +1118,13 @@ def correct_vector(vector, bad_value=np.nan, deg=3,
 
     # vector used to fit is smoothed
     if smoothing:
-        smooth_vector = smooth(vector, deg=5)
+        smooth_vector = smooth(vector, deg=int(n*0.1), kind='median')
     else: smooth_vector = np.copy(vector)
 
+
     # create vectors containing only valid values for interpolation
-    x = np.arange(n)[np.nonzero(~np.isnan(smooth_vector))]
-    new_vector = vector[np.nonzero(~np.isnan(smooth_vector))]
+    x = np.arange(n)[np.nonzero(~np.isnan(smooth_vector*vector))]
+    new_vector = smooth_vector[np.nonzero(~np.isnan(smooth_vector*vector))]
  
     if not polyfit:
         finterp = interpolate.UnivariateSpline(x, new_vector, k=deg, s=0)
@@ -1137,7 +1141,7 @@ def correct_vector(vector, bad_value=np.nan, deg=3,
     if smoothing:
         zeros_vector = np.zeros_like(result)
         zeros_vector[np.nonzero(np.isnan(vector))] = 1.
-        zeros_vector = smooth(zeros_vector, deg=10,
+        zeros_vector = smooth(zeros_vector, deg=int(n*0.1),
                               kind='cos_conv')
         zeros_vector[np.nonzero(np.isnan(vector))] = 1.
         

@@ -3,7 +3,7 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: astrometry.py
 
-## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -782,12 +782,12 @@ class Astrometry(Tools):
     
     def __init__(self, data, fwhm_arc, fov, profile_name='gaussian',
                  detect_stack=5, fit_tol=1e-2, moffat_beta=2.1,
-                 data_prefix="", star_list_path=None, box_size_coeff=7.,
+                 star_list_path=None, box_size_coeff=7.,
                  check_mask=True, reduced_chi_square_limit=1.5,
                  readout_noise=10., dark_current_level=0.,
                  target_radec=None, target_xy=None, wcs_rotation=None,
-                 config_file_name='config.orb', logfile_name=None,
-                 tuning_parameters=dict(), silent=False):
+                 **kwargs):
+
         """
         Init astrometry class.
 
@@ -812,9 +812,6 @@ class Astrometry(Tools):
 
         :param moffat_beta: (Optional) Default value of the beta
           parameter for the moffat profile (default 3.5).
-
-        :param data_prefix: (Optional) Prefix of the data saved on
-          disk (default "").
 
         :param star_list_path: (Optional) Path to a file containing a
           list of star positions (default None).
@@ -862,35 +859,11 @@ class Astrometry(Tools):
           options target_radec and target_xy are also given. In this
           case, WCS registration and catalogued star detection are
           possible (default None).
-
-        :param config_file_name: (Optional) name of the config file to
-          use. Must be located in orbs/data/ (default 'config.orb').
-
-        :param logfile_name: (Optional) Give a specific name to the
-          logfile (default None).
-
-        :param tuning_parameters: (Optional) Some parameters of the
-          methods can be tuned externally using this dictionary. The
-          dictionary must contains the full parameter name
-          (class.method.parameter_name) and its value. For example :
-          {'Astrometry.get_alignment_vectors.HPFILTER': 1}. Note
-          that only some parameters can be tuned. This possibility is
-          implemented into the method itself with the method
-          :py:meth:`Tools._get_tuning_parameter`.
-
-        :param silent: (Optional) If True, a minimum of messages are
-          printed (default False).
         """
-        self.config_file_name=config_file_name
-        self.ncpus = int(self._get_config_parameter("NCPUS"))
+        Tools.__init__(self, **kwargs)
+       
         self.BIG_DATA = bool(int(self._get_config_parameter("BIG_DATA")))
         
-        self._init_logfile_name(logfile_name)
-        self._data_prefix = data_prefix
-        self._msg_class_hdr = self._get_msg_class_hdr()
-        self._data_path_hdr = self._get_data_path_hdr()
-        self._tuning_parameters = tuning_parameters
-        self._silent = silent
         # check mask or not
         self._check_mask = check_mask
         

@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: core.py
 
-## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -3858,6 +3858,8 @@ class HDFCube(Cube):
             "BIG_DATA")))
         
         self._parallel_access_to_data = False
+
+        if cube_path is None or cube_path == '': return
         
         with self.open_hdf5(cube_path, 'r') as f:
             self.cube_path = cube_path
@@ -3959,6 +3961,36 @@ class HDFCube(Cube):
                     self._print_error('Attribute {} is missing. The HDF5 cube seems badly formatted. Try to create it again with the last version of ORB.'.format(attr))
                 else:
                     return None
+
+    def get_frame_attributes(self, index):
+        """Return an attribute attached to a frame.
+
+        If the attribute does not exist returns None.
+
+        :param index: Index of the frame.
+
+        :param attr: Attribute name.
+        """
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            attrs = list()
+            for attr in f[self._get_hdf5_frame_path(index)].attrs:
+                attrs.append(
+                    (attr, f[self._get_hdf5_frame_path(index)].attrs[attr]))
+            return attrs
+
+    def get_frame_attribute(self, index, attr):
+        """Return an attribute attached to a frame.
+
+        If the attribute does not exist returns None.
+
+        :param index: Index of the frame.
+
+        :param attr: Attribute name.
+        """
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if attr in f[self._get_hdf5_frame_path(index)].attrs:
+                return f[self._get_hdf5_frame_path(index)].attrs[attr]
+            else: return None
 
     def get_frame_header(self, index):
         """Return the header of a frame given its index in the list.
@@ -4094,6 +4126,17 @@ class OutHDFCube(Tools):
 
         self.imshape = (self.shape[0], self.shape[1])
 
+    def write_frame_attribute(self, index, attr, value):
+        """Write a frame attribute
+
+        :param index: Index of the frame
+
+        :param attr: Attribute name
+
+        :param value: Value of the attribute to write
+        """
+        self.f[self._get_hdf5_frame_path(index)].attrs[attr] = value
+
     def write_frame(self, index, data=None, header=None, mask=None,
                     record_stats=False, force_float32=True, section=None):
         """Write a frame
@@ -4110,7 +4153,7 @@ class OutHDFCube(Tools):
           frame are appended as attributes (data must be set) (defaut
           False).
 
-        :param force_float23: (Optional) If True, data type is forced
+        :param force_float32: (Optional) If True, data type is forced
           to numpy.float32 (default True).
         """
 

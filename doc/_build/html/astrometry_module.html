@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Astrometry module &mdash; Orb 1.4.0 documentation</title>
+  <title>Astrometry module &mdash; Orb 1.4.0.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.4.0.1 documentation" href="index.html"/>
         <link rel="next" title="Visual module" href="visual_module.html"/>
         <link rel="prev" title="CUtils module" href="cutils_module.html"/> 
 
@@ -58,7 +58,7 @@
 
         
           
-          <img src="_static/logo.png" class="logo" />
+          <img src="_static/logo_sidebar.png" class="logo" />
         
         </a>
 
@@ -102,7 +102,6 @@
 <li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-h5py-pip-cannot-be-used-directly">Install H5PY (pip cannot be used directly)</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="installing_python.html#tkinter">Tkinter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#cython">Cython</a></li>
 </ul>
 </li>
@@ -174,6 +173,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="data_module.html#data-functions">Data functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data-class">Data class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_module.html#data1d-class">Data1D class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_module.html#data2d-class">Data2D class</a></li>
 </ul>
@@ -239,7 +239,13 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-4-0">v1.4.0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-4-0">v1.4.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#visual-module">Visual module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#orb-viewer">Orb-viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#data-module">Data module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id4">Miscellaneous</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -302,7 +308,7 @@
 <h2><a class="toc-backref" href="#id2">Astrometry class</a><a class="headerlink" href="#astrometry-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Astrometry">
-<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Astrometry</code><span class="sig-paren">(</span><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='gaussian'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=2.1</em>, <em>data_prefix=''</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>target_radec=None</em>, <em>target_xy=None</em>, <em>wcs_rotation=None</em>, <em>config_file_name='config.orb'</em>, <em>logfile_name=None</em>, <em>tuning_parameters={}</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Astrometry</code><span class="sig-paren">(</span><em>data</em>, <em>fwhm_arc</em>, <em>fov</em>, <em>profile_name='gaussian'</em>, <em>detect_stack=5</em>, <em>fit_tol=0.01</em>, <em>moffat_beta=2.1</em>, <em>star_list_path=None</em>, <em>box_size_coeff=7.0</em>, <em>check_mask=True</em>, <em>reduced_chi_square_limit=1.5</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>target_radec=None</em>, <em>target_xy=None</em>, <em>wcs_rotation=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage all astrometrical processes that can be made on a single
 frame of a whole cube.</p>
@@ -1776,7 +1782,7 @@ estimation is returned (default False).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.4.0',
+            VERSION:'1.4.0.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

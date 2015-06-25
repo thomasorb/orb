@@ -44,10 +44,6 @@ the **latest version**) :
 
 The following modules are optional. 
 
-  * Tkinter_ : You will need it to use the script ``orbs-optcreator``
-    which can help you creating an option file. But you don't need it
-    to run the reduction.
-
   
 
 To use the Viewer (orb-viewer)
@@ -204,13 +200,7 @@ run the following into the extracted folder::
   sudo python setup.py build
   sudo python setup.py install
 
-Tkinter_
---------
 
-Simply run::
-
-  sudo apt-get install python-tk
-  sudo apt-get install python-imaging-tk
 
 
 Cython_
@@ -222,7 +212,7 @@ To install Cython_::
 
 
 
-.. |Ubuntu| image:: ubuntu-icon.png
+.. |Ubuntu| image:: os_linux.png
             :height: 40
    	    :width: 40
             :scale: 70
@@ -232,7 +222,6 @@ To install Cython_::
 .. _Numpy: http://numpy.scipy.org/
 .. _PyFITS: http://www.stsci.edu/resources/software_hardware/pyfits
 .. _Parallel: http://www.parallelpython.com/
-.. _Tkinter: http://docs.python.org/2/library/tkinter.html
 .. _Cython: http://cython.org/
 .. _PyWCS: http://stsdas.stsci.edu/astrolib/pywcs/
 .. _Bottleneck: https://pypi.python.org/pypi/Bottleneck

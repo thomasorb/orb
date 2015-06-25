@@ -7,7 +7,7 @@
 ORB Documentation
 ##################
 
-.. image:: orb.png
+.. image:: images/logo.*
    :width: 25%
    :align: center
 

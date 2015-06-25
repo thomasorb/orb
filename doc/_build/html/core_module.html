@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 1.4.0 documentation</title>
+  <title>Core module &mdash; Orb 1.4.0.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.4.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.4.0.1 documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
         <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
@@ -58,7 +58,7 @@
 
         
           
-          <img src="_static/logo.png" class="logo" />
+          <img src="_static/logo_sidebar.png" class="logo" />
         
         </a>
 
@@ -102,7 +102,6 @@
 <li class="toctree-l4"><a class="reference internal" href="installing_python.html#install-h5py-pip-cannot-be-used-directly">Install H5PY (pip cannot be used directly)</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="installing_python.html#tkinter">Tkinter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#cython">Cython</a></li>
 </ul>
 </li>
@@ -174,6 +173,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="data_module.html#data-functions">Data functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_module.html#data-class">Data class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_module.html#data1d-class">Data1D class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_module.html#data2d-class">Data2D class</a></li>
 </ul>
@@ -239,7 +239,13 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-4-0">v1.4.0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-4-0">v1.4.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#visual-module">Visual module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#orb-viewer">Orb-viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#data-module">Data module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id4">Miscellaneous</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -2026,6 +2032,44 @@ considered as invalid and an exception is raised.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.HDFCube.get_frame_attribute">
+<code class="descname">get_frame_attribute</code><span class="sig-paren">(</span><em>index</em>, <em>attr</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_frame_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an attribute attached to a frame.</p>
+<p>If the attribute does not exist returns None.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.HDFCube.get_frame_attribute.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.get_frame_attribute.params.index">¶</a> &#8211; Index of the frame.</li>
+<li><span class="target" id="core.HDFCube.get_frame_attribute.params.attr"></span><strong>attr</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.get_frame_attribute.params.attr">¶</a> &#8211; Attribute name.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.HDFCube.get_frame_attributes">
+<code class="descname">get_frame_attributes</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_frame_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an attribute attached to a frame.</p>
+<p>If the attribute does not exist returns None.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.HDFCube.get_frame_attributes.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.get_frame_attributes.params.index">¶</a> &#8211; Index of the frame.</li>
+<li><span class="target" id="core.HDFCube.get_frame_attributes.params.attr"></span><strong>attr</strong><a class="paramlink headerlink reference internal" href="#core.HDFCube.get_frame_attributes.params.attr">¶</a> &#8211; Attribute name.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.HDFCube.get_frame_header">
 <code class="descname">get_frame_header</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_frame_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of a frame given its index in the list.</p>
@@ -2192,8 +2236,27 @@ method is called so delete it. e.g.:</p>
 <li><span class="target" id="core.OutHDFCube.write_frame.params.record_stats"></span><strong>record_stats</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.record_stats">¶</a> &#8211; (Optional) If True Mean and Median of the
 frame are appended as attributes (data must be set) (defaut
 False).</li>
-<li><span class="target" id="core.OutHDFCube.write_frame.params.force_float23"></span><strong>force_float23</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.force_float23">¶</a> &#8211; (Optional) If True, data type is forced
+<li><span class="target" id="core.OutHDFCube.write_frame.params.force_float32"></span><strong>force_float32</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.force_float32">¶</a> &#8211; (Optional) If True, data type is forced
 to numpy.float32 (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFCube.write_frame_attribute">
+<code class="descname">write_frame_attribute</code><span class="sig-paren">(</span><em>index</em>, <em>attr</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.write_frame_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a frame attribute</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OutHDFCube.write_frame_attribute.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame_attribute.params.index">¶</a> &#8211; Index of the frame</li>
+<li><span class="target" id="core.OutHDFCube.write_frame_attribute.params.attr"></span><strong>attr</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame_attribute.params.attr">¶</a> &#8211; Attribute name</li>
+<li><span class="target" id="core.OutHDFCube.write_frame_attribute.params.value"></span><strong>value</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame_attribute.params.value">¶</a> &#8211; Value of the attribute to write</li>
 </ul>
 </td>
 </tr>
@@ -2901,7 +2964,7 @@ True).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.4.0',
+            VERSION:'1.4.0.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

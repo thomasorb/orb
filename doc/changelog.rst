@@ -486,3 +486,11 @@ operations on 1D or 2D data. Useful for IRIS and OACS.
 
 * :py:class:`~data.Data1D`, :py:class:`~data.Data2D`,
   :py:class:`~data.Data` and some convenience functions created.
+
+Miscellaneous
+-------------
+
+:py:meth:`orb.astrometry.StarsParams.load_stars_parameters` and
+:py:meth:`orb.astrometry.StarsParams.save_stars_parameters` changed to
+output the parameters in HDF5 format. saving and loading is much
+more efficient.

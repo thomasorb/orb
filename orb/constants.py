@@ -1,9 +1,9 @@
 #!/usr/bin/python2.7
 # *-* coding: utf-8 *-*
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
-# File: globals.py
+# File: constants.py
 
-## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
