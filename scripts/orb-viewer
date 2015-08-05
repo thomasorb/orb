@@ -38,7 +38,7 @@ def main(args):
 
     root = bv.get_widget()
     root.show_all()
-    bv.load_file(args.cube_path)
+    bv.load_file(args.cube_path, chip_index=args.chip_index)
     gtk.main()
         
 
@@ -51,9 +51,14 @@ if __name__ == "__main__":
     
     parser.add_argument('cube_path', help='Path to a FITS/HDF5 cube.')
     
+    
     parser.add_argument("--debug", dest="debug", default=False,
                         action="store_true",
                         help="Print warnings and errors on stdout.")
+
+    parser.add_argument("-i", dest="chip_index", default=1,
+                        type=int, choices = [1,2],
+                        help="In the case of a SITELLE image, the camera number must be choosen (can be 1 or 2, 1 by default)")
     
     args = parser.parse_args()
 

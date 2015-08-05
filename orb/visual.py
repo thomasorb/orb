@@ -377,7 +377,7 @@ class BaseViewer(object):
         Popup a File chooser dialog to open a new file
         """
         self.init_set = True
-        self.pop_file_chooser_dialog(self.load_file)
+        self.pop_file_chooser_dialog(self.load_file, mode='open')
 
     def _display_header_cb(self, c):
         """display-header callback
@@ -433,7 +433,7 @@ class BaseViewer(object):
 
         :param c: Caller Instance
         """
-        self.pop_file_chooser_dialog(self.save_image)
+        self.pop_file_chooser_dialog(self.save_image, mode='save')
 
     def _mode_change_cb(self, c, mode, modetype):
         """change-mode callback
@@ -655,7 +655,7 @@ class BaseViewer(object):
         """Return root widget"""
         return self.root
         
-    def load_file(self, filepath, reload=False):
+    def load_file(self, filepath, reload=False, chip_index=1):
         """Load the file to display. Can be a FITS or HDF5 cube.
 
         :param filepath: Path to the file.
@@ -666,15 +666,31 @@ class BaseViewer(object):
         if os.path.splitext(filepath)[-1] in ['.fits']:
             self.hdf5 = False
             hdu = self.tools.read_fits(filepath, return_hdu_only=True)
-            cube_size = float(hdu[0].header['NAXIS1']) * float(hdu[0].header['NAXIS2']) * float(hdu[0].header['NAXIS3']) * 4 / 1e9
+            if 'NAXIS3' in hdu[0].header:
+                cube_size = float(hdu[0].header['NAXIS1']) * float(hdu[0].header['NAXIS2']) * float(hdu[0].header['NAXIS3']) * 4 / 1e9
             
-            if cube_size > self.MAX_CUBE_SIZE:
-                raise Exception('Cube size is too large: {} Go > {} Go'.format(cube_size, self.MAX_CUBE_SIZE))
-                
-            self.cube, self.header = self.tools.read_fits(filepath,
-                                                          return_header=True,
-                                                          memmap=True,
-                                                          dtype=np.float32)
+                if cube_size > self.MAX_CUBE_SIZE:
+                    raise Exception('Cube size is too large: {} Go > {} Go'.format(cube_size, self.MAX_CUBE_SIZE))
+
+            # detect a sitelle file
+            image_mode = 'classic'
+            
+            if 'DETECTOR' in hdu[0].header:
+                if 'SITELLE' in hdu[0].header['DETECTOR']:
+                    if float(hdu[0].header['NAXIS2']) > 4000:
+                        image_mode = 'sitelle'
+            if 'INSTRUME' in hdu[0].header:
+                if 'SITELLE' in hdu[0].header['INSTRUME']:
+                    if float(hdu[0].header['NAXIS2']) > 4000:
+                        image_mode = 'sitelle'
+
+            self.cube, self.header = self.tools.read_fits(
+                filepath,
+                return_header=True,
+                image_mode=image_mode,
+                chip_index=chip_index,
+                memmap=False,
+                dtype=np.float32)
             
             self.filepath = filepath
 
@@ -685,8 +701,10 @@ class BaseViewer(object):
             self.filepath = filepath
 
         else:
-            self._print_error('File must be a FITS of HDF5 cube')
+            raise Exception('File must be a FITS of HDF5 cube')
 
+        if len(self.cube.shape) == 2: self.cube = self.cube[:,:,np.newaxis]
+        
         self.dimx, self.dimy, self.dimz = self.cube.shape
 
         
@@ -744,18 +762,30 @@ class BaseViewer(object):
         self.root.set_title(filepath)
 
 
-    def pop_file_chooser_dialog(self, action):
+    def pop_file_chooser_dialog(self, action, mode='save'):
         """Pop a a file chooser dialog
 
         :param action: Method launched when file path has been
           defined.
         """
+        if mode == 'save':
+            act = gtk.FILE_CHOOSER_ACTION_SAVE
+            but = gtk.STOCK_SAVE
+            title = 'Save image as ...'
+
+        elif mode == 'open':
+            act = gtk.FILE_CHOOSER_ACTION_OPEN
+            but = gtk.STOCK_OPEN
+            title = 'Open file ...'
+            
+        else: raise Exception("Mode must be 'save' or 'load'")
+        
         fc = gtk.FileChooserDialog(
-            title='Save Image as ...',
+            title=title,
             parent=self.root,
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                     gtk.STOCK_SAVE, gtk.RESPONSE_OK),
-            action=gtk.FILE_CHOOSER_ACTION_SAVE)
+                     but, gtk.RESPONSE_OK),
+            action=act)
         fc.set_current_folder(os.getcwd())
         response = fc.run()
 

@@ -24,15 +24,15 @@ CAM2_DETECTOR_SIZE_X 2048 # Camera 2 detector size along X
 CAM2_DETECTOR_SIZE_Y 2064 # Camera 2 detector size along Y
 
 ## Disalignment guess
-INIT_ANGLE -0.6 # Rough angle between images of the camera 1 and
+INIT_ANGLE -2.7 # Rough angle between images of the camera 1 and
 		# images of the camera 2 [in degree]
-INIT_DX 45. # Rough x axis disalignment [in pixel] (unbinned)
-INIT_DY -11. # Rough y axis disalignment [in pixel] (unbinned)
+INIT_DX -14 # Rough x axis disalignment [in pixel] (unbinned)
+INIT_DY 7 # Rough y axis disalignment [in pixel] (unbinned)
 
 ## Calibration parameters
 CALIB_NM_LASER 543.5 # Wavelength of the calibration laser [in nm]
-CALIB_ORDER 30 # Folding order of the calibration cube
-CALIB_STEP_SIZE 9765 # Step size of the calibration cube [in nm]
+CALIB_ORDER 11 # Folding order of the calibration cube
+CALIB_STEP_SIZE 3255.231 # Step size of the calibration cube [in nm]
 
 ## Phase parameters
 PHASE_FIT_DEG 1 # Degree of the polynomial used to fit the phase
@@ -50,7 +50,7 @@ EXT_ILLUMINATION 0 # Compute external illumination
 
 ## Astrometry parameters
 DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
-INIT_FWHM 1.5 # Rough estimate of the usual stars FWHM [in arcsecond]
+INIT_FWHM 1. # Rough estimate of the usual stars FWHM [in arcsecond]
 PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
 MOFFAT_BETA 3.5 # default beta parameter for the Moffat PSF
 DETECT_STACK 5 # Number of frames to combine for star detection

@@ -2140,6 +2140,17 @@ class Astrometry(Tools):
 
         ## Fit stars from computed position in the image
 
+        ## import pylab as pl
+        ## pl.imshow(
+        ##     deep_frame.T,
+        ##     vmin=cutils.part_value(deep_frame.flatten(), 0.02),
+        ##     vmax=cutils.part_value(deep_frame.flatten(), 0.98),
+        ##     cmap=pl.gray())
+        
+        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1])
+        ## pl.show()
+        ## quit()
+
         ## brute force guess #####
         x_range_len = SIZE_COEFF * float(self.dimx)
         y_range_len = SIZE_COEFF * float(self.dimy)
@@ -2152,6 +2163,8 @@ class Astrometry(Tools):
             deep_frame,
             star_list_pix, x_range, y_range, r_range,
             [self.target_x, self.target_y], 1)
+
+        #self.write_fits('guess_matrix.fits', guess_matrix, overwrite=True)
 
         self.wcs_rotation -= dr
         self.target_x -= dx

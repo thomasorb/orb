@@ -37,6 +37,7 @@ import os
 import subprocess
 
 from core import Tools
+import data
 import cutils
 import constants
 
@@ -1399,6 +1400,17 @@ def polar_map2d(f, n, corner=False, circle=True):
 ##################################################
 #### FITTING  ####################################
 ##################################################
+
+def lorentzian1d(x, h, a, dx, fwhm):
+    """Return a 1D lorentzian
+    :param x: Array giving the positions where the function is evaluated
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param w: FWHM
+    """
+    return h + (a / (1. + ((x-dx)/(fwhm/2.))**2.))
+
 def sinc1d(x, h, a, dx, fwhm):
     """Return a 1D sinc 
     :param x: Array giving the positions where the function is evaluated
@@ -1494,7 +1506,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
       continuum. Use high orders carefully (default 0).
 
     :param fmodel: (Optional) Fitting model. Can be 'gaussian', 
-      'sinc' or 'sinc2' (default 'gaussian').
+      'sinc', 'sinc2' or 'lorentzian' (default 'gaussian').
 
     :param sig_noise: (Optional) Noise standard deviation guess. If
       None noise value is guessed but the gaussian FWHM must not
@@ -1520,7 +1532,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
       * lines parameters [key: 'lines-params'] Lines parameters are
         given as an array of shape (lines_nb, 4). The order of the 4
         parameters for each lines is [height at the center of the
-        line, ampitude, position, fwhm].
+        line, amplitude, position, fwhm].
       
       * lines parameters errors [key: 'lines-params-err']
 
@@ -1593,14 +1605,22 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         # continuum
         mod += np.polyval(cont_p, np.arange(n))
         for iline in range(lines_p.shape[0]):
+            
             if fmodel == 'sinc':
                 mod += sinc1d(
                     pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
                     lines_p[iline, 2])
+                
+            if fmodel == 'lorentzian':
+                mod += lorentzian1d(
+                    pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
+                    lines_p[iline, 2])
+                
             elif fmodel == 'sinc2':
                 mod += np.sqrt(sinc1d(
                     pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
                     lines_p[iline, 2])**2.)
+                
             else:
                 mod += gaussian1d(
                     pix_axis, 0., lines_p[iline, 0], lines_p[iline, 1],
@@ -1821,7 +1841,6 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                                  cov_pos_mask_list),
                            maxfev=MAXFEV, full_output=True,
                            xtol=fit_tol)
-
     ### CHECK FIT RESULTS ###
     if fit[-1] <= 4:
         if fit[2]['nfev'] >= MAXFEV: return [] # reject evaluation bounded fit
@@ -1829,6 +1848,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         last_diff = fit[2]['fvec']
         lines_p, cov_p, cont_p = params_vect2arrays(
             fit[0], fixed_p, lines_p_mask, cov_p_mask, cont_p_mask)
+        
         
         # add cov to lines params
         full_lines_p = np.empty((lines_nb, 4), dtype=float)
@@ -1840,8 +1860,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                 np.nonzero(cov_pos_mask_list[i])]
             full_lines_p[ilines,2] = add_shift(full_lines_p[ilines,2],
                                                cov_p[1+i], axis)
+
         full_lines_p[:,3] += cov_p[0] # + FWHM_COEFF
-        
         # check and correct
         for iline in range(lines_nb):
             if no_absorption:
@@ -1899,6 +1919,16 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         noise_value = np.std(x - fitted_vector[np.min(signal_range):
                                                np.max(signal_range)])
         returned_data['snr'] = full_lines_p[:,1] / noise_value
+
+
+        # compute FLUX
+        ## if wavenumber:
+        ##     amp = data.array(returned_data['lines-params'][:, 1],
+        ##                      returned_data['lines-params-err'][:, 1])
+        ##     fwhm = data.array(returned_data['lines-params'][:, 3],
+        ##                       returned_data['lines-params-err'][:, 3])
+        ##     flux = amp * fwhm / 1.2067
+            
 
         # Compute analytical errors [from Minin & Kamalabadi, Applied
         # Optics, 2009]. Note that p4 = fwhm / (2*sqrt(ln(2))). These
@@ -3333,7 +3363,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     else:
         if sampling_vector.shape[0] != final_step_nb: raise Exception(
             'Sampling vector size must be equal to the final_step_nb')
-        interf = indft(spectrum, sampling_vector)
+        interf = indft(spectrum.real, sampling_vector)
     
     interf = np.array(interf)
 

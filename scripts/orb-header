@@ -84,7 +84,7 @@ def main(args):
             elif args.subparser_name == 'key':
                 if file_type == 'fits':
                     if args.keyword in hdu.header:
-                        print hdu.header[args.keyword]
+                        print os.path.split(fits_path)[1].strip(), ' ', hdu.header[args.keyword]
                     else:
                         print ' > ERROR: keyword {} does not exist.'.format(
                             args.keyword)
@@ -92,7 +92,8 @@ def main(args):
                         
                 if file_type == 'hdf5':
                     if args.keyword in cube.get_frame_header(args.hdu_index):
-                        print cube.get_frame_header(args.hdu_index)[args.keyword]
+                        print os.path.split(fits_path)[1].strip(), ' ', cube.get_frame_header(
+                            args.hdu_index)[args.keyword]
                     else:
                         print ' > ERROR: keyword {} does not exist.'.format(
                             args.keyword)

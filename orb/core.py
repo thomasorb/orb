@@ -44,7 +44,6 @@ import datetime
 ## MODULES IMPORTS
 import numpy as np
 import bottleneck as bn
-import bottleneck.func
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
@@ -1353,14 +1352,13 @@ class Tools(object):
             xamp, yamp = get_slice('DSEC', iamp)
             amp_data = get_data('DSEC', iamp, frame)
             bias_data = get_data('BSEC', iamp, frame)
-    
+
             if iamp in ['A', 'C', 'E', 'G']:
                 bias_data = bias_data[int(bias_data.shape[0]/2):,:]
             else:
                 bias_data = bias_data[:int(bias_data.shape[0]/2),:]
-            
-            bias_data = np.median(bias_data, axis=0)
-            
+
+            bias_data = np.mean(bias_data, axis=0)
             amp_data = amp_data - bias_data
 
             data[xamp.start - xchip.start: xamp.stop - xchip.start,
@@ -1739,7 +1737,7 @@ class Tools(object):
         :param hdf5_header: Header of the HDF5 file
         """
         def cast(a, t_str):
-            for _t in [int, float, bool, str, np.int64, np.float64]:
+            for _t in [int, float, bool, str, np.int64, np.float64, long]:
                 if t_str == repr(_t):
                     return _t(a)
             raise Exception('Bad type string {}'.format(t_str))
@@ -2694,8 +2692,7 @@ class Cube(Tools):
                 args=(ik + ijob, nozero, stat_key, center,
                       xmin, xmax, ymin, ymax),
                 modules=("import numpy as np",
-                         "import bottleneck as bn",
-                         "import bottleneck.func")))
+                         "import bottleneck as bn")))
                     for ijob in range(ncpus)]
 
             for ijob, job in jobs:
