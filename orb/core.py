@@ -2627,15 +2627,16 @@ class Cube(Tools):
         if nozero: # zeros filtering
             frame[np.nonzero(frame == 0)] = np.nan
 
-        if np.all(np.isnan(frame)):
+        if bn.allnan(frame, axis=None):
             return np.nan
         if stat_key == 'MEDIAN':
-            statf, a = bn.func.nanmedian_selector(frame, None)
+            return bn.nanmedian(frame, axis=None)
         elif stat_key == 'MEAN':
-            statf, a = bn.func.nanmean_selector(frame, None)
+            return bn.nanmean(frame, axis=None)
         elif stat_key == 'STD':
-            statf, a = bn.func.nanstd_selector(frame, None)
-        return statf(a)
+            return bn.nanstd(frame, axis=None)
+        else: self._print_error('stat_key must be set to MEDIAN, MEAN or STD')
+        
 
     def get_zstat(self, nozero=False, stat='mean', center=False):
         """Return a vector containing frames stat (mean, median or
