@@ -24,10 +24,10 @@ CAM2_DETECTOR_SIZE_X 2048 # Camera 2 detector size along X
 CAM2_DETECTOR_SIZE_Y 2064 # Camera 2 detector size along Y
 
 ## Disalignment guess
-INIT_ANGLE -2.7 # Rough angle between images of the camera 1 and
+INIT_ANGLE 2.5 # Rough angle between images of the camera 1 and
 		# images of the camera 2 [in degree]
-INIT_DX -14 # Rough x axis disalignment [in pixel] (unbinned)
-INIT_DY 7 # Rough y axis disalignment [in pixel] (unbinned)
+INIT_DX 15 # Rough x axis disalignment [in pixel] (unbinned)
+INIT_DY 29 # Rough y axis disalignment [in pixel] (unbinned)
 
 ## Calibration parameters
 CALIB_NM_LASER 543.5 # Wavelength of the calibration laser [in nm]
