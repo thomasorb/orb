@@ -1470,12 +1470,35 @@ class Tools(object):
         test = np.sum(file_keys == file_keys[0,:], axis=0)
         
         if np.min(test) > 1:
-            self._print_error('Images list cannot be safely sorted. Two images at least have the same index')
+            self._print_warning('Images list cannot be safely sorted. Two images at least have the same index')
+            column_index = np.nan
         else:
             column_index = np.argmin(test)
             
-        file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
-            column_index]))
+
+        # get changing step (if possible)
+        steplist = list()
+        for path in file_list:
+            if '.fits' in path:
+                try:
+                    hdr = self.read_fits(path, return_hdu_only=True)[0].header
+                    if 'SITSTEP' in hdr:
+                        steplist.append(int(hdr['SITSTEP']))
+                except Exception: pass
+                
+        
+        if len(steplist) == len(file_list):
+            _list = list()
+            for i in range(len(file_list)):
+                _list.append({'path':file_list[i], 'step':steplist[i]})
+            _list.sort(key=lambda x: x['step'])
+            file_list = [_path['path'] for _path in _list]
+        elif not np.isnan(column_index):
+            file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
+                column_index]))
+        else:
+            self._print_error('Image list cannot be sorted.')
+            
         return file_list
 
     def _clean_sip(self, hdr):
