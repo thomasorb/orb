@@ -49,6 +49,7 @@ import astropy.wcs as pywcs
 # MATPLOTLIB GTK BACKEND
 from matplotlib.backends.backend_gtkcairo import FigureCanvasGTKCairo as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.widgets import SpanSelector
 
 gobject.threads_init()
 
@@ -697,7 +698,7 @@ class BaseViewer(object):
         elif os.path.splitext(filepath)[-1] in ['.hdf5']:
             self.hdf5 = True
             self.cube = HDFCube(filepath)
-            self.header = self.cube.get_cube_header()
+            self.header = self.cube.get_frame_header(0)
             self.filepath = filepath
 
         else:
@@ -732,11 +733,17 @@ class BaseViewer(object):
 
         # SET ZAXIS
         self.wimage_index.set_upper(self.dimz-1)
+        
         if self.header is not None:
             if 'ORDER' in self.header:
                 self.order = self.header['ORDER']
+            elif 'SITORDER' in self.header:
+                self.order = self.header['SITORDER']
             if 'STEP' in self.header:
                 self.step = self.header['STEP']
+            elif 'SITSTPSZ' in self.header:
+                self.step = self.header['SITSTPSZ'] * self.header['SITFRGNM']
+                
             if 'CUNIT3' in self.header:
                 if 'nm' in self.header['CUNIT3']:
                     self.wavenumber = False
@@ -935,7 +942,7 @@ class HeaderWindow(PopupWindow):
 class ZPlotWindow(PopupWindow):
     """Implement a window for plotting zaxis data.
     """
-    
+
     def __init__(self, step, order, wavenumber, bunit):
         """Init and construct spectrum window.
 
@@ -958,13 +965,32 @@ class ZPlotWindow(PopupWindow):
         self.order = order
         self.wavenumber = wavenumber
         self.bunit = bunit
-
+        self.zmin_pix = None
+        self.zmax_pix = None
+        
         self.fig = Figure(figsize=SIZE, dpi=DPI, tight_layout=True)
-        self.subplot = self.fig.add_subplot(111)
+        if self.wavenumber is None:
+            self.subplot = self.fig.add_subplot(211)
+            self.subplot2 = self.fig.add_subplot(212)
+        else:
+            self.subplot = self.fig.add_subplot(111)
+            self.subplot2 = None
         
         self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
+        
         self.w.add(self.canvas)
+        self._start_plot_widgets()
 
+    def _start_plot_widgets(self):
+        self.span = SpanSelector(self.subplot, self._span_select_cb,
+                                 'horizontal', useblit=False,
+                                 rectprops=dict(alpha=0.5, facecolor='red'))
+        
+    def _span_select_cb(self, zmin, zmax):
+        self.zmin_pix = zmin
+        self.zmax_pix = zmax
+        self.update(self.zdata, self.zaxis)
+        
     def _get_zaxis(self, n):
         """Return the best zaxis based on known parameters
 
@@ -988,15 +1014,47 @@ class ZPlotWindow(PopupWindow):
         :param zdata: Data to plot (Y)
         :param zaxis: X axis.
         """
+        self.zdata = np.copy(zdata)
+        if zaxis is not None:
+            self.zaxis = np.copy(zaxis)
+        else: self.zaxis = None
         self.subplot.cla()
+        if self.subplot2 is not None:
+            self.subplot2.cla()
+        
         if zaxis is None:
             zaxis = self._get_zaxis(np.size(zdata))
             if self.wavenumber is not None:
                 if self.wavenumber: self.subplot.set_xlabel('Wavenumber [cm-1]')
                 else:  self.subplot.set_xlabel('Wavelength [nm]')
+            else:
+                self.subplot.set_xlabel('Step index')
+                self.subplot2.set_xlabel('Wavenumber [cm-1]')
+                
         if self.bunit is not None:
-            self.subplot.set_ylabel(self.bunit)
+            if self.wavenumber is not None:
+                self.subplot.set_ylabel(self.bunit)
+                
         self.subplot.plot(zaxis, zdata, c='0.', lw=1.)
+
+        # compute spectrum
+        if self.wavenumber is None:
+            if self.zmin_pix is not None and self.zmax_pix is not None:
+                interf = self.zdata[int(self.zmin_pix):int(self.zmax_pix)]
+            else:
+                interf = np.copy(self.zdata)
+            #ext_phase = orb.utils.optimize_phase(interf, self.step, self.order, 0)
+            
+            spectrum = orb.utils.transform_interferogram(
+                interf, 1., 1., self.step, self.order, None, 0,
+                #ext_phase=ext_phase, wavenumber=True)
+                n_phase=0, wavenumber=True, low_order_correction=True)
+
+            spectrum_axis = orb.utils.create_cm1_axis(
+                spectrum.shape[0], self.step, self.order)
+        
+            self.subplot2.plot(spectrum_axis, spectrum)
         self.canvas.draw()
+        self._start_plot_widgets()
 
 
