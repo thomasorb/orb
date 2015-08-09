@@ -2,8 +2,8 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # Filter name : SN3
 # Wavelength in nm | Transmission percentage
-# FILTER_MIN 641.6
-# FILTER_MAX 692.8
+# FILTER_MIN 647.3
+# FILTER_MAX 685.4
 1000.0 0.0
 999.973332444 0.0
 999.946664889 0.0
