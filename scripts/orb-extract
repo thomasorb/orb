@@ -1,0 +1,67 @@
+#!/usr/bin/python
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca> 
+# File: orb-viewer
+
+## Copyright (c) 2010-2014 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys, os
+import gtk
+from argparse import ArgumentParser
+import argparse
+
+from orb.core import Tools, HDFCube
+import orb
+
+###########################################
+### MAIN ##################################
+###########################################
+    
+def main(args):
+       
+    if '.hdf5' in args.input_cube_path:
+        
+        cube = HDFCube(args.input_cube_path, no_log=True)
+        
+        extracted_cube = cube[args.limits[0]:args.limits[2],
+                              args.limits[1]:args.limits[3],:]
+        
+        Tools(no_log=True).write_fits(args.extracted_cube_path, extracted_cube,
+                                      overwrite=True,
+                                      fits_header=cube.get_cube_header())
+    else:
+        self._print_error('FITS extraction not implemented.')
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(version=('ORB-version {}'.format(
+        orb.core.__version__)),
+                            description=
+                            "Extract part of a cube.")
+    
+    parser.add_argument('input_cube_path', help='Path to a FITS/HDF5 cube.')
+
+    parser.add_argument('extracted_cube_path', help='Path to a FITS/HDF5 cube.')
+
+    parser.add_argument('limits', help='xmin ymin xmax ymax', nargs=4, type=int)
+    
+    args = parser.parse_args()
+
+    main(args)
+        
+
