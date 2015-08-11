@@ -1,9 +1,10 @@
 ## ORBS filter file 
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # Filter name : SN3
+# Filter edges are taken at 70% (FILTER_MIN) and 60% (FILTER_MAX)
 # Wavelength in nm | Transmission percentage
-# FILTER_MIN 647.3
-# FILTER_MAX 685.4
+# FILTER_MIN 646.72
+# FILTER_MAX 685.72
 1000.0 0.0
 999.973332444 0.0
 999.946664889 0.0

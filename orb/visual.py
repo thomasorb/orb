@@ -698,7 +698,7 @@ class BaseViewer(object):
         elif os.path.splitext(filepath)[-1] in ['.hdf5']:
             self.hdf5 = True
             self.cube = HDFCube(filepath)
-            self.header = self.cube.get_frame_header(0)
+            self.header = self.cube.get_cube_header()
             self.filepath = filepath
 
         else:
