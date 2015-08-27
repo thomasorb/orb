@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 1.4.0.1 documentation</title>
+  <title>Index &mdash; Orb 1.5.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
   
 
   
-    <link rel="top" title="Orb 1.4.0.1 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -89,7 +89,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installing_python.html">Installing Python</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installing_python.html#python">Python</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installing_python.html#modules">Modules</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="installing_python.html#to-use-the-viewer-orb-viewer">To use the Viewer (orb-viewer)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#check-if-a-module-is-already-installed">Check if a module is already installed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#to-use-the-viewers-orb-viewer-and-orb-viewer3d">To use the Viewers (orb-viewer and orb-viewer3d)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#scipy-and-numpy">Scipy and Numpy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#pyfits">PyFITS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#parallel-python">Parallel Python</a></li>
@@ -243,6 +244,16 @@
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#orb-viewer">Orb-viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#data-module">Data module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id4">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-0">v1.5.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-correction">Phase correction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#d-viewer">3D Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -1109,6 +1120,10 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="astrometry_module.html#astrometry.Astrometry.detect_all_sources">detect_all_sources() (astrometry.Astrometry method)</a>
+  </dt>
+
+      
   <dt><a href="astrometry_module.html#astrometry.Astrometry.detect_stack">detect_stack (astrometry.Astrometry attribute)</a>
   </dt>
 
@@ -1191,15 +1206,19 @@
   </dt>
 
       
-  <dt><a href="astrometry_module.html#astrometry.fit_star">fit_star() (in module astrometry)</a>
+  <dt><a href="utils_module.html#utils.fit_sitelle_phase_map">fit_sitelle_phase_map() (in module utils)</a>
   </dt>
 
       
-  <dt><a href="astrometry_module.html#astrometry.Astrometry.fit_stars_in_cube">fit_stars_in_cube() (astrometry.Astrometry method)</a>
+  <dt><a href="astrometry_module.html#astrometry.fit_star">fit_star() (in module astrometry)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="astrometry_module.html#astrometry.Astrometry.fit_stars_in_cube">fit_stars_in_cube() (astrometry.Astrometry method)</a>
+  </dt>
+
       
   <dt><a href="astrometry_module.html#astrometry.Astrometry.fit_stars_in_frame">fit_stars_in_frame() (astrometry.Astrometry method)</a>
   </dt>
@@ -1612,12 +1631,12 @@
   <dt><a href="astrometry_module.html#astrometry.Astrometry.load_fit_results">load_fit_results() (astrometry.Astrometry method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.Indexer.load_index">load_index() (core.Indexer method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.Tools.load_sip">load_sip() (core.Tools method)</a>
   </dt>
@@ -1638,6 +1657,10 @@
 
       
   <dt><a href="data_module.html#data.log10">log10() (in module data)</a>
+  </dt>
+
+      
+  <dt><a href="utils_module.html#utils.lorentzian1d">lorentzian1d() (in module utils)</a>
   </dt>
 
       
@@ -2085,6 +2108,10 @@
   </dt>
 
       
+  <dt><a href="utils_module.html#utils.tilt_calibration_laser_map">tilt_calibration_laser_map() (in module utils)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Tools">Tools (class in core)</a>
   </dt>
 
@@ -2092,12 +2119,12 @@
   <dt><a href="cutils_module.html#cutils.transform_A_to_B">transform_A_to_B() (in module cutils)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.transform_frame">transform_frame() (in module utils)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.transform_interferogram">transform_interferogram() (in module utils)</a>
   </dt>
@@ -2232,7 +2259,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.4.0.1',
+            VERSION:'1.5.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

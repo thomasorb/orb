@@ -494,3 +494,63 @@ Miscellaneous
 :py:meth:`orb.astrometry.StarsParams.save_stars_parameters` changed to
 output the parameters in HDF5 format. saving and loading is much
 more efficient.
+
+
+v1.5: Handing SITELLE's real data cubes
+***************************************
+
+v1.5.0
+======
+
+Phase correction
+----------------
+
+SITELLE's phase map is nearly ideal so that a **better kind of phase
+correction is possible**. Now, the 'order 0 phase map' depends only on
+the OPD path i.e. the incident angle of the light (if we consider that
+the surfaces ot the interferometer's optics are perfect, which seems
+to be a good enough assumption up to now). The order 0 phase map can
+thus be modeled directly from the calibration laser map which gives
+the incident angle at each pixels. As the calibration laser map can be
+tilted (2 angles along X and Y axes) and rotated around its center,
+the model must take into account all those 3 parameters.
+
+There are at least two major **advantages**:
+
+  * We have an **understood model** with physical parameters to fit
+    the phase map (and the fitting approximation is really great,
+    giving a gaussian shaped error distribution with no apparent bias
+    or skewness).
+
+  * **We get the real calibration laser map** which corresponds to the
+    scientific cube and not a calibration laser map taken in different
+    conditions (gravity vector, temperature and so on).
+
+* :py:meth:`~utils.tilt_calibration_laser_map` and :py:meth:`~utils.fit_sitelle_phase_map` created to fit a sitelle's phase map.
+
+Point source detection
+----------------------
+
+:py:meth:`~astrometry.Astrometry.detect_all_sources` detects all
+point sources in a cube (HII regions, distant galaxies, stars and
+filamentary knots can be detected). This method is used to shield the
+point sources during the cosmic ray detection and will be certainly
+useful for automatic point source extraction.
+
+3D Viewer
+---------
+
+A 3D viewer has been created (**orb-viewer3d**) based on vispy library
+(http://vispy.org) which is an easy to use OpenGL API. It is still at
+a development level but it works well enough to travel into spectral cubes and  make beautiful 3D videos.
+
+Miscellaneous
+-------------
+
+:py:meth:`~utils.transform_interferogram` does not make any use of the
+old low resolution phase computation
+(:py:meth:`~utils.get_lr_phase`). The phase can be directly obtained
+at the output and the internally computed phase used for auto-phasing
+is also obtained with this function. A low resolution phase is no more
+useful as it does not give a better precisin on the fit. A full
+length phase vector is now computed every time the phase is needed.

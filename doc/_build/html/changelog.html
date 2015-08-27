@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; Orb 1.4.0.1 documentation</title>
+  <title>Changelog &mdash; Orb 1.5.0 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.4.0.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/>
         <link rel="prev" title="Data module" href="data_module.html"/> 
 
   
@@ -89,7 +89,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installing_python.html">Installing Python</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installing_python.html#python">Python</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installing_python.html#modules">Modules</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="installing_python.html#to-use-the-viewer-orb-viewer">To use the Viewer (orb-viewer)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#check-if-a-module-is-already-installed">Check if a module is already installed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#to-use-the-viewers-orb-viewer-and-orb-viewer3d">To use the Viewers (orb-viewer and orb-viewer3d)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#scipy-and-numpy">Scipy and Numpy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#pyfits">PyFITS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#parallel-python">Parallel Python</a></li>
@@ -243,6 +244,16 @@
 <li class="toctree-l4"><a class="reference internal" href="#orb-viewer">Orb-viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#data-module">Data module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#id4">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#v1-5-0">v1.5.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#phase-correction">Phase correction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#point-source-detection">Point source detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#d-viewer">3D Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -741,6 +752,63 @@ more efficient.</p>
 </div>
 </div>
 </div>
+<div class="section" id="v1-5-handing-sitelle-s-real-data-cubes">
+<h2>v1.5: Handing SITELLE&#8217;s real data cubes<a class="headerlink" href="#v1-5-handing-sitelle-s-real-data-cubes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="v1-5-0">
+<h3>v1.5.0<a class="headerlink" href="#v1-5-0" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="phase-correction">
+<h4>Phase correction<a class="headerlink" href="#phase-correction" title="Permalink to this headline">¶</a></h4>
+<p>SITELLE&#8217;s phase map is nearly ideal so that a <strong>better kind of phase
+correction is possible</strong>. Now, the &#8216;order 0 phase map&#8217; depends only on
+the OPD path i.e. the incident angle of the light (if we consider that
+the surfaces ot the interferometer&#8217;s optics are perfect, which seems
+to be a good enough assumption up to now). The order 0 phase map can
+thus be modeled directly from the calibration laser map which gives
+the incident angle at each pixels. As the calibration laser map can be
+tilted (2 angles along X and Y axes) and rotated around its center,
+the model must take into account all those 3 parameters.</p>
+<p>There are at least two major <strong>advantages</strong>:</p>
+<blockquote>
+<div><ul class="simple">
+<li>We have an <strong>understood model</strong> with physical parameters to fit
+the phase map (and the fitting approximation is really great,
+giving a gaussian shaped error distribution with no apparent bias
+or skewness).</li>
+<li><strong>We get the real calibration laser map</strong> which corresponds to the
+scientific cube and not a calibration laser map taken in different
+conditions (gravity vector, temperature and so on).</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><a class="reference internal" href="utils_module.html#utils.tilt_calibration_laser_map" title="utils.tilt_calibration_laser_map"><code class="xref py py-meth docutils literal"><span class="pre">tilt_calibration_laser_map()</span></code></a> and <a class="reference internal" href="utils_module.html#utils.fit_sitelle_phase_map" title="utils.fit_sitelle_phase_map"><code class="xref py py-meth docutils literal"><span class="pre">fit_sitelle_phase_map()</span></code></a> created to fit a sitelle&#8217;s phase map.</li>
+</ul>
+</div>
+<div class="section" id="point-source-detection">
+<h4>Point source detection<a class="headerlink" href="#point-source-detection" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.detect_all_sources" title="astrometry.Astrometry.detect_all_sources"><code class="xref py py-meth docutils literal"><span class="pre">detect_all_sources()</span></code></a> detects all
+point sources in a cube (HII regions, distant galaxies, stars and
+filamentary knots can be detected). This method is used to shield the
+point sources during the cosmic ray detection and will be certainly
+useful for automatic point source extraction.</p>
+</div>
+<div class="section" id="d-viewer">
+<h4>3D Viewer<a class="headerlink" href="#d-viewer" title="Permalink to this headline">¶</a></h4>
+<p>A 3D viewer has been created (<strong>orb-viewer3d</strong>) based on vispy library
+(<a class="reference external" href="http://vispy.org">http://vispy.org</a>) which is an easy to use OpenGL API. It is still at
+a development level but it works well enough to travel into spectral cubes and  make beautiful 3D videos.</p>
+</div>
+<div class="section" id="id5">
+<h4>Miscellaneous<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="utils_module.html#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">transform_interferogram()</span></code></a> does not make any use of the
+old low resolution phase computation
+(<a class="reference internal" href="utils_module.html#utils.get_lr_phase" title="utils.get_lr_phase"><code class="xref py py-meth docutils literal"><span class="pre">get_lr_phase()</span></code></a>). The phase can be directly obtained
+at the output and the internally computed phase used for auto-phasing
+is also obtained with this function. A low resolution phase is no more
+useful as it does not give a better precisin on the fit. A full
+length phase vector is now computed every time the phase is needed.</p>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -780,7 +848,7 @@ more efficient.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.4.0.1',
+            VERSION:'1.5.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

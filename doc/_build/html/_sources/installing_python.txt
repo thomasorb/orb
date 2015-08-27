@@ -44,10 +44,18 @@ the **latest version**) :
 
 The following modules are optional. 
 
-  
+Check if a module is already installed
+--------------------------------------
 
-To use the Viewer (orb-viewer)
-------------------------------
+To check if a module is installed just try the following::
+
+  python
+  >> import module_name
+ 
+
+
+To use the Viewers (orb-viewer and orb-viewer3d)
+------------------------------------------------
 
 `Ginga <http://ejeschke.github.io/ginga/>`_ must be installed and the GTK backend must be compiled inside matplotlib:
 
@@ -63,12 +71,14 @@ To use the Viewer (orb-viewer)
 
   sudo pip install --upgrade matplotlib
 
+4 - Install Vispy (for the 3d viewer)
 
-To check if a module is installed just try the following::
+  sudo pip install vispy
 
-  python
-  >> import module_name
- 
+5 - Install PySide (for the 3d viewer)
+
+  sudo apt-get install python-pyside
+
 
 Scipy_ and Numpy_
 -----------------

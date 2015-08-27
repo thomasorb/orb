@@ -1522,6 +1522,90 @@ class Astrometry(Tools):
         return self._get_star_list_path(), self.pix2arc(mean_fwhm)
 
 
+    def detect_all_sources(self, use_deep_frame=False):
+        """Detect all point sources in the cube regardless of there FWHM.
+
+        Galaxies, HII regions, filamentary knots and stars might be
+        detected.
+
+        :param use_deep_frame: (Optional) If True a deep frame of the
+          cube is used instead of combinig only the first frames
+          (default False).
+        """
+
+        SOURCE_SIZE = 2
+
+        def aggregate(init_source_list, source_size):
+            
+            px = list(init_source_list[0])
+            py = list(init_source_list[1])
+            
+            sources = list()
+            while len(px) > 0:
+                source = list()
+                source.append((px[0], py[0]))
+                px.pop(0)
+                py.pop(0)
+                
+                ii = 0
+                while ii < len(px):
+                    if ((abs(px[ii] - source[0][0]) <= source_size)
+                        and (abs(py[ii] - source[0][1]) <= source_size)):
+                        source.append((px[ii], py[ii]))
+                        px.pop(ii), py.pop(ii)
+                    else:
+                        ii += 1
+
+                if len(source) > source_size:
+                    xmean = 0.
+                    ymean = 0.
+                    for ipoint in source:
+                        xmean += float(ipoint[0])
+                        ymean += float(ipoint[1])
+                    xmean /= float(len(source))
+                    ymean /= float(len(source))
+
+                    sources.append((xmean, ymean))
+                    
+            return sources
+        
+        self._print_msg("Detecting all point sources in the cube", color=True)
+
+        im = self._get_combined_frame(use_deep_frame=use_deep_frame)
+        
+        start_time = time.time()
+        self._print_msg("Filtering master image")
+        hp_im = utils.high_pass_diff_image_filter(im, deg=1)
+        self._print_msg("Master image filtered in {} s".format(
+            time.time() - start_time))
+
+
+        # image is binned to help detection
+        binning = int(self.fwhm_pix) + 1        
+        hp_im = utils.nanbin_image(hp_im, binning)
+
+        # detect all pixels above the sky theshold
+        detected_pixels = np.nonzero(hp_im > 4. * np.nanstd(utils.sigmacut(
+            hp_im)))
+        
+        self._print_msg('{} detected pixels'.format(len(detected_pixels[0])))
+        
+        # pixels aggregation in sources
+        self._print_msg('aggregating detected pixels')
+        sources = aggregate(detected_pixels, SOURCE_SIZE)
+            
+        
+        self._print_msg('{} sources detected'.format(len(sources)))
+        
+        star_list_file = self.open_file(self._get_star_list_path())
+        for isource in sources:
+            star_list_file.write('{} {}\n'.format(
+                isource[0]*binning, isource[1]*binning))
+            
+        self.reset_star_list(sources)
+        
+        return self._get_star_list_path(), self.fwhm_arc
+       
 
     def detect_stars(self, min_star_number=4, no_save=False,
                      saturation_threshold=35000, try_catalogue=False,

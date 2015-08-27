@@ -119,6 +119,7 @@ def compute_line_fwhm(step_nb, step, order, apod_coeff=1., wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
+    warnings.warn('This is True only if the interferogram is symetric ! must be redefined better')
     nm_axis = create_nm_axis(step_nb, step, order)
     nm_mean = (nm_axis[-1] + nm_axis[0])/2.
     opd_max = step_nb * step
@@ -2732,6 +2733,165 @@ def fit_map(data_map, err_map, smooth_deg):
 
     return fitted_data_map, error_map, fit_error
 
+
+def tilt_calibration_laser_map(cmap, calib_laser_nm, phi_x, phi_y, phi_r):
+    """Tilt and rotate a calibration laser map.
+
+    :param cmap: calibration laser map.
+    :param calib_laser_nm: Calibration laser wavelength in nm.
+    :param phi_x: tilt angle along X axis (degrees).
+    :param phi_y: tilt angle along Y axis (degrees).
+    :param phi_r: Rotation angle (degrees).
+    """
+    phi_x = phi_x / 180. * math.pi
+    phi_y = phi_y / 180. * math.pi
+    phi_r = phi_r / 180. * math.pi
+    
+    xc, yc = cmap.shape[0]/2, cmap.shape[1]/2
+    theta_map = np.arccos(calib_laser_nm / cmap)
+    theta_c = theta_map[xc, yc]
+    theta_map -= theta_c
+    
+    X, Y = np.mgrid[0:cmap.shape[0], 0:cmap.shape[1]].astype(float)
+    X -= xc
+    Y -= yc
+    D = np.sqrt(X**2. + Y**2.)
+    
+    alpha = math.pi/2. - theta_map
+
+    if phi_r != 0:
+        Xr = X * math.cos(phi_r) - Y * math.sin(phi_r)
+        Yr = X * math.sin(phi_r) + Y * math.cos(phi_r)
+        X = Xr
+        Y = Yr
+    
+    if phi_x != 0.:
+        alpha2 = math.pi/2. - theta_map - phi_x
+        ratio = np.sin(alpha) / np.sin(alpha2)
+        X *= ratio
+        
+    if phi_y != 0.:
+        alpha2 = math.pi/2. - theta_map - phi_y
+        ratio = np.sin(alpha) / np.sin(alpha2)
+        Y *= ratio
+    
+    f_theta = interpolate.RectBivariateSpline(
+        np.arange(cmap.shape[0], dtype=float)-xc,
+        np.arange(cmap.shape[1], dtype=float)-yc,
+        theta_map, kx=1, ky=1, s=0)
+    
+    return calib_laser_nm / np.cos(f_theta.ev(X, Y) + theta_c)
+
+def nanbin_image(im, binning):
+
+    binning = int(binning)
+    
+    x_range = range(0, im.shape[0], binning)
+    y_range = range(0, im.shape[1], binning)
+    out = np.empty((len(x_range), len(y_range)), dtype=im.dtype)
+    
+    for ii in range(len(x_range)):
+        for ij in range(len(y_range)):
+            xmin = x_range[ii]
+            xmax = xmin + binning
+            if xmax > im.shape[0]: xmax=im.shape[0]
+            ymin = y_range[ij]
+            ymax = ymin + binning
+            if ymax > im.shape[1]: ymax=im.shape[1]
+            
+            out[ii,ij] = np.nanmean(im[xmin:xmax,ymin:ymax])
+            
+    return out
+
+def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
+                          calib_laser_nm):
+
+    """Fit a SITELLE phase map (order 0 map of the phase) using a
+    model based on the calibration laser map.
+
+    The calibration laser map is tilted and rotated until the best fit
+    is reached.
+
+    The new calibration laser map obtained from the fit is also returned.
+    """
+
+    def model(p, calib, calib_laser_nm):
+        if len(p) == 3:
+            if p[2] != 0:
+                calib = tilt_calibration_laser_map(
+                    calib, calib_laser_nm, 0., 0., p[2])
+
+        if len(p) == 5:
+            if p[2] != 0 or p[3] != 0 or p[4] != 0:
+                calib = tilt_calibration_laser_map(
+                    calib, calib_laser_nm, p[3], p[4], p[2])
+            
+        return p[0] + p[1] * calib
+                                      
+    def diff(p, calib, calib_laser_nm, pm, pm_err):
+        model_map = model(p, calib, calib_laser_nm)
+        result = (model_map - pm) / pm_err
+        result = result[np.nonzero(~np.isnan(result))]
+        return result
+
+    
+    BINNING = 4
+
+    # Data is binned to accelerate the fit
+    phase_map_bin = nanbin_image(phase_map, BINNING)
+    phase_map_err_bin = nanbin_image(phase_map_err, BINNING)
+    calib_laser_map_bin = nanbin_image(calib_laser_map, BINNING)
+
+    # first fit without rotational parameters
+    fit = scipy.optimize.leastsq(diff, [0., 0.],
+                                 args=(calib_laser_map_bin,
+                                       calib_laser_nm,
+                                       phase_map_bin,
+                                       phase_map_err_bin),
+                                 full_output=True)
+    
+    params = fit[0]
+    print '> first fit parameters: {}'.format(params)
+    
+    
+
+    # second fit includes rotation around central axis
+    fit = scipy.optimize.leastsq(diff, [params[0], params[1], 0.],
+                                 args=(calib_laser_map_bin,
+                                       calib_laser_nm,
+                                       phase_map_bin,
+                                       phase_map_err_bin),
+                                 full_output=True)
+    params = fit[0]
+    print '> second fit parameters: {}'.format(params)
+
+    # third fit includes tip and tilt
+    fit = scipy.optimize.leastsq(diff, [params[0], params[1], params[2], 0., 0.],
+                                 args=(calib_laser_map_bin,
+                                       calib_laser_nm,
+                                       phase_map_bin,
+                                       phase_map_err_bin),
+                                 full_output=True)
+    params = fit[0]
+    print '> third fit parameters: {}'.format(params)
+
+    fitted_phase_map = model(params, calib_laser_map, calib_laser_nm)
+    
+    ## Error computation
+    # Creation of the error map: The error map gives the 
+    # Squared Error for each point used in the fit point. 
+    error_map = phase_map - fitted_phase_map
+
+    # The square root of the mean of this map is then normalized
+    # by the range of the values fitted. This gives the Normalized
+    # root-mean-square deviation
+    fit_error =(np.nanmean(np.sqrt(error_map**2.))
+                / (np.nanmax(phase_map) - np.nanmin(phase_map)))
+
+    new_calib_laser_map = tilt_calibration_laser_map(
+        calib_laser_map, calib_laser_nm, params[3], params[4], params[2])
+    
+    return fitted_phase_map, error_map, fit_error, new_calib_laser_map
     
 def interpolate_map(m, dimx, dimy):
     """Interpolate 2D data map.
@@ -2889,8 +3049,8 @@ def get_lr_phase(interf, n_phase=None, return_lr_spectrum=False):
     lr_interf = temp_vector
     
     # centerburst
-    lr_interf = np.roll(lr_interf,
-                        zp_phase_len/2 - int((dimz&1 and not n_phase&1)))
+    lr_interf = np.roll(
+        lr_interf, zp_phase_len/2 - int((dimz&1 and not n_phase&1)))
     
     # fft
     lr_spectrum = np.fft.fft(lr_interf)[:zp_phase_len/2]
@@ -2904,7 +3064,7 @@ def get_lr_phase(interf, n_phase=None, return_lr_spectrum=False):
 
 def transform_interferogram(interf, nm_laser, 
                             calibration_coeff, step, order, 
-                            window_type, zpd_shift, n_phase=None,
+                            window_type, zpd_shift, phase_correction=True,
                             return_phase=False, ext_phase=None,
                             weights=None, polyfit_deg=1,
                             balanced=True, bad_frames_vector=None,
@@ -2938,12 +3098,9 @@ def transform_interferogram(interf, nm_laser,
       zeros (default None). This vector must be uncorrected for ZPD
       shift
 
-    :param n_phase: (Optional) Number of points to use for phase
-      correction. It can be no greater than interferogram length. If
-      0, no phase correction will be done and the resulting spectrum
-      will be the absolute value of the complex spectrum. If None, the
-      number of points is set to 20 percent of the interferogram
-      length (default None).
+    :param phase_correction: (Optional) If False, no phase correction will
+      be done and the resulting spectrum will be the absolute value of the
+      complex spectrum (default True).
 
     :param ext_phase: (Optional) External phase vector. If given this
       phase vector is used instead of a low-resolution one. It must be
@@ -2956,10 +3113,9 @@ def transform_interferogram(interf, nm_laser,
       ext_phase to None to set return_phase to True.
 
     :param weights: (Optional) A vector of the same length as the
-      number of points used to compute the phase (n_phase) giving the
-      weight of each point for interpolation (Must be a float between
-      0. and 1.). If none is given, the weights are defined by the
-      amplitude of the vector.
+      interferogram giving the weight of each point for interpolation
+      (Must be a float between 0. and 1.). If none is given, the
+      weights are defined by the amplitude of the vector.
 
     :param polyfit_deg: (Optional) Degree of the polynomial fit to the
       computed phase. If < 0, no fit will be performed (Default 1).
@@ -3003,13 +3159,13 @@ def transform_interferogram(interf, nm_laser,
     """
     MIN_ZEROS_LENGTH = 8 # Minimum length of a zeros band to smooth it
     interf = np.copy(interf)
-
+    interf_orig = np.copy(interf)
     if order == 0 and not wavenumber:
         warnings.warn("order 0: Wavenumber output automatically set to True. Please set manually wavenumber option to True ifyou don't want this warning message to be printed.")
         wavenumber = True
    
-    if return_phase and n_phase == 0:
-        raise Exception("Phase cannot be computed with 0 points, return_phase=True and n_phase=0 options are not compatible !")
+    if return_phase and phase_correction:
+        raise Exception("phase correction and return_phase cannot be all set to True")
     if return_phase and ext_phase is not None:
         raise Exception("return_phase=True and ext_phase != None options are not compatible. Set the phase or get it !")
     
@@ -3017,7 +3173,6 @@ def transform_interferogram(interf, nm_laser,
 
     if final_step_nb is None:
         final_step_nb = dimz
-
     
     # discard zeros interferogram
     if len(np.nonzero(interf)[0]) == 0:
@@ -3025,6 +3180,11 @@ def transform_interferogram(interf, nm_laser,
             return None
         else:
             return interf
+
+    # discard interferograms with a bad phase vector
+    if ext_phase is not None:
+        if np.any(np.isnan(ext_phase)):
+            return None
 
     if conserve_energy:
         interf_energy = interf_mean_energy(interf)
@@ -3100,40 +3260,46 @@ def transform_interferogram(interf, nm_laser,
     #
     # The low resolution interferogram is a small part of the real
     # interferogram taken symmetrically around ZPD
-    if (ext_phase is None) and (n_phase != 0):
-        lr_phase, lr_spectrum = get_lr_phase(interf, n_phase=n_phase,
-                                             return_lr_spectrum=True)
+    if phase_correction:
+        if ext_phase is None:
+            
+            lr_phase2, lr_spectrum2 = get_lr_phase(interf, n_phase=dimz,
+                                                   return_lr_spectrum=True)
+            lr_spectrum = transform_interferogram(
+                interf_orig, 1, 1, step, order, 'learner95', zpd_shift,
+                phase_correction=False, return_phase=False, polyfit_deg=-1,
+                wavenumber=True, ext_phase=None, final_step_nb=dimz,
+                return_complex=True)
+            if int(order) & 1: # must be returned again if order is
+                               # even cause the output is returned
+                lr_spectrum = lr_spectrum[::-1]
+                    
+            lr_phase = np.unwrap(np.angle(lr_spectrum))
         
-        # fit
-        if polyfit_deg >= 0:
-            # polynomial fitting must be weigthed in case of a spectrum
-            # without enough continuum.
-            if weights is None or not np.any(weights):
-                weights = np.abs(lr_spectrum)
-                # suppress noise on spectrum borders
-                weights *= border_cut_window(lr_spectrum.shape[0])
-                if np.max(weights) != 0.:
-                    weights /= np.max(weights)
+            # fit
+            if polyfit_deg >= 0:
+                # polynomial fitting must be weigthed in case of a spectrum
+                # without enough continuum.
+                if weights is None or not np.any(weights):
+                    weights = np.abs(lr_spectrum)
+                    # suppress noise on spectrum borders
+                    weights *= border_cut_window(lr_spectrum.shape[0])
+                    if np.max(weights) != 0.:
+                        weights /= np.max(weights)
+                    else:
+                        weights = np.ones_like(lr_spectrum)
+                    # remove parts with a bad signal to noise ratio
+                    weights[np.nonzero(weights < 0.25)] = 0.
                 else:
-                    weights = np.ones_like(lr_spectrum)
-                # remove parts with a bad signal to noise ratio
-                weights[np.nonzero(weights < 0.25)] = 0.
-            else:
-                if weights.shape[0] != lr_phase.shape[0]:
-                    weights = interpolate_size(weights, lr_phase.shape[0], 1)
+                    if weights.shape[0] != lr_phase.shape[0]:
+                        weights = interpolate_size(weights, lr_phase.shape[0], 1)
 
-            lr_phase, lr_phase_coeffs = polyfit1d(lr_phase, polyfit_deg,
-                                                  w=weights, return_coeffs=True)
+                lr_phase, lr_phase_coeffs = polyfit1d(
+                    lr_phase, polyfit_deg,
+                    w=weights, return_coeffs=True)
             
-            
-    elif ext_phase is not None:
-        lr_phase = ext_phase
-
-    if return_phase:
-        if polyfit_deg < 0:
-            return lr_phase
         else:
-            return lr_phase_coeffs
+            lr_phase = ext_phase
 
     #####
     # 6 - Apodization of the real interferogram
@@ -3141,6 +3307,8 @@ def transform_interferogram(interf, nm_laser,
         if window_type in ['1.1', '1.2', '1.3', '1.4', '1.5',
                            '1.6', '1.7', '1.8', '1.9', '2.0']:
             window = norton_beer_window(window_type, interf.shape[0])
+        elif window_type == 'learner95':
+            window = learner95_window(interf.shape[0])
         else:
             window = signal.get_window((window_type), interf.shape[0])
             
@@ -3179,16 +3347,17 @@ def transform_interferogram(interf, nm_laser,
         
     #####
     # 10 - Phase correction
-    if n_phase != 0:
+    if phase_correction:
         lr_phase = interpolate_size(lr_phase, interf_fft.shape[0], 1)
         spectrum_corr = np.empty_like(interf_fft)
         spectrum_corr.real = (interf_fft.real * np.cos(lr_phase)
                               + interf_fft.imag * np.sin(lr_phase))
         spectrum_corr.imag = (interf_fft.imag * np.cos(lr_phase)
                               - interf_fft.real * np.sin(lr_phase))
-    else:
-        spectrum_corr = np.abs(interf_fft)
 
+    else:
+        spectrum_corr = interf_fft
+        
     #####
     # 11 - Off-axis effect correction with maxima map   
     # Irregular wavelength axis creation
@@ -3230,14 +3399,16 @@ def transform_interferogram(interf, nm_laser,
     if conserve_energy:
         # Spectrum is rescaled to the modulation energy of the interferogram
         spectrum = spectrum / spectrum_mean_energy(spectrum) * interf_energy
-    
-    if n_phase != 0:
-        if return_complex:
-            return np.copy(spectrum)
-        else:
-            return np.copy(spectrum.real)
-    else:
+
+    if return_phase:
+        return np.copy(np.unwrap(np.angle(spectrum)))
+    elif return_complex:
         return np.copy(spectrum)
+    else:
+        if phase_correction:
+            return np.copy(spectrum.real)
+        else:    
+            return np.copy(np.abs(spectrum))
 
 
 def transform_spectrum(spectrum, nm_laser, calibration_coeff,
@@ -3457,7 +3628,7 @@ def optimize_phase(interf, step, order, zpd_shift):
     def fft(p, interf, return_imag, step, order, zpd_shift):
         ext_phase = np.polyval(p, np.arange(np.size(interf)))
         a_fft = transform_interferogram(
-            interf, 1., 1., step, order, '2.0', zpd_shift,
+            interf, 1., 1., step, order, '1.0', zpd_shift,
             wavenumber=True,
             ext_phase=ext_phase,
             return_complex=True)
@@ -3465,7 +3636,7 @@ def optimize_phase(interf, step, order, zpd_shift):
             return a_fft.imag
         else:
             return a_fft.real
-    optim = scipy.optimize.leastsq(fft, [0., 0.], args=(
+    optim = scipy.optimize.leastsq(fft, [0., 0., 0, 0], args=(
         interf, True, step, order, zpd_shift))
-    
+
     return np.polyval(optim[0], np.arange(np.size(interf)))

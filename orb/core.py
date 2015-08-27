@@ -876,6 +876,8 @@ class Tools(object):
                     '# prebinning {}'.format(int(prebinning)))
     
             file_list = os.listdir(dir_path)
+            file_list = [os.path.join(dir_path,_path) for _path in file_list]
+            
             # image list sort
             file_list = self.sort_image_list(file_list, image_mode)
             if file_list is None:
@@ -1201,15 +1203,15 @@ class Tools(object):
         try:
             hdulist = pyfits.open(fits_name, memmap=memmap)
             fits_header = hdulist[data_index].header
-        except:
+        except Exception, e:
             if not no_error:
                 self._print_error(
-                    "The file '%s' could not be opened"%fits_name)
+                    "File '%s' could not be opened: {}".format(fits_name, e))
                 return None
             else:
                 if not silent:
                     self._print_warning(
-                        "The file '%s' could not be opened"%fits_name)
+                        "File '%s' could not be opened {}".format(fits_name, e))
                 return None
 
         # Correct header

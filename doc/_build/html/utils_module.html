@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Utils module &mdash; Orb 1.4.0.1 documentation</title>
+  <title>Utils module &mdash; Orb 1.5.0 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.4.0.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/>
         <link rel="next" title="CUtils module" href="cutils_module.html"/>
         <link rel="prev" title="Core module" href="core_module.html"/> 
 
@@ -90,7 +90,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installing_python.html">Installing Python</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installing_python.html#python">Python</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installing_python.html#modules">Modules</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="installing_python.html#to-use-the-viewer-orb-viewer">To use the Viewer (orb-viewer)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#check-if-a-module-is-already-installed">Check if a module is already installed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installing_python.html#to-use-the-viewers-orb-viewer-and-orb-viewer3d">To use the Viewers (orb-viewer and orb-viewer3d)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#scipy-and-numpy">Scipy and Numpy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#pyfits">PyFITS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installing_python.html#parallel-python">Parallel Python</a></li>
@@ -244,6 +245,16 @@
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#orb-viewer">Orb-viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#data-module">Data module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id4">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-0">v1.5.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-correction">Phase correction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#d-viewer">3D Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -863,7 +874,7 @@ are returned (default False).</li>
 <li><span class="target" id="utils.fit_lines_in_vector.params.poly_order"></span><strong>poly_order</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.poly_order">¶</a> &#8211; (Optional) Order of the polynomial used to fit
 continuum. Use high orders carefully (default 0).</li>
 <li><span class="target" id="utils.fit_lines_in_vector.params.fmodel"></span><strong>fmodel</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.fmodel">¶</a> &#8211; (Optional) Fitting model. Can be &#8216;gaussian&#8217;, 
-&#8216;sinc&#8217; or &#8216;sinc2&#8217; (default &#8216;gaussian&#8217;).</li>
+&#8216;sinc&#8217;, &#8216;sinc2&#8217; or &#8216;lorentzian&#8217; (default &#8216;gaussian&#8217;).</li>
 <li><span class="target" id="utils.fit_lines_in_vector.params.sig_noise"></span><strong>sig_noise</strong><a class="paramlink headerlink reference internal" href="#utils.fit_lines_in_vector.params.sig_noise">¶</a> &#8211; (Optional) Noise standard deviation guess. If
 None noise value is guessed but the gaussian FWHM must not
 exceed half of the sampling interval (default None).</li>
@@ -887,7 +898,7 @@ shape of the lines becomes symetric) (default False).</li>
 <li>lines parameters [key: &#8216;lines-params&#8217;] Lines parameters are
 given as an array of shape (lines_nb, 4). The order of the 4
 parameters for each lines is [height at the center of the
-line, ampitude, position, fwhm].</li>
+line, amplitude, position, fwhm].</li>
 <li>lines parameters errors [key: &#8216;lines-params-err&#8217;]</li>
 <li>residual [key: &#8216;residual&#8217;]</li>
 <li>chi-square [key: &#8216;chi-square&#8217;]</li>
@@ -925,6 +936,16 @@ smoothing degrees)</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.fit_sitelle_phase_map">
+<code class="descclassname">utils.</code><code class="descname">fit_sitelle_phase_map</code><span class="sig-paren">(</span><em>phase_map</em>, <em>phase_map_err</em>, <em>calib_laser_map</em>, <em>calib_laser_nm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fit_sitelle_phase_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a SITELLE phase map (order 0 map of the phase) using a
+model based on the calibration laser map.</p>
+<p>The calibration laser map is tilted and rotated until the best fit
+is reached.</p>
+<p>The new calibration laser map obtained from the fit is also returned.</p>
 </dd></dl>
 
 <dl class="function">
@@ -1446,6 +1467,17 @@ else it is returned in nm.</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.lorentzian1d">
+<code class="descclassname">utils.</code><code class="descname">lorentzian1d</code><span class="sig-paren">(</span><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.lorentzian1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 1D lorentzian
+:param _sphinx_paramlinks_utils.lorentzian1d.x: Array giving the positions where the function is evaluated
+:param _sphinx_paramlinks_utils.lorentzian1d.h: Height
+:param _sphinx_paramlinks_utils.lorentzian1d.a: Amplitude
+:param _sphinx_paramlinks_utils.lorentzian1d.dx: Position of the center
+:param _sphinx_paramlinks_utils.lorentzian1d.w: FWHM</p>
 </dd></dl>
 
 <dl class="function">
@@ -2121,6 +2153,27 @@ effect when convolving).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.tilt_calibration_laser_map">
+<code class="descclassname">utils.</code><code class="descname">tilt_calibration_laser_map</code><span class="sig-paren">(</span><em>cmap</em>, <em>calib_laser_nm</em>, <em>phi_x</em>, <em>phi_y</em>, <em>phi_r</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.tilt_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tilt and rotate a calibration laser map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.tilt_calibration_laser_map.params.cmap"></span><strong>cmap</strong><a class="paramlink headerlink reference internal" href="#utils.tilt_calibration_laser_map.params.cmap">¶</a> &#8211; calibration laser map.</li>
+<li><span class="target" id="utils.tilt_calibration_laser_map.params.calib_laser_nm"></span><strong>calib_laser_nm</strong><a class="paramlink headerlink reference internal" href="#utils.tilt_calibration_laser_map.params.calib_laser_nm">¶</a> &#8211; Calibration laser wavelength in nm.</li>
+<li><span class="target" id="utils.tilt_calibration_laser_map.params.phi_x"></span><strong>phi_x</strong><a class="paramlink headerlink reference internal" href="#utils.tilt_calibration_laser_map.params.phi_x">¶</a> &#8211; tilt angle along X axis (degrees).</li>
+<li><span class="target" id="utils.tilt_calibration_laser_map.params.phi_y"></span><strong>phi_y</strong><a class="paramlink headerlink reference internal" href="#utils.tilt_calibration_laser_map.params.phi_y">¶</a> &#8211; tilt angle along Y axis (degrees).</li>
+<li><span class="target" id="utils.tilt_calibration_laser_map.params.phi_r"></span><strong>phi_r</strong><a class="paramlink headerlink reference internal" href="#utils.tilt_calibration_laser_map.params.phi_r">¶</a> &#8211; Rotation angle (degrees).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.transform_frame">
 <code class="descclassname">utils.</code><code class="descname">transform_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>x_min</em>, <em>x_max</em>, <em>y_min</em>, <em>y_max</em>, <em>d</em>, <em>rc</em>, <em>zoom_factor</em>, <em>interp_order</em>, <em>mask=None</em>, <em>fill_value=nan</em>, <em>sip_A=None</em>, <em>sip_B=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform one frame or a part of it using transformation
@@ -2160,7 +2213,7 @@ the input image (default None).</li>
 
 <dl class="function">
 <dt id="utils.transform_interferogram">
-<code class="descclassname">utils.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>n_phase=None</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>conserve_energy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>phase_correction=True</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>conserve_energy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2182,12 +2235,9 @@ ones for bad frames. Bad frames are replaced by zeros using a
 special function that smoothes transition between good parts and
 zeros (default None). This vector must be uncorrected for ZPD
 shift</li>
-<li><span class="target" id="utils.transform_interferogram.params.n_phase"></span><strong>n_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.n_phase">¶</a> &#8211; (Optional) Number of points to use for phase
-correction. It can be no greater than interferogram length. If
-0, no phase correction will be done and the resulting spectrum
-will be the absolute value of the complex spectrum. If None, the
-number of points is set to 20 percent of the interferogram
-length (default None).</li>
+<li><span class="target" id="utils.transform_interferogram.params.phase_correction"></span><strong>phase_correction</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.phase_correction">¶</a> &#8211; (Optional) If False, no phase correction will
+be done and the resulting spectrum will be the absolute value of the
+complex spectrum (default True).</li>
 <li><span class="target" id="utils.transform_interferogram.params.ext_phase"></span><strong>ext_phase</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.ext_phase">¶</a> &#8211; (Optional) External phase vector. If given this
 phase vector is used instead of a low-resolution one. It must be
 as long as the interferogram.</li>
@@ -2197,10 +2247,9 @@ the coefficients of the fitted phase (default False). Note that
 this option is not compatible with ext_phase. You must set
 ext_phase to None to set return_phase to True.</li>
 <li><span class="target" id="utils.transform_interferogram.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.weights">¶</a> &#8211; (Optional) A vector of the same length as the
-number of points used to compute the phase (n_phase) giving the
-weight of each point for interpolation (Must be a float between
-0. and 1.). If none is given, the weights are defined by the
-amplitude of the vector.</li>
+interferogram giving the weight of each point for interpolation
+(Must be a float between 0. and 1.). If none is given, the
+weights are defined by the amplitude of the vector.</li>
 <li><span class="target" id="utils.transform_interferogram.params.polyfit_deg"></span><strong>polyfit_deg</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.polyfit_deg">¶</a> &#8211; (Optional) Degree of the polynomial fit to the
 computed phase. If &lt; 0, no fit will be performed (Default 1).</li>
 <li><span class="target" id="utils.transform_interferogram.params.smoothing_deg"></span><strong>smoothing_deg</strong><a class="paramlink headerlink reference internal" href="#utils.transform_interferogram.params.smoothing_deg">¶</a> &#8211; (Optional) Degree of zeros smoothing. A
@@ -2397,7 +2446,7 @@ can be a single float or a vector of size n</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.4.0.1',
+            VERSION:'1.5.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

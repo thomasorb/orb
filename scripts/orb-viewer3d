@@ -1,0 +1,375 @@
+#!/usr/bin/python
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca> 
+# File: orb-viewer3d
+
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+## This is a 3d viewer for HDF5 Spectral cubes based on opengl and vispy
+
+import numpy as np
+from orb.core import HDFCube, Tools
+import bottleneck as bn
+import orb
+import os
+from orb.astrometry import Gaussian
+from vispy import gloo
+from vispy import app
+import vispy
+from vispy.util.transforms import perspective, translate, rotate
+
+from argparse import ArgumentParser
+import argparse
+
+from matplotlib.cm import ScalarMappable
+from PySide import QtGui
+
+
+class Viewer3d(app.Canvas):
+
+    def __init__(self, cube_path, xmin, ymin, xmax, ymax, zmin, zmax,
+                 contmin, contmax, cmap_name='jet'):       
+
+
+        vispy.use(app='pyside', gl='gl2')
+        app.Canvas.__init__(self, keys='interactive', size=(600, 600))
+        
+        
+        # Create vertices
+        if os.path.splitext(cube_path)[-1] == '.hdf5':
+            cube = HDFCube(cube_path)
+        elif os.path.splitext(cube_path)[-1] == '.fits':
+            to = Tools(no_log=True)
+            cube = to.read_fits(cube_path)
+        else:
+            raise Exception('Bad file format, extension must be *.fits or *.hdf5')
+
+        cube_part = cube[xmin:xmax,ymin:ymax,zmin:zmax]
+        
+        if contmin is not None and contmax is not None:
+            continuum = bn.nanmedian(cube[xmin:xmax,ymin:ymax,contmin:contmax],
+                                     axis=2)
+            cube_part = (cube_part.T - continuum.T).T
+            noise = bn.nanstd(cube[xmin:xmax,ymin:ymax,contmin:contmax], axis=2)
+        else:
+            noise = bn.nanstd(cube[xmin:xmax,ymin:ymax,:], axis=2)
+            
+        goodpix = np.nonzero((cube_part.T > (2.5 * noise).T).T)    
+        goodvals = cube_part[goodpix]
+        
+        
+        n = len(goodpix[0])
+        print 'Number of displayed points: {} (must be < 1e6 for good performances)'.format(n)
+        pos = np.array(goodpix).T.astype(np.float32)
+        pos[:,0] -= cube_part.shape[0] / 2.
+        pos[:,1] -= cube_part.shape[1] / 2.
+        pos[:,2] -= cube_part.shape[2] / 2.
+        pos[:,2] *= 4.
+        pos /= 2.
+        
+        data = np.zeros(n, [('a_position', np.float32, 3),
+                            ('a_color', np.float32, 4)])
+        
+        data['a_position'] = pos
+        
+        ### define colors
+        norm_posz = pos[:,2] - np.nanmin(pos[:,2])
+        norm_posz /= np.nanmax(norm_posz)
+        # colormap
+        cmap = ScalarMappable(cmap=cmap_name)
+        colors = cmap.to_rgba(norm_posz).astype(np.float32)
+        # alpha for intensity
+        colors[:,3] = (goodvals / np.nanmax(goodvals))
+        data['a_color'] = colors
+
+        self.translate = 5
+        self.program = gloo.Program(self.vertex_shader(),
+                                    self.fragment_shader(),
+                                    count=n)
+        self.view = translate((0, 0, -self.translate))
+        self.model = np.eye(4, dtype=np.float32)
+        self.projection = np.eye(4, dtype=np.float32)
+
+        self.apply_zoom()
+
+        self.program.bind(gloo.VertexBuffer(data))
+        self.program['s_texture'] = gloo.Texture2D(self._get_texture())
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
+        self.colorpow = 1.
+        self.program['u_colorpow'] = self.colorpow
+        self.sizecoeff = 1.
+        self.program['u_sizecoeff'] = self.sizecoeff
+        self.zcoeff = 1.
+        self.program['u_zcoeff'] = self.zcoeff
+
+        self.theta = 0
+        self.phi = 0
+        self.dx = 0
+        self.dy = 0
+
+        gloo.set_state('additive', clear_color='black')
+
+        self.timer = app.Timer('auto', connect=self.on_timer, start=False)
+
+        self.show()
+
+        # create control window
+        qmainwindow = QtGui.QMainWindow(self.native)
+        self.cmap_chooser = QtGui.QComboBox(qmainwindow)
+        self.cmap_chooser.addItem('coin')
+        self.cmap_chooser.addItem('pouet')
+        self.cmap_chooser.activated.connect(self._test)
+        #qwidget.qmenu = QtGui.QMenu('Menu')
+        #fileMenu = qmainwindow.addMenu('&File')
+        #fileMenu.addAction(exitAction)
+        #qwidget.qmenu.show()
+        #qwidget.show()
+        ## qmainwindow = QtGui.QGLWindow(qwidget)
+
+    
+        ## menubar = qmainwindow.menuBar()
+        ## fileMenu = menubar.addMenu('&File')
+        ## fileMenu.addAction(exitAction)
+        qmainwindow.show()
+        
+
+    def _test(self):
+        print 'yeah'
+
+    def on_key_press(self, event):
+        if event.text == 'r':
+            if self.timer.running:
+                self.timer.stop()
+            else:
+                self.timer.start()
+
+
+    def on_timer(self, event):
+        self.phi += .5
+        self.model = np.dot(rotate(self.theta, (1, 0, 0)),
+                            rotate(self.phi, (0, 1, 0)))
+        self.program['u_model'] = self.model
+        self.update()
+
+    def on_mouse_press(self, event):
+        if event.button == 1:
+            self._mouse_start = np.array(event.pos)
+        if event.button == 0:
+            self._mouse_start = np.array(event.pos)
+        if event.button == 2:
+            self._mouse_start = np.array(event.pos)
+            
+    def on_mouse_move(self, event):
+        modifier_control = False
+        if len(event.modifiers) > 0:
+            if event.modifiers[0].name == 'Control':
+                modifier_control = True
+        
+        if event.button == 1 and event.is_dragging:
+            drag = np.array(event.pos) - self._mouse_start
+            
+            if not modifier_control:
+                self.theta += drag[1]/float(self.size[1]) * 100.
+                self.phi += drag[0]/float(self.size[0]) * 100.
+                self.model = np.dot(rotate(self.theta, (1, 0, 0)),
+                                    rotate(self.phi, (0, 1, 0)))
+                self.program['u_model'] = self.model
+            else:
+                self.dy -= drag[1]/float(self.size[1]) * 300.
+                self.dx += drag[0]/float(self.size[0]) * 300.
+                self.view = translate((self.dx, self.dy, -self.translate))
+                self.program['u_view'] = self.view
+            
+
+        if event.button == 2 and event.is_dragging:
+            drag = np.array(event.pos) - self._mouse_start
+                    
+            if not modifier_control:
+                self.colorpow -= drag[0] / 300.
+                self.program['u_colorpow'] = self.colorpow
+                self.sizecoeff -= drag[1] / 300.
+                self.program['u_sizecoeff'] = self.sizecoeff
+            else:
+                self.zcoeff -= drag[0] / 300.
+                self.program['u_zcoeff'] = self.zcoeff
+
+        self.update()
+        self._mouse_start = np.array(event.pos)
+        
+    def on_resize(self, event):
+        self.apply_zoom()
+
+    def on_mouse_wheel(self, event):
+        self.translate -= event.delta[1] * 30
+        self.translate = max(2, self.translate)
+        self.view = translate((self.dx, self.dy, -self.translate))
+
+        self.program['u_view'] = self.view
+        self.update()
+
+    def on_draw(self, event):
+        gloo.clear()
+        self.program.draw('points')
+
+    def apply_zoom(self):
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 1000.0)
+        self.program['u_projection'] = self.projection
+
+
+    def _get_texture(self):
+        """ Return a Gaussian like texture for points"""
+        radius = 40
+        im1 = Gaussian([0, 1, radius/2., radius/2., radius/4.], no_log=True)
+        return im1.array2d(radius,radius).astype(np.float32)
+
+
+    def vertex_shader(self):
+        return """
+#version 120
+
+// Uniforms
+// ------------------------------------
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+uniform float u_colorpow;
+uniform float u_sizecoeff;
+uniform float u_zcoeff;
+
+// Attributes
+// ------------------------------------
+attribute vec3  a_position;
+attribute vec4  a_color;
+
+// Varyings
+// ------------------------------------
+varying vec4 v_color;
+varying float v_linewidth;
+varying float v_antialias;
+varying float v_pointsize;
+
+void main (void) {
+
+    vec3 pos = a_position;
+    v_color = a_color;
+
+    pos.z *= u_zcoeff;
+    vec4 v_eye_position = u_view * u_model * vec4(pos, 1.0);
+    gl_Position = u_projection * v_eye_position;
+
+    // stackoverflow.com/questions/8608844/...
+    //  ... resizing-point-sprites-based-on-distance-from-the-camera
+    float radius = 1;
+    vec4 corner = vec4(radius, radius, v_eye_position.z, v_eye_position.w);
+    vec4 proj_corner = u_projection * corner;
+    gl_PointSize = 5000.0 * proj_corner.x / proj_corner.w * u_sizecoeff;
+    v_pointsize = gl_PointSize;
+}
+"""
+
+
+
+    def fragment_shader(self):
+        return """
+precision highp float;
+uniform sampler2D texture1;
+uniform float u_colorpow;
+varying vec4 v_color;
+uniform highp sampler2D s_texture;
+void main()
+{
+    highp vec4 texColor;
+    texColor = texture2D(s_texture, gl_PointCoord);
+    gl_FragColor = pow(vec4(v_color), vec4(u_colorpow)) * texColor;
+}
+"""
+
+###########################################
+### MAIN ##################################
+###########################################
+    
+    
+def main(args):
+    if args.x_lim is not None:
+        xmin = x_lim[0]
+        xmax = x_lim[1]
+    else:
+        xmin = None
+        xmax = None
+
+    if args.y_lim is not None:
+        ymin = args.y_lim[0]
+        ymax = args.y_lim[1]
+    else:
+        ymin = None
+        ymax = None
+
+    if args.z_lim is not None:
+        zmin = args.z_lim[0]
+        zmax = args.z_lim[1]
+    else:
+        zmin = None
+        zmax = None
+
+    if args.c_lim is not None:
+        contmin = args.c_lim[0]
+        contmax = args.c_lim[1]
+    else:
+        contmin = None
+        contmax = None
+    
+        
+    viever3d = Viewer3d(args.cube_path, xmin, xmax, ymin, ymax, zmin, zmax, contmin, contmax, cmap_name=args.cmap_name)
+    app.run()
+
+    
+if __name__ == '__main__':
+
+    parser = ArgumentParser(
+        version=('ORB-version {}'.format(
+            orb.core.__version__)),
+        description="3d viewer for HDF5 spectral cubes.")
+
+    parser.add_argument('cube_path', help='Path to an HDF5 cube.')
+
+    parser.add_argument("-x", dest="x_lim", default=None,
+                        type=int, nargs=2,
+                        help="X limits of the displayed cube: XMIN XMAX")
+
+    parser.add_argument("-y", dest="y_lim", default=None,
+                        type=int, nargs=2,
+                        help="Y limits of the displayed cube: YMIN YMAX")
+
+    parser.add_argument("-z", dest="z_lim", default=None,
+                        type=int, nargs=2,
+                        help="Z limits of the displayed cube: ZMIN ZMAX")
+
+    parser.add_argument("-c", dest="c_lim", default=None,
+                        type=int, nargs=2,
+                        help="Continuum limits of the displayed cube: ZMIN ZMAX, the mean of this slice is removed from the cube.")
+
+    parser.add_argument("--cmap", dest="cmap_name", default='jet',
+                        help="Name of the color map (matplotlib colormaps): e.g.: 'autumn', 'gist_rainbow', 'jet', 'winter', 'summer', 'hot', 'cool'")
+    
+
+    args = parser.parse_args()
+    main(args)
+    
