@@ -2786,7 +2786,8 @@ class Cube(Tools):
                 overwrite=overwrite)
             
             outcube.append_image_list(self.image_list)
-            outcube.append_header(header)
+            if header is not None:
+                outcube.append_header(header)
             
             job_server, ncpus = self._init_pp_server()
             progress = ProgressBar(zmax-zmin)
