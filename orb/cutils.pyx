@@ -1789,3 +1789,94 @@ def map_me(np.ndarray[np.float64_t, ndim=2] frame):
                 me[ii, imin:imax] = (vmax-vmin)/vmax
         
     return me
+
+
+
+def nanbin_image(np.ndarray[np.float64_t, ndim=2] im, int binning): 
+    """Mean image binning robust to NaNs.
+
+    :param im: Image to bin
+    :param binning: Binning factor (must be an integer)
+    """     
+    cdef np.ndarray[np.float64_t, ndim=2] out 
+    cdef np.ndarray[np.int64_t, ndim=1] x_range
+    cdef np.ndarray[np.int64_t, ndim=1] y_range
+    cdef int ii, ij, xmin, xmax, ymin, ymax
+    
+    x_range = np.arange(0, im.shape[0]/binning*binning, binning)
+    y_range = np.arange(0, im.shape[1]/binning*binning, binning)
+    out = np.empty((x_range.shape[0], y_range.shape[0]), dtype=im.dtype)
+    
+    for ii in range(x_range.shape[0]):
+        for ij in range(y_range.shape[0]):
+            xmin = x_range[ii]
+            xmax = xmin + binning
+            if xmax > im.shape[0]: xmax=im.shape[0]
+            ymin = y_range[ij]
+            ymax = ymin + binning
+            if ymax > im.shape[1]: ymax=im.shape[1]
+            
+            out[ii,ij] = bn.nanmean(im[xmin:xmax,ymin:ymax])
+            
+    return out
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def unbin_image(np.ndarray[np.float64_t, ndim=2] im,
+                int nx, int ny):
+    """Unbin a binned image (restore the image binned with the
+    function :py:func:`~orb.cutils.nanbin_image`).
+
+    :param im: Image to unbin.
+
+    :param nx: X dimension of the unbinned image.
+    
+    :param ny: Y dimension of the unbinned image.
+    """
+
+    cdef np.ndarray[np.float64_t, ndim=2] out
+    cdef np.ndarray[np.float64_t, ndim=1] xaxis
+    cdef np.ndarray[np.float64_t, ndim=1] yaxis
+    cdef int binx, biny
+    cdef int ii, ij, x1, x2, y1, y2
+    cdef double q11, q12, q21, q22, x, y
+    cdef int dimx = im.shape[0]
+    cdef int dimy = im.shape[1]
+    cdef double x1d, y1d, x2d, y2d
+    
+    out = np.empty((nx, ny), dtype=float)
+    out.fill(np.nan)
+    
+    binx = nx / dimx
+    biny = ny / dimy
+
+    xaxis = (np.arange(dimx * binx) - (<double> binx / 2. - 0.5)) / (<double> binx)
+    yaxis = (np.arange(dimy * biny) - (<double> biny / 2. - 0.5)) / (<double> biny)
+    with nogil:
+        for ii in range(dimx * binx):
+            for ij in range(dimy * biny):
+                x = xaxis[ii]
+                y = yaxis[ij]
+                if x >= 0. and y >= 0.:
+                    x1 = <int> x
+                    x2 = x1 + 1
+                    y1 = <int> y
+                    y2 = y1 + 1
+                    x1d = <double> x1
+                    x2d = <double> x2
+                    y1d = <double> y1
+                    y2d = <double> y2
+                    
+                    if x1 >= 0 and y1 >= 0 and x2 < dimx and y2 < dimy:
+                        q11 = <double> im[x1, y1]
+                        q12 = <double> im[x1, y2]
+                        q21 = <double> im[x2, y1]
+                        q22 = <double> im[x2, y2]
+                        out[ii,ij] = (q11 * (x2d - x) * (y2d - y)
+                                      + q21 * (x - x1d) * (y2d - y)
+                                      + q12 * (x2d - x) * (y - y1d)
+                                      + q22 * (x - x1d) * (y - y1d))
+            
+    return out

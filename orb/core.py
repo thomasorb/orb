@@ -71,7 +71,7 @@ class TextColor:
     WARNING = '\033[4;33m'
     ERROR = '\033[4;91m'
     END = '\033[0m'
-    
+
     def disable(self):
         """ Disable ANSI Escape sequences for windows portability
         """
@@ -82,59 +82,6 @@ class TextColor:
         self.ERROR = ''
         self.END = ''
 
-#################################################
-#### CLASS MemFile ##############################
-#################################################
-        
-class MemFile:
-    """Manage memory file.
-
-    A memory file is a file containing options that must be shared by
-    multiple classes. Options in this file are temporary.
-
-    This class behaves as a dictionary reflecting the content of the
-    memory file on the disk.
-    """
-
-    mem = None
-
-    def __init__(self, memfile_path):
-        """Init Memfile Class
-
-        :param memfile_path: Path to the memory file.
-        """
-        self.mem = dict()
-        self.memfile_path = memfile_path
-        if os.path.exists(self.memfile_path):
-            memfile = open(memfile_path, 'r')
-            for iline in memfile:
-                if len(iline) > 3:
-                    iline = iline.split()
-                    if len(iline) > 1:
-                        self.mem[iline[0]] = iline[1]
-            memfile.close()
-
-    def __getitem__(self, key):
-        """Implement the evaluation of self[key]"""
-        return self.mem[key]
-
-    def __setitem__(self, key, value):
-        """Implement the evaluation of self[key] = value"""
-        self.mem[key] = value
-        self.update()
-
-    def __iter__(self):
-        """Return an iterator object"""
-        return self.mem.__iter__()
-
-    def update(self):
-        """Update memory file with the data contained in self.mem"""
-        if len(self.mem) > 0:
-            memfile = open(self.memfile_path, 'w')
-            for ikey in self.mem:
-                memfile.write('%s %s\n'%(ikey, self.mem[ikey]))
-            memfile.close()
-
 
 #################################################
 #### CLASS Tools ################################
@@ -144,9 +91,8 @@ class Tools(object):
     """
     Parent class of all classes of orb.
 
-    Implement basic methods to read and write FITS data, display
-    messages, feed a logfile and manage the server for parallel
-    processing.
+    Manage configuration file, implement basic methods and manage the
+    server for parallel processing.
     """
     config_file_name = 'config.orb' # Name of the config file
     ncpus = 0 # number of CPUs to use for parallel processing
@@ -163,10 +109,6 @@ class Tools(object):
     _data_prefix = "" # prefix used in the creation of _data_path_hdr
                       # (see _get_data_path_hdr() function)
 
-    _logfile_name = "./logfile.orb" # Name of the log file
-
-    _memfile_name = "./.memfile.orb"
-
     _no_log = False # If True no logfile is created
 
     _tuning_parameters = dict() # Dictionay containing the full names of the
@@ -175,7 +117,7 @@ class Tools(object):
     _silent = False # If True only error messages will be diplayed on screen
 
     def __init__(self, data_prefix="./temp/data.", no_log=False,
-                 tuning_parameters=dict(), logfile_name=None,
+                 tuning_parameters=dict(), 
                  config_file_name='config.orb', silent=False):
         """Initialize Tools class.
 
@@ -183,10 +125,9 @@ class Tools(object):
           header of the name of each created file (default
           'temp_data')
 
-        :param logfile_name: (Optional) Name of the log file (if None).
-
-        :param no_log: (Optional) If True no log file is created
-          (default False).
+        :param no_log: (Optional) If True (and if sys.stdout has been
+          redirected to Logger) no log file is created (default
+          False).
 
         :param tuning_parameters: (Optional) Some parameters of the
           methods can be tuned externally using this dictionary. The
@@ -204,7 +145,6 @@ class Tools(object):
           screen (default False).
         """
         self.config_file_name = config_file_name
-        self._init_logfile_name(logfile_name)
         if (os.name == 'nt'):
             TextColor.disable()
         self._data_prefix = data_prefix
@@ -215,17 +155,9 @@ class Tools(object):
         self.ncpus = int(self._get_config_parameter("NCPUS"))
         self._silent = silent
         warnings.showwarning = self._custom_warn
-
-    def _init_logfile_name(self, logfile_name):
-        """Initialize logfile name."""
-        memfile = MemFile(self._memfile_name)
-        if logfile_name is not None:
-            self._logfile_name = logfile_name
-            memfile['LOGFILENAME'] = self._logfile_name
-
-        if logfile_name is None:
-            if 'LOGFILENAME' in memfile:
-                self._logfile_name = memfile['LOGFILENAME']
+        if self._no_log:
+            if isinstance(sys.stdout, Logger):
+                Logger.nolog = True
 
     def _get_msg_class_hdr(self):
         """Return the header of the displayed messages."""
@@ -370,13 +302,7 @@ class Tools(object):
              ## Instrumental parameters
              PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
              PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
-        """
-        ### config file test 
-        #if  self._get_config_file_path() == '/home/thomas/Astro/Python/ORB/Orb/orb/data/config.orb' and param_key != 'NCPUS':
-        #    self._print_warning(' '.join(['CHECK:', self._get_config_file_path(), param_key]))
-        #    self._print_caller_traceback()
-        ######## to be removed
-            
+        """ 
         f = self.open_file(
             self._get_config_file_path(), 'r')
         for line in f:
@@ -401,16 +327,16 @@ class Tools(object):
         :param message: The message to be displayed.
         """
         error_msg = self._get_date_str() + self._msg_class_hdr + sys._getframe(1).f_code.co_name + " > Error: " + message
-        print "\r" + TextColor.ERROR + error_msg + TextColor.END
-        if not self._no_log:
-            self.open_file(self._logfile_name, "a").write(error_msg + "\n")
+        if isinstance(sys.stdout, Logger):
+            sys.stdout.write('\r' + error_msg + '\n', color=TextColor.ERROR)
+        else:
+            print "\r" + TextColor.ERROR + error_msg + TextColor.END
+            
         raise StandardError(message)
 
 
     def _print_caller_traceback(self):
-        """Print the traceback of the calling function and log it into
-        the log file.
-        """
+        """Print the traceback of the calling function."""
         traceback = inspect.stack()
         traceback_msg = ''
         for i in range(len(traceback))[::-1]:
@@ -420,8 +346,6 @@ class Tools(object):
                               traceback[i][4][0])
             
         print '\r' + traceback_msg
-        if not self._no_log:
-            self.open_file(self._logfile_name, "a").write(traceback_msg + "\n")
 
     def _print_warning(self, message, traceback=False):
         """Print a warning message. No exception is raised.
@@ -437,11 +361,12 @@ class Tools(object):
             self._print_caller_traceback()
             
         warning_msg = self._get_date_str() + self._msg_class_hdr + sys._getframe(1).f_code.co_name + " > Warning: " + message
-        if not self._silent:
-            print "\r" + TextColor.WARNING + warning_msg + TextColor.END
-        if not self._no_log:
-            self.open_file(self._logfile_name, "a").write(warning_msg + "\n")
-
+        
+        if isinstance(sys.stdout, Logger):
+            sys.stdout.write('\r' + warning_msg + '\n', color=TextColor.WARNING)
+        else:
+            print '\r' + TextColor.WARNING + warning_msg + TextColor.END
+        
     def _custom_warn(self, message, category, filename, lineno,
                      file=None, line=None):
         """Redirect warnings thrown by external functions
@@ -464,28 +389,27 @@ class Tools(object):
           color. If 'alt', an alternative color is displayed.
 
         :param no_hdr: (Optional) If True, The message is displayed
-          as it is, without any header.
-
-        
+          as it is, without any header.   
         """
         if not no_hdr:
             message = (self._get_date_str() + self._msg_class_hdr + 
                        sys._getframe(1).f_code.co_name + " > " + message)
-
+            
         text_col = TextColor.BLUE
         if color == 'alt':
             color = True
             text_col = TextColor.PURPLE
             
-        if color and not self._silent:
-            print "\r" + text_col + message + TextColor.END
-        elif not self._silent:
-            print "\r" + message
-        if not self._no_log:
-            self.open_file(self._logfile_name, "a").write(message + "\n")
-
+        if color:
+            if isinstance(sys.stdout, Logger):
+                sys.stdout.write('\r' + message + '\n', color=text_col)
+            else:
+                print '\r' + text_col + message + TextColor.END
+        else:
+            print message
+        
     def _print_traceback(self, no_hdr=False):
-        """Print a traceback and log it into the logfile.
+        """Print a traceback
 
         :param no_hdr: (Optional) If True, The message is displayed
           as it is, without any header.
@@ -499,8 +423,6 @@ class Tools(object):
                        sys._getframe(1).f_code.co_name + " > " + message)
             
         print "\r" + message
-        if not self._no_log:
-            self.open_file(self._logfile_name, "a").write(message + "\n")
             
     def _update_fits_key(self, fits_name, key, value, comment):
         """Update one key of a FITS file. If the key doesn't exist
@@ -1033,6 +955,11 @@ class Tools(object):
         if fits_data.dtype == np.float64:
             fits_data = fits_data.astype(np.float32)
 
+        # complex data cannot be written in fits
+        if np.iscomplexobj(fits_data):
+            fits_data = fits_data.real.astype(np.float32)
+            self._print_warning('Complex data cast to float32 (FITS format fo not support complex data)')
+        
         base_fits_name = fits_name
 
         dirname = os.path.dirname(fits_name)
@@ -1842,7 +1769,43 @@ class Tools(object):
         return 'frame{:05d}'.format(frame_index)
         
             
+    def get_quadrant_dims(self, quad_number, dimx, dimy, div_nb):
+        """Return the indices of a quadrant along x and y axes.
+
+        :param quad_number: Quadrant number
+
+        :param dimx: X axis dimension.
+          
+        :param dimy: Y axis dimension.
         
+        :param div_nb: Number of divisions along x and y axes. (e.g. if
+          div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
+          number of quadrant is 16)
+
+        """
+        quad_nb = div_nb**2
+
+        if (quad_number < 0) or (quad_number > quad_nb - 1L):
+            self._print_error("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
+            return None
+
+        index_x = quad_number % div_nb
+        index_y = (quad_number - index_x) / div_nb
+
+        x_min = long(index_x * math.ceil(dimx / div_nb))
+        if (index_x != div_nb - 1L):            
+            x_max = long((index_x  + 1L) * math.ceil(dimx / div_nb))
+        else:
+            x_max = dimx
+
+        y_min = long(index_y * math.ceil(dimy / div_nb))
+        if (index_y != div_nb - 1L):            
+            y_max = long((index_y  + 1L) * math.ceil(dimy / div_nb))
+        else:
+            y_max = dimy
+
+        return x_min, x_max, y_min, y_max
+
             
 ##################################################
 #### CLASS Cube ##################################
@@ -1908,13 +1871,15 @@ class Cube(Tools):
     _parallel_access_to_data = None # authorize parallel access to
                                     # data (False for HDF5)
 
+    is_complex = None # tell if cube's data is complex.
+    dtype = None # data type
+    
     def __init__(self, image_list_path, image_mode='classic',
                  chip_index=1, binning=1, data_prefix="./temp/data.",
                  config_file_name="config.orb", project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, silent_init=False, no_log=False,
-                 tuning_parameters=dict(), indexer=None,
-                 logfile_name=None):
+                 tuning_parameters=dict(), indexer=None):
         
         """
         Initialize Cube class.
@@ -1984,14 +1949,16 @@ class Cube(Tools):
 
         :param indexer: (Optional) Must be a :py:class:`core.Indexer`
           instance. If not None created files can be indexed by this
-          instance.
-
-        :param logfile_name: (Optional) Give a specific name to the
-          logfile (default None).
+          instance.    
         """
-        self._init_logfile_name(logfile_name)
+        self.is_complex = False
+        self.dtype = float
         self.overwrite = overwrite
         self._no_log = no_log
+        if self._no_log:
+            if isinstance(sys.stdout, Logger):
+                Logger.nolog = True
+                
         self.indexer = indexer
         
         # read config file to get parameters
@@ -2503,7 +2470,7 @@ class Cube(Tools):
            star-like objects a linear interpolation must be done
            (set degree to 1).
         """
-        resized_frame = np.empty((size_x, size_y), dtype=float)
+        resized_frame = np.empty((size_x, size_y), dtype=self.dtype)
         x = np.arange(self.dimx)
         y = np.arange(self.dimy)
         x_new = np.linspace(0, self.dimx, num=size_x)
@@ -2532,7 +2499,7 @@ class Cube(Tools):
           containing star-like objects (a linear interpopolation must
           be done in this case).
         """
-        resized_cube = np.empty((size_x, size_y, self.dimz), dtype=float)
+        resized_cube = np.empty((size_x, size_y, self.dimz), dtype=self.dtype)
         x = np.arange(self.dimx)
         y = np.arange(self.dimy)
         x_new = np.linspace(0, self.dimx, num=size_x)
@@ -2554,7 +2521,7 @@ class Cube(Tools):
     def get_interf_energy_map(self):
         """Return the energy map of an interferogram cube"""
         mean_map = self.get_mean_image()
-        energy_map = np.zeros((self.dimx, self.dimy), dtype=float)
+        energy_map = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
         progress = ProgressBar(self.dimz)
         for _ik in range(self.dimz):
             energy_map += np.abs(self.get_data_frame(_ik) - mean_map)**2.
@@ -2567,7 +2534,7 @@ class Cube(Tools):
 
         .. note:: In this process NaNs are considered as zeros.
         """
-        energy_map = np.zeros((self.dimx, self.dimy), dtype=float)
+        energy_map = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
         progress = ProgressBar(self.dimz)
         for _ik in range(self.dimz):
             frame = self.get_data_frame(_ik)
@@ -2584,7 +2551,7 @@ class Cube(Tools):
         .. note:: In this process NaNs are considered as zeros.
         """
         if self.mean_image is None:
-            mean_im = np.zeros((self.dimx, self.dimy), dtype=float)
+            mean_im = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
             progress = ProgressBar(self.dimz)
             for _ik in range(self.dimz):
                 frame = self.get_data_frame(_ik)
@@ -2705,7 +2672,7 @@ class Cube(Tools):
         else: self._print_error(
             "Bad stat option. Must be 'mean', 'median' or 'std'")
         
-        stat_vector = np.empty(self.dimz, dtype=float)
+        stat_vector = np.empty(self.dimz, dtype=self.dtype)
 
         job_server, ncpus = self._init_pp_server()
         progress = ProgressBar(self.dimz)
@@ -2760,26 +2727,8 @@ class Cube(Tools):
         if dimx is None: dimx = self.dimx
         if dimy is None: dimy = self.dimy
 
-        if (quad_number < 0) or (quad_number > quad_nb - 1L):
-            self._print_error("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
-            return None
-
-        index_x = quad_number % div_nb
-        index_y = (quad_number - index_x) / div_nb
-
-        x_min = long(index_x * math.ceil(dimx / div_nb))
-        if (index_x != div_nb - 1L):            
-            x_max = long((index_x  + 1L) * math.ceil(dimx / div_nb))
-        else:
-            x_max = dimx
-
-        y_min = long(index_y * math.ceil(dimy / div_nb))
-        if (index_y != div_nb - 1L):            
-            y_max = long((index_y  + 1L) * math.ceil(dimy / div_nb))
-        else:
-            y_max = dimy
-
-        return x_min, x_max, y_min, y_max
+        return Tools.get_quadrant_dims(
+            self, quad_number, dimx, dimy, div_nb)
        
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
@@ -2837,12 +2786,13 @@ class Cube(Tools):
                 overwrite=overwrite)
             
             outcube.append_image_list(self.image_list)
-          
+            outcube.append_header(header)
+            
             job_server, ncpus = self._init_pp_server()
             progress = ProgressBar(zmax-zmin)
 
             data_frames = np.empty((xmax - xmin, ymax - ymin, ncpus),
-                                   dtype=float)
+                                   dtype=self.dtype)
             
             
             for iframe in range(0, zmax-zmin, ncpus):
@@ -2953,7 +2903,10 @@ class ProgressBar:
     def _erase_line(self):
         """Erase the progress bar"""
         if not self._silent:
-            sys.stdout.write("\r" + " " * self.MAX_CARAC)
+            if isinstance(sys.stdout, Logger):
+                sys.stdout.write("\r" + " " * self.MAX_CARAC, nolog=True)
+            else:
+                sys.stdout.write("\r" + " " * self.MAX_CARAC)
             sys.stdout.flush()
 
     def _time_str_convert(self, sec):
@@ -2991,6 +2944,7 @@ class ProgressBar:
           displayed (default True).
         """
         if (self._max_index > 0):
+            color = TextColor.BLUE
             self._count += 1
             for _icount in range(self.REFRESH_COUNT - 1L):
                 self._time_table[_icount] = self._time_table[_icount + 1L]
@@ -3006,28 +2960,27 @@ class ProgressBar:
             else:
                 time_to_end = 0.
             pos = (float(index) / self._max_index) * self._bar_length
-            line = (TextColor.BLUE + "\r [" + "="*int(math.floor(pos)) + 
+            line = ("\r [" + "="*int(math.floor(pos)) + 
                     " "*int(self._bar_length - math.floor(pos)) + 
                     "] [%d%%] [" %(pos*100./self._bar_length) + 
                     str(info) +"]")
             if remains:
                 line += (" [remains: " + 
-                         self._time_str_convert(time_to_end) + "]"
-                         + TextColor.END)
-            else:
-                line += TextColor.END
+                         self._time_str_convert(time_to_end) + "]")
             
         else:
-            line = (TextColor.GREEN + "\r [please wait] [" +
-                    str(info) +"]" + TextColor.END)
+            color = TextColor.GREEN
+            line = ("\r [please wait] [" +
+                    str(info) +"]")
         self._erase_line()
         if (len(line) > self.MAX_CARAC):
             rem_len = len(line) - self.MAX_CARAC + 1
-            line = line[:-len(TextColor.END)]
-            line = line[:-(rem_len+len(TextColor.END))]
-            line += TextColor.END
+            line = line[:-rem_len]
         if not self._silent:
-            sys.stdout.write(line)
+            if isinstance(sys.stdout, Logger):
+                sys.stdout.write(line, color=color, nolog=True)
+            else:
+                sys.stdout.write(line)
             sys.stdout.flush()
 
     def end(self, silent=False):
@@ -3046,7 +2999,10 @@ class ProgressBar:
                             time.time() - self._start_time),
                         remains=False)
             if not self._silent:
-                sys.stdout.write("\n")
+                if isinstance(sys.stdout, Logger):
+                    sys.stdout.write('\n', nolog=True)
+                else:
+                    sys.stdout.write("\n")
         else:
             self._erase_line()
             self.update(self._max_index, info="completed in " +
@@ -3831,6 +3787,8 @@ class HDFCube(Cube):
 
     _hdf5f = None # Instance of h5py.File
     _silent_load = False
+    is_complex = None
+    """Set to True if data is complex"""
     
     def __init__(self, cube_path, project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
@@ -3910,6 +3868,14 @@ class HDFCube(Cube):
                     self._mask_exists = True
                 else:
                     self._mask_exists = False
+
+                # test whether data is complex
+                if np.iscomplexobj(f[self._get_hdf5_data_path(0)]):
+                    self.is_complex = True
+                    self.dtype = complex
+                else:
+                    self.is_complex = False
+                    self.dtype = float
             else:
                 self._print_error('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
                     self._get_hdf5_frame_path(0)))
@@ -3943,7 +3909,7 @@ class HDFCube(Cube):
 
         data = np.empty((x_slice.stop - x_slice.start,
                          y_slice.stop - y_slice.start,
-                         z_slice.stop - z_slice.start), dtype=float)
+                         z_slice.stop - z_slice.start), dtype=self.dtype)
 
         if z_slice.stop - z_slice.start == 1:
             only_one_frame = True
@@ -4161,7 +4127,8 @@ class OutHDFCube(Tools):
         self.f[self._get_hdf5_frame_path(index)].attrs[attr] = value
 
     def write_frame(self, index, data=None, header=None, mask=None,
-                    record_stats=False, force_float32=True, section=None):
+                    record_stats=False, force_float32=True, section=None,
+                    force_complex64=False):
         """Write a frame
 
         :param index: Index of the frame
@@ -4177,18 +4144,26 @@ class OutHDFCube(Tools):
           False).
 
         :param force_float32: (Optional) If True, data type is forced
-          to numpy.float32 (default True).
+          to numpy.float32 type (default True).
+
+        :param section: (Optional) If not None, must be a 4-tuple
+          [xmin, xmax, ymin, ymax] giving the section to write instead
+          of the whole frame. Useful to modify only a part of the
+          frame (deafult None).
+
+        :param force_complex64: (Optional) If True, data type is
+          forced to numpy.complex64 type (default False).
         """
 
         def _replace(name, dat):
             if name == 'data':
-                if force_float32: dat = dat.astype(np.float32)
+                if force_complex64: dat = dat.astype(np.complex64)
+                elif force_float32: dat = dat.astype(np.float32)
                 dat_path = self._get_hdf5_data_path(index)
             if name == 'mask':
                 dat_path = self._get_hdf5_data_path(index, mask=True)
             if name == 'header':
                 dat_path = self._get_hdf5_header_path(index)
-                
             if name == 'data' or name == 'mask':
                 if section is not None:
                     old_dat = None
@@ -4199,7 +4174,7 @@ class OutHDFCube(Tools):
                         frame = np.empty(self.imshape, dtype=dat.dtype)
                         frame.fill(np.nan)
                     else:
-                        frame = np.copy(old_dat)
+                        frame = np.copy(old_dat).astype(dat.dtype)
                     frame[section[0]:section[1],section[2]:section[3]] = dat
                 else:
                     if dat.shape == self.imshape:
@@ -4213,6 +4188,10 @@ class OutHDFCube(Tools):
             if dat_path in self.f: del self.f[dat_path]
             self.f[dat_path] = dat
             return dat
+
+        if force_float32 and force_complex64:
+            self._print_error('force_float32 and force_complex64 cannot be both set to True')
+
             
         if data is None and header is None and mask is None:
             self._print_warning('Nothing to write in the frame {}').format(
@@ -4223,8 +4202,8 @@ class OutHDFCube(Tools):
             data = _replace('data', data)
             
             if record_stats:
-                mean = bn.nanmean(data)
-                median = bn.nanmedian(data)
+                mean = bn.nanmean(data.real)
+                median = bn.nanmedian(data.real)
                 self.f[self._get_hdf5_frame_path(index)].attrs['mean'] = (
                     mean)
                 self.f[self._get_hdf5_frame_path(index)].attrs['median'] = (
@@ -4244,7 +4223,10 @@ class OutHDFCube(Tools):
                 header = pyfits.Header(header)
 
         if data.dtype != np.bool:
-            hdu = pyfits.ImageHDU(data=data, header=header)
+            if np.iscomplexobj(data) or force_complex64:
+                hdu = pyfits.ImageHDU(data=data.real, header=header)
+            else:
+                hdu = pyfits.ImageHDU(data=data, header=header)
         else:
             hdu = pyfits.ImageHDU(data=data.astype(np.uint8), header=header)
             
@@ -4268,8 +4250,6 @@ class OutHDFCube(Tools):
             _replace('header', self._header_fits2hdf5(hdu.header))
             
 
-               
-
     def append_image_list(self, image_list):
         """Append an image list to the HDF5 cube.
 
@@ -4277,8 +4257,11 @@ class OutHDFCube(Tools):
         """
         if 'image_list' in self.f:
             del self.f['image_list']
-            
-        self.f['image_list'] = np.array(image_list)
+
+        if image_list is not None:
+            self.f['image_list'] = np.array(image_list)
+        else:
+            self._print_warning('empty image list')
         
 
     def append_deep_frame(self, deep_frame):
@@ -4323,3 +4306,71 @@ class OutHDFCube(Tools):
         except Exception:
             pass
 
+
+##################################################
+#### CLASS Logger ################################
+##################################################           
+
+class Logger(object):
+    """Logger class."""
+
+    noprint = None
+    nolog = None
+    stdout = None
+    stderr = None
+    file = None
+    
+    def __init__(self, name, mode='a', noprint=False, nolog=False):
+        """Init Logger class.
+
+        :param name: Name of the logfile.
+
+        :param mode: (Optional) File mode (same as file mode for the classic
+          open() function) (default 'a').
+
+        :param noprint: (Optional) If True nothing is printed on the terminal (or
+          more generally on the regular stdout) (default False).
+
+        :param nolog: (Optional) If True nothing is logged in the
+          logfile (default False).
+        """
+        self.file = open(name, mode)
+        self.stdout = sys.stdout
+        self.stderr = sys.stderr
+        sys.stdout = self
+        sys.stderr = self
+        self.noprint = noprint
+        self.nolog = nolog
+        
+        
+    def __del__(self):
+        """Class destructor."""
+        sys.stdout = self.stdout
+        self.file.close()
+        
+    def write(self, msg, color=None, nolog=False):
+        """Write in the logfile and on the terminal (stdout)
+
+        :param msg: Message to write.
+
+        :param color: (Optional) Output will be colored. Must be a
+          :py:class:`~orb.core.TextColor` attribute (default None).
+
+        :param nolog: (Optional) If True nothing is printed in the log
+          (default False).
+        """
+        msg_color = str(msg)
+        if color is not None:
+            msg_color = color + msg + TextColor.END
+
+        if not nolog and not self.nolog:
+            self.file.write(msg)
+        if not self.noprint:
+            self.stdout.write(msg_color)
+        self.flush()
+
+    def flush(self):
+        """Flush stdout and logfile."""
+        self.stdout.flush()
+        self.file.flush()
+        

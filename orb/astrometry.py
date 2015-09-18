@@ -68,7 +68,7 @@ class StarsParams(Tools):
     keys = None # Tuple containing the keys of the parameters
     
 
-    def __init__(self, star_nb=1, frame_nb=1, logfile_name=None,
+    def __init__(self, star_nb=1, frame_nb=1,
                  **kwargs):
         """StarsParams init
 
@@ -76,16 +76,10 @@ class StarsParams(Tools):
         
         :param frame_nb: (Optional) Number of frames (default 1)
 
-        :param logfile_name: (Optional) Give a specific name to the
-          logfile (default None).
-
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
-        
-        if logfile_name is not None:
-            self._logfile_name = logfile_name
-            
+              
         if isinstance(star_nb, int):
             if star_nb > 0:
                 self.star_nb = star_nb
@@ -229,7 +223,6 @@ class StarsParams(Tools):
             star_nb = data.shape[0]
             frame_nb = data.shape[1]
             new_params = StarsParams(star_nb, frame_nb,
-                                     logfile_name=self._logfile_name,
                                      silent=self._silent,
                                      config_file_name=self.config_file_name)
             for ik in range(star_nb):
@@ -461,7 +454,7 @@ class Moffat(PSF):
     
     alpha = None # Alpha: coefficient defined from beta and FWHM
 
-    def __init__(self, params, logfile_name=None, **kwargs):
+    def __init__(self, params, **kwargs):
         """Init Moffat profile parameters
 
         :param params: Input parameters of the Moffat profile. Input
@@ -470,16 +463,10 @@ class Moffat(PSF):
           elements stored in this order: ['height', 'amplitude', 'x',
           'y', 'fwhm', 'beta']
 
-        :param logfile_name: (Optional) Give a specific name to the
-          logfile (default None).
-
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
         
-        if logfile_name is not None:
-            self._logfile_name = logfile_name
-            
         MAX_BETA = 30.
         self.params = dict()
         
@@ -592,7 +579,7 @@ class Gaussian(PSF):
     width = None # Width = FWHM / abs(2.*sqrt(2. * log(2.)))
 
 
-    def __init__(self, params, logfile_name=None, **kwargs):
+    def __init__(self, params, **kwargs):
         """Init Gaussian profile parameters
 
         :param params: Input parameters of the Gaussian profile. Input
@@ -601,16 +588,10 @@ class Gaussian(PSF):
           elements stored in this order: ['height', 'amplitude', 'x',
           'y', 'fwhm']
 
-        :param logfile_name: (Optional) Give a specific name to the
-          logfile (default None).
-
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
         
-        if logfile_name is not None:
-            self._logfile_name = logfile_name
-            
         self.params = dict()
         if isinstance(params, dict):
             if (set([key for key in params.iterkeys()])
@@ -955,7 +936,7 @@ class Astrometry(Tools):
         # frames to detect stars
         if self.dimz > 1:
             if use_deep_frame:
-                return self.data.get_mean_image()
+                return self.data.get_mean_image().astype(float)
             
             stack_nb = self.detect_stack
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
@@ -975,7 +956,7 @@ class Astrometry(Tools):
         # else we just return the only frame we have
         else:
             im = np.copy(self.data)
-        return im
+        return im.astype(float)
 
     def reset_profile_name(self, profile_name):
         """Reset the name of the profile used.
@@ -1010,7 +991,6 @@ class Astrometry(Tools):
         self.star_nb = self.star_list.shape[0]
         # create an empty StarsParams array
         self.fit_results = StarsParams(self.star_nb, self.frame_nb,
-                                       logfile_name=self._logfile_name,
                                        silent=self._silent,
                                        config_file_name=self.config_file_name)
         return self.star_list
@@ -1310,7 +1290,7 @@ class Astrometry(Tools):
             fix_aperture_fwhm_pix = None
 
         if add_cube is not None:
-            if np.size(add_cube) == 2:
+            if np.size(add_cube) >= 2:
                 added_cube = add_cube[0]
                 added_cube_scale = add_cube[1]
                 if not isinstance(added_cube, Cube):
@@ -1319,7 +1299,6 @@ class Astrometry(Tools):
                     self._print_error('Bad added cube scale. Check add_cube option.')
                 
         self.fit_results = StarsParams(self.star_nb, self.frame_nb,
-                                       logfile_name=self._logfile_name,
                                        silent=self._silent,
                                        config_file_name=self.config_file_name)
 
@@ -1384,8 +1363,12 @@ class Astrometry(Tools):
 
             for ijob in range(ncpus):
                 frame = np.copy(self.data[:,:,ik+ijob])
+                
+                # add cube
                 if add_cube is not None:
                     frame += added_cube[:,:,ik+ijob] * added_cube_scale
+        
+                # check mask
                 if self._check_mask:
                     if self.data._mask_exists:
                         mask = self.data.get_data_frame(ik+ijob, mask=True)
@@ -2189,7 +2172,7 @@ class Astrometry(Tools):
         if not full_deep_frame:
             deep_frame = self._get_combined_frame()
         else:
-            deep_frame = self.data.get_mean_image()
+            deep_frame = self.data.get_mean_image().astype(float)
 
 
         deltax = self.scale / 3600. # arcdeg per pixel
@@ -2247,8 +2230,6 @@ class Astrometry(Tools):
             deep_frame,
             star_list_pix, x_range, y_range, r_range,
             [self.target_x, self.target_y], 1)
-
-        #self.write_fits('guess_matrix.fits', guess_matrix, overwrite=True)
 
         self.wcs_rotation -= dr
         self.target_x -= dx
@@ -3587,7 +3568,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
       radius is Rap = aper_coeff * FWHM. Better when between 1.5 to
       reduce the variation of the collected photons with varying FWHM
       and 3. to account for the flux in the wings (default 3., better
-      for star with a high SNR).
+      for Moffat stars with a high SNR).
 
     :param warn: If True, print a warning when the background cannot
       be well estimated (default True).
@@ -3610,9 +3591,10 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
       may be better. More over, to get exact photometry the result
       must be corrected by aperture growth curve for the 'missing
       light'. A coefficient of 1.27 FWHM corresponds to 3 sigma and
-      collects more than 99% of the light. A coefficient of 1.5 reduce
-      the variations of the proportion of collected photons with the
-      FWHM.
+      collects more than 99% of the light if the star is a pure
+      Gaussian. A coefficient of 3 for Moffat stars reduces the
+      variations of the proportion of collected photons when the FWHM
+      is changing and seems to be the best.
 
     .. note:: Best radius for sky background annulus is determined
       from this rule of thumb: The number of pixels to estimate the
@@ -3622,7 +3604,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
       coefficient (Cin) as Rin = Cin * FWHM, gives the outer radius
       coefficient (Cout): Cout = sqrt(3*Cap^2 + Cin^2)
 
-    .. warning:: The star MUST be at the center (+/- a pixel) of the
+    .. warning:: The star MUST be at the center (+/- 1 pixel) of the
       star box.
     """
     MIN_APER_SIZE = 0.5 # Minimum warning flux coefficient in the
@@ -3640,9 +3622,8 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
 
     # Outer radius coefficient of the annulus
     C_OUT = math.sqrt((MIN_BACK_COEFF*C_AP**2.) + C_IN**2.)
-
-    bad = 0
-            
+    
+    bad = 0        
     box_dimx = star_box.shape[0]
     box_dimy = star_box.shape[1]
     if x_guess is None:
@@ -3742,7 +3723,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        multi_fit=False, enable_zoom=False,
                        enable_rotation=False, saturation=None,
                        fix_pos=False, nozero=False, silent=True,
-                       sip=None):
+                       sip=None, background_value=None):
 
     ## WARNING : DO NOT CHANGE THE ORDER OF THE ARGUMENTS OR TAKE CARE
     ## OF THE CALL IN astrometry.Astrometry.fit_stars_in_cube()
@@ -3880,6 +3861,11 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     :param sip: (Optional) A pywcs.WCS instance containing SIP
       distorsion correction (default None).
+
+    :param background_value: (Optional) If not None, this background
+      value is used in the fit functions and will be fixed for fit and
+      aperture photometry. Note also that in this case
+      local_background is automatically set to False (default None).
     
     :return: Parameters of a 2D fit of the stars positions.
 
@@ -3928,7 +3914,11 @@ def fit_stars_in_frame(frame, star_list, box_size,
     ## Frame background determination if wanted
     background = None
     cov_height = False
-    
+
+    if background_value is not None:
+        local_background = False
+        background = background_value
+
     if not local_background:
         if precise_guess:
             background = sky_background_level(frame)
@@ -3939,8 +3929,6 @@ def fit_stars_in_frame(frame, star_list, box_size,
         else:
             cov_height = True
     
-    
-
     ## Blur frame to avoid undersampled data
     if blur:
         fit_frame = np.copy(utils.low_pass_image_filter(frame, deg=BLUR_DEG))

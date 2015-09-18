@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ORB Documentation &mdash; Orb 1.5.0 documentation</title>
+  <title>ORB Documentation &mdash; Orb 1.5.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.0 documentation" href="#"/>
+    <link rel="top" title="Orb 1.5.1 documentation" href="#"/>
         <link rel="next" title="Installing Orb" href="installing_orb.html"/> 
 
   
@@ -141,11 +141,11 @@
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -169,6 +169,8 @@
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -254,6 +256,16 @@
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#d-viewer">3D Viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5-final-output-format">HDF5 Final output format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#complex-data-cubes">Complex data cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#no-more-automatic-logging">No more automatic logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#calibration-laser-map-fit">Calibration laser map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-map-fit">Phase map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id6">2D viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id7">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -370,11 +382,11 @@ Ubuntu.</p>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -398,6 +410,8 @@ Ubuntu.</p>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -473,7 +487,7 @@ Ubuntu.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.0',
+            VERSION:'1.5.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

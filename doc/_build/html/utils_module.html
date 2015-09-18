@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Utils module &mdash; Orb 1.5.0 documentation</title>
+  <title>Utils module &mdash; Orb 1.5.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.5.1 documentation" href="index.html"/>
         <link rel="next" title="CUtils module" href="cutils_module.html"/>
         <link rel="prev" title="Core module" href="core_module.html"/> 
 
@@ -142,11 +142,11 @@
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Utils module</a></li>
@@ -170,6 +170,8 @@
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -251,10 +253,20 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-0">v1.5.0</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-correction">Phase correction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#d-viewer">3D Viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5-final-output-format">HDF5 Final output format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#complex-data-cubes">Complex data cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#no-more-automatic-logging">No more automatic logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#calibration-laser-map-fit">Calibration laser map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-map-fit">Phase map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id6">2D viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id7">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -452,10 +464,11 @@ observation parameters.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="utils.compute_line_fwhm.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.step_nb">¶</a> &#8211; Number of steps</li>
+<li><span class="target" id="utils.compute_line_fwhm.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.step_nb">¶</a> &#8211; Number of steps from the zpd to the longest side
+of the interferogram.</li>
 <li><span class="target" id="utils.compute_line_fwhm.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.step">¶</a> &#8211; Step size in nm</li>
 <li><span class="target" id="utils.compute_line_fwhm.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.order">¶</a> &#8211; Folding order</li>
-<li><span class="target" id="utils.compute_line_fwhm.params.apod_coeff"></span><strong>apod_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.apod_coeff">¶</a> &#8211; (Optional) Apodization coefficient. 1. stand
+<li><span class="target" id="utils.compute_line_fwhm.params.apod_coeff"></span><strong>apod_coeff</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.apod_coeff">¶</a> &#8211; (Optional) Apodization coefficient. 1. stands
 for no apodization and gives the FWHM of the central lobe of the
 sinc (default 1.)</li>
 <li><span class="target" id="utils.compute_line_fwhm.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#utils.compute_line_fwhm.params.wavenumber">¶</a> &#8211; (Optional) If True the result is returned in cm-1,
@@ -509,6 +522,28 @@ filter bandpass.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple (order, step size, max wavelength)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.compute_phase_coeffs_vector">
+<code class="descclassname">utils.</code><code class="descname">compute_phase_coeffs_vector</code><span class="sig-paren">(</span><em>phase_map_paths</em>, <em>residual_map_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.compute_phase_coeffs_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a vector containing the mean of the phase
+coefficients for each given phase map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.compute_phase_coeffs_vector.params.phase_maps"></span><strong>phase_maps</strong><a class="paramlink headerlink reference internal" href="#utils.compute_phase_coeffs_vector.params.phase_maps">¶</a> &#8211; Tuple of phase map paths. Coefficients are
+sorted in the same order as the phase maps.</li>
+<li><span class="target" id="utils.compute_phase_coeffs_vector.params.residual_map"></span><strong>residual_map</strong><a class="paramlink headerlink reference internal" href="#utils.compute_phase_coeffs_vector.params.residual_map">¶</a> &#8211; (Optional) If given this map is used to
+get only the well fitted coefficients in order to compute a
+more precise mean coefficent.</li>
+</ul>
 </td>
 </tr>
 </tbody>
@@ -761,6 +796,26 @@ axis in cm-1.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.create_phase_vector">
+<code class="descclassname">utils.</code><code class="descname">create_phase_vector</code><span class="sig-paren">(</span><em>order_0</em>, <em>other_orders</em>, <em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.create_phase_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a phase vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.create_phase_vector.params.order_0"></span><strong>order_0</strong><a class="paramlink headerlink reference internal" href="#utils.create_phase_vector.params.order_0">¶</a> &#8211; Order 0 coefficient</li>
+<li><span class="target" id="utils.create_phase_vector.params.other_orders"></span><strong>other_orders</strong><a class="paramlink headerlink reference internal" href="#utils.create_phase_vector.params.other_orders">¶</a> &#8211; Other orders coefficients (in ascending
+order).</li>
+<li><span class="target" id="utils.create_phase_vector.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#utils.create_phase_vector.params.n">¶</a> &#8211; Length of the phase vector</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.cube_raw_fft">
 <code class="descclassname">utils.</code><code class="descname">cube_raw_fft</code><span class="sig-paren">(</span><em>x</em>, <em>apod=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.cube_raw_fft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the raw FFT of a cube (the last axis
@@ -806,6 +861,32 @@ length) (default 0.2)</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.find_phase_coeffs_brute_force">
+<code class="descclassname">utils.</code><code class="descname">find_phase_coeffs_brute_force</code><span class="sig-paren">(</span><em>interf</em>, <em>step</em>, <em>order</em>, <em>zpd_shift</em>, <em>div_nb=400</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.find_phase_coeffs_brute_force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return phase coefficients (order0, order1) based on a brute
+force method which finds where the standard deviation of the
+imaginary part is minimized.</p>
+<p>Especially useful to get a good guess on the order 1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.find_phase_coeffs_brute_force.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#utils.find_phase_coeffs_brute_force.params.interf">¶</a> &#8211; Interferogram</li>
+<li><span class="target" id="utils.find_phase_coeffs_brute_force.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.find_phase_coeffs_brute_force.params.step">¶</a> &#8211; Step size in nm.</li>
+<li><span class="target" id="utils.find_phase_coeffs_brute_force.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.find_phase_coeffs_brute_force.params.order">¶</a> &#8211; Folding order.</li>
+<li><span class="target" id="utils.find_phase_coeffs_brute_force.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.find_phase_coeffs_brute_force.params.zpd_shift">¶</a> &#8211; ZPD shift.</li>
+<li><span class="target" id="utils.find_phase_coeffs_brute_force.params.div_nb"></span><strong>div_nb</strong><a class="paramlink headerlink reference internal" href="#utils.find_phase_coeffs_brute_force.params.div_nb">¶</a> &#8211; (Optional) Number of division along each axis of
+the search matrix (the more divisions, the more precise will be
+the result) (default 400).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.find_zpd">
 <code class="descclassname">utils.</code><code class="descname">find_zpd</code><span class="sig-paren">(</span><em>interf</em>, <em>step_number=None</em>, <em>return_zpd_shift=False</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.find_zpd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the ZPD along the z axis.</p>
@@ -819,6 +900,33 @@ greater than the number of frames of the cube. Useful when
 the interferograms are non symetric (default None).</li>
 <li><span class="target" id="utils.find_zpd.params.return_zpd_shift"></span><strong>return_zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.find_zpd.params.return_zpd_shift">¶</a> &#8211; (Optional) If True return ZPD shift
 instead of ZPD index (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.fit_calibration_laser_map">
+<code class="descclassname">utils.</code><code class="descname">fit_calibration_laser_map</code><span class="sig-paren">(</span><em>calib_laser_map</em>, <em>calib_laser_nm</em>, <em>pixel_size=15.0</em>, <em>binning=4</em>, <em>mirror_distance_guess=220000.0</em>, <em>center_angle_guess=15</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fit_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a calibration laser map.</p>
+<p>The model is based on optical parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.fit_calibration_laser_map.params.calib_laser_map"></span><strong>calib_laser_map</strong><a class="paramlink headerlink reference internal" href="#utils.fit_calibration_laser_map.params.calib_laser_map">¶</a> &#8211; Reference calibration laser map.</li>
+<li><span class="target" id="utils.fit_calibration_laser_map.params.calib_laser_nm"></span><strong>calib_laser_nm</strong><a class="paramlink headerlink reference internal" href="#utils.fit_calibration_laser_map.params.calib_laser_nm">¶</a> &#8211; Wavelength of the calibration laser in nm.</li>
+<li><span class="target" id="utils.fit_calibration_laser_map.params.pixel_size"></span><strong>pixel_size</strong><a class="paramlink headerlink reference internal" href="#utils.fit_calibration_laser_map.params.pixel_size">¶</a> &#8211; (Optional) Size of the CCD pixels in um
+(default 15).</li>
+<li><span class="target" id="utils.fit_calibration_laser_map.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#utils.fit_calibration_laser_map.params.binning">¶</a> &#8211; (Optional) Maps are binned to accelerate the
+process. Set the binning factor (default 4).</li>
+<li><span class="target" id="utils.fit_calibration_laser_map.params.mirror_distance_guess"></span><strong>mirror_distance_guess</strong><a class="paramlink headerlink reference internal" href="#utils.fit_calibration_laser_map.params.mirror_distance_guess">¶</a> &#8211; (Optional) Guess on the mirror
+distance in um (default 2.2e5).</li>
+<li><span class="target" id="utils.fit_calibration_laser_map.params.center_angle_guess"></span><strong>center_angle_guess</strong><a class="paramlink headerlink reference internal" href="#utils.fit_calibration_laser_map.params.center_angle_guess">¶</a> &#8211; (Optional) Guess on the angle at the
+center of the frame in degrees (default 15)</li>
 </ul>
 </td>
 </tr>
@@ -940,12 +1048,35 @@ smoothing degrees)</li>
 
 <dl class="function">
 <dt id="utils.fit_sitelle_phase_map">
-<code class="descclassname">utils.</code><code class="descname">fit_sitelle_phase_map</code><span class="sig-paren">(</span><em>phase_map</em>, <em>phase_map_err</em>, <em>calib_laser_map</em>, <em>calib_laser_nm</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fit_sitelle_phase_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">utils.</code><code class="descname">fit_sitelle_phase_map</code><span class="sig-paren">(</span><em>phase_map</em>, <em>phase_map_err</em>, <em>calib_laser_map</em>, <em>calib_laser_nm</em>, <em>pixel_size=15.0</em>, <em>binning=4</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.fit_sitelle_phase_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a SITELLE phase map (order 0 map of the phase) using a
-model based on the calibration laser map.</p>
-<p>The calibration laser map is tilted and rotated until the best fit
-is reached.</p>
-<p>The new calibration laser map obtained from the fit is also returned.</p>
+model based on a simulated calibration laser map..</p>
+<p>An real calibration laser map is needed first to get a first guess
+on the parameters of the fit. Then the whole phase map is modeled
+to fit the real phase map.</p>
+<p>The modeled calibration laser map obtained from the fit is also
+returned.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="utils.fit_sitelle_phase_map.params.phase_map"></span><strong>phase_map</strong><a class="paramlink headerlink reference internal" href="#utils.fit_sitelle_phase_map.params.phase_map">¶</a> &#8211; Phase map to fit.</li>
+<li><span class="target" id="utils.fit_sitelle_phase_map.params.phase_map_err"></span><strong>phase_map_err</strong><a class="paramlink headerlink reference internal" href="#utils.fit_sitelle_phase_map.params.phase_map_err">¶</a> &#8211; Error on the phase map values.</li>
+<li><span class="target" id="utils.fit_sitelle_phase_map.params.calib_laser_map"></span><strong>calib_laser_map</strong><a class="paramlink headerlink reference internal" href="#utils.fit_sitelle_phase_map.params.calib_laser_map">¶</a> &#8211; Reference calibration laser map.</li>
+<li><span class="target" id="utils.fit_sitelle_phase_map.params.calib_laser_nm"></span><strong>calib_laser_nm</strong><a class="paramlink headerlink reference internal" href="#utils.fit_sitelle_phase_map.params.calib_laser_nm">¶</a> &#8211; Wavelength of the calibration laser in nm.</li>
+<li><span class="target" id="utils.fit_sitelle_phase_map.params.pixel_size"></span><strong>pixel_size</strong><a class="paramlink headerlink reference internal" href="#utils.fit_sitelle_phase_map.params.pixel_size">¶</a> &#8211; (Optional) Size of the CCD pixels in um
+(default 15).</li>
+<li><span class="target" id="utils.fit_sitelle_phase_map.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#utils.fit_sitelle_phase_map.params.binning">¶</a> &#8211; (Optional) Maps are binned to accelerate the
+process. Set the binning factor (default 4).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (fitted phase map, error map, fit error, new calibration laser map)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -1382,6 +1513,12 @@ this value (default np.nan)</li>
 <dt id="utils.interpolate_map">
 <code class="descclassname">utils.</code><code class="descname">interpolate_map</code><span class="sig-paren">(</span><em>m</em>, <em>dimx</em>, <em>dimy</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.interpolate_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate 2D data map.</p>
+<p>This function is robust to Nans.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The interpolation process is much longer if Nans are
+present in the map.</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1491,6 +1628,24 @@ else it is returned in nm.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="utils.low_pass_image_filter.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#utils.low_pass_image_filter.params.im">¶</a> &#8211; Image to filter</li>
 <li><span class="target" id="utils.low_pass_image_filter.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#utils.low_pass_image_filter.params.deg">¶</a> &#8211; Radius of the kernel. Must be &gt; 0.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.nanbin_image">
+<code class="descclassname">utils.</code><code class="descname">nanbin_image</code><span class="sig-paren">(</span><em>im</em>, <em>binning</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.nanbin_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mean image binning robust to NaNs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.nanbin_image.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#utils.nanbin_image.params.im">¶</a> &#8211; Image to bin</li>
+<li><span class="target" id="utils.nanbin_image.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#utils.nanbin_image.params.binning">¶</a> &#8211; Binning factor (must be an integer)</li>
 </ul>
 </td>
 </tr>
@@ -1682,9 +1837,9 @@ Optical Society of America A.</td></tr>
 
 <dl class="function">
 <dt id="utils.optimize_phase">
-<code class="descclassname">utils.</code><code class="descname">optimize_phase</code><span class="sig-paren">(</span><em>interf</em>, <em>step</em>, <em>order</em>, <em>zpd_shift</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.optimize_phase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return an optimized linear phase vector basez on the
-minimization of the imaginary part.</p>
+<code class="descclassname">utils.</code><code class="descname">optimize_phase</code><span class="sig-paren">(</span><em>interf, step, order, zpd_shift, guess=[0, 0], return_coeffs=False, fixed_params=[0, 0]</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.optimize_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an optimized phase vector based on the minimization of
+the imaginary part.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1694,6 +1849,8 @@ minimization of the imaginary part.</p>
 <li><span class="target" id="utils.optimize_phase.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#utils.optimize_phase.params.step">¶</a> &#8211; Step size (in nm)</li>
 <li><span class="target" id="utils.optimize_phase.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#utils.optimize_phase.params.order">¶</a> &#8211; Alisasing order</li>
 <li><span class="target" id="utils.optimize_phase.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#utils.optimize_phase.params.zpd_shift">¶</a> &#8211; ZPD shift</li>
+<li><span class="target" id="utils.optimize_phase.params.return_coeffs"></span><strong>return_coeffs</strong><a class="paramlink headerlink reference internal" href="#utils.optimize_phase.params.return_coeffs">¶</a> &#8211; (Optional) If True, coeffs and residual are
+returned instead of the phase vector (default False).</li>
 </ul>
 </td>
 </tr>
@@ -2051,6 +2208,34 @@ distribution is used as the central value (default None)</li>
 (default False).</li>
 <li><span class="target" id="utils.sigmacut.params.return_index_list"></span><strong>return_index_list</strong><a class="paramlink headerlink reference internal" href="#utils.sigmacut.params.return_index_list">¶</a> &#8211; (Optional) If True the list of the non
 rejected values is returned also (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.simulate_calibration_laser_map">
+<code class="descclassname">utils.</code><code class="descname">simulate_calibration_laser_map</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em>, <em>pixel_size</em>, <em>calib_laser_wl</em>, <em>mirror_distance</em>, <em>theta_cx</em>, <em>theta_cy</em>, <em>phi_x</em>, <em>phi_y</em>, <em>phi_r</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.simulate_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate a calibration laser map from optical and mechanical parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.nx"></span><strong>nx</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.nx">¶</a> &#8211; Number of pixels along X</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.ny"></span><strong>ny</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.ny">¶</a> &#8211; Number of pixels along Y</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.pixel_size"></span><strong>pixel_size</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.pixel_size">¶</a> &#8211; Size of a pixel in microns</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.calib_laser_wl"></span><strong>calib_laser_wl</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.calib_laser_wl">¶</a> &#8211; Calibration laser wavelength in nm</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.mirror_distance"></span><strong>mirror_distance</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.mirror_distance">¶</a> &#8211; Distance to the mirror in microns</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.theta_cx"></span><strong>theta_cx</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.theta_cx">¶</a> &#8211; Angle along X from the optical axis to the mirror
+center in degrees</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.theta_cy"></span><strong>theta_cy</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.theta_cy">¶</a> &#8211; Angle along Y from the optical axis to the mirror
+center in degrees</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.phi_x"></span><strong>phi_x</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.phi_x">¶</a> &#8211; Tilt of the mirror along X in degrees</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.phi_y"></span><strong>phi_y</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.phi_y">¶</a> &#8211; Tilt of the mirror along Y in degrees</li>
+<li><span class="target" id="utils.simulate_calibration_laser_map.params.phi_r"></span><strong>phi_r</strong><a class="paramlink headerlink reference internal" href="#utils.simulate_calibration_laser_map.params.phi_r">¶</a> &#8211; Rotation angle of the mirror in degrees</li>
 </ul>
 </td>
 </tr>
@@ -2446,7 +2631,7 @@ can be a single float or a vector of size n</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.0',
+            VERSION:'1.5.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

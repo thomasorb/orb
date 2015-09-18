@@ -30,14 +30,15 @@ import logging
 from ginga.gtkw.ImageViewCanvasGtk import ImageViewCanvas
 from ginga.gtkw.ImageViewCanvasTypesGtk import DrawingCanvas
 import ginga.gtkw.Widgets
-from ginga.gtkw import FileSelection
+from ginga.gtkw import FileSelection, ColorBar
 from ginga import AstroImage
+from ginga import colors, cmap
 from ginga.util import wcsmod
 from ginga.util.wcsmod import AstropyWCS
 wcsmod.use('astropy')
 
 # ORB IMPORTS
-from orb.core import Tools, Cube, HDFCube
+from orb.core import Tools, Cube, HDFCube, Lines
 import orb.utils
 
 # OTHER IMPORTS
@@ -45,11 +46,13 @@ import gtk, gobject
 import gtk.gdk
 import numpy as np
 import astropy.wcs as pywcs
+import math
 
 # MATPLOTLIB GTK BACKEND
 from matplotlib.backends.backend_gtkcairo import FigureCanvasGTKCairo as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import SpanSelector
+import pylab as pl
 
 gobject.threads_init()
 
@@ -117,6 +120,8 @@ class BaseViewer(object):
 
     MAX_CUBE_SIZE = 4. # Max cube size in Go
     MAX_CUBE_SECTION_SIZE = 1. # max section size to load in Go
+
+    matplotlib_cmaps = ['gray', 'gist_rainbow', 'jet', 'cool', 'hot', 'autumn', 'summer', 'winter']
     
     def __init__(self, config_file_name='config.orb', no_log=True,
                  debug=False):
@@ -156,7 +161,15 @@ class BaseViewer(object):
             self.tools._get_config_parameter('WCS_ROTATION'))
         self.fov = float(
             self.tools._get_config_parameter('FIELD_OF_VIEW'))
-        
+
+
+        # crating colormaps
+        self.colormaps = list()
+        self.colormaps_name = list()
+        for imap in self.matplotlib_cmaps:
+           self.colormaps.append(cmap.matplotlib_to_ginga_cmap(pl.get_cmap(imap)))
+           self.colormaps_name.append(imap)
+           
         # Define GTK GUI
         root = gtk.Window(gtk.WINDOW_TOPLEVEL)
         root.set_title("ORB Viewer")
@@ -170,9 +183,8 @@ class BaseViewer(object):
         fake_image.set_data(np.zeros((10,10), dtype=float))
         fi.set_image(fake_image)
         fi.enable_autocuts('on')
-        
         fi.set_autocut_params('zscale')
-        
+        fi.set_color_map('gray')
         fi.enable_autozoom('on')
         fi.set_callback('none-move', self._mouse_motion_cb)
         fi.set_callback('button-press', self._start_box_cb)
@@ -187,9 +199,7 @@ class BaseViewer(object):
         
         bd = fi.get_bindings()
         bd.enable_all(True)
-        bm = fi.get_bindmap()
-        bm.add_callback('mode-set', self._mode_change_cb)
-        
+    
         # canvas that we will draw on
         canvas = DrawingCanvas()
         canvas.enable_draw(True)
@@ -202,7 +212,7 @@ class BaseViewer(object):
         canvas.ui_setActive(True)
 
         w = fi.get_widget()
-        w.set_size_request(self.IMAGE_SIZE,self. IMAGE_SIZE)
+        w.set_size_request(self.IMAGE_SIZE, self. IMAGE_SIZE)
 
         # BIG BOX
         bigbox = gtk.VBox(spacing=2)
@@ -212,8 +222,9 @@ class BaseViewer(object):
         imageframebox = gtk.VBox()
 
         # imageoptionsbox
-        # autocut
         imageoptionsbox = gtk.HBox()
+        
+        # autocut
         autocutbox = gtk.VBox()
         wautocuts = ginga.gtkw.Widgets.ComboBox()
         for name in self.autocut_methods:
@@ -225,6 +236,18 @@ class BaseViewer(object):
         autocutbox.pack_start(wautocuts_label)
         autocutbox.pack_start(wautocuts.widget)
         imageoptionsbox.pack_start(autocutbox, fill=False, expand=False)
+
+        # colormap 
+        colormapbox = gtk.VBox()
+        wcolormap = ginga.gtkw.Widgets.ComboBox()
+        for name in self.colormaps_name:
+            wcolormap.append_text(name)
+        wcolormap.set_index(0)
+        wcolormap.add_callback('activated', self._set_colormap_cb)
+        wcolormap_label = gtk.Label('Color Map')
+        colormapbox.pack_start(wcolormap_label)
+        colormapbox.pack_start(wcolormap.widget)
+        imageoptionsbox.pack_start(colormapbox, fill=False, expand=False)
 
         # index scale
         indexbox = gtk.VBox()
@@ -263,6 +286,7 @@ class BaseViewer(object):
         
         imageframebox.pack_start(imageoptionsbox, fill=False, expand=False)
         imageframebox.pack_start(w)
+        imageframebox.pack_start(self._build_colorbar(), fill=True, expand=False)
         
         # Coordsbox
         coordsbox = gtk.HBox()
@@ -322,7 +346,7 @@ class BaseViewer(object):
         imageframe.add(imageframebox)
         
         # IMAGE BOX
-        imagebox = gtk.HBox(spacing=2)
+        imagebox = gtk.VBox(spacing=2)
         imagebox.pack_start(imageframe, fill=True, expand=True)
         
         
@@ -331,20 +355,25 @@ class BaseViewer(object):
             _m = gtk.MenuItem(name)
             _m.connect('activate', cb)
             return _m
-            
-        file_submenu = gtk.Menu()
+   
+        file_menu = gtk.Menu()
+        file_mi = gtk.MenuItem('File')
+        file_mi.set_submenu(file_menu)
+        
         submenus = list()
         submenus.append(new_submenu('Open...',
                                     self._open_file_cb))
         submenus.append(new_submenu('Display header...',
                                     self._display_header_cb))
-        
         for submenu in submenus:
-            file_submenu.append(submenu)
-        file_menu = gtk.MenuItem('File')
-        file_menu.set_submenu(file_submenu)
+            file_menu.append(submenu)
+        
+        
         menu_bar = gtk.MenuBar()
-        menu_bar.append(file_menu)
+        menu_bar.append(file_mi)
+
+        self.regions = Regions(change_region_properties_cb=self._change_region_properties_cb)
+        menu_bar.append(self.regions.get_menubar_item())
         
         # PACK BIGBOX
         bigbox.pack_start(menu_bar, fill=False, expand=False, padding=2)
@@ -357,6 +386,25 @@ class BaseViewer(object):
             bigbox.pack_start(plugin, fill=False, expand=False, padding=2)
         
         root.add(bigbox)
+
+    def _build_colorbar(self):
+        """Return a colorbar frame.
+
+        Mostly copied from GingaGtk.build_colorbar()
+        """
+        # colorbar
+        rgbmap = self.fitsimage.get_rgbmap()
+        
+        rgbmap.add_callback('changed', self._rgbmap_cb)
+        cbar = ColorBar.ColorBar(
+            self.logger, rgbmap=rgbmap, link=True)
+        cbar.set_range(*self.fitsimage.get_cut_levels())
+        cbar.show()
+        fr = gtk.Frame()
+        fr.set_shadow_type(gtk.SHADOW_ETCHED_OUT)
+        fr.add(cbar)
+        self.colorbar = cbar
+        return fr
 
     def _get_plugins(self):
         """A list of plugins (returned as a list of gtk.Box instance)
@@ -371,6 +419,18 @@ class BaseViewer(object):
         """
         print ' > Reloading {}'.format(self.filepath)
         self.load_file(self.filepath, reload=True)
+
+
+    def _change_region_properties_cb(self, regions):
+        self.canvas.set_drawtype(
+            regions.get_shape(), color=self.DRAW_COLOR_DEFAULT, alpha=1)
+
+    def _rgbmap_cb(self, rgbmap):
+        self.colorbar.set_range(*self.fitsimage.get_cut_levels())
+        self.colorbar.redraw()
+
+    def _set_colormap_cb(self, c, idx):
+        self.fitsimage.set_cmap(self.colormaps[idx])
         
     def _open_file_cb(self, c):
         """open-file callback
@@ -395,6 +455,19 @@ class BaseViewer(object):
         :param c: Caller Instance
         :param key: key pressed
         """
+        
+        if key == 'control_l':
+            self.mode = 'ctrl'
+        if key == 'shift_l':
+            self.mode = 'shift'
+        if key == 'alt_l':
+            self.mode = 'alt'
+
+        if self.mode in ['shift', 'ctrl', 'alt']:
+            self.canvas.enable_draw(False)
+        else:
+            self.canvas.enable_draw(True)
+            
         self.key_pressed = key
 
     def _key_released_cb(self, c, key):
@@ -403,6 +476,14 @@ class BaseViewer(object):
         :param c: Caller Instance
         :param key: key pressed
         """
+        if key in ['control_l', 'shift_l', 'alt_l']:
+            self.mode = None
+
+        if self.mode in ['shift', 'ctrl', 'alt']:
+            self.canvas.enable_draw(False)
+        else:
+            self.canvas.enable_draw(True)
+            
         self.key_pressed = None
 
     def _set_image_index_cb(self, c):
@@ -436,25 +517,6 @@ class BaseViewer(object):
         """
         self.pop_file_chooser_dialog(self.save_image, mode='save')
 
-    def _mode_change_cb(self, c, mode, modetype):
-        """change-mode callback
-
-        Called when the interaction mode is changed (shift or ctrl pressed)
-
-        Avoid drawing boxes while in special mode.
-
-        :param c: Caller Instance
-
-        :param mode: Interaction mode
-
-        :param modetype: Mode type
-        """
-        print modetype
-        self.mode = mode
-        if mode in ['shift', 'ctrl']:
-            self.canvas.enable_draw(False)
-        else:
-            self.canvas.enable_draw(True)
 
     def _set_autocut_method_cb(self, c, idx):
         """autocut-method-changed callback
@@ -467,7 +529,8 @@ class BaseViewer(object):
           self.autocut_methods list
         """
         self.autocut_index = idx
-        self.fitsimage.set_autocut_params(self.autocut_methods[idx])        
+        self.fitsimage.set_autocut_params(self.autocut_methods[idx])
+        self._rgbmap_cb(self.fitsimage.get_rgbmap())
 
     def _start_box_cb(self, c, button, data_x, data_y):
         """start-drawing-box callback
@@ -482,7 +545,7 @@ class BaseViewer(object):
 
         :param data_y: Y position when mouse button pressed
         """
-        if self.mode not in ['ctrl', 'shift'] and button == 4:
+        if self.mode not in ['ctrl', 'shift', 'alt'] and button == 4:
             if self.key_pressed == 'k':
                 self.sky_mode = True
             else:
@@ -506,19 +569,33 @@ class BaseViewer(object):
 
         :param data_y: Y position when mouse button released
         """
-
-        if self.mode not in ['ctrl', 'shift'] and button == 4:    
+        if self.mode not in ['ctrl', 'shift', 'alt'] and button == 4:    
             self.xy_stop = (data_x + 1, data_y + 1)
 
+            self.image_region = None
             
-            y_range = np.array([min(self.xy_start[0], self.xy_stop[0]),
-                                max(self.xy_start[0], self.xy_stop[0])])
-            x_range = np.array([min(self.xy_start[1], self.xy_stop[1]),
-                                max(self.xy_start[1], self.xy_stop[1])])
+            if self.regions.get_shape() == 'circle':
+                center = np.array(self.xy_start)
+                radius = math.sqrt(np.sum((np.array(self.xy_stop) - center)**2.))
+                Y, X = np.mgrid[0:self.dimx, 0:self.dimy]
+                R = np.sqrt((X - center[0])**2. + (Y - center[1])**2.)
+                mask = (R <= radius)
+                mask_pixels = np.nonzero(mask)
+                self.image_region = self.image[mask_pixels]
+                x_range = np.array([np.nanmin(mask_pixels[0]),
+                                    np.nanmax(mask_pixels[0])])
+                y_range = np.array([np.nanmin(mask_pixels[1]),
+                                    np.nanmax(mask_pixels[1])])
+
+            else:
+                mask = None
+                y_range = np.array([min(self.xy_start[0], self.xy_stop[0]),
+                                    max(self.xy_start[0], self.xy_stop[0])])
+                x_range = np.array([min(self.xy_start[1], self.xy_stop[1]),
+                                    max(self.xy_start[1], self.xy_stop[1])])
 
 
             # check range
-            
             x_range[np.nonzero(x_range < 0)] = 0
             x_range[np.nonzero(x_range > self.dimx)] = self.dimx
             y_range[np.nonzero(y_range < 0)] = 0
@@ -529,18 +606,20 @@ class BaseViewer(object):
                     x_range[1] = x_range[0] + 1
                 else:
                     x_range = [self.dimx - 1, self.dimx]
-                    
+
             if y_range[1] - y_range[0] < 1.:
                 if y_range[0] < self.dimy:
                     y_range[1] = y_range[0] + 1
                 else:
                     y_range = [self.dimy - 1, self.dimy]
-                 
-            
-            if self.image is not None:
-                self.image_region = self.image[x_range[0]:x_range[1],
-                                               y_range[0]:y_range[1]]
+
+            if self.regions.get_shape() == 'rectangle':
+                if self.image is not None:
+                    self.image_region = self.image[x_range[0]:x_range[1],
+                                                   y_range[0]:y_range[1]]
+
                 
+            if self.image_region is not None:
                 self.mean.set_text('{:.3e}'.format(
                     np.nanmean(self.image_region)))
                 self.median.set_text('{:.3e}'.format(
@@ -576,10 +655,24 @@ class BaseViewer(object):
                 zdata = self.cube[int(x_range[0]):int(x_range[1]),
                                   int(y_range[0]):int(y_range[1]), :]
 
+                if self.regions.get_shape() == 'circle':
+                    for ii in range(zdata.shape[0]):
+                        for ij in range(zdata.shape[1]):
+                            if not mask[ii+int(x_range[0]),
+                                        ij+int(y_range[0])]:
+                                zdata[ii,ij,:].fill(np.nan)
+                                
+
                 if len(zdata.shape) == 3:
-                    zdata = np.nansum(np.nansum(zdata, axis=0), axis=0)
-
-
+                    if self.regions.get_method() == 'sum':
+                        zdata = np.nansum(np.nansum(zdata, axis=0), axis=0)
+                    elif self.regions.get_method() == 'mean':
+                        zdata = np.nanmean(np.nanmean(zdata, axis=0), axis=0)
+                    elif self.regions.get_method() == 'median':
+                        zdata = np.nanmedian(np.nanmedian(zdata, axis=0), axis=0)
+                    else: raise Exception('Method error')
+                        
+                        
                 self.spectrum_window.update(zdata)
         
     def _mouse_motion_cb(self, c, button, data_x, data_y):
@@ -697,7 +790,7 @@ class BaseViewer(object):
 
         elif os.path.splitext(filepath)[-1] in ['.hdf5']:
             self.hdf5 = True
-            self.cube = HDFCube(filepath)
+            self.cube = HDFCube(filepath, no_log=True)
             self.header = self.cube.get_cube_header()
             self.filepath = filepath
 
@@ -940,9 +1033,13 @@ class HeaderWindow(PopupWindow):
 ### CLASS SPECTRUMWINDOW ##################
 ###########################################
 class ZPlotWindow(PopupWindow):
-    """Implement a window for plotting zaxis data.
-    """
+    """Implement a window for plotting zaxis data."""
 
+
+    is_spectrum = None
+    _display_spectrum = None
+    fitplugin = None
+    
     def __init__(self, step, order, wavenumber, bunit):
         """Init and construct spectrum window.
 
@@ -955,41 +1052,80 @@ class ZPlotWindow(PopupWindow):
 
         :param bunit: Flux unit (string)
         """
-        SIZE = (8,3)
+        SIZE = (8,6)
         DPI = 75
         PopupWindow.__init__(self, title='Zdata',
                              size=(SIZE[0]*DPI,SIZE[1]*DPI))
 
-        # create zaxis
         self.step = step
         self.order = order
         self.wavenumber = wavenumber
+        if self.wavenumber is None:
+            self.is_spectrum = False
+            self._display_spectrum = False
+            self.wavenumber = True
+        else:
+            self.is_spectrum = True
+            
         self.bunit = bunit
         self.zmin_pix = None
         self.zmax_pix = None
         
         self.fig = Figure(figsize=SIZE, dpi=DPI, tight_layout=True)
-        if self.wavenumber is None:
-            self.subplot = self.fig.add_subplot(211)
-            self.subplot2 = self.fig.add_subplot(212)
-        else:
-            self.subplot = self.fig.add_subplot(111)
-            self.subplot2 = None
-        
+        self.subplot = self.fig.add_subplot(111)
+
+
+        # CREATE framebox
+        framebox = gtk.VBox()
+        # add figure canvas
         self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
+        framebox.pack_start(self.canvas, fill=True, expand=True)
+
+        # add buttons
+        buttonsbar = gtk.HBox()
+        if not self.is_spectrum:
+            self.specbutton = gtk.Button('Spectrum')
+            self.specbutton.connect('clicked', self._display_spectrum_cb)
+            buttonsbar.pack_start(self.specbutton)
+            
+        framebox.pack_start(buttonsbar, fill=False, expand=False)
         
-        self.w.add(self.canvas)
+
+        # add fit plugin
+        self.fitplugin = FitPlugin(step=self.step,
+                                   order=self.order,
+                                   update_cb=self.update,
+                                   wavenumber=self.wavenumber)
+        framebox.pack_start(self.fitplugin.get_frame(),
+                            fill=False, expand=False)
+        
+        # add framebox
+        self.w.add(framebox)
         self._start_plot_widgets()
 
     def _start_plot_widgets(self):
-        self.span = SpanSelector(self.subplot, self._span_select_cb,
-                                 'horizontal', useblit=False,
-                                 rectprops=dict(alpha=0.5, facecolor='red'))
+        if not self.is_spectrum:
+            if not self._display_spectrum:
+                self.span = SpanSelector(
+                    self.subplot, self._span_select_cb,
+                    'horizontal', useblit=False,
+                    rectprops=dict(alpha=0.5, facecolor='red'))
         
+
+    def _display_spectrum_cb(self, c):
+        self._display_spectrum = ~self._display_spectrum
+        if self._display_spectrum:
+            self.specbutton.set_label('Interferogram')
+        else:
+            self.specbutton.set_label('Spectrum')
+        self.update()
+            
     def _span_select_cb(self, zmin, zmax):
-        self.zmin_pix = zmin
-        self.zmax_pix = zmax
-        self.update(self.zdata, self.zaxis)
+        if not self.is_spectrum:
+            if not self._display_spectrum:
+                self.zmin_pix = zmin
+                self.zmax_pix = zmax
+                self.update()
         
     def _get_zaxis(self, n):
         """Return the best zaxis based on known parameters
@@ -998,7 +1134,7 @@ class ZPlotWindow(PopupWindow):
         """
         if (self.step is not None
             and self.order is not None
-            and self.wavenumber is not None):
+            and self.is_spectrum):
             if self.wavenumber:
                 return orb.utils.create_cm1_axis(
                     n, self.step, self.order)
@@ -1008,53 +1144,743 @@ class ZPlotWindow(PopupWindow):
         else:
             return np.arange(n)
 
-    def update(self, zdata, zaxis=None):
+    def update(self, zdata=None, zaxis=None):
         """Update plot
 
         :param zdata: Data to plot (Y)
         :param zaxis: X axis.
         """
-        self.zdata = np.copy(zdata)
-        if zaxis is not None:
-            self.zaxis = np.copy(zaxis)
-        else: self.zaxis = None
+        if zdata is not None:
+            self.zdata = np.copy(zdata)
+        else: zdata = self.zdata
+
+        zdata[np.nonzero(zdata == 0.)] = np.nan
         self.subplot.cla()
-        if self.subplot2 is not None:
-            self.subplot2.cla()
         
         if zaxis is None:
             zaxis = self._get_zaxis(np.size(zdata))
-            if self.wavenumber is not None:
+            if self.is_spectrum:
                 if self.wavenumber: self.subplot.set_xlabel('Wavenumber [cm-1]')
                 else:  self.subplot.set_xlabel('Wavelength [nm]')
             else:
-                self.subplot.set_xlabel('Step index')
-                self.subplot2.set_xlabel('Wavenumber [cm-1]')
+                if not self._display_spectrum:
+                    self.subplot.set_xlabel('Step index')
+                else:
+                    if self.step is not None and self.order is not None:
+                        self.subplot.set_xlabel('Wavenumber [cm-1]')
+                    else:
+                        self.subplot.set_xlabel('Channel index')
                 
         if self.bunit is not None:
             if self.wavenumber is not None:
                 self.subplot.set_ylabel(self.bunit)
+
+        # compute spectrum
+        if not self.is_spectrum:
+            if self.zmin_pix is not None and self.zmax_pix is not None:
+                interf = zdata[int(self.zmin_pix):int(self.zmax_pix)]
+            else:
+                interf = np.copy(zdata)
+            #ext_phase = orb.utils.optimize_phase(interf, self.step, self.order, 0)
+
+            if self.step is not None and self.order is not None:
+                zdata = orb.utils.transform_interferogram(
+                    interf, 1., 1., self.step, self.order, None, 0,
+                    #ext_phase=ext_phase, wavenumber=True)
+                    phase_correction=False, wavenumber=True,
+                    low_order_correction=True)
+
+                zaxis = orb.utils.create_cm1_axis(
+                    spectrum.shape[0], self.step, self.order)
+            else:
+                zdata = orb.utils.raw_fft(interf)
+                zaxis = np.arange(spectrum.shape[0])
+                
                 
         self.subplot.plot(zaxis, zdata, c='0.', lw=1.)
 
-        # compute spectrum
-        if self.wavenumber is None:
-            if self.zmin_pix is not None and self.zmax_pix is not None:
-                interf = self.zdata[int(self.zmin_pix):int(self.zmax_pix)]
-            else:
-                interf = np.copy(self.zdata)
-            #ext_phase = orb.utils.optimize_phase(interf, self.step, self.order, 0)
-            
-            spectrum = orb.utils.transform_interferogram(
-                interf, 1., 1., self.step, self.order, None, 0,
-                #ext_phase=ext_phase, wavenumber=True)
-                n_phase=0, wavenumber=True, low_order_correction=True)
 
-            spectrum_axis = orb.utils.create_cm1_axis(
-                spectrum.shape[0], self.step, self.order)
-        
-            self.subplot2.plot(spectrum_axis, spectrum)
+        if self.fitplugin is not None:
+            if self.is_spectrum or self._display_spectrum:
+                if self.fitplugin is not None:
+                    self.fitplugin.set_spectrum(zdata)
+                lines = self.fitplugin.get_fit_lines()
+                if lines is not None:
+                    for line in lines:
+                        self.subplot.axvline(x=line, c='0.3', ls=':')
+                fitted_vector = self.fitplugin.get_fitted_vector()
+                if fitted_vector is not None:
+                    self.subplot.plot(zaxis, fitted_vector)
+            
         self.canvas.draw()
         self._start_plot_widgets()
 
 
+###########################################
+### CLASS FITPLUGIN #######################
+###########################################
+class FitPlugin(object):
+    """Fitting plugin that can be added to the ZPlot module.
+    """
+
+    fit_lines = None
+    wavenumber = None
+    step = None
+    order = None
+    apod = None
+    spectrum = None
+    update_cb = None
+    fitted_vector = None
+    
+    def __init__(self, step=None, order=None, apod=None,
+                 update_cb=None, wavenumber=True):
+        """Init FitPlugin class
+
+        :param step: (Optional) Step size in nm (default None).
+
+        :param order: (Optional) Folding order (default None).
+
+        :param apod: (Optional) Apodization (default None).
+
+        :param update_cb: (Optional) function to call when the visual
+          object displaying the spectrum must be updated (the ZPlot
+          window) (default None).
+
+        :param wavenumber: (Optional) If True spectrum to fit is in
+          wavenumber (default True).
+        """
+
+        self.fit_lines = None
+        
+        # FIT BOX
+        frame = gtk.Frame('Spectrum Fit')
+        framebox = gtk.HBox(spacing=2)
+        fitbox = gtk.VBox(spacing=2)
+
+        # Observation Params
+        buttonbox = gtk.HBox()
+
+        stepbox = gtk.VBox()
+        self.wstep = gtk.Entry()
+        self.wstep.set_width_chars(8)
+        self.wstep.connect('changed', self._set_step_cb)
+        wstep_label = gtk.Label('Step (nm)')
+        wstep_label.set_max_width_chars(8)
+        
+        stepbox.pack_start(wstep_label)
+        stepbox.pack_start(self.wstep)
+        
+        orderbox = gtk.VBox()
+        self.worder = gtk.Entry()
+        self.worder.set_width_chars(8)
+        self.worder.connect('changed', self._set_order_cb)
+        worder_label = gtk.Label('Order')
+        worder_label.set_max_width_chars(8)
+        orderbox.pack_start(worder_label)
+        orderbox.pack_start(self.worder)
+
+        apodbox = gtk.VBox()
+        self.wapod = gtk.Entry()
+        self.wapod.connect('changed', self._set_apod_cb)
+        self.wapod.set_width_chars(8)
+        wapod_label = gtk.Label('Apod')
+        wapod_label.set_max_width_chars(8)
+        apodbox.pack_start(wapod_label)
+        apodbox.pack_start(self.wapod)
+
+        # calibration map
+        calibbox = gtk.VBox()
+        caliblabel = gtk.Label('Calibration Map')
+        
+        wcalib = gtk.FileChooserButton("Choose a calibration map")
+        wcalib.connect('file-set', self._get_calib_map_path_cb)
+        calibbox.pack_start(caliblabel)
+        calibbox.pack_start(wcalib)
+        
+        for box in (stepbox, orderbox, apodbox, calibbox):
+            buttonbox.pack_start(box, fill=False, expand=False)
+            
+        fitbox.pack_start(buttonbox, fill=False, expand=False)
+
+        # define choose line box
+        linebox = gtk.HBox(spacing=2)
+        wselectline = ginga.gtkw.Widgets.ComboBox()
+        for line in self._get_lines_keys():
+            wselectline.append_text(line)
+        wselectline.set_index(0)
+        self.line_name = self._get_lines_keys()[0]
+        wselectline.add_callback('activated', self._set_line_name_cb)
+        linebox.pack_start(wselectline.get_widget(), fill=True, expand=True)
+        
+        waddline = gtk.Button("+")
+        waddline.connect('clicked', self._add_fit_line_cb)
+        linebox.pack_start(waddline, fill=True, expand=True)
+        wdelline = gtk.Button("-")
+        wdelline.connect('clicked', self._del_fit_line_cb)
+        linebox.pack_start(wdelline, fill=True, expand=True)
+
+        fitbox.pack_start(linebox, fill=False, expand=False)
+
+        # define velocity / redshift box
+        velocitybox = gtk.HBox(spacing=2)
+        velbox = gtk.VBox()
+        wvelocity_label = gtk.Label('Velocity [km/s]')
+        self.wvelocity = gtk.SpinButton(climb_rate=1., digits=1)
+        self.wvelocity.set_range(-1e6,1e6)
+        self.wvelocity.set_increments(10,100)
+        self.wvelocity.connect('value-changed', self._update_velocity_cb)
+        velbox.pack_start(wvelocity_label, fill=False, expand=False)
+        velbox.pack_start(self.wvelocity, fill=False, expand=False)
+        velocitybox.pack_start(velbox)
+
+        redbox = gtk.VBox()
+        wredshift_label = gtk.Label('Redshift')
+        self.wredshift = gtk.Label('Redshift')
+        self.wredshift = gtk.SpinButton(climb_rate=1., digits=4)
+        self.wredshift.set_range(0, 1e8)
+        self.wredshift.set_increments(0.01, 0.1)
+        self.wredshift.connect('value-changed', self._update_velocity_cb)
+        redbox.pack_start(wredshift_label, fill=False, expand=False)
+        redbox.pack_start(self.wredshift, fill=False, expand=False)
+        velocitybox.pack_start(redbox)
+        fitbox.pack_start(velocitybox, fill=False, expand=False)
+
+        self.fit_lines_velocity = 0.
+        self.fit_lines_redshift = 0.
+
+        # fit spectrum button
+        wfit = gtk.Button("Fit Spectrum")
+        wfit.connect('clicked', self._fit_lines_in_spectrum)
+        fitbox.pack_start(wfit, fill=False, expand=False)
+
+        framebox.pack_start(fitbox, fill=True, expand=False)
+        # fit results
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+
+        self.fit_results_store = gtk.ListStore(
+            str, str, str, str, str, str, str)
+        wfit_results = gtk.TreeView(self.fit_results_store)
+        renderer = gtk.CellRendererText()
+        col_name = gtk.TreeViewColumn("Name", renderer, text=0)
+        col_line = gtk.TreeViewColumn("Line", renderer, text=1)
+        col_hei = gtk.TreeViewColumn("Height", renderer, text=2)
+        col_amp = gtk.TreeViewColumn("Amplitude", renderer, text=3)
+        col_vel = gtk.TreeViewColumn("Velocity", renderer, text=4)
+        col_fwhm = gtk.TreeViewColumn("FWHM", renderer, text=5)
+        col_snr = gtk.TreeViewColumn("SNR", renderer, text=6)
+        wfit_results.append_column(col_name)
+        wfit_results.append_column(col_line)
+        wfit_results.append_column(col_hei)
+        wfit_results.append_column(col_amp)
+        wfit_results.append_column(col_vel)
+        wfit_results.append_column(col_fwhm)
+        wfit_results.append_column(col_snr)
+        
+        sw.add(wfit_results)
+        framebox.pack_start(sw, fill=True, expand=True)
+
+        frame.add(framebox)
+        self.fitframe = frame
+        self.set_step(step)
+        self.set_order(order)
+        self.set_apod(apod)
+        self.wavenumber = wavenumber
+        self.update_cb = update_cb
+        self.fitted_vector = None
+
+
+    def _get_calib_map_path_cb(self, w):
+        """Callback to set the calibration laser map.
+
+        :param w: Widget.
+        """
+        self._set_calib_map(w.get_filename())
+
+    def _set_calib_map(self, file_path):
+        """Set calibration laser map.
+
+        :param file_path: Calibration laser map path.
+        """
+        self.calib_map = self.tools.read_fits(file_path)
+        self.calib_map = orb.utils.interpolate_map(self.calib_map, self.dimx,
+                                                   self.dimy)
+        
+    def _set_step_cb(self, w):
+        """Callback to set the step size.
+        
+        :param w: Widget
+        """
+        self.step = float(w.get_text())
+        
+    def _set_order_cb(self, w):
+        """Callback to set the folding order.
+        
+        :param w: Widget
+        """
+        self.order = int(float(w.get_text()))
+        
+    def _set_apod_cb(self, w):
+        """Callback to set the step apodization function.
+        
+        :param w: Widget
+        """
+        if w.get_text() == 'None': self.apod = 1.0
+        else: self.apod = float(w.get_text())
+
+    def _fit_lines_in_spectrum(self, w):
+        """Fit lines in the given spectrum
+        
+        :param w: Widget
+        """
+        if (self.fit_lines is not None
+            and self.spectrum is not None
+            and self.step is not None and self.order is not None):
+            if len(self.fit_lines) > 0:
+                fit_axis = self._get_axis()
+                if self.wavenumber:
+                    lines = orb.utils.nm2pix(fit_axis, self.get_fit_lines())
+                lines = orb.utils.nm2pix(fit_axis, self.get_fit_lines())
+                
+                # remove lines that are not in the spectral range
+                if self.wavenumber:
+                    spectrum_range = orb.utils.cm12pix(
+                        fit_axis, self._get_spectrum_range())
+                else:
+                    spectrum_range = orb.utils.nm2pix(
+                        fit_axis, self._get_spectrum_range())
+
+                lines = [line for line in lines
+                         if (line > np.nanmin(spectrum_range)
+                             and line < np.nanmax(spectrum_range))]
+
+                if self.apod == 1.0: fmodel = 'sinc'
+                else: fmodel = 'gaussian'
+
+                # guess fwhm
+                fwhm_guess = orb.utils.compute_line_fwhm(
+                    self.spectrum.shape[0], self.step, self.order, apod_coeff=self.apod,
+                    wavenumber=self.wavenumber)
+                if self.wavenumber:
+                    fwhm_guess_pix = orb.utils.cm12pix(
+                        fit_axis, fit_axis[0] + fwhm_guess)
+                else:
+                    fwhm_guess_pix = orb.utils.nm2pix(
+                        fit_axis, fit_axis[0] + fwhm_guess)
+
+                fit_results = orb.utils.fit_lines_in_vector(
+                    self.spectrum,
+                    lines, fwhm_guess=fwhm_guess_pix,
+                    signal_range=[np.nanmin(spectrum_range),
+                                  np.nanmax(spectrum_range)],
+                    return_fitted_vector=True, wavenumber=self.wavenumber,
+                    observation_params=[self.step, self.order],
+                    fmodel=fmodel)
+
+                if 'lines-params-err' in fit_results:
+                    self.fitted_vector = np.copy(fit_results['fitted-vector'])
+                    self._update_plot()
+                    
+                    # print results
+                    par = fit_results['lines-params']
+                    par_err = fit_results['lines-params-err']
+                    self.fit_results_store.clear()
+                    for iline in range(len(self.fit_lines)):
+                        store = np.zeros(7, dtype=float)
+                        store[2] = par[iline][0]
+                        store[3] = par[iline][1]
+
+                        # convert velocity in km/s
+                        if self.wavenumber:
+                            pos = orb.utils.pix2cm1(fit_axis, par[iline][2])
+                        else:
+                            pos = orb.utils.pix2nm(fit_axis, par[iline][2])
+
+                        store[4] = orb.utils.compute_radial_velocity(pos,
+                            self.fit_lines[iline], wavenumber=self.wavenumber)
+
+                        store[5] = par[iline][3] * abs(
+                            fit_axis[1] - fit_axis[0])
+                        store = ['{:.2e}'.format(store[i])
+                                 for i in range(store.shape[0])]
+
+                        if self.wavenumber:
+                            store[0] = Lines().get_line_name(
+                                orb.utils.cm12nm(self.fit_lines[iline]))
+                        else:
+                            store[0] = Lines().get_line_name(
+                                self.fit_lines[iline])
+
+                        store[1] = '{:.3f}'.format(self.fit_lines[iline])
+                        store[6] = '{:.1f}'.format(
+                            par[iline][1] / par_err[iline][1])
+
+                        self.fit_results_store.append(store)
+
+                    
+    def _get_lines_keys(self):
+        """Return lines keys."""
+        keys = Lines().air_lines_nm.keys()
+        keys.sort()
+        keys.append('Filter lines')
+        keys.append('Sky lines')
+        return keys
+
+    def _get_axis(self):
+        """Return fit axis"""
+        if self.order is not None and self.step is not None and self.spectrum is not None:
+            if not self.wavenumber:
+                return orb.utils.create_nm_axis(
+                    self.spectrum.shape[0], self.step, self.order)
+            else:
+                return orb.utils.create_cm1_axis(
+                    self.spectrum.shape[0], self.step, self.order)
+        else: return None
+            
+    def _get_spectrum_range(self):
+        """Return min and max wavelength of the spectrum"""
+        axis = self._get_axis()
+        if axis is not None:
+            if self.spectrum is not None:
+                nonans = np.nonzero(~np.isnan(self.spectrum))
+            return np.nanmin(axis[nonans]), np.nanmax(axis[nonans])
+        else:
+            return None
+
+        
+    def _get_line_nm(self, line_name):
+        """Return lines wavelength in nm
+
+        :param line_name: Name of the lines
+        """
+        if self._get_spectrum_range() is None:
+            return None
+        else:
+            if self.wavenumber:
+                nm_max, nm_min = orb.utils.cm12nm(self._get_spectrum_range())
+            else:
+                nm_min, nm_max = self._get_spectrum_range()
+                
+        if line_name == 'Sky lines':
+            delta_nm = orb.utils.compute_line_fwhm(
+                    self.spectrum.shape[0], self.step, self.order, apod_coeff=self.apod,
+                    wavenumber=False)
+                
+            return Lines().get_sky_lines(nm_min, nm_max, delta_nm)
+
+        elif line_name == 'Filter lines':
+            filter_lines = list()
+            all_lines = Lines().air_lines_nm
+        
+            for line in all_lines.keys():
+                line_nm = all_lines[line]
+                
+                if (line_nm > nm_min
+                    and line_nm < nm_max):
+                    filter_lines.append(line_nm)
+            
+            return filter_lines
+            
+        else:
+            return Lines().get_line_nm(line_name)
+ 
+    def _update_velocity_cb(self, w):
+        """Callback to update velocity parameters (velocity and redshift)
+
+        :param w: Widget.
+        """
+        self.fit_lines_velocity = self.wvelocity.get_value()
+        self.fit_lines_redshift = self.wredshift.get_value()
+        self._update_plot()
+        
+    def _add_fit_line_cb(self, w):
+        """Add a line to the list of lines to fit.
+
+        Action called by the '+' button.
+        
+        :param w: Widget
+        """
+        self._change_fit_lines(True)
+
+        
+    def _del_fit_line_cb(self, w):
+        """Delete a line from the list of lines to fit.
+
+        Action called by the '-' button.
+        
+        :param w: Widget
+        """
+        self._change_fit_lines(False)
+        
+    def _change_fit_lines(self, add):
+        """Add or delete a fit line.
+
+        :param add: If True line is added, if False line is deleted.
+        """
+        if self.fit_lines is None:
+            self.fit_lines = []
+
+        new_lines = list()
+        new_lines = self._get_line_nm(self.line_name)
+
+        if new_lines is None:
+            return None
+        
+        if isinstance(new_lines, float):
+            new_lines = list([new_lines])
+        
+        if self.wavenumber:
+            new_lines = orb.utils.nm2cm1(new_lines)
+
+        
+        for new_line in new_lines:
+            if add:
+                if new_line not in self.fit_lines:
+                    self.fit_lines.append(new_line)
+            elif new_line in self.fit_lines:
+                self.fit_lines.remove(new_line)
+                
+                
+        # add lines to table
+        self.fit_results_store.clear()
+        for line in self.get_fit_lines():
+            store = list(np.zeros(7, dtype=float))
+            if self.wavenumber:
+                store[0] = Lines().get_line_name(
+                    orb.utils.cm12nm(line))
+            else:
+                store[0] = Lines().get_line_name(line)
+                        
+                store[1] = '{:.3f}'.format(line)
+            self.fit_results_store.append(store)        
+
+        self._update_plot()
+        
+    def _set_line_name_cb(self, w, idx):
+        """Callback to set the line names
+
+        :param w: Widget.
+        :param idx: Index of the selected line.
+        """
+        self.line_name = self._get_lines_keys()[idx]
+
+
+    def _update_plot(self):
+        """Update plot in the ZPlot window if a callback function has
+        been given.
+        """
+        if self.update_cb is not None:
+            self.update_cb()
+
+    def set_step(self, step):
+        """Set step size.
+
+        :param step: Step size in nm
+        """
+        if step is not None:
+            self.wstep.set_text('{}'.format(step))
+
+    def set_order(self, order):
+        """Set order.
+
+        :param order: Order.
+        """
+        if order is not None:
+            self.worder.set_text('{}'.format(order))
+            
+    def set_apod(self, apod):
+        """Set apodization.
+
+        :param apod: Apodization function.
+        """
+        self.wapod.set_text('{}'.format(apod))
+
+    def set_spectrum(self, spectrum):
+        """Set spectrum to fit.
+
+        :param spectrum: Spectrum.
+        """
+        update = False
+        if self.spectrum is None:
+            update = True
+        elif np.all(np.isnan(self.spectrum)):
+            update = True
+
+        if spectrum is not None and self.spectrum is not None:
+            nonans = np.nonzero(~np.isnan(spectrum))
+            if np.any(self.spectrum[nonans] != spectrum[nonans]):
+                update = True
+        if update:
+            self.spectrum = spectrum
+            self.fitted_vector = None
+    
+    def get_frame(self):
+        """Return the visual gtk.Frame object corresponding to the
+        fitting plugin.
+        """
+        return self.fitframe
+
+    def get_fit_lines(self):
+        """Return the selected fit lines."""
+        if self.fit_lines is not None:
+            fit_lines = (np.array(self.fit_lines)
+                         + np.array(orb.utils.line_shift(
+                             self.fit_lines_velocity, self.fit_lines,
+                             wavenumber=self.wavenumber)))
+            if self.wavenumber:
+                return fit_lines / (1. + self.fit_lines_redshift)
+            else:
+                return fit_lines * (1. + self.fit_lines_redshift)
+        else:
+            return None
+
+    def get_fitted_vector(self):
+        """Return the fitted spectrum."""
+        return self.fitted_vector
+
+###########################################
+### CLASS REGIONS #########################
+###########################################
+class Regions(object):
+    """Manage regions parameters and the visual objects (region menu)"""
+
+    method = None
+    methods = ['mean', 'sum', 'median']
+    shapes = ['rectangle', 'circle']
+    shape = None
+    change_region_properties_cb = None
+    
+    def __init__(self, change_region_properties_cb=None):
+        """Init Regions class.
+
+        :param change_region_properties_cb: (Optional) method to call in the main
+          window when region properties are changed (default None).
+        """
+        def new_checksubmenu(name, cb, args, first_radioitem, menuitems):
+            _m = gtk.RadioMenuItem(first_radioitem, name)
+            _m.connect('toggled', cb, args)
+            if first_radioitem is None:
+                first_radioitem = _m
+                first_radioitem.set_active(True)
+            menuitems.append(_m)
+            return first_radioitem, menuitems
+
+        self.change_region_properties_cb = change_region_properties_cb
+
+        region_menu = gtk.Menu()
+        self.region_mi = gtk.MenuItem('Region')
+        self.region_mi.set_submenu(region_menu)
+
+        # add method menu
+        region_method_menu = gtk.Menu()
+        region_method_mi = gtk.MenuItem('Method')
+        region_method_mi.set_submenu(region_method_menu)
+
+        first_radioitem = None
+        menuitems = list()
+        for imethod in self.methods:
+            first_radioitem, menuitems = new_checksubmenu(
+                imethod, self._set_method_cb, imethod, first_radioitem,
+                menuitems)
+        submenus = list()
+        for menuitem in menuitems:
+            submenus.append(menuitem)
+
+        for submenu in submenus:
+            region_method_menu.append(submenu)
+                    
+        region_menu.append(region_method_mi)
+        
+        self.method = 'sum'
+        menuitems[self.get_method_index('sum')].set_active(True)
+
+        # add shape menu
+        region_shape_menu = gtk.Menu()
+        region_shape_mi = gtk.MenuItem('Shape')
+        region_shape_mi.set_submenu(region_shape_menu)
+
+        first_radioitem = None
+        menuitems = list()
+        for ishape in self.shapes:
+            first_radioitem, menuitems = new_checksubmenu(
+                ishape, self._set_shape_cb, ishape, first_radioitem,
+                menuitems)
+        submenus = list()
+        for menuitem in menuitems:
+            submenus.append(menuitem)
+
+        for submenu in submenus:
+            region_shape_menu.append(submenu)
+                    
+        region_menu.append(region_shape_mi)
+        
+        self.shape = 'circle'
+        menuitems[self.get_shape_index('circle')].set_active(True)
+
+        
+    def _set_method_cb(self, c, method):
+        """callback method to select a new combining method.
+
+        :param c: widget.
+        :param method: Choosen method.
+        """
+        if c.get_active():
+            self.set_method(method)
+        
+    def set_method(self, method):
+        """Select a new combining method.
+
+        :param method: Selected method.
+        """
+        self.method = method
+
+    def get_method(self):
+        """Get the selected combining method."""
+        return self.method
+  
+    def get_menubar_item(self):
+        """Return the region menubar item"""
+        return self.region_mi
+
+    def get_method_index(self, method):
+        """Return combining method index.
+
+        :param method: method.
+        """
+        for index in range(len(self.methods)):
+            if method == self.methods[index]:
+                return index
+        return None
+
+    def _set_shape_cb(self, c, shape):
+        """Callback function to select region shape.
+
+        :param c: Widget.
+        :param shape: Selected shape.
+        """
+        if c.get_active():
+            self.set_shape(shape)
+        
+    def set_shape(self, shape):
+        """Select region shape.
+
+        :param shape: region shape.
+        """
+        self.shape = shape
+        if self.change_region_properties_cb is not None:
+            self.change_region_properties_cb(self)
+
+    def get_shape(self):
+        """Return selected region shape"""
+        return self.shape
+
+    def get_shape_index(self, shape):
+        """Return region shape index.
+
+        :param shape: region shape.
+        """
+        for index in range(len(self.shapes)):
+            if shape == self.shapes[index]:
+                return index
+        return None
+    

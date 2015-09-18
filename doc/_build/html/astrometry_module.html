@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Astrometry module &mdash; Orb 1.5.0 documentation</title>
+  <title>Astrometry module &mdash; Orb 1.5.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.5.1 documentation" href="index.html"/>
         <link rel="next" title="Visual module" href="visual_module.html"/>
         <link rel="prev" title="CUtils module" href="cutils_module.html"/> 
 
@@ -142,11 +142,11 @@
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -170,6 +170,8 @@
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -251,10 +253,20 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-0">v1.5.0</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-correction">Phase correction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#d-viewer">3D Viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5-final-output-format">HDF5 Final output format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#complex-data-cubes">Complex data cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#no-more-automatic-logging">No more automatic logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#calibration-laser-map-fit">Calibration laser map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-map-fit">Phase map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id6">2D viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id7">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -1036,7 +1048,7 @@ using the SIZE_COEFF constant)</p>
 <h2><a class="toc-backref" href="#id4">StarsParams class</a><a class="headerlink" href="#starsparams-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.StarsParams">
-<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">StarsParams</code><span class="sig-paren">(</span><em>star_nb=1</em>, <em>frame_nb=1</em>, <em>logfile_name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">StarsParams</code><span class="sig-paren">(</span><em>star_nb=1</em>, <em>frame_nb=1</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.StarsParams" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>StarsParams manage the parameters of each star in each frame of
 a cube.</p>
@@ -1128,7 +1140,7 @@ written in the root group.</p>
 <h2><a class="toc-backref" href="#id5">PSF class</a><a class="headerlink" href="#psf-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.PSF">
-<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">PSF</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.PSF" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">PSF</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.PSF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>General class of inheritance for point spread functions (PSFs)</p>
 <dl class="method">
@@ -1176,7 +1188,7 @@ array.</p>
 <h2><a class="toc-backref" href="#id6">Gaussian class</a><a class="headerlink" href="#gaussian-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Gaussian">
-<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Gaussian</code><span class="sig-paren">(</span><em>params</em>, <em>logfile_name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Gaussian" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Gaussian</code><span class="sig-paren">(</span><em>params</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Gaussian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><code class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></code></a></p>
 <p>Class implementing the gaussian profile</p>
 <div class="admonition note">
@@ -1256,7 +1268,7 @@ array.</p>
 <h2><a class="toc-backref" href="#id7">Moffat class</a><a class="headerlink" href="#moffat-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="astrometry.Moffat">
-<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Moffat</code><span class="sig-paren">(</span><em>params</em>, <em>logfile_name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Moffat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">astrometry.</code><code class="descname">Moffat</code><span class="sig-paren">(</span><em>params</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Moffat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#astrometry.PSF" title="astrometry.PSF"><code class="xref py py-class docutils literal"><span class="pre">astrometry.PSF</span></code></a></p>
 <p>Class implementing the Moffat profile.</p>
 <p>This profile is useful to fit stars on CCD arrays.</p>
@@ -1470,7 +1482,7 @@ guess. Used to compute the aperture photometry error (default 0.).</li>
 radius is Rap = aper_coeff * FWHM. Better when between 1.5 to
 reduce the variation of the collected photons with varying FWHM
 and 3. to account for the flux in the wings (default 3., better
-for star with a high SNR).</li>
+for Moffat stars with a high SNR).</li>
 <li><span class="target" id="astrometry.aperture_photometry.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#astrometry.aperture_photometry.params.warn">¶</a> &#8211; If True, print a warning when the background cannot
 be well estimated (default True).</li>
 <li><span class="target" id="astrometry.aperture_photometry.params.x_guess"></span><strong>x_guess</strong><a class="paramlink headerlink reference internal" href="#astrometry.aperture_photometry.params.x_guess">¶</a> &#8211; (Optional) position of the star along x axis. If
@@ -1497,9 +1509,10 @@ which is not always the case so a higher aperture coefficient
 may be better. More over, to get exact photometry the result
 must be corrected by aperture growth curve for the &#8216;missing
 light&#8217;. A coefficient of 1.27 FWHM corresponds to 3 sigma and
-collects more than 99% of the light. A coefficient of 1.5 reduce
-the variations of the proportion of collected photons with the
-FWHM.</p>
+collects more than 99% of the light if the star is a pure
+Gaussian. A coefficient of 3 for Moffat stars reduces the
+variations of the proportion of collected photons when the FWHM
+is changing and seems to be the best.</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -1513,14 +1526,14 @@ coefficient (Cout): Cout = sqrt(3*Cap^2 + Cin^2)</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">The star MUST be at the center (+/- a pixel) of the
+<p class="last">The star MUST be at the center (+/- 1 pixel) of the
 star box.</p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="astrometry.fit_stars_in_frame">
-<code class="descclassname">astrometry.</code><code class="descname">fit_stars_in_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=None</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>saturation=None</em>, <em>fix_pos=False</em>, <em>nozero=False</em>, <em>silent=True</em>, <em>sip=None</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">astrometry.</code><code class="descname">fit_stars_in_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>star_list</em>, <em>box_size</em>, <em>profile_name='gaussian'</em>, <em>scale=None</em>, <em>fwhm_pix=None</em>, <em>beta=3.5</em>, <em>fit_tol=0.01</em>, <em>fwhm_min=0.5</em>, <em>fix_height=None</em>, <em>fix_aperture_fwhm_pix=None</em>, <em>fix_beta=True</em>, <em>fix_fwhm=False</em>, <em>readout_noise=10.0</em>, <em>dark_current_level=0.0</em>, <em>local_background=True</em>, <em>no_aperture_photometry=False</em>, <em>precise_guess=False</em>, <em>aper_coeff=3.0</em>, <em>blur=False</em>, <em>no_fit=False</em>, <em>estimate_local_noise=True</em>, <em>multi_fit=False</em>, <em>enable_zoom=False</em>, <em>enable_rotation=False</em>, <em>saturation=None</em>, <em>fix_pos=False</em>, <em>nozero=False</em>, <em>silent=True</em>, <em>sip=None</em>, <em>background_value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.fit_stars_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit stars in a frame.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -1631,6 +1644,10 @@ stars. readout_noise and dark_current_level are thus not used
 saturation level are removed from the fit (default None).</li>
 <li><span class="target" id="astrometry.fit_stars_in_frame.params.sip"></span><strong>sip</strong><a class="paramlink headerlink reference internal" href="#astrometry.fit_stars_in_frame.params.sip">¶</a> &#8211; (Optional) A pywcs.WCS instance containing SIP
 distorsion correction (default None).</li>
+<li><span class="target" id="astrometry.fit_stars_in_frame.params.background_value"></span><strong>background_value</strong><a class="paramlink headerlink reference internal" href="#astrometry.fit_stars_in_frame.params.background_value">¶</a> &#8211; (Optional) If not None, this background
+value is used in the fit functions and will be fixed for fit and
+aperture photometry. Note also that in this case
+local_background is automatically set to False (default None).</li>
 </ul>
 </td>
 </tr>
@@ -1811,7 +1828,7 @@ estimation is returned (default False).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.0',
+            VERSION:'1.5.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

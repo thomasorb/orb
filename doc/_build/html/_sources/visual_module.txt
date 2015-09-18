@@ -38,3 +38,25 @@ ZPlotWindow class
    :private-members:
    :special-members:
    :show-inheritance:
+
+
+FitPlugin class
+---------------
+
+.. autoclass:: orb.visual.FitPlugin
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+
+Regions class
+-------------
+
+.. autoclass:: orb.visual.Regions
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; Orb 1.5.0 documentation</title>
+  <title>Changelog &mdash; Orb 1.5.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.5.1 documentation" href="index.html"/>
         <link rel="prev" title="Data module" href="data_module.html"/> 
 
   
@@ -141,11 +141,11 @@
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -169,6 +169,8 @@
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -254,6 +256,16 @@
 <li class="toctree-l4"><a class="reference internal" href="#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#d-viewer">3D Viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#id5">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#hdf5-final-output-format">HDF5 Final output format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#complex-data-cubes">Complex data cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#no-more-automatic-logging">No more automatic logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calibration-laser-map-fit">Calibration laser map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phase-map-fit">Phase map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id6">2D viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id7">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -617,7 +629,7 @@ parameter have been modified to accept order 0 only when possible
 (e.g. <a class="reference internal" href="utils_module.html#utils.transform_interferogram" title="utils.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">transform_interferogram()</span></code></a> cannot give an
 output in nm at order 0). If the order 0 is not possible, those
 functions raise an Exception.</li>
-<li><code class="xref py py-meth docutils literal"><span class="pre">map_me()</span></code> added to map the modulation efficiency on
+<li><a class="reference internal" href="cutils_module.html#cutils.map_me" title="cutils.map_me"><code class="xref py py-meth docutils literal"><span class="pre">map_me()</span></code></a> added to map the modulation efficiency on
 a laser frame.</li>
 <li><a class="reference internal" href="astrometry_module.html#astrometry.aperture_photometry" title="astrometry.aperture_photometry"><code class="xref py py-meth docutils literal"><span class="pre">aperture_photometry()</span></code></a> has been made more robust
 to NaNs</li>
@@ -808,6 +820,85 @@ useful as it does not give a better precisin on the fit. A full
 length phase vector is now computed every time the phase is needed.</p>
 </div>
 </div>
+<div class="section" id="v1-5-1">
+<h3>v1.5.1<a class="headerlink" href="#v1-5-1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="hdf5-final-output-format">
+<h4>HDF5 Final output format<a class="headerlink" href="#hdf5-final-output-format" title="Permalink to this headline">¶</a></h4>
+<p>The final output format is now an HDF5 cube. A FITS cube can then be
+obtained by using the script <strong>orb-extract</strong>. The HDF5 cube can be
+handled directly by ORCS.</p>
+</div>
+<div class="section" id="complex-data-cubes">
+<h4>Complex data cubes<a class="headerlink" href="#complex-data-cubes" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> and <a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> now handles
+complex data sets. If a complex data cube is opened returned data will
+be complex. The user of the class must make sure that the complex data
+is not hardly cast to float (a warning is raised in this case).</p>
+<p>The full complex spectral cube is generated whichs helps in checking
+that the energy contained in the imaginary part is a small percentage
+of the energy contained in the real part, giving the possibility to
+check if the phase correction is correct. This check is made during
+the calibration step.</p>
+</div>
+<div class="section" id="no-more-automatic-logging">
+<h4>No more automatic logging<a class="headerlink" href="#no-more-automatic-logging" title="Permalink to this headline">¶</a></h4>
+<p>Automatic logging originally handled by <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> is now
+handled by <a class="reference internal" href="core_module.html#core.Logger" title="core.Logger"><code class="xref py py-class docutils literal"><span class="pre">Logger</span></code></a> which must be initialised by the
+main script. No more logfile name has to be passed to
+<a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> or its subclasses.</p>
+<p><a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> which was used to ensure the use of the same
+logfile for all the launched processes has also been suppressed.</p>
+</div>
+<div class="section" id="calibration-laser-map-fit">
+<h4>Calibration laser map fit<a class="headerlink" href="#calibration-laser-map-fit" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="utils_module.html#utils.fit_calibration_laser_map" title="utils.fit_calibration_laser_map"><code class="xref py py-meth docutils literal"><span class="pre">fit_calibration_laser_map()</span></code></a>: The residual of the
+modelized fit of the calibration laser map is now fitted with a 2D
+polynomial. The precision is of the order of 10 m/s which gives enough
+precision to remove the fitting error on small calibration laser
+cubes. This error could be seen as small fringes on high precision
+velocity maps. It is thus better to fit the obtained calibration laser
+map when it is used to calibrate a cube. The script
+<strong>orbs-fit-calibration-laser-map</strong> hase been created for that.</p>
+</div>
+<div class="section" id="phase-map-fit">
+<h4>Phase map fit<a class="headerlink" href="#phase-map-fit" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="utils_module.html#utils.simulate_calibration_laser_map" title="utils.simulate_calibration_laser_map"><code class="xref py py-meth docutils literal"><span class="pre">simulate_calibration_laser_map()</span></code></a>,
+<a class="reference internal" href="utils_module.html#utils.fit_calibration_laser_map" title="utils.fit_calibration_laser_map"><code class="xref py py-meth docutils literal"><span class="pre">fit_calibration_laser_map()</span></code></a> and
+<a class="reference internal" href="utils_module.html#utils.fit_sitelle_phase_map" title="utils.fit_sitelle_phase_map"><code class="xref py py-meth docutils literal"><span class="pre">fit_sitelle_phase_map()</span></code></a> have been updated to deliver
+a much more precise fit. But you must note that the calibration laser
+map delivered during the fitting procedure is still not good enough
+for using as a real calibration laser map. this comes from the
+residual which must be taken into account. This might come in the
+future (see above).</p>
+</div>
+<div class="section" id="id6">
+<h4>2D viewer<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
+<p>2D Viewer has been updated to handle colormaps. Different shapes
+(circle and square) and different combining methods (mean, median,
+sum) of the regions are possible. A fitting module process has been
+added to the spectrum window. Some bugs have also been corrected.</p>
+</div>
+<div class="section" id="id7">
+<h4>Miscellaneous<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><a class="reference internal" href="astrometry_module.html#astrometry.aperture_photometry" title="astrometry.aperture_photometry"><code class="xref py py-meth docutils literal"><span class="pre">aperture_photometry()</span></code></a> and
+<a class="reference internal" href="astrometry_module.html#astrometry.fit_stars_in_frame" title="astrometry.fit_stars_in_frame"><code class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></code></a> can now return
+photometrical data without background sustraction. This is used in
+source extraction (less noisy for faint sources).</li>
+<li>The implementation of <a class="reference internal" href="core_module.html#core.Cube.get_quadrant_dims" title="core.Cube.get_quadrant_dims"><code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code></a> has
+been moved to <a class="reference internal" href="core_module.html#core.Tools.get_quadrant_dims" title="core.Tools.get_quadrant_dims"><code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code></a>.</li>
+<li><a class="reference internal" href="cutils_module.html#cutils.nanbin_image" title="cutils.nanbin_image"><code class="xref py py-meth docutils literal"><span class="pre">nanbin_image()</span></code></a> and
+<a class="reference internal" href="cutils_module.html#cutils.unbin_image" title="cutils.unbin_image"><code class="xref py py-meth docutils literal"><span class="pre">unbin_image()</span></code></a> created to bin and unbin images
+during phase maps fitting. It permits to accelerate the process a
+lot without losing precision.</li>
+<li><a class="reference internal" href="utils_module.html#utils.compute_line_fwhm" title="utils.compute_line_fwhm"><code class="xref py py-meth docutils literal"><span class="pre">compute_line_fwhm()</span></code></a> now computes the line fwhm
+from the number of steps on the longest side of the interferogram
+(before this was computed from the total number of steps of a
+symetric interferogram, so generally two times more steps than in
+this version).</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 
@@ -848,7 +939,7 @@ length phase vector is now computed every time the phase is needed.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.0',
+            VERSION:'1.5.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

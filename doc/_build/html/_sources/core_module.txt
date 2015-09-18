@@ -58,15 +58,6 @@ ProgressBar class
    :special-members:
    :show-inheritance:
 
-MemFile class
--------------
-
-.. autoclass:: core.MemFile
-   :members:
-   :private-members:
-   :special-members:
-   :show-inheritance:
-
 Indexer class
 -------------
 
@@ -102,3 +93,14 @@ ParamsFile class
    :private-members:
    :special-members:
    :show-inheritance:
+
+Logger class
+------------
+
+.. autoclass:: core.Logger
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+

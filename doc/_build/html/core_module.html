@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 1.5.0 documentation</title>
+  <title>Core module &mdash; Orb 1.5.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.5.1 documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
         <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
@@ -142,11 +142,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -170,6 +170,8 @@
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -251,10 +253,20 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-0">v1.5.0</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-correction">Phase correction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#point-source-detection">Point source detection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#d-viewer">3D Viewer</a></li>
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5-final-output-format">HDF5 Final output format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#complex-data-cubes">Complex data cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#no-more-automatic-logging">No more automatic logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#calibration-laser-map-fit">Calibration laser map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-map-fit">Phase map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id6">2D viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id7">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -310,11 +322,11 @@
 <li><a class="reference internal" href="#outhdfcube-class" id="id5">OutHDFCube class</a></li>
 <li><a class="reference internal" href="#textcolor-class" id="id6">TextColor class</a></li>
 <li><a class="reference internal" href="#progressbar-class" id="id7">ProgressBar class</a></li>
-<li><a class="reference internal" href="#memfile-class" id="id8">MemFile class</a></li>
-<li><a class="reference internal" href="#indexer-class" id="id9">Indexer class</a></li>
-<li><a class="reference internal" href="#lines-class" id="id10">Lines class</a></li>
-<li><a class="reference internal" href="#optionfile-class" id="id11">OptionFile class</a></li>
-<li><a class="reference internal" href="#paramsfile-class" id="id12">ParamsFile class</a></li>
+<li><a class="reference internal" href="#indexer-class" id="id8">Indexer class</a></li>
+<li><a class="reference internal" href="#lines-class" id="id9">Lines class</a></li>
+<li><a class="reference internal" href="#optionfile-class" id="id10">OptionFile class</a></li>
+<li><a class="reference internal" href="#paramsfile-class" id="id11">ParamsFile class</a></li>
+<li><a class="reference internal" href="#logger-class" id="id12">Logger class</a></li>
 </ul>
 </li>
 </ul>
@@ -323,15 +335,14 @@
 <h2><a class="toc-backref" href="#id2">Tools class</a><a class="headerlink" href="#tools-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Tools">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Tools</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Tools</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Parent class of all classes of orb.</p>
-<p>Implement basic methods to read and write FITS data, display
-messages, feed a logfile and manage the server for parallel
-processing.</p>
+<p>Manage configuration file, implement basic methods and manage the
+server for parallel processing.</p>
 <dl class="method">
 <dt id="core.Tools.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize Tools class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -341,9 +352,9 @@ processing.</p>
 <li><span class="target" id="core.Tools.params.data_prefix"></span><strong>data_prefix</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.data_prefix">¶</a> &#8211; (Optional) Prefix used to determine the
 header of the name of each created file (default
 &#8216;temp_data&#8217;)</li>
-<li><span class="target" id="core.Tools.params.logfile_name"></span><strong>logfile_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.logfile_name">¶</a> &#8211; (Optional) Name of the log file (if None).</li>
-<li><span class="target" id="core.Tools.params.no_log"></span><strong>no_log</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.no_log">¶</a> &#8211; (Optional) If True no log file is created
-(default False).</li>
+<li><span class="target" id="core.Tools.params.no_log"></span><strong>no_log</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.no_log">¶</a> &#8211; (Optional) If True (and if sys.stdout has been
+redirected to Logger) no log file is created (default
+False).</li>
 <li><span class="target" id="core.Tools.params.tuning_parameters"></span><strong>tuning_parameters</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.tuning_parameters">¶</a> &#8211; (Optional) Some parameters of the
 methods can be tuned externally using this dictionary. The
 dictionary must contains the full parameter name
@@ -918,12 +929,6 @@ be a string.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.Tools._init_logfile_name">
-<code class="descname">_init_logfile_name</code><span class="sig-paren">(</span><em>logfile_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._init_logfile_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize logfile name.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="core.Tools._init_pp_server">
 <code class="descname">_init_pp_server</code><span class="sig-paren">(</span><em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._init_pp_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a server for parallel processing.</p>
@@ -946,8 +951,7 @@ sources and information on Parallel Python software</p>
 <dl class="method">
 <dt id="core.Tools._print_caller_traceback">
 <code class="descname">_print_caller_traceback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_caller_traceback" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print the traceback of the calling function and log it into
-the log file.</p>
+<dd><p>Print the traceback of the calling function.</p>
 </dd></dl>
 
 <dl class="method">
@@ -991,7 +995,7 @@ as it is, without any header.</li>
 <dl class="method">
 <dt id="core.Tools._print_traceback">
 <code class="descname">_print_traceback</code><span class="sig-paren">(</span><em>no_hdr=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._print_traceback" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print a traceback and log it into the logfile.</p>
+<dd><p>Print a traceback</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1098,6 +1102,28 @@ more information on PyFITS module. And
 <a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
 files.</p>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools.get_quadrant_dims">
+<code class="descname">get_quadrant_dims</code><span class="sig-paren">(</span><em>quad_number</em>, <em>dimx</em>, <em>dimy</em>, <em>div_nb</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.get_quadrant_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the indices of a quadrant along x and y axes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools.get_quadrant_dims.params.quad_number"></span><strong>quad_number</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.quad_number">¶</a> &#8211; Quadrant number</li>
+<li><span class="target" id="core.Tools.get_quadrant_dims.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.dimx">¶</a> &#8211; X axis dimension.</li>
+<li><span class="target" id="core.Tools.get_quadrant_dims.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.dimy">¶</a> &#8211; Y axis dimension.</li>
+<li><span class="target" id="core.Tools.get_quadrant_dims.params.div_nb"></span><strong>div_nb</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.div_nb">¶</a> &#8211; Number of divisions along x and y axes. (e.g. if
+div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
+number of quadrant is 16)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1414,7 +1440,7 @@ must be installed (default False).</li>
 <h2><a class="toc-backref" href="#id3">Cube class</a><a class="headerlink" href="#cube-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Cube">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Generate and manage a <strong>virtual frame-divided cube</strong>.</p>
 <div class="admonition note">
@@ -1449,7 +1475,7 @@ Cube()._silent_load to True.</p>
 
 <dl class="method">
 <dt id="core.Cube.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>logfile_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize Cube class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1509,8 +1535,6 @@ implemented into the method itself with the method
 <li><span class="target" id="core.Cube.params.indexer"></span><strong>indexer</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.indexer">¶</a> &#8211; (Optional) Must be a <a class="reference internal" href="#core.Indexer" title="core.Indexer"><code class="xref py py-class docutils literal"><span class="pre">core.Indexer</span></code></a>
 instance. If not None created files can be indexed by this
 instance.</li>
-<li><span class="target" id="core.Cube.params.logfile_name"></span><strong>logfile_name</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.logfile_name">¶</a> &#8211; (Optional) Give a specific name to the
-logfile (default None).</li>
 </ul>
 </td>
 </tr>
@@ -2119,6 +2143,12 @@ dataset) return it directly.</p>
 dataset) return it directly.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="core.HDFCube.is_complex">
+<code class="descname">is_complex</code><em class="property"> = None</em><a class="headerlink" href="#core.HDFCube.is_complex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to True if data is complex</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -2233,7 +2263,7 @@ method is called so delete it. e.g.:</p>
 
 <dl class="method">
 <dt id="core.OutHDFCube.write_frame">
-<code class="descname">write_frame</code><span class="sig-paren">(</span><em>index</em>, <em>data=None</em>, <em>header=None</em>, <em>mask=None</em>, <em>record_stats=False</em>, <em>force_float32=True</em>, <em>section=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.write_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_frame</code><span class="sig-paren">(</span><em>index</em>, <em>data=None</em>, <em>header=None</em>, <em>mask=None</em>, <em>record_stats=False</em>, <em>force_float32=True</em>, <em>section=None</em>, <em>force_complex64=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.write_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a frame</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2248,7 +2278,13 @@ method is called so delete it. e.g.:</p>
 frame are appended as attributes (data must be set) (defaut
 False).</li>
 <li><span class="target" id="core.OutHDFCube.write_frame.params.force_float32"></span><strong>force_float32</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.force_float32">¶</a> &#8211; (Optional) If True, data type is forced
-to numpy.float32 (default True).</li>
+to numpy.float32 type (default True).</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.section"></span><strong>section</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.section">¶</a> &#8211; (Optional) If not None, must be a 4-tuple
+[xmin, xmax, ymin, ymax] giving the section to write instead
+of the whole frame. Useful to modify only a part of the
+frame (deafult None).</li>
+<li><span class="target" id="core.OutHDFCube.write_frame.params.force_complex64"></span><strong>force_complex64</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.force_complex64">¶</a> &#8211; (Optional) If True, data type is
+forced to numpy.complex64 type (default False).</li>
 </ul>
 </td>
 </tr>
@@ -2394,62 +2430,11 @@ displayed (default True).</li>
 </dd></dl>
 
 </div>
-<div class="section" id="memfile-class">
-<h2><a class="toc-backref" href="#id8">MemFile class</a><a class="headerlink" href="#memfile-class" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="core.MemFile">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">MemFile</code><span class="sig-paren">(</span><em>memfile_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manage memory file.</p>
-<p>A memory file is a file containing options that must be shared by
-multiple classes. Options in this file are temporary.</p>
-<p>This class behaves as a dictionary reflecting the content of the
-memory file on the disk.</p>
-<dl class="method">
-<dt id="core.MemFile.__getitem__">
-<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implement the evaluation of self[key]</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.MemFile.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>memfile_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Init Memfile Class</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.MemFile.params.memfile_path"></span><strong>memfile_path</strong><a class="paramlink headerlink reference internal" href="#core.MemFile.params.memfile_path">¶</a> &#8211; Path to the memory file.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.MemFile.__iter__">
-<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__iter__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return an iterator object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.MemFile.__setitem__">
-<code class="descname">__setitem__</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.__setitem__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implement the evaluation of self[key] = value</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.MemFile.update">
-<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MemFile.update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update memory file with the data contained in self.mem</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="indexer-class">
-<h2><a class="toc-backref" href="#id9">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id8">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Indexer">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Indexer</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>logfile_name=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Indexer</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage locations of created files.</p>
 <p>All files locations are stored in a text-like file: the index
@@ -2566,7 +2551,7 @@ set to None.</td>
 
 </div>
 <div class="section" id="lines-class">
-<h2><a class="toc-backref" href="#id10">Lines class</a><a class="headerlink" href="#lines-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id9">Lines class</a><a class="headerlink" href="#lines-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Lines">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Lines</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines" title="Permalink to this definition">¶</a></dt>
@@ -2721,7 +2706,7 @@ retrieve. If 0 all lines are given (default 0).</li>
 
 </div>
 <div class="section" id="optionfile-class">
-<h2><a class="toc-backref" href="#id11">OptionFile class</a><a class="headerlink" href="#optionfile-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id10">OptionFile class</a><a class="headerlink" href="#optionfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.OptionFile">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">OptionFile</code><span class="sig-paren">(</span><em>option_file_path</em>, <em>protected_keys=[]</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile" title="Permalink to this definition">¶</a></dt>
@@ -2873,7 +2858,7 @@ of this interval are merged (default None).</li>
 
 </div>
 <div class="section" id="paramsfile-class">
-<h2><a class="toc-backref" href="#id12">ParamsFile class</a><a class="headerlink" href="#paramsfile-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">ParamsFile class</a><a class="headerlink" href="#paramsfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.ParamsFile">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">ParamsFile</code><span class="sig-paren">(</span><em>file_path</em>, <em>reset=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile" title="Permalink to this definition">¶</a></dt>
@@ -2934,6 +2919,78 @@ True).</li>
 </dd></dl>
 
 </div>
+<div class="section" id="logger-class">
+<h2><a class="toc-backref" href="#id12">Logger class</a><a class="headerlink" href="#logger-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.Logger">
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Logger</code><span class="sig-paren">(</span><em>name</em>, <em>mode='a'</em>, <em>noprint=False</em>, <em>nolog=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Logger class.</p>
+<dl class="method">
+<dt id="core.Logger.__del__">
+<code class="descname">__del__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Logger.__del__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class destructor.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Logger.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>name</em>, <em>mode='a'</em>, <em>noprint=False</em>, <em>nolog=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Logger.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Init Logger class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Logger.params.name"></span><strong>name</strong><a class="paramlink headerlink reference internal" href="#core.Logger.params.name">¶</a> &#8211; Name of the logfile.</li>
+<li><span class="target" id="core.Logger.params.mode"></span><strong>mode</strong><a class="paramlink headerlink reference internal" href="#core.Logger.params.mode">¶</a> &#8211; (Optional) File mode (same as file mode for the classic
+open() function) (default &#8216;a&#8217;).</li>
+<li><span class="target" id="core.Logger.params.noprint"></span><strong>noprint</strong><a class="paramlink headerlink reference internal" href="#core.Logger.params.noprint">¶</a> &#8211; (Optional) If True nothing is printed on the terminal (or
+more generally on the regular stdout) (default False).</li>
+<li><span class="target" id="core.Logger.params.nolog"></span><strong>nolog</strong><a class="paramlink headerlink reference internal" href="#core.Logger.params.nolog">¶</a> &#8211; (Optional) If True nothing is logged in the
+logfile (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="core.Logger.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#core.Logger.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Logger.flush">
+<code class="descname">flush</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Logger.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush stdout and logfile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Logger.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>msg</em>, <em>color=None</em>, <em>nolog=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Logger.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write in the logfile and on the terminal (stdout)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Logger.write.params.msg"></span><strong>msg</strong><a class="paramlink headerlink reference internal" href="#core.Logger.write.params.msg">¶</a> &#8211; Message to write.</li>
+<li><span class="target" id="core.Logger.write.params.color"></span><strong>color</strong><a class="paramlink headerlink reference internal" href="#core.Logger.write.params.color">¶</a> &#8211; (Optional) Output will be colored. Must be a
+<code class="xref py py-class docutils literal"><span class="pre">TextColor</span></code> attribute (default None).</li>
+<li><span class="target" id="core.Logger.write.params.nolog"></span><strong>nolog</strong><a class="paramlink headerlink reference internal" href="#core.Logger.write.params.nolog">¶</a> &#8211; (Optional) If True nothing is printed in the log
+(default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -2975,7 +3032,7 @@ True).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.0',
+            VERSION:'1.5.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

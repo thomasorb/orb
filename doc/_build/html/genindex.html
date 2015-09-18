@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 1.5.0 documentation</title>
+  <title>Index &mdash; Orb 1.5.1 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.0 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 1.5.1 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -141,11 +141,11 @@
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#outhdfcube-class">OutHDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#progressbar-class">ProgressBar class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core_module.html#memfile-class">MemFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#indexer-class">Indexer class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#lines-class">Lines class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#optionfile-class">OptionFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="core_module.html#paramsfile-class">ParamsFile class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_module.html#logger-class">Logger class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -169,6 +169,8 @@
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#popupwindow-class">PopupWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#headerwindow-class">HeaderWindow class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visual_module.html#zplotwindow-class">ZPlotWindow class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#fitplugin-class">FitPlugin class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual_module.html#regions-class">Regions class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a><ul>
@@ -256,6 +258,16 @@
 <li class="toctree-l4"><a class="reference internal" href="changelog.html#id5">Miscellaneous</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#hdf5-final-output-format">HDF5 Final output format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#complex-data-cubes">Complex data cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#no-more-automatic-logging">No more automatic logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#calibration-laser-map-fit">Calibration laser map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#phase-map-fit">Phase map fit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id6">2D viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="changelog.html#id7">Miscellaneous</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -332,9 +344,15 @@
   </dt>
 
       
-  <dt><a href="core_module.html#core.ParamsFile.__del__">__del__() (core.ParamsFile method)</a>
+  <dt><a href="core_module.html#core.Logger.__del__">__del__() (core.Logger method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.ParamsFile.__del__">(core.ParamsFile method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="data_module.html#data.Data1D.__div__">__div__() (data.Data1D method)</a>
   </dt>
@@ -350,10 +368,6 @@
 
         
   <dt><a href="core_module.html#core.Indexer.__getitem__">(core.Indexer method)</a>
-  </dt>
-
-        
-  <dt><a href="core_module.html#core.MemFile.__getitem__">(core.MemFile method)</a>
   </dt>
 
         
@@ -395,7 +409,7 @@
   </dt>
 
         
-  <dt><a href="core_module.html#core.MemFile.__init__">(core.MemFile method)</a>
+  <dt><a href="core_module.html#core.Logger.__init__">(core.Logger method)</a>
   </dt>
 
         
@@ -431,11 +445,19 @@
   </dt>
 
         
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.__init__">(orb.visual.FitPlugin method)</a>
+  </dt>
+
+        
   <dt><a href="visual_module.html#orb.visual.HeaderWindow.__init__">(orb.visual.HeaderWindow method)</a>
   </dt>
 
         
   <dt><a href="visual_module.html#orb.visual.PopupWindow.__init__">(orb.visual.PopupWindow method)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.Regions.__init__">(orb.visual.Regions method)</a>
   </dt>
 
         
@@ -445,10 +467,6 @@
       </dl></dd>
       
   <dt><a href="data_module.html#data.Data1D.__isub__">__isub__() (data.Data1D method)</a>
-  </dt>
-
-      
-  <dt><a href="core_module.html#core.MemFile.__iter__">__iter__() (core.MemFile method)</a>
   </dt>
 
       
@@ -487,12 +505,6 @@
   <dt><a href="core_module.html#core.Indexer.__setitem__">__setitem__() (core.Indexer method)</a>
   </dt>
 
-      <dd><dl>
-        
-  <dt><a href="core_module.html#core.MemFile.__setitem__">(core.MemFile method)</a>
-  </dt>
-
-      </dl></dd>
       
   <dt><a href="core_module.html#core.Indexer.__str__">__str__() (core.Indexer method)</a>
   </dt>
@@ -508,10 +520,14 @@
   </dt>
 
       
-  <dt><a href="core_module.html#core.Tools.__weakref__">__weakref__ (core.Tools attribute)</a>
+  <dt><a href="core_module.html#core.Logger.__weakref__">__weakref__ (core.Logger attribute)</a>
   </dt>
 
       <dd><dl>
+        
+  <dt><a href="core_module.html#core.Tools.__weakref__">(core.Tools attribute)</a>
+  </dt>
+
         
   <dt><a href="data_module.html#data.Data.__weakref__">(data.Data attribute)</a>
   </dt>
@@ -521,12 +537,32 @@
   </dt>
 
         
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.__weakref__">(orb.visual.FitPlugin attribute)</a>
+  </dt>
+
+        
   <dt><a href="visual_module.html#orb.visual.PopupWindow.__weakref__">(orb.visual.PopupWindow attribute)</a>
+  </dt>
+
+        
+  <dt><a href="visual_module.html#orb.visual.Regions.__weakref__">(orb.visual.Regions attribute)</a>
   </dt>
 
       </dl></dd>
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._add_fit_line_cb">_add_fit_line_cb() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Tools._bin_image">_bin_image() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.BaseViewer._build_colorbar">_build_colorbar() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._change_fit_lines">_change_fit_lines() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -556,6 +592,10 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._del_fit_line_cb">_del_fit_line_cb() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="visual_module.html#orb.visual.BaseViewer._display_header_cb">_display_header_cb() (orb.visual.BaseViewer method)</a>
   </dt>
 
@@ -564,7 +604,15 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._fit_lines_in_spectrum">_fit_lines_in_spectrum() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.HDFCube._get_attribute">_get_attribute() (core.HDFCube method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._get_axis">_get_axis() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -585,6 +633,10 @@
 
       
   <dt><a href="core_module.html#core.Tools._get_basic_spectrum_header">_get_basic_spectrum_header() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._get_calib_map_path_cb">_get_calib_map_path_cb() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -651,8 +703,6 @@
   <dt><a href="core_module.html#core.Cube._get_frame_stat">_get_frame_stat() (core.Cube method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="astrometry_module.html#astrometry.Aligner._get_guess_matrix_header">_get_guess_matrix_header() (astrometry.Aligner method)</a>
   </dt>
@@ -661,6 +711,8 @@
   <dt><a href="astrometry_module.html#astrometry.Aligner._get_guess_matrix_path">_get_guess_matrix_path() (astrometry.Aligner method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.Tools._get_hdf5_data_path">_get_hdf5_data_path() (core.Tools method)</a>
   </dt>
@@ -679,6 +731,14 @@
 
       
   <dt><a href="core_module.html#core.Indexer._get_index_path">_get_index_path() (core.Indexer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._get_line_nm">_get_line_nm() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._get_lines_keys">_get_lines_keys() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -707,6 +767,10 @@
 
       
   <dt><a href="core_module.html#core.Tools._get_sitelle_slice">_get_sitelle_slice() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._get_spectrum_range">_get_spectrum_range() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -746,10 +810,6 @@
   </dt>
 
       
-  <dt><a href="core_module.html#core.Tools._init_logfile_name">_init_logfile_name() (core.Tools method)</a>
-  </dt>
-
-      
   <dt><a href="core_module.html#core.Tools._init_pp_server">_init_pp_server() (core.Tools method)</a>
   </dt>
 
@@ -759,10 +819,6 @@
 
       
   <dt><a href="visual_module.html#orb.visual.BaseViewer._key_released_cb">_key_released_cb() (orb.visual.BaseViewer method)</a>
-  </dt>
-
-      
-  <dt><a href="visual_module.html#orb.visual.BaseViewer._mode_change_cb">_mode_change_cb() (orb.visual.BaseViewer method)</a>
   </dt>
 
       
@@ -818,7 +874,15 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._set_apod_cb">_set_apod_cb() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="visual_module.html#orb.visual.BaseViewer._set_autocut_method_cb">_set_autocut_method_cb() (orb.visual.BaseViewer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._set_calib_map">_set_calib_map() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -846,6 +910,26 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._set_line_name_cb">_set_line_name_cb() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions._set_method_cb">_set_method_cb() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._set_order_cb">_set_order_cb() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions._set_shape_cb">_set_shape_cb() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._set_step_cb">_set_step_cb() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="visual_module.html#orb.visual.BaseViewer._start_box_cb">_start_box_cb() (orb.visual.BaseViewer method)</a>
   </dt>
 
@@ -859,6 +943,14 @@
 
       
   <dt><a href="core_module.html#core.Tools._update_fits_key">_update_fits_key() (core.Tools method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._update_plot">_update_plot() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin._update_velocity_cb">_update_velocity_cb() (orb.visual.FitPlugin method)</a>
   </dt>
 
   </dl></td>
@@ -1018,6 +1110,10 @@
   </dt>
 
       
+  <dt><a href="utils_module.html#utils.compute_phase_coeffs_vector">compute_phase_coeffs_vector() (in module utils)</a>
+  </dt>
+
+      
   <dt><a href="utils_module.html#utils.compute_radial_velocity">compute_radial_velocity() (in module utils)</a>
   </dt>
 
@@ -1071,6 +1167,10 @@
 
       
   <dt><a href="utils_module.html#utils.create_nm_axis_ireg">create_nm_axis_ireg() (in module utils)</a>
+  </dt>
+
+      
+  <dt><a href="utils_module.html#utils.create_phase_vector">create_phase_vector() (in module utils)</a>
   </dt>
 
       
@@ -1186,7 +1286,15 @@
 
       </dl></dd>
       
+  <dt><a href="utils_module.html#utils.find_phase_coeffs_brute_force">find_phase_coeffs_brute_force() (in module utils)</a>
+  </dt>
+
+      
   <dt><a href="utils_module.html#utils.find_zpd">find_zpd() (in module utils)</a>
+  </dt>
+
+      
+  <dt><a href="utils_module.html#utils.fit_calibration_laser_map">fit_calibration_laser_map() (in module utils)</a>
   </dt>
 
       
@@ -1234,7 +1342,15 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin">FitPlugin (class in orb.visual)</a>
+  </dt>
+
+      
   <dt><a href="utils_module.html#utils.flambda2ABmag">flambda2ABmag() (in module utils)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.Logger.flush">flush() (core.Logger method)</a>
   </dt>
 
       
@@ -1362,6 +1478,18 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.get_fit_lines">get_fit_lines() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.get_fitted_vector">get_fitted_vector() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.get_frame">get_frame() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.HDFCube.get_frame_attribute">get_frame_attribute() (core.HDFCube method)</a>
   </dt>
 
@@ -1401,12 +1529,12 @@
   <dt><a href="core_module.html#core.Lines.get_line_nm">get_line_nm() (core.Lines method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="core_module.html#core.OptionFile.get_lines">get_lines() (core.OptionFile method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.get_lr_phase">get_lr_phase() (in module utils)</a>
   </dt>
@@ -1430,6 +1558,18 @@
 
       </dl></dd>
       
+  <dt><a href="visual_module.html#orb.visual.Regions.get_menubar_item">get_menubar_item() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions.get_method">get_method() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions.get_method_index">get_method_index() (orb.visual.Regions method)</a>
+  </dt>
+
+      
   <dt><a href="utils_module.html#utils.get_open_fds">get_open_fds() (in module utils)</a>
   </dt>
 
@@ -1445,6 +1585,12 @@
   <dt><a href="core_module.html#core.Cube.get_quadrant_dims">get_quadrant_dims() (core.Cube method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="core_module.html#core.Tools.get_quadrant_dims">(core.Tools method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="core_module.html#core.OptionFile.get_regions_parameters">get_regions_parameters() (core.OptionFile method)</a>
   </dt>
@@ -1455,6 +1601,14 @@
 
       
   <dt><a href="core_module.html#core.Cube.get_resized_frame">get_resized_frame() (core.Cube method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions.get_shape">get_shape() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions.get_shape_index">get_shape_index() (orb.visual.Regions method)</a>
   </dt>
 
       
@@ -1590,6 +1744,10 @@
   </dt>
 
       
+  <dt><a href="core_module.html#core.HDFCube.is_complex">is_complex (core.HDFCube attribute)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Cube.is_same_2D_size">is_same_2D_size() (core.Cube method)</a>
   </dt>
 
@@ -1660,6 +1818,10 @@
   </dt>
 
       
+  <dt><a href="core_module.html#core.Logger">Logger (class in core)</a>
+  </dt>
+
+      
   <dt><a href="utils_module.html#utils.lorentzian1d">lorentzian1d() (in module utils)</a>
   </dt>
 
@@ -1684,15 +1846,15 @@
   </dt>
 
       
+  <dt><a href="cutils_module.html#cutils.map_me">map_me() (in module cutils)</a>
+  </dt>
+
+      
   <dt><a href="cutils_module.html#cutils.master_combine">master_combine() (in module cutils)</a>
   </dt>
 
       
   <dt><a href="data_module.html#data.mean">mean() (in module data)</a>
-  </dt>
-
-      
-  <dt><a href="core_module.html#core.MemFile">MemFile (class in core)</a>
   </dt>
 
   </dl></td>
@@ -1715,6 +1877,16 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="cutils_module.html#cutils.nanbin_image">nanbin_image() (in module cutils)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="utils_module.html#utils.nanbin_image">(in module utils)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="data_module.html#data.nanmean">nanmean() (in module data)</a>
   </dt>
@@ -1906,6 +2078,10 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.Regions">Regions (class in orb.visual)</a>
+  </dt>
+
+      
   <dt><a href="astrometry_module.html#astrometry.Astrometry.register">register() (astrometry.Astrometry method)</a>
   </dt>
 
@@ -2010,7 +2186,31 @@
   </dt>
 
       
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.set_apod">set_apod() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
   <dt><a href="core_module.html#core.Indexer.set_file_group">set_file_group() (core.Indexer method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions.set_method">set_method() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.set_order">set_order() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.Regions.set_shape">set_shape() (orb.visual.Regions method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.set_spectrum">set_spectrum() (orb.visual.FitPlugin method)</a>
+  </dt>
+
+      
+  <dt><a href="visual_module.html#orb.visual.FitPlugin.set_step">set_step() (orb.visual.FitPlugin method)</a>
   </dt>
 
       
@@ -2029,6 +2229,8 @@
   <dt><a href="cutils_module.html#cutils.sigmaclip">sigmaclip() (in module cutils)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="cutils_module.html#cutils.sigmacut">sigmacut() (in module cutils)</a>
   </dt>
@@ -2040,6 +2242,10 @@
 
       </dl></dd>
       
+  <dt><a href="utils_module.html#utils.simulate_calibration_laser_map">simulate_calibration_laser_map() (in module utils)</a>
+  </dt>
+
+      
   <dt><a href="cutils_module.html#cutils.sinc1d">sinc1d() (in module cutils)</a>
   </dt>
 
@@ -2049,8 +2255,6 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="utils_module.html#utils.sip_im2pix">sip_im2pix() (in module utils)</a>
   </dt>
@@ -2144,14 +2348,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="core_module.html#core.MemFile.update">update() (core.MemFile method)</a>
+  <dt><a href="cutils_module.html#cutils.unbin_image">unbin_image() (in module cutils)</a>
+  </dt>
+
+      
+  <dt><a href="core_module.html#core.ProgressBar.update">update() (core.ProgressBar method)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="core_module.html#core.ProgressBar.update">(core.ProgressBar method)</a>
-  </dt>
-
         
   <dt><a href="visual_module.html#orb.visual.ZPlotWindow.update">(orb.visual.ZPlotWindow method)</a>
   </dt>
@@ -2197,6 +2401,10 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="core_module.html#core.Logger.write">write() (core.Logger method)</a>
+  </dt>
+
       
   <dt><a href="core_module.html#core.Tools.write_fits">write_fits() (core.Tools method)</a>
   </dt>
@@ -2259,7 +2467,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.0',
+            VERSION:'1.5.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

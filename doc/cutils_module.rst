@@ -33,6 +33,9 @@ Contents
     cutils.multi_fit_stars
     cutils.part_value
     cutils.indft
+    cutils.map_me
+    cutils.nanbin_image
+    cutils.unbin_image
 
 
 Cutils
@@ -70,4 +73,6 @@ Cutils
 .. autofunction:: multi_fit_stars
 .. autofunction:: part_value
 .. autofunction:: indft
-
+.. autofunction:: map_me
+.. autofunction:: nanbin_image
+.. autofunction:: unbin_image

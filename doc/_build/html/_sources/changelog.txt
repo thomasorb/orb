@@ -554,3 +554,101 @@ at the output and the internally computed phase used for auto-phasing
 is also obtained with this function. A low resolution phase is no more
 useful as it does not give a better precisin on the fit. A full
 length phase vector is now computed every time the phase is needed.
+
+
+
+v1.5.1
+======
+
+
+HDF5 Final output format
+------------------------
+
+The final output format is now an HDF5 cube. A FITS cube can then be
+obtained by using the script **orb-extract**. The HDF5 cube can be
+handled directly by ORCS.
+
+Complex data cubes
+------------------
+
+:py:class:`~core.HDFCube` and :py:class:`~core.OutHDFCube` now handles
+complex data sets. If a complex data cube is opened returned data will
+be complex. The user of the class must make sure that the complex data
+is not hardly cast to float (a warning is raised in this case).
+
+The full complex spectral cube is generated whichs helps in checking
+that the energy contained in the imaginary part is a small percentage
+of the energy contained in the real part, giving the possibility to
+check if the phase correction is correct. This check is made during
+the calibration step.
+
+No more automatic logging
+-------------------------
+
+Automatic logging originally handled by :py:class:`~core.Tools` is now
+handled by :py:class:`~core.Logger` which must be initialised by the
+main script. No more logfile name has to be passed to
+:py:class:`~core.Tools` or its subclasses.
+
+
+:py:class:`~core.Tools` which was used to ensure the use of the same
+logfile for all the launched processes has also been suppressed.
+
+
+Calibration laser map fit
+-------------------------
+
+:py:meth:`~utils.fit_calibration_laser_map`: The residual of the
+modelized fit of the calibration laser map is now fitted with a 2D
+polynomial. The precision is of the order of 10 m/s which gives enough
+precision to remove the fitting error on small calibration laser
+cubes. This error could be seen as small fringes on high precision
+velocity maps. It is thus better to fit the obtained calibration laser
+map when it is used to calibrate a cube. The script
+**orbs-fit-calibration-laser-map** hase been created for that.
+
+
+Phase map fit
+-------------
+
+:py:meth:`~utils.simulate_calibration_laser_map`, 
+:py:meth:`~utils.fit_calibration_laser_map` and 
+:py:meth:`~utils.fit_sitelle_phase_map` have been updated to deliver 
+a much more precise fit. But you must note that the calibration laser 
+map delivered during the fitting procedure is still not good enough
+for using as a real calibration laser map. this comes from the
+residual which must be taken into account. This might come in the
+future (see above).
+
+2D viewer
+---------
+
+2D Viewer has been updated to handle colormaps. Different shapes
+(circle and square) and different combining methods (mean, median,
+sum) of the regions are possible. A fitting module process has been
+added to the spectrum window. Some bugs have also been corrected.
+
+
+Miscellaneous
+-------------
+
+* :py:meth:`~astrometry.aperture_photometry` and
+  :py:meth:`~astrometry.fit_stars_in_frame` can now return
+  photometrical data without background sustraction. This is used in
+  source extraction (less noisy for faint sources).
+
+
+* The implementation of :py:meth:`~core.Cube.get_quadrant_dims` has
+  been moved to :py:meth:`~core.Tools.get_quadrant_dims`.
+
+* :py:meth:`~cutils.nanbin_image` and
+  :py:meth:`~cutils.unbin_image` created to bin and unbin images
+  during phase maps fitting. It permits to accelerate the process a
+  lot without losing precision.
+
+
+* :py:meth:`~utils.compute_line_fwhm` now computes the line fwhm
+  from the number of steps on the longest side of the interferogram
+  (before this was computed from the total number of steps of a
+  symetric interferogram, so generally two times more steps than in
+  this version).
