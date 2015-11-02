@@ -1,4 +1,4 @@
-#!/usr/bin/python -W ignore::FutureWarning
+#!/usr/bin/env python -W ignore::FutureWarning
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca> based on
 #   Ginga created by Eric Jeschke (eric@naoj.org) 

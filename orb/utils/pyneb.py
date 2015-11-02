@@ -30,8 +30,6 @@ __author__ = "Thomas Martin"
 __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
 __docformat__ = 'reStructuredText'
 
-import version
-__version__ = version.__version__
 
 import pyneb as pn
 from orb.core import Tools

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: combine
@@ -24,35 +24,56 @@
 ############ COMBINE script ##################
 #############################################
 
-# This script helps the user to combine a set of frames. A
-# list of frames path must be given. List files created by ORBS can be
-# used. Custom lists can be created using the command:
-# 'ls /path/to/file/*.fits > list'
+# This script helps the user to combine an hdf5 cube and create a deep
+# frame or an energy map.
 
 import os, sys
-from orb.core import Cube
+from orb.core import HDFCube
+import orb
+import argparse
+from argparse import ArgumentParser
+
 
 def usage(): 
-    print """usage: orb-combine LIST_OF_FITS IMAGE_NAME
+    print """usage: orb-combine HDF5_CUBE IMAGE_NAME
     
-    Combine a set of frames in one frame.
+    Combine an hdf5 cube in one frame.
     
     Frames must have the same shape."""
   
     sys.exit(2)
 
-def main():
+def main(args):
 
-    if len(sys.argv) < 3: usage()
-
-    list_of_fits_path = sys.argv[1]
-    im_name = sys.argv[2]
-    if os.path.exists(list_of_fits_path):
-        cube = Cube(list_of_fits_path, no_log=True)
-        im = cube.get_mean_image()
-        cube.write_fits(im_name, im)
+    if os.path.exists(args.hdf5_path):
+        cube = HDFCube(args.hdf5_path)
+        if args.type == 'deep':
+            im = cube.get_mean_image(recompute=True)
+        elif args.type == 'interf-energy':
+            im = cube.get_interf_energy_map(recompute=True)
+        elif args.type == 'spectrum-energy':
+            im = cube.get_spectrum_energy_map(recompute=True)
+            
+        cube.write_fits(args.out_path, im, overwrite=False,
+                        fits_header=cube.get_cube_header())
     else:
         print "The list file does not exist"
        
 if __name__ == "__main__":
-    main()
+
+    parser = ArgumentParser(
+        version=('ORB-version {}'.format(
+            orb.core.__version__)),
+        description="Combine an HDF5 cube and create a deep frame (by default) or an energy map (use option --energy).")
+    
+    parser.add_argument('hdf5_path',
+                        help='Path to the HDF5 cube')
+    parser.add_argument('out_path',
+                        help='Path to the output file (FITS format)')
+    parser.add_argument('--type', dest="type",
+                        default='deep', choices=['deep', 'interf-energy', 'spectrum-energy'],
+                        help="Choose the combined frame type: a deep frame ('deep'), an energy map of an interferometric cube ('interf-energy') or an energy map of a spectral cube ('spectrum-energy')")
+    
+    args = parser.parse_args()
+
+    main(args)

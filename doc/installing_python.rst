@@ -56,26 +56,27 @@ To check if a module is installed just try the following::
 
 To use the Viewers (orb-viewer and orb-viewer3d)
 ------------------------------------------------
+1. Install pygtk
 
-`Ginga <http://ejeschke.github.io/ginga/>`_ must be installed and the GTK backend must be compiled inside matplotlib:
+  sudo pip install pygtk
 
-1 - Install Ginga
+2. Install pycairo
 
-  sudo pip install ginga
+  sudo apt-get install python-cairo
 
-2 - Install development libraries for gtk2
+3. Install development libraries for gtk2
 
   sudo apt-get install python-gtk2-dev
 
-3 - Rebuild matlplotlib
+4. Rebuild matlplotlib
 
   sudo pip install --upgrade matplotlib
 
-4 - Install Vispy (for the 3d viewer)
+5. Install Vispy (for the 3d viewer)
 
   sudo pip install vispy
 
-5 - Install PySide (for the 3d viewer)
+6. Install PySide (for the 3d viewer)
 
   sudo apt-get install python-pyside
 

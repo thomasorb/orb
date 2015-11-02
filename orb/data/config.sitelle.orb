@@ -11,9 +11,9 @@ OBS_LON -155.468761 # Observatory longitude
 OBS_ALT 4215. # Observatory altitude
 
 ## Instrumental parameters
-FIELD_OF_VIEW 11. # Size of the field of view of the camera 1 in
+FIELD_OF_VIEW 11.05 # Size of the field of view of the camera 1 in
 		  # arc-minutes along the largest axis
-FIELD_OF_VIEW_2 11. # Size of the field of view of the camera 2 in
+FIELD_OF_VIEW_2 11.05 # Size of the field of view of the camera 2 in
 	            # arc-minutes along the largest axis
 PIX_SIZE_CAM1 15 # Size of one pixel of the camera 1 in um
 PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um
@@ -72,4 +72,4 @@ BIAS_CALIB_PARAM_A 7.22859919
 BIAS_CALIB_PARAM_B 1417.34030164
 
 ## WCS parameters
-WCS_ROTATION 0. # Initial rotation angle of the image [in degree]
+WCS_ROTATION 1.5 # Initial rotation angle of the image [in degree]

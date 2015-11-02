@@ -29,11 +29,8 @@ __author__ = "Thomas Martin"
 __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
 __docformat__ = 'reStructuredText'
 
-
-from orb.core import Tools
 import numpy as np
 import math
-
 
 #################################################
 #### CLASS Data #################################
@@ -88,11 +85,11 @@ class Data1D(Data):
         if len(dat.shape) > 1: raise ValueError('Data must be a 1D vector')
         self._dat = dat
         self._dimx = np.size(dat)
-        
+
         if err is not None:
             self._err = self._check_data(err)
         else:
-            self._err = None
+            self._err = np.zeros_like(dat, dtype=float)
 
     def __str__(self):
         """Informal string representation, called by print"""
@@ -553,6 +550,28 @@ def log10(a):
         return result
     else:
         return np.log10(a)
+
+
+
+def exp(a):
+    """exponential of a Data array"""
+    if isinstance(a, Data):
+        result = a.copy()
+        result.dat = np.exp(a.dat)
+        result.err = result.dat * a.err
+        return result
+    else:
+        return np.exp(a)
+
+def sqrt(a):
+    """exponential of a Data array"""
+    if isinstance(a, Data):
+        result = a.copy()
+        result.dat = np.sqrt(a.dat)
+        result.err = (result.dat * 0.5 * (a.err)) / a.dat
+        return result
+    else:
+        return np.sqrt(a)
 
 def sum(a):
     """Sum of a Data array"""

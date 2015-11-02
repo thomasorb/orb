@@ -1,0 +1,84 @@
+#!/usr/bin/python
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File: utils.py
+
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+Utils module contains functions that are used by the processing
+classes of ORBS
+"""
+
+__author__ = "Thomas Martin"
+__licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
+__docformat__ = 'reStructuredText'
+
+import version
+__version__ = version.__version__
+
+import warnings
+import os
+import subprocess
+
+from core import Tools
+import data
+import cutils
+import constants
+
+import numpy as np
+from scipy import interpolate, signal, ndimage, optimize
+import scipy.ndimage.filters
+import math
+import bottleneck as bn
+import urllib2
+from xml.dom import minidom
+import sys
+
+
+    
+
+
+
+
+    
+
+##################################################
+#### FITTING  ####################################
+##################################################
+
+
+    
+##################################################
+#### IMAGE TOOLS #################################
+##################################################
+
+
+
+
+##################################################
+#### SPECTRUM COMPUTATION  #######################
+##################################################
+
+
+
+
+
+    
+
+

@@ -56,11 +56,63 @@ cdef extern from "math.h" nogil:
     double ceil(double x)
     double floor(double x)
     double M_PI
+    double isnan(double x)
 
 def radians(double deg):
     """Convert degrees to radians
     """
     return deg * M_PI / 180.
+
+
+def transform_B_to_A(double x1, double y1, double dx, double dy, double dr,
+                     double da, double db, double xrc, double yrc, double zx,
+                     double zy):
+    """Transform star positions in camera B to the same star position
+       in camera A given the transformation parameters.
+
+    .. warning:: this function is meant to be the inverse of
+      transform_A_to_B. Given the output of transform_A_to_B and the
+      **SAME transformation parameters** the initial positions must be
+      returned by this function within the numerical error. i.e. if
+      (Xb, Yb) = A_to_B(Xi,Yi,p) and (Xa, Ya) = B_to_A(Xb, Yb, p) then
+      Xa - Xi ~ 1e-13 and Ya - Yi ~ 1e-13 (for float64 numbers)
+
+    :param x1: x coordinate to transform
+    :param y1: y coordinate to transform
+    :param dx: translation along x
+    :param dy: translation along y
+    :param dr: rotation in the plane of the image
+    :param da: tip angle
+    :param db: tilt angle
+    :param xrc: x coordinate of the rotation center
+    :param yrc: y coordinate of the rotation center
+    :param zx: zoom coefficient along x
+    :param zy: zoom coefficient along y
+    """
+    cdef double x1_orig = x1
+    cdef double y1_orig = y1
+    cdef double x2_err = 0.
+    cdef double y2_err = 0.
+    cdef double a, b, c, d, a_err, b_err, c_err, d_err
+    cdef double x2 = 0.
+    cdef double y2 = 0.
+    
+    dr = radians(dr)
+    da = radians(da)
+    db = radians(db)
+
+    # rotation
+    x2 = (x1 - xrc) * cos(dr) - (y1 - yrc) * sin(dr) + xrc
+    y2 = (y1 - yrc) * cos(dr) + (x1 - xrc) * sin(dr) + yrc
+
+    # da, db, zx, zy
+    x2 = x2 + dx
+    y2 = y2 + dy
+    
+    x2 = x2 * cos(da) * zx
+    y2 = y2 * cos(db) * zy
+
+    return x2, y2
 
 def transform_A_to_B(double x1, double y1, double dx, double dy, double dr,
                      double da, double db, double xrc, double yrc, double zx,
@@ -807,7 +859,7 @@ def sinc1d(np.ndarray[np.float64_t, ndim=1] x,
     :param dx: Position of the center
     :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
     """
-    cdef np.ndarray[np.float64_t, ndim=1] X = ((x-dx)/(fwhm/1.2067))
+    cdef np.ndarray[np.float64_t, ndim=1] X = ((x-dx)/(fwhm/1.20671))
     return h + a * np.sinc(X)
 
 def interf_mean_energy(np.ndarray interf):
@@ -1880,3 +1932,142 @@ def unbin_image(np.ndarray[np.float64_t, ndim=2] im,
                                       + q22 * (x - x1d) * (y - y1d))
             
     return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def im2rgba(np.ndarray[np.float64_t, ndim=2] im,
+            mpl_colorbar,
+            double vmin, double vmax,
+            int xmin, int xmax, int ymin, int ymax,
+            np.ndarray[np.uint8_t, ndim=2] computed_pixels,
+            last_arr8,
+            int res=1000):
+
+    """Compute RGBA from image given a matplotlib colorbar instance.
+
+    This is a function used by :py:class:`orb.visual.ImageCanvas`. It
+    is not a generalist function. It has been written to accelerate
+    matplotlib function colorbar.to_rgba().
+
+    :param im: Image
+    :param mpl_colorbar: A matplotlib colorbar instance
+    :param vmin: min value of the colorbar
+    :param vmax: max value of the colorbar
+    :param xmin: min x index of the region to compute
+    :param xmax: max x index of the region to compute
+    :param ymin: min y index of the region to compute
+    :param ymax: max y index of the region to compute
+    :param computed_pixels: Array giving the already computed pixels
+    :param last_arr8: If not None, last computed array.
+    :param res: (Optional) Lookup table resolution (default 1000)
+    """
+
+    cdef np.ndarray[np.float64_t, ndim=1] color_values
+    cdef np.ndarray[np.uint8_t, ndim=2] color_mapper
+    cdef np.ndarray[np.uint8_t, ndim=3] arr8
+    cdef np.ndarray[np.uint16_t, ndim=1] x_range, y_range
+    cdef int ii, ij, index, ir, n
+    
+    color_values = np.linspace(vmin, vmax, res)
+    color_mapper = mpl_colorbar.to_rgba(
+        color_values, alpha=None, bytes=True)
+    if last_arr8 is None:
+        arr8 = np.ones((im.shape[1], im.shape[0], 4),
+                       dtype=np.uint8) * 255
+    else:
+        arr8 = last_arr8
+
+    pix_to_compute = np.nonzero(computed_pixels[xmin:xmax, ymin:ymax] < 1)
+    x_range = pix_to_compute[0].astype(np.uint16)
+    y_range = pix_to_compute[1].astype(np.uint16)
+    n = <int> len(x_range)
+    
+    with nogil:
+        for ir in range(n):
+            ii = <int> x_range[ir] + xmin
+            ij = <int> y_range[ir] + ymin
+            if computed_pixels[ii,ij] < 1:
+                if isnan(im[ii,ij]): index = -1
+                elif im[ii,ij] <= vmin: index = 0
+                elif im[ii,ij] >= vmax: index = res - 1
+                else:
+                    index = <int> (((im[ii,ij] - vmin) / (vmax - vmin)) * (res - 1))
+                for ik in range(3):
+                    if index < 0:
+                        arr8[ij,ii,ik] = 255
+                    else:
+                        arr8[ij,ii,ik] = color_mapper[index, ik]
+                    
+    return arr8
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def detect_cosmic_rays(np.ndarray[np.float64_t, ndim=2] frame,
+                       crs_list, int box_size, double detect_coeff):
+    
+    cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
+    cdef np.ndarray[np.uint8_t, ndim=2] cr_map = np.zeros_like(
+        frame, dtype=np.uint8)
+    cdef int cr_list_len = len(crs_list[0])
+    cdef int icr, ix, iy, xmin, xmax, ymin, ymax
+    cdef double boxmed, boxstd
+    cdef np.ndarray[np.float64_t, ndim=2] box
+    
+    workframe[crs_list] = np.nan
+    
+    for icr in range(cr_list_len):
+        ix = crs_list[0][icr]
+        iy = crs_list[1][icr]
+
+        xmin, xmax, ymin, ymax = get_box_coords(
+            ix, iy, box_size,
+            0, workframe.shape[0], 0, workframe.shape[1])
+
+        if xmax - xmin == box_size and ymax - ymin == box_size:
+        
+            box = np.copy(workframe[xmin:xmax, ymin:ymax])
+        
+            if not np.all(np.isnan(box)):
+                boxstd = bn.nanstd(box)
+                boxmed = bn.nanmedian(box)
+                if frame[ix,iy] > boxmed + detect_coeff * boxstd:
+                    cr_map[ix,iy] = 1
+                
+    return cr_map
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def check_cosmic_rays_neighbourhood(
+    np.ndarray[np.float64_t, ndim=2] frame,
+    np.ndarray[np.uint8_t, ndim=2] cr_map,
+    int box_size, double detect_coeff):
+    
+    cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
+    cdef int inewcr, icr, ix, iy, xmin, xmax, ymin, ymax, ii, ij
+    cdef np.ndarray[np.float64_t, ndim=2] box
+    cdef double boxmed, boxstd
+
+    crs_list = np.nonzero(cr_map)
+    workframe[crs_list] = np.nan
+    
+    for icr in range(len(crs_list[0])):
+        ix = crs_list[0][icr]
+        iy = crs_list[1][icr]
+        xmin, xmax, ymin, ymax = get_box_coords(
+            ix, iy, box_size,
+            0, workframe.shape[0], 0, workframe.shape[1])
+        
+        if xmax - xmin == box_size and ymax - ymin == box_size:
+            box = np.copy(workframe[xmin:xmax, ymin:ymax])
+            if not np.all(np.isnan(box)):
+                boxstd = bn.nanstd(box)
+                boxmed = bn.nanmedian(box)
+                for ii in range(xmin, xmax):
+                    for ij in range(ymin, ymax):
+                        if frame[ii, ij] > boxmed + detect_coeff * boxstd:
+                            cr_map[ii,ij] = 1
+            
+    return cr_map

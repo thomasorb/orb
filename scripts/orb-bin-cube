@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File: orb-bin-cube
+
+## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+#############################################
+############ BIN-CUBE script ################
+#############################################
+
+# bin a cube 
+import argparse
+from argparse import ArgumentParser
+import os
+from orb.core import HDFCube, OutHDFCube, ProgressBar
+import orb.utils.image
+
+def main(args):
+    cube = HDFCube(args.cube_path)
+    outpath = (os.path.splitext(args.cube_path)[0]
+               + '.bin{}'.format(args.bin_factor)
+               + os.path.splitext(args.cube_path)[1])
+    
+    frame0 = cube.get_data_frame(0)
+    frame0_bin = orb.utils.image.nanbin_image(frame0, args.bin_factor)
+
+    outcube = OutHDFCube(outpath,
+                         (frame0_bin.shape[0],
+                          frame0_bin.shape[1],
+                          cube.dimz),
+                         overwrite=True, reset=True)
+    outcube.write_frame(0, data=frame0_bin,
+                        header=cube.get_frame_header(0))
+    
+    progress = ProgressBar(cube.dimz-1)
+    for ik in range(1, cube.dimz):
+        iframe = cube.get_data_frame(ik)
+        frame_bin = orb.utils.image.nanbin_image(iframe, args.bin_factor)
+        outcube.write_frame(ik, data=frame_bin,
+                            header=cube.get_frame_header(ik))
+        progress.update(ik-1)
+    progress.end()
+    outcube.close()
+        
+    
+    
+if __name__ == "__main__":
+
+    parser = ArgumentParser(version=('ORB-version {}'.format(
+                              orb.core.__version__)),
+                            description=
+                            "Bin an HDF5 cube.")
+
+
+    parser.add_argument('bin_factor', help='Binning factor', type=int)
+    
+    parser.add_argument('cube_path', help='Path to an HDF5 cube')
+
+
+    args=parser.parse_args()
+    
+    main(args)

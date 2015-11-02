@@ -51,7 +51,7 @@ import pp
 import h5py
 
 import cutils
-
+import utils.spectrum
 
 #################################################
 #### CLASS TextColor ############################
@@ -950,15 +950,15 @@ class Tools(object):
             else:
                 self._print_error("New data shape %s and old data shape %s are not the same. Do not set the option 'replace' to True in this case"%(str(fits_data.shape), str(old_data.shape)))
         
-        # float64 data conversion to float32 to avoid too big files
+        # float64/128 data conversion to float32 to avoid too big files
         # with unnecessary precision
-        if fits_data.dtype == np.float64:
+        if fits_data.dtype == np.float64 or fits_data.dtype == np.float128:
             fits_data = fits_data.astype(np.float32)
 
         # complex data cannot be written in fits
         if np.iscomplexobj(fits_data):
             fits_data = fits_data.real.astype(np.float32)
-            self._print_warning('Complex data cast to float32 (FITS format fo not support complex data)')
+            self._print_warning('Complex data cast to float32 (FITS format do not support complex data)')
         
         base_fits_name = fits_name
 
@@ -1689,7 +1689,8 @@ class Tools(object):
         :param hdf5_header: Header of the HDF5 file
         """
         def cast(a, t_str):
-            for _t in [int, float, bool, str, np.int64, np.float64, long]:
+            for _t in [int, float, bool, str, np.int64,
+                       np.float64, long, np.float128]:
                 if t_str == repr(_t):
                     return _t(a)
             raise Exception('Bad type string {}'.format(t_str))
@@ -1879,7 +1880,7 @@ class Cube(Tools):
                  config_file_name="config.orb", project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, silent_init=False, no_log=False,
-                 tuning_parameters=dict(), indexer=None):
+                 tuning_parameters=dict(), indexer=None, no_sort=False):
         
         """
         Initialize Cube class.
@@ -1949,7 +1950,10 @@ class Cube(Tools):
 
         :param indexer: (Optional) Must be a :py:class:`core.Indexer`
           instance. If not None created files can be indexed by this
-          instance.    
+          instance.
+
+        :param no_sort: (Optional) If True, no sort of the file list
+          is done. Files list is taken as is (default False).
         """
         self.is_complex = False
         self.dtype = float
@@ -2067,8 +2071,9 @@ class Cube(Tools):
             image_list_file.close()
 
             # image list is sorted
-            self.image_list = self.sort_image_list(self.image_list,
-                                                   self._image_mode)
+            if not no_sort:
+                self.image_list = self.sort_image_list(self.image_list,
+                                                       self._image_mode)
             
             self.image_list = np.array(self.image_list)
             self.dimz = self.image_list.shape[0]
@@ -2519,7 +2524,7 @@ class Cube(Tools):
         return data
 
     def get_interf_energy_map(self):
-        """Return the energy map of an interferogram cube"""
+        """Return the energy map of an interferogram cube."""
         mean_map = self.get_mean_image()
         energy_map = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
         progress = ProgressBar(self.dimz)
@@ -2531,7 +2536,7 @@ class Cube(Tools):
 
     def get_spectrum_energy_map(self):
         """Return the energy map of a spectrum cube.
-
+    
         .. note:: In this process NaNs are considered as zeros.
         """
         energy_map = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
@@ -2544,13 +2549,16 @@ class Cube(Tools):
         progress.end()
         return np.sqrt(energy_map) / self.dimz
 
-    def get_mean_image(self):
+    def get_mean_image(self, recompute=False):
         """Return the mean image of a cube (corresponding to a deep
         frame for an interferogram cube or a specral cube).
 
+        :param recompute: (Optional) Force to recompute mean image
+          even if it is already present in the cube (default False).
+        
         .. note:: In this process NaNs are considered as zeros.
         """
-        if self.mean_image is None:
+        if self.mean_image is None or recompute:
             mean_im = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
             progress = ProgressBar(self.dimz)
             for _ik in range(self.dimz):
@@ -2732,7 +2740,7 @@ class Cube(Tools):
        
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
-               force_hdf5=False):
+               force_hdf5=False, force_fits=False):
         
         """Export cube as one FITS/HDF5 file.
 
@@ -2755,8 +2763,15 @@ class Cube(Tools):
 
         :param force_hdf5: (Optional) If True, output is in HDF5
           format even if the input files are FITS files. If False it
-          will be in the format of the input files (default False).   
+          will be in the format of the input files (default False).
+
+        :param force_fits: (Optional) If True, output is in FITS
+          format. If False it will be in the format of the input files
+          (default False).
         """
+        if force_fits and force_hdf5:
+            self._print_error('force_fits and force_hdf5 cannot be both set to True')
+        
         if x_range is None:
             xmin = 0
             xmax = self.dimx
@@ -2778,8 +2793,9 @@ class Cube(Tools):
             zmin = np.min(z_range)
             zmax = np.max(z_range)
             
-        if self._hdf5 or force_hdf5: # HDF5 export
-            
+        if (self._hdf5 or force_hdf5) and not force_fits: # HDF5 export
+            self._print_msg('Exporting cube to an HDF5 cube: {}'.format(
+                export_path))
             outcube = OutHDFCube(
                 export_path,
                 (xmax - xmin, ymax - ymin, zmax - zmin),
@@ -2835,6 +2851,8 @@ class Cube(Tools):
             del outcube
                 
         else: # FITS export
+            self._print_msg('Exporting cube to a FITS cube: {}'.format(
+                export_path))
             data = np.empty((xmax-xmin, ymax-ymin, zmax-zmin), dtype=float)
         
             job_server, ncpus = self._init_pp_server()
@@ -3399,7 +3417,7 @@ class Lines(Tools):
           to be in air. If False it is considered to be in
           vacuum (default True).
         """
-        if isinstance(lines, (float, int)):
+        if isinstance(lines, (float, int, np.float128)):
             lines = [lines]
 
         names = list()
@@ -4006,38 +4024,47 @@ class HDFCube(Cube):
             else:
                 return pyfits.Header()
            
-    def get_mean_image(self):
+    def get_mean_image(self, recompute=False):
         """Return the deep frame of the cube.
 
+        :param recompute: (Optional) Force to recompute mean image
+          even if it is already present in the cube (default False).
+        
         If a deep frame has already been computed ('deep_frame'
         dataset) return it directly.
         """
         with self.open_hdf5(self.cube_path, 'r') as f:
-            if 'deep_frame' in f:
+            if 'deep_frame' in f and not recompute:
                 return f['deep_frame'][:]
             else:
-                return Cube.get_mean_image(self)
+                return Cube.get_mean_image(self, recompute=recompute)
 
-    def get_interf_energy_map(self):
+    def get_interf_energy_map(self, recompute=False):
         """Return the energy map of an interferogram cube.
-
+    
+        :param recompute: (Optional) Force to recompute energy map
+          even if it is already present in the cube (default False).
+          
         If an energy map has already been computed ('energy_map'
         dataset) return it directly.
         """
         with self.open_hdf5(self.cube_path, 'r') as f:
-            if 'energy_map' in f:
+            if 'energy_map' in f and not recompute:
                 return f['energy_map'][:]
             else:
                 return Cube.get_interf_energy_map(self)
     
-    def get_spectrum_energy_map(self):
+    def get_spectrum_energy_map(self, recompute=False):
         """Return the energy map of a spectral cube.
-
+        
+        :param recompute: (Optional) Force to recompute energy map
+          even if it is already present in the cube (default False).
+          
         If an energy map has already been computed ('energy_map'
         dataset) return it directly.
         """
         with self.open_hdf5(self.cube_path, 'r') as f:
-            if 'energy_map' in f:
+            if 'energy_map' in f and not recompute:
                 return f['energy_map'][:]
             else:
                 return Cube.get_spectrum_energy_map(self)
@@ -4375,3 +4402,62 @@ class Logger(object):
         self.stdout.flush()
         self.file.flush()
         
+##################################################
+#### CLASS Waves #################################
+##################################################           
+
+class Waves(object):
+    """Wave class that keep the best conversions possible from nm to cm1."""
+
+    def __init__(self, nm, velocity=0.):
+        """
+        :param nm: Rest frame wavelength in nm. Must be a float, a
+          string or an array of 1 dimension of floats and
+          strings. Strings must be line names stored in Lines class.
+        
+        :param velocity: (Optional) Velocity in km/s (default 0.)
+
+        .. note:: all parameters can be arrays of the same shape. If
+        velocity is a float and nm is an array with a certain
+        shape, the same velocity will be attributed to all
+        wavelengths.
+        """
+        if len(np.array(nm).shape) > 1:
+            raise Exception('nm must be an array of dimension 1')
+
+        if not isinstance(nm, list):
+            if np.size(nm) == 1:
+                nm = list([nm])
+
+        nm_list = list()
+        for inm in nm:
+            if isinstance(inm, str):
+                nm_list.append(Lines().get_line_nm(inm))
+            else:
+                nm_list.append(float(inm))
+
+        self.nm = np.squeeze(np.array(nm_list).astype(np.longdouble))
+        self.set_velocity(velocity)
+        
+    def set_velocity(self, velocity):
+        if np.size(velocity) == 1:
+            self.velocity = float(velocity)
+        elif np.array(velocity).shape != self.nm.shape:
+            raise Exception('Velocity array shape must be the same as nm shape')
+        else:
+            self.velocity = np.array(velocity).astype(np.longdouble)
+
+    def get_nm(self):
+        return self.nm + utils.spectrum.line_shift(
+            self.velocity, self.nm, wavenumber=False)
+
+    def get_cm1(self):
+        cm1 = self.get_cm1_rest()
+        return cm1 + utils.spectrum.line_shift(
+            self.velocity, cm1, wavenumber=True)
+
+    def get_nm_rest(self):
+        return np.copy(self.nm)
+
+    def get_cm1_rest(self):
+        return utils.spectrum.nm2cm1(self.nm)
