@@ -726,12 +726,12 @@ class BaseViewer(object):
         if mode == 'save':
             act = gtk.FILE_CHOOSER_ACTION_SAVE
             but = gtk.STOCK_SAVE
-            title = 'Save image as ...'
+            title = 'Save image as...'
 
         elif mode == 'open':
             act = gtk.FILE_CHOOSER_ACTION_OPEN
             but = gtk.STOCK_OPEN
-            title = 'Open file ...'
+            title = 'Open file'
             
         else: raise Exception("Mode must be 'save' or 'load'")
         
@@ -750,7 +750,7 @@ class BaseViewer(object):
             fc.destroy()
             action(filepath)
             
-        elif response == gtk.RESPONSE_CANCEL:
+        else:
             fc.destroy()
         
     def save_image(self, filepath):
@@ -1014,6 +1014,14 @@ class ZPlotWindow(PopupWindow):
             clabutton.connect('clicked', self._clear_data_cb)
             buttonsbar.pack_start(clabutton)
 
+            uzobutton = gtk.Button('Unzoom')
+            uzobutton.connect('clicked', self._unzoom_cb)
+            buttonsbar.pack_start(uzobutton)
+
+            savbutton = gtk.Button('Save')
+            savbutton.connect('clicked', self._save_data_cb)
+            buttonsbar.pack_start(savbutton)
+
             framebox.pack_start(buttonsbar, fill=False, expand=False)
         
 
@@ -1057,11 +1065,32 @@ class ZPlotWindow(PopupWindow):
             self.specbutton.set_label('Show spectrum')
         self.update()
 
+    def _unzoom_cb(self, c):
+        print 'unzoom'
+
+
+    def _save_data_cb(self, c):
+        fc = gtk.FileChooserDialog(
+            title='Save data as...',
+            parent=self.w,
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                     gtk.STOCK_SAVE, gtk.RESPONSE_OK),
+            action= gtk.FILE_CHOOSER_ACTION_SAVE)
+        fc.set_current_folder(os.getcwd())
+        
+        response = fc.run()
+
+        
+        if response == gtk.RESPONSE_OK:
+            filepath = fc.get_filename()
+            fc.destroy()
+            Tools().write_fits(filepath, self.zdata, overwrite=True)
+        
+        else:
+            fc.destroy()
+        
+        
     def _zoom_cb(self, eclick, erelease):
-        'eclick and erelease are matplotlib events at press and release'
-        print(' startposition : (%f, %f)' % (eclick.xdata, eclick.ydata))
-        print(' endposition   : (%f, %f)' % (erelease.xdata, erelease.ydata))
-        print(' used button   : ', eclick.button)
         xlim = (min(eclick.xdata, erelease.xdata),
                 max(eclick.xdata, erelease.xdata))
         ylim = (min(eclick.ydata, erelease.ydata),

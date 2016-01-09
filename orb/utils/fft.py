@@ -14,7 +14,7 @@
 ##
 ## ORB is distributed in the hope that it will be useful, but WITHOUT
 ## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
 ## License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
@@ -716,7 +716,7 @@ def transform_interferogram(interf, nm_laser,
     # 8 - Zero the centerburst
     zero_padded_vector = np.roll(zero_padded_vector,
                                  zero_padded_vector.shape[0]/2)
-
+    
     #####
     # 9 - Fast Fourier Transform of the interferogram
     center = zero_padded_size / 2
@@ -798,7 +798,8 @@ def transform_interferogram(interf, nm_laser,
 def transform_spectrum(spectrum, nm_laser, calibration_coeff,
                        step, order, window_type, zpd_shift,
                        ext_phase=None, return_complex=False, wavenumber=False,
-                       final_step_nb=None, sampling_vector=None):
+                       final_step_nb=None, sampling_vector=None,
+                       zero_padding=False):
     """Transform a spectrum into an interferogram.
 
     This function is the inverse of :py:meth:`utils.transform_interferogram`.
@@ -853,6 +854,11 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
       computed which may be really slow for long vectors. A uniformly
       sampled vector would be range(final_step_nb). The size of the
       vector must be equal to final_step_nb (default None).
+
+    :zero_padding: (Optional) If True and if final_step_nb is >
+      spectrum step number, ouput is zero padded. Can be used to
+      compare a high resolution interferogram to a low resolution
+      interferogram.
     
     .. note:: Interferogram can be complex
     """
@@ -928,10 +934,19 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     if window_type is not None:
         window = norton_beer_window(window_type, final_step_nb)
         interf /= window
-    
+
     # Normalization to remove zero filling effect on the mean energy
     interf *= step_nb / float(final_step_nb) * 2.
-    
+
+    # Zero-padding of the output
+    if zero_padding and final_step_nb < step_nb:
+        print interf.shape, final_step_nb, step_nb
+        zp_interf = np.zeros(step_nb, dtype=complex)
+        zp_interf[
+            int(math.ceil(step_nb/2.))-(final_step_nb/2) - final_step_nb%2:
+            int(math.ceil(step_nb/2.))+(final_step_nb/2)] = interf
+        interf = zp_interf
+        
     if return_complex:
         return interf
     else:

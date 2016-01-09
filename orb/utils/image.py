@@ -84,7 +84,9 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
         modules=("import numpy as np",
                  "import orb.cutils as cutils",
                  "from orb.core import Tools",
-                 "from orb.utils import *")))
+                 "from orb.utils import *",
+                 "import warnings",
+                 "import orb")))
             for ijob in range(ncpus)]
     
     for ijob, job in jobs:
@@ -503,7 +505,7 @@ def high_pass_diff_image_filter(im, deg=1):
     :param im: Image to filter
 
     :param deg: (Optional) Radius of the kernel of the low pass
-      filter. Must be > 0 (default 2).
+      filter. Must be > 0 (default 1).
     """
     lp_im = low_pass_image_filter(im, deg=deg)
     return lp_im - scipy.ndimage.filters.median_filter(lp_im, size=(5,5))

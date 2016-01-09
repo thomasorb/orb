@@ -140,7 +140,7 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
     return filter_min_pix, filter_max_pix
 
 def get_filter_function(filter_file_path, step, order, n,
-                        wavenumber=False):
+                        wavenumber=False, silent=False):
     """Read a filter file and return its function interpolated over
     the desired number of points. Return also the edges position over
     its axis in pixels.
@@ -156,6 +156,9 @@ def get_filter_function(filter_file_path, step, order, n,
     :param wavenumber: (Optional) If True the function is interpolated
       and returned along a wavenumber axis. If False it is returned
       along a wavelength axis (default False).
+
+    :param silent: (Optional) If True, no message is displayed
+      (default False).
 
     :returns: (interpolated filter function, min edge, max edge). Min
       and max edges are given in pixels over the interpolation axis.
@@ -183,7 +186,7 @@ def get_filter_function(filter_file_path, step, order, n,
     # Interpolation of the filter function
     interpol_f = interpolate.UnivariateSpline(filter_nm, filter_trans, 
                                               k=5, s=0)
-    filter_function = interpol_f(spectrum_axis)
+    filter_function = interpol_f(spectrum_axis.astype(float))
 
     # Filter function is expressed in percentage. We want it to be
     # between 0 and 1.
@@ -201,7 +204,8 @@ def get_filter_function(filter_file_path, step, order, n,
         filter_max = np.max(ok_values)
         warnings.warn("Filter edges (%f -- %f nm) determined automatically using a threshold of %f %% transmission coefficient"%(f_axis(filter_min), f_axis(filter_max), filter_threshold*100.))
     else:
-        print "Filter edges read from filter file: %f -- %f"%(filter_min, filter_max)
+        if not silent:
+            print "Filter edges read from filter file: %f -- %f"%(filter_min, filter_max)
         # filter edges converted to index of the filter vector
         filter_min = int(fpix_axis(filter_min))
         filter_max = int(fpix_axis(filter_max))

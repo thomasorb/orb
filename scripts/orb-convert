@@ -38,7 +38,8 @@ def main(args):
     export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
     cube = HDFCube(args.input_cube_path, no_log=True)
     
-    cube.export(export_path, force_fits=True, overwrite=True)
+    cube.export(export_path, force_fits=True, overwrite=True,
+                header=cube.get_cube_header())
  
 
 if __name__ == "__main__":

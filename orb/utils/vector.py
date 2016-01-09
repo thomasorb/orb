@@ -69,8 +69,8 @@ def smooth(a, deg=2, kind='gaussian', keep_sides=True):
     if (kind== 'cos_conv'):
         kernel = cos_kernel(deg)
 
-    if (kind=="gaussian_conv") or (kind== 'cos_conv'):
-        kernel /= np.sum(kernel)
+    if (kind=="gaussian_conv") or (kind=='cos_conv') or (kind=="gaussian"):
+        kernel /= np.nansum(kernel)
         smoothed_a = signal.convolve(a, kernel, mode='same')
         if keep_sides:
             return smoothed_a[deg:-deg]

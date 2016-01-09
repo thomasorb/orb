@@ -2092,8 +2092,6 @@ class Cube(Tools):
 
     def __getitem__(self, key):
         """Implement the evaluation of self[key].
-
-        .. note:: There is no interpretation of the negative indexes.
         
         .. note:: To make this function silent just set
           Cube()._silent_load to True.
@@ -2184,9 +2182,12 @@ class Cube(Tools):
             if _slice.stop is not None:
                 if (isinstance(_slice.stop, int)
                     or isinstance(_slice.stop, long)):
-                    if ((_slice.stop >= 0) and (_slice.stop <= _max)
-                        and _slice.stop > slice_min):
-                        slice_max = int(_slice.stop)
+                    if _slice.stop < 0: # transform negative index to real index
+                        slice_stop = _max + _slice.stop
+                    else:  slice_stop = _slice.stop
+                    if ((slice_stop <= _max)
+                        and slice_stop > slice_min):
+                        slice_max = int(slice_stop)
                     else:
                         self._print_error(
                             "Index error: list index out of range")
@@ -3807,12 +3808,14 @@ class HDFCube(Cube):
     _hdf5f = None # Instance of h5py.File
     _silent_load = False
     is_complex = None
+    _prebinning = None
+    
     """Set to True if data is complex"""
     
     def __init__(self, cube_path, project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, indexer=None, silent_init=False,
-                 **kwargs):
+                 binning=None, **kwargs):
         
         """
         Initialize HDFCube class.
@@ -3839,6 +3842,10 @@ class HDFCube(Cube):
           instance. If not None created files can be indexed by this
           instance.
 
+        :param binning: (Optional) Cube binning. If > 1 data will be
+          transparently binned so that the cube will behave as as if
+          it was already binned (default None).
+
         :param silent_init: (Optional) If True Init is silent (default False).
 
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
@@ -3850,7 +3857,12 @@ class HDFCube(Cube):
         self._project_header = project_header
         self._wcs_header = wcs_header
         self._calibration_laser_header = calibration_laser_header
-        
+
+        self._prebinning = None
+        if binning is not None:
+            if int(binning) > 1:
+                self._prebinning = int(binning)
+            
         self.DIV_NB = int(self._get_config_parameter(
             "DIV_NB"))
         self.QUAD_NB = self.DIV_NB**2L
@@ -3876,8 +3888,6 @@ class HDFCube(Cube):
             self.dimx = self._get_attribute('dimx')
             self.dimy = self._get_attribute('dimy')
             
-            self.shape = (self.dimx, self.dimy, self.dimz)
-            
             if self._get_hdf5_frame_path(0) in f:                
                 if ((self.dimx, self.dimy)
                     != f[self._get_hdf5_data_path(0)].shape):
@@ -3899,6 +3909,11 @@ class HDFCube(Cube):
                 self._print_error('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
                     self._get_hdf5_frame_path(0)))
 
+        # binning
+        if self._prebinning is not None:
+            self.dimx = self.dimx / self._prebinning
+            self.dimy = self.dimy / self._prebinning
+
         if (self.dimx) and (self.dimy) and (self.dimz):
             if not silent_init:
                 self._print_msg("Data shape : (" + str(self.dimx) 
@@ -3909,10 +3924,10 @@ class HDFCube(Cube):
                             + str(self.dimx) + ", " + str(self.dimy) 
                               + ", " +str(self.dimz) + ")")
 
+        self.shape = (self.dimx, self.dimy, self.dimz)
+        
     def __getitem__(self, key):
         """Implement the evaluation of self[key].
-
-        .. note:: There is no interpretation of the negative indexes.
         
         .. note:: To make this function silent just set
           Cube()._silent_load to True.
@@ -3930,6 +3945,12 @@ class HDFCube(Cube):
                          y_slice.stop - y_slice.start,
                          z_slice.stop - z_slice.start), dtype=self.dtype)
 
+        if self._prebinning is not None:
+            x_slice = slice(x_slice.start * self._prebinning,
+                            x_slice.stop * self._prebinning, 1)
+            y_slice = slice(y_slice.start * self._prebinning,
+                            y_slice.stop * self._prebinning, 1)
+
         if z_slice.stop - z_slice.start == 1:
             only_one_frame = True
         else:
@@ -3938,17 +3959,27 @@ class HDFCube(Cube):
         with self.open_hdf5(self.cube_path, 'r') as f:
             if not self._silent_load and not only_one_frame:
                 progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+                
             for ik in range(z_slice.start, z_slice.stop):
-                data[0:x_slice.stop - x_slice.start,
-                     0:y_slice.stop - y_slice.start,
-                     ik - z_slice.start] = f[
+                unbin_data = f[
                     self._get_hdf5_data_path(
                         ik, mask=self._return_mask)][x_slice, y_slice]
                 
+                if self._prebinning is not None:
+                    data[0:x_slice.stop - x_slice.start,
+                         0:y_slice.stop - y_slice.start,
+                         ik - z_slice.start] = utils.image.nanbin_image(
+                        unbin_data, self._prebinning)
+                else:
+                    data[0:x_slice.stop - x_slice.start,
+                         0:y_slice.stop - y_slice.start,
+                         ik - z_slice.start] = unbin_data
+                    
+                if not self._silent_load and not only_one_frame:
+                    progress.update(ik - z_slice.start, info="Loading data")
+                    
             if not self._silent_load and not only_one_frame:
-                progress.update(ik - z_slice.start, info="Loading data")
-        if not self._silent_load and not only_one_frame:
-            progress.end()
+                progress.end()
             
         return np.squeeze(data)
 

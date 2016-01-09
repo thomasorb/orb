@@ -31,6 +31,9 @@ This file contains only some useful constants
 # (line_fwhm = line_width * FWHM)
 FWHM_COEFF = abs(2.*math.sqrt(2. * math.log(2.)))
 
+# Coefficien used to determine sinc fwhm
+FWHM_SINC_COEFF = 1.20671
+
 # Velocity of the light in the vacuum in km.s-1
 LIGHT_VEL_KMS = 299792.458 
 

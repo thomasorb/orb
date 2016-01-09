@@ -31,6 +31,7 @@ import orb.core
 from orb.core import Tools, HDFCube
 import argparse
 from argparse import ArgumentParser
+import astropy.wcs as pywcs
 import warnings
 
 
@@ -124,6 +125,36 @@ def main(args):
                          
             elif args.subparser_name == 'info':
                 hdulist.info()
+
+            elif args.subparser_name == 'mod':
+                if file_type == 'fits':
+                    try:
+                        value = int(args.value)
+                    except ValueError:
+                        try:
+                            value = float(args.value)
+                        except ValueError:
+                            value = str(args.value)
+                        
+                    hdu.header[args.keyword] = value
+                    hdulist.writeto(fits_path, clobber=True)
+                else:
+                    print ' > ERROR: Not implemented yet for HDF5.'.format(
+                        args.keyword)
+                    sys.exit(2)
+
+            elif args.subparser_name == 'fix':
+                if file_type == 'fits':
+                    
+                    wcs = pywcs.WCS(hdu.header, relax=False, fix=True)
+                    wcs_header = wcs.to_header()
+                    hdu.header.extend(wcs_header, update=True)
+                    hdulist.writeto(fits_path, clobber=True, output_verify='fix')
+                else:
+                    print ' > ERROR: Not implemented yet for HDF5.'.format(
+                        args.keyword)
+                    sys.exit(2)
+                    
         
     else:
         print " > ERROR: File {} does not exist.".format(args.fits_path)
@@ -152,9 +183,15 @@ if __name__ == "__main__":
     
     parser_del.add_argument('keyword', help='Keyword to delete')
 
-    parser_del = subparsers.add_parser('info', help='Print basic header info')
+    parser_info = subparsers.add_parser('info', help='Print basic header info')
+
+    parser_mod = subparsers.add_parser('mod', help='Change/Add keyword')
+
+    parser_mod.add_argument('keyword', help='Keyword to Change/Add')
+
+    parser_mod.add_argument('value', help='Value of the keyword')
     
-    
+    parser_mod = subparsers.add_parser('fix', help='Fix header and WCS')
 
     if len(sys.argv) < 2:
         parser.print_usage()
