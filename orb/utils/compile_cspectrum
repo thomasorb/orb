@@ -1,5 +1,0 @@
-#!/bin/bash
-
-cython cspectrum.pyx
-gcc -c -fPIC  -I/usr/include/python2.7/ -I/usr/local/lib/python2.7/dist-packages/numpy/core/include/ cspectrum.c
-gcc -shared cspectrum.o -o cspectrum.so

@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: filters.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -23,8 +23,8 @@
 import numpy as np
 import warnings
 from scipy import interpolate
+
 import orb.utils.spectrum
-import orb.utils.vector
 
 def read_filter_file(filter_file_path):
     """

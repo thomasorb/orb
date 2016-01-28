@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: core.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -47,11 +47,11 @@ import bottleneck as bn
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
-import pp
 import h5py
 
+## ORB IMPORTS
 import cutils
-import utils.spectrum
+import utils.spectrum, utils.parallel
 
 #################################################
 #### CLASS TextColor ############################
@@ -357,6 +357,7 @@ class Tools(object):
         :param traceback: (Optional) If True, print traceback (default
           False)
         """
+        if self._silent: return
         if traceback:
             self._print_caller_traceback()
             
@@ -391,6 +392,7 @@ class Tools(object):
         :param no_hdr: (Optional) If True, The message is displayed
           as it is, without any header.   
         """
+        if self._silent: return
         if not no_hdr:
             message = (self._get_date_str() + self._msg_class_hdr + 
                        sys._getframe(1).f_code.co_name + " > " + message)
@@ -677,44 +679,20 @@ class Tools(object):
         .. note:: Please refer to http://www.parallelpython.com/ for
           sources and information on Parallel Python software
         """
-        ppservers = ()
-        
-        if self.ncpus == 0:
-            job_server = pp.Server(ppservers=ppservers)
-        else:
-            job_server = pp.Server(self.ncpus, ppservers=ppservers)
-            
-        ncpus = job_server.get_ncpus()
-        if not silent:
-            self._print_msg(
-                "Init of the parallel processing server with %d threads"%ncpus)
-        return job_server, ncpus
+        return utils.parallel.init_pp_server(ncpus=self.ncpus,
+                                             silent=silent)
 
     def _close_pp_server(self, js):
         """
         Destroy the parallel python job server to avoid too much
         opened files.
+
+        :param js: job server.
         
         .. note:: Please refer to http://www.parallelpython.com/ for
             sources and information on Parallel Python software.
         """
-        # First shut down the normal way
-        js.destroy()
-        # access job server methods for shutting down cleanly
-        js._Server__exiting = True
-        js._Server__queue_lock.acquire()
-        js._Server__queue = []
-        js._Server__queue_lock.release()
-        for worker in js._Server__workers:
-            worker.t.exiting = True
-            try:
-                # add worker close()
-                worker.t.close()
-                os.kill(worker.pid, 0)
-                os.waitpid(worker.pid, os.WNOHANG)
-            except OSError:
-                # PID does not exist
-                pass
+        return utils.parallel.close_pp_server(js)
         
     def _get_mask_path(self, path):
         """Return the path to the mask given the path to the original
@@ -1123,7 +1101,7 @@ class Tools(object):
           http://fits.gsfc.nasa.gov/ for more information on FITS
           files.
         """
-        fits_name = (fits_name.splitlines())[0]
+        fits_name = ((fits_name.splitlines())[0]).strip()
         if return_mask:
             fits_name = self._get_mask_path(fits_name)
             
@@ -1366,18 +1344,25 @@ class Tools(object):
                     os.makedirs(dirname)
         if mode == 'r': mode = 'rU' # read in universal mode by
                                     # default to handle Windows files.
-                                    
-        return open(file_name, mode)
 
-    def sort_image_list(self, file_list, image_mode):
+        return open(file_name, mode)
+    
+
+    def sort_image_list(self, file_list, image_mode, cube=True):
         """Sort a list of fits files.
 
         :param file_list: A list of file names
 
         :param image_mode: Image mode, can be 'sitelle' or 'spiomm'.
+
+        :param cube: If True, image list is considered as a cube
+          list. Headers are used to get the right order based on step
+          number instead of file path (default True).
         """
+    
         file_list = [path for path in file_list if
                      (('.fits' in path) or ('.hdf5' in path))]
+        
         if len(file_list) == 0: return None
 
         if image_mode == 'spiomm':
@@ -1388,6 +1373,7 @@ class Tools(object):
         file_seq = [re.findall("[0-9]+", path)
                         for path in file_list if
                     (('.fits' in path) or ('.hdf5' in path))]
+        
         try:
             file_keys = np.array(file_seq, dtype=int)
         except Exception, e:
@@ -1403,17 +1389,18 @@ class Tools(object):
             column_index = np.nan
         else:
             column_index = np.argmin(test)
-            
 
         # get changing step (if possible)
         steplist = list()
-        for path in file_list:
-            if '.fits' in path:
-                try:
-                    hdr = self.read_fits(path, return_hdu_only=True)[0].header
-                    if 'SITSTEP' in hdr:
-                        steplist.append(int(hdr['SITSTEP']))
-                except Exception: pass
+        if cube:
+            for path in file_list:
+                if '.fits' in path:
+                    try:
+                        hdr = self.read_fits(
+                            path, return_hdu_only=True)[0].header
+                        if 'SITSTEP' in hdr:
+                            steplist.append(int(hdr['SITSTEP']))
+                    except Exception: pass
                 
         
         if len(steplist) == len(file_list):
@@ -1504,7 +1491,7 @@ class Tools(object):
 
     def write_hdf5(self, file_path, data, header=None,
                    silent=False, overwrite=False, max_hdu_check=True,
-                   compress=False):
+                   compress=True):
 
         """    
         Write data in HDF5 format.
@@ -1648,7 +1635,9 @@ class Tools(object):
                 if compress:
                     data_group = f.create_dataset(
                         hdu_group_name + '/data', data=idata,
-                        compression='szip', compression_opts=('nn', 32))
+                        compression='lzf', compression_opts=None)
+                        #compression='szip', compression_opts=('nn', 32))
+                        #compression='gzip', compression_opts=9)
                 else:
                     data_group = f.create_dataset(
                         hdu_group_name + '/data', data=idata)
@@ -2951,7 +2940,7 @@ class ProgressBar:
             return str(hours) + "h" + str(minutes) + "m" + str(seconds) + "s"
 
 
-    def update(self, index, info="", remains=True):
+    def update(self, index, info="", remains=True, nolog=True):
         """Update the progress bar.
 
         :param index: Index representing the progress of the
@@ -2962,6 +2951,9 @@ class ProgressBar:
           
         :param remains: (Optional) If True, remaining time is
           displayed (default True).
+
+        :param nolog: (Optional) No logging of the printed text is
+          made (default True).
         """
         if (self._max_index > 0):
             color = TextColor.BLUE
@@ -2992,13 +2984,14 @@ class ProgressBar:
             color = TextColor.GREEN
             line = ("\r [please wait] [" +
                     str(info) +"]")
+            
         self._erase_line()
         if (len(line) > self.MAX_CARAC):
             rem_len = len(line) - self.MAX_CARAC + 1
             line = line[:-rem_len]
         if not self._silent:
             if isinstance(sys.stdout, Logger):
-                sys.stdout.write(line, color=color, nolog=True)
+                sys.stdout.write(line, color=color, nolog=nolog)
             else:
                 sys.stdout.write(line)
             sys.stdout.flush()
@@ -3017,10 +3010,10 @@ class ProgressBar:
             self.update(self._max_index, info="completed in " +
                         self._time_str_convert(
                             time.time() - self._start_time),
-                        remains=False)
+                        remains=False, nolog=False)
             if not self._silent:
                 if isinstance(sys.stdout, Logger):
-                    sys.stdout.write('\n', nolog=True)
+                    sys.stdout.write('\n', nolog=False)
                 else:
                     sys.stdout.write("\n")
         else:
@@ -3030,6 +3023,7 @@ class ProgressBar:
                         remains=False)
             if not self._silent:
                 sys.stdout.flush()
+                
 
 
 
@@ -3686,8 +3680,8 @@ class OptionFile(Tools):
 #################################################
 
 class ParamsFile(Tools):
-    """Manage the correspondance between multiple dict containing the
-    same parameters and a file on the disk.
+    """Manage correspondance between multiple dict containing the
+    same parameters and a file on disk.
 
     Its behaviour is similar to :py:class:`astrometry.StarsParams`.
     """
@@ -4187,7 +4181,7 @@ class OutHDFCube(Tools):
 
     def write_frame(self, index, data=None, header=None, mask=None,
                     record_stats=False, force_float32=True, section=None,
-                    force_complex64=False):
+                    force_complex64=False, compress=True):
         """Write a frame
 
         :param index: Index of the frame
@@ -4212,6 +4206,9 @@ class OutHDFCube(Tools):
 
         :param force_complex64: (Optional) If True, data type is
           forced to numpy.complex64 type (default False).
+
+        :param compress: (Optional) If True, data is lossely
+          compressed using a gzip algorithm (default True).
         """
 
         def _replace(name, dat):
@@ -4245,7 +4242,23 @@ class OutHDFCube(Tools):
                 dat = frame
                     
             if dat_path in self.f: del self.f[dat_path]
-            self.f[dat_path] = dat
+            szip_types = (np.float32, np.float64, np.int16, np.int32, np.int64,
+                          np.uint8, np.uint16)
+            if compress:
+                ## if dat.dtype in szip_types:
+                ##     compression = 'szip'
+                ##     compression_opts = ('nn', 32)
+                ## else:
+                ##     compression = 'gzip'
+                ##     compression_opts = 4
+                compression = 'lzf'
+                compression_opts = None
+            else:
+                compression = None
+                compression_opts = None
+            self.f.create_dataset(
+                dat_path, data=dat,
+                compression=compression, compression_opts=compression_opts)
             return dat
 
         if force_float32 and force_complex64:
@@ -4471,6 +4484,10 @@ class Waves(object):
         self.set_velocity(velocity)
         
     def set_velocity(self, velocity):
+        """Set waves velocity.
+
+        :param velocity: velocity in km/s
+        """
         if np.size(velocity) == 1:
             self.velocity = float(velocity)
         elif np.array(velocity).shape != self.nm.shape:
@@ -4479,16 +4496,20 @@ class Waves(object):
             self.velocity = np.array(velocity).astype(np.longdouble)
 
     def get_nm(self):
+        """Return wavelength of waves in nm (taking velocity into account)"""
         return self.nm + utils.spectrum.line_shift(
             self.velocity, self.nm, wavenumber=False)
 
     def get_cm1(self):
+        """Return wavenumber of waves in cm-1 (taking velocity into account)"""
         cm1 = self.get_cm1_rest()
         return cm1 + utils.spectrum.line_shift(
             self.velocity, cm1, wavenumber=True)
 
     def get_nm_rest(self):
+        """"Return restframe wavelength of waves in nm"""
         return np.copy(self.nm)
 
     def get_cm1_rest(self):
+        """Return restframe wavelength of waves in cm-1"""
         return utils.spectrum.nm2cm1(self.nm)

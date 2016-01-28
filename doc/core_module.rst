@@ -103,4 +103,11 @@ Logger class
    :special-members:
    :show-inheritance:
 
+Waves class
+------------
 
+.. autoclass:: core.Waves
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:

@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: image.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -27,10 +27,9 @@ import warnings
 from scipy import interpolate, optimize, ndimage, signal
 import bottleneck as bn
 
-from orb.core import Tools
-
 import orb.utils.stats
 import orb.utils.vector
+import orb.utils.parallel
 import orb.cutils
 
 def compute_binning(image_shape, detector_shape):
@@ -70,8 +69,7 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
 
     .. seealso:: :py:meth:`utils.create_master_frame`
     """
-    to = Tools()
-    job_server, ncpus = to._init_pp_server()
+    job_server, ncpus = orb.utils.parallel.init_pp_server()
     divs = np.linspace(0, frames.shape[0], ncpus + 1).astype(int)
     result = np.empty((frames.shape[0], frames.shape[1]), dtype=float)
     
@@ -83,16 +81,14 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
               combine, reject, sigma, True, False),
         modules=("import numpy as np",
                  "import orb.cutils as cutils",
-                 "from orb.core import Tools",
-                 "from orb.utils import *",
-                 "import warnings",
-                 "import orb")))
+                 "import orb.utils.stats",
+                 "import warnings")))
             for ijob in range(ncpus)]
     
     for ijob, job in jobs:
         result[divs[ijob]:divs[ijob+1],:] = job()
         
-    to._close_pp_server(job_server)
+    orb.utils.parallel.close_pp_server(job_server)
     return result
 
 
@@ -190,10 +186,14 @@ def create_master_frame(frames, combine='average', reject='avsigclip',
             return np.squeeze(frames)
         
         if not silent: warnings.warn("Not enough frames to use a rejection method (%d < 3)"%frames.shape[2])
-        reject = None
 
+        if combine == 'average':
+            return np.nanmean(frames, axis=2)
+        else:
+            return np.nanmedian(frames, axis=2)
+        
     if reject not in ['sigclip', 'minmax', 'avsigclip']:
-        raise Exception("Rejection operation must be 'sigclip', 'minmax' or None")
+        raise Exception("Rejection operation must be 'sigclip', 'minmax' or 'avsigclip'")
     if combine not in ['median', 'average']:
         raise Exception("Combining operation must be 'average' or 'median'")
 
@@ -271,9 +271,13 @@ def correct_map2d(map2d, bad_value=np.nan):
         column = np.copy(map2d[:,icol])
         good_vals = np.nonzero(~np.isnan(column))[0]
         bad_vals = np.nonzero(np.isnan(column))[0]
-        interp = interpolate.UnivariateSpline(good_vals, column[good_vals], k=5)
-        column[bad_vals] = interp(bad_vals)
-        map2d[:,icol] = np.copy(column)
+        if len(good_vals) > 0.25 * np.size(column):
+            interp = interpolate.UnivariateSpline(
+                good_vals, column[good_vals], k=5)
+            column[bad_vals] = interp(bad_vals)
+            map2d[:,icol] = np.copy(column)
+        else:
+            map2d[:,icol] = np.nan
         
     return map2d
 

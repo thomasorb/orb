@@ -24,8 +24,8 @@ CAM2_DETECTOR_SIZE_X 2048 # Camera 2 detector size along X
 CAM2_DETECTOR_SIZE_Y 2064 # Camera 2 detector size along Y
 
 ## Disalignment guess
-INIT_ANGLE 2.5 # Rough angle between images of the camera 1 and
-		# images of the camera 2 [in degree]
+INIT_ANGLE 2.0 # Rough angle between images of the camera 1 and
+	       # images of the camera 2 [in degree]
 INIT_DX 47 #dec16# 15 # Rough x axis disalignment [in pixel] (unbinned)
 INIT_DY -20 #dec16# 29 # Rough y axis disalignment [in pixel] (unbinned)
 

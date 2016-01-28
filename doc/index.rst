@@ -62,8 +62,10 @@ Documentation
    utils_module
    cutils_module
    astrometry_module
-   visual_module
+   viewer_module
+   fit_module
    data_module
+   constants_module
 
 Changelog
 ---------

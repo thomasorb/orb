@@ -3,7 +3,7 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: astrometry.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -40,6 +40,7 @@ import time
 import numpy as np
 from scipy import optimize
 import astropy.wcs as pywcs
+import bottleneck as bn
 
 import core
 __version__ = core.__version__
@@ -49,7 +50,7 @@ import utils.image
 import utils.stats
 import utils.vector
 import cutils
-import bottleneck as bn
+
 
 ##################################################
 #### CLASS StarsParams ###########################
@@ -802,14 +803,14 @@ class Astrometry(Tools):
         Fit stars in one frame.
 
         This function is basically a wrapper around
-        :meth:`astrometry.fit_stars_in_frame`.
+        :meth:`utils.astrometry.fit_stars_in_frame`.
 
         .. note:: 2 fitting modes are possible::
         
             * Individual fit mode [multi_fit=False]
             * Multi fit mode [multi_fit=True]
 
-            see :meth:`astrometry.fit_stars_in_frame` for more
+            see :meth:`utils.astrometry.fit_stars_in_frame` for more
             information.
 
         :param index: Index of the frame to fit. If index is a frame,
@@ -819,7 +820,7 @@ class Astrometry(Tools):
           (default True).
           
         :param kwargs: Same optional arguments as for
-          :meth:`astrometry.fit_stars_in_frame`.
+          :meth:`utils.astrometry.fit_stars_in_frame`.
 
         .. warning:: Some optional arguments are taken directly from the
           values computed at the init of the Class. The following
@@ -866,8 +867,15 @@ class Astrometry(Tools):
         kwargs['readout_noise'] = self.readout_noise,
         kwargs['dark_current_level'] = self.dark_current_level
 
-        fit_results = fit_stars_in_frame(
+        fit_results = StarsParams(star_nb=len(self.star_list), frame_nb=1)
+
+        # fit
+        _fit_results = utils.astrometry.fit_stars_in_frame(
             frame, self.star_list, self.box_size, **kwargs)
+
+        # convert results to a StarParams instance
+        for istar in range(len(self.star_list)):
+            fit_results[istar] = _fit_results[istar]
 
         if not isinstance(index, np.ndarray):
             if self.dimz > 1:
@@ -877,8 +885,9 @@ class Astrometry(Tools):
         
         if save:
             self.fit_results.save_stars_params(self._get_fit_results_path())
-            
+
         return fit_results
+            
 
 
     def fit_stars_in_cube(self, correct_alignment=False, save=False,
@@ -905,7 +914,7 @@ class Astrometry(Tools):
             * Individual fit mode [multi_fit=False]
             * Multi fit mode [multi_fit=True]
 
-            see :meth:`astrometry.fit_stars_in_frame` for more
+            see :meth:`astrometry.utils.fit_stars_in_frame` for more
             information.
     
         :param correct_alignment: (Optional) If True, the initial star
@@ -926,67 +935,67 @@ class Astrometry(Tools):
           not be used for photometry (default False).
     
         :param fix_height: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.fix_height`
+          :paramref:`utils.astrometry.fit_stars_in_frame.fix_height`
           (default True)
 
         :param fix_beta: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.fix_beta` (default
+          :paramref:`utils.astrometry.fit_stars_in_frame.fix_beta` (default
           True).
 
         :param fix_fwhm: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.fix_fwhm`
+          :paramref:`utils.astrometry.fit_stars_in_frame.fix_fwhm`
           (default False)
 
         :param fwhm_min: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.fix_min` (default
+          :paramref:`utils.astrometry.fit_stars_in_frame.fix_min` (default
           0.5)
 
         :param local_background: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.local_background`
+          :paramref:`utils.astrometry.fit_stars_in_frame.local_background`
           (default True).
 
         :param no_aperture_photometry: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.no_aperture_photometry`
+          :paramref:`utils.astrometry.fit_stars_in_frame.no_aperture_photometry`
           (default False).
 
         :param fix_aperture_size: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.fix_aperture_size`
+          :paramref:`utils.astrometry.fit_stars_in_frame.fix_aperture_size`
           (default False).
 
         :param precise_guess: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.precise_guess`
+          :paramref:`utils.astrometry.fit_stars_in_frame.precise_guess`
           (default False).
 
         :param aper_coeff: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.aper_coeff`
+          :paramref:`utils.astrometry.fit_stars_in_frame.aper_coeff`
           (default 3).
 
         :param blur: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.blur` (default
+          :paramref:`utils.astrometry.fit_stars_in_frame.blur` (default
           False).
 
         :param no_fit: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.no_fit` (default
+          :paramref:`utils.astrometry.fit_stars_in_frame.no_fit` (default
           False).
 
         :param estimate_local_noise: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.estimate_local_noise`
+          :paramref:`utils.astrometry.fit_stars_in_frame.estimate_local_noise`
           (default True).
 
         :param multi_fit: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.multi_fit` (default
+          :paramref:`utils.astrometry.fit_stars_in_frame.multi_fit` (default
           False).
 
         :param enable_zoom: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.enable_zoom`
+          :paramref:`utils.astrometry.fit_stars_in_frame.enable_zoom`
           (default False).
 
         :param enable_rotation: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.enable_rotation`
+          :paramref:`utils.astrometry.fit_stars_in_frame.enable_rotation`
           (default False).
   
         :param saturation: (Optional) see
-          :paramref:`astrometry.fit_stars_in_frame.saturation`
+          :paramref:`utils.astrometry.fit_stars_in_frame.saturation`
           (default None).
         """
         def get_index_mean_dev(index):
@@ -1108,7 +1117,7 @@ class Astrometry(Tools):
 
             # get stars photometry for each frame
             jobs = [(ijob, job_server.submit(
-                fit_stars_in_frame,
+                utils.astrometry.fit_stars_in_frame,
                 args=(frames[:,:,ijob], star_list, self.box_size,
                       self.profile_name, self.scale, fwhm_mean,
                       self.default_beta, self.fit_tol, fwhm_min,
@@ -1118,20 +1127,23 @@ class Astrometry(Tools):
                       precise_guess,
                       aper_coeff, blur, no_fit, estimate_local_noise,
                       multi_fit, enable_zoom, enable_rotation, saturation),
-                modules=("import orb.utils.astrometry",
-                         "import orb.utils.stats",
+                modules=("import orb.utils.stats",
                          "import orb.utils.image",
                          "import numpy as np",
                          "import math",
-                         "import orb.cutils as cutils",
-                         "import orb.utils as utils",
+                         "import orb.cutils",
                          "import bottleneck as bn",
                          "import warnings",
-                         "from orb.astrometry import StarsParams")))
+                         "from orb.utils.astrometry import *")))
                     for ijob in range(ncpus)]
 
             for ijob, job in jobs:
-                self.fit_results[:, ik+ijob] = job()
+                res = job()
+                if res is not None:
+                    for istar in range(len(star_list)):
+                        self.fit_results[istar, ik+ijob] = res[istar]
+                    
+                        
                 
             progress.update(ik, info="frame : " + str(ik))
             
@@ -2694,16 +2706,20 @@ class Aligner(Tools):
                             # fitted stars after the 
                             # optimization pass a warning is printed.
 
-        WARNING_DIST = .5 # Max optimized distance before a warning is raised
-        ERROR_DIST = 1. # Max optimized distance before an error is raised
+        WARNING_DIST = .3 # Max optimized distance in arcsec before a
+                          # warning is raised
+                          
+        ERROR_DIST = 2.* WARNING_DIST # Max optimized distance in
+                                      # arcsec before an error is
+                                      # raised
         
         MIN_STAR_NB = 30 # Target number of star to detect to find the
                          # transformation parameters
 
         XYSTEP_SIZE = 0.5 # Pixel step size of the search range
 
-        ANGLE_STEPS = 5 # Angle steps for brute force guess
-        ANGLE_RANGE = .1 # Angle range for brute force guess
+        ANGLE_STEPS = 10 # Angle steps for brute force guess
+        ANGLE_RANGE = 1. # Angle range for brute force guess
         
         # Skip fit checking
         SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', 0)))
@@ -2876,9 +2892,9 @@ class Aligner(Tools):
         final_err = np.mean(utils.stats.sigmacut(dr_fit))
 
         if not SKIP_CHECK:
-            if final_err < WARNING_DIST:
+            if final_err < self.astro1.arc2pix(WARNING_DIST):
                 self._print_msg('Mean difference on star positions: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
-            elif final_err < ERROR_DIST:
+            elif final_err < self.astro1.arc2pix(ERROR_DIST):
                 self._print_warning('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
             else:
                 self._print_error('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
@@ -2909,469 +2925,3 @@ class Aligner(Tools):
                 'fwhm_arc2': fwhm_arc2}
 
 
-##################################################
-#### UTILS #######################################
-##################################################
-    
-def fit_stars_in_frame(frame, star_list, box_size,
-                       profile_name='gaussian', scale=None,
-                       fwhm_pix=None, beta=3.5, fit_tol=1e-2,
-                       fwhm_min=0.5, fix_height=None,
-                       fix_aperture_fwhm_pix=None, fix_beta=True,
-                       fix_fwhm=False, readout_noise=10.,
-                       dark_current_level=0., local_background=True,
-                       no_aperture_photometry=False,
-                       precise_guess=False, aper_coeff=3., blur=False,
-                       no_fit=False, estimate_local_noise=True,
-                       multi_fit=False, enable_zoom=False,
-                       enable_rotation=False, saturation=None,
-                       fix_pos=False, nozero=False, silent=True,
-                       sip=None, background_value=None):
-
-    ## WARNING : DO NOT CHANGE THE ORDER OF THE ARGUMENTS OR TAKE CARE
-    ## OF THE CALL IN astrometry.Astrometry.fit_stars_in_cube()
-  
-    """Fit stars in a frame.
-
-    .. note:: 2 fitting modes are possible:
-    
-      * Individual fit mode [multi_fit=False]: Stars are all fit
-        independantly.
-      
-      * Multi fit mode [multi_fit=True]: Stars are fitted all together
-        considering that the position pattern is well known, the same
-        shift in x and y will be applied. Optionally the pattern can be
-        rotated and zoomed. The FWHM is also considered to be the
-        same. This option is far more robust and precise for alignment
-        purpose.
-
-    :param frame: The frame containing the stars to fit.
-
-    :param star_list: A list of star positions as an array of shape
-      (star_nb, 2)
-
-    :param box_size: The size of the box created around a star to fit
-      its parameter.
-
-    :param profile_name: (Optional) Name of the PSF profile to use to
-      fit stars. May be 'gaussian' or 'moffat' (default 'gaussian').
-
-    :param fwhm_pix: (Optional) Estimate of the FWHM in pixels. If
-      None given FWHM is estimated to half the box size (default
-      None).
-
-    :param scale: (Optional) Scale of the frame in arcsec/pixel. If
-      given the fwhm in arcseconds is also computed (keyword:
-      'fwhm_arc') with the fit parameters (default None).
-
-    :param beta: (Optional) Beta parameter of the moffat psf. Used
-      only if the fitted profile is a Moffat psf (default 3.5).
-
-    :param fix_height: (Optional) Fix height parameter to its
-      estimation. If None, set by default to True in individual fit
-      mode [multi_fit=False] and False in multi fit mode
-      [multi_fit=True] (default None).
-
-    :param fix_beta: (Optional) Fix beta to the given value (default
-      True).
-
-    :param fix_fwhm: (Optional) Fix FWHM to the given value or the
-      estimated value (default False).
-
-    :param fix_pos: (Optional) Fix x,y positions of the stars to the
-      given value.
-
-    :param fit_tol: (Optional) Tolerance on the paramaters fit (the
-      lower the better but the longer too) (default 1e-2).
-
-    :param nozero: (Optional) If True do not fit any star which box
-      (the pixels around it) contains a zero. Valid only in individual
-      fit mode [multi_fit=False] (default False).
-
-    :param fwhm_min: (Optional) Minimum valid FWHM of the fitted star
-      (default 0.5)
-      
-    :param silent: (Optional) If True no messages are printed (default
-      True).
-
-    :param local_background: (Optional) If True, height is estimated
-      localy, i.e. around the star. If False, the sky background is
-      determined in the whole frame. In individual fit mode
-      [multi_fit=False] height will be the same for all the stars, and
-      the fix_height option is thus automatically set to True. In
-      multi fit mode [multi_fit=True] height is considered as a
-      covarying parameter for all the stars but it won't be fixed
-      (default True).
-
-    :param fix_aperture_fwhm_pix: (Optional) If a positive float. FWHM
-      used to scale aperture size is not computed from the mean FWHM
-      in the frame but fixed to the given float (default None).
-
-    :param no_aperture_photometry: (Optional) If True, aperture
-      photometry will not be done after profile fitting (default
-      False).
-
-    :param precise_guess: (Optional) If True, the fit guess will be
-      more precise but this can lead to errors if the stars positions
-      are not already well known. Valid only in individual fit mode
-      [multi_fit=False] (default False).
-          
-    :param readout_noise: (Optional) Readout noise in ADU/pixel (can
-      be computed from bias frames: std(master_bias_frame)) (default
-      10.)
-    
-    :param dark_current_level: (Optional) Dark current level in
-      ADU/pixel (can be computed from dark frames:
-      median(master_dark_frame)) (default 0.)
-
-    :param aper_coeff: (Optional) Aperture coefficient. The aperture
-      radius is Rap = aper_coeff * FWHM. Better when between 1.5 to
-      reduce the variation of the collected photons with varying FWHM
-      and 3. to account for the flux in the wings (default 3., better
-      for star with a high SNR).
-
-    :param blur: (Optional) If True, blur frame (low pass filtering)
-      before fitting stars. It can be used to enhance the quality of
-      the fitted flux of undersampled data. Note that the error on
-      star position can be greater on blurred frame. This option must
-      not be used for alignment purpose (default False).
-
-    :param no_fit: (Optional) If True, no fit is done. Only the
-      aperture photometry. Star positions in the star list must thus
-      be precise (default False).
-
-    :param multi_fit: (Optional) If True all stars are fitted at the
-      same time. More robust for alignment purpose. The difference of
-      position between the stars in the star list must be precisely
-      known because the overall shift only is estimated (default
-      False).
-
-    :param enable_zoom: (Optional) If True, the stars position pattern
-      can be zoomed to better adjust it to the real frame. Valid only
-      in multi fit mode [multi_fit=True] (default False).
-
-    :param enable_rotation: (Optional) If True, the stars position
-      pattern can be rotated to better adjust it to the real frame
-      Valid only in multi fit mode [multi_fit=True] (default False).
-
-    :param estimate_local_noise: (Optional) If True, the level of
-      noise is computed from the background pixels around the
-      stars. readout_noise and dark_current_level are thus not used
-      (default True).
-
-    :param saturation: (Optional) If not None, all pixels above the
-      saturation level are removed from the fit (default None).
-
-    :param sip: (Optional) A pywcs.WCS instance containing SIP
-      distorsion correction (default None).
-
-    :param background_value: (Optional) If not None, this background
-      value is used in the fit functions and will be fixed for fit and
-      aperture photometry. Note also that in this case
-      local_background is automatically set to False (default None).
-    
-    :return: Parameters of a 2D fit of the stars positions.
-
-    .. seealso:: :py:meth:`astrometry.Astrometry.load_star_list` to load
-      a predefined list of stars or
-      :py:meth:`astrometry.Astrometry.detect_stars` to automatically
-      create it.
-
-    .. seealso:: :meth:`utils.astrometry.fit_star` and
-      :meth:`orb.cutils.multi_fit_stars`
-
-    """
-    BOX_COEFF = 7. # Coefficient to redefine the box size if the
-                   # fitted FWHM is too large
-    
-    BIG_BOX_COEFF = 4. # Coefficient to apply to create a bigger box
-                       # than the normal star box. This box is used for
-                       # background determination and aperture
-                       # photometry
-                       
-    BLUR_FWHM = 3.5   # FWHM of the gaussian kernel used to blur frames
-    BLUR_DEG = int(math.ceil(
-        BLUR_FWHM * 2. / (2. * math.sqrt(2. * math.log(2.)))))
-    
-    dimx = frame.shape[0]
-    dimy = frame.shape[1]
-
-    fitted_stars_params = list()
-    fit_count = 0
-
-    fit_results = StarsParams(star_list.shape[0], 1,
-                              silent=silent)
-
-    star_list = np.array(star_list, dtype=float)
-
-    if fix_height is None:
-        if multi_fit: fix_height = False
-        else: fix_height = True
-
-    frame_median = bn.nanmedian(frame)
-    
-    if frame_median < 0.:
-        frame -= frame_median
-        warnings.warn('frame median is < 0 ({}), a value of {} has been subtracted to have a median at 0.'.format(frame_median, frame_median))
-    
-    ## Frame background determination if wanted
-    background = None
-    cov_height = False
-
-    if background_value is not None:
-        local_background = False
-        background = background_value
-
-    if not local_background and background_value is None:
-        if precise_guess:
-            background = utils.astrometry.sky_background_level(frame)
-        else:
-            background = frame_median
-        if not multi_fit:
-            fix_height = True
-        else:
-            cov_height = True
-    
-    ## Blur frame to avoid undersampled data
-    if blur:
-        fit_frame = np.copy(utils.image.low_pass_image_filter(
-            frame, deg=BLUR_DEG))
-        fwhm_pix = BLUR_FWHM
-    else:
-        fit_frame = np.copy(frame)
-
-    ## Profile fitting
-    if not no_fit:
-        if multi_fit:
-            if saturation is None: saturation = 0
-            fit_params = cutils.multi_fit_stars(
-                np.array(fit_frame, dtype=float), np.array(star_list), box_size,
-                height_guess=np.array(background, dtype=np.float),
-                fwhm_guess=np.array(fwhm_pix, dtype=np.float),
-                cov_height=cov_height,
-                cov_pos=True,
-                cov_fwhm=True,
-                fix_height=fix_height,
-                fix_pos=fix_pos,
-                fix_fwhm=fix_fwhm,
-                fit_tol=fit_tol,
-                ron=np.array(readout_noise, dtype=np.float),
-                dcl=np.array(dark_current_level, dtype=np.float),
-                enable_zoom=enable_zoom,
-                enable_rotation=enable_rotation,
-                estimate_local_noise=estimate_local_noise,
-                saturation=saturation, sip=sip)
-                
-            # save results as a StarsParams instance
-            for istar in range(star_list.shape[0]):
-                if fit_params != []:
-                    star_params = dict()
-                    p = fit_params['stars-params'][istar, :]
-                    e = fit_params['stars-params-err'][istar, :]
-                    star_params['height'] = p[0]
-                    star_params['height_err'] = e[0]
-                    star_params['amplitude'] = p[1]
-                    star_params['amplitude_err'] = e[1]
-                    star_params['snr'] = (star_params['amplitude']
-                                          / star_params['amplitude_err'])
-                    star_params['x'] = p[2]
-                    star_params['x_err'] = e[2]
-                    star_params['y'] = p[3]
-                    star_params['y_err'] = e[3]
-                    star_params['fwhm'] = p[4]
-                    star_params['fwhm_pix'] = star_params['fwhm']
-                    star_params['fwhm_err'] = e[4]
-                    star_params['chi-square'] = fit_params['chi-square']
-                    star_params['reduced-chi-square'] = fit_params[
-                        'reduced-chi-square']
-                    
-                    star_params['flux'] = (utils.astrometry.get_profile(profile_name))(
-                        star_params).flux()
-                    star_params['flux_err'] = (utils.astrometry.get_profile(profile_name))(
-                        star_params).flux_error(
-                        star_params['amplitude_err'],
-                        star_params['fwhm_err']
-                        / abs(2.*math.sqrt(2. * math.log(2.))))
-                    star_params['dx'] = star_params['x'] - star_list[istar,0]
-                    star_params['dy'] = star_params['y'] - star_list[istar,1]
-                    star_params['cov_angle'] = fit_params['cov_angle']
-                    star_params['cov_zx'] = fit_params['cov_zx']
-                    star_params['cov_zy'] = fit_params['cov_zy']
-                    star_params['cov_dx'] = fit_params['cov_dx']
-                    star_params['cov_dy'] = fit_params['cov_dy']
-                    
-                    
-                    
-                    if scale is not None:
-                        star_params['fwhm_arc'] = (
-                            float(star_params['fwhm_pix']) * scale)
-                        star_params['fwhm_arc_err'] = (
-                            float(star_params['fwhm_err']) * scale)
-                    
-                    fit_results[istar] = dict(star_params)
-                else:
-                    fit_results[istar] = None
-        else:
-            for istar in range(star_list.shape[0]):        
-                ## Create fit box
-                guess = star_list[istar,:]
-                if guess.shape[0] == 2:
-                    [x_test, y_test] = guess
-                elif guess.shape[0] >= 4:
-                    [x_test, y_test] = guess[0:2]
-                else:
-                    raise ValueError("The star list must give 2 OR at least 4 parameters for each star [x, y, fwhm_x, fwhm_y]")
-
-                if (x_test > 0 and x_test < dimx
-                    and y_test > 0  and y_test < dimy):
-                    (x_min, x_max,
-                     y_min, y_max) = utils.image.get_box_coords(
-                        x_test, y_test, box_size,
-                        0, dimx, 0, dimy)
-
-                    star_box = fit_frame[x_min:x_max, y_min:y_max]
-                else:
-                    (x_min, x_max, y_min, y_max) = (
-                        np.nan, np.nan, np.nan, np.nan)
-                    star_box = np.empty((1,1))
-
-                ## Profile Fitting
-                if (min(star_box.shape) > float(box_size/2.)
-                    and (x_max < dimx) and (x_min >= 0)
-                    and (y_max < dimy) and (y_min >= 0)):
-
-                    ## Local background determination for fitting
-                    if local_background:
-                        background_box_size = BIG_BOX_COEFF * box_size
-                        (x_min_back, x_max_back,
-                         y_min_back, y_max_back) = utils.image.get_box_coords(
-                            x_test, y_test, background_box_size,
-                            0, dimx, 0, dimy)
-                        background_box = fit_frame[x_min_back:x_max_back,
-                                                   y_min_back:y_max_back]
-                        if precise_guess:
-                            background = utils.astrometry.sky_background_level(background_box)
-                        else:
-                            background = np.median(background_box)
-
-
-                    if nozero and len(np.nonzero(star_box == 0)[0]) > 0:
-                        fit_params = []
-
-                    else:
-                        fit_params = utils.astrometry.fit_star(
-                            star_box, profile_name=profile_name,
-                            fwhm_pix=fwhm_pix,
-                            beta=beta, fix_height=fix_height,
-                            fix_beta=fix_beta,
-                            fix_fwhm=fix_fwhm,
-                            fit_tol=fit_tol,
-                            fwhm_min=fwhm_min,
-                            height=background,
-                            ron=readout_noise,
-                            dcl=dark_current_level,
-                            precise_guess=precise_guess,
-                            estimate_local_noise=estimate_local_noise,
-                            saturation=saturation)
-                else:
-                    fit_params = []
-
-                if (fit_params != []):
-                    fit_count += 1
-                    # compute real position in the frame
-                    fit_params['x'] += float(x_min)
-                    fit_params['y'] += float(y_min)
-
-                    # compute deviation from the position given in the
-                    # star list (the center of the star box)
-                    fit_params['dx'] = fit_params['x'] - x_test
-                    fit_params['dy'] = fit_params['y'] - y_test
-
-                    # compute FWHM in arcsec
-                    if scale is not None:
-                        fit_params['fwhm_arc'] = (float(fit_params['fwhm_pix'])
-                                                  * scale)
-                        fit_params['fwhm_arc_err'] = (
-                            float(fit_params['fwhm_err']) * scale)
-
-                    # save results as a StarsParams instance
-                    fit_results[istar] = dict(fit_params)
-                else:
-                    fit_results[istar] = None
-    
-    ## Compute aperture photometry
-    if not no_aperture_photometry:
-        
-        if not no_fit:
-            # get mean FWHM in the frame
-            if fix_aperture_fwhm_pix is not None:
-                if fix_aperture_fwhm_pix > 0.:
-                    mean_fwhm = fix_aperture_fwhm_pix
-                else:
-                    raise ValueError(
-                        'Fixed FWHM for aperture photometry must be > 0.')
-            elif star_list.shape[0] > 1:
-                mean_fwhm = utils.stats.robust_mean(utils.stats.sigmacut(
-                    fit_results[:,'fwhm_pix']))
-            else:
-                mean_fwhm = fit_results[0,'fwhm_pix']
-        else:
-            mean_fwhm = fwhm_pix
-
-        ## Local background determination for aperture
-        if local_background:
-            background = None
-        
-        # get aperture given the mean FWHM
-        for istar in range(star_list.shape[0]):
-            if (fit_results[istar] is not None) or (no_fit):
-                new_box_size = BOX_COEFF * mean_fwhm
-                aperture_box_size = BIG_BOX_COEFF * max(box_size, new_box_size)
-               
-                if not no_fit:
-                    ix = fit_results[istar, 'x']
-                    iy = fit_results[istar, 'y']
-                else:
-                    ix = star_list[istar,0]
-                    iy = star_list[istar,1]
-                if ix > 0 and ix < dimx and iy > 0  and iy < dimy:
-                    (x_min, x_max,
-                     y_min, y_max) = utils.image.get_box_coords(
-                        ix, iy, aperture_box_size, 0, dimx, 0, dimy)
-                    star_box = frame[x_min:x_max, y_min:y_max]
-                    
-                    photom_result = utils.astrometry.aperture_photometry(
-                        star_box, mean_fwhm, background_guess=background,
-                        aper_coeff=aper_coeff)
-                    
-                    if no_fit:
-                        fit_params = {'aperture_flux':photom_result[0],
-                                      'aperture_flux_err':photom_result[1],
-                                      'aperture_surface':photom_result[2],
-                                      'aperture_flux_bad':photom_result[3],
-                                      'aperture_background':photom_result[4],
-                                      'aperture_background_err':photom_result[5]}
-                        
-                        fit_results[istar] = dict(fit_params)
-
-                    else:
-                        fit_results[istar, 'aperture_flux'] = (
-                            photom_result[0])
-                        fit_results[istar, 'aperture_flux_err'] = (
-                            photom_result[1])
-                        fit_results[istar, 'aperture_surface'] = (
-                            photom_result[2])
-                        fit_results[istar, 'aperture_flux_bad'] = (
-                            photom_result[3])
-                        fit_results[istar, 'aperture_background'] = (
-                            photom_result[4])
-                        fit_results[istar, 'aperture_background_err'] = (
-                            photom_result[5])
-                        
-                    
-        
-    ## Print number of fitted stars
-    if not silent:
-        print "%d/%d stars fitted" %(len(fitted_stars_params), star_list.shape[0])
-
-    return fit_results

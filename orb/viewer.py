@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca> 
 # File: visual.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -26,10 +26,12 @@ import traceback
 import warnings
 
 # ORB IMPORTS
-from orb.core import Tools, HDFCube, Lines
-import orb.utils.spectrum
-import orb.utils.fft
-import orb.utils.stats
+from core import Tools, HDFCube, Lines
+import utils.spectrum
+import utils.fft
+import utils.stats
+import fit
+import orb.cutils
 
 # OTHER IMPORTS
 import gtk, gobject
@@ -408,10 +410,10 @@ class BaseViewer(object):
             zval = self.zaxis[c.get_value()]
             if self.wavenumber:
                 unit = 'cm-1'
-                conv = '{:.2f} nm'.format(orb.utils.spectrum.cm12nm(zval))
+                conv = '{:.2f} nm'.format(utils.spectrum.cm12nm(zval))
             else:
                 unit = 'nm'
-                conv = '{:.2f} cm-1'.format(orb.utils.spectrum.nm2cm1(zval))
+                conv = '{:.2f} cm-1'.format(utils.spectrum.nm2cm1(zval))
             self.index_label.set_text('{:.2f} {} ({})'.format(
                 zval, unit, conv))
             
@@ -457,7 +459,7 @@ class BaseViewer(object):
         self.mean.set_text('{:.3e}'.format(
             np.nanmean(self.image_region)))
         self.median.set_text('{:.3e}'.format(
-            orb.utils.stats.robust_median(self.image_region)))
+            utils.stats.robust_median(self.image_region)))
         self.std.set_text('{:.3e}'.format(
             np.nanstd(self.image_region)))
         self.sum.set_text('{:.3e}'.format(
@@ -539,8 +541,8 @@ class BaseViewer(object):
         # Calculate WCS RA/DEC
         try:
             ra, dec = self.wcs.wcs.wcs_pix2world(fits_x, fits_y, 0)
-            ra_txt = '{:.0f}:{:.0f}:{:.1f}'.format(*orb.utils.astrometry.deg2ra(ra))
-            dec_txt = '{:.0f}:{:.0f}:{:.1f}'.format(*orb.utils.astrometry.deg2dec(dec))
+            ra_txt = '{:.0f}:{:.0f}:{:.1f}'.format(*utils.astrometry.deg2ra(ra))
+            dec_txt = '{:.0f}:{:.0f}:{:.1f}'.format(*utils.astrometry.deg2dec(dec))
             
         except Exception as e:
             #print "Bad coordinate conversion: %s" % (str(e))
@@ -701,10 +703,10 @@ class BaseViewer(object):
                 and self.step is not None
                 and self.wavenumber is not None):
                 if self.wavenumber:
-                    self.zaxis = orb.utils.spectrum.create_cm1_axis(
+                    self.zaxis = utils.spectrum.create_cm1_axis(
                         self.dimz, self.step, self.order)
                 else:
-                    self.zaxis = orb.utils.spectrum.create_nm_axis(
+                    self.zaxis = utils.spectrum.create_nm_axis(
                         self.dimz, self.step, self.order)
 
             if 'BUNIT' in self.header:
@@ -847,7 +849,7 @@ class AutoCuts(object):
 
     def _rhist_cut(self, distrib):
         
-        distrib = orb.utils.stats.sigmacut(distrib, sigma=2.5)
+        distrib = utils.stats.sigmacut(distrib, sigma=2.5)
         
         return bn.nanmin(distrib), bn.nanmax(distrib)
         
@@ -1029,7 +1031,8 @@ class ZPlotWindow(PopupWindow):
             self.fitplugin = FitPlugin(step=self.step,
                                        order=self.order,
                                        update_cb=self.update,
-                                       wavenumber=self.wavenumber)
+                                       wavenumber=self.wavenumber,
+                                       parent=self)
             framebox.pack_start(self.fitplugin.get_frame(),
                                 fill=False, expand=False)
         
@@ -1063,10 +1066,10 @@ class ZPlotWindow(PopupWindow):
             self.specbutton.set_label('Show interferogram')
         else:
             self.specbutton.set_label('Show spectrum')
-        self.update()
+        self.update(reset_axis=True)
 
     def _unzoom_cb(self, c):
-        print 'unzoom'
+        self.update(reset_axis=True)
 
 
     def _save_data_cb(self, c):
@@ -1137,15 +1140,15 @@ class ZPlotWindow(PopupWindow):
             and self.order is not None
             and self.is_spectrum):
             if self.wavenumber:
-                return orb.utils.spectrum.create_cm1_axis(
+                return utils.spectrum.create_cm1_axis(
                     n, self.step, self.order)
             else:
-                return orb.utils.spectrum.create_nm_axis(
+                return utils.spectrum.create_nm_axis(
                     n, self.step, self.order)
         else:
             return np.arange(n)
 
-    def update(self, zdata=None, zaxis=None, ylabel=None):
+    def update(self, zdata=None, zaxis=None, ylabel=None, reset_axis=False):
         """Update plot
 
         :param zdata: Data to plot (Y)
@@ -1157,8 +1160,11 @@ class ZPlotWindow(PopupWindow):
             ylim = None
         else:
             zdata = self.zdata
-            xlim = self.subplot.get_xlim()
-            ylim = self.subplot.get_ylim()
+            if not reset_axis:
+                xlim = self.subplot.get_xlim()
+                ylim = self.subplot.get_ylim()
+            else:
+                xlim = None ; ylim = None
             
         if self._kzdata is not None:
             kzdata = np.copy(self._kzdata)
@@ -1198,27 +1204,27 @@ class ZPlotWindow(PopupWindow):
                     kinterf = np.copy(kzdata)
                     
             if self.step is not None and self.order is not None:
-                zdata = orb.utils.fft.transform_interferogram(
+                zdata = utils.fft.transform_interferogram(
                     interf, 1., 1., self.step, self.order, None, 0,
                     phase_correction=False, wavenumber=True,
                     low_order_correction=True)
-                zdata_phase = orb.utils.fft.transform_interferogram(
+                zdata_phase = utils.fft.transform_interferogram(
                     interf, 1., 1., self.step, self.order, None, 0,
                     phase_correction=False, wavenumber=True,
                     low_order_correction=True, return_phase=True)
                 if self._kzdata is not None:
-                    kzdata = orb.utils.fft.transform_interferogram(
+                    kzdata = utils.fft.transform_interferogram(
                         kinterf, 1., 1., self.step, self.order, None, 0,
                         phase_correction=False, wavenumber=True,
                         low_order_correction=True)
 
-                zaxis = orb.utils.spectrum.create_cm1_axis(
+                zaxis = utils.spectrum.create_cm1_axis(
                     interf.shape[0], self.step, self.order)
             else:
-                zdata = orb.utils.fft.raw_fft(interf)
-                zdata_phase = orb.utils.fft.raw_fft(interf, return_phase=True)
+                zdata = utils.fft.raw_fft(interf)
+                zdata_phase = utils.fft.raw_fft(interf, return_phase=True)
                 if self._kzdata is not None:
-                    kzdata = orb.utils.fft.raw_fft(kinterf)
+                    kzdata = utils.fft.raw_fft(kinterf)
                 zaxis = np.arange(interf.shape[0])
 
         # plot data
@@ -1263,6 +1269,7 @@ class FitPlugin(object):
     """Fitting plugin that can be added to the ZPlot module.
     """
 
+    line_models = ['auto', 'sinc', 'gaussian', 'sinc2']
     fit_lines = None
     wavenumber = None
     step = None
@@ -1272,9 +1279,10 @@ class FitPlugin(object):
     update_cb = None
     fitted_vector = None
     fitrange = None
+    parent = None
     
     def __init__(self, step=None, order=None, apod=None,
-                 update_cb=None, wavenumber=True):
+                 update_cb=None, wavenumber=True, parent=None):
         """Init FitPlugin class
 
         :param step: (Optional) Step size in nm (default None).
@@ -1284,14 +1292,18 @@ class FitPlugin(object):
         :param apod: (Optional) Apodization (default None).
 
         :param update_cb: (Optional) function to call when the visual
-          object displaying the spectrum must be updated (the ZPlot
+          object displaying the spectrum must be updated (e.g. ZPlot
           window) (default None).
 
         :param wavenumber: (Optional) If True spectrum to fit is in
           wavenumber (default True).
+
+        :param parent: (Optional) Parent class (e.g. ZPlot Window)
         """
 
         self.fit_lines = None
+
+        if parent is not None: self.parent = parent
         
         # FIT BOX
         frame = gtk.Frame('Spectrum Fit')
@@ -1359,6 +1371,14 @@ class FitPlugin(object):
         wdelline = gtk.Button("-")
         wdelline.connect('clicked', self._del_fit_line_cb)
         linebox.pack_start(wdelline, fill=True, expand=True)
+
+        wselectlinemodel = gtk.combo_box_new_text()
+        for linemodel in self.line_models:
+            wselectlinemodel.append_text(linemodel)
+        wselectlinemodel.set_active(0)
+        self.line_model = self.line_models[0]
+        wselectlinemodel.connect('changed', self._set_line_model_cb)
+        linebox.pack_start(wselectlinemodel, fill=True, expand=True)
 
         fitbox.pack_start(linebox, fill=False, expand=False)
 
@@ -1444,7 +1464,7 @@ class FitPlugin(object):
         :param file_path: Calibration laser map path.
         """
         self.calib_map = self.tools.read_fits(file_path)
-        self.calib_map = orb.utils.image.interpolate_map(
+        self.calib_map = utils.image.interpolate_map(
             self.calib_map, self.dimx, self.dimy)
         
     def _set_step_cb(self, w):
@@ -1452,22 +1472,22 @@ class FitPlugin(object):
         
         :param w: Widget
         """
-        self.step = float(w.get_text())
+        self.set_step(w.get_text())
         
     def _set_order_cb(self, w):
         """Callback to set the folding order.
         
         :param w: Widget
         """
-        self.order = int(float(w.get_text()))
+        self.set_order(w.get_text())
         
     def _set_apod_cb(self, w):
         """Callback to set the step apodization function.
         
         :param w: Widget
         """
-        if w.get_text() == 'None': self.apod = 1.0
-        else: self.apod = float(w.get_text())
+        if w.get_text() == 'None': self.set_apod('1.0')
+        else: self.set_apod(w.get_text())
 
     def _fit_lines_in_spectrum(self, w):
         """Fit lines in the given spectrum
@@ -1483,28 +1503,27 @@ class FitPlugin(object):
                 # remove lines that are not in the spectral range
                 spectrum_range = self._get_spectrum_range()
 
-                if self.apod == 1.0:
-                    fmodel = 'sinc'
-                    fit_function = orb.utils.spectrum.robust_fit_sinc_lines_in_spectrum
+                if self.line_model == 'auto':
+                    if self.apod == 1.0: fmodel = 'sinc'
+                    else: fmodel = 'gaussian'
                 else:
-                    fmodel = 'gaussian'
-                    fit_function = orb.utils.spectrum.fit_lines_in_spectrum
-                
+                    fmodel = str(self.line_model)
+                    
                 # guess fwhm
-                fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
-                    self.spectrum.shape[0], self.step, self.order,
+                fwhm_guess = utils.spectrum.compute_line_fwhm(
+                    self.spectrum.shape[0]/2., self.step, self.order,
                     apod_coeff=self.apod,
                     wavenumber=self.wavenumber)
-
-                fit_results = fit_function(
+                
+                fit_results =  fit.fit_lines_in_spectrum(
                     self.spectrum,
                     self.get_fit_lines(),
                     self.step, self.order,
-                    1,1,
+                    1, 1,
                     fwhm_guess=fwhm_guess,
                     signal_range=[np.nanmin(spectrum_range),
                                   np.nanmax(spectrum_range)],
-                    return_fitted_vector=True, wavenumber=self.wavenumber,
+                    wavenumber=self.wavenumber,
                     fmodel=fmodel)
 
                 if 'lines-params-err' in fit_results:
@@ -1514,40 +1533,43 @@ class FitPlugin(object):
                     # print results
                     par = fit_results['lines-params']
                     par_err = fit_results['lines-params-err']
+                    vel = fit_results['velocity']
+                    vel_err = fit_results['velocity-err']
+                    
                     self.fit_results_store.clear()
-                    for iline in range(len(self.fit_lines)):
-                        store = np.zeros(7, dtype=float)
-                        store[2] = par[iline][0]
-                        store[3] = par[iline][1]
 
-                        # convert velocity in km/s
-                        if self.wavenumber:
-                            pos = orb.utils.spectrum.pix2cm1(fit_axis, par[iline][2])
-                        else:
-                            pos = orb.utils.spectrum.pix2nm(fit_axis, par[iline][2])
-
-                        store[4] = orb.utils.spectrum.compute_radial_velocity(
-                            pos, self.fit_lines[iline],
-                            wavenumber=self.wavenumber)
-
-                        store[5] = par[iline][3] * abs(
-                            fit_axis[1] - fit_axis[0])
-                        store = ['{:.2e}'.format(store[i])
-                                 for i in range(store.shape[0])]
+                    def format_store(p, v, perr):
+                        _store = np.zeros(7, dtype=float)
+                        _store[2] = p[iline][0]
+                        _store[3] = p[iline][1]
+                        _store[4] = v[iline]
+                        _store[5] = p[iline][3]
+                        
+                        _store = ['{:.2e}'.format(_store[i])
+                                 for i in range(_store.shape[0])]
 
                         if self.wavenumber:
-                            store[0] = Lines().get_line_name(
-                                orb.utils.spectrum.cm12nm(
+                            _store[0] = Lines().get_line_name(
+                                utils.spectrum.cm12nm(
                                     self.fit_lines[iline]))
                         else:
-                            store[0] = Lines().get_line_name(
+                            _store[0] = Lines().get_line_name(
                                 self.fit_lines[iline])
 
-                        store[1] = '{:.3f}'.format(self.fit_lines[iline])
-                        store[6] = '{:.1f}'.format(
-                            par[iline][1] / par_err[iline][1])
+                        _store[1] = '{:.3f}'.format(self.fit_lines[iline])
+                        _store[6] = '{:.1f}'.format(
+                            p[iline][1] / perr[iline][1])
+                        return _store
 
+                        
+                    for iline in range(len(self.fit_lines)):
+                        store = format_store(par, vel, par_err)
+                        store_err = format_store(par_err, vel_err, par_err)
+                        store_err[0] = ''
+                        store_err[1] = ''
+                        store_err[6] = ''
                         self.fit_results_store.append(store)
+                        self.fit_results_store.append(store_err)
 
                     
     def _get_lines_keys(self):
@@ -1562,10 +1584,10 @@ class FitPlugin(object):
         """Return fit axis"""
         if self.order is not None and self.step is not None and self.spectrum is not None:
             if not self.wavenumber:
-                return orb.utils.spectrum.create_nm_axis(
+                return utils.spectrum.create_nm_axis(
                     self.spectrum.shape[0], self.step, self.order)
             else:
-                return orb.utils.spectrum.create_cm1_axis(
+                return utils.spectrum.create_cm1_axis(
                     self.spectrum.shape[0], self.step, self.order)
         else: return None
             
@@ -1594,13 +1616,13 @@ class FitPlugin(object):
             return None
         else:
             if self.wavenumber:
-                nm_max, nm_min = orb.utils.spectrum.cm12nm(
+                nm_max, nm_min = utils.spectrum.cm12nm(
                     self._get_spectrum_range())
             else:
                 nm_min, nm_max = self._get_spectrum_range()
                 
         if line_name == 'Sky lines':
-            delta_nm = orb.utils.spectrum.compute_line_fwhm(
+            delta_nm = utils.spectrum.compute_line_fwhm(
                 self.spectrum.shape[0], self.step, self.order,
                 apod_coeff=self.apod, wavenumber=False)
                 
@@ -1668,7 +1690,7 @@ class FitPlugin(object):
             new_lines = list([new_lines])
         
         if self.wavenumber:
-            new_lines = orb.utils.spectrum.nm2cm1(new_lines)
+            new_lines = utils.spectrum.nm2cm1(new_lines)
 
         
         for new_line in new_lines:
@@ -1685,7 +1707,7 @@ class FitPlugin(object):
             store = list(np.zeros(7, dtype=float))
             if self.wavenumber:
                 store[0] = Lines().get_line_name(
-                    orb.utils.spectrum.cm12nm(line))
+                    utils.spectrum.cm12nm(line))
             else:
                 store[0] = Lines().get_line_name(line)
                         
@@ -1700,6 +1722,13 @@ class FitPlugin(object):
         :param w: Widget.
         """
         self.line_name = self._get_lines_keys()[w.get_active()]
+
+    def _set_line_model_cb(self, w):
+        """Callback to set the line model
+
+        :param w: Widget.
+        """
+        self.line_model = self.line_models[w.get_active()]
 
 
     def _update_plot(self):
@@ -1716,6 +1745,10 @@ class FitPlugin(object):
         """
         if step is not None:
             self.wstep.set_text('{}'.format(step))
+            self.step = float(step)
+            if self.parent is not None:
+                self.parent.step = float(step)
+                self._update_plot()
 
     def set_order(self, order):
         """Set order.
@@ -1724,14 +1757,23 @@ class FitPlugin(object):
         """
         if order is not None:
             self.worder.set_text('{}'.format(order))
+            self.order = float(order)
+            if self.parent is not None:
+                self.parent.order = float(order)
+                self._update_plot()
             
     def set_apod(self, apod):
         """Set apodization.
 
         :param apod: Apodization function.
         """
+        if apod is None: apod = 1.0
+            
         self.wapod.set_text('{}'.format(apod))
-
+        self.apod = apod
+        if self.parent is not None:
+            self.parent.apod = float(apod)
+            
     def set_spectrum(self, spectrum):
         """Set spectrum to fit.
 
@@ -1745,8 +1787,11 @@ class FitPlugin(object):
 
         if spectrum is not None and self.spectrum is not None:
             nonans = np.nonzero(~np.isnan(spectrum))
-            if np.any(self.spectrum[nonans] != spectrum[nonans]):
-                update = True
+            if np.size(self.spectrum) == np.size(spectrum):
+                if np.any(self.spectrum[nonans] != spectrum[nonans]):
+                    update = True
+            else: update = True
+                
         if update:
             self.spectrum = spectrum
             self.fitted_vector = None
@@ -1764,7 +1809,7 @@ class FitPlugin(object):
         """Return the selected fit lines."""
         if self.fit_lines is not None:
             fit_lines = (np.array(self.fit_lines)
-                         + np.array(orb.utils.spectrum.line_shift(
+                         + np.array(utils.spectrum.line_shift(
                              self.fit_lines_velocity, self.fit_lines,
                              wavenumber=self.wavenumber)))
             if self.wavenumber:

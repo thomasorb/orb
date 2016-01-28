@@ -652,3 +652,41 @@ Miscellaneous
   (before this was computed from the total number of steps of a
   symetric interferogram, so generally two times more steps than in
   this version).
+
+
+v1.5.2
+======
+
+A lot of changes have been made. Only the most important are summarized.
+
+Architecture
+------------
+
+The old orb/utils.py has been transformed into a real module:
+:ref:`utils-module`, utils function have been ordered by type:
+astrometry, fft, spectrum, vector, image, stats, parallel, web ...
+
+A Gaussian convoluted with a Sinc line can now be fitted using a
+function created by Simon Prunet, see: :py:meth:`~cutils.sincgauss1d`
+
+
+New Fit classes
+---------------
+
+The whole fit concept has been enhanced. A fitting module has been
+created (:py:mod:`~fit`, see :ref:`fit-module`) It is now governed by a Fit class
+(:py:class:`fit.FitVector`) which can aggregates models based on a
+Template class (:py:class:`fit.Model`).
+
+Compression
+-----------
+
+A small compression of the HDF5 files is now automaticcaly done. It
+slows the process but makes the siez of the reduction file on disk
+much smaller.
+
+Adaptation to SITELLE
+---------------------
+
+**Phase correction** and **cosmic-ray detection** have been reworked. Cosmic
+ray detection now uses both cubes and is much more robust than before.

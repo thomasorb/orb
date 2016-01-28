@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: fft.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -28,8 +28,8 @@ import scipy
 from scipy import signal
 
 import orb.utils.vector
-import orb.utils.stats
 import orb.utils.spectrum
+import orb.utils.stats
 import orb.cutils
 
 

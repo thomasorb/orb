@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: cutils.pyx
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -43,6 +43,7 @@ import scipy.ndimage.filters
 import scipy.optimize
 import scipy.interpolate
 import scipy.special
+import constants
 
 import bottleneck as bn # https://pypi.python.org/pypi/Bottleneck
 from cpython cimport bool
@@ -58,6 +59,9 @@ cdef extern from "math.h" nogil:
     double floor(double x)
     double M_PI
     double isnan(double x)
+
+# define long double for numpy arrays
+ctypedef long double float128_t
 
 def radians(double deg):
     """Convert degrees to radians
@@ -2041,6 +2045,20 @@ def im2rgba(np.ndarray[np.float64_t, ndim=2] im,
 @cython.wraparound(False)
 def detect_cosmic_rays(np.ndarray[np.float64_t, ndim=2] frame,
                        crs_list, int box_size, double detect_coeff):
+    """Check if a given pixel is a cosmic ray (classic detection).
+    
+    classic detection: pixel value is checked against standard
+    deviation of values in a box around the pixel.
+
+    :param frame: Frame to check
+    
+    :param crs_list: List of pixels to check
+    
+    :param box_size: Size of the box in pixels
+    
+    :param detect_coeff: Coefficient of detection (number of sigmas
+      threshold)
+    """
     
     cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
     cdef np.ndarray[np.uint8_t, ndim=2] cr_map = np.zeros_like(
@@ -2078,6 +2096,18 @@ def check_cosmic_rays_neighbourhood(
     np.ndarray[np.float64_t, ndim=2] frame,
     np.ndarray[np.uint8_t, ndim=2] cr_map,
     int box_size, double detect_coeff):
+    """Check the neighbourhood around detected cosmic rays in a frame.
+
+    :param frame: Frame to check
+    
+    :param cr_map: Map of the cosimic-rays positions (boolean map, 1
+      is a cosmic ray)
+
+    :param box_size: Size of the box checked around each cr.
+
+    :param detect_coeff: Coefficient of detection (number of sigmas
+      threshold)
+    """
     
     cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
     cdef int inewcr, icr, ix, iy, xmin, xmax, ymin, ymax, ii, ij
@@ -2107,3 +2137,126 @@ def check_cosmic_rays_neighbourhood(
     return cr_map
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def fast_w2pix(np.ndarray[np.float64_t, ndim=1] w,
+               double axis_min, double axis_step):
+    """Fast conversion of wavelength/wavenumber to pixel
+
+    :param w: wavelength/wavenumber
+    
+    :param axis_min: min axis wavelength/wavenumber
+    
+    :param axis_step: axis step size in wavelength/wavenumber
+    """
+    return np.abs(w - axis_min) / axis_step
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def fast_pix2w(np.ndarray[np.float64_t, ndim=1] pix,
+               double axis_min, double axis_step):
+    """Fast conversion of pixel to wavelength/wavenumber
+
+    :param pix: position along axis in pixels
+    
+    :param axis_min: min axis wavelength/wavenumber
+    
+    :param axis_step: axis step size in wavelength/wavenumber
+    """
+    return pix * axis_step + axis_min
+
+
+def get_cm1_axis_min(double step, int order, double corr=1.):
+    """Return min wavenumber of a regular wavenumber axis in cm-1.
+
+    :param step: Step size in nm
+    
+    :param order: Folding order
+    
+    :param corr: (Optional) Coefficient of correction (default 1.)
+    """
+    return <double> order / (2.* step) * corr * 1e7
+
+def get_cm1_axis_max(double step, int order, double corr=1.):
+    """Return max wavenumber of a regular wavenumber axis in cm-1.
+
+    :param step: Step size in nm
+    
+    :param order: Folding order
+    
+    :param corr: (Optional) Coefficient of correction (default 1.)
+    """
+    return <double> (order + 1.) / (2. * step) * corr * 1e7
+
+def get_cm1_axis_step(int n, double step, corr=1.):
+    """Return step size of a regular wavenumber axis in cm-1.
+
+    :param n: Number of steps on the axis
+    
+    :param step: Step size in nm
+    
+    :param corr: (Optional) Coefficient of correction (default 1.)
+    """
+    return corr / (2. * (<double> n - 1.) * step) * 1e7
+
+def get_nm_axis_min(double step, int order, double corr=1.):
+    """Return min wavelength of regular wavelength axis in nm.
+
+    :param step: Step size in nm
+    
+    :param order: Folding order (cannot be 0)
+    
+    :param corr: (Optional) Coefficient of correction (default 1.)
+    """
+    return 2. * step / <double> (order + 1) / corr
+
+def get_nm_axis_max(double step, int order, double corr=1.):
+    """Return max wavelength of regular wavelength axis in nm.
+
+    :param step: Step size in nm
+    
+    :param order: Folding order (cannot be 0)
+    
+    :param corr: (Optional) Coefficient of correction (default 1.)
+    """
+    return 2. * step / <double> order / corr
+
+def get_nm_axis_step(int n, double step, int order, double corr=1.):
+    """Return step size of a regular wavelength axis in nm.
+
+    :param n: Number of steps on the axis
+    
+    :param step: Step size in nm
+    
+    :param order: Folding order (cannot be 0)
+    
+    :param corr: (Optional) Coefficient of correction (default 1.)
+    """
+    if (order > 0): 
+        return 2. * step / (<double> order * <double> (order + 1) * corr) / <double> (n - 1)
+    else: raise Exception("order must be > 0")
+
+
+def compute_radial_velocity(np.ndarray[float128_t, ndim=1] line,
+                            np.ndarray[float128_t, ndim=1] rest_line,
+                            bool wavenumber=False):
+    """
+    Return radial velocity in km.s-1
+
+    V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0
+
+    :param line: Emission line wavelength/wavenumber (can be a numpy
+      array)
+    
+    :param rest_line: Rest-frame wavelength/wavenumber (can be a numpy
+      array but must have the same size as line)
+
+    :param wavenumber: (Optional) If True the result is returned in cm-1,
+      else it is returned in nm.
+    """
+    cdef np.ndarray[float128_t, ndim=1] delta
+    
+    if wavenumber: delta = rest_line - line
+    else: delta = line - rest_line
+    return np.array(<long double> constants.LIGHT_VEL_KMS
+                    * delta / rest_line, dtype=np.float64)

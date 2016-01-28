@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: orb-header
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -48,10 +48,10 @@ def main(args):
         if (not 'fits' in args.fits_path) and (not 'hdf5' in args.fits_path):
             with open(args.fits_path, 'r') as f:
                 fits_list = [filename for filename in f]
-                fits_list = to.sort_image_list(fits_list, 'spiomm')
+                fits_list = to.sort_image_list(fits_list, 'sitelle', cube=args.cube)
         else:
             fits_list = [args.fits_path]
-            
+
         for fits_path in fits_list:
 
             if 'hdf5' in fits_path:
@@ -84,12 +84,16 @@ def main(args):
                 
             elif args.subparser_name == 'key':
                 if file_type == 'fits':
-                    if args.keyword in hdu.header:
-                        print os.path.split(fits_path)[1].strip(), ' ', hdu.header[args.keyword]
-                    else:
-                        print ' > ERROR: keyword {} does not exist.'.format(
-                            args.keyword)
-                        sys.exit(2)
+                    vals = list()
+                    for ikey in args.keyword:
+                        if ikey in hdu.header:
+                            vals.append(str(hdu.header[ikey]))
+                        else:
+                            vals.append('BAD_KEY_ERROR')
+                    print '{} {}'.format(
+                        os.path.abspath(fits_path).strip(),
+                        ' '.join(vals))
+                    
                         
                 if file_type == 'hdf5':
                     if args.keyword in cube.get_frame_header(args.hdu_index):
@@ -102,27 +106,26 @@ def main(args):
                         
             elif args.subparser_name == 'del':
                 if file_type == 'fits':
-                    if args.keyword in hdu.header:
-                        del hdu.header[args.keyword]
-                        hdulist.writeto(fits_path, clobber=True)
-                    else:
-                        print ' > ERROR: keyword {} does not exist.'.format(
-                            args.keyword)
-                        sys.exit(2)
+                    for ikey in args.keyword:
+                        if ikey in hdu.header:
+                            del hdu.header[ikey]
+                        else:
+                            print ' > WARNING: keyword {} does not exist.'.format(ikey)    
+                    hdulist.writeto(fits_path, clobber=True)
+                    
                         
                 if file_type == 'hdf5':
                     with to.open_hdf5(fits_path, 'a') as f:
                         hdr = cube.get_frame_header(args.hdu_index)
-                        if args.keyword in hdr:
-                            del hdr[args.keyword]
-                            del f[to._get_hdf5_header_path(args.hdu_index)]
-                            f[to._get_hdf5_header_path(args.hdu_index)] = (
-                                to._header_fits2hdf5(hdr))
-                        else:
-                            print ' > ERROR: keyword {} does not exist.'.format(
-                                args.keyword)
-                            sys.exit(2)
-                         
+                        for ikey in args.keyword:
+                            if ikey in hdr:
+                                del hdr[ikey]
+                            else:
+                                print ' > WARNING: keyword {} does not exist.'.format(ikey)    
+                        del f[to._get_hdf5_header_path(args.hdu_index)]
+                        f[to._get_hdf5_header_path(args.hdu_index)] = (
+                            to._header_fits2hdf5(hdr))
+                        
             elif args.subparser_name == 'info':
                 hdulist.info()
 
@@ -170,6 +173,9 @@ if __name__ == "__main__":
 
     parser.add_argument('-i', dest="hdu_index", default=0, type=int,
                         help="Change HDU index")
+
+    parser.add_argument('--cube', dest="cube", default=False,
+                        action='store_true', help="If image list is a cube sort list based on step number instead of filepath")
     
     subparsers = parser.add_subparsers(help='operation type', dest='subparser_name')
 
@@ -177,7 +183,7 @@ if __name__ == "__main__":
 
     parser_key = subparsers.add_parser('key', help='Print key value')
 
-    parser_key.add_argument('keyword', help='Keyword to print')
+    parser_key.add_argument('keyword', help='Keyword to print', nargs='*')
 
     parser_del = subparsers.add_parser('del', help='Delete keyword (Warning: File will be overwritten)')
     

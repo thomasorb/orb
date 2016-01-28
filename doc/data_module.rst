@@ -9,6 +9,10 @@ Data functions
 
 .. autofunction:: data.array
 
+.. autofunction:: data.exp
+
+.. autofunction:: data.sqrt
+
 .. autofunction:: data.log10
 
 .. autofunction:: data.sum

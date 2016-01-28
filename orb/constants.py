@@ -3,7 +3,7 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: constants.py
 
-## Copyright (c) 2010-2015 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -22,23 +22,23 @@
 
 
 import math, os
-"""
-This file contains only some useful constants
-"""
+
+##
+## This file only contains some useful constants
+##
 
 
-# Coefficient to convert the width of a gaussian function to its FWHM
-# (line_fwhm = line_width * FWHM)
 FWHM_COEFF = abs(2.*math.sqrt(2. * math.log(2.)))
+"""Coefficient used to convert the width of a gaussian function to its FWHM (line_fwhm = line_width * FWHM)"""
 
-# Coefficien used to determine sinc fwhm
 FWHM_SINC_COEFF = 1.20671
+"""Coefficien used to determine sinc fwhm"""
 
-# Velocity of the light in the vacuum in km.s-1
-LIGHT_VEL_KMS = 299792.458 
+LIGHT_VEL_KMS = 299792.458
+"""Velocity of the light in the vacuum in km.s-1"""
 
-# Max length of a FITS string card
 FITS_CARD_MAX_STR_LENGTH = 18
+"""Max length of a FITS string card"""
 
-# Sesame URL
 SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/NSV?"
+"""Sesame URL """
