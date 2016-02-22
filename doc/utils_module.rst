@@ -47,6 +47,13 @@ Image
    :show-inheritance:
 
 
+IO
+--
+
+.. automodule:: orb.utils.io
+   :members:
+   :private-members:
+   :show-inheritance:
 
 Miscellaneous
 -------------

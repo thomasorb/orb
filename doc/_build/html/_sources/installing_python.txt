@@ -3,8 +3,31 @@ Installing Python
 
 .. contents::
 
-.. note:: All instruction are given for Ubuntu |Ubuntu|. It might work
-     for any Debian based operating system.
+.. note:: Instructions are generally given for Ubuntu |Ubuntu|. It
+     might work for any Debian based operating system. Most of the
+     installation can be used with pip or setup.py and its the same
+     for Mac |Mac| (see below).
+
+Fast installation sequence for MAC users
+========================================
+
+Most of the installation process can be done with pip::
+
+  sudo easy_install pip
+  sudo pip install pip --upgrade
+  sudo pip install numpy --upgrade
+  sudo pip install scipy --upgrade
+  sudo pip install cython --upgrade
+  sudo pip install astropy --upgrade
+  sudo pip install h5py --upgrade
+  
+For the libraries that are not accessible via pip (e.g. pp) you can
+install them using python. Download the archive, unzip it and, in the
+unzipped folder type::
+
+  sudo python setup.py install
+
+
 
 
 Python_
@@ -224,6 +247,11 @@ To install Cython_::
 
 
 .. |Ubuntu| image:: os_linux.png
+            :height: 40
+   	    :width: 40
+            :scale: 70
+
+.. |Mac| image:: os_apple.png
             :height: 40
    	    :width: 40
             :scale: 70

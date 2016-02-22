@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 1.5.2 documentation</title>
+  <title>Core module &mdash; Orb 1.6.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.2 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
         <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.5.2
+                1.6.1
               </div>
             
           
@@ -1054,14 +1054,14 @@ informations.</p>
 
 <dl class="method">
 <dt id="core.Tools.read_fits">
-<code class="descname">read_fits</code><span class="sig-paren">(</span><em>fits_name</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=False</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">read_fits</code><span class="sig-paren">(</span><em>fits_path</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=False</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.read_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a FITS data file and returns its data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="core.Tools.read_fits.params.fits_name"></span><strong>fits_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.fits_name">¶</a> &#8211; Path to the file, can be either
+<li><span class="target" id="core.Tools.read_fits.params.fits_path"></span><strong>fits_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.fits_path">¶</a> &#8211; Path to the file, can be either
 relative or absolut.</li>
 <li><span class="target" id="core.Tools.read_fits.params.no_error"></span><strong>no_error</strong><a class="paramlink headerlink reference internal" href="#core.Tools.read_fits.params.no_error">¶</a> &#8211; (Optional) If True this function will only
 display a warning message if the file does not exist (so it
@@ -1183,7 +1183,7 @@ number instead of file path (default True).</li>
 
 <dl class="method">
 <dt id="core.Tools.write_fits">
-<code class="descname">write_fits</code><span class="sig-paren">(</span><em>fits_name</em>, <em>fits_data</em>, <em>fits_header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>mask=None</em>, <em>replace=False</em>, <em>record_stats=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.write_fits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_fits</code><span class="sig-paren">(</span><em>fits_path</em>, <em>fits_data</em>, <em>fits_header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>mask=None</em>, <em>replace=False</em>, <em>record_stats=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.write_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write data in FITS format. If the file doesn&#8217;t exist create
 it with its directories.</p>
 <p>If the file already exists add a number to its name before the
@@ -1193,7 +1193,7 @@ extension (unless &#8216;overwrite&#8217; option is set to True).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="core.Tools.write_fits.params.fits_name"></span><strong>fits_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_name">¶</a> &#8211; Path to the file, can be either
+<li><span class="target" id="core.Tools.write_fits.params.fits_path"></span><strong>fits_path</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_path">¶</a> &#8211; Path to the file, can be either
 relative or absolut.</li>
 <li><span class="target" id="core.Tools.write_fits.params.fits_data"></span><strong>fits_data</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_data">¶</a> &#8211; Data to be written in the file.</li>
 <li><span class="target" id="core.Tools.write_fits.params.fits_header"></span><strong>fits_header</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_fits.params.fits_header">¶</a> &#8211; (Optional) Optional keywords to update or
@@ -1243,7 +1243,7 @@ files.</p>
 
 <dl class="method">
 <dt id="core.Tools.write_hdf5">
-<code class="descname">write_hdf5</code><span class="sig-paren">(</span><em>file_path</em>, <em>data</em>, <em>header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>max_hdu_check=True</em>, <em>compress=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.write_hdf5" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_hdf5</code><span class="sig-paren">(</span><em>file_path</em>, <em>data</em>, <em>header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>max_hdu_check=True</em>, <em>compress=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.write_hdf5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write data in HDF5 format.</p>
 <p>A header can be added to the data. This method is useful to
 handle an HDF5 data file like a FITS file. It implements most
@@ -1628,6 +1628,17 @@ even if it is already present in the cube (default False).</td>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">In this process NaNs are considered as zeros.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_median_image">
+<code class="descname">get_median_image</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_median_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the median image of a cube</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is not a real median image. Frames are combined
+10 by 10 with a median.</p>
 </div>
 </dd></dl>
 
@@ -2161,7 +2172,7 @@ method is called so delete it. e.g.:</p>
 
 <dl class="method">
 <dt id="core.OutHDFCube.write_frame">
-<code class="descname">write_frame</code><span class="sig-paren">(</span><em>index</em>, <em>data=None</em>, <em>header=None</em>, <em>mask=None</em>, <em>record_stats=False</em>, <em>force_float32=True</em>, <em>section=None</em>, <em>force_complex64=False</em>, <em>compress=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.write_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_frame</code><span class="sig-paren">(</span><em>index</em>, <em>data=None</em>, <em>header=None</em>, <em>mask=None</em>, <em>record_stats=False</em>, <em>force_float32=True</em>, <em>section=None</em>, <em>force_complex64=False</em>, <em>compress=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.write_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a frame</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2184,7 +2195,7 @@ frame (deafult None).</li>
 <li><span class="target" id="core.OutHDFCube.write_frame.params.force_complex64"></span><strong>force_complex64</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.force_complex64">¶</a> &#8211; (Optional) If True, data type is
 forced to numpy.complex64 type (default False).</li>
 <li><span class="target" id="core.OutHDFCube.write_frame.params.compress"></span><strong>compress</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.write_frame.params.compress">¶</a> &#8211; (Optional) If True, data is lossely
-compressed using a gzip algorithm (default True).</li>
+compressed using a gzip algorithm (default False).</li>
 </ul>
 </td>
 </tr>
@@ -3016,7 +3027,7 @@ wavelengths.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.2',
+            VERSION:'1.6.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

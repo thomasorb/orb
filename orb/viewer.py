@@ -47,7 +47,7 @@ matplotlib.use('GTKAgg')
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib.widgets import SpanSelector, RectangleSelector, AxesWidget
+from matplotlib.widgets import SpanSelector, RectangleSelector, EllipseSelector, AxesWidget
 from matplotlib.patches import Circle, Rectangle
 from matplotlib.lines import Line2D
 
@@ -487,7 +487,7 @@ class BaseViewer(object):
             
             zdata = self.cube[int(x_range[0]):int(x_range[1]),
                               int(y_range[0]):int(y_range[1]), :]
-            
+        
             if self.regions.get_shape() == 'circle':
                 all_vectors = list()
                 for ik in range(len(region.get_selected_pixels()[0])):
@@ -940,7 +940,7 @@ class HeaderWindow(PopupWindow):
 class ZPlotWindow(PopupWindow):
     """Implement a window for plotting zaxis data."""
 
-
+    subplot = None
     simple_mode = False
     is_spectrum = None
     _display_spectrum = None
@@ -986,7 +986,8 @@ class ZPlotWindow(PopupWindow):
         self.zmax_pix = None
         
         self.fig = Figure(figsize=SIZE, dpi=DPI, tight_layout=True)
-        self.subplot = self.fig.add_subplot(111)
+        self.twin_plot = self.fig.add_subplot(111)
+        self.subplot = self.twin_plot.twinx()
 
 
         # CREATE framebox
@@ -1171,6 +1172,8 @@ class ZPlotWindow(PopupWindow):
 
         #zdata[np.nonzero(zdata == 0.)] = np.nan
         self.subplot.cla()
+        if self.twin_plot is not None:
+            self.twin_plot.cla()
         
         if zaxis is None:
             zaxis = self._get_zaxis(np.size(zdata))
@@ -1235,7 +1238,13 @@ class ZPlotWindow(PopupWindow):
                 self.subplot.plot(zaxis, kzdata, c='red', lw=1.)
                 
         if zdata_phase is not None:
-            self.subplot.plot(zaxis, zdata_phase, c='green', lw=1.)
+            
+            #self.subplot.plot(zaxis, zdata_phase, c='green', lw=1.)
+            self.twin_plot.plot(zaxis, zdata_phase, c='green', lw=1.)
+            self.twin_plot.set_ylabel('Phase')
+        elif self.twin_plot is not None:
+            self.twin_plot.cla()
+        
             
         self.subplot.plot(zaxis, zdata, c='0.', lw=1.)
         
@@ -1831,7 +1840,8 @@ class Regions(object):
 
     method = None
     methods = ['mean', 'sum', 'median']
-    shapes = ['rectangle', 'circle']
+    #shapes = ['rectangle', 'circle']
+    shapes = ['circle']
     shape = None
     change_region_properties_cb = None
     regions = list()
@@ -1990,9 +2000,11 @@ class Region(object):
     
     def __init__(self, shape, xy_start, xy_stop, dimx, dimy):
         self.shape = shape
-
+        xy_start = np.array(xy_start)
+        xy_stop = np.array(xy_stop)
+        
         if shape == 'circle':
-            center = np.array(xy_start)
+            center = np.array((xy_start + xy_stop)/2.)
             radius = math.sqrt(np.sum((np.array(xy_stop) - center)**2.))
             X, Y = np.mgrid[0:dimx, 0:dimy]
             R = np.sqrt((X - center[0])**2. + (Y - center[1])**2.)
@@ -2130,10 +2142,15 @@ class ImageCanvas(Tools):
         if self.region_selector is not None:
             self.region_selector.to_draw.set_visible(False)
             self.region_selector.canvas.draw()
-        
-        self.region_selector = RegionSelector(
-            self.subplot, self._on_select_region_cb,
-            button=1, rectprops=rectprops, drawtype=self.regions.get_shape())
+        if self.regions.get_shape() == 'circle':
+            self.region_selector = EllipseSelector(
+                self.subplot, self._on_select_region_cb,
+                button=1, rectprops=rectprops, interactive=True)
+        else:
+            self.region_selector = RectangleSelector(
+                self.subplot, self._on_select_region_cb,
+                button=1, rectprops=rectprops, interactive=True)
+        self.region_selector.state.add('square')
         
             
     def connect_all(self):
@@ -2455,9 +2472,6 @@ class ImageCanvas(Tools):
                 
             self.canvas.draw()
             
-
-            
-
         self._last_xlim = self.subplot.get_xlim()
         self._last_ylim = self.subplot.get_ylim()
         self._last_cmap = str(self.cmap)
@@ -2468,203 +2482,7 @@ class ImageCanvas(Tools):
         self.redraw(recompute_all=True)
     
 
-    
-class RegionSelector(RectangleSelector):
 
-    def __init__(self, ax, onselect, drawtype='rectangle',
-                 minspanx=None, minspany=None, useblit=False,
-                 lineprops=None, rectprops=None, spancoords='data',
-                 button=None):
-
-        """
-        Create a selector in *ax*.  When a selection is made, clear
-        the span and call onselect with::
-
-          onselect(pos_1, pos_2)
-
-        and clear the drawn box/line. The ``pos_1`` and ``pos_2`` are
-        arrays of length 2 containing the x- and y-coordinate.
-
-        If *minspanx* is not *None* then events smaller than *minspanx*
-        in x direction are ignored (it's the same for y).
-
-        The rectangle is drawn with *rectprops*; default::
-
-          rectprops = dict(facecolor='red', edgecolor = 'black',
-                           alpha=0.5, fill=False)
-
-        The line is drawn with *lineprops*; default::
-
-          lineprops = dict(color='black', linestyle='-',
-                           linewidth = 2, alpha=0.5)
-
-        Use *drawtype* if you want the mouse to draw a line,
-        a box or nothing between click and actual position by setting
-
-        ``drawtype = 'line'``, ``drawtype='box'`` or ``drawtype = 'none'``.
-
-        *spancoords* is one of 'data' or 'pixels'.  If 'data', *minspanx*
-        and *minspanx* will be interpreted in the same coordinates as
-        the x and y axis. If 'pixels', they are in pixels.
-
-        *button* is a list of integers indicating which mouse buttons should
-        be used for rectangle selection.  You can also specify a single
-        integer if only a single button is desired.  Default is *None*,
-        which does not limit which button can be used.
-
-        Note, typically:
-         1 = left mouse button
-         2 = center mouse button (scroll wheel)
-         3 = right mouse button
-        """
-        AxesWidget.__init__(self, ax)
-
-        self.visible = True
-        self.connect_event('motion_notify_event', self.onmove)
-        self.connect_event('button_press_event', self.press)
-        self.connect_event('button_release_event', self.release)
-        self.connect_event('draw_event', self.update_background)
-
-        self.active = True                    # for activation / deactivation
-        self.to_draw = None
-        self.background = None
-
-        if drawtype == 'none':
-            drawtype = 'line'                        # draw a line but make it
-            self.visible = False                     # invisible
-
-        if drawtype == 'rectangle' or drawtype == 'circle':
-            if rectprops is None:
-                rectprops = dict(facecolor='white', edgecolor='black',
-                                 alpha=0.5, fill=False)
-            self.rectprops = rectprops
-            if drawtype == 'rectangle':
-                self.to_draw = Rectangle((0, 0), 0, 1, visible=False,
-                                         **self.rectprops)
-            else:
-                self.to_draw = Circle((0, 0), 1, visible=False,
-                                      **self.rectprops)
-                
-            self.ax.add_patch(self.to_draw)
-            
-        if drawtype == 'line':
-            if lineprops is None:
-                lineprops = dict(color='black', linestyle='-',
-                                 linewidth=2, alpha=0.5)
-            self.lineprops = lineprops
-            self.to_draw = Line2D([0, 0], [0, 0], visible=False,
-                                  **self.lineprops)
-            self.ax.add_line(self.to_draw)
-
-        self.onselect = onselect
-        self.useblit = useblit and self.canvas.supports_blit
-        self.minspanx = minspanx
-        self.minspany = minspany
-
-        if button is None or isinstance(button, list):
-            self.validButtons = button
-        elif isinstance(button, int):
-            self.validButtons = [button]
-
-        assert(spancoords in ('data', 'pixels'))
-
-        self.spancoords = spancoords
-        self.drawtype = drawtype
-        # will save the data (position at mouseclick)
-        self.eventpress = None
-        # will save the data (pos. at mouserelease)
-        self.eventrelease = None
-    
-    def onmove(self, event):
-        """on motion notify event if box/line is wanted"""
-        if self.eventpress is None or self.ignore(event):
-            return
-        x, y = event.xdata, event.ydata             # actual position (with
-                                                   #   (button still pressed)
-        if self.drawtype == 'rectangle' or self.drawtype == 'circle':
-            minx, maxx = self.eventpress.xdata, x  # click-x and actual mouse-x
-            miny, maxy = self.eventpress.ydata, y  # click-y and actual mouse-y
-            center = minx, miny
-            if minx > maxx:
-                minx, maxx = maxx, minx  # get them in the right order
-            if miny > maxy:
-                miny, maxy = maxy, miny
-
-            r = math.sqrt((maxx - minx)**2. + (maxy - miny)**2.)
-
-            if self.drawtype == 'rectangle':
-                self.to_draw.set_x(minx)             # set lower left of box
-                self.to_draw.set_y(miny)
-                self.to_draw.set_width(maxx - minx)  # set width and height of box
-                self.to_draw.set_height(maxy - miny)
-            else:
-                self.to_draw.set_radius(r)             # set lower left of box
-                self.to_draw.center = center
-                
-            self.update()
-            return False
-        if self.drawtype == 'line':
-            self.to_draw.set_data([self.eventpress.xdata, x],
-                                  [self.eventpress.ydata, y])
-            self.update()
-            return False
-
-
-    def release(self, event):
-        """on button release event"""
-       
-        if self.eventpress is None or self.ignore(event):
-            return
-        # make the box/line invisible again
-        #self.to_draw.set_visible(False)
-        self.canvas.draw()
-        # release coordinates, button, ...
-        self.eventrelease = event
-
-        if self.spancoords == 'data':
-            xmin, ymin = self.eventpress.xdata, self.eventpress.ydata
-            xmax, ymax = self.eventrelease.xdata, self.eventrelease.ydata
-            # calculate dimensions of box or line get values in the right
-            # order
-        elif self.spancoords == 'pixels':
-            xmin, ymin = self.eventpress.x, self.eventpress.y
-            xmax, ymax = self.eventrelease.x, self.eventrelease.y
-        else:
-            raise ValueError('spancoords must be "data" or "pixels"')
-
-        if xmin > xmax:
-            xmin, xmax = xmax, xmin
-        if ymin > ymax:
-            ymin, ymax = ymax, ymin
-
-        spanx = xmax - xmin
-        spany = ymax - ymin
-        xproblems = self.minspanx is not None and spanx < self.minspanx
-        yproblems = self.minspany is not None and spany < self.minspany
-        
-        if spanx < 0.01 and spany < 0.01:
-            if self.drawtype == 'rectangle':
-                self.to_draw.set_x(xmin-0.5)             # set lower left of box
-                self.to_draw.set_y(ymin-0.5)
-                self.to_draw.set_width(1)  # set width and height of box
-                self.to_draw.set_height(1)
-            elif self.drawtype == 'circle':
-                self.to_draw.set_radius(1)             # set lower left of box
-                self.to_draw.center = xmin, ymin
-                
-            self.update()
-
-        if (((self.drawtype == 'rectangle') or (self.drawtype == 'line')
-             or (self.drawtype == 'circle')) and (xproblems or yproblems)):
-            # check if drawn distance (if it exists) is not too small in
-            # neither x nor y-direction
-            return
-
-        self.onselect(self.eventpress, self.eventrelease)
-                                              # call desired function
-        self.eventpress = None                # reset the variables to their
-        self.eventrelease = None              # inital values
-        return False      
 
 
 

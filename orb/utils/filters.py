@@ -25,6 +25,70 @@ import warnings
 from scipy import interpolate
 
 import orb.utils.spectrum
+import orb.cutils
+
+def compute_weights(calib, nm_laser, step_nb, step, order,
+                    range_border_coeff, filter_min_cm1, filter_max_cm1):
+    """Compute weights for a fit based on a spectrum with a given
+    filter bandpass
+
+    :param calib: Calibration laser observed wavelength
+    
+    :param nm_laser: Calibration laser theoretical wavelength
+    
+    :param step_nb: Vector length
+    
+    :param step: Step size (in nm)
+    
+    :param order: Folding order
+    
+    :param range_border_coeff: Percentage of the vector size
+      considered as bad borders near the filter edges (must be between
+      0.2 and 0.).
+    
+    :param filter_min_cm1: Minimum wavenumber of the filter in cm-1
+
+    :param filter_max_cm1: Maximum wavenumber of the filter in cm-1
+    """
+    
+    weights = np.ones(step_nb, dtype=float)
+    corr = calib / nm_laser
+    cm1_axis_step = orb.cutils.get_cm1_axis_step(
+        step_nb, step, corr=corr)
+    cm1_axis_min = orb.cutils.get_cm1_axis_min(
+        step_nb, step, order, corr=corr)
+    filter_range = orb.cutils.fast_w2pix(
+        np.array([filter_min_cm1, filter_max_cm1]),
+        cm1_axis_min, cm1_axis_step)
+
+    if int(order) & 1:
+        filter_range = step_nb - filter_range
+
+    filter_range[filter_range < 0] = 0
+    filter_range[filter_range > step_nb] = (
+        step_nb - 1)
+    range_size = abs(np.diff(filter_range)[0])
+    weights[:np.min(filter_range)
+            + int(range_border_coeff * range_size)] = 1e-35
+    weights[np.max(filter_range)
+            - int(range_border_coeff * range_size):] = 1e-35
+    return weights, filter_range
+
+
+def get_phase_fit_order(filter_file_path):
+    """
+    Return phase fit order if it exists and None instead.
+    
+    :param filter_file_path: Path to the filter file.
+    """
+    with open(filter_file_path, 'r') as f:
+        for line in f:
+            if len(line) > 2:
+                if '# PHASE_FIT_ORDER' in line:
+                    return int(line.strip().split()[2])
+    warnings.warn('PHASE_FIT_ORDER keyword not in filter file: {}'.format(filter_file_path))
+    return None
+
 
 def read_filter_file(filter_file_path):
     """

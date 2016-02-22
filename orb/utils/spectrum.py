@@ -42,9 +42,9 @@ def create_nm_axis(n, step, order, corr=1.):
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
     
-    nm_min = orb.cutils.get_nm_axis_min(step, order, corr=corr)
+    nm_min = orb.cutils.get_nm_axis_min(n, step, order, corr=corr)
     if (order > 0): 
-        nm_max = orb.cutils.get_nm_axis_max(step, order, corr=corr)
+        nm_max = orb.cutils.get_nm_axis_max(n, step, order, corr=corr)
         return np.linspace(nm_min, nm_max, n, dtype=np.longdouble)
     else:
         raise Exception("order must be > 0")
@@ -60,9 +60,9 @@ def create_cm1_axis(n, step, order, corr=1.):
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    cm1_min = orb.cutils.get_cm1_axis_min(step, order, corr=corr)
-    cm1_max = orb.cutils.get_cm1_axis_max(step, order, corr=corr)
-    return np.linspace(cm1_min, cm1_max, n, dtype=np.longdouble)
+    cm1_min = orb.cutils.get_cm1_axis_min(n, step, order, corr=corr)
+    cm1_max = orb.cutils.get_cm1_axis_max(n, step, order, corr=corr)
+    return np.linspace(cm1_min, cm1_max, n, dtype=np.longdouble) 
     
     
 def create_nm_axis_ireg(n, step, order, corr=1.):

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Utils module &mdash; Orb 1.5.2 documentation</title>
+  <title>Utils module &mdash; Orb 1.6.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.2 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
         <link rel="next" title="CUtils module" href="cutils_module.html"/>
         <link rel="prev" title="Core module" href="core_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.5.2
+                1.6.1
               </div>
             
           
@@ -104,6 +104,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.fft">FFT</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.filters">Filters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.image">Image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.io">IO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.misc">Miscellaneous</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.parallel">Parallel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.pyneb">Pyneb</a></li>
@@ -177,13 +178,14 @@
 <li><a class="reference internal" href="#module-orb.utils.fft" id="id7">FFT</a></li>
 <li><a class="reference internal" href="#module-orb.utils.filters" id="id8">Filters</a></li>
 <li><a class="reference internal" href="#module-orb.utils.image" id="id9">Image</a></li>
-<li><a class="reference internal" href="#module-orb.utils.misc" id="id10">Miscellaneous</a></li>
-<li><a class="reference internal" href="#module-orb.utils.parallel" id="id11">Parallel</a></li>
-<li><a class="reference internal" href="#module-orb.utils.pyneb" id="id12">Pyneb</a></li>
-<li><a class="reference internal" href="#module-orb.utils.spectrum" id="id13">Spectrum</a></li>
-<li><a class="reference internal" href="#module-orb.utils.stats" id="id14">Stats</a></li>
-<li><a class="reference internal" href="#module-orb.utils.vector" id="id15">Vector</a></li>
-<li><a class="reference internal" href="#module-orb.utils.web" id="id16">Web</a></li>
+<li><a class="reference internal" href="#module-orb.utils.io" id="id10">IO</a></li>
+<li><a class="reference internal" href="#module-orb.utils.misc" id="id11">Miscellaneous</a></li>
+<li><a class="reference internal" href="#module-orb.utils.parallel" id="id12">Parallel</a></li>
+<li><a class="reference internal" href="#module-orb.utils.pyneb" id="id13">Pyneb</a></li>
+<li><a class="reference internal" href="#module-orb.utils.spectrum" id="id14">Spectrum</a></li>
+<li><a class="reference internal" href="#module-orb.utils.stats" id="id15">Stats</a></li>
+<li><a class="reference internal" href="#module-orb.utils.vector" id="id16">Vector</a></li>
+<li><a class="reference internal" href="#module-orb.utils.web" id="id17">Web</a></li>
 </ul>
 </li>
 </ul>
@@ -1336,7 +1338,7 @@ Optical Society of America A.</td></tr>
 
 <dl class="function">
 <dt id="orb.utils.fft.optimize_phase">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">optimize_phase</code><span class="sig-paren">(</span><em>interf, step, order, zpd_shift, guess=[0, 0], return_coeffs=False, fixed_params=[0, 0]</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.optimize_phase" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.fft.</code><code class="descname">optimize_phase</code><span class="sig-paren">(</span><em>interf, step, order, zpd_shift, guess=[0, 0], return_coeffs=False, fixed_params=[0, 0], weights=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.optimize_phase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an optimized phase vector based on the minimization of
 the imaginary part.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1348,8 +1350,14 @@ the imaginary part.</p>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.step">¶</a> &#8211; Step size (in nm)</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.order">¶</a> &#8211; Alisasing order</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.zpd_shift">¶</a> &#8211; ZPD shift</li>
+<li><span class="target" id="orb.utils.fft.optimize_phase.params.guess"></span><strong>guess</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.guess">¶</a> &#8211; (Optional) First guess. The number of values defines the order
+of the polynomial used used to fit (default [0,0]).</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.return_coeffs"></span><strong>return_coeffs</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.return_coeffs">¶</a> &#8211; (Optional) If True, coeffs and residual are
 returned instead of the phase vector (default False).</li>
+<li><span class="target" id="orb.utils.fft.optimize_phase.params.fixed_params"></span><strong>fixed_params</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.fixed_params">¶</a> &#8211; (Optional) Define free and fixed parameters
+(1 for fixed, 0 for free, default [0,0])</li>
+<li><span class="target" id="orb.utils.fft.optimize_phase.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.weights">¶</a> &#8211; (Optional) spectrum weighting (a vector with
+values ranging from 0 to 1, 1 being the maximu weight)</li>
 </ul>
 </td>
 </tr>
@@ -1581,6 +1589,33 @@ can be a single float or a vector of size n</td>
 <div class="section" id="module-orb.utils.filters">
 <span id="filters"></span><h2><a class="toc-backref" href="#id8">Filters</a><a class="headerlink" href="#module-orb.utils.filters" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
+<dt id="orb.utils.filters.compute_weights">
+<code class="descclassname">orb.utils.filters.</code><code class="descname">compute_weights</code><span class="sig-paren">(</span><em>calib</em>, <em>nm_laser</em>, <em>step_nb</em>, <em>step</em>, <em>order</em>, <em>range_border_coeff</em>, <em>filter_min_cm1</em>, <em>filter_max_cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.compute_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute weights for a fit based on a spectrum with a given
+filter bandpass</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.filters.compute_weights.params.calib"></span><strong>calib</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.calib">¶</a> &#8211; Calibration laser observed wavelength</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.nm_laser"></span><strong>nm_laser</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.nm_laser">¶</a> &#8211; Calibration laser theoretical wavelength</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.step_nb">¶</a> &#8211; Vector length</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.step">¶</a> &#8211; Step size (in nm)</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.range_border_coeff"></span><strong>range_border_coeff</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.range_border_coeff">¶</a> &#8211; Percentage of the vector size
+considered as bad borders near the filter edges (must be between
+0.2 and 0.).</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.filter_min_cm1"></span><strong>filter_min_cm1</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.filter_min_cm1">¶</a> &#8211; Minimum wavenumber of the filter in cm-1</li>
+<li><span class="target" id="orb.utils.filters.compute_weights.params.filter_max_cm1"></span><strong>filter_max_cm1</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.compute_weights.params.filter_max_cm1">¶</a> &#8211; Maximum wavenumber of the filter in cm-1</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.filters.get_filter_edges_pix">
 <code class="descclassname">orb.utils.filters.</code><code class="descname">get_filter_edges_pix</code><span class="sig-paren">(</span><em>filter_file_path</em>, <em>correction_factor</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>filter_min=None</em>, <em>filter_max=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_filter_edges_pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the position in pixels of the edges of a filter
@@ -1648,6 +1683,20 @@ and max edges are given in pixels over the interpolation axis.</p>
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></code></p>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.filters.get_phase_fit_order">
+<code class="descclassname">orb.utils.filters.</code><code class="descname">get_phase_fit_order</code><span class="sig-paren">(</span><em>filter_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_phase_fit_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return phase fit order if it exists and None instead.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.filters.get_phase_fit_order.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.get_phase_fit_order.params.filter_file_path">¶</a> &#8211; Path to the filter file.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -1838,8 +1887,10 @@ than 3 frames.</p>
 
 <dl class="function">
 <dt id="orb.utils.image.fit_calibration_laser_map">
-<code class="descclassname">orb.utils.image.</code><code class="descname">fit_calibration_laser_map</code><span class="sig-paren">(</span><em>calib_laser_map</em>, <em>calib_laser_nm</em>, <em>pixel_size=15.0</em>, <em>binning=4</em>, <em>mirror_distance_guess=220000.0</em>, <em>center_angle_guess=15</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.image.</code><code class="descname">fit_calibration_laser_map</code><span class="sig-paren">(</span><em>calib_laser_map</em>, <em>calib_laser_nm</em>, <em>pixel_size=15.0</em>, <em>binning=4</em>, <em>mirror_distance_guess=240000.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a calibration laser map.</p>
+<p>Fit a classic optical model first and uses Zernike polynomials to
+fit the residual.</p>
 <p>The model is based on optical parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1854,13 +1905,17 @@ than 3 frames.</p>
 process. Set the binning factor (default 4).</li>
 <li><span class="target" id="orb.utils.image.fit_calibration_laser_map.params.mirror_distance_guess"></span><strong>mirror_distance_guess</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_calibration_laser_map.params.mirror_distance_guess">¶</a> &#8211; (Optional) Guess on the mirror
 distance in um (default 2.2e5).</li>
-<li><span class="target" id="orb.utils.image.fit_calibration_laser_map.params.center_angle_guess"></span><strong>center_angle_guess</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_calibration_laser_map.params.center_angle_guess">¶</a> &#8211; (Optional) Guess on the angle at the
-center of the frame in degrees (default 15)</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Zernike polynomial fit routine has been written by Tim
+van Werkhoven (<a class="reference external" href="mailto:werkhoven&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">werkhoven<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a>) as a part of
+libtim. It can be found in ORB module in ./ext/zern.py.</p>
+</div>
 </dd></dl>
 
 <dl class="function">
@@ -1887,11 +1942,39 @@ smoothing degrees)</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.image.fit_map_zernike">
+<code class="descclassname">orb.utils.image.</code><code class="descname">fit_map_zernike</code><span class="sig-paren">(</span><em>data_map</em>, <em>err_map</em>, <em>nmodes</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_map_zernike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a map with Zernike polynomials.</p>
+<p>Bad values must be set to NaN (not 0.)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.image.fit_map_zernike.params.data_map"></span><strong>data_map</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_map_zernike.params.data_map">¶</a> &#8211; Data map to fit</li>
+<li><span class="target" id="orb.utils.image.fit_map_zernike.params.nmodes"></span><strong>nmodes</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_map_zernike.params.nmodes">¶</a> &#8211; Number of zernike modes to use for fitting.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(fitted data map, error map, fit error)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Zernike polynomial fit routine has been written by Tim
+van Werkhoven (<a class="reference external" href="mailto:werkhoven&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">werkhoven<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a>) as a part of
+libtim. It can be found in ORB module in ./ext/zern.py.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.image.fit_sitelle_phase_map">
 <code class="descclassname">orb.utils.image.</code><code class="descname">fit_sitelle_phase_map</code><span class="sig-paren">(</span><em>phase_map</em>, <em>phase_map_err</em>, <em>calib_laser_map</em>, <em>calib_laser_nm</em>, <em>pixel_size=15.0</em>, <em>binning=4</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_sitelle_phase_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a SITELLE phase map (order 0 map of the phase) using a
 model based on a simulated calibration laser map..</p>
-<p>An real calibration laser map is needed first to get a first guess
+<p>A real calibration laser map is needed first to get a first guess
 on the parameters of the fit. Then the whole phase map is modeled
 to fit the real phase map.</p>
 <p>The modeled calibration laser map obtained from the fit is also
@@ -1912,7 +1995,8 @@ process. Set the binning factor (default 4).</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (fitted phase map, error map, fit error, new calibration laser map)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (fitted phase map, error map, fit error, new
+calibration laser map)</p>
 </td>
 </tr>
 </tbody>
@@ -2127,7 +2211,7 @@ stars use order 1 (linear interpolation).</p>
 
 <dl class="function">
 <dt id="orb.utils.image.simulate_calibration_laser_map">
-<code class="descclassname">orb.utils.image.</code><code class="descname">simulate_calibration_laser_map</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em>, <em>pixel_size</em>, <em>calib_laser_wl</em>, <em>mirror_distance</em>, <em>theta_cx</em>, <em>theta_cy</em>, <em>phi_x</em>, <em>phi_y</em>, <em>phi_r</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.simulate_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.image.</code><code class="descname">simulate_calibration_laser_map</code><span class="sig-paren">(</span><em>nx</em>, <em>ny</em>, <em>pixel_size</em>, <em>calib_laser_wl</em>, <em>mirror_distance</em>, <em>theta_c</em>, <em>phi_x</em>, <em>phi_y</em>, <em>phi_r</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.simulate_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simulate a calibration laser map from optical and mechanical parameters</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2138,14 +2222,15 @@ stars use order 1 (linear interpolation).</p>
 <li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.ny"></span><strong>ny</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.ny">¶</a> &#8211; Number of pixels along Y</li>
 <li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.pixel_size"></span><strong>pixel_size</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.pixel_size">¶</a> &#8211; Size of a pixel in microns</li>
 <li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.calib_laser_wl"></span><strong>calib_laser_wl</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.calib_laser_wl">¶</a> &#8211; Calibration laser wavelength in nm</li>
-<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.mirror_distance"></span><strong>mirror_distance</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.mirror_distance">¶</a> &#8211; Distance to the mirror in microns</li>
-<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.theta_cx"></span><strong>theta_cx</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.theta_cx">¶</a> &#8211; Angle along X from the optical axis to the mirror
-center in degrees</li>
-<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.theta_cy"></span><strong>theta_cy</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.theta_cy">¶</a> &#8211; Angle along Y from the optical axis to the mirror
+<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.mirror_distance"></span><strong>mirror_distance</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.mirror_distance">¶</a> &#8211; Distance to the mirror in microns on the
+optical axis.</li>
+<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.theta_c"></span><strong>theta_c</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.theta_c">¶</a> &#8211; Angle from the optical axis to the mirror
 center in degrees</li>
 <li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.phi_x"></span><strong>phi_x</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.phi_x">¶</a> &#8211; Tilt of the mirror along X in degrees</li>
 <li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.phi_y"></span><strong>phi_y</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.phi_y">¶</a> &#8211; Tilt of the mirror along Y in degrees</li>
-<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.phi_r"></span><strong>phi_r</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.phi_r">¶</a> &#8211; Rotation angle of the mirror in degrees</li>
+<li><span class="target" id="orb.utils.image.simulate_calibration_laser_map.params.phi_r"></span><strong>phi_r</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.simulate_calibration_laser_map.params.phi_r">¶</a> &#8211; angle from the center of the frame to the optical
+axis along X axis in degrees (equivalent to a rotation of the
+camera)</li>
 </ul>
 </td>
 </tr>
@@ -2213,8 +2298,231 @@ the input image (default None).</li>
 </dd></dl>
 
 </div>
+<div class="section" id="module-orb.utils.io">
+<span id="io"></span><h2><a class="toc-backref" href="#id10">IO</a><a class="headerlink" href="#module-orb.utils.io" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="orb.utils.io.bin_image">
+<code class="descclassname">orb.utils.io.</code><code class="descname">bin_image</code><span class="sig-paren">(</span><em>a</em>, <em>binning</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.bin_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mean binned image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.io.bin_image.params.image"></span><strong>image</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.bin_image.params.image">¶</a> &#8211; 2d array to bin.</li>
+<li><span class="target" id="orb.utils.io.bin_image.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.bin_image.params.binning">¶</a> &#8211; binning (must be an integer &gt;= 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only the complete sets of rows or columns are binned
+so that depending on the bin size and the image size the
+last columns or rows can be ignored. This ensures that the
+binning surface is the same for every pixel in the binned
+array.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.io.get_hdu_data_index">
+<code class="descclassname">orb.utils.io.</code><code class="descname">get_hdu_data_index</code><span class="sig-paren">(</span><em>hdul</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.get_hdu_data_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the index of the first header data unit (HDU) containing data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.io.get_hdu_data_index.params.hdul"></span><strong>hdul</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.get_hdu_data_index.params.hdul">¶</a> &#8211; A pyfits.HDU instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.io.get_sitelle_slice">
+<code class="descclassname">orb.utils.io.</code><code class="descname">get_sitelle_slice</code><span class="sig-paren">(</span><em>slice_str</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.get_sitelle_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strip a string containing SITELLE like slice coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.io.get_sitelle_slice.params.slice_str"></span><strong>slice_str</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.get_sitelle_slice.params.slice_str">¶</a> &#8211; Slice string.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.io.read_fits">
+<code class="descclassname">orb.utils.io.</code><code class="descname">read_fits</code><span class="sig-paren">(</span><em>fits_path</em>, <em>no_error=False</em>, <em>nan_filter=False</em>, <em>return_header=False</em>, <em>return_hdu_only=False</em>, <em>return_mask=False</em>, <em>silent=False</em>, <em>delete_after=False</em>, <em>data_index=0</em>, <em>image_mode='classic'</em>, <em>chip_index=None</em>, <em>binning=None</em>, <em>fix_header=True</em>, <em>memmap=False</em>, <em>dtype=&lt;type 'float'&gt;</em>, <em>mask_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.read_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a FITS data file and returns its data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.io.read_fits.params.fits_path"></span><strong>fits_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.fits_path">¶</a> &#8211; Path to the file, can be either
+relative or absolut.</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.no_error"></span><strong>no_error</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.no_error">¶</a> &#8211; (Optional) If True this function will only
+display a warning message if the file does not exist (so it
+does not raise an exception) (default False)</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.nan_filter"></span><strong>nan_filter</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.nan_filter">¶</a> &#8211; (Optional) If True replace NaN by zeros
+(default False)</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.return_header"></span><strong>return_header</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.return_header">¶</a> &#8211; (Optional) If True return a tuple (data,
+header) (default False).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.return_hdu_only"></span><strong>return_hdu_only</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.return_hdu_only">¶</a> &#8211; (Optional) If True return FITS header
+data unit only. No data will be returned (default False).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.return_mask"></span><strong>return_mask</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.return_mask">¶</a> &#8211; (Optional) If True return only the mask
+corresponding to the data file (default False).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.silent">¶</a> &#8211; (Optional) If True no message is displayed
+except if an error is raised (default False).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.delete_after"></span><strong>delete_after</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.delete_after">¶</a> &#8211; (Optional) If True delete file after
+reading (default False).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.data_index"></span><strong>data_index</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.data_index">¶</a> &#8211; (Optional) Index of data in the header data
+unit (Default 0).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.image_mode"></span><strong>image_mode</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.image_mode">¶</a> &#8211; (Optional) Can be &#8216;sitelle&#8217;, &#8216;spiomm&#8217; or
+&#8216;classic&#8217;. In &#8216;sitelle&#8217; mode, the parameter
+chip_index must also be set to 0 or 1. In this mode only
+one of both SITELLE quadrants is returned. In &#8216;classic&#8217; mode
+the whole frame is returned (default &#8216;classic&#8217;).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.chip_index"></span><strong>chip_index</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.chip_index">¶</a> &#8211; (Optional) Index of the chip of the
+SITELLE image. Used only if image_mode is set to &#8216;sitelle&#8217;
+In this case, must be 1 or 2. Else must be None (default
+None).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.binning">¶</a> &#8211; (Optional) If not None, returned data is
+binned by this amount (must be an integer &gt;= 1)</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.fix_header"></span><strong>fix_header</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.fix_header">¶</a> &#8211; (Optional) If True, fits header is
+fixed to avoid errors due to header inconsistencies
+(e.g. WCS errors) (default True).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.memmap"></span><strong>memmap</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.memmap">¶</a> &#8211; (Optional) If True, use the memory mapping
+option of pyfits. This is useful to avoid loading a full cube
+in memory when opening a large data cube (default False).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.dtype"></span><strong>dtype</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.dtype">¶</a> &#8211; (Optional) Data is converted to
+the given dtype (e.g. np.float32, default float).</li>
+<li><span class="target" id="orb.utils.io.read_fits.params.mask_path"></span><strong>mask_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_fits.params.mask_path">¶</a> &#8211; (Optional) Path to the corresponding mask image.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to
+<a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyfits/">http://www.stsci.edu/institute/software_hardware/pyfits/</a> for
+more information on PyFITS module. And
+<a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
+files.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.io.read_sitelle_chip">
+<code class="descclassname">orb.utils.io.</code><code class="descname">read_sitelle_chip</code><span class="sig-paren">(</span><em>hdu</em>, <em>chip_index</em>, <em>substract_bias=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.read_sitelle_chip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return chip data of a SITELLE FITS image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.io.read_sitelle_chip.params.hdu"></span><strong>hdu</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_sitelle_chip.params.hdu">¶</a> &#8211; pyfits.HDU Instance of the SITELLE image</li>
+<li><span class="target" id="orb.utils.io.read_sitelle_chip.params.chip_index"></span><strong>chip_index</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_sitelle_chip.params.chip_index">¶</a> &#8211; Index of the chip to read. Must be 1 or 2.</li>
+<li><span class="target" id="orb.utils.io.read_sitelle_chip.params.substract_bias"></span><strong>substract_bias</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_sitelle_chip.params.substract_bias">¶</a> &#8211; If True bias is automatically
+substracted by using the overscan area (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.io.read_spiomm_data">
+<code class="descclassname">orb.utils.io.</code><code class="descname">read_spiomm_data</code><span class="sig-paren">(</span><em>hdu</em>, <em>image_path</em>, <em>substract_bias=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.read_spiomm_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return data of an SpIOMM FITS image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.io.read_spiomm_data.params.hdu"></span><strong>hdu</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_spiomm_data.params.hdu">¶</a> &#8211; pyfits.HDU Instance of the SpIOMM image</li>
+<li><span class="target" id="orb.utils.io.read_spiomm_data.params.image_path"></span><strong>image_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_spiomm_data.params.image_path">¶</a> &#8211; Image path</li>
+<li><span class="target" id="orb.utils.io.read_spiomm_data.params.substract_bias"></span><strong>substract_bias</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.read_spiomm_data.params.substract_bias">¶</a> &#8211; If True bias is automatically
+substracted by using the associated bias frame as an
+overscan frame. Mean bias level is thus computed along the y
+axis of the bias frame (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.io.write_fits">
+<code class="descclassname">orb.utils.io.</code><code class="descname">write_fits</code><span class="sig-paren">(</span><em>fits_path</em>, <em>fits_data</em>, <em>fits_header=None</em>, <em>silent=False</em>, <em>overwrite=False</em>, <em>mask=None</em>, <em>replace=False</em>, <em>record_stats=False</em>, <em>mask_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.io.write_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data in FITS format. If the file doesn&#8217;t exist create
+it with its directories.</p>
+<p>If the file already exists add a number to its name before the
+extension (unless &#8216;overwrite&#8217; option is set to True).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.io.write_fits.params.fits_path"></span><strong>fits_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.fits_path">¶</a> &#8211; Path to the file, can be either
+relative or absolut.</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.fits_data"></span><strong>fits_data</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.fits_data">¶</a> &#8211; Data to be written in the file.</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.fits_header"></span><strong>fits_header</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.fits_header">¶</a> &#8211; (Optional) Optional keywords to update or
+create. It can be a pyfits.Header() instance or a list of
+tuples [(KEYWORD_1, VALUE_1, COMMENT_1), (KEYWORD_2,
+VALUE_2, COMMENT_2), ...]. Standard keywords like SIMPLE,
+BITPIX, NAXIS, EXTEND does not have to be passed.</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.silent">¶</a> &#8211; (Optional) If True turn this function won&#8217;t
+display any message (default False)</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.overwrite">¶</a> &#8211; (Optional) If True overwrite the output file
+if it exists (default False).</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.mask">¶</a> &#8211; (Optional) It not None must be an array with the
+same size as the given data but filled with ones and
+zeros. Bad values (NaN or Inf) are converted to 1 and the
+array is converted to 8 bit unsigned integers (uint8). This
+array will be written to the disk with the same path
+terminated by &#8216;_mask&#8217;. The header of the mask FITS file will
+be the same as the original data (default None).</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.replace"></span><strong>replace</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.replace">¶</a> &#8211; (Optional) If True and if the file already
+exist, new data replace old data in the existing file. NaN
+values do not replace old values. Other values replace old
+values. New array MUST have the same size as the existing
+array. Note that if replace is True, overwrite is
+automatically set to True.</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.record_stats"></span><strong>record_stats</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.record_stats">¶</a> &#8211; (Optional) If True, record mean and
+median of data. Useful if they often have to be computed
+(default False).</li>
+<li><span class="target" id="orb.utils.io.write_fits.params.mask_path"></span><strong>mask_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.io.write_fits.params.mask_path">¶</a> &#8211; (Optional) Path to the corresponding mask image.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">float64 data is converted to float32 data to avoid
+too big files with unnecessary precision</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please refer to
+<a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyfits/">http://www.stsci.edu/institute/software_hardware/pyfits/</a> for
+more information on PyFITS module and
+<a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
+files.</p>
+</div>
+</dd></dl>
+
+</div>
 <div class="section" id="module-orb.utils.misc">
-<span id="miscellaneous"></span><h2><a class="toc-backref" href="#id10">Miscellaneous</a><a class="headerlink" href="#module-orb.utils.misc" title="Permalink to this headline">¶</a></h2>
+<span id="miscellaneous"></span><h2><a class="toc-backref" href="#id11">Miscellaneous</a><a class="headerlink" href="#module-orb.utils.misc" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.misc.compute_obs_params">
 <code class="descclassname">orb.utils.misc.</code><code class="descname">compute_obs_params</code><span class="sig-paren">(</span><em>nm_min_filter</em>, <em>nm_max_filter</em>, <em>theta_min=5.01</em>, <em>theta_max=11.28</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.misc.compute_obs_params" title="Permalink to this definition">¶</a></dt>
@@ -2354,7 +2662,7 @@ coordinates in degrees (ra, dec)</p>
 
 </div>
 <div class="section" id="module-orb.utils.parallel">
-<span id="parallel"></span><h2><a class="toc-backref" href="#id11">Parallel</a><a class="headerlink" href="#module-orb.utils.parallel" title="Permalink to this headline">¶</a></h2>
+<span id="parallel"></span><h2><a class="toc-backref" href="#id12">Parallel</a><a class="headerlink" href="#module-orb.utils.parallel" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.parallel.close_pp_server">
 <code class="descclassname">orb.utils.parallel.</code><code class="descname">close_pp_server</code><span class="sig-paren">(</span><em>js</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.close_pp_server" title="Permalink to this definition">¶</a></dt>
@@ -2402,7 +2710,7 @@ sources and information on Parallel Python software</p>
 
 </div>
 <div class="section" id="module-orb.utils.pyneb">
-<span id="pyneb"></span><h2><a class="toc-backref" href="#id12">Pyneb</a><a class="headerlink" href="#module-orb.utils.pyneb" title="Permalink to this headline">¶</a></h2>
+<span id="pyneb"></span><h2><a class="toc-backref" href="#id13">Pyneb</a><a class="headerlink" href="#module-orb.utils.pyneb" title="Permalink to this headline">¶</a></h2>
 <p>Utils functions derived from pyNeb.</p>
 <p>pyNeb must be installed</p>
 <dl class="function">
@@ -2466,7 +2774,7 @@ is the same used for ha)</li>
 
 </div>
 <div class="section" id="module-orb.utils.spectrum">
-<span id="spectrum"></span><h2><a class="toc-backref" href="#id13">Spectrum</a><a class="headerlink" href="#module-orb.utils.spectrum" title="Permalink to this headline">¶</a></h2>
+<span id="spectrum"></span><h2><a class="toc-backref" href="#id14">Spectrum</a><a class="headerlink" href="#module-orb.utils.spectrum" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.spectrum.ABmag2flambda">
 <code class="descclassname">orb.utils.spectrum.</code><code class="descname">ABmag2flambda</code><span class="sig-paren">(</span><em>ABmag</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.ABmag2flambda" title="Permalink to this definition">¶</a></dt>
@@ -2928,7 +3236,7 @@ orb.cutils.fast_pix2w is much faster.</p>
 
 </div>
 <div class="section" id="module-orb.utils.stats">
-<span id="stats"></span><h2><a class="toc-backref" href="#id14">Stats</a><a class="headerlink" href="#module-orb.utils.stats" title="Permalink to this headline">¶</a></h2>
+<span id="stats"></span><h2><a class="toc-backref" href="#id15">Stats</a><a class="headerlink" href="#module-orb.utils.stats" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.stats.robust_mean">
 <code class="descclassname">orb.utils.stats.</code><code class="descname">robust_mean</code><span class="sig-paren">(</span><em>a</em>, <em>weights=None</em>, <em>warn=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.stats.robust_mean" title="Permalink to this definition">¶</a></dt>
@@ -3043,7 +3351,7 @@ rejected values is returned also (default False).</li>
 
 </div>
 <div class="section" id="module-orb.utils.vector">
-<span id="vector"></span><h2><a class="toc-backref" href="#id15">Vector</a><a class="headerlink" href="#module-orb.utils.vector" title="Permalink to this headline">¶</a></h2>
+<span id="vector"></span><h2><a class="toc-backref" href="#id16">Vector</a><a class="headerlink" href="#module-orb.utils.vector" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.vector.correct_vector">
 <code class="descclassname">orb.utils.vector.</code><code class="descname">correct_vector</code><span class="sig-paren">(</span><em>vector</em>, <em>bad_value=nan</em>, <em>deg=3</em>, <em>polyfit=False</em>, <em>smoothing=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.vector.correct_vector" title="Permalink to this definition">¶</a></dt>
@@ -3192,7 +3500,7 @@ effect when convolving).</p>
 
 </div>
 <div class="section" id="module-orb.utils.web">
-<span id="web"></span><h2><a class="toc-backref" href="#id16">Web</a><a class="headerlink" href="#module-orb.utils.web" title="Permalink to this headline">¶</a></h2>
+<span id="web"></span><h2><a class="toc-backref" href="#id17">Web</a><a class="headerlink" href="#module-orb.utils.web" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.web.query_sesame">
 <code class="descclassname">orb.utils.web.</code><code class="descname">query_sesame</code><span class="sig-paren">(</span><em>object_name</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.web.query_sesame" title="Permalink to this definition">¶</a></dt>
@@ -3254,7 +3562,7 @@ object.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.2',
+            VERSION:'1.6.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

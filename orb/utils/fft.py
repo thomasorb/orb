@@ -400,7 +400,6 @@ def compute_phase_coeffs_vector(phase_maps,
     """
     BEST_RATIO = 0.2 # Max ratio of coefficients considered as good
     
-    print "Computing phase coefficients of order > 0"
     res_map[np.nonzero(res_map == 0)] = np.nanmax(res_map)
     res_map[np.nonzero(np.isnan(res_map))] = np.nanmax(res_map)
     res_distrib = res_map[np.nonzero(~np.isnan(res_map))].flatten()
@@ -431,7 +430,7 @@ def compute_phase_coeffs_vector(phase_maps,
                                and (coeff > median_coeff - 2.* std_coeff))]
 
         phase_coeffs.append(np.mean(clean_phase_map))
-        print "Computed phase coefficient of order %d: %f (std: %f)"%(order, np.mean(clean_phase_map), np.std(clean_phase_map))
+        print "Computed phase coefficient: %f (std: %f)"%(np.mean(clean_phase_map), np.std(clean_phase_map))
         
         if np.std(clean_phase_map) >= abs(np.mean(clean_phase_map)):
             warnings.warn("Phase map standard deviation (%f) is greater than its mean value (%f) : the returned coefficient is not well determined and phase correction might be uncorrect"%(np.std(clean_phase_map), np.mean(clean_phase_map)))
@@ -720,6 +719,10 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 9 - Fast Fourier Transform of the interferogram
     center = zero_padded_size / 2
+    # spectrum is cropped at zero_padded_size / 2 instead of
+    # zero_padded_size / 2 + 1 which would output a spectrum with 1
+    # more sample than the input length. Comnputed axis must be
+    # cropped accordingly.
     interf_fft = np.fft.fft(zero_padded_vector)[:center]
 
     # normalization of the vector to take into account zero-padding 
@@ -1065,39 +1068,61 @@ def find_phase_coeffs_brute_force(interf, step, order, zpd_shift,
 
 def optimize_phase(interf, step, order, zpd_shift,
                    guess=[0,0], return_coeffs=False,
-                   fixed_params=[0, 0]):
+                   fixed_params=[0, 0], weights=None):
     """Return an optimized phase vector based on the minimization of
     the imaginary part.
 
     :param interf: Interferogram
+    
     :param step: Step size (in nm)
+    
     :param order: Alisasing order
+    
     :param zpd_shift: ZPD shift
+
+    :param guess: (Optional) First guess. The number of values defines the order
+      of the polynomial used used to fit (default [0,0]).
     
     :param return_coeffs: (Optional) If True, coeffs and residual are
       returned instead of the phase vector (default False).
-      
+
+    :param fixed_params: (Optional) Define free and fixed parameters
+      (1 for fixed, 0 for free, default [0,0])
+
+    :param weights: (Optional) spectrum weighting (a vector with
+      values ranging from 0 to 1, 1 being the maximu weight)
     """
-    def diff(vp, interf, step, order, zpd_shift, fp, findex):
+    def diff(vp, interf_fft, fp, findex, weights):
         p = np.empty_like(findex, dtype=float)
         p[np.nonzero(findex==0)] = vp
         p[np.nonzero(findex)] = fp
         ext_phase = np.polyval(p, np.arange(np.size(interf)))
-        a_fft = transform_interferogram(
-            interf, 1., 1., step, order, '2.0', zpd_shift,
-            wavenumber=True,
-            ext_phase=ext_phase,
-            return_complex=True)
-        return a_fft.imag
+        # phase correction
+        a_fft = np.zeros_like(interf_fft)
+        ## a_fft.real = (interf_fft.real * np.cos(ext_phase)
+        ##               + interf_fft.imag * np.sin(ext_phase))
+        a_fft.imag = (interf_fft.imag * np.cos(ext_phase)
+                      - interf_fft.real * np.sin(ext_phase))
+        return a_fft.imag * weights
 
     guess = np.array(guess, dtype=float)
     fixed_params = np.array(fixed_params, dtype=bool)
     vguess = guess[np.nonzero(fixed_params==0)]
     fguess = guess[np.nonzero(fixed_params)]
-            
+
+    if weights is None:
+        weights = np.ones(interf.shape[0], dtype=float)
+    
+    interf_fft = transform_interferogram(
+        interf, 1., 1., step, order, '2.0', zpd_shift,
+        wavenumber=True,
+        ext_phase=np.zeros_like(interf),
+        phase_correction=True,
+        return_complex=True)
+    
     optim = scipy.optimize.leastsq(
         diff, vguess, args=(
-            interf, step, order, zpd_shift, fguess, fixed_params),
+            interf_fft, fguess, fixed_params, weights),
         full_output=True)
     
     if optim[-1] < 5:

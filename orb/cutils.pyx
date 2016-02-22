@@ -2166,27 +2166,43 @@ def fast_pix2w(np.ndarray[np.float64_t, ndim=1] pix,
     return pix * axis_step + axis_min
 
 
-def get_cm1_axis_min(double step, int order, double corr=1.):
+def get_cm1_axis_min(int n, double step, int order, double corr=1.):
     """Return min wavenumber of a regular wavenumber axis in cm-1.
 
+    :param n: Number of steps on the axis
+
     :param step: Step size in nm
     
     :param order: Folding order
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    return <double> order / (2.* step) * corr * 1e7
+    # last sample of the axis is removed because this sample is also
+    # removed in orb.utils.fft.transform_interferogram (after fft
+    # spectrum is cropped to step_nb/2 instead of step_nb/2 + 1)
+    cdef double cm1_min = <double> order / (2.* step) * corr * 1e7
+    if order & 1:
+        cm1_min += get_cm1_axis_step(n, step, corr=corr)
+    return cm1_min
 
-def get_cm1_axis_max(double step, int order, double corr=1.):
+def get_cm1_axis_max(int n, double step, int order, double corr=1.):
     """Return max wavenumber of a regular wavenumber axis in cm-1.
 
+    :param n: Number of steps on the axis
+
     :param step: Step size in nm
     
     :param order: Folding order
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    return <double> (order + 1.) / (2. * step) * corr * 1e7
+    # last sample of the axis is removed because this sample is also
+    # removed in orb.utils.fft.transform_interferogram (after fft
+    # spectrum is cropped to step_nb/2 instead of step_nb/2 + 1)
+    cdef double cm1_max = <double> (order + 1.) / (2. * step) * corr * 1e7
+    if not order & 1:
+        cm1_max -= get_cm1_axis_step(n, step, corr=corr)
+    return cm1_max
 
 def get_cm1_axis_step(int n, double step, corr=1.):
     """Return step size of a regular wavenumber axis in cm-1.
@@ -2197,29 +2213,35 @@ def get_cm1_axis_step(int n, double step, corr=1.):
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    return corr / (2. * (<double> n - 1.) * step) * 1e7
+    return corr / (2. * <double> n * step) * 1e7
 
-def get_nm_axis_min(double step, int order, double corr=1.):
+def get_nm_axis_min(int n, double step, int order, double corr=1.):
     """Return min wavelength of regular wavelength axis in nm.
 
+    :param n: Number of steps on the axis
+    
     :param step: Step size in nm
     
     :param order: Folding order (cannot be 0)
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    return 2. * step / <double> (order + 1) / corr
+    if order == 0: raise ValueError('Order cannot be 0 for a nm axis (minimum wavelength is infinite), use a cm-1 axis instead')
+    return 1. / get_cm1_axis_max(n, step, order, corr=corr) * 1e7
 
-def get_nm_axis_max(double step, int order, double corr=1.):
+def get_nm_axis_max(int n, double step, int order, double corr=1.):
     """Return max wavelength of regular wavelength axis in nm.
 
+    :param n: Number of steps on the axis
+
     :param step: Step size in nm
     
     :param order: Folding order (cannot be 0)
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    return 2. * step / <double> order / corr
+    if order == 0: raise ValueError('Order cannot be 0 for a nm axis (minimum wavelength is infinite), use a cm-1 axis instead')
+    return 1. / get_cm1_axis_min(n, step, order, corr=corr) * 1e7
 
 def get_nm_axis_step(int n, double step, int order, double corr=1.):
     """Return step size of a regular wavelength axis in nm.
@@ -2233,8 +2255,8 @@ def get_nm_axis_step(int n, double step, int order, double corr=1.):
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
     if (order > 0): 
-        return 2. * step / (<double> order * <double> (order + 1) * corr) / <double> (n - 1)
-    else: raise Exception("order must be > 0")
+        return 2. * step / (<double> order * <double> (order + 1) * corr) / <double> n
+    else: raise ValueError('Order cannot be 0 for a nm axis (stepsize is infinite), use a cm-1 axis instead')
 
 
 def compute_radial_velocity(np.ndarray[float128_t, ndim=1] line,

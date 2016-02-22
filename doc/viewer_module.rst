@@ -78,14 +78,6 @@ ImageCanvas class
    :special-members:
    :show-inheritance:
 
-RegionSelector class
---------------------
-
-.. autoclass:: orb.viewer.RegionSelector
-   :members:
-   :private-members:
-   :special-members:
-   :show-inheritance:
 
 
 ImageWindow class

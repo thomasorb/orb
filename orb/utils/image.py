@@ -30,7 +30,10 @@ import bottleneck as bn
 import orb.utils.stats
 import orb.utils.vector
 import orb.utils.parallel
+import orb.utils.io
 import orb.cutils
+
+import orb.ext.zern
 
 def compute_binning(image_shape, detector_shape):
     """Return binning along both axis given the image shape and the
@@ -529,6 +532,58 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
+def fit_map_zernike(data_map, err_map, nmodes):
+    """
+    Fit a map with Zernike polynomials.
+
+    Bad values must be set to NaN (not 0.)
+
+    :param data_map: Data map to fit
+
+    :param nmodes: Number of zernike modes to use for fitting.
+    
+    :return: (fitted data map, error map, fit error)
+    
+    .. note:: Zernike polynomial fit routine has been written by Tim
+      van Werkhoven (werkhoven@strw.leidenuniv.nl) as a part of
+      libtim. It can be found in ORB module in ./ext/zern.py.
+    """
+    # bigger version used to fit corners
+    data_map_big = np.zeros(np.array(data_map.shape) * math.sqrt(2.) + 1,
+                           dtype=float)
+    borders = (np.array(data_map_big.shape) - np.array(data_map.shape))/2.
+    data_map_big[borders[0]:borders[0]+data_map.shape[0],
+                 borders[1]:borders[1]+data_map.shape[1]] = np.copy(data_map)
+    mask = np.ones_like(data_map_big, dtype=float)
+    err_map = np.abs(err_map)
+    err_map /= np.nanmax(err_map) # error map is normalized
+    mask[borders[0]:borders[0]+data_map.shape[0],
+         borders[1]:borders[1]+data_map.shape[1]] = err_map
+
+    # nans and 0s are masked
+    mask[np.nonzero(np.isnan(data_map_big))] = 0.
+    mask[np.nonzero(data_map_big == 0.)] = 0.
+    
+    # nans are replaced by zeros in the fitted map
+    data_map_big[np.nonzero(np.isnan(data_map_big))] = 0. 
+
+    (wf_zern_vec, wf_zern_rec, fitdiff) = orb.ext.zern.fit_zernike(
+        data_map_big, fitweight=mask, startmode=1, nmodes=nmodes)
+
+    data_map_fit = wf_zern_rec[borders[0]:borders[0]+data_map.shape[0],
+                               borders[1]:borders[1]+data_map.shape[1]]
+
+    res_map = data_map - data_map_fit
+    fit_error_map = np.abs(res_map) / np.abs(data_map)
+    fit_error_map[np.isinf(fit_error_map)] = np.nan
+    fit_res_std = np.nanstd(res_map)
+    fit_error = np.nanmedian(fit_error_map)
+    print 'Standard deviation of the residual: {}'.format(fit_res_std)
+    print 'Median relative error (err/val)): {:.2f}%'.format(
+        fit_error * 100.)
+
+    return data_map_fit, res_map, fit_error
+
 def fit_map(data_map, err_map, smooth_deg):
     """Fit map with low order polynomials
 
@@ -552,21 +607,25 @@ def fit_map(data_map, err_map, smooth_deg):
         return orb.utils.vector.polyfit1d(coeffs, smooth_deg, w=w,
                                           return_coeffs=True)
 
-    def model(fit_coeffs, smooth_deg, dimx, dimy):
-        fit_coeffs = fit_coeffs.reshape((smooth_deg + 1, smooth_deg + 1))
+    def model(fit_coeffs, coeffs_smooth_deg, dimx, dimy):
+        fit_coeffs = fit_coeffs.reshape((np.size(fit_coeffs)
+                                         /(coeffs_smooth_deg + 1),
+                                         coeffs_smooth_deg + 1))
         fitted_data_map = np.zeros((dimx, dimy), dtype=float)
         params_fit_list = list()
-        for ideg in range(smooth_deg + 1):
+        # compute coeffs 
+        for ideg in range(coeffs_smooth_deg + 1):
             params_fit_list.append(np.polynomial.polynomial.polyval(
                 np.arange(dimy), fit_coeffs[ideg,:]))
         params_fit_list = np.array(params_fit_list)
+        # compute map
         for ij in range(dimy):
             fitted_data_map[:,ij] = np.polynomial.polynomial.polyval(
                 np.arange(dimx), params_fit_list[:, ij])
         return fitted_data_map
     
-    def diff(fit_coeffs, data_map, smooth_deg, err_map):
-        fitted_data_map = model(fit_coeffs, smooth_deg,
+    def diff(fit_coeffs, data_map, coeffs_smooth_deg, err_map):
+        fitted_data_map = model(fit_coeffs, coeffs_smooth_deg,
                                 data_map.shape[0],
                                 data_map.shape[1])
         
@@ -576,18 +635,18 @@ def fit_map(data_map, err_map, smooth_deg):
         return res.flatten()
   
 
+    coeffs_smooth_deg = smooth_deg + 1
     coeffs_list = list()
     err_list = list()
     dimx, dimy = data_map.shape
     
-    ## Phase map fit
+    ## 1st pass: fit lines independantly with a polynomial
     for ij in range(dimy):
         imap = data_map[:,ij]
         ierr = err_map[:,ij]
         w = (1./ierr)**2.
         
         w[np.nonzero(np.isinf(w))] = np.nan
-        
         
         # reject columns with too much NaNs
         if np.sum(~np.isnan(imap)* ~np.isnan(w)) > dimy/3.:
@@ -602,28 +661,25 @@ def fit_map(data_map, err_map, smooth_deg):
             coeffs_list.append(bad_coeffs)
             err_list.append(np.nan)
             
-
+    ## first fit returns smooth_deg + 1 coefficient for each line
     coeffs_list = np.array(coeffs_list)
     err_list = np.array(err_list)
 
     if np.all(np.isnan(coeffs_list)):
         raise Exception('All fit coeffs are NaNs !')
         
-    ## Smooth fit parameters 
-    params_fit_list = list()
-    fit_coeffs_list = list()
+    ## 2nd pass: fit coeffs are smoothed with a polynomial also (which
+    ## gives a list of coefficients to recover the first coefficients)
+    coeffs_coeffs_list = list()
     for ideg in range(smooth_deg + 1):
-        fit, coeffs = smooth_fit_parameters(
-            coeffs_list, err_list, ideg, smooth_deg)
-        params_fit_list.append(fit)
-        fit_coeffs_list.append(coeffs[0])
-        
-    params_fit_list = np.array(params_fit_list)
-    fit_coeffs_list = np.array(fit_coeffs_list)
+        fitted_coeffs, coeffs_coeffs = smooth_fit_parameters(
+            coeffs_list, err_list, ideg, coeffs_smooth_deg)
+        coeffs_coeffs_list.append(coeffs_coeffs[0])
     
+    coeffs_coeffs_list = np.array(coeffs_coeffs_list)
     
-    ## smooth optimization
-    fit = optimize.leastsq(diff, fit_coeffs_list.flatten(),
+    ## coeffs optimization over the real data map
+    fit = optimize.leastsq(diff, coeffs_coeffs_list.flatten(),
                            args=(data_map, smooth_deg, err_map),
                            maxfev=1000, full_output=True,
                            xtol=1e-6)
@@ -702,8 +758,9 @@ def tilt_calibration_laser_map(cmap, calib_laser_nm, phi_x, phi_y, phi_r):
     return new_calib_map
 
 
-def simulate_calibration_laser_map(nx, ny, pixel_size, calib_laser_wl, mirror_distance,
-                                   theta_cx, theta_cy, phi_x, phi_y, phi_r):
+def simulate_calibration_laser_map(nx, ny, pixel_size, calib_laser_wl,
+                                   mirror_distance,
+                                   theta_c, phi_x, phi_y, phi_r):
     """Simulate a calibration laser map from optical and mechanical parameters
 
     :param nx: Number of pixels along X
@@ -714,64 +771,46 @@ def simulate_calibration_laser_map(nx, ny, pixel_size, calib_laser_wl, mirror_di
     
     :param calib_laser_wl: Calibration laser wavelength in nm
     
-    :param mirror_distance: Distance to the mirror in microns
+    :param mirror_distance: Distance to the mirror in microns on the
+      optical axis.
     
-    :param theta_cx: Angle along X from the optical axis to the mirror
-      center in degrees
-      
-    :param theta_cy: Angle along Y from the optical axis to the mirror
+    :param theta_c: Angle from the optical axis to the mirror
       center in degrees
 
     :param phi_x: Tilt of the mirror along X in degrees
     
     :param phi_y: Tilt of the mirror along Y in degrees
     
-    :param phi_r: Rotation angle of the mirror in degrees
+    :param phi_r: angle from the center of the frame to the optical
+      axis along X axis in degrees (equivalent to a rotation of the
+      camera)
     """
+    
+    pixel_scale = math.atan(pixel_size/mirror_distance)
     phi_x = phi_x / 180. * math.pi
     phi_y = phi_y / 180. * math.pi
     phi_r = phi_r / 180. * math.pi
-    theta_cx = theta_cx/ 180. * math.pi
-    theta_cy = theta_cy/ 180. * math.pi
+    theta_c = theta_c / 180. * math.pi
 
     X, Y = np.mgrid[0:nx, 0:ny].astype(float)
-    X -= nx / 2.
-    Y -= ny / 2.
-    X *= pixel_size
-    Y *= pixel_size
+    X -= nx / 2. - 0.5
+    Y -= ny / 2. - 0.5
+    X *= pixel_scale * mirror_distance
+    Y *= pixel_scale * mirror_distance
+
+    X *= math.cos(phi_x)
+    Y *= math.cos(phi_y)
     
-    # rotation
-    if phi_r != 0:
-        Xr = X * math.cos(phi_r) - Y * math.sin(phi_r)
-        Yr = X * math.sin(phi_r) + Y * math.cos(phi_r)
-        X = Xr
-        Y = Yr
+    xc = phi_r * mirror_distance
     
-    xc = mirror_distance * math.tan(theta_cx)
-    yc = mirror_distance * math.tan(theta_cy)
-    dmap = np.sqrt((X+xc)**2. + (Y+yc)**2.)
-    theta_map = np.arctan(dmap/mirror_distance)
+    yc = mirror_distance * theta_c
     
-    
-    if phi_x != 0. or phi_y != 0:
-        
-        theta_c = math.acos(math.cos(theta_cx)*math.cos(theta_cy))
-        alpha = math.pi/2. - (theta_map - theta_c)
-        if phi_x != 0.:
-            alpha2 = math.pi/2. - (theta_map - theta_c) - phi_x
-            ratio = np.sin(alpha) / np.sin(alpha2)
-            X *= ratio
-            
-        if phi_y != 0.:
-            alpha2 = math.pi/2. - (theta_map - theta_c) - phi_y
-            ratio = np.sin(alpha) / np.sin(alpha2)
-            Y *= ratio
-            
-        dmap = np.sqrt((X+xc)**2.+(Y+yc)**2.)
-        theta_map = np.arctan(dmap/mirror_distance)
-            
+    d_map = np.sqrt((X+xc)**2. + (Y+yc)**2.)
+    theta_map = d_map / mirror_distance
     calib_map = calib_laser_wl/np.cos(theta_map)
+    
     return calib_map
+
 
 def nanbin_image(im, binning):
     """Mean image binning robust to NaNs.
@@ -783,10 +822,12 @@ def nanbin_image(im, binning):
 
 
 def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
-                              binning=4, mirror_distance_guess=2.2e5,
-                              center_angle_guess=15):
+                              binning=4, mirror_distance_guess=2.4e5):
     """
     Fit a calibration laser map.
+
+    Fit a classic optical model first and uses Zernike polynomials to
+    fit the residual.
 
     The model is based on optical parameters.
     
@@ -803,23 +844,25 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     :param mirror_distance_guess: (Optional) Guess on the mirror
       distance in um (default 2.2e5).
 
-    :param center_angle_guess: (Optional) Guess on the angle at the
-      center of the frame in degrees (default 15)
+    .. note:: Zernike polynomial fit routine has been written by Tim
+      van Werkhoven (werkhoven@strw.leidenuniv.nl) as a part of
+      libtim. It can be found in ORB module in ./ext/zern.py.
     """
 
-    def model_laser_map(p, calib, calib_laser_nm, pixel_size):
+    def model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c):
         """p_ind = 0: variable parameter, index=1: fixed parameter
         """
         return simulate_calibration_laser_map(
             calib.shape[0], calib.shape[1], pixel_size,
-            calib_laser_nm, p[0], p[1], p[2], p[3], p[4], p[5])
+            calib_laser_nm, p[0], theta_c, 0., 0., p[1])
 
-    def diff_laser_map(p_var, p_fix, p_ind, calib, calib_laser_nm, pixel_size):
+    def diff_laser_map(p_var, p_fix, p_ind, calib, calib_laser_nm, pixel_size,
+                       theta_c):
         p = get_p(p_var, p_fix, p_ind)
-        res = model_laser_map(p, calib, calib_laser_nm, pixel_size)
+        res = model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c)
         res -= calib
         res = res[np.nonzero(~np.isnan(res))]
-        res = orb.utils.stats.sigmacut(res)
+        #res = orb.utils.stats.sigmacut(res)
         return res
 
     def get_p(p_var, p_fix, p_ind):
@@ -830,29 +873,49 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         return p
         
 
-    def print_params(params, fvec):
+    def print_params(params, fvec, p_ind):
+        def print_fix(index):
+            if p_ind[index] : return '(Fixed)'
+            else: return ''
         print ('    > Calibration laser map fit parameters:\n'
-               + '    distance to mirror: {} cm\n'.format(params[0]*1e-4)
-               + '    X angle from the optical axis to the center: {} degrees\n'.format(params[1])
-               + '    Y angle from the optical axis to the center: {} degrees\n'.format(params[2])
-               + '    X tilt of the mirror: {} degrees\n'.format(params[3])
-               + '    Y tilt of the mirror: {} degrees\n'.format(params[4])
-               + '    Rotation angle of the mirror: {} degrees\n'.format(params[5])
+               + '    distance to mirror: {} cm {}\n'.format(
+                   params[0]*1e-4, print_fix(0))
+               + '    X angle from the optical axis to the center: {} degrees {}\n'.format(math.fmod(float(params[1]),2.*math.pi), print_fix(1))
                + '    Error on fit: mean {}, std {} (in nm)\n'.format(
                    np.nanmean(fvec), np.nanstd(fvec))
                + '    Error on fit: mean {}, std {} (in km/s)'.format(
-                   np.nanmean(fvec)/calib_laser_nm*3e5, np.nanstd(fvec)/calib_laser_nm*3e5))
+                   np.nanmean(fvec)/calib_laser_nm*3e5,
+                   np.nanstd(fvec)/calib_laser_nm*3e5))
 
-        
-
-    CENTER_COEFF = 0.2
+    CENTER_COEFF = 0.5
     LARGE_COEFF = 0.95
+    ZERN_MODES = 20 # number of Zernike modes to fit 
+    BORDER_SIZE = 10 # in pixels
+    ANGLE_RANGE = 4 # in degrees
 
+    # compute angle at the exact center of the map
+    cx = calib_laser_map.shape[0]/2.
+    cy = calib_laser_map.shape[1]/2.
+    center_calib_nm = np.nanmean(
+        calib_laser_map[int(cx-0.5):math.ceil(cx-0.5+1),
+                        int(cy-0.5):math.ceil(cy-0.5+1)])
+    
+    theta_c = math.acos(calib_laser_nm/center_calib_nm) / math.pi * 180.
+    print 'Angle at the center of the frame: {}'.format(theta_c)
+
+    # filter calibration laser map
+    value_min = calib_laser_nm / math.cos((theta_c - ANGLE_RANGE)/180.*math.pi)
+    value_max = calib_laser_nm / math.cos((theta_c + ANGLE_RANGE)/180.*math.pi)
+    calib_laser_map[np.nonzero(calib_laser_map > value_max)] = np.nan
+    calib_laser_map[np.nonzero(calib_laser_map < value_min)] = np.nan
+
+    # remove borders
+    calib_laser_map[:BORDER_SIZE,:] = np.nan
+    calib_laser_map[-BORDER_SIZE:,:] = np.nan
+    calib_laser_map[:,:BORDER_SIZE] = np.nan
+    calib_laser_map[:,-BORDER_SIZE:] = np.nan
+    
     print '> Binning calibration map'
-
-    # remove obvious bad points
-    calib_laser_map[calib_laser_map > calib_laser_nm * 2.] = np.nan
-    calib_laser_map[calib_laser_map < calib_laser_nm / 2.] = np.nan
 
     binning = int(binning)
     if binning > 1:
@@ -862,7 +925,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     print '> Calibration laser map fit'
 
-    # mirror_dist, X theta, Y theta, X tilt, Y tilt, R
+    # mirror_dist, Y angle
     # p_ind = 0: variable parameter, index=1: fixed parameter
 
     print '  > First fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100)
@@ -874,16 +937,16 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         0, calib_laser_map_bin.shape[1])
     calib_laser_map_bin_center = calib_laser_map_bin[xmin:xmax,ymin:ymax]
 
-    p_var = np.array([mirror_distance_guess, 0, center_angle_guess])
-    p_ind = np.array([0, 0, 0, 1, 1, 1])
-    p_fix = np.array([0, 0, 0])
+    p_var = np.array([mirror_distance_guess, 0.])
+    p_ind = np.array([0, 0])
+    p_fix = np.array([])
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_center,
                                        calib_laser_nm,
-                                       float(pixel_size*binning)),
+                                       float(pixel_size*binning), theta_c),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
-    print_params(params, fit[2]['fvec'])
+    print_params(params, fit[2]['fvec'], p_ind)
 
     print '  > Second fit on all the map ({:.1f}% of the total size)'.format(LARGE_COEFF*100)
     xmin,xmax,ymin,ymax = get_box_coords(
@@ -893,48 +956,39 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         0, calib_laser_map_bin.shape[0],
         0, calib_laser_map_bin.shape[1])
     calib_laser_map_bin_large = calib_laser_map_bin[xmin:xmax,ymin:ymax]
-
-    p_fix = np.array([params[0], params[1], params[2]])
-    p_ind = np.array([1, 1, 1, 0, 0, 0])
-    p_var = np.array([0, 0, 0])
+    p_var = np.array([params[0], params[1]])
+    p_ind = np.array([0, 0])
+    p_fix = np.array([])
+    
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_large,
                                        calib_laser_nm,
-                                       float(pixel_size*binning)),
+                                       float(pixel_size*binning), theta_c),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
-    print_params(params, fit[2]['fvec'])
+    print_params(params, fit[2]['fvec'], p_ind)
     
     new_calib_laser_map = model_laser_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size)
-
-
-    # map fit of the diff map
-    print '  > residual map fit ({:.1f}% of the total size)'.format(
-        LARGE_COEFF*100)
+        params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+    
+    # Zernike fit of the diff map
+    print '  > Zernike polynomials fit of the residual'
     res_map = calib_laser_map - new_calib_laser_map
     
-    xmin,xmax,ymin,ymax = get_box_coords(
-        res_map.shape[0]/2,
-        res_map.shape[1]/2,
-        int(LARGE_COEFF*res_map.shape[0]),
-        0, res_map.shape[0],
-        0, res_map.shape[1])
+    res_map[np.nonzero(res_map == 0.)] = np.nan
+    res_map_fit, _err_map, _fit_error = fit_map_zernike(
+        res_map, np.ones_like(res_map), ZERN_MODES)
 
-    err_map = np.ones_like(res_map)
-    err_map[xmin:xmax, ymin:ymax] = 1e-35
-    res_map_fit, err_map, fit_error = fit_map(
-        res_map.T, err_map.T, 5)
-    new_calib_laser_map += res_map_fit.T
+    new_calib_laser_map += res_map_fit
     
     # final error
     std_err = np.nanstd(
         (calib_laser_map - new_calib_laser_map)[
             xmin:xmax, ymin:ymax])
     
-    
     print '> final error (std on {:.1f}% of the total size): {:.3e} nm, {:.3e} km/s'.format(LARGE_COEFF*100., std_err, std_err/calib_laser_nm*3e5)
-        
+
+    params = np.array(list(params) + list([theta_c]))
     return params, new_calib_laser_map
 
 def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
@@ -943,7 +997,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     """Fit a SITELLE phase map (order 0 map of the phase) using a
     model based on a simulated calibration laser map..
 
-    An real calibration laser map is needed first to get a first guess
+    A real calibration laser map is needed first to get a first guess
     on the parameters of the fit. Then the whole phase map is modeled
     to fit the real phase map.
 
@@ -964,16 +1018,17 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     :param binning: (Optional) Maps are binned to accelerate the
       process. Set the binning factor (default 4).
 
-    :return: a tuple (fitted phase map, error map, fit error, new calibration laser map)
+    :return: a tuple (fitted phase map, error map, fit error, new
+      calibration laser map)
     """
-    def model_laser_map(p, calib, calib_laser_nm, pixel_size):
+    def model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c):
         return simulate_calibration_laser_map(
             calib.shape[0], calib.shape[1], pixel_size,
-            calib_laser_nm, p[0], p[1], p[2], p[3], p[4], p[5])
+            calib_laser_nm, p[0], theta_c, 0., 0., p[1])
 
-    def model_phase_map(p, calib, calib_laser_nm, pixel_size):
-        return p[6] + p[7] * model_laser_map(
-            p[:6], calib, calib_laser_nm, pixel_size)
+    def model_phase_map(p, calib, calib_laser_nm, pixel_size, theta_c):
+        return p[2] + p[3] * model_laser_map(
+            p[:2], calib, calib_laser_nm, pixel_size, theta_c)
 
     def get_p(p_var, p_fix, p_ind):
         """p_ind = 0: variable parameter, index=1: fixed parameter
@@ -983,9 +1038,11 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         p_all[np.nonzero(p_ind > 0.)] = p_fix
         return p_all
 
-    def diff_phase_map(p_var, calib, calib_laser_nm, pixel_size, pm, pm_err, p_fix, p_ind):
+    def diff_phase_map(p_var, calib, calib_laser_nm, pixel_size, pm,
+                       pm_err, p_fix, p_ind, theta_c):
         p_all = get_p(p_var, p_fix, p_ind)
-        model_map = model_phase_map(p_all, calib, calib_laser_nm, pixel_size)
+        model_map = model_phase_map(p_all, calib, calib_laser_nm, pixel_size,
+                                    theta_c)
         result = (model_map - pm) / pm_err
         result = result[np.nonzero(~np.isnan(result))]
         return result
@@ -993,15 +1050,30 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     def print_params(params):
         print ('> Phase map fit parameters:\n'
                + 'distance to mirror: {} cm (fixed)\n'.format(params[0]*1e-4)
-               + 'X angle from the optical axis to the center: {} degrees (fixed)\n'.format(params[1])
-               + 'Y angle from the optical axis to the center: {} degrees (fixed)\n'.format(params[2])
-               + 'X tilt of the mirror: {} degrees\n'.format(params[3])
-               + 'Y tilt of the mirror: {} degrees\n'.format(params[4])
-               + 'Rotation angle of the mirror: {} degrees\n'.format(params[5])
-               + 'order 0: {} radians\n'.format(params[6])
-               + 'order 1: {} radians\n'.format(params[7]))
+               + 'X angle from the optical axis to the center: {} degrees (fixed)\n'.format(math.fmod(float(params[1]),2.*math.pi))
+               + 'order 0: {} radians\n'.format(params[2])
+               + 'order 1: {} radians\n'.format(params[3]))
 
+    ZERN_MODES = 20 # number of Zernike modes to fit
 
+    CROP_COEFF = 0.85 # proportion of the pahse map to keep when
+                      # cropping
+
+    # bad values are filtered and phase map is cropped to remove
+    # borders with erroneous phase values.
+    phase_map[np.nonzero(phase_map==0)] = np.nan
+    
+    xmin,xmax,ymin,ymax = get_box_coords(
+        phase_map.shape[0]/2,
+        phase_map.shape[1]/2,
+        int(CROP_COEFF*phase_map.shape[0]),
+        0, phase_map.shape[0],
+        0, phase_map.shape[1])
+    phase_map[:xmin,:] = np.nan
+    phase_map[xmax:,:] = np.nan
+    phase_map[:,:ymin] = np.nan
+    phase_map[:,ymax:] = np.nan
+    
     # Data is binned to accelerate the fit
     if binning > 1:
         print '> Binning phase maps'
@@ -1014,62 +1086,89 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         calib_laser_map_bin = calib_laser_map
 
     # ref calibration laser map fit
-    params, new_calib_map = fit_calibration_laser_map(calib_laser_map_bin, calib_laser_nm,
-                                                      pixel_size=pixel_size*binning,
-                                                      binning=1)
+    params, new_calib_map = fit_calibration_laser_map(
+        calib_laser_map_bin, calib_laser_nm,
+        pixel_size=pixel_size*binning,
+        binning=1)
+
+    # get theta_c
+    theta_c = params[-1]
     
     print '> Phase map fit'
     # first fit of the linear parameters
-    p_ind = np.array([1,1,1,1,1,1,0,0])
+    p_ind = np.array([1,1,0,0])
     p_fix = params
     fit = scipy.optimize.leastsq(diff_phase_map,
-                                 [0, 0],
+                                 [0., 0.],
                                  args=(calib_laser_map_bin,
                                        calib_laser_nm,
                                        float(pixel_size*binning),
                                        phase_map_bin,
                                        phase_map_err_bin,
-                                       p_fix,
-                                       p_ind),
+                                       p_fix, p_ind, theta_c),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
     print_params(params)
 
-    # second fit (x and y tilt + rotation angle)
-    p_fix = [params[0], params[1], params[2]]
-    p_ind = np.array([1,1,1,0,0,0,0,0])
+    # second fit (all params)
+    p_fix = np.array([params[0]])
+    p_ind = np.array([1,0,0,0])
     fit = scipy.optimize.leastsq(diff_phase_map,
-                                 [params[3], params[4], params[5], params[6], params[7]],
+                                 [params[1], params[2], params[3]],
                                  args=(calib_laser_map_bin,
                                        calib_laser_nm,
                                        float(pixel_size*binning),
                                        phase_map_bin,
                                        phase_map_err_bin,
-                                       p_fix, p_ind),
+                                       p_fix, p_ind, theta_c),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
     print_params(params)
 
     fitted_phase_map = model_phase_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size)
+        params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+
+
+    ### Zernike fit: Instead of fitting the residual of the phase map,
+    ## the residual of the laser map if fitted (because it is a simple
+    ## linear conversion of the laser map). This way a best fitted
+    ## laser map is also obtained along with the best fitted phase
+    ## map. the obtained laser map might be used for better precision.
+    
+    print '> Phase map residual fit with Zernike polynomials ({} modes)'.format(ZERN_MODES)
+    real_calib_laser_map = (phase_map - params[2]) / params[3]
+    
+    mod_calib_laser_map = model_laser_map(
+        params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+    res_map = real_calib_laser_map - mod_calib_laser_map
+    
+    res_map[np.nonzero(phase_map == 0.)] = np.nan # 0s are replaced
+                                                  # with nans
+    
+    res_map_fit, _err_map, _fit_error = fit_map_zernike(
+        res_map, np.ones_like(res_map), ZERN_MODES)
+
+    fitted_laser_map = mod_calib_laser_map + res_map_fit
+    fitted_phase_map = params[2] + params[3] * fitted_laser_map
     
     ## Error computation
     # Creation of the error map: The error map gives the 
     # Squared Error for each point used in the fit point. 
     error_map = phase_map - fitted_phase_map
+    error_map[np.nonzero(phase_map == 0)] = np.nan
+    
 
     # The square root of the mean of this map is then normalized
     # by the range of the values fitted. This gives the Normalized
     # root-mean-square deviation
-    fit_error =(np.nanmean(np.sqrt(error_map**2.))
+    fit_error_rms =(np.nanmean(np.sqrt(error_map**2.))
                 / (np.nanmax(phase_map) - np.nanmin(phase_map)))
 
-    new_calib_laser_map = simulate_calibration_laser_map(
-        calib_laser_map.shape[0], calib_laser_map.shape[1], pixel_size,
-        calib_laser_nm, params[0], params[1], params[2],
-        params[3], params[4], params[5])
+    fit_error = np.nanstd(error_map)
 
-    return fitted_phase_map, error_map, fit_error, new_calib_laser_map
+    print '> Final fit std: {} radians'.format(fit_error)
+
+    return fitted_phase_map, error_map, fit_error_rms, fitted_laser_map
     
 def interpolate_map(m, dimx, dimy):
     """Interpolate 2D data map.

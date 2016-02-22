@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Viewer module &mdash; Orb 1.5.2 documentation</title>
+  <title>Viewer module &mdash; Orb 1.6.1 documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.5.2 documentation" href="index.html"/>
+    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
         <link rel="next" title="Fit module" href="fit_module.html"/>
         <link rel="prev" title="Astrometry module" href="astrometry_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.5.2
+                1.6.1
               </div>
             
           
@@ -110,7 +110,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#regions-class">Regions class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#region-class">Region class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#imagecanvas-class">ImageCanvas class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#regionselector-class">RegionSelector class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#imagewindow-class">ImageWindow class</a></li>
 </ul>
 </li>
@@ -178,8 +177,7 @@
 <li><a class="reference internal" href="#regions-class" id="id7">Regions class</a></li>
 <li><a class="reference internal" href="#region-class" id="id8">Region class</a></li>
 <li><a class="reference internal" href="#imagecanvas-class" id="id9">ImageCanvas class</a></li>
-<li><a class="reference internal" href="#regionselector-class" id="id10">RegionSelector class</a></li>
-<li><a class="reference internal" href="#imagewindow-class" id="id11">ImageWindow class</a></li>
+<li><a class="reference internal" href="#imagewindow-class" id="id10">ImageWindow class</a></li>
 </ul>
 </li>
 </ul>
@@ -1081,69 +1079,8 @@ window when region properties are changed (default None).</td>
 </dd></dl>
 
 </div>
-<div class="section" id="regionselector-class">
-<h2><a class="toc-backref" href="#id10">RegionSelector class</a><a class="headerlink" href="#regionselector-class" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="orb.viewer.RegionSelector">
-<em class="property">class </em><code class="descclassname">orb.viewer.</code><code class="descname">RegionSelector</code><span class="sig-paren">(</span><em>ax</em>, <em>onselect</em>, <em>drawtype='rectangle'</em>, <em>minspanx=None</em>, <em>minspany=None</em>, <em>useblit=False</em>, <em>lineprops=None</em>, <em>rectprops=None</em>, <em>spancoords='data'</em>, <em>button=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.RegionSelector" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">matplotlib.widgets.RectangleSelector</span></code></p>
-<dl class="method">
-<dt id="orb.viewer.RegionSelector.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>ax</em>, <em>onselect</em>, <em>drawtype='rectangle'</em>, <em>minspanx=None</em>, <em>minspany=None</em>, <em>useblit=False</em>, <em>lineprops=None</em>, <em>rectprops=None</em>, <em>spancoords='data'</em>, <em>button=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.RegionSelector.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a selector in <em>ax</em>.  When a selection is made, clear
-the span and call onselect with:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">onselect</span><span class="p">(</span><span class="n">pos_1</span><span class="p">,</span> <span class="n">pos_2</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>and clear the drawn box/line. The <code class="docutils literal"><span class="pre">pos_1</span></code> and <code class="docutils literal"><span class="pre">pos_2</span></code> are
-arrays of length 2 containing the x- and y-coordinate.</p>
-<p>If <em>minspanx</em> is not <em>None</em> then events smaller than <em>minspanx</em>
-in x direction are ignored (it&#8217;s the same for y).</p>
-<p>The rectangle is drawn with <em>rectprops</em>; default:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">rectprops</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">edgecolor</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
-                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The line is drawn with <em>lineprops</em>; default:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">lineprops</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
-                 <span class="n">linewidth</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Use <em>drawtype</em> if you want the mouse to draw a line,
-a box or nothing between click and actual position by setting</p>
-<p><code class="docutils literal"><span class="pre">drawtype</span> <span class="pre">=</span> <span class="pre">'line'</span></code>, <code class="docutils literal"><span class="pre">drawtype='box'</span></code> or <code class="docutils literal"><span class="pre">drawtype</span> <span class="pre">=</span> <span class="pre">'none'</span></code>.</p>
-<p><em>spancoords</em> is one of &#8216;data&#8217; or &#8216;pixels&#8217;.  If &#8216;data&#8217;, <em>minspanx</em>
-and <em>minspanx</em> will be interpreted in the same coordinates as
-the x and y axis. If &#8216;pixels&#8217;, they are in pixels.</p>
-<p><em>button</em> is a list of integers indicating which mouse buttons should
-be used for rectangle selection.  You can also specify a single
-integer if only a single button is desired.  Default is <em>None</em>,
-which does not limit which button can be used.</p>
-<dl class="docutils">
-<dt>Note, typically:</dt>
-<dd>1 = left mouse button
-2 = center mouse button (scroll wheel)
-3 = right mouse button</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="orb.viewer.RegionSelector.onmove">
-<code class="descname">onmove</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.RegionSelector.onmove" title="Permalink to this definition">¶</a></dt>
-<dd><p>on motion notify event if box/line is wanted</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="orb.viewer.RegionSelector.release">
-<code class="descname">release</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.RegionSelector.release" title="Permalink to this definition">¶</a></dt>
-<dd><p>on button release event</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="imagewindow-class">
-<h2><a class="toc-backref" href="#id11">ImageWindow class</a><a class="headerlink" href="#imagewindow-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id10">ImageWindow class</a><a class="headerlink" href="#imagewindow-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="orb.viewer.ImageWindow">
 <em class="property">class </em><code class="descclassname">orb.viewer.</code><code class="descname">ImageWindow</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.ImageWindow" title="Permalink to this definition">¶</a></dt>
@@ -1201,7 +1138,7 @@ which does not limit which button can be used.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.5.2',
+            VERSION:'1.6.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

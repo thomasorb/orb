@@ -1138,7 +1138,7 @@ class Cm1LinesModel(LinesModel):
         self.correction_coeff = self.nm_laser_obs / self.nm_laser
         
         self.axis_min = cutils.get_cm1_axis_min(
-            self.step, self.order,
+            self.step_nb, self.step, self.order,
             corr=self.correction_coeff)
         self.axis_step = cutils.get_cm1_axis_step(
             self.step_nb, self.step, corr=self.correction_coeff)
@@ -1192,7 +1192,7 @@ class NmLinesModel(Cm1LinesModel):
         Cm1LinesModel.parse_dict(self)
         
         self.axis_min = cutils.get_nm_axis_min(
-            self.step, self.order,
+            self.step_nb, self.step, self.order,
             corr=self.correction_coeff)
         self.axis_step = cutils.get_nm_axis_step(
             self.step_nb, self.step, self.order,
@@ -1302,14 +1302,14 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     correction_coeff = float(nm_laser_obs) / nm_laser
 
     if wavenumber:
-        axis_min = cutils.get_cm1_axis_min(step, order,
+        axis_min = cutils.get_cm1_axis_min(spectrum.shape[0], step, order,
                                            corr=correction_coeff)
         axis_step = cutils.get_cm1_axis_step(spectrum.shape[0], step, 
                                              corr=correction_coeff)
         linesmodel = Cm1LinesModel
   
     else:
-        axis_min = cutils.get_nm_axis_min(step, order,
+        axis_min = cutils.get_nm_axis_min(spectrum.shape[0], step, order,
                                           corr=correction_coeff)
         axis_step = cutils.get_nm_axis_step(spectrum.shape[0], step, order,
                                             corr=correction_coeff)

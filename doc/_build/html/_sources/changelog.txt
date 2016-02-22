@@ -1,7 +1,8 @@
 Changelog
 #########
 
-	
+.. contents::
+   
 v1.0 Creation of ORB
 ********************
 
@@ -646,15 +647,16 @@ Miscellaneous
   during phase maps fitting. It permits to accelerate the process a
   lot without losing precision.
 
-
 * :py:meth:`~utils.compute_line_fwhm` now computes the line fwhm
   from the number of steps on the longest side of the interferogram
   (before this was computed from the total number of steps of a
-  symetric interferogram, so generally two times more steps than in
+  symmetric interferogram, so generally two times more steps than in
   this version).
 
+v1.6: Architectural changes
+***************************
 
-v1.5.2
+v1.6.0
 ======
 
 A lot of changes have been made. Only the most important are summarized.
@@ -690,3 +692,45 @@ Adaptation to SITELLE
 
 **Phase correction** and **cosmic-ray detection** have been reworked. Cosmic
 ray detection now uses both cubes and is much more robust than before.
+
+
+v.1.6.1
+=======
+
+
+Zernike Modes Fit
+-----------------
+
+* External module :py:mod:`orb.ext.zern` added to fit Zernike
+  modes. This module has been created by Tim van Werkhoven
+  (werkhoven@strw.leidenuniv.nl).
+
+New module utils.IO
+-------------------
+
+* module :py:mod:`orb.utils.io` created to put input/output functions
+  related to write/read FITS and HDF5 single files.
+
+Miscellaneous
+-------------
+
+* :py:meth:`~astrometry.Astrometry.brute_force_guess` Brute force
+  guess extended to cover a wider region by default. Initial guess on
+  dx and dy can be very rough. All alignement are successful on
+  SITELLE with the same set of parameters even with major optics
+  change.
+
+
+
+* :py:meth:`~cutils.get_nm_axis_step`,
+  :py:meth:`~cutils.get_nm_axis_max`,
+  :py:meth:`~cutils.get_nm_axis_min`,
+  :py:meth:`~cutils.get_cm1_axis_step`,
+  :py:meth:`~cutils.get_cm1_axis_max`,
+  :py:meth:`~cutils.get_cm1_axis_min`, changed to take into account the
+  fact that the spectral axis created from
+  :py:meth:`orb.utils.fft.transform_interferogram` has 1 sample less than
+  expected to keep the same number of sample at the input and the
+  output.
+
+* :py:mod:`orb.viewer` updated for the last matplotlib version (1.5.1).

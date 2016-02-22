@@ -662,7 +662,7 @@ class Astrometry(Tools):
         # frames to detect stars
         if self.dimz > 1:
             if use_deep_frame:
-                return self.data.get_mean_image().astype(float)
+                return self.data.get_median_image().astype(float)
             
             stack_nb = self.detect_stack
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
@@ -1362,7 +1362,7 @@ class Astrometry(Tools):
           False).
 
         :param use_deep_frame: (Optional) If True a deep frame of the
-          cube is used instead of combinig only the first frames
+          cube is used instead of combining only the first frames
           (default False).
 
         :param r_max_coeff: (Optional) Coefficient that sets the limit
@@ -1895,14 +1895,13 @@ class Astrometry(Tools):
         MIN_STAR_NB = 5 # Minimum number of stars to get a correct WCS
 
         XYRANGE_STEP_NB = 60. # Define the number of steps for the rough guess
-                              # STEP_SIZE = FWHM / STEP_DEG
         
-        SIZE_COEFF = 0.020 # Define the range of pixels around the
+        SIZE_COEFF = 0.030 # Define the range of pixels around the
                            # initial value of shift where the correct
                            # shift parameters must be found.
 
-        ANGLE_STEPS = 50
-        ANGLE_RANGE = 1.0
+        ANGLE_STEPS = 100
+        ANGLE_RANGE = 6.0
         
         if not (self.target_ra is not None and self.target_dec is not None
                 and self.target_x is not None and self.target_y is not None
@@ -1918,7 +1917,7 @@ class Astrometry(Tools):
         if not full_deep_frame:
             deep_frame = self._get_combined_frame()
         else:
-            deep_frame = self.data.get_mean_image().astype(float)
+            deep_frame = self.data.get_median_image().astype(float)
 
         deltax = self.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
@@ -2737,26 +2736,22 @@ class Aligner(Tools):
         self.astro2.reset_fwhm_arc(fwhm_arc)
         self.astro1.reset_fwhm_arc(fwhm_arc)
 
-        ##########################################
-        ### BRUTE FORCE GUESS (only dx and dy) ###
-        ##########################################
-        if brute_force:
-            self._print_msg("Rough alignment")
 
+        def brute_force_alignment(xystep_size, angle_range, angle_steps, range_coeff):
             # define the ranges in x and y for the rough optimization
-            x_range_len = self.range_coeff * float(self.astro2.dimx)
-            y_range_len = self.range_coeff * float(self.astro2.dimy)
+            x_range_len = range_coeff * float(self.astro2.dimx)
+            y_range_len = range_coeff * float(self.astro2.dimy)
 
-            x_hrange = np.arange(XYSTEP_SIZE, x_range_len/2, XYSTEP_SIZE)
+            x_hrange = np.arange(xystep_size, x_range_len/2, xystep_size)
             x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + self.dx
             
-            y_hrange = np.arange(XYSTEP_SIZE, y_range_len/2, XYSTEP_SIZE)
+            y_hrange = np.arange(xystep_size, y_range_len/2, xystep_size)
             y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + self.dy
             
           
-            r_range = np.linspace(-ANGLE_RANGE/2.,
-                                  ANGLE_RANGE/2.,
-                                  ANGLE_STEPS) + self.dr
+            r_range = np.linspace(-angle_range/2.,
+                                  angle_range/2.,
+                                  angle_steps) + self.dr
 
             (self.dx, self.dy, self.dr, guess_matrix) = (
                 self.astro2.brute_force_guess(
@@ -2772,8 +2767,21 @@ class Aligner(Tools):
                             fits_header=self._get_guess_matrix_header(),
                             overwrite=self.overwrite)
 
-            self._print_msg("Rough alignment parameters:") 
+
+        ##########################################
+        ### BRUTE FORCE GUESS (only dx and dy) ###
+        ##########################################
+        if brute_force:
+            self._print_msg("Brute force guess on large field")
+            brute_force_alignment(4*XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS/2, self.range_coeff*10)
+            self._print_msg("Brute force guess:") 
             self.print_alignment_coeffs()
+
+            self._print_msg("Finer brute force guess")
+            brute_force_alignment(XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS, self.range_coeff)
+            self._print_msg("Brute force guess:") 
+            self.print_alignment_coeffs()
+
 
         guess = [self.dx, self.dy, self.dr, self.da, self.db]
         
