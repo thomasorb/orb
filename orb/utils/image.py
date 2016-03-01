@@ -532,13 +532,16 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
-def fit_map_zernike(data_map, err_map, nmodes):
+def fit_map_zernike(data_map, weights_map, nmodes):
     """
     Fit a map with Zernike polynomials.
 
     Bad values must be set to NaN (not 0.)
 
     :param data_map: Data map to fit
+
+    :param weights_map: weights map (high weight value stands for high
+      precision data)
 
     :param nmodes: Number of zernike modes to use for fitting.
     
@@ -555,10 +558,10 @@ def fit_map_zernike(data_map, err_map, nmodes):
     data_map_big[borders[0]:borders[0]+data_map.shape[0],
                  borders[1]:borders[1]+data_map.shape[1]] = np.copy(data_map)
     mask = np.ones_like(data_map_big, dtype=float)
-    err_map = np.abs(err_map)
-    err_map /= np.nanmax(err_map) # error map is normalized
+    weights_map = np.abs(weights_map)
+    weights_map /= np.nanmax(weights_map) # error map is normalized
     mask[borders[0]:borders[0]+data_map.shape[0],
-         borders[1]:borders[1]+data_map.shape[1]] = err_map
+         borders[1]:borders[1]+data_map.shape[1]] = weights_map
 
     # nans and 0s are masked
     mask[np.nonzero(np.isnan(data_map_big))] = 0.
@@ -594,7 +597,7 @@ def fit_map(data_map, err_map, smooth_deg):
     :param smooth_deg: Degree of fit smoothing (beware of high
       smoothing degrees)
 
-    :return: (fitted data map, error map, fit error)
+    :return: a tuple: (fitted data map, residual map, fit RMS error)
     """
 
     def smooth_fit_parameters(coeffs_list, err_list, order, smooth_deg):
@@ -693,15 +696,15 @@ def fit_map(data_map, err_map, smooth_deg):
     ## Error computation
     # Creation of the error map: The error map gives the 
     # Squared Error for each point used in the fit point. 
-    error_map = data_map - fitted_data_map
+    res_map = data_map - fitted_data_map
 
     # The square root of the mean of this map is then normalized
     # by the range of the values fitted. This gives the Normalized
     # root-mean-square deviation
-    fit_error =(np.nanmean(np.sqrt(error_map**2.))
+    fit_rms_error =(np.nanmean(np.sqrt(res_map**2.))
                 / (np.nanmax(data_map) - np.nanmin(data_map)))
 
-    return fitted_data_map, error_map, fit_error
+    return fitted_data_map, res_map, fit_rms_error
 
 
 def tilt_calibration_laser_map(cmap, calib_laser_nm, phi_x, phi_y, phi_r):
@@ -990,6 +993,41 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     params = np.array(list(params) + list([theta_c]))
     return params, new_calib_laser_map
+
+
+
+def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
+    """Robust fit phase maps of order > 1
+
+    First fit pass is made with a polynomial of order 1.
+    
+    Second pass is a Zernike fit of the residual.
+
+    :param phase_map: Phase map to fit
+
+    :param err_map: Error map of phase map values
+
+    :param nmodes: (Optional) Number of Zernike modes (default 10).
+
+    :return: A tuple: (Fitted map, residual map)
+    """
+    # order 1 fit 
+    phase_map_fit, res_map, rms_error = fit_map(phase_map, err_map, 1)
+    print ' > Residual STD after 1st order fit: {}'.format(np.nanstd(res_map))
+    
+    # residual fit with zernike
+    w_map = np.copy(err_map)
+    w_map = np.abs(w_map)
+    w_map = 1./w_map
+    w_map /= orb.cutils.part_value(w_map.flatten(), 0.95)
+    w_map[w_map > 1.] = 1.
+    res_map_fit, res_res_map, fit_error = fit_map_zernike(res_map, w_map, nmodes)
+    print ' > Residual STD after Zernike fit of the residual: {}'.format(np.nanstd(res_res_map))
+    full_fit = phase_map_fit + res_map_fit
+    return full_fit, phase_map - full_fit
+    
+    
+
 
 def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                           calib_laser_nm, pixel_size=15., binning=4):

@@ -4,7 +4,7 @@
 # Wavelength in nm | Transmission percentage
 # FILTER_MIN 362.6
 # FILTER_MAX 385.6
-# PHASE_FIT_ORDER 2
+# PHASE_FIT_ORDER 1
 1000.0 0.0
 999.973332444 0.0
 999.946664889 0.0

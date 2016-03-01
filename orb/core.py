@@ -211,6 +211,26 @@ class Tools(object):
          
         return filter_file_path
 
+    
+    def _get_phase_file_path(self, filter_name):
+        """Return the full path to the phase file given the name of
+        the filter.
+
+        The filter name must be filter_FILTER_NAME and the phase file
+        must be located in orb/data/.
+
+        :param filter_name: Name of the filter.
+        """
+        phase_file_path =  self._get_orb_data_file_path(
+            "phase_" + filter_name + ".orb")
+        
+        if not os.path.exists(phase_file_path):
+             self._print_warning(
+                 "Phase file %s does not exist !"%phase_file_path)
+             return None
+         
+        return phase_file_path
+
     def _get_standard_table_path(self, standard_table_name):
         """Return the full path to the standard table giving name,
         location and type of the recorded standard spectra.

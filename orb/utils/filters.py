@@ -50,24 +50,14 @@ def compute_weights(calib, nm_laser, step_nb, step, order,
 
     :param filter_max_cm1: Maximum wavenumber of the filter in cm-1
     """
+
+    filter_range = get_filter_edges_pix(
+        None, calib / nm_laser, step, order, step_nb,
+        orb.utils.spectrum.cm12nm(filter_max_cm1),
+        orb.utils.spectrum.cm12nm(filter_min_cm1))
+    range_size = abs(np.diff(filter_range)[0])
     
     weights = np.ones(step_nb, dtype=float)
-    corr = calib / nm_laser
-    cm1_axis_step = orb.cutils.get_cm1_axis_step(
-        step_nb, step, corr=corr)
-    cm1_axis_min = orb.cutils.get_cm1_axis_min(
-        step_nb, step, order, corr=corr)
-    filter_range = orb.cutils.fast_w2pix(
-        np.array([filter_min_cm1, filter_max_cm1]),
-        cm1_axis_min, cm1_axis_step)
-
-    if int(order) & 1:
-        filter_range = step_nb - filter_range
-
-    filter_range[filter_range < 0] = 0
-    filter_range[filter_range > step_nb] = (
-        step_nb - 1)
-    range_size = abs(np.diff(filter_range)[0])
     weights[:np.min(filter_range)
             + int(range_border_coeff * range_size)] = 1e-35
     weights[np.max(filter_range)
@@ -146,14 +136,25 @@ def read_filter_file(filter_file_path):
     return filter_nm, filter_trans, filter_min, filter_max
 
 
+def get_filter_bandpass(filter_file_path):
+    """Return the filter bandpass in nm as a tuple (nm_min, nm_max)
+    
+    :param get_filter_bandpass: Path to the filter file.
+
+    .. seealso:: :py:meth:`utils.read_filter_file`
+    """
+    if filter_file_path is not None:
+        (filter_nm, filter_trans,
+         filter_min, filter_max) = read_filter_file(filter_file_path)
+
+    return filter_min, filter_max
+
 def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
                          n, filter_min=None, filter_max=None):
     """Return the position in pixels of the edges of a filter
     corrected for the off-axis effect.
 
-    Note that the axis is assumed to be in wavenumber. Spectra are
-    generally given in wavelength but phase vectors are not. So this
-    function is best used with phase vectors.
+    Note that the axis is assumed to be in wavenumber.
     
     :param filter_file_path: Path to the filter file. If None,
       filter_min and filter_max must be specified.
@@ -176,32 +177,32 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
     .. seealso:: :py:meth:`utils.read_filter_file`
     """
     if filter_file_path is not None:
-        (filter_nm, filter_trans,
-         filter_min, filter_max) = read_filter_file(filter_file_path)
+        (filter_min, filter_max) = get_filter_bandpass(filter_file_path)
     elif (filter_min is None or filter_max is None):
         raise Exception("filter_min and filter_max must be specified if filter_file_path is None")
-    
-    nm_axis_ireg = orb.utils.spectrum.create_nm_axis_ireg(
+
+    filter_min_cm1 = orb.utils.spectrum.nm2cm1(filter_max)
+    filter_max_cm1 = orb.utils.spectrum.nm2cm1(filter_min)
+
+    cm1_axis_step = orb.cutils.get_cm1_axis_step(
+        n, step, corr=correction_factor)
+    cm1_axis_min = orb.cutils.get_cm1_axis_min(
         n, step, order, corr=correction_factor)
+    filter_range = orb.cutils.fast_w2pix(
+        np.array([filter_min_cm1, filter_max_cm1]),
+        cm1_axis_min, cm1_axis_step)
 
-    # note that nm_axis_ireg is an reversed axis
-    fpix_axis = interpolate.UnivariateSpline(nm_axis_ireg[::-1],
-                                             np.arange(n))
+    if int(order) & 1:
+        filter_range = n - filter_range
+        filter_range = filter_range[::-1]
     
-    try:
-        filter_min_pix = int(fpix_axis(filter_min)) # axis is reversed
-        filter_max_pix = int(fpix_axis(filter_max)) # axis is reversed
-    except Exception:
-        filter_min_pix = np.nan
-        filter_max_pix = np.nan
+    filter_range[filter_range < 0] = 0
+    filter_range[filter_range > n] = (n - 1)
 
-    if (filter_min_pix <= 0. or filter_min_pix > n
-        or filter_max_pix <= 0. or filter_max_pix > n
-        or filter_min_pix >= filter_max_pix):
-        filter_min_pix == np.nan
-        filter_max_pix == np.nan 
+    if min(filter_range) == max(filter_range):
+        raise Exception('Filter range out of axis. Check step, order and correction factor')
+    return filter_range
 
-    return filter_min_pix, filter_max_pix
 
 def get_filter_function(filter_file_path, step, order, n,
                         wavenumber=False, silent=False):
@@ -278,3 +279,6 @@ def get_filter_function(filter_file_path, step, order, n,
         return filter_function, filter_min, filter_max
     else:
         return filter_function, filter_max, filter_min
+
+
+

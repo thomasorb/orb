@@ -25,11 +25,12 @@ import numpy as np
 import math
 import warnings
 import scipy
-from scipy import signal
+from scipy import signal, interpolate
 
 import orb.utils.vector
 import orb.utils.spectrum
 import orb.utils.stats
+import orb.utils.filters
 import orb.cutils
 
 
@@ -441,13 +442,14 @@ def compute_phase_coeffs_vector(phase_maps,
 def transform_interferogram(interf, nm_laser, 
                             calibration_coeff, step, order, 
                             window_type, zpd_shift, phase_correction=True,
+                            wave_calibration=True,
                             return_phase=False, ext_phase=None,
                             weights=None, polyfit_deg=1,
                             balanced=True, bad_frames_vector=None,
                             smoothing_deg=2, return_complex=False,
                             final_step_nb=None, wavenumber=False,
                             low_order_correction=False,
-                            conserve_energy=False):
+                            conserve_energy=False, high_order_phase=None):
     
     """Transform an interferogram into a spectrum.
     
@@ -477,6 +479,9 @@ def transform_interferogram(interf, nm_laser,
     :param phase_correction: (Optional) If False, no phase correction will
       be done and the resulting spectrum will be the absolute value of the
       complex spectrum (default True).
+
+    :param wave_calibration: (Optional) If True wavenumber/wavelength
+      calibration is done (default True).
 
     :param ext_phase: (Optional) External phase vector. If given this
       phase vector is used instead of a low-resolution one. It must be
@@ -530,6 +535,12 @@ def transform_interferogram(interf, nm_laser,
 
     :param conserve_energy: (Optional) If True the energy is conserved
       in the transformation (default False).
+
+    :param high_order_phase: (Optional) High order phase to be added
+      to the phase computed via a low order polynomial (generally 1
+      order). Note that it must be a
+      scipy.interpolate.UnivariateSpline instance to accelerate the
+      process.
 
     .. note:: Interferogram can be complex
     """
@@ -721,7 +732,7 @@ def transform_interferogram(interf, nm_laser,
     center = zero_padded_size / 2
     # spectrum is cropped at zero_padded_size / 2 instead of
     # zero_padded_size / 2 + 1 which would output a spectrum with 1
-    # more sample than the input length. Comnputed axis must be
+    # more sample than the input length. Computed axis must be
     # cropped accordingly.
     interf_fft = np.fft.fft(zero_padded_vector)[:center]
 
@@ -730,12 +741,35 @@ def transform_interferogram(interf, nm_laser,
         interf_fft /= (zero_padded_size / dimz)
     else:
         interf_fft /= (zero_padded_size / dimz) / 2.
+
+
+    #### Create spectrum original cm-1 axis
+    if wave_calibration:
+        correction_coeff = float(calibration_coeff) / nm_laser
+    else:
+        correction_coeff = 1.
+
+    if not wavenumber:
+        base_axis = orb.utils.spectrum.create_nm_axis_ireg(
+            interf_fft.shape[0], step, order,
+            corr=correction_coeff)
+    else:
+        base_axis = orb.utils.spectrum.create_cm1_axis(
+            interf_fft.shape[0], step, order, corr=correction_coeff)
         
     #####
     # 10 - Phase correction
     if phase_correction:
+        if high_order_phase is not None:
+            phase_axis = orb.utils.spectrum.create_cm1_axis(
+                interf_fft.shape[0], step, order,
+                corr=float(calibration_coeff) / nm_laser).astype(np.float64)
+            lr_phase += high_order_phase(phase_axis)
+
+        # interpolation of the phase to zero padded size
         lr_phase = orb.utils.vector.interpolate_size(
             lr_phase, interf_fft.shape[0], 1)
+        
         spectrum_corr = np.empty_like(interf_fft)
         spectrum_corr.real = (interf_fft.real * np.cos(lr_phase)
                               + interf_fft.imag * np.sin(lr_phase))
@@ -748,14 +782,6 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 11 - Off-axis effect correction with maxima map   
     # Irregular wavelength axis creation
-    correction_coeff = float(calibration_coeff) / nm_laser
-    if not wavenumber:
-        base_axis = orb.utils.spectrum.create_nm_axis_ireg(
-            spectrum_corr.shape[0], step, order,
-            corr=correction_coeff)
-    else:
-        base_axis = orb.utils.spectrum.create_cm1_axis(
-            spectrum_corr.shape[0], step, order, corr=correction_coeff)
     
     # Spectrum is returned if folding order is even
     if int(order) & 1:
@@ -1067,8 +1093,10 @@ def find_phase_coeffs_brute_force(interf, step, order, zpd_shift,
     return a0, a1
 
 def optimize_phase(interf, step, order, zpd_shift,
-                   guess=[0,0], return_coeffs=False,
-                   fixed_params=[0, 0], weights=None):
+                   calib, nm_laser,
+                   guess=[0.0001, 0.0001], return_coeffs=False,
+                   fixed_params=[0, 0], weights=None,
+                   high_order_phase=None):
     """Return an optimized phase vector based on the minimization of
     the imaginary part.
 
@@ -1079,6 +1107,10 @@ def optimize_phase(interf, step, order, zpd_shift,
     :param order: Alisasing order
     
     :param zpd_shift: ZPD shift
+
+    :param calib: Calibration laser observed wavelength
+
+    :param nm_laser: Calibration laser real wavelength
 
     :param guess: (Optional) First guess. The number of values defines the order
       of the polynomial used used to fit (default [0,0]).
@@ -1091,12 +1123,21 @@ def optimize_phase(interf, step, order, zpd_shift,
 
     :param weights: (Optional) spectrum weighting (a vector with
       values ranging from 0 to 1, 1 being the maximu weight)
+
+    :param high_order_phase: (Optional) High order phase to be
+      subtracted during the optimization process. Can be a path to a
+      phase file . Note that if it is not a phase file name it must be
+      a scipy.interpolate.UnivariateSpline instance to accelerate the
+      process (as returned by
+      :py:meth:`orb.utils.fft.read_phase_file`).
     """
-    def diff(vp, interf_fft, fp, findex, weights):
+    def diff(vp, interf_fft, fp, findex, weights, high_phase):
         p = np.empty_like(findex, dtype=float)
         p[np.nonzero(findex==0)] = vp
         p[np.nonzero(findex)] = fp
         ext_phase = np.polyval(p, np.arange(np.size(interf)))
+        if high_phase is not None:
+            ext_phase += high_phase
         # phase correction
         a_fft = np.zeros_like(interf_fft)
         ## a_fft.real = (interf_fft.real * np.cos(ext_phase)
@@ -1119,10 +1160,21 @@ def optimize_phase(interf, step, order, zpd_shift,
         ext_phase=np.zeros_like(interf),
         phase_correction=True,
         return_complex=True)
+
+    if high_order_phase is not None:
+        if isinstance(high_order_phase, str):
+            high_order_phase = read_phase_file(high_order_phase, return_spline=True)
+        cm1_axis = orb.utils.spectrum.create_cm1_axis(
+            interf.shape[0], step, order,
+            corr=calib/nm_laser).astype(np.float64)
+        high_phase = high_order_phase(cm1_axis)
+    else:
+        high_phase = None
     
     optim = scipy.optimize.leastsq(
         diff, vguess, args=(
-            interf_fft, fguess, fixed_params, weights),
+            interf_fft, fguess, fixed_params, weights,
+            high_phase),
         full_output=True)
     
     if optim[-1] < 5:
@@ -1132,7 +1184,7 @@ def optimize_phase(interf, step, order, zpd_shift,
         res = (np.sqrt(np.nanmean(optim[2]['fvec']**2.))
                /interf_mean_energy(interf))
         if not return_coeffs:
-            return np.polyval(p, np.arange(np.size(interf)))
+            return np.polyval(p, np.arange(np.size(interf))) + high_phase
         else:
             return p, res
     else: return None
@@ -1153,5 +1205,177 @@ def create_phase_vector(order_0, other_orders, n):
     coeffs_list += other_orders
     return np.polynomial.polynomial.polyval(
         np.arange(n), coeffs_list)
+
+
+def create_mean_phase_vector(phase_cube, step, order,
+                             calib_map, nm_laser,
+                             filter_file_path,
+                             size_coeff=0.45,
+                             border_coeff=0.05):
+
+    """Compute mean phase vector of order > 1.
+
+    :param phase_cube: Phase cube (generally binned) as computed by
+      ORBS Interferogram class.
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param filter_file_path: Filter file path
+
+    :param size_coeff: Relative size of the central part used to compute mean
+      phase vector.
+
+    :param border_coeff: Relative size of the border inside the filter
+      edges. This part is not considered as good.
+
+    :returns: a tuple (Phase axis [cm-1], Phase [radians])
+    """
     
+    x_min, x_max, y_min, y_max = orb.utils.image.get_box_coords(
+        phase_cube.shape[0]/2,
+        phase_cube.shape[1]/2,
+        int(float(min(phase_cube.shape))*size_coeff),
+        0, phase_cube.shape[0],
+        0, phase_cube.shape[1])
     
+    cm1_axis_base = orb.utils.spectrum.create_cm1_axis(
+                phase_cube.shape[2], step, order, corr=1.)
+    
+    phase = np.zeros(phase_cube.shape[2], dtype=float)
+
+    counts = 0
+    range_axis = np.arange(phase_cube.shape[2])
+
+    z_min, z_max = orb.utils.filters.get_filter_edges_pix(
+        filter_file_path, 1., step, order,
+        phase.shape[0])
+
+    border_pix = int(float(z_max - z_min) * border_coeff)
+    z_min += border_pix
+    z_max -= border_pix
+    
+    for ii in range(x_min, x_max):
+        phase_col = list()
+        for ij in range(y_min, y_max):
+            # interpolate phase to 0deg axis
+            corr =  calib_map[ii,ij] / nm_laser
+            cm1_axis = orb.utils.spectrum.create_cm1_axis(
+                phase_cube.shape[2], step, order, corr=corr)
+            iphase = phase_cube[ii,ij,:]
+            iphase = orb.utils.vector.interpolate_axis(
+                iphase, cm1_axis_base, 1, old_axis=cm1_axis)
+            if int(order) & 1: iphase = iphase[::-1]
+            # remove parts outside filter
+            iphase[:z_min] = np.nan
+            iphase[z_max:] = np.nan
+            
+            # remove a 1 order polynomial to avoid order 0 and order 1
+            # variable contribution.
+            range_nans = range_axis[~np.isnan(iphase)]
+            iphase_nans = iphase[~np.isnan(iphase)]
+            
+            iphase -= np.polyval(np.polyfit(
+                range_nans, iphase_nans, 1), range_axis)
+            phase_col.append(iphase)
+        
+        # each column of phase vectors is reduced to one phase vector
+        # with a sigmacut
+        phase_col = np.array(phase_col, dtype=float)
+        iphase = np.empty(phase_col.shape[1], dtype=float)
+        for ik in range(iphase.shape[0]):
+            iphase[ik] = np.nanmean(orb.utils.stats.sigmacut(
+                phase_col[:,ik], sigma=2.0))
+        # computed phase vector for the column is added to the final
+        # phase vector
+        phase += iphase
+        counts += 1
+        
+  
+    phase /= counts
+    phase -= phase[~np.isnan(phase)][0] # first sample at 0.
+            
+    
+    return cm1_axis_base, phase
+
+def create_phase_file(file_path, phase_vector, cm1_axis):
+    """Write a phase vector in a phase file.
+
+    Phase vector is interpolated via a cubic spline.
+
+    :param file_path: Path to the output phae file.
+
+    :param phase_vector: Phase vector
+
+    :param cm1_axis: Phase vector axis in cm-1
+    """
+    
+    STEP_NB = 2000
+
+    # interpolate phase
+    cm1_axis = cm1_axis.astype(float)
+    cm1_axis_nans = cm1_axis[~np.isnan(phase_vector)]
+    phase_vector_nans = phase_vector[~np.isnan(phase_vector)]
+    phase_finterp = scipy.interpolate.UnivariateSpline(
+        cm1_axis_nans, phase_vector_nans,
+        k=3, s=0)
+    cm1_axis_interp = np.linspace(np.min(cm1_axis_nans),
+                                  np.max(cm1_axis_nans),
+                                  STEP_NB)
+    phase_interp = phase_finterp(cm1_axis_interp)
+
+    # write phase in a phase file
+    with open(file_path, 'w') as f:
+        for i in range(STEP_NB):
+            f.write('{} {}\n'.format(
+                cm1_axis_interp[i],
+                phase_interp[i]))
+
+
+def read_phase_file(file_path, return_spline=False):
+    """Read a phase file and return its content.
+
+    :param file_path: Path to the phase file
+
+    :param return_spline: If True a cubic spline
+      (scipy.interpolate.UnivariateSpline instance) is returned
+      instead of a tuple.
+
+    :returns: a tuple (Phase axis [cm-1], Phase [radians]) or a
+      scipy.interpolate.UnivariateSpline instance if return_spline is
+      True.
+    """
+    cm1_axis = list()
+    phase = list()
+    with open(file_path, 'r') as f:
+        for line in f:
+            if '#' not in line and len(line) > 2:
+                cm1, ph = line.strip().split()
+                cm1_axis.append(float(cm1))
+                phase.append(float(ph))
+    cm1_axis = np.array(cm1_axis, dtype=float)
+    phase = np.array(phase, dtype=float)
+    if not return_spline:
+        return cm1_axis, phase
+    else:
+        return interpolate.UnivariateSpline(
+            cm1_axis, phase, k=3, s=0, ext=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

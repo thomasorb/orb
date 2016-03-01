@@ -1494,10 +1494,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     new_pos = pos[np.nonzero(pos_mask)]
 
-        
     # stop here if no star positions are in the frame
     if np.size(new_pos) == 0:
         return []
+    
     cdef int PARAMS_NB = 6
     cdef int star_nb = new_pos.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
