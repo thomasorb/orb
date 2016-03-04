@@ -9,9 +9,15 @@ INSTRUMENT_NAME SITELLE # Instrument name
 OBS_LAT 19.825232 # Observatory latitude
 OBS_LON -155.468761 # Observatory longitude
 OBS_ALT 4215. # Observatory altitude
+ATM_EXTINCTION_FILE MAUNA_KEA.atm_ext.orb # Atmospheric extinction
+					  # file name
+
+MIR_TRANSMISSION_FILE CFHT.mir_trans.orb # Mirror transmision file
+					 # name
+MIR_SURFACE 81700 # Mirror surface in cm^2
 
 ## Instrumental parameters
-FIELD_OF_VIEW 11.05 # Size of the field of view of the camera 1 in
+FIELD_OF_VIEW_1 11.05 # Size of the field of view of the camera 1 in
 		  # arc-minutes along the largest axis
 FIELD_OF_VIEW_2 11.05 # Size of the field of view of the camera 2 in
 	            # arc-minutes along the largest axis
@@ -22,6 +28,12 @@ CAM1_DETECTOR_SIZE_X 2048 # Camera 1 detector size along X
 CAM1_DETECTOR_SIZE_Y 2064 # Camera 1 detector size along Y
 CAM2_DETECTOR_SIZE_X 2048 # Camera 2 detector size along X
 CAM2_DETECTOR_SIZE_Y 2064 # Camera 2 detector size along Y
+CAM1_GAIN 1.37 # Camera 1 gain
+CAM2_GAIN 1.37 # Camera 2 gain
+CAM1_QE_FILE SITELLE.cam1.QE.orb # Camera 1 Quantum efficiency file
+				 # path
+CAM2_QE_FILE SITELLE.cam2.QE.orb # Camera 1 Quantum efficiency file
+				 # path
 
 ## Disalignment guess
 INIT_ANGLE 2.0 # Rough angle between images of the camera 1 and

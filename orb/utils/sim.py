@@ -65,4 +65,3 @@ def fft(interf, zp_coeff=10):
     axis = np.linspace(0, (step_nb - 1)/2., interf_fft.shape[0])
     return axis, interf_fft
 
-    

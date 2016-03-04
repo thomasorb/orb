@@ -1,7 +1,7 @@
-## ORBS filter file 
+## ORBS phase file 
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # Filter name : SN1
-# Wavelength in cm-1 | Phase in radians
+# Wavenumber in cm-1 | Phase in radians
 
 25991.1660042 8.06872372232e-19
 25991.904759 -0.00160997002206

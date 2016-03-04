@@ -111,3 +111,13 @@ Waves class
    :private-members:
    :special-members:
    :show-inheritance:
+
+
+Standard class
+--------------
+
+.. autoclass:: core.Standard
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:

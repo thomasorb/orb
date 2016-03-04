@@ -157,7 +157,7 @@ class Moffat(PSF):
         # 2-D PSF function
         self.psf2d = lambda x, y: (
             self.psf(np.sqrt((x - self.params['x'])**2.
-                             +(y - self.params['y'])**2.)))
+                             + (y - self.params['y'])**2.)))
         
 
     def flux(self):
@@ -679,7 +679,8 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
 def aperture_photometry(star_box, fwhm_guess, background_guess=None,
                         background_guess_err=0.,
                         aper_coeff=3., warn=True, x_guess=None,
-                        y_guess=None):
+                        y_guess=None, return_surfaces=False,
+                        aperture_surface=None, annulus_surface=None):
     """Return the aperture photometry of a star centered in a star box.
 
     :param star_box: Star box
@@ -699,7 +700,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
       and 3. to account for the flux in the wings (default 3., better
       for Moffat stars with a high SNR).
 
-    :param warn: If True, print a warning when the background cannot
+    :param warn: (Optional) If True, print a warning when the background cannot
       be well estimated (default True).
 
     :param x_guess: (Optional) position of the star along x axis. If
@@ -709,6 +710,22 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     :param y_guess: (Optional) position of the star along y axis. If
       None, star is assumed to lie at the very center of the frame
       (default None).
+
+    :param return_surfaces: (Optional) If True returns also the
+      aperture_surface and annulus_surface computed. Useful if
+      multiple stars with the same FWHM must be done (default False).
+
+    :param aperture_surface: (Optional) Pre-computed
+      aperture_surface. Accelerate the process for multiple stars with
+      the same FWHM but must be used with caution. aper_coeff is of no
+      use if aperture_surface if given (default None). See
+      :py:meth:`orb.utils.astrometry.multi_aperture_photometry`.
+
+    :param annulus_surface: (Optional) Pre-computed
+      annulus_surface. Accelerate the process for multiple stars with
+      the same FWHM but must be used with caution. aper_coeff is of no
+      use if annulus_surface if given (default None). See
+      :py:meth:`orb.utils.astrometry.multi_aperture_photometry`.
 
     :return: A Tuple (flux, flux_error, aperture surface,
       bad_estimation_flag). If the estimation is bad,
@@ -735,6 +752,8 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
 
     .. warning:: The star MUST be at the center (+/- 1 pixel) of the
       star box.
+
+    .. seealso:: :py:meth:`orb.utils.astrometry.multi_aperture_photometry`
     """
     MIN_APER_SIZE = 0.5 # Minimum warning flux coefficient in the
                         # aperture
@@ -764,9 +783,13 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     aper_rmax = C_AP * fwhm_guess
 
     # Get approximate pixels surface value of the pixels for the aperture
-    aperture_surface = orb.cutils.surface_value(box_dimx, box_dimy,
-                                                x_guess, y_guess,
-                                                0., aper_rmax, SUR_VAL_COEFF)
+    if aperture_surface is None or aperture_surface.shape != (box_dimx, box_dimy):
+        aperture_surface = orb.cutils.surface_value(
+            box_dimx, box_dimy,
+            x_guess, y_guess,
+            0., aper_rmax, SUR_VAL_COEFF)
+    # saved for clean output if return_surfaces is True
+    base_aperture_surface = np.copy(aperture_surface) 
     
     aperture_surface[np.nonzero(np.isnan(star_box))] = 0.
     aperture = star_box * aperture_surface
@@ -789,28 +812,33 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
         # C_OUT definition just does not work well at small radii, so the
         # outer radius has to be enlarged until we have a good ratio of
         # background counts
-        ann_rmax = math.ceil(C_OUT * fwhm_guess)
+        ann_rmax = math.ceil(C_OUT * fwhm_guess) + 1
         not_enough = True
         while not_enough:
-            annulus = orb.cutils.surface_value(box_dimx, box_dimy,
-                                               x_guess, y_guess,
-                                               ann_rmin, ann_rmax,
-                                               SUR_VAL_COEFF)
+            if annulus_surface is None or annulus_surface.shape != (box_dimx, box_dimy):
+                annulus_surface = np.copy(orb.cutils.surface_value(
+                    box_dimx, box_dimy,
+                    x_guess, y_guess,
+                    ann_rmin, ann_rmax,
+                    SUR_VAL_COEFF))
+            # saved for clean output if return_surfaces is True
+            base_annulus_surface= np.copy(annulus_surface)
             
-            annulus[np.nonzero(annulus < 1.)] = 0. # no partial pixels are used
+            annulus_surface[np.nonzero(annulus_surface < 1.)] = 0. # no partial pixels are used
        
-            if (np.sum(annulus) >
+            if (np.sum(annulus_surface) >
                 float(MIN_BACK_COEFF) *  np.sum(aperture_surface)):
                 not_enough = False
             elif ann_rmax >= min(box_dimx, box_dimy) / 2.:
                 not_enough = False
             else:
                 ann_rmax += 0.5
+                annulus_surface = None
 
         # background in counts / pixel
-        if (np.sum(annulus) >
+        if (np.sum(annulus_surface) >
             float(MIN_BACK_COEFF) *  np.nansum(aperture_surface)):
-            background_pixels = star_box[np.nonzero(annulus)]
+            background_pixels = star_box[np.nonzero(annulus_surface)]
             # background level is computed from the mode of the sky
             # pixels distribution
             background, background_err = sky_background_level(
@@ -832,10 +860,99 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     aperture_flux = total_aperture - (background *  np.nansum(aperture_surface))
     aperture_flux_error = background_err * np.nansum(aperture_surface)
 
-    return (aperture_flux, aperture_flux_error,
-            np.nansum(aperture_surface), bad,
-            background, background_err)
+    returns = (aperture_flux, aperture_flux_error,
+               np.nansum(aperture_surface), bad,
+               background, background_err)
+    if not return_surfaces:
+        return returns
+    else:
+        return returns, base_aperture_surface, base_annulus_surface
 
+def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
+    """Detect stars FWHM in a frame.
+
+    .. warning:: star positions must be known precisely
+
+    :param frame: Frame
+
+    :param star_list: List of the positions of the stars used to
+      detect FWHM.
+
+    :param fwhm_guess_pix: Initial guess on the FWHM of the stars.
+
+    :return: (FWHM, FWHM_ERR) in pixels
+    """
+    FIT_BOXSZ_COEFF = 4
+    
+    fit_params = orb.cutils.multi_fit_stars(
+        np.array(frame, dtype=float),
+        np.array(star_list), fwhm_guess_pix*FIT_BOXSZ_COEFF,
+        height_guess=np.nanmedian(frame),
+        fwhm_guess=np.array(fwhm_guess_pix, dtype=np.float),
+        cov_height=False,
+        cov_pos=True,
+        cov_fwhm=True,
+        fix_height=True,
+        fix_pos=True,
+        fix_fwhm=False,
+        enable_zoom=False,
+        enable_rotation=False,
+        estimate_local_noise=False)
+    
+    return fit_params['stars-params'][0,4], fit_params['stars-params-err'][0,4]
+
+
+def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
+                              aper_coeff=3., detect_fwhm=False,
+                              silent=False):
+    """Aperture photometry of multiple sources in a frame.
+
+    :param frame: Frame
+
+    :param pos_list: List of the positions of the sources
+
+    :param fwhm_guess_pix: Initial guess on the FWHM of the sources.
+
+    :param aper_coeff: (Optional) Aperture coefficient used for
+      photometry (default 3.).
+
+    :param detect_fwhm: (Optional) If True FWHM is automatically
+      computed from a fit on the sources. Sources must be stars or
+      bright point sources. If most of the sources are stars this
+      might work well enough (default False).
+
+    :param silent: (Optional) Silent function if True (default False).
+    """
+    PHOT_BOXSZ_COEFF = 17
+
+    if detect_fwhm:
+        fwhm_guess_pix, fwhm_err = detect_fwhm_in_frame(
+            frame, pos_list, fwhm_guess_pix)
+        if not silent:
+            print 'Detected FWHM: {} [+/- {}] pixels'.format(fwhm_guess_pix, fwhm_err)
+    results = list()
+    pos_list = np.array(pos_list)
+    aper_surf = None
+    annu_surf = None
+    for istar in range(pos_list.shape[0]):
+        ix, iy = pos_list[istar, :2]
+        x_min, x_max, y_min, y_max = orb.utils.image.get_box_coords(
+            ix, iy, fwhm_guess_pix*PHOT_BOXSZ_COEFF,
+            0, frame.shape[0],
+            0, frame.shape[1])
+        star_box = frame[x_min:x_max, y_min:y_max]
+        photom_result, aper_surf, annu_surf = aperture_photometry(
+            star_box, fwhm_guess_pix, aper_coeff=aper_coeff,
+            return_surfaces=True, aperture_surface=aper_surf,
+            annulus_surface=annu_surf)
+        
+        results.append({'aperture_flux':photom_result[0],
+                        'aperture_flux_err':photom_result[1],
+                        'aperture_surface':photom_result[2],
+                        'aperture_flux_bad':photom_result[3],
+                        'aperture_background':photom_result[4],
+                        'aperture_background_err':photom_result[5]})
+    return results
 
 def load_star_list(star_list_path, silent=False):
     """Load a list of stars coordinates
@@ -880,7 +997,7 @@ def load_star_list(star_list_path, silent=False):
     return star_list
 
 def radial_profile(a, xc, yc, rmax):
-    """Return the averaged radial profile on a region of a 2D array.
+    """Return the average radial profile on a region of a 2D array.
 
     :param a: A 2D array
     
@@ -1104,6 +1221,7 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
       star_list_B = sip_im2pix(star_list_B, sip_B)
         
     return star_list_B
+
 
 def get_profile(profile_name):
     """Return the PSF profile class corresponding to the given profile name.

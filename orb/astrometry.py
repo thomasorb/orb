@@ -1439,7 +1439,7 @@ class Astrometry(Tools):
         """Ratio of the number of pre-detected stars over the minimum
         number of stars"""
         
-        MIN_FWHM_COEFF = 0.8
+        MIN_FWHM_COEFF = 0.5
         """Coefficient used to determine the minimum FWHM given the
         Rough stars FWHM. """
 
@@ -1566,7 +1566,7 @@ class Astrometry(Tools):
 
         # check FWHM value to ensure that it is a star and reject too
         # large or too narrow structures (e.g. galaxies and hot pixels)
-        median_fwhm = utils.stats.robust_mean(utils.stats.sigmacut(
+        median_fwhm = utils.stats.robust_median(utils.stats.sigmacut(
             fwhm_list, sigma=3.))
         std_fwhm = utils.stats.robust_std(utils.stats.sigmacut(
             fwhm_list, sigma=3.))

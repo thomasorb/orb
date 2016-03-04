@@ -287,61 +287,6 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
         np.array(rest_line, dtype=np.longdouble),
         wavenumber=wavenumber)
 
-def flambda2ABmag(flambda, lam):
-    """Return AB magnitude from flux in erg/cm2/s/A
-
-    :param flambda: Flux in erg/cm2/s/A. Can be an array.
-
-    :param lambda: Wavelength in A of the Flux. If flambda is an array
-      lambda must have the same shape.
-    """
-    c = 2.99792458e18 # Ang/s
-    fnu = lam**2./c*flambda
-    ABmag = -2.5 * np.log10(fnu) - 48.60
-    return ABmag
-
-def ABmag2fnu(ABmag):
-    """Return flux in erg/cm2/s/Hz from AB magnitude (Oke, ApJS, 27,
-    21, 1974)
-
-    ABmag = -2.5 * log10(f_nu) - 48.60
-    f_nu = 10^(-0.4 * (ABmag + 48.60))
-
-    :param ABmag: A magnitude in the AB magnitude system
-
-    .. note:: Definition of the zero-point can change and be
-      e.g. 48.59 for Oke standard stars (Hamuy et al., PASP, 104, 533,
-      1992). This is the case for Spectrophotometric Standards given
-      on the ESO website (https://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html). Here the HST definition is used.
-    """
-    return 10**(-0.4*(ABmag + 48.60))
-
-def fnu2flambda(fnu, nu):
-    """Convert a flux in erg/cm2/s/Hz to a flux in erg/cm2/s/A
-
-    :param fnu: Flux in erg/cm2/s/Hz
-    :param nu: frequency in Hz
-    """
-    c = 2.99792458e18 # Ang/s
-    return fnu * nu**2. / c
-
-def lambda2nu(lam):
-    """Convert lambda in Ang to nu in Hz
-
-    :param lam: Wavelength in angstrom
-    """
-    c = 2.99792458e18 # Ang/s
-    return c / lam
-
-def ABmag2flambda(ABmag, lam):
-    """Convert AB magnitude to flux in erg/cm2/s/A
-
-    :param ABmag: A magnitude in the AB magnitude system
-
-    :param lam: Wavelength in angstrom
-    """
-    return fnu2flambda(ABmag2fnu(ABmag), lambda2nu(lam))
-
 def lorentzian1d(x, h, a, dx, fwhm):
     """Return a 1D lorentzian
     :param x: Array giving the positions where the function is evaluated

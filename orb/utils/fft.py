@@ -1045,52 +1045,6 @@ def variable_me(n, params):
      me.imag = (me_imag * np.cos(phi) + me_real * np.sin(phi)) * a
      return me
 
-def find_phase_coeffs_brute_force(interf, step, order, zpd_shift,
-                                  div_nb=400):
-    """Return phase coefficients (order0, order1) based on a brute
-    force method which finds where the standard deviation of the
-    imaginary part is minimized.
-
-    Especially useful to get a good guess on the order 1.
-
-    :param interf: Interferogram
-    
-    :param step: Step size in nm.
-    
-    :param order: Folding order.
-    
-    :param zpd_shift: ZPD shift.
-    
-    :param div_nb: (Optional) Number of division along each axis of
-      the search matrix (the more divisions, the more precise will be
-      the result) (default 400).
-    """
-
-    x0 = np.linspace(-math.pi/4., math.pi/4., div_nb)
-    x1 = np.linspace(-math.pi/2., math.pi/2., div_nb)
-    
-    matrix = np.empty((div_nb, div_nb), dtype=float)
-    matrix.fill(np.nan)
-    print '> Searching phase coefficients by brute force'
-    for i0 in range(div_nb):
-        sys.stdout.write('\r {}/{}'.format(i0, div_nb))
-        sys.stdout.flush()
-        for i1 in range(div_nb):
-            ext_phase = np.polyval([x1[i1], x0[i0]], np.arange(np.size(interf)))
-            a_fft = transform_interferogram(
-                interf, 1., 1., step, order, '2.0', zpd_shift,
-                wavenumber=True,
-                ext_phase=ext_phase,
-                return_complex=True,
-                phase_correction=True)
-            matrix[i0,i1] = np.nanstd(a_fft.imag)
-
-    matrix_min = np.unravel_index(np.argmin(matrix), matrix.shape)
-    a0 = x0[matrix_min[0]]
-    a1 = x1[matrix_min[1]]
-    print ' > order0: {}, order1: {}'.format(a0, a1)
-
-    return a0, a1
 
 def optimize_phase(interf, step, order, zpd_shift,
                    calib, nm_laser,
@@ -1135,7 +1089,8 @@ def optimize_phase(interf, step, order, zpd_shift,
         p = np.empty_like(findex, dtype=float)
         p[np.nonzero(findex==0)] = vp
         p[np.nonzero(findex)] = fp
-        ext_phase = np.polyval(p, np.arange(np.size(interf)))
+        ext_phase = np.polynomial.polynomial.polyval(
+            np.arange(np.size(interf)), p)
         if high_phase is not None:
             ext_phase += high_phase
         # phase correction
@@ -1184,27 +1139,16 @@ def optimize_phase(interf, step, order, zpd_shift,
         res = (np.sqrt(np.nanmean(optim[2]['fvec']**2.))
                /interf_mean_energy(interf))
         if not return_coeffs:
-            return np.polyval(p, np.arange(np.size(interf))) + high_phase
+            optim_phase = np.polynomial.polynomial.polyval(
+                np.arange(np.size(interf)), p)
+            if high_phase is not None:
+                return optim_phase + high_phase
+            else:
+                return optim_phase
         else:
             return p, res
     else: return None
 
-
-def create_phase_vector(order_0, other_orders, n):
-    """Create a phase vector.
-
-    :param order_0: Order 0 coefficient
-    
-    :param other_orders: Other orders coefficients (in ascending
-      order).
-
-    :param n: Length of the phase vector
-    """
-    coeffs_list = list()
-    coeffs_list.append(order_0)
-    coeffs_list += other_orders
-    return np.polynomial.polynomial.polyval(
-        np.arange(n), coeffs_list)
 
 
 def create_mean_phase_vector(phase_cube, step, order,
@@ -1304,7 +1248,7 @@ def create_phase_file(file_path, phase_vector, cm1_axis):
 
     Phase vector is interpolated via a cubic spline.
 
-    :param file_path: Path to the output phae file.
+    :param file_path: Path to the output phase file.
 
     :param phase_vector: Phase vector
 

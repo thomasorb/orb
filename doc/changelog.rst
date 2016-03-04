@@ -734,3 +734,14 @@ Miscellaneous
   output.
 
 * :py:mod:`orb.viewer` updated for the last matplotlib version (1.5.1).
+
+
+v.1.6.2
+=======
+
+
+Miscellaneous
+-------------
+
+- moved Standard class from orbs.process to orb.core
+

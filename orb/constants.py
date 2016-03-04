@@ -42,3 +42,7 @@ FITS_CARD_MAX_STR_LENGTH = 18
 
 SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/NSV?"
 """Sesame URL """
+
+
+HEISEN = 6.6260755e-27
+"""Heisenberg constant in erg.s """

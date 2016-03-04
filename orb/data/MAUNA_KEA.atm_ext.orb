@@ -1,17 +1,17 @@
+## ORB atmospheric extinction file for Mauna Kea
 #
-#   VizieR Astronomical Server vizier.u-strasbg.fr
-#    Date: 2014-07-25T17:58:48 [V1.99+ (14-Oct-2013)]
+#   VizieR Astronomical Server vizier.cfa.harvard.edu
+#    Date: 2016-03-02T15:46:48 [V1.99+ (14-Oct-2013)]
 #   In case of problem, please report to:	cds-question@unistra.fr
 #
 #
 #Coosys	J2000:	eq_FK5 J2000
 #INFO	votable-version=1.99+ (14-Oct-2013)	
-#INFO	-ref=VIZ53d29a5b52b7	
+#INFO	-ref=VIZ56d70ab83ae0	
 #INFO	-out.max=unlimited	
-#INFO	queryParameters=12	
+#INFO	queryParameters=10	
 #-oc.form=dec
 #-out.max=unlimited
-#-out.all=2
 #-nav=cat:J/A+A/549/A8&tab:{J/A+A/549/A8/snfext}&key:source=J/A+A/549/A8&HTTPPRM:&
 #-source=J/A+A/549/A8/snfext
 #-order=I
@@ -20,8 +20,7 @@
 #-out=kR
 #-out=kO3
 #-out=ka
-#-out.all=2
-
+#
 #RESOURCE=yCat_35490008
 #Name: J/A+A/549/A8
 #Title: Atmospheric extinction properties above Mauna Kea (Buton+, 2013)
@@ -33,9 +32,9 @@
 #Column	kR	(D14.7)	Rayleigh scattering, in mag/airmass unit (\wGraph{J/A+A/549/A8/kR}{}{spectrum of kR for \lambda=320-1030nm})	[ucd=obs.atmos.extinction]
 #Column	kO3	(D14.7)	Ozone scattering, in mag/airmass unit (\wGraph{J/A+A/549/A8/kO3}{}{spectrum of kO3 for \lambda=320-1030nm})	[ucd=obs.atmos.extinction]
 #Column	ka	(D14.7)	Aerosols scattering, in mag/airmass unit (\wGraph{J/A+A/549/A8/ka}{}{spectrum of ka for \lambda=320-1030nm})	[ucd=obs.atmos.extinction]
-lambda	Ext	kR	kO3	ka
-0.1nm	mag	mag	mag	mag
---------------	--------------	--------------	--------------	--------------
+#lambda	Ext	kR	kO3	ka
+#0.1nm	mag	mag	mag	mag
+#--------------	--------------	--------------	--------------	--------------
  3.2000000e+03	 8.5643510e-01	 6.0606410e-01	 2.1433860e-01	 3.6032310e-02
  3.2020000e+03	 8.4014970e-01	 6.0446050e-01	 1.9968530e-01	 3.6003920e-02
  3.2040000e+03	 8.1229260e-01	 6.0286220e-01	 1.7345490e-01	 3.5975580e-02

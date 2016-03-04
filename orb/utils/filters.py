@@ -82,7 +82,7 @@ def get_phase_fit_order(filter_file_path):
 
 def read_filter_file(filter_file_path):
     """
-    Read a file containing a the filter transmission function.
+    Read a file containing the filter transmission function.
 
     :param filter_file_path: Path to the filter file.
 
@@ -132,6 +132,8 @@ def read_filter_file(filter_file_path):
     if filter_nm[0] > filter_nm[1]:
         filter_nm = filter_nm[::-1]
         filter_trans = filter_trans[::-1]
+
+    filter_file.close()
         
     return filter_nm, filter_trans, filter_min, filter_max
 
@@ -274,7 +276,7 @@ def get_filter_function(filter_file_path, step, order, n,
         # filter edges converted to index of the filter vector
         filter_min = int(fpix_axis(filter_min))
         filter_max = int(fpix_axis(filter_max))
-
+        
     if not wavenumber:
         return filter_function, filter_min, filter_max
     else:
