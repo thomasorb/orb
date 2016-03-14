@@ -86,6 +86,13 @@ def ABmag2flambda(ABmag, lam):
 
 
 def read_atmospheric_extinction_file(file_path):
+    """Read atmospheric extinction file
+
+    :param file_path: Path to the atmospheric extinction file.
+
+    :return: a tuple (axis [in nm], atmospheric extinction in
+      [mag/airmass])
+    """
     with open(file_path, 'r') as f:
         wav = list()
         ext = list()
@@ -98,16 +105,49 @@ def read_atmospheric_extinction_file(file_path):
     return np.array(wav), np.array(ext)
 
 def get_atmospheric_extinction(file_path, step, order, step_nb):
+    """Return the atmospheric extinction curve in mag/airmass in the
+    range defined by the observation parameters along a reference nm
+    axis (on the interferometer optical axis).
+
+    :param file_path: Path to the file
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param step_nb: Number of step along the nm axis.
+    """
     axis, atm_ext = read_atmospheric_extinction_file(file_path)
     atm_extf = scipy.interpolate.UnivariateSpline(axis, atm_ext, s=0, k=3)
     nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
     return atm_extf(nm_axis)
 
 def get_atmospheric_transmission(file_path, step, order, step_nb, airmass=1):
+    """Return the atmospheric transmission curve at a given airmass
+    in the range defined by the observation parameters along a
+    reference nm axis (on the interferometer optical axis).
+
+    :param file_path: Path to the file
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param step_nb: Number of step along the nm axis.
+
+    :param airmass: (Optional) Airmass (default 1)
+    """
     atm_ext = get_atmospheric_extinction(file_path, step, order, step_nb)
     return 10**(-atm_ext*airmass/2.5)
 
 def read_quantum_efficiency_file(file_path):
+    """Read quantum efficiency file
+
+    :param file_path: Path to the file
+
+    :return: a tuple (axis [in nm], quantum efficiency (from 0 to 1))
+    """
+  
     with open(file_path, 'r') as f:
         wav = list()
         qe = list()
@@ -120,6 +160,18 @@ def read_quantum_efficiency_file(file_path):
     return np.array(wav), np.array(qe)
 
 def get_quantum_efficiency(file_path, step, order, step_nb):
+    """Return the quantum efficiency curve in the range defined by the
+    observation parameters along a reference nm axis (on the
+    interferometer optical axis).
+
+    :param file_path: Path to the file
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param step_nb: Number of step along the nm axis.
+    """
     axis, qe = read_quantum_efficiency_file(file_path)
     qef = scipy.interpolate.UnivariateSpline(axis, qe, s=0, k=3)
     nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
@@ -127,6 +179,12 @@ def get_quantum_efficiency(file_path, step, order, step_nb):
 
 
 def read_mirror_transmission_file(file_path):
+    """Read mirror transmission file
+
+    :param file_path: Path to the file
+
+    :return: a tuple (axis [in nm], Mirror transmission (from 0 to 1))
+    """
     with open(file_path, 'r') as f:
         wav = list()
         mir_trans = list()
@@ -139,6 +197,18 @@ def read_mirror_transmission_file(file_path):
     return np.array(wav), np.array(mir_trans)
 
 def get_mirror_transmission(file_path, step, order, step_nb):
+    """Return the mirror transmission curve in mag/airmass in the
+    range defined by the observation parameters along a reference nm
+    axis (on the interferometer optical axis).
+
+    :param file_path: Path to the file
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param step_nb: Number of step along the nm axis.
+    """
     axis, mir_trans = read_mirror_transmission_file(file_path)
     mir_transf = scipy.interpolate.UnivariateSpline(axis, mir_trans, s=0, k=3)
     nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
@@ -188,29 +258,61 @@ def read_optics_file(optics_file_path):
     return optics_nm, optics_trans
 
 def get_optics_transmission(file_path, step, order, step_nb):
+    """Return the optics transmission curve in mag/airmass in the
+    range defined by the observation parameters along a reference nm
+    axis (on the interferometer optical axis).
+
+    :param file_path: Path to the file
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param step_nb: Number of step along the nm axis.
+    """
     axis, optics_trans = read_optics_file(file_path)
     optics_transf = scipy.interpolate.UnivariateSpline(axis, optics_trans, s=0, k=1)
     nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
     return optics_transf(nm_axis)
 
 def compute_mean_star_flux(star_spectrum, filter_transmission):
+    """Return mean star flux given a spectrum and the filter. Both
+    files must be given along the same wavelength/wavenumber axis.
 
+    :param star_spectrum: Spectrum of the star
+    :param filter_transmission: Filter transmission curve
+    """
     return (np.sum(star_spectrum * filter_transmission)
             / np.sum(filter_transmission))
 
 
 def compute_mean_photon_energy(nm_axis, filter_transmission):
+    """Return mean energy of the photons passing thourgh a given
+    filter.
     
+    :param nm_axis: Filter transmission axis in nm.
+    :param filter_transmission: Filter transmission curve
+    """
     ph_energy_spectrum = compute_photon_energy(nm_axis)
     return (np.sum(ph_energy_spectrum * filter_transmission)
             / np.sum(filter_transmission))
 
 def compute_photon_energy(nm_axis):
+    """Return the photon energy computed for all the wavelength along
+    a given wavelength axis.
+
+    :param nm_axis: Wavelength axis in nm
+    """
     return (orb.constants.HEISEN
             * orb.constants.LIGHT_VEL_KMS * 1e12
             / nm_axis)
 
 def compute_equivalent_bandwidth(nm_axis, filter_transmission):
+    """Return the equivalent bandwidth of a given filter.
+
+    :param nm_axis: Filter transmission axis in nm.
+    :param filter_transmission: Filter transmission curve
+    """
     return np.nansum(np.diff(nm_axis) * filter_transmission[:-1]
                      / np.nanmax(filter_transmission))
 
@@ -219,6 +321,15 @@ def compute_star_flux_in_frame(nm_axis, star_flux, filter_trans,
                                optics_trans, atm_trans,
                                mirror_trans, qe, mirror_surface, ccd_gain):
     """Return the estimation of the flux of a star in counts/s in one image.
+
+    :param nm_axis: Wavelentgh axis in nm
+    :param star_flux: Star flux curve in ergs/cm2/s/A
+    :param filter_trans: Transmission curve of the filter
+    :param optics_trans: Transmission of the optics
+    :param atm_trans: Transmission of the atmosphere
+    :param qe: Quantum Efficiency curve of the detector
+    :param mirror_surface: Surface of the primary mirror in cm2
+    :param ccd_gain: Gain of the detector.
     """
     flux = star_flux # erg/cm2/s/A
     flux /= compute_photon_energy(nm_axis) # photons/s/A
@@ -236,7 +347,12 @@ def compute_star_flux_in_frame(nm_axis, star_flux, filter_trans,
     return flux
 
 def compute_star_central_pixel_value(seeing, plate_scale):
-    
+    """Return the relative value of the pixel containing the greatest
+    proportion of the flux (central pixel) of Gaussian star.
+
+    :param seeing: Star FWHM in arcsec
+    :param plate_scale: Size of the pixels in arcsec.
+    """
     N = 100
     fwhm_pix = seeing / plate_scale
     star = Gaussian([0,1,N/2,N/2,fwhm_pix]).array2d(N,N)
@@ -245,6 +361,14 @@ def compute_star_central_pixel_value(seeing, plate_scale):
 
 def compute_optimal_texp(star_flux, seeing, plate_scale,
                          saturation=30000):
+    """Compute the optimal exposure time given the total flux of the
+    star in ADU/s.
+
+    :param star_flux: Total star flux in ADU/s
+    :param seeing: Star FWHM in arcsec
+    :param plate_scale: Size of 1 pixel in arcsec.
+    :param saturation: (Optional) Saturation value (default 30000).
+    """
 
     print 'Optimal exposure time is computed for a saturation value of: {} counts'.format(saturation)
     max_flux = compute_star_central_pixel_value(
@@ -253,7 +377,16 @@ def compute_optimal_texp(star_flux, seeing, plate_scale,
     return saturation/max_flux
     
 def fit_std_spectrum(real_spectrum, std_spectrum, polydeg=2):
+    """Fit a real spectrum multiplied by a polynomial over a standard
+    spectrum.
 
+    Return the polynomial which can be used directly as a calibration
+    curve.
+
+    :param real_spectrum: Observed spectrum
+    :param std_spectrum: Standard spectrum
+    :param polydeg: Degree of the polynomial
+    """
 
     def model(p, x, real_spectrum):
         return (real_spectrum

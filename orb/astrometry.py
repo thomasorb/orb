@@ -31,9 +31,6 @@ __docformat__ = 'reStructuredText'
 
 import os
 import math
-import urllib2
-import socket
-import StringIO
 import warnings
 import time
 
@@ -49,6 +46,7 @@ import utils.astrometry
 import utils.image
 import utils.stats
 import utils.vector
+import utils.web
 import cutils
 
 
@@ -441,6 +439,7 @@ class Astrometry(Tools):
     frame_nb = None # Number of frames in the data cube
     _silent = False # If True only warnings and error message will be
                     # printed
+    deep_frame = None # computed deep frame
 
     target_x = None # X position of a target
     target_y = None # Y position of a target
@@ -477,14 +476,7 @@ class Astrometry(Tools):
     """Dark current level in ADU/pixel (can be computed from dark frames:
     median(master_dark_frame))"""
 
-    base_url_ca = "http://vizier.hia.nrc.ca/viz-bin/"
-    """Beginning of the URL to the Vizier server in Canada"""
     
-    base_url = "http://webviz.u-strasbg.fr/viz-bin/"
-    """Beginning of the URL to the Vizier server"""
-
-    BASE_URL = base_url
-    """Beginning of the URL to the Vizer server by default"""
 
     
     def __init__(self, data, fwhm_arc, fov, profile_name='gaussian',
@@ -659,10 +651,14 @@ class Astrometry(Tools):
           (default False)
         """
         # If we have 3D data we work on a combined image of the first
-        # frames to detect stars
+        # frames
+        if self.deep_frame is not None:
+            return np.copy(self.deep_frame)
         if self.dimz > 1:
             if use_deep_frame:
-                return self.data.get_median_image().astype(float)
+                self.deep_frame = self.data.get_median_image().astype(float)
+                return self.deep_frame
+            
             
             stack_nb = self.detect_stack
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
@@ -773,10 +769,26 @@ class Astrometry(Tools):
             self._print_error("Scale not defined")
 
     def fwhm(self, x):
+        """Return fwhm from width
+
+        :param x: width
+        """
         return x * abs(2.*math.sqrt(2. * math.log(2.)))
 
     def width(self, x):
+        """Return width from fwhm
+
+        :param x: fwhm.
+        """
         return x / abs(2.*math.sqrt(2. * math.log(2.)))
+
+
+    def set_deep_frame(self, deep_frame_path):
+        deep_frame = self.read_fits(deep_frame_path)
+        if deep_frame.shape == (self.dimx, self.dimy):
+            self.deep_frame = deep_frame
+        else:
+            self._print_error('Deep frame must have the same shape')
 
     def load_fit_results(self, fit_results_path=None):
         """Load a file containing the fit results"""
@@ -1679,11 +1691,7 @@ class Astrometry(Tools):
     def query_vizier(self, catalog='USNO-B1.0', max_stars=100):
         """Return a list of star coordinates around an object in a
         given radius based on a query to VizieR Services
-        (http://vizier.u-strasbg.fr/viz-bin/VizieR)
-
-        Note that the idea of this method has been picked from an IDL
-        function: QUERYVIZIER
-        (http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro)
+        (http://vizier.u-strasbg.fr/viz-bin/VizieR)    
 
         :param radius: (Optional) Radius around the target in
           arc-minutes (default 7).
@@ -1694,75 +1702,15 @@ class Astrometry(Tools):
         :param max_stars: (Optional) Maximum number of row to retrieve
           (default 100)
 
-        .. note:: Some catalogs that can be used::
-          'V/139' - Sloan SDSS photometric catalog Release 9 (2012)
-          '2MASS-PSC' - 2MASS point source catalog (2003)
-          'GSC2.3' - Version 2.3.2 of the HST Guide Star Catalog (2006)
-          'USNO-B1' - Verson B1 of the US Naval Observatory catalog (2003)
-          'UCAC4'  - 4th U.S. Naval Observatory CCD Astrograph Catalog (2012)
-          'B/DENIS/DENIS' - 2nd Deep Near Infrared Survey of southern Sky (2005)
-          'I/259/TYC2' - Tycho-2 main catalog (2000)
-          'I/311/HIP2' - Hipparcos main catalog, new reduction (2007)
+        .. seealso:: :py:meth:`orb.utils.web.query_vizier`
         """
-        MAX_RETRY = 5
-        
         radius = self.fov / math.sqrt(2)
-
         if self.target_ra is None or self.target_dec is None:
             self._print_error('No catalogue query can be done. Please make sure to give target_radec and target_xy parameter at class init')
-            
-        self._print_msg("Sending query to VizieR server")
-        self._print_msg("Looking for stars at RA: %f DEC: %f"%(
-            self.target_ra, self.target_dec))
         
-        URL = (self.BASE_URL + "asu-tsv/?-source=" + catalog
-               + "&-c.ra=%f"%self.target_ra + '&-c.dec=%f'%self.target_dec
-               + "&-c.rm=%d"%int(radius)
-               + '&-out.max=unlimited&-out.meta=-huD'
-               + '&-out=_RAJ2000,_DEJ2000,R2mag&-sort=-R2mag'
-               + '&-out.max=%d'%max_stars)
-        
-        retry = 0
-        while retry <= MAX_RETRY:
-            try:
-                query_result = urllib2.urlopen(URL, timeout=5)
-                break
-            
-            except urllib2.URLError:
-                retry += 1
-                self._print_warning(
-                    'Vizier timeout, retrying ... {}/{}'.format(
-                        retry, MAX_RETRY))
-            except socket.timeout:
-                retry += 1
-                self._print_warning(
-                    'Vizier timeout, retrying ... {}/{}'.format(
-                        retry, MAX_RETRY))
-                
-        if retry > MAX_RETRY:
-            self._print_error(
-                'Vizier server unreachable, try again later')
-            
-        query_result = query_result.read()
-        output = StringIO.StringIO(query_result)
-        star_list = list()
-        for iline in output:
-            if iline[0] != '#' and iline[0] != '-' and len(iline) > 3:
-                iline = iline.split()
-                if len(iline) == 3:
-                    star_list.append((float(iline[0]),
-                                      float(iline[1]),
-                                      float(iline[2])))
-
-        # sorting list to get the brightest stars first
-        star_list = np.array(sorted(star_list, key=lambda istar: istar[2]))
-    
-        self._print_msg(
-            "%d stars recorded in the given field"%len(star_list))
-        self._print_msg(
-            "Magnitude min: {}, max:{}".format(
-                 np.min(star_list[:,2]), np.max(star_list[:,2])))
-        return star_list
+        return utils.web.query_vizier(
+            radius, self.target_ra, self.target_dec,
+            catalog=catalog, max_stars=max_stars)
 
 
 
@@ -1779,7 +1727,7 @@ class Astrometry(Tools):
         
         :param max_stars: (Optional) Maximum number of stars used to
           fit (default 50)
-
+          
         :param full_deep_frame: (Optional) If True all the frames of
           the cube are used to create a deep frame. Use it only when
           the frames in the cube are aligned. In the other case only
@@ -1894,14 +1842,16 @@ class Astrometry(Tools):
       
         MIN_STAR_NB = 5 # Minimum number of stars to get a correct WCS
 
-        XYRANGE_STEP_NB = 60. # Define the number of steps for the rough guess
+        XYRANGE_STEP_NB = 30. # Define the number of steps for the
+                              # brute force guess
         
-        SIZE_COEFF = 0.030 # Define the range of pixels around the
+        SIZE_COEFF = 0.100 # Define the range of pixels around the
                            # initial value of shift where the correct
                            # shift parameters must be found.
 
-        ANGLE_STEPS = 100
+        ANGLE_STEPS = 12
         ANGLE_RANGE = 6.0
+        ZOOM_RANGE_COEFF = 0.010
         
         if not (self.target_ra is not None and self.target_dec is not None
                 and self.target_x is not None and self.target_y is not None
@@ -1912,22 +1862,36 @@ class Astrometry(Tools):
 
         self._print_msg("Initial scale: {} arcsec/pixel".format(self.scale))
         self._print_msg("Initial rotation: {} degrees".format(self.wcs_rotation))
-        
-        # get deep frame
-        if not full_deep_frame:
-            deep_frame = self._get_combined_frame()
-        else:
-            deep_frame = self.data.get_median_image().astype(float)
 
+        # get deep frame
+        deep_frame = self._get_combined_frame(
+            use_deep_frame=full_deep_frame)
+            
         deltax = self.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
 
         # get FWHM
-        star_list_init, fwhm_arc = self.detect_stars(
-            min_star_number=10,
+        star_list_init_path, fwhm_arc = self.detect_stars(
+            min_star_number=60,
             use_deep_frame=full_deep_frame)
+        star_list_init = self.load_star_list(star_list_init_path)
         self.box_size_coeff = 5.
         self.reset_fwhm_arc(fwhm_arc)
+
+        # clean deep frame by keeping only the pixels around the
+        # detected stars to avoid strong saturated stars.
+        deep_frame_corr = np.empty_like(deep_frame)
+        deep_frame_corr.fill(np.nan)
+        for istar in range(star_list_init.shape[0]):
+            x_min, x_max, y_min, y_max = utils.image.get_box_coords(
+                star_list_init[istar, 0],
+                star_list_init[istar, 1],
+                self.fwhm_pix*7,
+                0, deep_frame.shape[0],
+                0, deep_frame.shape[1])
+            deep_frame_corr[x_min:x_max,
+                            y_min:y_max] = deep_frame[x_min:x_max,
+                                                      y_min:y_max]
         
         # Query to get reference star positions in degrees
         star_list_query = self.query_vizier(max_stars=30 * max_stars)
@@ -1967,18 +1931,59 @@ class Astrometry(Tools):
         x_range_len = SIZE_COEFF * float(self.dimx)
         y_range_len = SIZE_COEFF * float(self.dimy)
   
-        x_range = np.linspace(-x_range_len/2, x_range_len/2, XYRANGE_STEP_NB)
-        y_range = np.linspace(-y_range_len/2, y_range_len/2, XYRANGE_STEP_NB)
-        r_range = np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2., ANGLE_STEPS)
+        x_range = np.linspace(-x_range_len/2, x_range_len/2,
+                              XYRANGE_STEP_NB * 2)
+        y_range = np.linspace(-y_range_len/2, y_range_len/2,
+                              XYRANGE_STEP_NB * 2)
+        r_range = np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2.,
+                              ANGLE_STEPS * 2)
         
         dx, dy, dr, guess_matrix = self.brute_force_guess(
-            deep_frame,
+            deep_frame_corr,
             star_list_pix, x_range, y_range, r_range,
-            [self.target_x, self.target_y], 1)
+            [self.target_x, self.target_y], 1.)
 
-        self.wcs_rotation -= dr
-        self.target_x -= dx
-        self.target_y -= dy
+        # refined brute force guess
+        x_range_len = SIZE_COEFF/10. * float(self.dimx)
+        y_range_len = SIZE_COEFF/10. * float(self.dimy)
+        finer_angle_range = ANGLE_RANGE / 4
+        x_range = np.linspace(dx-x_range_len/2, dx+x_range_len/2,
+                              XYRANGE_STEP_NB/2)
+        y_range = np.linspace(dy-y_range_len/2, dy+y_range_len/2,
+                              XYRANGE_STEP_NB/2)
+        r_range = np.linspace(dr-finer_angle_range/2., dr+finer_angle_range/2.,
+                              ANGLE_STEPS)
+
+        zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
+                                 1.+ZOOM_RANGE_COEFF/2., 10)
+        zoom_guesses = list()
+        for izoom in zoom_range:
+            dx, dy, dr, guess_matrix = self.brute_force_guess(
+                deep_frame_corr,
+                star_list_pix, x_range, y_range, r_range,
+                [self.target_x, self.target_y], izoom)
+            zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
+            self._print_msg('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
+
+        # sort brute force guesses to get the best one
+        best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
+
+        self.wcs_rotation -= best_guess[3]
+        self.target_x -= best_guess[1]
+        self.target_y -= best_guess[2]
+    
+        deltax *= best_guess[0]
+        deltay *= best_guess[0]
+
+        self._print_msg(
+            "Brute force guess of the parameters:\n"
+            + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
+            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                self.target_x, self.target_y)
+            + "> Scale X (arcsec/pixel): {:.5f}\n".format(
+                deltax * 3600.)
+            + "> Scale Y (arcsec/pixel): {:.5f}".format(
+                deltay * 3600.))
 
         # update wcs
         wcs = update_wcs(wcs, self.target_x, self.target_y,
@@ -2144,13 +2149,13 @@ class Astrometry(Tools):
             # the fit box gets fitted instead of the star at the
             # center of it. 
             dx = get_filtered_params(
-                fit_params, param='dx', dist_min=0.5)
+                fit_params, param='dx', dist_min=3.)
             dy = get_filtered_params(
-                fit_params, param='dy', dist_min=0.5)
+                fit_params, param='dy', dist_min=3.)
             x_err = get_filtered_params(
-                fit_params, param='x_err', dist_min=0.5)
+                fit_params, param='x_err', dist_min=3.)
             y_err = get_filtered_params(
-                fit_params, param='y_err', dist_min=0.5)
+                fit_params, param='y_err', dist_min=3.)
             
             precision = np.sqrt(dx**2. + dy**2.)
             precision_err = np.sqrt((dx**2. * x_err**2.
@@ -2191,9 +2196,9 @@ class Astrometry(Tools):
             + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
             + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
                 self.target_x, self.target_y)
-            + "> Scale X (arcsec/pixel): {:.3f}\n".format(
+            + "> Scale X (arcsec/pixel): {:.5f}\n".format(
                 deltax * 3600.)
-            + "> Scale Y (arcsec/pixel): {:.3f}".format(
+            + "> Scale Y (arcsec/pixel): {:.5f}".format(
                 deltay * 3600.))
 
         self.reset_scale(np.mean((deltax, deltay)) * 3600.)
@@ -2358,21 +2363,10 @@ class Astrometry(Tools):
                          guess_list[ik, 1],
                          guess_list[ik, 2], 0., 0.)
 
-                star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(
-                    np.copy(star_list), guess, rc, zoom_factor)
+                star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(np.copy(star_list), guess, rc, zoom_factor)
 
-                total_flux = 0.
-                for istar in range(star_list.shape[0]):
-                    ix, iy = star_list2[istar,:]
-                    if not np.isnan(ix) and not np.isnan(iy):
-                        x_min, x_max, y_min, y_max = orb.utils.image.get_box_coords(
-                            ix, iy, box_size,
-                            0, image.shape[0],
-                            0, image.shape[1])
-                        if ((x_max - x_min == box_size)
-                            and (y_max - y_min == box_size)):
-                            total_flux += np.nansum(
-                                image[x_min:x_max, y_min:y_max] * kernel)
+                total_flux = orb.cutils.brute_photometry(
+                    image, star_list2, kernel, box_size)
                 result[ik, 0] = total_flux
                 result[ik, 1:] = guess_list[ik]
         
@@ -2388,7 +2382,7 @@ class Astrometry(Tools):
         if len(r_range) > 1:
             self._print_msg('R = {:.2f}:{:.2f}:{:.2f}'.format(
                 np.min(r_range), np.max(r_range), r_range[1] - r_range[0]))
-        
+
         guess_list = list()
         guess_matrix = np.empty((len(x_range),
                                  len(y_range),
@@ -2432,7 +2426,8 @@ class Astrometry(Tools):
                   box_size, kernel),
             modules=("numpy as np",
                      "import orb.utils.astrometry",
-                     "import orb.utils.image"))) 
+                     "import orb.utils.image",
+                     "import orb.cutils"))) 
                 for ijob in range(ncpus)]
             
         for ijob, job in jobs:

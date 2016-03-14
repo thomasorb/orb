@@ -43,6 +43,11 @@ FITS_CARD_MAX_STR_LENGTH = 18
 SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/NSV?"
 """Sesame URL """
 
+VIZIER_URL_CA = "http://vizier.hia.nrc.ca/viz-bin/"
+"""Vizier URL in Canada """
+
+VIZIER_URL = "http://webviz.u-strasbg.fr/viz-bin/"
+"""Vizier URL in Canada """
 
 HEISEN = 6.6260755e-27
 """Heisenberg constant in erg.s """

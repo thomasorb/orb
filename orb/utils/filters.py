@@ -80,6 +80,21 @@ def get_phase_fit_order(filter_file_path):
     return None
 
 
+def get_modulation_efficiency(filter_file_path):
+    """
+    Return modulation efficiency if it exists and 1. instead
+    
+    :param filter_file_path: Path to the filter file.
+    """
+    with open(filter_file_path, 'r') as f:
+        for line in f:
+            if len(line) > 2:
+                if '# MODULATION_EFFICIENCY' in line:
+                    return float(line.strip().split()[2])
+    warnings.warn('MODULATION_EFFICIENCY keyword not in filter file: {}'.format(filter_file_path))
+    return 1.
+
+
 def read_filter_file(filter_file_path):
     """
     Read a file containing the filter transmission function.

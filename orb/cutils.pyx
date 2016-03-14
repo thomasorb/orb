@@ -2039,7 +2039,44 @@ def im2rgba(np.ndarray[np.float64_t, ndim=2] im,
                     
     return arr8
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def brute_photometry(np.ndarray[np.float64_t, ndim=2] im,
+                     np.ndarray[np.float64_t, ndim=2] star_list,
+                     np.ndarray[np.float64_t, ndim=2] kernel,
+                     int box_size):
 
+    cdef double total_flux = 0.
+    cdef int star_nb = star_list.shape[0]
+    cdef int istar
+    cdef int x_min, x_max, y_min, y_max
+    cdef int dimx = im.shape[0]
+    cdef int dimy = im.shape[1]
+    cdef int ii, ij
+    cdef double ix, iy
+    cdef double val
+
+    with nogil:
+        for istar in range(star_nb):
+            ix = star_list[istar,0]
+            iy = star_list[istar,1]
+            if not isnan(ix) and not isnan(iy):
+                x_min = <int> (ix - box_size/2)
+                y_min = <int> (iy - box_size/2)
+
+                if (ix + box_size < dimx
+                    and iy + box_size < dimy
+                    and x_min > 0
+                    and y_min > 0):
+                    for ii in range(box_size):
+                        for ij in range(box_size):
+                            val = (im[x_min+ii, y_min+ij]
+                                   * kernel[ii, ij])
+                            if not isnan(val):
+                                total_flux += val
+    return total_flux
+
+                     
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

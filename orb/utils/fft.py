@@ -444,12 +444,11 @@ def transform_interferogram(interf, nm_laser,
                             window_type, zpd_shift, phase_correction=True,
                             wave_calibration=True,
                             return_phase=False, ext_phase=None,
-                            weights=None, polyfit_deg=1,
                             balanced=True, bad_frames_vector=None,
                             smoothing_deg=2, return_complex=False,
                             final_step_nb=None, wavenumber=False,
                             low_order_correction=False,
-                            conserve_energy=False, high_order_phase=None):
+                            high_order_phase=None):
     
     """Transform an interferogram into a spectrum.
     
@@ -476,9 +475,11 @@ def transform_interferogram(interf, nm_laser,
       zeros (default None). This vector must be uncorrected for ZPD
       shift
 
-    :param phase_correction: (Optional) If False, no phase correction will
-      be done and the resulting spectrum will be the absolute value of the
-      complex spectrum (default True).
+    :param phase_correction: (Optional) If False, no phase correction
+      will be done and the resulting spectrum will be the absolute
+      value of the complex spectrum. Else the ext_phase vector will be
+      used for phase correction. If ext_phase is set to None,
+      ext_phase will be replaced by a vector of 0 (default True).
 
     :param wave_calibration: (Optional) If True wavenumber/wavelength
       calibration is done (default True).
@@ -492,14 +493,6 @@ def transform_interferogram(interf, nm_laser,
       the coefficients of the fitted phase (default False). Note that
       this option is not compatible with ext_phase. You must set
       ext_phase to None to set return_phase to True.
-
-    :param weights: (Optional) A vector of the same length as the
-      interferogram giving the weight of each point for interpolation
-      (Must be a float between 0. and 1.). If none is given, the
-      weights are defined by the amplitude of the vector.
-
-    :param polyfit_deg: (Optional) Degree of the polynomial fit to the
-      computed phase. If < 0, no fit will be performed (Default 1).
 
     :param smoothing_deg: (Optional) Degree of zeros smoothing. A
       higher degree means a smoother transition from zeros parts (bad
@@ -533,9 +526,6 @@ def transform_interferogram(interf, nm_laser,
       order polynomial to remove low frequency noise. Useful for
       unperfectly corrected interferograms (default False).
 
-    :param conserve_energy: (Optional) If True the energy is conserved
-      in the transformation (default False).
-
     :param high_order_phase: (Optional) High order phase to be added
       to the phase computed via a low order polynomial (generally 1
       order). Note that it must be a
@@ -543,16 +533,21 @@ def transform_interferogram(interf, nm_laser,
       process.
 
     .. note:: Interferogram can be complex
+
+    .. note:: Only NANs or INFs are interpreted as bad values
+    
     """
     MIN_ZEROS_LENGTH = 8 # Minimum length of a zeros band to smooth it
     interf = np.copy(interf)
     interf_orig = np.copy(interf)
+        
     if order == 0 and not wavenumber:
-        warnings.warn("order 0: Wavenumber output automatically set to True. Please set manually wavenumber option to True ifyou don't want this warning message to be printed.")
+        warnings.warn("order 0: Wavenumber output automatically set to True. Please set manually wavenumber option to True if you don't want to see this warning message.")
         wavenumber = True
    
     if return_phase and phase_correction:
         raise Exception("phase correction and return_phase cannot be all set to True")
+    
     if return_phase and ext_phase is not None:
         raise Exception("return_phase=True and ext_phase != None options are not compatible. Set the phase or get it !")
     
@@ -561,43 +556,39 @@ def transform_interferogram(interf, nm_laser,
     if final_step_nb is None:
         final_step_nb = dimz
     
-    # discard zeros interferogram
+    # discard zeros and nans interferogram
     if len(np.nonzero(interf)[0]) == 0:
         if return_phase:
             return None
         else:
             return interf
 
+    if np.all(np.isnan(interf)): return None
+
     # discard interferograms with a bad phase vector
     if ext_phase is not None:
         if np.any(np.isnan(ext_phase)):
             return None
 
-    if conserve_energy:
-        interf_energy = interf_mean_energy(interf)
-
-    # replace NaN and Inf values by zeros
-    interf[np.nonzero(np.isnan(interf))] = 0.
-    interf[np.nonzero(np.isinf(interf))] = 0.
+    # replace Inf by Nan
+    interf[np.nonzero(np.isinf(interf))] = np.nan
 
     # reverse unbalanced vector
     if not balanced:
         interf = -interf
-   
+
     #####
     # 1 - substraction of the mean of the interferogram where the
-    # interferogram is not 0
-    nonzero_pix = np.nonzero(interf != 0.)
-    if len(nonzero_pix[0])>0:
-        interf[nonzero_pix] -= np.mean(interf[nonzero_pix])
+    # interferogram is not nan
+    interf[~np.isnan(interf)] -= np.nanmean(interf)
         
     #####
     # 2 - low order polynomial substraction to suppress 
     # low frequency noise
     if low_order_correction:
-        interf[nonzero_pix] -= orb.utils.vector.polyfit1d(
-            interf, 3)[nonzero_pix]
-    
+        interf[~np.isnan(interf)] -= orb.utils.vector.polyfit1d(
+            interf, 3)[nonans]
+        
     #####
     # 3 - ZPD shift to center the spectrum
     if zpd_shift != 0:
@@ -622,9 +613,11 @@ def transform_interferogram(interf, nm_laser,
     # Smooth the transition between good parts and 'zeros' parts. We
     # use here a concept from Learner et al. (1995) Journal of the
     # Optical Society of America A, 12(10), 2165
+    
     zeros_vector = np.ones_like(interf)
-    zeros_vector[np.nonzero(interf == 0)] = 0
+    zeros_vector[np.isnan(interf)] = 0.
     zeros_vector = zeros_vector.real # in case interf is complex
+    interf[np.isnan(interf)] = 0. # replace nans by zeros in interf
     if bad_frames_vector is not None:
         zeros_vector[np.nonzero(bad_frames_vector)] = 0
     if len(np.nonzero(zeros_vector == 0)[0]) > 0:
@@ -642,60 +635,9 @@ def transform_interferogram(interf, nm_laser,
                 kind='cos_conv')
             zeros_vector = zeros_vector * (- zeros_vector[::-1] + 2)
             interf *= zeros_vector
-    
 
     #####
-    # 5 - Phase determination (Mertz method)
-    #
-    # We use the method described by Learner et al. (1995) Journal of
-    # the Optical Society of America A, 12(10), 2165
-    #
-    # The low resolution interferogram is a small part of the real
-    # interferogram taken symmetrically around ZPD
-    if phase_correction:
-        if ext_phase is None:
-            
-            lr_phase2, lr_spectrum2 = get_lr_phase(interf, n_phase=dimz,
-                                                   return_lr_spectrum=True)
-            lr_spectrum = transform_interferogram(
-                interf_orig, 1, 1, step, order, 'learner95', zpd_shift,
-                phase_correction=False, return_phase=False, polyfit_deg=-1,
-                wavenumber=True, ext_phase=None, final_step_nb=dimz,
-                return_complex=True)
-            if int(order) & 1: # must be inversed again if order is
-                               # even because the output is inversed
-                lr_spectrum = lr_spectrum[::-1]
-                    
-            lr_phase = np.unwrap(np.angle(lr_spectrum))
-        
-            # fit
-            if polyfit_deg >= 0:
-                # polynomial fitting must be weigthed in case of a spectrum
-                # without enough continuum.
-                if weights is None or not np.any(weights):
-                    weights = np.abs(lr_spectrum)
-                    # suppress noise on spectrum borders
-                    weights *= border_cut_window(lr_spectrum.shape[0])
-                    if np.max(weights) != 0.:
-                        weights /= np.max(weights)
-                    else:
-                        weights = np.ones_like(lr_spectrum)
-                    # remove parts with a bad signal to noise ratio
-                    weights[np.nonzero(weights < 0.25)] = 0.
-                else:
-                    if weights.shape[0] != lr_phase.shape[0]:
-                        weights = orb.utils.vector.interpolate_size(
-                            weights, lr_phase.shape[0], 1)
-
-                lr_phase, lr_phase_coeffs = orb.utils.vector.polyfit1d(
-                    lr_phase, polyfit_deg,
-                    w=weights, return_coeffs=True)
-            
-        else:
-            lr_phase = ext_phase
-
-    #####
-    # 6 - Apodization of the real interferogram
+    # 5 - Apodization of the real interferogram
     if window_type is not None and window_type != '1.0':
         if window_type in ['1.1', '1.2', '1.3', '1.4', '1.5',
                            '1.6', '1.7', '1.8', '1.9', '2.0']:
@@ -708,7 +650,7 @@ def transform_interferogram(interf, nm_laser,
         interf *= window
 
     #####
-    # 7 - Zero padding
+    # 6 - Zero padding
     #
     # Define the size of the zero padded vector to have at
     # least 2 times more points than the initial vector to
@@ -723,25 +665,28 @@ def transform_interferogram(interf, nm_laser,
     zero_padded_vector = temp_vector
 
     #####
-    # 8 - Zero the centerburst
+    # 7 - ZPD rolled at the beginning of the interferogram
     zero_padded_vector = np.roll(zero_padded_vector,
                                  zero_padded_vector.shape[0]/2)
     
     #####
-    # 9 - Fast Fourier Transform of the interferogram
+    # 8 - Fast Fourier Transform of the interferogram
     center = zero_padded_size / 2
     # spectrum is cropped at zero_padded_size / 2 instead of
     # zero_padded_size / 2 + 1 which would output a spectrum with 1
     # more sample than the input length. Computed axis must be
     # cropped accordingly.
     interf_fft = np.fft.fft(zero_padded_vector)[:center]
-
-    # normalization of the vector to take into account zero-padding 
+    
+    # normalization of the vector to take into account zero-padding
+    # and mimic a dispersive instrument: if the same energy is
+    # dispersed over more channels (more zeros) then you get less
+    # counts/channel
     if np.iscomplexobj(interf):
         interf_fft /= (zero_padded_size / dimz)
     else:
         interf_fft /= (zero_padded_size / dimz) / 2.
-
+                            
 
     #### Create spectrum original cm-1 axis
     if wave_calibration:
@@ -758,29 +703,43 @@ def transform_interferogram(interf, nm_laser,
             interf_fft.shape[0], step, order, corr=correction_coeff)
         
     #####
-    # 10 - Phase correction
+    # 9 - Phase correction
     if phase_correction:
+        if ext_phase is None:
+            ext_phase = np.zeros(dimz, dtype=float)
+
         if high_order_phase is not None:
             phase_axis = orb.utils.spectrum.create_cm1_axis(
                 interf_fft.shape[0], step, order,
                 corr=float(calibration_coeff) / nm_laser).astype(np.float64)
-            lr_phase += high_order_phase(phase_axis)
+            ext_phase += high_order_phase(phase_axis)
 
         # interpolation of the phase to zero padded size
-        lr_phase = orb.utils.vector.interpolate_size(
-            lr_phase, interf_fft.shape[0], 1)
-        
+        ext_phase = orb.utils.vector.interpolate_size(
+            ext_phase, interf_fft.shape[0], 1)
+    
         spectrum_corr = np.empty_like(interf_fft)
-        spectrum_corr.real = (interf_fft.real * np.cos(lr_phase)
-                              + interf_fft.imag * np.sin(lr_phase))
-        spectrum_corr.imag = (interf_fft.imag * np.cos(lr_phase)
-                              - interf_fft.real * np.sin(lr_phase))
+        spectrum_corr.real = (interf_fft.real * np.cos(ext_phase)
+                              + interf_fft.imag * np.sin(ext_phase))
+        spectrum_corr.imag = (interf_fft.imag * np.cos(ext_phase)
+                              - interf_fft.real * np.sin(ext_phase))
 
     else:
         spectrum_corr = interf_fft
+
+
+    ## if np.nanmax(interf) > 600:
+    ##     import pylab as pl
+    ##     pl.plot(zero_padded_vector)
+    ##     pl.plot(spectrum_corr.real)
+    ##     pl.plot(spectrum_corr.imag)
+    ##     pl.plot(np.abs(spectrum_corr))
+        
+    ##     #pl.plot(np.abs(np.fft.fft(interf)))
+    ##     pl.show()
         
     #####
-    # 11 - Off-axis effect correction with maxima map   
+    # 10 - Off-axis effect correction with maxima map   
     # Irregular wavelength axis creation
     
     # Spectrum is returned if folding order is even
@@ -808,10 +767,6 @@ def transform_interferogram(interf, nm_laser,
     # Extrapolated parts of the spectrum are set to NaN
     spectrum[np.nonzero(final_axis > np.max(base_axis))] = np.nan
     spectrum[np.nonzero(final_axis < np.min(base_axis))] = np.nan
-
-    if conserve_energy:
-        # Spectrum is rescaled to the modulation energy of the interferogram
-        spectrum = spectrum / spectrum_mean_energy(spectrum) * interf_energy
 
     if return_phase:
         return np.copy(np.unwrap(np.angle(spectrum)))
@@ -1151,97 +1106,97 @@ def optimize_phase(interf, step, order, zpd_shift,
 
 
 
-def create_mean_phase_vector(phase_cube, step, order,
-                             calib_map, nm_laser,
-                             filter_file_path,
-                             size_coeff=0.45,
-                             border_coeff=0.05):
+## def create_mean_phase_vector(phase_cube, step, order,
+##                              calib_map, nm_laser,
+##                              filter_file_path,
+##                              size_coeff=0.45,
+##                              border_coeff=0.05):
 
-    """Compute mean phase vector of order > 1.
+##     """Compute mean phase vector of order > 1.
 
-    :param phase_cube: Phase cube (generally binned) as computed by
-      ORBS Interferogram class.
+##     :param phase_cube: Phase cube (generally binned) as computed by
+##       ORBS Interferogram class.
 
-    :param step: Step size in nm
+##     :param step: Step size in nm
 
-    :param order: Folding order
+##     :param order: Folding order
 
-    :param filter_file_path: Filter file path
+##     :param filter_file_path: Filter file path
 
-    :param size_coeff: Relative size of the central part used to compute mean
-      phase vector.
+##     :param size_coeff: Relative size of the central part used to compute mean
+##       phase vector.
 
-    :param border_coeff: Relative size of the border inside the filter
-      edges. This part is not considered as good.
+##     :param border_coeff: Relative size of the border inside the filter
+##       edges. This part is not considered as good.
 
-    :returns: a tuple (Phase axis [cm-1], Phase [radians])
-    """
+##     :returns: a tuple (Phase axis [cm-1], Phase [radians])
+##     """
     
-    x_min, x_max, y_min, y_max = orb.utils.image.get_box_coords(
-        phase_cube.shape[0]/2,
-        phase_cube.shape[1]/2,
-        int(float(min(phase_cube.shape))*size_coeff),
-        0, phase_cube.shape[0],
-        0, phase_cube.shape[1])
+##     x_min, x_max, y_min, y_max = orb.utils.image.get_box_coords(
+##         phase_cube.shape[0]/2,
+##         phase_cube.shape[1]/2,
+##         int(float(min(phase_cube.shape))*size_coeff),
+##         0, phase_cube.shape[0],
+##         0, phase_cube.shape[1])
     
-    cm1_axis_base = orb.utils.spectrum.create_cm1_axis(
-                phase_cube.shape[2], step, order, corr=1.)
+##     cm1_axis_base = orb.utils.spectrum.create_cm1_axis(
+##                 phase_cube.shape[2], step, order, corr=1.)
     
-    phase = np.zeros(phase_cube.shape[2], dtype=float)
+##     phase = np.zeros(phase_cube.shape[2], dtype=float)
 
-    counts = 0
-    range_axis = np.arange(phase_cube.shape[2])
+##     counts = 0
+##     range_axis = np.arange(phase_cube.shape[2])
 
-    z_min, z_max = orb.utils.filters.get_filter_edges_pix(
-        filter_file_path, 1., step, order,
-        phase.shape[0])
+##     z_min, z_max = orb.utils.filters.get_filter_edges_pix(
+##         filter_file_path, 1., step, order,
+##         phase.shape[0])
 
-    border_pix = int(float(z_max - z_min) * border_coeff)
-    z_min += border_pix
-    z_max -= border_pix
+##     border_pix = int(float(z_max - z_min) * border_coeff)
+##     z_min += border_pix
+##     z_max -= border_pix
     
-    for ii in range(x_min, x_max):
-        phase_col = list()
-        for ij in range(y_min, y_max):
-            # interpolate phase to 0deg axis
-            corr =  calib_map[ii,ij] / nm_laser
-            cm1_axis = orb.utils.spectrum.create_cm1_axis(
-                phase_cube.shape[2], step, order, corr=corr)
-            iphase = phase_cube[ii,ij,:]
-            iphase = orb.utils.vector.interpolate_axis(
-                iphase, cm1_axis_base, 1, old_axis=cm1_axis)
-            if int(order) & 1: iphase = iphase[::-1]
-            # remove parts outside filter
-            iphase[:z_min] = np.nan
-            iphase[z_max:] = np.nan
+##     for ii in range(x_min, x_max):
+##         phase_col = list()
+##         for ij in range(y_min, y_max):
+##             # interpolate phase to 0deg axis
+##             corr =  calib_map[ii,ij] / nm_laser
+##             cm1_axis = orb.utils.spectrum.create_cm1_axis(
+##                 phase_cube.shape[2], step, order, corr=corr)
+##             iphase = phase_cube[ii,ij,:]
+##             iphase = orb.utils.vector.interpolate_axis(
+##                 iphase, cm1_axis_base, 1, old_axis=cm1_axis)
+##             if int(order) & 1: iphase = iphase[::-1]
+##             # remove parts outside filter
+##             iphase[:z_min] = np.nan
+##             iphase[z_max:] = np.nan
             
-            # remove a 1 order polynomial to avoid order 0 and order 1
-            # variable contribution.
-            range_nans = range_axis[~np.isnan(iphase)]
-            iphase_nans = iphase[~np.isnan(iphase)]
+##             # remove a 1 order polynomial to avoid order 0 and order 1
+##             # variable contribution.
+##             range_nans = range_axis[~np.isnan(iphase)]
+##             iphase_nans = iphase[~np.isnan(iphase)]
             
-            iphase -= np.polyval(np.polyfit(
-                range_nans, iphase_nans, 1), range_axis)
-            phase_col.append(iphase)
+##             iphase -= np.polyval(np.polyfit(
+##                 range_nans, iphase_nans, 1), range_axis)
+##             phase_col.append(iphase)
         
-        # each column of phase vectors is reduced to one phase vector
-        # with a sigmacut
-        phase_col = np.array(phase_col, dtype=float)
-        iphase = np.empty(phase_col.shape[1], dtype=float)
-        for ik in range(iphase.shape[0]):
-            iphase[ik] = np.nanmean(orb.utils.stats.sigmacut(
-                phase_col[:,ik], sigma=2.0))
-        # computed phase vector for the column is added to the final
-        # phase vector
-        phase += iphase
-        counts += 1
+##         # each column of phase vectors is reduced to one phase vector
+##         # with a sigmacut
+##         phase_col = np.array(phase_col, dtype=float)
+##         iphase = np.empty(phase_col.shape[1], dtype=float)
+##         for ik in range(iphase.shape[0]):
+##             iphase[ik] = np.nanmean(orb.utils.stats.sigmacut(
+##                 phase_col[:,ik], sigma=2.0))
+##         # computed phase vector for the column is added to the final
+##         # phase vector
+##         phase += iphase
+##         counts += 1
         
   
-    phase /= counts
-    phase -= phase[~np.isnan(phase)][0] # first sample at 0.
+##     phase /= counts
+##     phase -= phase[~np.isnan(phase)][0] # first sample at 0.
             
     
-    return cm1_axis_base, phase
+##     return cm1_axis_base, phase
 
 def create_phase_file(file_path, phase_vector, cm1_axis):
     """Write a phase vector in a phase file.

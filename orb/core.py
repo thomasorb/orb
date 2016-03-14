@@ -308,11 +308,43 @@ class Tools(object):
 
         for iline in std_table:
             iline = iline.split()
-            if len(iline) == 3:
+            if len(iline) >= 3:
                 if iline[0] == standard_name:
                     file_path = self._get_orb_data_file_path(iline[2])
                     if os.path.exists(file_path):
                         return file_path, iline[1]
+
+        self._print_error('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
+
+    def _get_standard_radec(self, standard_name,
+                            standard_table_name='std_table.orb'):
+        """
+        Return a standard spectrum file path.
+        
+        :param standard_name: Name of the standard star. Must be
+          recorded in the standard table.
+        
+        :param standard_table_name: (Optional) Name of the standard
+          table file (default std_table.orb).
+
+        :return: A tuple [standard file path, standard type]. Standard type
+          can be 'MASSEY' of 'CALSPEC'.
+        """
+        std_table = self.open_file(self._get_standard_table_path(
+            standard_table_name=standard_table_name), 'r')
+
+        for iline in std_table:
+            iline = iline.strip().split()
+            if len(iline) >= 3:
+                if iline[0] == standard_name:
+                    if len(iline) > 3:
+                        ra = float(iline[3])
+                        dec = float(iline[4])
+                        return ra, dec
+                    else:
+                        self._print_error('No RA DEC recorded for standard: {}'.format(
+                            standard_name))
+                    
 
         self._print_error('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
 
@@ -3271,13 +3303,14 @@ class OptionFile(Tools):
       of the file and can be used to give a description of the file.
     """
 
+    input_file_path = None
     option_file = None # the option file object
     options = None # the core list containing the parsed file
     lines = None # a core.Lines instance
 
-    protected_keys = ['REG', 'TUNE'] # special keywords that can be
-                                     # used mulitple times without
-                                     # being overriden.
+    # special keywords that can be used mulitple times without being
+    # overriden.
+    protected_keys = ['REG', 'TUNE'] 
 
     header_line = None
     
@@ -3298,6 +3331,7 @@ class OptionFile(Tools):
             self.protected_keys.append(key) 
         
         self.option_file = self.open_file(option_file_path, 'r')
+        self.input_file_path = str(option_file_path)
         self.options = dict()
         self.lines = Lines(config_file_name=self.config_file_name)
         for line in self.option_file:
@@ -3669,6 +3703,8 @@ class HDFCube(Cube):
         with self.open_hdf5(cube_path, 'r') as f:
             self.cube_path = cube_path
             self.dimz = self._get_attribute('dimz')
+            if 'image_list' in f:
+                self.image_list = f['image_list'][:]
 
             # check frame nb
             frame_nb = len([igrp
@@ -4319,6 +4355,7 @@ class Waves(object):
 #### CLASS Standard #############################
 #################################################
 class Standard(Tools):
+    """Manage standard files and photometrical calibration"""
 
     ang = None # Angstrom axis of the standard file
     flux = None # Flux of the standard in erg/cm2/s/Ang
@@ -4422,15 +4459,24 @@ class Standard(Tools):
         return spec_ang, spec_flux
 
 
-    def compute_star_flux_in_frame(self, step, order, seeing, filter_name,
+    def compute_star_flux_in_frame(self, step, order, filter_file_path,
+                                   optics_file_path,
                                    camera_number, airmass=1.):
+        """Return flux in ADU/s in an image.
+
+        :param step: Step size in nm
+        :param order: Folding order
+        :param filter_file_path: Path to the filter file
+        :param optics_file_path: Path to the optics file
+        :param camera_number: Number of the camera
+        :param airmass: (Optional) Airmass (default 1)
+        """
         
         STEP_NB = 1000
         camera_number = int(camera_number)
         if camera_number not in (1,2):
             self._print_error('Camera number must be 1 or 2')
         
-        filter_file_path = self._get_filter_file_path(filter_name)
         (filter_trans,
          filter_min, filter_max) = utils.filters.get_filter_function(
             filter_file_path, step, order, STEP_NB)
@@ -4450,7 +4496,7 @@ class Standard(Tools):
             step, order, STEP_NB)
         
         optics_trans = utils.photometry.get_optics_transmission(
-            self._get_optics_file_path(filter_name),
+            optics_file_path,
             step, order, STEP_NB)
 
         star_flux = utils.photometry.compute_star_flux_in_frame(
@@ -4466,9 +4512,27 @@ class Standard(Tools):
                              camera_number,
                              saturation=30000, airmass=1.):
 
+        """Compute the optimal exposition time given the total flux of
+        the star in ADU/s.
+
+        :param step: Step size in nm
         
+        :param order: Folding order
+        
+        :param seeing: Star's FWHM in arcsec
+        
+        :param filter_name: Name of the filter
+        
+        :param camera_number: Number of the camera
+        
+        :param saturation: (Optional) Saturation value of the detector
+          (default 30000).
+
+        :param airmass: (Optional) Airmass (default 1)    
+        """
         star_flux = self.compute_star_flux_in_frame(
-            step, order, seeing, filter_name,
+            step, order, self._get_filter_file_path(filter_name),
+            self._get_optics_file_path(filter_name),
             camera_number, airmass=airmass)
         
         dimx = float(self._get_config_parameter(
@@ -4483,141 +4547,3 @@ class Standard(Tools):
             star_flux, seeing,
             plate_scale,
             saturation=saturation)
-
-    
-    def compute_image_calibration(self, images_list_path, filter_name,
-                                  exp_time, std_coords, init_fwhm_arc,
-                                  fov, profile_name='gaussian',
-                                  moffat_beta=3.5, prim_surf=17554,
-                                  verbose=False):
-
-        """
-        Compute 'flambda' calibration coefficient for a spectrum cube
-        from a set of images of a standard star.
-
-        :param image_list_path: Path to a list of images of a standard
-          star.
-
-        :param filter_name: Name of the filter
-
-        :param exp_time: Exposition time of one frame.
-
-        :param std_coords: Pixel coordinates of the standard as a
-          tuple [x,y]
-
-        :param init_fwhm_arc: Rough FWHM of the stars in the frame in
-          arcseconds
-
-        :param fov: Field of View of the frame
-
-        :param order: Folding order
-        
-        :param step: Step size in um
-
-        :param step_nb: Number of steps
-
-        :param profile_name: (Optional) Name of the PSF profile used
-          for photometry. Can be 'gaussian' or 'moffat' (default
-          'moffat').
-
-        :param moffat_beta: (Optional) Initial value of the moffat
-          beta parameter (default 3.5).
-        
-        :param prim_surf: (Optional) Surface of the primary mirror in
-          cm^2. Used to print the rough flux of photons. Do not change
-          anything to the flambda coefficient.
-
-        :param verbose: (Optional) If True print more information to
-          check results.
-        """
-        # read filter file
-        filter_file_path = self._get_filter_file_path(filter_name)
-        (filter_nm, filter_trans,
-         filter_min, filter_max) = utils.filters.read_filter_file(
-            filter_file_path)
-
-        # convert filter scale to A
-        filter_ang = filter_nm * 10.
-        # convert percentage of transmission
-        filter_trans /= 100.
-
-        # filter band pass is cut in case the standard spectrum axis is smaller
-        filter_trans = filter_trans[filter_ang < self.ang[-1]]
-        filter_ang = filter_ang[filter_ang < self.ang[-1]]
-        filter_trans = filter_trans[filter_ang > self.ang[0]]
-        filter_ang = filter_ang[filter_ang > self.ang[0]]
-        
-        # interpolate standard spectrum 
-        interp_spec = interpolate.InterpolatedUnivariateSpline(self.ang,
-                                                               self.flux, k=1)
-        interp_spec = interp_spec(filter_ang)
-        
-        # compute mean flux of the star in the filter band
-        std_flux = (np.sum(interp_spec * filter_trans)
-                    / np.sum(filter_trans))
-        
-
-        self._print_msg('Mean flux of the star in the filter band: %e [erg/s/cm^2/A]'%std_flux)
-
-        if verbose:
-            # compute mean energy of 1 photon in ergs
-            h = 6.62653319e-27 # [erg.s]
-            c = 299792458 # [m/s]
-            lambda_mean = ((filter_max + filter_min)/2.) * 1e-9 # [m]
-            mean_ph_energy = h * c / lambda_mean # [ergs]
-            self._print_msg('Mean energy of 1 photon: %e [erg]'%mean_ph_energy)
-            # compute flux of photons
-            ph_flux = std_flux / mean_ph_energy # [ph/cm^2/s/A]
-            self._print_msg('Flux of photons: %e [ph/cm^2/s/A]'%ph_flux)
-        
-        ## Photometry
-        std = Cube(images_list_path,
-                   config_file_name=self.config_file_name)
-        if std.dimz == 1:
-            std_master_frame = std.get_data_frame(0)
-        elif std.dimz <= 3:
-            std_master_frame = np.median(std[:,:,:], axis=2)
-        elif std.dimz <= 15:
-            std_master_frame = utils.image.create_master_frame(
-                std[:,:,:], silent=True)
-        else: # large number of frames to combine
-            std_master_frame = utils.image.create_master_frame(
-                std[:,:,:], silent=True, reject='minmax')
-
-        astrom = Astrometry(std_master_frame, init_fwhm_arc,
-                            fov, profile_name=profile_name,
-                            moffat_beta=moffat_beta,
-                            data_prefix=self._data_prefix,
-                            tuning_parameters=self._tuning_parameters,
-                            silent=True,
-                            config_file_name=self.config_file_name)
-
-        astrom.reset_star_list(np.array([std_coords]))
-        fit_results = astrom.fit_stars_in_frame(0, local_background=False,
-                                                multi_fit=True,
-                                                precise_guess=True,
-                                                save=False)
-        
-        star_counts = fit_results[0, 'aperture_flux']
-        
-        self._print_msg('Raw Star photometry: %e ADU'%star_counts)
-
-        star_flux = star_counts / exp_time # [ADU/s]
-        if verbose:
-            self._print_msg('Star flux: %e ADU/s'%star_flux)
-        
-        ## Compute calibration coeff
-        if verbose:
-            ph_calib = ph_flux / star_flux
-            self._print_msg('Photons calibration: %e ph/cm^2/s/A/[ADU/s]'%
-                            ph_calib)
-            self._print_msg(
-                'Estimated number of photons per ADU: %e ph/ADU'%
-                (ph_calib * prim_surf * (filter_max - filter_min) * 10.))
-            
-        f_lambda_calib = std_flux / star_flux # erg/cm2/s/A / [ADU/s]
-        self._print_msg(
-            'Flambda calibration of the image: %e erg/cm^2/s/A/[ADU/s]'%
-                        f_lambda_calib)
-        
-        return f_lambda_calib

@@ -25,7 +25,7 @@ import gtk
 from argparse import ArgumentParser
 import argparse
 
-from orb.core import Tools, HDFCube
+from orb.core import Tools, HDFCube, ProgressBar
 import orb
 
 ###########################################
@@ -34,13 +34,30 @@ import orb
     
 def main(args):
 
-    
-    export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
+    DIV_NB = 2
     cube = HDFCube(args.input_cube_path, no_log=True)
-    
-    cube.export(export_path, force_fits=True, overwrite=True,
-                header=cube.get_cube_header())
- 
+
+    if not args.split:
+        export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
+        cube.export(export_path, force_fits=True, overwrite=True,
+                    header=cube.get_cube_header())
+    else:
+        for iquad in range(DIV_NB**2):
+            print 'Exporting quadrant {}'.format(iquad)
+            export_path = (os.path.splitext(
+                args.input_cube_path)[0]
+                           + '.quad{}.fits'.format(iquad))
+        
+            xmin, xmax, ymin, ymax = cube.get_quadrant_dims(iquad, div_nb=DIV_NB)
+            cube.export(
+                export_path, force_fits=True, overwrite=True,
+                header=cube.get_cube_header(),
+                x_range=(xmin,xmax),
+                y_range=(ymin,ymax))
+                
+                
+                
+            
 
 if __name__ == "__main__":
 
@@ -50,6 +67,9 @@ if __name__ == "__main__":
                             "Convert an HDF5 cube to a FITS cube")
     
     parser.add_argument('input_cube_path', help='Path to an HDF5 cube.')
+    parser.add_argument('--split', dest='split', action='store_true',
+                        default=False,
+                        help='Split output cube into 4 quadrants')
 
  
     args = parser.parse_args()

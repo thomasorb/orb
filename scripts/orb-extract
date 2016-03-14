@@ -37,10 +37,21 @@ def main(args):
     if '.hdf5' in args.input_cube_path:
         
         cube = HDFCube(args.input_cube_path, no_log=True)
+
+        if args.x == (None, None) and args.y == (None, None) and args.z == (None, None):
+            raise Exception('At least one couple of coordinates must be given')
         
+        if args.x == (None, None):
+            args.x = (0, cube.dimx)
+        if args.y == (None, None):
+            args.y = (0, cube.dimy)
+        if args.z == (None, None):
+            args.z = (0, cube.dimz)
+            
         if '.fits' in args.extracted_cube_path:
-            extracted_cube = cube[args.limits[0]:args.limits[2],
-                                  args.limits[1]:args.limits[3],:]
+            extracted_cube = cube[args.x[0]:args.x[1],
+                                  args.y[0]:args.y[1],
+                                  args.z[0]:args.z[1]]
             
             Tools(no_log=True).write_fits(
                 args.extracted_cube_path, extracted_cube,
@@ -50,14 +61,14 @@ def main(args):
         elif '.hdf5' in args.extracted_cube_path:
             
             output_cube = OutHDFCube(args.extracted_cube_path,
-                                     (args.limits[2]-args.limits[0],
-                                      args.limits[3]-args.limits[1],
-                                      cube.dimz), overwrite=True, reset=True)
+                                     (args.x[1] - args.x[0],
+                                      args.y[1] - args.y[0],
+                                      args.z[1] - args.z[0]), overwrite=True, reset=True)
             output_cube.append_header(cube.get_cube_header())
             progress = ProgressBar(cube.dimz)
-            for ik in range(cube.dimz):
-                iframe = cube[args.limits[0]:args.limits[2],
-                              args.limits[1]:args.limits[3],ik]
+            for ik in range(args.z[0], args.z[1] + 1):
+                iframe = cube[args.x[0]:args.x[1],
+                              args.y[0]:args.y[1],ik]
                 output_cube.write_frame(ik, data=iframe, header=cube.get_frame_header(ik))
                 progress.update(ik, 'writing frame {}/{}'.format(ik, cube.dimz))
             output_cube.close()
@@ -78,7 +89,11 @@ if __name__ == "__main__":
 
     parser.add_argument('extracted_cube_path', help='Path to a FITS/HDF5 cube.')
 
-    parser.add_argument('limits', help='xmin ymin xmax ymax', nargs=4, type=int)
+    parser.add_argument('-x', dest='x', help='xmin xmax', nargs=2, type=int, default=(None, None))
+    
+    parser.add_argument('-y', dest='y', help='ymin ymax', nargs=2, type=int, default=(None, None))
+    
+    parser.add_argument('-z', dest='z', help='zmin zmax', nargs=2, type=int, default=(None, None))
     
     args = parser.parse_args()
 
