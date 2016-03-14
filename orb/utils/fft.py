@@ -606,6 +606,10 @@ def transform_interferogram(interf, nm_laser,
                 bad_frames_vector = np.roll(bad_frames_vector, zpd_shift)
             else:
                 bad_frames_vector = None
+
+
+    ### Replace Nans by zeros ininterf vector
+    interf[np.isnan(interf)] = 0.
     
     #####
     # 4 - Zeros smoothing
@@ -615,9 +619,9 @@ def transform_interferogram(interf, nm_laser,
     # Optical Society of America A, 12(10), 2165
     
     zeros_vector = np.ones_like(interf)
-    zeros_vector[np.isnan(interf)] = 0.
+    zeros_vector[interf == 0.] = 0.
     zeros_vector = zeros_vector.real # in case interf is complex
-    interf[np.isnan(interf)] = 0. # replace nans by zeros in interf
+    
     if bad_frames_vector is not None:
         zeros_vector[np.nonzero(bad_frames_vector)] = 0
     if len(np.nonzero(zeros_vector == 0)[0]) > 0:
@@ -726,17 +730,6 @@ def transform_interferogram(interf, nm_laser,
 
     else:
         spectrum_corr = interf_fft
-
-
-    ## if np.nanmax(interf) > 600:
-    ##     import pylab as pl
-    ##     pl.plot(zero_padded_vector)
-    ##     pl.plot(spectrum_corr.real)
-    ##     pl.plot(spectrum_corr.imag)
-    ##     pl.plot(np.abs(spectrum_corr))
-        
-    ##     #pl.plot(np.abs(np.fft.fft(interf)))
-    ##     pl.show()
         
     #####
     # 10 - Off-axis effect correction with maxima map   
