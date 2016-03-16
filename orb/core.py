@@ -1552,6 +1552,14 @@ class Tools(object):
         if mask: return self._get_hdf5_frame_path(frame_index) + '/mask'
         else: return self._get_hdf5_frame_path(frame_index) + '/data'
 
+    def _get_hdf5_quad_data_path(self, quad_index):
+        """Return path to the data of a given quad in an HDF5 cube.
+
+        :param quad_index: Index of the quadrant
+        """
+        return self._get_hdf5_quad_path(quad_index) + '/data'
+        
+
     def _get_hdf5_header_path(self, frame_index):
         """Return path to the header of a given frame in an HDF5 cube.
 
@@ -1559,15 +1567,30 @@ class Tools(object):
         """
         return self._get_hdf5_frame_path(frame_index) + '/header'
 
+    def _get_hdf5_quad_header_path(self, quad_index):
+        """Return path to the header of a given quadrant in an HDF5 cube.
+
+        :param frame_index: Index of the quadrant
+        """
+        return self._get_hdf5_quad_path(quad_index) + '/header'
+
     def _get_hdf5_frame_path(self, frame_index):
         """Return path to a given frame in an HDF5 cube.
 
         :param frame_index: Index of the frame.
         """
         return 'frame{:05d}'.format(frame_index)
+
+    
+    def _get_hdf5_quad_path(self, quad_index):
+        """Return path to a given quadrant in an HDF5 cube.
+
+        :param quad_index: Index of the quad.
+        """
+        return 'quad{:03d}'.format(quad_index)
         
             
-    def get_quadrant_dims(self, quad_number, dimx, dimy, div_nb):
+    def _get_quadrant_dims(self, quad_number, dimx, dimy, div_nb):
         """Return the indices of a quadrant along x and y axes.
 
         :param quad_number: Quadrant number
@@ -2556,7 +2579,7 @@ class Cube(Tools):
         if dimx is None: dimx = self.dimx
         if dimy is None: dimy = self.dimy
 
-        return Tools.get_quadrant_dims(
+        return Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
        
     def export(self, export_path, x_range=None, y_range=None,
@@ -2613,61 +2636,87 @@ class Cube(Tools):
         else:
             zmin = np.min(z_range)
             zmax = np.max(z_range)
+           
             
         if (self._hdf5 or force_hdf5) and not force_fits: # HDF5 export
             self._print_msg('Exporting cube to an HDF5 cube: {}'.format(
                 export_path))
-            outcube = OutHDFCube(
-                export_path,
-                (xmax - xmin, ymax - ymin, zmax - zmin),
-                overwrite=overwrite)
+            if not self.is_quad_cube:
+                outcube = OutHDFCube(
+                    export_path,
+                    (xmax - xmin, ymax - ymin, zmax - zmin),
+                    overwrite=overwrite)
+            else:
+                outcube = OutHDFQuadCube(
+                    export_path,
+                    (xmax - xmin, ymax - ymin, zmax - zmin),
+                    self.QUAD_NB,
+                    overwrite=overwrite)
             
             outcube.append_image_list(self.image_list)
             if header is not None:
                 outcube.append_header(header)
-            
-            job_server, ncpus = self._init_pp_server()
-            progress = ProgressBar(zmax-zmin)
 
-            data_frames = np.empty((xmax - xmin, ymax - ymin, ncpus),
-                                   dtype=self.dtype)
-            
-            
-            for iframe in range(0, zmax-zmin, ncpus):
-                progress.update(
-                    iframe, info='exporting data frame {}'.format(
-                        iframe))
-                if iframe + ncpus >= zmax - zmin:
-                    ncpus = zmax - zmin - iframe
+            if not self.is_quad_cube: # frames export
+                job_server, ncpus = self._init_pp_server()
+                progress = ProgressBar(zmax-zmin)
 
-                # get data
-                jobs = [(ijob, job_server.submit(
-                    self.get_data, 
-                    args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
-                          zmin + iframe +ijob + 1)))
-                        for ijob in range(ncpus)]
-                for ijob, job in jobs:
-                    data_frames[:,:,ijob] = job()
-                    
-                # get header
-                jobs = [(ijob, job_server.submit(
-                    self.get_frame_header, 
-                    args=(zmin + iframe +ijob,)))
-                        for ijob in range(ncpus)]
+                data_frames = np.empty((xmax - xmin, ymax - ymin, ncpus),
+                                       dtype=self.dtype)
+
+
+                for iframe in range(0, zmax-zmin, ncpus):
+                    progress.update(
+                        iframe, info='exporting data frame {}'.format(
+                            iframe))
+                    if iframe + ncpus >= zmax - zmin:
+                        ncpus = zmax - zmin - iframe
+
+                    # get data
+                    jobs = [(ijob, job_server.submit(
+                        self.get_data, 
+                        args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
+                              zmin + iframe +ijob + 1)))
+                            for ijob in range(ncpus)]
+                    for ijob, job in jobs:
+                        data_frames[:,:,ijob] = job()
+
+                    # get header
+                    jobs = [(ijob, job_server.submit(
+                        self.get_frame_header, 
+                        args=(zmin + iframe +ijob,)))
+                            for ijob in range(ncpus)]
+
+                    # write data + header
+                    for ijob, job in jobs:
+                        outcube.write_frame(zmin + iframe + ijob,
+                                            data=data_frames[:,:,ijob],
+                                            header=job(),
+                                            force_float32=True)
+                        
+                    progress.end()
+                self._close_pp_server(job_server)
+            else: # quad export
                 
-                # write data + header
-                for ijob, job in jobs:
-                    outcube.write_frame(zmin + iframe + ijob,
-                                        data=data_frames[:,:,ijob],
-                                        header=job(),
-                                        force_float32=True)
-                      
-                progress.update(
-                    iframe,
-                    info='exporting data frame {}'.format(iframe))
-            progress.end()
-            self._close_pp_server(job_server)
+                progress = ProgressBar(self.QUAD_NB)
+                for iquad in range(self.QUAD_NB):
+                    progress.update(
+                        iquad, info='exporting quad {}'.format(
+                            iquad))
+                    
+                    x_min, x_max, y_min, y_max = self._get_quadrant_dims(
+                        iquad, self.dimx, self.dimy, int(math.sqrt(float(self.quad_nb))))
+                    
+                    data_quad = self.get_data(x_min, x_max, y_min, y_max, 0, self.dimz,
+                                              silent=True)
 
+                    # write data
+                    outcube.write_quad(iquad,
+                                       data=data_quad,
+                                       force_float32=True)
+
+                progress.end()
+                
             outcube.close()
             del outcube
                 
@@ -3636,6 +3685,10 @@ class HDFCube(Cube):
     _silent_load = False
     is_complex = None
     _prebinning = None
+    quad_nb = None # number of quads (set to None if HDFCube is not a
+                   # cube split in quads but a cube split in frames)
+    is_quad_cube = None # set to True if cube is split in quad. set to
+                        # False if split in frames.
     
     """Set to True if data is complex"""
     
@@ -3703,40 +3756,72 @@ class HDFCube(Cube):
         with self.open_hdf5(cube_path, 'r') as f:
             self.cube_path = cube_path
             self.dimz = self._get_attribute('dimz')
-            if 'image_list' in f:
-                self.image_list = f['image_list'][:]
-
-            # check frame nb
-            frame_nb = len([igrp
-                            for igrp in f
-                            if 'frame' == igrp[:5]])
-
-            if frame_nb != self.dimz:
-                self._print_error("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
-                
             self.dimx = self._get_attribute('dimx')
             self.dimy = self._get_attribute('dimy')
+            if 'image_list' in f:
+                self.image_list = f['image_list'][:]
             
-            if self._get_hdf5_frame_path(0) in f:                
-                if ((self.dimx, self.dimy)
-                    != f[self._get_hdf5_data_path(0)].shape):
-                    self._print_error('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
+            
 
-                if self._get_hdf5_data_path(0, mask=True) in f:
-                    self._mask_exists = True
-                else:
-                    self._mask_exists = False
-
-                # test whether data is complex
-                if np.iscomplexobj(f[self._get_hdf5_data_path(0)]):
-                    self.is_complex = True
-                    self.dtype = complex
-                else:
-                    self.is_complex = False
-                    self.dtype = float
+            # check if cube is quad or frames based
+            self.quad_nb = self._get_attribute('quad_nb', optional=True)
+            if self.quad_nb is not None:
+                self.is_quad_cube = True
             else:
-                self._print_error('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
-                    self._get_hdf5_frame_path(0)))
+                self.is_quad_cube = False
+        
+            # sanity check
+            if self.is_quad_cube:
+                quad_nb = len(
+                    [igrp for igrp in f
+                     if 'quad' == igrp[:4]])
+                if quad_nb != self.quad_nb:
+                    self._print_error("Corrupted HDF5 cube: 'quad_nb' attribute ([]) does not correspond to the real number of quads ({})".format(self.quad_nb, quad_nb))
+
+                if self._get_hdf5_quad_path(0) in f:
+                    # test whether data is complex
+                    if np.iscomplexobj(f[self._get_hdf5_quad_data_path(0)]):
+                        self.is_complex = True
+                        self.dtype = complex
+                    else:
+                        self.is_complex = False
+                        self.dtype = float
+                
+                else:
+                    self._print_error('{} is missing. A valid HDF5 cube must contain at least one quadrant'.format(
+                        self._get_hdf5_quad_path(0)))
+                    
+
+            else:
+                frame_nb = len(
+                    [igrp for igrp in f
+                     if 'frame' == igrp[:5]])
+
+                if frame_nb != self.dimz:
+                    self._print_error("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
+                
+            
+                if self._get_hdf5_frame_path(0) in f:                
+                    if ((self.dimx, self.dimy)
+                        != f[self._get_hdf5_data_path(0)].shape):
+                        self._print_error('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
+
+                    if self._get_hdf5_data_path(0, mask=True) in f:
+                        self._mask_exists = True
+                    else:
+                        self._mask_exists = False
+
+                    # test whether data is complex
+                    if np.iscomplexobj(f[self._get_hdf5_data_path(0)]):
+                        self.is_complex = True
+                        self.dtype = complex
+                    else:
+                        self.is_complex = False
+                        self.dtype = float
+                else:
+                    self._print_error('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
+                        self._get_hdf5_frame_path(0)))
+                
 
         # binning
         if self._prebinning is not None:
@@ -3754,13 +3839,20 @@ class HDFCube(Cube):
                               + ", " +str(self.dimz) + ")")
 
         self.shape = (self.dimx, self.dimy, self.dimz)
+
         
     def __getitem__(self, key):
         """Implement the evaluation of self[key].
         
         .. note:: To make this function silent just set
           Cube()._silent_load to True.
-        """        
+        """
+        def slice_in_quad(ax_slice, ax_min, ax_max):
+            ax_range = range(ax_min, ax_max)
+            for ii in range(ax_slice.start, ax_slice.stop):
+                if ii in ax_range:
+                    return True
+            return False
         # check return mask possibility
         if self._return_mask and not self._mask_exists:
             self._print_error("No mask found with data, cannot return mask")
@@ -3780,37 +3872,66 @@ class HDFCube(Cube):
             y_slice = slice(y_slice.start * self._prebinning,
                             y_slice.stop * self._prebinning, 1)
 
-        if z_slice.stop - z_slice.start == 1:
-            only_one_frame = True
-        else:
-            only_one_frame = False
+        # frame based cube
+        if not self.is_quad_cube:
 
-        with self.open_hdf5(self.cube_path, 'r') as f:
-            if not self._silent_load and not only_one_frame:
-                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
-                
-            for ik in range(z_slice.start, z_slice.stop):
-                unbin_data = f[
-                    self._get_hdf5_data_path(
-                        ik, mask=self._return_mask)][x_slice, y_slice]
-                
-                if self._prebinning is not None:
-                    data[0:x_slice.stop - x_slice.start,
-                         0:y_slice.stop - y_slice.start,
-                         ik - z_slice.start] = utils.image.nanbin_image(
-                        unbin_data, self._prebinning)
-                else:
-                    data[0:x_slice.stop - x_slice.start,
-                         0:y_slice.stop - y_slice.start,
-                         ik - z_slice.start] = unbin_data
-                    
+            if z_slice.stop - z_slice.start == 1:
+                only_one_frame = True
+            else:
+                only_one_frame = False
+
+            with self.open_hdf5(self.cube_path, 'r') as f:
                 if not self._silent_load and not only_one_frame:
-                    progress.update(ik - z_slice.start, info="Loading data")
-                    
-            if not self._silent_load and not only_one_frame:
-                progress.end()
-            
+                    progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+
+                for ik in range(z_slice.start, z_slice.stop):
+                    unbin_data = f[
+                        self._get_hdf5_data_path(
+                            ik, mask=self._return_mask)][x_slice, y_slice]
+
+                    if self._prebinning is not None:
+                        data[0:x_slice.stop - x_slice.start,
+                             0:y_slice.stop - y_slice.start,
+                             ik - z_slice.start] = utils.image.nanbin_image(
+                            unbin_data, self._prebinning)
+                    else:
+                        data[0:x_slice.stop - x_slice.start,
+                             0:y_slice.stop - y_slice.start,
+                             ik - z_slice.start] = unbin_data
+
+                    if not self._silent_load and not only_one_frame:
+                        progress.update(ik - z_slice.start, info="Loading data")
+
+                if not self._silent_load and not only_one_frame:
+                    progress.end()
+
+        # quad based cube
+        else:
+            with self.open_hdf5(self.cube_path, 'r') as f:
+                if not self._silent_load:
+                    progress = ProgressBar(self.quad_nb)
+
+                for iquad in range(self.quad_nb):
+                    if not self._silent_load:
+                        progress.update(iquad, info='Loading data')
+                    x_min, x_max, y_min, y_max = self._get_quadrant_dims(
+                        iquad, self.dimx, self.dimy, int(math.sqrt(float(self.quad_nb))))
+                    if slice_in_quad(x_slice, x_min, x_max) and slice_in_quad(y_slice, y_min, y_max):
+                        data[max(x_min, x_slice.start) - x_slice.start:
+                             min(x_max, x_slice.stop) - x_slice.start,
+                             max(y_min, y_slice.start) - y_slice.start:
+                             min(y_max, y_slice.stop) - y_slice.start,
+                             0:z_slice.stop-z_slice.start] = f[self._get_hdf5_quad_data_path(iquad)][
+                            max(x_min, x_slice.start) - x_min:min(x_max, x_slice.stop) - x_min,
+                            max(y_min, y_slice.start) - y_min:min(y_max, y_slice.stop) - y_min,
+                            z_slice.start:z_slice.stop]
+                if not self._silent_load:
+                    progress.end()
+                        
+
         return np.squeeze(data)
+
+                
 
     def _get_attribute(self, attr, optional=False):
         """Return the value of an attribute of the HDF5 cube
@@ -4076,9 +4197,10 @@ class OutHDFCube(Tools):
                 dat = frame
                     
             if dat_path in self.f: del self.f[dat_path]
-            szip_types = (np.float32, np.float64, np.int16, np.int32, np.int64,
-                          np.uint8, np.uint16)
             if compress:
+                ## szip_types = (np.float32, np.float64, np.int16, np.int32, np.int64,
+                ##               np.uint8, np.uint16)
+            
                 ## if dat.dtype in szip_types:
                 ##     compression = 'szip'
                 ##     compression_opts = ('nn', 32)
@@ -4211,6 +4333,116 @@ class OutHDFCube(Tools):
             self.f.close()
         except Exception:
             pass
+
+
+
+
+##################################################
+#### CLASS OutHDFQuadCube ########################
+##################################################           
+
+class OutHDFQuadCube(OutHDFCube):
+    """Output HDF5 Cube class saved in quadrants.
+
+    This class can be used to output a valid HDF5 cube.
+    """
+
+    def __init__(self, export_path, shape, quad_nb, overwrite=False,
+                 reset=False, **kwargs):
+        """Init OutHDFQuadCube class.
+
+        :param export_path: Path ot the output HDF5 cube to create.
+
+        :param shape: Data shape. Must be a 3-Tuple (dimx, dimy, dimz)
+
+        :param quad_nb: Number of quadrants in the cube.
+
+        :param overwrite: (Optional) If True data will be overwritten
+          but existing data will not be removed (default False).
+
+        :param reset: (Optional) If True and if the file already
+          exists, it is deleted (default False).
+        
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        OutHDFCube.__init__(self, export_path, shape, overwrite=overwrite,
+                            reset=reset, **kwargs)
+
+        self.f.attrs['quad_nb'] = quad_nb
+
+    def write_quad(self, index, data=None, header=None, force_float32=True,
+                   force_complex64=False,
+                   compress=False):
+        """"Write a quadrant
+
+        :param index: Index of the quadrant
+        
+        :param data: (Optional) Frame data (default None).
+        
+        :param header: (Optional) Frame header (default None).
+        
+        :param mask: (Optional) Frame mask (default None).
+        
+        :param record_stats: (Optional) If True Mean and Median of the
+          frame are appended as attributes (data must be set) (defaut
+          False).
+
+        :param force_float32: (Optional) If True, data type is forced
+          to numpy.float32 type (default True).
+
+        :param section: (Optional) If not None, must be a 4-tuple
+          [xmin, xmax, ymin, ymax] giving the section to write instead
+          of the whole frame. Useful to modify only a part of the
+          frame (deafult None).
+
+        :param force_complex64: (Optional) If True, data type is
+          forced to numpy.complex64 type (default False).
+
+        :param compress: (Optional) If True, data is lossely
+          compressed using a gzip algorithm (default False).
+        """
+        
+        if force_float32 and force_complex64:
+            self._print_error('force_float32 and force_complex64 cannot be both set to True')
+
+            
+        if data is None and header is None:
+            self._print_warning('Nothing to write in the frame {}').format(
+                index)
+            return
+        
+        if data is not None:
+            if force_complex64: data = data.astype(np.complex64)
+            elif force_float32: data = data.astype(np.float32)
+            dat_path = self._get_hdf5_quad_data_path(index)
+
+            if dat_path in self.f:
+                del self.f[dat_path]
+
+            if compress:
+                
+                #szip_types = (np.float32, np.float64, np.int16, np.int32, np.int64,
+                #              np.uint8, np.uint16)
+                ## if data.dtype in szip_types:
+                ##     compression = 'szip'
+                ##     compression_opts = ('nn', 32)
+                ## else:
+                ##     compression = 'gzip'
+                ##     compression_opts = 4
+                compression = 'lzf'
+                compression_opts = None
+            else:
+                compression = None
+                compression_opts = None
+                
+            self.f.create_dataset(
+                dat_path, data=data,
+                compression=compression,
+                compression_opts=compression_opts)
+
+            return data
+        
+        
 
 
 ##################################################
