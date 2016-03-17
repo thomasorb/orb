@@ -1694,6 +1694,8 @@ class Cube(Tools):
 
     is_complex = None # tell if cube's data is complex.
     dtype = None # data type
+    is_quad_cube = False # Basic cube is not quad cube (see class
+                         # HDFCube and OutHDFQuadCube)
     
     def __init__(self, image_list_path, image_mode='classic',
                  chip_index=1, binning=1, data_prefix="./temp/data.",
@@ -2404,13 +2406,14 @@ class Cube(Tools):
         for _ik in range(0, self.dimz, BLOCK_SIZE):
             progress.update(_ik, info="Creating median image")
             _ik_end = _ik+BLOCK_SIZE
-            if _ik_end > self.dimz - 1:
+            if _ik_end >= self.dimz:
                 _ik_end = self.dimz - 1
-            frames = self.get_data(0,self.dimx,
-                                   0, self.dimy,
-                                   _ik,_ik_end, silent=True)
-            median_im += np.nanmedian(frames, axis=2)
-            counts += 1
+            if _ik_end > _ik:
+                frames = self.get_data(0,self.dimx,
+                                       0, self.dimy,
+                                       _ik,_ik_end, silent=True)
+                median_im += np.nanmedian(frames, axis=2)
+                counts += 1
         progress.end()
         return median_im / counts
 
@@ -2645,57 +2648,30 @@ class Cube(Tools):
                 outcube = OutHDFCube(
                     export_path,
                     (xmax - xmin, ymax - ymin, zmax - zmin),
-                    overwrite=overwrite)
+                    overwrite=overwrite,
+                    reset=True)
             else:
                 outcube = OutHDFQuadCube(
                     export_path,
                     (xmax - xmin, ymax - ymin, zmax - zmin),
                     self.QUAD_NB,
-                    overwrite=overwrite)
+                    overwrite=overwrite,
+                    reset=True)
             
             outcube.append_image_list(self.image_list)
             if header is not None:
                 outcube.append_header(header)
 
             if not self.is_quad_cube: # frames export
-                job_server, ncpus = self._init_pp_server()
                 progress = ProgressBar(zmax-zmin)
-
-                data_frames = np.empty((xmax - xmin, ymax - ymin, ncpus),
-                                       dtype=self.dtype)
-
-
-                for iframe in range(0, zmax-zmin, ncpus):
-                    progress.update(
-                        iframe, info='exporting data frame {}'.format(
-                            iframe))
-                    if iframe + ncpus >= zmax - zmin:
-                        ncpus = zmax - zmin - iframe
-
-                    # get data
-                    jobs = [(ijob, job_server.submit(
-                        self.get_data, 
-                        args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
-                              zmin + iframe +ijob + 1)))
-                            for ijob in range(ncpus)]
-                    for ijob, job in jobs:
-                        data_frames[:,:,ijob] = job()
-
-                    # get header
-                    jobs = [(ijob, job_server.submit(
-                        self.get_frame_header, 
-                        args=(zmin + iframe +ijob,)))
-                            for ijob in range(ncpus)]
-
-                    # write data + header
-                    for ijob, job in jobs:
-                        outcube.write_frame(zmin + iframe + ijob,
-                                            data=data_frames[:,:,ijob],
-                                            header=job(),
-                                            force_float32=True)
-                        
-                    progress.end()
-                self._close_pp_server(job_server)
+                for iframe in range(zmin, zmax):
+                    progress.update(iframe-zmin, info='exporting frame {}'.format(iframe))
+                    outcube.write_frame(
+                        iframe,
+                        data=self.get_data(xmin, xmax, ymin, ymax, iframe, iframe + 1),
+                        header=self.get_frame_header(iframe),
+                        force_float32=True)
+                progress.end()
             else: # quad export
                 
                 progress = ProgressBar(self.QUAD_NB)
@@ -4616,23 +4592,29 @@ class Standard(Tools):
         return (os.curdir + os.sep + 'STANDARD' + os.sep
                 + 'STD' + '.')
 
-    def get_spectrum(self, step, order, n, wavenumber=False):
+    def get_spectrum(self, step, order, n, wavenumber=False, corr=1.):
         """Return part of the standard spectrum corresponding to the
         observation parameters.
 
         Returned spectrum is calibrated in erg/cm^2/s/A
 
         :param order: Folding order
+        
         :param step: Step size in um
-        :param n: Number of steps    
-        :param wavenumber: If True spectrum is returned along a
-          wavenumber axis.
+        
+        :param n: Number of steps
+        
+        :param wavenumber: (Optional) If True spectrum is returned along a
+          wavenumber axis (default False).
+          
+        :param corr: (Optional) Correction coefficient related to the incident
+          angle (default 1).
         """
         if wavenumber:
-            axis = utils.spectrum.create_cm1_axis(n, step, order)
+            axis = utils.spectrum.create_cm1_axis(n, step, order, corr=corr)
             old_axis = utils.spectrum.nm2cm1(self.ang / 10.)
         else:
-            axis = utils.spectrum.create_nm_axis(n, step, order)
+            axis = utils.spectrum.create_nm_axis(n, step, order, corr=corr)
             old_axis = self.ang / 10.
         
         return axis, utils.vector.interpolate_axis(
@@ -4693,7 +4675,7 @@ class Standard(Tools):
 
     def compute_star_flux_in_frame(self, step, order, filter_file_path,
                                    optics_file_path,
-                                   camera_number, airmass=1.):
+                                   camera_number, airmass=1., corr=1.):
         """Return flux in ADU/s in an image.
 
         :param step: Step size in nm
@@ -4702,6 +4684,8 @@ class Standard(Tools):
         :param optics_file_path: Path to the optics file
         :param camera_number: Number of the camera
         :param airmass: (Optional) Airmass (default 1)
+        :param corr: (Optional) Correction coefficient related to the
+           incident angle (default 1).
         """
         
         STEP_NB = 1000
@@ -4711,25 +4695,25 @@ class Standard(Tools):
         
         (filter_trans,
          filter_min, filter_max) = utils.filters.get_filter_function(
-            filter_file_path, step, order, STEP_NB)
+            filter_file_path, step, order, STEP_NB, corr=corr)
         
-        nm_axis, std_spectrum = self.get_spectrum(step, order, STEP_NB)
+        nm_axis, std_spectrum = self.get_spectrum(step, order, STEP_NB, corr=corr)
 
         atm_trans = utils.photometry.get_atmospheric_transmission(
             self._get_atmospheric_extinction_file_path(),
-            step, order, STEP_NB, airmass=airmass)
+            step, order, STEP_NB, airmass=airmass, corr=corr)
 
         qe_cam = utils.photometry.get_quantum_efficiency(
             self._get_quantum_efficiency_file_path(camera_number),
-            step, order, STEP_NB)
+            step, order, STEP_NB, corr=corr)
 
         mirror_trans = utils.photometry.get_mirror_transmission(
             self._get_mirror_transmission_file_path(),
-            step, order, STEP_NB)
+            step, order, STEP_NB, corr=corr)
         
         optics_trans = utils.photometry.get_optics_transmission(
             optics_file_path,
-            step, order, STEP_NB)
+            step, order, STEP_NB, corr=corr)
 
         star_flux = utils.photometry.compute_star_flux_in_frame(
             nm_axis, std_spectrum,

@@ -222,7 +222,7 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
 
 
 def get_filter_function(filter_file_path, step, order, n,
-                        wavenumber=False, silent=False):
+                        wavenumber=False, silent=False, corr=1):
     """Read a filter file and return its function interpolated over
     the desired number of points. Return also the edges position over
     its axis in pixels.
@@ -241,6 +241,9 @@ def get_filter_function(filter_file_path, step, order, n,
 
     :param silent: (Optional) If True, no message is displayed
       (default False).
+    
+    :param corr: (Optional) Correction coefficient related to the
+      incident angle (default 1).
 
     :returns: (interpolated filter function, min edge, max edge). Min
       and max edges are given in pixels over the interpolation axis.
@@ -256,9 +259,11 @@ def get_filter_function(filter_file_path, step, order, n,
 
     # Spectrum wavelength axis creation.
     if not wavenumber:
-        spectrum_axis = orb.utils.spectrum.create_nm_axis(n, step, order)
+        spectrum_axis = orb.utils.spectrum.create_nm_axis(
+            n, step, order, corr=corr)
     else:
-        spectrum_axis = orb.utils.spectrum.create_nm_axis_ireg(n, step, order)
+        spectrum_axis = orb.utils.spectrum.create_nm_axis_ireg(
+            n, step, order, corr=corr)
 
     f_axis = interpolate.UnivariateSpline(np.arange(n),
                                           spectrum_axis)

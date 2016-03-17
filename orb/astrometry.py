@@ -1840,18 +1840,18 @@ class Astrometry(Tools):
                 return np.array(param_list_f), index
         
       
-        MIN_STAR_NB = 5 # Minimum number of stars to get a correct WCS
+        MIN_STAR_NB = 4 # Minimum number of stars to get a correct WCS
 
-        XYRANGE_STEP_NB = 30. # Define the number of steps for the
+        XYRANGE_STEP_NB = 100 # Define the number of steps for the
                               # brute force guess
         
         SIZE_COEFF = 0.100 # Define the range of pixels around the
                            # initial value of shift where the correct
                            # shift parameters must be found.
 
-        ANGLE_STEPS = 12
-        ANGLE_RANGE = 6.0
-        ZOOM_RANGE_COEFF = 0.010
+        ANGLE_STEPS = 60
+        ANGLE_RANGE = 12.0
+        ZOOM_RANGE_COEFF = 0.015
         
         if not (self.target_ra is not None and self.target_dec is not None
                 and self.target_x is not None and self.target_y is not None
@@ -1862,6 +1862,8 @@ class Astrometry(Tools):
 
         self._print_msg("Initial scale: {} arcsec/pixel".format(self.scale))
         self._print_msg("Initial rotation: {} degrees".format(self.wcs_rotation))
+        self._print_msg("Initial target position in the image (X,Y): {} {}".format(
+            self.target_x, self.target_y))
 
         # get deep frame
         deep_frame = self._get_combined_frame(
@@ -1932,25 +1934,28 @@ class Astrometry(Tools):
         y_range_len = SIZE_COEFF * float(self.dimy)
   
         x_range = np.linspace(-x_range_len/2, x_range_len/2,
-                              XYRANGE_STEP_NB * 2)
+                              XYRANGE_STEP_NB)
         y_range = np.linspace(-y_range_len/2, y_range_len/2,
-                              XYRANGE_STEP_NB * 2)
+                              XYRANGE_STEP_NB)
         r_range = np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2.,
-                              ANGLE_STEPS * 2)
+                              ANGLE_STEPS)
         
         dx, dy, dr, guess_matrix = self.brute_force_guess(
             deep_frame_corr,
             star_list_pix, x_range, y_range, r_range,
             [self.target_x, self.target_y], 1.)
-
+        
         # refined brute force guess
-        x_range_len = SIZE_COEFF/10. * float(self.dimx)
-        y_range_len = SIZE_COEFF/10. * float(self.dimy)
-        finer_angle_range = ANGLE_RANGE / 4
+        x_range_len = SIZE_COEFF / 10. * float(self.dimx)
+        y_range_len = SIZE_COEFF / 10. * float(self.dimy)
+        finer_angle_range = ANGLE_RANGE / 6
+        finer_xy_step = min(XYRANGE_STEP_NB / 4,
+                            x_range_len) # avoid xystep < 1 pixel
+        
         x_range = np.linspace(dx-x_range_len/2, dx+x_range_len/2,
-                              XYRANGE_STEP_NB/2)
+                              finer_xy_step)
         y_range = np.linspace(dy-y_range_len/2, dy+y_range_len/2,
-                              XYRANGE_STEP_NB/2)
+                              finer_xy_step)
         r_range = np.linspace(dr-finer_angle_range/2., dr+finer_angle_range/2.,
                               ANGLE_STEPS)
 
@@ -1959,9 +1964,9 @@ class Astrometry(Tools):
         zoom_guesses = list()
         for izoom in zoom_range:
             dx, dy, dr, guess_matrix = self.brute_force_guess(
-                deep_frame_corr,
+                deep_frame,
                 star_list_pix, x_range, y_range, r_range,
-                [self.target_x, self.target_y], izoom)
+                [self.target_x, self.target_y], izoom, verbose=False)
             zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
             self._print_msg('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
 
@@ -2011,7 +2016,9 @@ class Astrometry(Tools):
         ### plot stars positions ###
         ############################
         ## import pylab as pl
-        ## im = pl.imshow(deep_frame.T, vmin=0, vmax=1000)
+        ## im = pl.imshow(deep_frame.T,
+        ##                vmin=np.nanmedian(deep_frame),
+        ##                vmax=np.nanmedian(deep_frame)+200)
         ## im.set_cmap('gray')
         ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
         ##            edgecolor='blue', linewidth=2., alpha=1.,
@@ -2339,15 +2346,23 @@ class Astrometry(Tools):
 
 
     def brute_force_guess(self, image, star_list, x_range, y_range, r_range,
-                          rc, zoom_factor):
+                          rc, zoom_factor, verbose=True):
         """Determine a precise alignment guess by brute force.
 
         :param star_list: List of stars
+
         :param x_range: range of x values to check
+
         :param y_range: range of y values to check
+
         :param r_range: range of angle values to check
+
         :param rc: rotation center (rc, ry)
+
         :param zoom_factor: zoom_factor
+        
+        :param verbose: (Optional) If True print some informations
+          (default True).
         """
 
         def get_total_flux(guess_list, image, star_list,
@@ -2371,17 +2386,18 @@ class Astrometry(Tools):
                 result[ik, 1:] = guess_list[ik]
         
             return result
-        
-        self._print_msg('Brute force range:')
-        if len(x_range) > 1:
-            self._print_msg('X = {:.2f}:{:.2f}:{:.2f}'.format(
-                np.min(x_range), np.max(x_range), x_range[1] - x_range[0]))
-        if len(y_range) > 1:
-            self._print_msg('Y = {:.2f}:{:.2f}:{:.2f}'.format(
-                np.min(y_range), np.max(y_range), y_range[1] - y_range[0]))
-        if len(r_range) > 1:
-            self._print_msg('R = {:.2f}:{:.2f}:{:.2f}'.format(
-                np.min(r_range), np.max(r_range), r_range[1] - r_range[0]))
+
+        if verbose:
+            self._print_msg('Brute force range:')
+            if len(x_range) > 1:
+                self._print_msg('X = {:.2f}:{:.2f}:{:.2f}'.format(
+                    np.min(x_range), np.max(x_range), x_range[1] - x_range[0]))
+            if len(y_range) > 1:
+                self._print_msg('Y = {:.2f}:{:.2f}:{:.2f}'.format(
+                    np.min(y_range), np.max(y_range), y_range[1] - y_range[0]))
+            if len(r_range) > 1:
+                self._print_msg('R = {:.2f}:{:.2f}:{:.2f}'.format(
+                    np.min(r_range), np.max(r_range), r_range[1] - r_range[0]))
 
         guess_list = list()
         guess_matrix = np.empty((len(x_range),
@@ -2457,10 +2473,11 @@ class Astrometry(Tools):
         dx = total_flux_list[index1d, 1]
         dy = total_flux_list[index1d, 2]
         dr = total_flux_list[index1d, 3]
-        
-        self._print_msg(
-            'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
-                dx, dy, dr))
+
+        if verbose:
+            self._print_msg(
+                'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
+                    dx, dy, dr))
         
         return dx, dy, dr, np.squeeze(guess_matrix)
 

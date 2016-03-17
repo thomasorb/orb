@@ -1092,9 +1092,9 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                + 'order 0: {} radians\n'.format(params[2])
                + 'order 1: {} radians\n'.format(params[3]))
 
-    ZERN_MODES = 20 # number of Zernike modes to fit
+    ZERN_MODES = 30 # number of Zernike modes to fit
 
-    CROP_COEFF = 0.85 # proportion of the pahse map to keep when
+    CROP_COEFF = 0.85 # proportion of the phase map to keep when
                       # cropping
 
     # bad values are filtered and phase map is cropped to remove

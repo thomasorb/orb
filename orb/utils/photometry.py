@@ -104,7 +104,7 @@ def read_atmospheric_extinction_file(file_path):
         
     return np.array(wav), np.array(ext)
 
-def get_atmospheric_extinction(file_path, step, order, step_nb):
+def get_atmospheric_extinction(file_path, step, order, step_nb, corr=1.):
     """Return the atmospheric extinction curve in mag/airmass in the
     range defined by the observation parameters along a reference nm
     axis (on the interferometer optical axis).
@@ -116,13 +116,18 @@ def get_atmospheric_extinction(file_path, step, order, step_nb):
     :param order: Folding order
 
     :param step_nb: Number of step along the nm axis.
+    
+    :param corr: (Optional) Correction coefficient related to the
+      incident angle (default 1).
     """
     axis, atm_ext = read_atmospheric_extinction_file(file_path)
     atm_extf = scipy.interpolate.UnivariateSpline(axis, atm_ext, s=0, k=3)
-    nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
+    nm_axis = orb.utils.spectrum.create_nm_axis(
+        step_nb, step, order, corr=corr).astype(float)
     return atm_extf(nm_axis)
 
-def get_atmospheric_transmission(file_path, step, order, step_nb, airmass=1):
+def get_atmospheric_transmission(file_path, step, order, step_nb, airmass=1,
+                                 corr=1.):
     """Return the atmospheric transmission curve at a given airmass
     in the range defined by the observation parameters along a
     reference nm axis (on the interferometer optical axis).
@@ -136,8 +141,11 @@ def get_atmospheric_transmission(file_path, step, order, step_nb, airmass=1):
     :param step_nb: Number of step along the nm axis.
 
     :param airmass: (Optional) Airmass (default 1)
+
+    :param corr: (Optional) Correction coefficient related to the
+      incident angle (default 1).
     """
-    atm_ext = get_atmospheric_extinction(file_path, step, order, step_nb)
+    atm_ext = get_atmospheric_extinction(file_path, step, order, step_nb, corr=corr)
     return 10**(-atm_ext*airmass/2.5)
 
 def read_quantum_efficiency_file(file_path):
@@ -159,7 +167,7 @@ def read_quantum_efficiency_file(file_path):
         
     return np.array(wav), np.array(qe)
 
-def get_quantum_efficiency(file_path, step, order, step_nb):
+def get_quantum_efficiency(file_path, step, order, step_nb, corr=1.):
     """Return the quantum efficiency curve in the range defined by the
     observation parameters along a reference nm axis (on the
     interferometer optical axis).
@@ -171,10 +179,14 @@ def get_quantum_efficiency(file_path, step, order, step_nb):
     :param order: Folding order
 
     :param step_nb: Number of step along the nm axis.
+
+    :param corr: (Optional) Correction coefficient related to the
+      incident angle (default 1).
     """
     axis, qe = read_quantum_efficiency_file(file_path)
     qef = scipy.interpolate.UnivariateSpline(axis, qe, s=0, k=3)
-    nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
+    nm_axis = orb.utils.spectrum.create_nm_axis(
+        step_nb, step, order, corr=corr).astype(float)
     return qef(nm_axis)
 
 
@@ -196,7 +208,7 @@ def read_mirror_transmission_file(file_path):
         
     return np.array(wav), np.array(mir_trans)
 
-def get_mirror_transmission(file_path, step, order, step_nb):
+def get_mirror_transmission(file_path, step, order, step_nb, corr=1.):
     """Return the mirror transmission curve in mag/airmass in the
     range defined by the observation parameters along a reference nm
     axis (on the interferometer optical axis).
@@ -208,10 +220,14 @@ def get_mirror_transmission(file_path, step, order, step_nb):
     :param order: Folding order
 
     :param step_nb: Number of step along the nm axis.
+
+    :param corr: (Optional) Correction coefficient related to the
+      incident angle (default 1).
     """
     axis, mir_trans = read_mirror_transmission_file(file_path)
     mir_transf = scipy.interpolate.UnivariateSpline(axis, mir_trans, s=0, k=3)
-    nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
+    nm_axis = orb.utils.spectrum.create_nm_axis(
+        step_nb, step, order, corr=corr).astype(float)
     return mir_transf(nm_axis)
 
 
@@ -257,7 +273,7 @@ def read_optics_file(optics_file_path):
         
     return optics_nm, optics_trans
 
-def get_optics_transmission(file_path, step, order, step_nb):
+def get_optics_transmission(file_path, step, order, step_nb, corr=1.):
     """Return the optics transmission curve in mag/airmass in the
     range defined by the observation parameters along a reference nm
     axis (on the interferometer optical axis).
@@ -269,10 +285,14 @@ def get_optics_transmission(file_path, step, order, step_nb):
     :param order: Folding order
 
     :param step_nb: Number of step along the nm axis.
+
+    :param corr: (Optional) Correction coefficient related to the
+      incident angle (default 1).
     """
     axis, optics_trans = read_optics_file(file_path)
     optics_transf = scipy.interpolate.UnivariateSpline(axis, optics_trans, s=0, k=1)
-    nm_axis = orb.utils.spectrum.create_nm_axis(step_nb, step, order).astype(float)
+    nm_axis = orb.utils.spectrum.create_nm_axis(
+        step_nb, step, order, corr=corr).astype(float)
     return optics_transf(nm_axis)
 
 def compute_mean_star_flux(star_spectrum, filter_transmission):
