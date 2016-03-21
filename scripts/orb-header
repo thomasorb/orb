@@ -80,7 +80,7 @@ def main(args):
                 if file_type == 'fits':
                     print repr(hdu.header)
                 if file_type == 'hdf5':
-                    print repr(cube.get_frame_header(args.hdu_index))
+                    print repr(cube.get_cube_header())
                 
             elif args.subparser_name == 'key':
                 if file_type == 'fits':
@@ -96,9 +96,8 @@ def main(args):
                     
                         
                 if file_type == 'hdf5':
-                    if args.keyword in cube.get_frame_header(args.hdu_index):
-                        print os.path.split(fits_path)[1].strip(), ' ', cube.get_frame_header(
-                            args.hdu_index)[args.keyword]
+                    if args.keyword in cube.get_cube_header():
+                        print os.path.split(fits_path)[1].strip(), ' ', cube.get_cube_header()[args.keyword]
                     else:
                         print ' > ERROR: keyword {} does not exist.'.format(
                             args.keyword)
@@ -116,7 +115,7 @@ def main(args):
                         
                 if file_type == 'hdf5':
                     with to.open_hdf5(fits_path, 'a') as f:
-                        hdr = cube.get_frame_header(args.hdu_index)
+                        hdr = cube.get_cube_header()
                         for ikey in args.keyword:
                             if ikey in hdr:
                                 del hdr[ikey]
@@ -172,7 +171,7 @@ if __name__ == "__main__":
     parser.add_argument('fits_path', help='Path to the FITS file')
 
     parser.add_argument('-i', dest="hdu_index", default=0, type=int,
-                        help="Change HDU index")
+                        help="Change HDU index (used only for FITS files)")
 
     parser.add_argument('--cube', dest="cube", default=False,
                         action='store_true', help="If image list is a cube sort list based on step number instead of filepath")

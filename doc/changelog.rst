@@ -740,8 +740,31 @@ v.1.6.2
 =======
 
 
+Photometry
+----------
+
+* Standard class moved from orbs/process.py to core.py.
+* new utils/photometry.py
+
+
+QuadCube
+--------
+
+
 Miscellaneous
 -------------
 
-- moved Standard class from orbs.process to orb.core
+* brute_force_guess made more robust (frame is cleaned from all other
+  things than detected stars to remove bad brilliant object
+  --e.g. saturated stars--)
+* brute_force_guess made faster by moving the core functions to
+  cutils.py
 
+v.1.6.3
+-------
+
+* star photometry is now computed on the axis at the center of the
+  frame instead of the axis at 0 degrees (interferometer axis). This
+  way the filter and standrd curve are well centered instead of beeing
+  moved too much to the left and cut (which was resulting in an
+  underestimation of a few percent on the std star theoretical flux).

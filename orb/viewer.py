@@ -102,6 +102,7 @@ class BaseViewer(object):
     step = None
     order = None
     bunit = None
+    axis_corr = None
 
     spectrum_window = None
     
@@ -473,12 +474,14 @@ class BaseViewer(object):
             if self.spectrum_window is None:
                 self.spectrum_window = ZPlotWindow(
                     self.step, self.order,
-                    self.wavenumber, self.bunit)
+                    self.wavenumber, self.bunit,
+                    axis_corr=self.axis_corr)
                 self.spectrum_window.show()
             elif not self.spectrum_window.w.get_property('visible'):
                 self.spectrum_window = ZPlotWindow(
                     self.step, self.order,
-                    self.wavenumber, self.bunit)
+                    self.wavenumber, self.bunit,
+                     axis_corr=self.axis_corr)
                 self.spectrum_window.show()
 
             if self.hdf5:
@@ -692,6 +695,11 @@ class BaseViewer(object):
                 self.step = self.header['STEP']
             elif 'SITSTPSZ' in self.header:
                 self.step = self.header['SITSTPSZ'] * self.header['SITFRGNM']
+
+            if 'AXISCORR' in self.header:
+                self.axis_corr = self.header['AXISCORR']
+            else:
+                self.axis_corr = 1.
                 
             if 'CUNIT3' in self.header:
                 if 'nm' in self.header['CUNIT3']:
@@ -704,10 +712,12 @@ class BaseViewer(object):
                 and self.wavenumber is not None):
                 if self.wavenumber:
                     self.zaxis = utils.spectrum.create_cm1_axis(
-                        self.dimz, self.step, self.order)
+                        self.dimz, self.step, self.order,
+                        corr=self.axis_corr)
                 else:
                     self.zaxis = utils.spectrum.create_nm_axis(
-                        self.dimz, self.step, self.order)
+                        self.dimz, self.step, self.order,
+                        corr=self.axis_corr)
 
             if 'BUNIT' in self.header:
                 if 'erg/cm^2/s/A' in self.header.comments['BUNIT']:
@@ -949,6 +959,7 @@ class ZPlotWindow(PopupWindow):
     _substract = False
     
     def __init__(self, step, order, wavenumber, bunit,
+                 axis_corr=1.,
                  title='Zdata', simple=False):
         """Init and construct spectrum window.
 
@@ -960,6 +971,9 @@ class ZPlotWindow(PopupWindow):
           wavelength, None otherwise.
 
         :param bunit: Flux unit (string)
+
+        :param axis_corr: (Optional) Wave axis correction coefficient
+          (default 1.)
 
         :param title: (Optional) Window title (default Zdata)
 
@@ -973,6 +987,7 @@ class ZPlotWindow(PopupWindow):
         self.simple_mode = simple
         self.step = step
         self.order = order
+        self.axis_corr = axis_corr
         self.wavenumber = wavenumber
         if self.wavenumber is None:
             self.is_spectrum = False
@@ -1031,6 +1046,7 @@ class ZPlotWindow(PopupWindow):
             # add fit plugin
             self.fitplugin = FitPlugin(step=self.step,
                                        order=self.order,
+                                       axis_corr=self.axis_corr,
                                        update_cb=self.update,
                                        wavenumber=self.wavenumber,
                                        parent=self)
@@ -1142,10 +1158,10 @@ class ZPlotWindow(PopupWindow):
             and self.is_spectrum):
             if self.wavenumber:
                 return utils.spectrum.create_cm1_axis(
-                    n, self.step, self.order)
+                    n, self.step, self.order, corr=self.axis_corr)
             else:
                 return utils.spectrum.create_nm_axis(
-                    n, self.step, self.order)
+                    n, self.step, self.order, corr=self.axis_corr)
         else:
             return np.arange(n)
 
@@ -1283,6 +1299,7 @@ class FitPlugin(object):
     wavenumber = None
     step = None
     order = None
+    axis_corr = None
     apod = None
     spectrum = None
     update_cb = None
@@ -1290,13 +1307,16 @@ class FitPlugin(object):
     fitrange = None
     parent = None
     
-    def __init__(self, step=None, order=None, apod=None,
+    def __init__(self, step=None, order=None, axis_corr=1., apod=None,
                  update_cb=None, wavenumber=True, parent=None):
         """Init FitPlugin class
 
         :param step: (Optional) Step size in nm (default None).
 
         :param order: (Optional) Folding order (default None).
+
+        :param axis_corr: (Optional) Wave axis correction coefficient
+          (default 1.)
 
         :param apod: (Optional) Apodization (default None).
 
@@ -1313,6 +1333,7 @@ class FitPlugin(object):
         self.fit_lines = None
 
         if parent is not None: self.parent = parent
+        self.axis_corr = axis_corr
         
         # FIT BOX
         frame = gtk.Frame('Spectrum Fit')
@@ -1528,7 +1549,7 @@ class FitPlugin(object):
                     self.spectrum,
                     self.get_fit_lines(),
                     self.step, self.order,
-                    1, 1,
+                    1, self.axis_corr,
                     fwhm_guess=fwhm_guess,
                     signal_range=[np.nanmin(spectrum_range),
                                   np.nanmax(spectrum_range)],
@@ -1594,10 +1615,10 @@ class FitPlugin(object):
         if self.order is not None and self.step is not None and self.spectrum is not None:
             if not self.wavenumber:
                 return utils.spectrum.create_nm_axis(
-                    self.spectrum.shape[0], self.step, self.order)
+                    self.spectrum.shape[0], self.step, self.order, self.axis_corr)
             else:
                 return utils.spectrum.create_cm1_axis(
-                    self.spectrum.shape[0], self.step, self.order)
+                    self.spectrum.shape[0], self.step, self.order, self.axis_corr)
         else: return None
             
     def _get_spectrum_range(self):

@@ -1669,7 +1669,6 @@ class Cube(Tools):
 
     overwrite = None
 
-    _hdf5 = None
     _data_prefix = None
     _project_header = None
     _calibration_laser_header = None
@@ -1692,6 +1691,12 @@ class Cube(Tools):
     _parallel_access_to_data = None # authorize parallel access to
                                     # data (False for HDF5)
 
+    is_hdf5_frames = None # frames are hdf5 frames (i.e. the cube is
+                          # not an HDF5 cube but is made from hdf5
+                          # frames)
+    is_hdf5_cube = None # tell if the cube is an hdf5 cube
+                        # (i.e. created via OutHDFCube or
+                        # OutHDFQuadCube)
     is_complex = None # tell if cube's data is complex.
     dtype = None # data type
     is_quad_cube = False # Basic cube is not quad cube (see class
@@ -1845,19 +1850,19 @@ class Cube(Tools):
 
                         # detect if hdf5 format or not
                         if os.path.splitext(image_name)[1] == '.hdf5':
-                            self._hdf5 = True
+                            self.is_hdf5_frames = True
                         elif os.path.splitext(image_name)[1] == '.fits':
-                            self._hdf5 = False
+                            self.is_hdf5_frames = False
                         else:
                             self._print_error("Unrecognized extension of file {}. File extension must be '*.fits' or '*.hdf5' depending on its format.".format(image_name))
 
-                        if self._hdf5 :
+                        if self.is_hdf5_frames :
                             if self._image_mode != 'classic': self._print_warning("Image mode changed to 'classic' because 'spiomm' and 'sitelle' modes are not supported in hdf5 format.")
                             if self._prebinning != 1: self._print_warning("Prebinning is not supported for images in hdf5 format")
                             self._image_mode = 'classic'
                             self._prebinning = 1
         
-                        if not self._hdf5:
+                        if not self.is_hdf5_frames:
                             image_data = self.read_fits(
                                 image_name,
                                 image_mode=self._image_mode,
@@ -2039,7 +2044,7 @@ class Cube(Tools):
            :py:meth:`orb.core.get_data_frame` or
            :py:meth:`orb.core.get_data`.
         """
-        if not self._hdf5:
+        if not self.is_hdf5_frames:
             hdu = self.read_fits(self.image_list[frame_index],
                                  return_hdu_only=True,
                                  return_mask=self._return_mask)
@@ -2052,7 +2057,7 @@ class Cube(Tools):
             # to avoid loading more than one time the same image.
             # check if already binned data exists
 
-            if not self._hdf5:
+            if not self.is_hdf5_frames:
                 stored_file_path = os.path.join(
                     os.path.split(self._get_data_path_hdr())[0],
                     'STORED',
@@ -2089,7 +2094,7 @@ class Cube(Tools):
                 section = image[x_slice, y_slice]
             else:
                 if image is None: # HDF5 and FITS
-                    if not self._hdf5:
+                    if not self.is_hdf5_frames:
                         section = np.copy(
                             hdu[0].section[y_slice, x_slice].transpose())
                     else:
@@ -2225,7 +2230,7 @@ class Cube(Tools):
           http://fits.gsfc.nasa.gov/ for more information on FITS
           files.
         """
-        if not self._hdf5:
+        if not self.is_hdf5_frames:
             hdu = self.read_fits(self.image_list[index],
                                  return_hdu_only=True)
             return hdu[0].header
@@ -2639,9 +2644,9 @@ class Cube(Tools):
         else:
             zmin = np.min(z_range)
             zmax = np.max(z_range)
-           
             
-        if (self._hdf5 or force_hdf5) and not force_fits: # HDF5 export
+        if ((self.is_hdf5_frames or force_hdf5 or self.is_hdf5_cube)
+            and not force_fits): # HDF5 export
             self._print_msg('Exporting cube to an HDF5 cube: {}'.format(
                 export_path))
             if not self.is_quad_cube:
@@ -2668,7 +2673,9 @@ class Cube(Tools):
                     progress.update(iframe-zmin, info='exporting frame {}'.format(iframe))
                     outcube.write_frame(
                         iframe,
-                        data=self.get_data(xmin, xmax, ymin, ymax, iframe, iframe + 1),
+                        data=self.get_data(xmin, xmax, ymin, ymax,
+                                           iframe, iframe + 1,
+                                           silent=True),
                         header=self.get_frame_header(iframe),
                         force_float32=True)
                 progress.end()
@@ -2683,7 +2690,9 @@ class Cube(Tools):
                     x_min, x_max, y_min, y_max = self._get_quadrant_dims(
                         iquad, self.dimx, self.dimy, int(math.sqrt(float(self.quad_nb))))
                     
-                    data_quad = self.get_data(x_min, x_max, y_min, y_max, 0, self.dimz,
+                    data_quad = self.get_data(x_min, x_max,
+                                              y_min, y_max,
+                                              0, self.dimz,
                                               silent=True)
 
                     # write data
@@ -2699,29 +2708,35 @@ class Cube(Tools):
         else: # FITS export
             self._print_msg('Exporting cube to a FITS cube: {}'.format(
                 export_path))
-            data = np.empty((xmax-xmin, ymax-ymin, zmax-zmin), dtype=float)
-        
-            job_server, ncpus = self._init_pp_server()
-            progress = ProgressBar(zmax-zmin)
-            for iframe in range(0, zmax-zmin, ncpus):
-                progress.update(iframe,
-                                info='exporting data frame {}'.format(
-                    iframe))
-                if iframe + ncpus >= zmax - zmin:
-                    ncpus = zmax - zmin - iframe
 
-                jobs = [(ijob, job_server.submit(
-                    self.get_data, 
-                    args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
-                          zmin + iframe +ijob + 1)))
-                        for ijob in range(ncpus)]
-
-                for ijob, job in jobs:
-                    data[:,:,iframe+ijob] = job()
+            if not self.is_hdf5_cube:
                 
-            progress.end()        
-            self._close_pp_server(job_server)
-        
+                data = np.empty((xmax-xmin, ymax-ymin, zmax-zmin),
+                                dtype=float)
+                job_server, ncpus = self._init_pp_server()
+                progress = ProgressBar(zmax-zmin)
+                for iframe in range(0, zmax-zmin, ncpus):
+                    progress.update(
+                        iframe,
+                        info='exporting data frame {}'.format(
+                            iframe))
+                    if iframe + ncpus >= zmax - zmin:
+                        ncpus = zmax - zmin - iframe
+
+                    jobs = [(ijob, job_server.submit(
+                        self.get_data, 
+                        args=(xmin, xmax, ymin, ymax, zmin + iframe +ijob,
+                              zmin + iframe +ijob + 1)))
+                            for ijob in range(ncpus)]
+
+                    for ijob, job in jobs:
+                        data[:,:,iframe+ijob] = job()
+
+                progress.end()        
+                self._close_pp_server(job_server)
+            else:
+                data = self.get_data(xmin, xmax, ymin, ymax, zmin, zmax)
+                
             self.write_fits(export_path, data, overwrite=overwrite,
                             fits_header=header)
 
@@ -3713,6 +3728,8 @@ class HDFCube(Cube):
         self._project_header = project_header
         self._wcs_header = wcs_header
         self._calibration_laser_header = calibration_laser_header
+
+        self.is_hdf5_cube = True
 
         self._prebinning = None
         if binning is not None:
