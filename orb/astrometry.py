@@ -1868,6 +1868,8 @@ class Astrometry(Tools):
         # get deep frame
         deep_frame = self._get_combined_frame(
             use_deep_frame=full_deep_frame)
+
+        ## self.write_fits('deep.fits', deep_frame, overwrite=True) ; quit()
             
         deltax = self.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
@@ -1911,7 +1913,7 @@ class Astrometry(Tools):
         
         # Compute initial star positions from initial transformation
         # parameters
-        rmax = max(self.dimx, self.dimy) / math.sqrt(2)
+        rmax = max(self.dimx, self.dimy) /2.#/ math.sqrt(2)
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_deg), rmax)
         self.reset_star_list(star_list_pix)
@@ -1929,7 +1931,7 @@ class Astrometry(Tools):
         ## pl.show()
         ## quit()
 
-        ## brute force guess #####
+        ## brute force guess ####
         x_range_len = SIZE_COEFF * float(self.dimx)
         y_range_len = SIZE_COEFF * float(self.dimy)
   
@@ -1944,23 +1946,27 @@ class Astrometry(Tools):
             deep_frame_corr,
             star_list_pix, x_range, y_range, r_range,
             [self.target_x, self.target_y], 1.)
+
+        ## self.write_fits('guess.fits', guess_matrix, overwrite=True) ; quit()
         
         # refined brute force guess
-        x_range_len = SIZE_COEFF / 10. * float(self.dimx)
-        y_range_len = SIZE_COEFF / 10. * float(self.dimy)
+        x_range_len = max(SIZE_COEFF / 20. * float(self.dimx), self.fwhm_pix * 3) # 3 FWHM min
+        y_range_len = max(SIZE_COEFF / 20. * float(self.dimy), self.fwhm_pix * 3) # 10 pixels min
+        
         finer_angle_range = ANGLE_RANGE / 6
         finer_xy_step = min(XYRANGE_STEP_NB / 4,
-                            x_range_len) # avoid xystep < 1 pixel
+                            int(x_range_len) + 1) # avoid xystep < 1 pixel
+
         
         x_range = np.linspace(dx-x_range_len/2, dx+x_range_len/2,
                               finer_xy_step)
         y_range = np.linspace(dy-y_range_len/2, dy+y_range_len/2,
                               finer_xy_step)
         r_range = np.linspace(dr-finer_angle_range/2., dr+finer_angle_range/2.,
-                              ANGLE_STEPS)
+                              ANGLE_STEPS * 2)
 
         zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
-                                 1.+ZOOM_RANGE_COEFF/2., 10)
+                                 1.+ZOOM_RANGE_COEFF/2., 20)
         zoom_guesses = list()
         for izoom in zoom_range:
             dx, dy, dr, guess_matrix = self.brute_force_guess(
@@ -1979,7 +1985,7 @@ class Astrometry(Tools):
     
         deltax *= best_guess[0]
         deltay *= best_guess[0]
-
+        
         self._print_msg(
             "Brute force guess of the parameters:\n"
             + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
@@ -2000,17 +2006,29 @@ class Astrometry(Tools):
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_deg), rmax)
         self.reset_star_list(star_list_pix)
-        
+
+        ############################
+        ### plot stars positions ###
+        ############################
+        ## import pylab as pl
+        ## im = pl.imshow(deep_frame.T,
+        ##                vmin=np.nanmedian(deep_frame),
+        ##                vmax=np.nanmedian(deep_frame)+50)
+        ## im.set_cmap('gray')
+        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
+        ##            edgecolor='blue', linewidth=2., alpha=1.,
+        ##            facecolor=(0,0,0,0))
+        ## pl.show()
+            
         # 1st fit pass
-        self._print_msg('Fitting {} stars'.format(
-            star_list_pix.shape[0]))
+        ## self._print_msg('Fitting {} stars'.format(
+        ##     star_list_pix.shape[0]))
         
-        
-        fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
-                                             multi_fit=True, enable_zoom=True,
-                                             enable_rotation=True, save=False,
-                                             fix_fwhm=True, fix_pos=False)
-        star_list_fit = fit_params.get_star_list(all_params=True)
+        ## fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
+        ##                                      multi_fit=True, enable_zoom=True,
+        ##                                      enable_rotation=True, save=False,
+        ##                                      fix_fwhm=False, fix_pos=False)
+        ## star_list_fit = fit_params.get_star_list(all_params=True)
 
         ############################
         ### plot stars positions ###
@@ -2028,68 +2046,74 @@ class Astrometry(Tools):
         ##            facecolor=(0,0,0,0))
         ## pl.show()
         
-        fwhm_pix = utils.stats.robust_median(fit_params[:,'fwhm_pix'])
+        ## fwhm_pix = utils.stats.robust_median(fit_params[:,'fwhm_pix'])
         
-        self.reset_fwhm_arc(self.pix2arc(fwhm_pix))
-        if self.dimz > 1:
-            self.fit_results[:,0] = fit_params
-        else:
-            self.fit_results = fit_params
+        ## self.reset_fwhm_arc(self.pix2arc(fwhm_pix))
+        ## if self.dimz > 1:
+        ##     self.fit_results[:,0] = fit_params
+        ## else:
+        ##     self.fit_results = fit_params
 
-        # get median snr to remove bad fitted stars from all the lists
-        snr = fit_params[:,'snr']
+        ## # get median snr to remove bad fitted stars from all the lists
+        ## snr = fit_params[:,'snr']
     
-        # min SNR must be > 3
-        snr_med = max(utils.stats.robust_median(snr), 3.)
-
-        star_list_deg_temp = list()
-        star_list_pix_temp = list()
-        star_list_fit_temp = list()
-        for istar in range(len(snr)):
-            if snr[istar] > snr_med:
-                star_list_deg_temp.append(star_list_deg[istar])
-                star_list_pix_temp.append(star_list_pix[istar])
-                star_list_fit_temp.append(star_list_fit[istar])
-
-        star_list_deg = star_list_deg_temp
-        star_list_pix = star_list_pix_temp
-        star_list_fit = star_list_fit_temp
-
-        self._print_msg("Best stars: %d (SNR threshold: %f)"%(
-            len(star_list_deg), snr_med))
-
-        if len(star_list_deg) < MIN_STAR_NB:
-            self._print_error(
-                'Not enough good star to register frame')
-
-        # Optimization of the transformation parameters
-        progress = ProgressBar(0)
-
-        guess = np.array([self.wcs_rotation, self.target_x,
-                          self.target_y, deltax, deltay])
+        ## # min SNR must be > 3
+        ## snr_med = np.nanmax([utils.stats.robust_median(snr), 3.])
         
-        optim = optimize.leastsq(
-            get_transformation_error, guess, 
-            args=(star_list_deg, star_list_fit,
-                  self.target_ra, self.target_dec),
-            ftol=1e-10, xtol=1e-10,
-            full_output=True)
-        progress.end()
-        if optim[-1] <= 4:
-            [self.wcs_rotation, self.target_x, self.target_y, deltax, deltay] = optim[0]
-            res = np.sqrt(np.nansum(optim[2]['fvec']**2.))
-            if res < 1e-3:
-                self._print_msg('Optimization residual: {}'.format(res))
-            else:
-                self._print_warning('Bad optimization residual: {}'.format(res))
-        else:
-            self._print_error('Bad optimization of transformation parameters')
+
+        ## star_list_deg_temp = list()
+        ## star_list_pix_temp = list()
+        ## star_list_fit_temp = list()
+        ## for istar in range(len(snr)):
+        ##     if snr[istar] > snr_med:
+        ##         star_list_deg_temp.append(star_list_deg[istar])
+        ##         star_list_pix_temp.append(star_list_pix[istar])
+        ##         star_list_fit_temp.append(star_list_fit[istar])
+
+        ## star_list_deg = star_list_deg_temp
+        ## star_list_pix = star_list_pix_temp
+        ## star_list_fit = star_list_fit_temp
+
+        ## self._print_msg("Best stars: %d (SNR threshold: %f)"%(
+        ##     len(star_list_deg), snr_med))
+
+        ## if len(star_list_deg) < MIN_STAR_NB:
+        ##     self._print_error(
+        ##         'Not enough good star to register frame')
+
+        ## # Optimization of the transformation parameters
+        ## progress = ProgressBar(0)
+
+        ## guess = np.array([self.wcs_rotation, self.target_x,
+        ##                   self.target_y, deltax, deltay])
+        
+        ## optim = optimize.leastsq(
+        ##     get_transformation_error, guess, 
+        ##     args=(star_list_deg, star_list_fit,
+        ##           self.target_ra, self.target_dec),
+        ##     ftol=1e-10, xtol=1e-10,
+        ##     full_output=True)
+        ## progress.end()
+        ## if optim[-1] <= 4:
+        ##     [self.wcs_rotation, self.target_x, self.target_y, deltax, deltay] = optim[0]
+        ##     res = np.sqrt(np.nansum(optim[2]['fvec']**2.))
+        ##     if res < 1e-3:
+        ##         self._print_msg('Optimization residual: {}'.format(res))
+        ##     else:
+        ##         self._print_warning('Bad optimization residual: {}'.format(res))
+        ## else:
+        ##     self._print_error('Bad optimization of transformation parameters')
+
+
+        ## FIT procedure (see above) is not made anymore because
+        ## optical distrosion are too important. It could be used
+        ## again with a good optical model.
+        ## star_list_fit = np.copy(star_list_pix)
         
         # update WCS
         wcs = update_wcs(wcs, self.target_x, self.target_y,
                          deltax, deltay, self.target_ra, self.target_dec,
                          self.wcs_rotation)
-
 
         ## COMPUTE SIP
         if compute_distorsion:
@@ -2114,8 +2138,6 @@ class Astrometry(Tools):
             star_list_pix = star_list_pix[np.nonzero(index)]
             err = fit_params[:, 'x_err'][np.nonzero(index)]
 
-      
-
             ############################
             ### plot stars positions ###
             ############################
@@ -2129,8 +2151,7 @@ class Astrometry(Tools):
             ##            edgecolor='blue', linewidth=2., alpha=1.,
             ##            facecolor=(0,0,0,0))
             ## pl.show()
-            
-            
+                        
             wcs = self.fit_sip(star_list_fit,
                                star_list_pix,
                                params=None, init_sip=wcs,
@@ -2156,13 +2177,17 @@ class Astrometry(Tools):
             # the fit box gets fitted instead of the star at the
             # center of it. 
             dx = get_filtered_params(
-                fit_params, param='dx', dist_min=3.)
+                fit_params, param='dx',
+                dist_min=self.fwhm_pix*2.)
             dy = get_filtered_params(
-                fit_params, param='dy', dist_min=3.)
+                fit_params, param='dy',
+                dist_min=self.fwhm_pix*2.)
             x_err = get_filtered_params(
-                fit_params, param='x_err', dist_min=3.)
+                fit_params, param='x_err',
+                dist_min=self.fwhm_pix*2.)
             y_err = get_filtered_params(
-                fit_params, param='y_err', dist_min=3.)
+                fit_params, param='y_err',
+                dist_min=self.fwhm_pix*2.)
             
             precision = np.sqrt(dx**2. + dy**2.)
             precision_err = np.sqrt((dx**2. * x_err**2.

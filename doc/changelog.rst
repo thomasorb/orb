@@ -768,3 +768,10 @@ v.1.6.3
   way the filter and standrd curve are well centered instead of beeing
   moved too much to the left and cut (which was resulting in an
   underestimation of a few percent on the std star theoretical flux).
+
+* :py:meth:`~astrometry.Astrometry.register` : registration is now
+  only made by photometry optimization (brute force) and does not rely
+  on fit because the distorsion are too big to give correct fit
+  results. If it can be less precise (a precision better than 1 pixel
+  is impossible by definition) it is much more robust. Note that after
+  all distorsion are bigger than 3 to 4 pixels.

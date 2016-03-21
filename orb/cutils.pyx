@@ -1401,9 +1401,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                                     params[istar,4],
                                     box_size, box_size)
             # background
-            xx, xy = np.mgrid[0 - dx: star.shape[0] - dx,
-                              0 - dy: star.shape[1] - dy]
-            star += params[istar,0] + params[istar,5] * xy
+            #xx, xy = np.mgrid[0 - dx: star.shape[0] - dx,
+            #                  0 - dy: star.shape[1] - dy]
+            #star += params[istar,0] + params[istar,5] * xy
+            star += params[istar,0]
 
             x_min, x_max, y_min, y_max = get_box_coords(
                 int_posx, int_posy, box_size,
@@ -1420,7 +1421,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
             if star.shape[0] > 1 and star.shape[1] > 1:
                 data = frame[x_min:x_max, y_min:y_max]
-                star = (star - data) / sigma(data, noise[istar], dcl)
+                star = (star - data) #/ sigma(data, noise[istar], dcl)
                 if saturation > 0.:
                     star[np.nonzero(data >= saturation)] = np.nan
             
@@ -1435,6 +1436,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                     res[0: star.shape[0],
                         istar * box_size:
                         istar * box_size + star.shape[1]] = star
+        
         return res
     
     def diff(np.ndarray[np.float64_t, ndim=1] free_p,
@@ -1477,7 +1479,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         res = model_diff(frame.shape[0], frame.shape[1],
                          params, box_size, frame, noise, dcl,
                          saturation)
-           
+        
         return res[np.nonzero(~np.isnan(res))]
     
     ## filter pos list
@@ -1498,10 +1500,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     if np.size(new_pos) == 0:
         return []
     
-    cdef int PARAMS_NB = 6
+    cdef int PARAMS_NB = 5
     cdef int star_nb = new_pos.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
-        (star_nb, PARAMS_NB), dtype=float) # [STARS_NB * (H,A,DX,DY,FWHM,GRAD)]
+        (star_nb, PARAMS_NB), dtype=float) # [STARS_NB * (H,A,DX,DY,FWHM)]
     cdef np.ndarray[np.float64_t, ndim=2] stars_err = np.zeros_like(
         stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=2] new_stars_p = np.zeros(
@@ -1694,7 +1696,6 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     ### CHECK FIT RESULTS ###
     if fit[-1] <= 4:
-        
         returned_data = dict()
         last_diff = fit[2]['fvec']
         stars_p, cov_p = params_vect2arrays(
@@ -1719,6 +1720,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         rcx = <double> frame.shape[0] / 2.
         rcy = <double> frame.shape[1] / 2.
         cov_matrix = fit[1]
+        
         if cov_matrix is None: # no covariance : no error estimation
             stars_err.fill(np.nan)
             # compute transformed postitions

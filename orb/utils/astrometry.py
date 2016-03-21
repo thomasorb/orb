@@ -1468,6 +1468,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
     if not no_fit:
         if multi_fit:
             if saturation is None: saturation = 0
+            
             fit_params = orb.cutils.multi_fit_stars(
                 np.array(fit_frame, dtype=float), np.array(star_list), box_size,
                 height_guess=np.array(background, dtype=np.float),
@@ -1492,6 +1493,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
                     star_params = dict()
                     p = fit_params['stars-params'][istar, :]
                     e = fit_params['stars-params-err'][istar, :]
+                    
                     star_params['height'] = p[0]
                     star_params['height_err'] = e[0]
                     star_params['amplitude'] = p[1]
