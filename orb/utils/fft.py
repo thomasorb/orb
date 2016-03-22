@@ -331,62 +331,6 @@ def border_cut_window(n, coeff=0.2):
     return window
 
 
-def get_lr_phase(interf, n_phase=None, return_lr_spectrum=False):
-    """Return a low resolution phase from a given interferogram vector.
-
-    :param interf: Interferogram vector
-    
-    :param n_phase: (Optional) Number of points for phase
-      computation. Of course it can be no greater than the number of
-      points of the interferogram. If None, this is set to 50% of the
-      interferogram length (Default None).
-
-    :param return_lr_spectrum: (Optional) If True return also the low
-      resolution spectrum from which phase is computed (Default False).
-    """
-    LOW_RES_COEFF = 0.5 # Ratio of the number of points for phase
-                        # computation over the number of points of the
-                        # interferogram
-                        
-    dimz = interf.shape[0]
-    # define the number of points for phase computation
-    if n_phase is None:
-        n_phase = int(LOW_RES_COEFF * float(dimz))
-            
-    elif n_phase > dimz:
-        warnings.warn("The number of points for phase computation is too high (it can be no greater than the interferogram length). Phase is computed with the maximum number of points available")
-        n_phase = dimz
-
-    if n_phase != dimz:
-        lr_interf = np.copy(interf[
-            int((dimz - n_phase)/2.):
-            int((dimz - n_phase)/2.) + n_phase])
-    else:
-        lr_interf = np.copy(interf)
-        
-    # apodization
-    lr_interf *= learner95_window(n_phase)
-  
-    # zero padding
-    zp_phase_len = next_power_of_two(2 * n_phase)
-    zp_border = int((zp_phase_len - n_phase) / 2.)
-    temp_vector = np.zeros(zp_phase_len, dtype=float)
-    temp_vector[zp_border:(zp_border + n_phase)] = lr_interf
-    lr_interf = temp_vector
-    
-    # centerburst
-    lr_interf = np.roll(
-        lr_interf, zp_phase_len/2 - int((dimz&1 and not n_phase&1)))
-    
-    # fft
-    lr_spectrum = np.fft.fft(lr_interf)[:zp_phase_len/2]
-    lr_phase = np.unwrap(np.angle(lr_spectrum))
-    if not return_lr_spectrum:
-        return orb.utils.vector.interpolate_size(lr_phase, n_phase, 1)
-    else:
-        return (orb.utils.vector.interpolate_size(lr_phase, n_phase, 1),
-                orb.utils.vector.interpolate_size(np.abs(lr_spectrum), n_phase, 1))
-
 def compute_phase_coeffs_vector(phase_maps,
                                 res_map=None):
     """Return a vector containing the mean of the phase

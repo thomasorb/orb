@@ -704,6 +704,9 @@ def fit_map(data_map, err_map, smooth_deg):
     fit_rms_error =(np.nanmean(np.sqrt(res_map**2.))
                 / (np.nanmax(data_map) - np.nanmin(data_map)))
 
+    orb.utils.io.write_fits('fit.fits', fitted_data_map, overwrite=True) #####
+    orb.utils.io.write_fits('fit_res.fits', res_map, overwrite=True) #####
+    
     return fitted_data_map, res_map, fit_rms_error
 
 
@@ -1011,7 +1014,28 @@ def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
 
     :return: A tuple: (Fitted map, residual map)
     """
-    # order 1 fit 
+    # order 1 fit
+    
+    CROP_COEFF = 0.85 # proportion of the phase map to keep when
+                      # cropping
+
+    # bad values are filtered and phase map is cropped to remove
+    # borders with erroneous phase values.
+    phase_map[np.nonzero(phase_map==0)] = np.nan
+    
+    xmin,xmax,ymin,ymax = get_box_coords(
+        phase_map.shape[0]/2,
+        phase_map.shape[1]/2,
+        int(CROP_COEFF*phase_map.shape[0]),
+        0, phase_map.shape[0],
+        0, phase_map.shape[1])
+    phase_map[:xmin,:] = np.nan
+    phase_map[xmax:,:] = np.nan
+    phase_map[:,:ymin] = np.nan
+    phase_map[:,ymax:] = np.nan
+    
+    err_map[np.nonzero(np.isnan(phase_map))] = np.nan
+    
     phase_map_fit, res_map, rms_error = fit_map(phase_map, err_map, 1)
     print ' > Residual STD after 1st order fit: {}'.format(np.nanstd(res_map))
     
@@ -1024,6 +1048,7 @@ def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
     res_map_fit, res_res_map, fit_error = fit_map_zernike(res_map, w_map, nmodes)
     print ' > Residual STD after Zernike fit of the residual: {}'.format(np.nanstd(res_res_map))
     full_fit = phase_map_fit + res_map_fit
+    
     return full_fit, phase_map - full_fit
     
     
