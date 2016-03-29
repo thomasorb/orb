@@ -48,46 +48,42 @@ def main(args):
         if args.z == (None, None):
             args.z = (0, cube.dimz)
             
-        if '.fits' in args.extracted_cube_path:
-            extracted_cube = cube[args.x[0]:args.x[1],
-                                  args.y[0]:args.y[1],
-                                  args.z[0]:args.z[1]]
+        hdr = cube.get_cube_header()
+        if 'CRPIX1' in hdr:
+            hdr['CRPIX1'] = hdr['CRPIX1'] - args.x[0]
+        if 'CRPIX2' in hdr:
+            hdr['CRPIX2'] = hdr['CRPIX2'] - args.y[0]
+        if 'CRPIX3' in hdr:
+            hdr['CRPIX3'] = hdr['CRPIX3'] - args.z[0]
+
+            
+        if '.fits' in args.output_cube_path:
+            output_cube = cube[args.x[0]:args.x[1],
+                               args.y[0]:args.y[1],
+                               args.z[0]:args.z[1]]
+            
             
             Tools(no_log=True).write_fits(
-                args.extracted_cube_path, extracted_cube,
+                args.output_cube_path, output_cube,
                 overwrite=True,
-                fits_header=cube.get_cube_header())
+                fits_header=hdr)
             
-        elif '.hdf5' in args.extracted_cube_path:
-            
-            output_cube = OutHDFCube(args.extracted_cube_path,
-                                     (args.x[1] - args.x[0],
-                                      args.y[1] - args.y[0],
-                                      args.z[1] - args.z[0]), overwrite=True, reset=True)
-            output_cube.append_header(cube.get_cube_header())
-            progress = ProgressBar(cube.dimz)
-            for ik in range(args.z[0], args.z[1] + 1):
-                iframe = cube[args.x[0]:args.x[1],
-                              args.y[0]:args.y[1],ik]
-                output_cube.write_frame(ik, data=iframe, header=cube.get_frame_header(ik))
-                progress.update(ik, 'writing frame {}/{}'.format(ik, cube.dimz))
-            output_cube.close()
-            progress.end()
         else:
-            raise Exception("Unrecognized output file type, must be '.fits' or '.hdf5'")
+            raise Exception("Unrecognized output file extension must be '.fits'")
     else:
-        self._print_error('FITS extraction not implemented.')
+        raise Exception("Unrecognized output file extension must be '.hdf5'")
+    
 
 if __name__ == "__main__":
 
     parser = ArgumentParser(version=('ORB-version {}'.format(
         orb.core.__version__)),
                             description=
-                            "Extract part of a cube.")
+                            "Extract part of an HDF5 cube to a FITS file")
     
-    parser.add_argument('input_cube_path', help='Path to a FITS/HDF5 cube.')
+    parser.add_argument('input_cube_path', help='Path to an HDF5 cube.')
 
-    parser.add_argument('extracted_cube_path', help='Path to a FITS/HDF5 cube.')
+    parser.add_argument('output_cube_path', help='Path to a FITS cube.')
 
     parser.add_argument('-x', dest='x', help='xmin xmax', nargs=2, type=int, default=(None, None))
     

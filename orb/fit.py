@@ -198,7 +198,7 @@ class FitVector(object):
 
         :param all_p_free: Vector of free parameters.
         """
-        
+       
         return (self.vector - self.get_model(all_p_free))[
             np.min(self.signal_range):np.max(self.signal_range)]
 
@@ -1275,7 +1275,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       * lines parameters [key: 'lines-params'] Lines parameters are
         given as an array of shape (lines_nb, 4). The order of the 4
         parameters for each lines is [height at the center of the
-        line, amplitude, position, fwhm]. Postion and FWHM are given
+        line, amplitude, position, fwhm]. Position and FWHM are given
         in nm/cm-1 depending on the input unit (i.e. nm if wavenumber
         is False and cm-1 if wavenumber is True)
       
@@ -1333,13 +1333,13 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         if not cov_pos: pos_def = 'free'
         else: pos_def = '1'
 
-    ## import pylab as pl
-    ## axis = create_cm1_axis(spectrum.shape[0], step, order, corr=nm_laser_obs/nm_laser)
-    ## pl.plot(axis, spectrum)
-    ## searched_lines = lines + cutils.line_shift(shift_guess, lines, wavenumber=wavenumber)
-    ## [pl.axvline(x=iline) for iline in searched_lines]
-    ## [pl.axvline(x=iline, ls=':') for iline in signal_range]
-    ## pl.show()
+##     import pylab as pl
+## #    axis = create_cm1_axis(spectrum.shape[0], step, order, corr=nm_laser_obs/nm_laser)
+##     pl.plot(axis, spectrum)
+##     searched_lines = lines + cutils.line_shift(shift_guess, lines, wavenumber=wavenumber)
+##     [pl.axvline(x=iline) for iline in searched_lines]
+##     [pl.axvline(x=iline, ls=':') for iline in signal_range]
+##     pl.show()
 
     if filter_file_path is not None:
         filter_function = orb.utils.filters.get_filter_function(
@@ -1347,11 +1347,13 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             wavenumber=wavenumber,
             silent=True)[0]
         if wavenumber:
-            filter_axis = create_cm1_axis(spectrum.shape[0], step, order, corr=1.)
+            filter_axis = create_cm1_axis(
+                spectrum.shape[0], step, order, corr=1.)
             filter_axis_calib = create_cm1_axis(spectrum.shape[0], step, order,
                                                 corr=correction_coeff)
         else:
-            filter_axis = create_nm_axis(spectrum.shape[0], step, order, corr=1.)
+            filter_axis = create_nm_axis(
+                spectrum.shape[0], step, order, corr=1.)
             filter_axis_calib = create_nm_axis(spectrum.shape[0], step, order,
                                                corr=correction_coeff)
             

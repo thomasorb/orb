@@ -1,11 +1,12 @@
 ## ORBS filter file 
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # Filter name : SN2
-# Wavelength in nm | Transmission percentage
+# filter min and max set at 90%
 # FILTER_MIN 482.5
-# FILTER_MAX 513.0
-# PHASE_FIT_ORDER 2
+# FILTER_MAX 513.2
+# PHASE_FIT_ORDER 1
 # MODULATION_EFFICIENCY 0.8
+# Wavelength in nm | Transmission percentage
 1000.0 0.0
 999.973332444 0.0
 999.946664889 0.0

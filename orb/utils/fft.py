@@ -665,6 +665,7 @@ def transform_interferogram(interf, nm_laser,
         # interpolation of the phase to zero padded size
         ext_phase = orb.utils.vector.interpolate_size(
             ext_phase, interf_fft.shape[0], 1)
+
     
         spectrum_corr = np.empty_like(interf_fft)
         spectrum_corr.real = (interf_fft.real * np.cos(ext_phase)
@@ -698,13 +699,14 @@ def transform_interferogram(interf, nm_laser,
     if not (wavenumber and correction_coeff == 1.):
         spectrum = orb.utils.vector.interpolate_axis(
             spectrum_corr, final_axis, 5, old_axis=base_axis)
+        # Extrapolated parts of the spectrum are set to NaN
+        spectrum[np.nonzero(final_axis > np.max(base_axis))] = np.nan
+        spectrum[np.nonzero(final_axis < np.min(base_axis))] = np.nan
+
     else:
         spectrum = spectrum_corr
 
-    # Extrapolated parts of the spectrum are set to NaN
-    spectrum[np.nonzero(final_axis > np.max(base_axis))] = np.nan
-    spectrum[np.nonzero(final_axis < np.min(base_axis))] = np.nan
-
+    
     if return_phase:
         return np.copy(np.unwrap(np.angle(spectrum)))
     elif return_complex:
@@ -1196,7 +1198,7 @@ def read_phase_file(file_path, return_spline=False):
         return cm1_axis, phase
     else:
         return interpolate.UnivariateSpline(
-            cm1_axis, phase, k=3, s=0, ext=3)
+            cm1_axis, phase, k=3, s=0, ext=0)
 
 
 

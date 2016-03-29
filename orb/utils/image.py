@@ -704,9 +704,6 @@ def fit_map(data_map, err_map, smooth_deg):
     fit_rms_error =(np.nanmean(np.sqrt(res_map**2.))
                 / (np.nanmax(data_map) - np.nanmin(data_map)))
 
-    orb.utils.io.write_fits('fit.fits', fitted_data_map, overwrite=True) #####
-    orb.utils.io.write_fits('fit_res.fits', res_map, overwrite=True) #####
-    
     return fitted_data_map, res_map, fit_rms_error
 
 
