@@ -750,6 +750,7 @@ Photometry
 QuadCube
 --------
 
+* New major upgrade working.
 
 Miscellaneous
 -------------
@@ -775,3 +776,47 @@ v.1.6.3
   results. If it can be less precise (a precision better than 1 pixel
   is impossible by definition) it is much more robust. Note that after
   all distorsion are bigger than 3 to 4 pixels.
+
+
+v.2. Data Release 1
+*******************
+
+This is a major version corresponding to the first Data Release of
+SITELLE made in March 2016.
+
+v.2.0-DR1-beta
+==============
+
+OutHDFQuadCube
+--------------
+
+Quad divided HDF cube. Much much faster when dealing with quads or
+spectra. This is now the default HDF5 cube for the final output and
+all the spectrum related processes like spectrum computation and
+calibration.
+
+Photometry
+----------
+
+* Standard class moved from ORBS to ORB. This class manage standard
+  related files and compute a estimated flux in a frame.
+
+* A lot has been developped to compute a precise estimation of the
+  number of counts. All the functions related to photometry have been
+  stored in utils/photometry.py.
+
+
+Fit module
+----------
+
+The fit module is now stable and robust. Models can be easily created
+and aggregated to a global model. Model for continuum, emission lines
+and filter have been designed.
+
+
+Compression
+-----------
+
+Compression has been removed. Even a small compression slows down the
+process too much.It could be used for archiving though.
+

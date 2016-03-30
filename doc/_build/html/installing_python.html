@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installing Python &mdash; Orb 1.6.1 documentation</title>
+  <title>Installing Python &mdash; Orb 2.0-DR1-beta documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
         <link rel="next" title="Python for ORB users" href="python_for_orb.html"/>
         <link rel="prev" title="Installing Orb" href="installing_orb.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.6.1
+                2.0-DR1-beta
               </div>
             
           
@@ -108,6 +108,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#cython">Cython</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-pyfftw">Install PyFFTW</a></li>
 </ul>
 </li>
 </ul>
@@ -174,28 +175,29 @@
            <div itemprop="articleBody">
             
   <div class="section" id="installing-python">
-<h1><a class="toc-backref" href="#id14">Installing Python</a><a class="headerlink" href="#installing-python" title="Permalink to this headline">¶</a></h1>
+<h1><a class="toc-backref" href="#id16">Installing Python</a><a class="headerlink" href="#installing-python" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#installing-python" id="id14">Installing Python</a><ul>
-<li><a class="reference internal" href="#fast-installation-sequence-for-mac-users" id="id15">Fast installation sequence for MAC users</a></li>
-<li><a class="reference internal" href="#python" id="id16">Python</a></li>
-<li><a class="reference internal" href="#modules" id="id17">Modules</a><ul>
-<li><a class="reference internal" href="#check-if-a-module-is-already-installed" id="id18">Check if a module is already installed</a></li>
-<li><a class="reference internal" href="#to-use-the-viewers-orb-viewer-and-orb-viewer3d" id="id19">To use the Viewers (orb-viewer and orb-viewer3d)</a></li>
-<li><a class="reference internal" href="#scipy-and-numpy" id="id20">Scipy and Numpy</a></li>
-<li><a class="reference internal" href="#pyfits" id="id21">PyFITS</a></li>
-<li><a class="reference internal" href="#parallel-python" id="id22">Parallel Python</a></li>
-<li><a class="reference internal" href="#pywcs" id="id23">PyWCS</a></li>
-<li><a class="reference internal" href="#bottleneck" id="id24">Bottleneck</a></li>
-<li><a class="reference internal" href="#h5py" id="id25">h5py</a><ul>
-<li><a class="reference internal" href="#install-szip" id="id26">Install SZIP</a></li>
-<li><a class="reference internal" href="#install-hdf5" id="id27">Install HDF5</a></li>
-<li><a class="reference internal" href="#install-h5py-pip-cannot-be-used-directly" id="id28">Install H5PY (pip cannot be used directly)</a></li>
+<li><a class="reference internal" href="#installing-python" id="id16">Installing Python</a><ul>
+<li><a class="reference internal" href="#fast-installation-sequence-for-mac-users" id="id17">Fast installation sequence for MAC users</a></li>
+<li><a class="reference internal" href="#python" id="id18">Python</a></li>
+<li><a class="reference internal" href="#modules" id="id19">Modules</a><ul>
+<li><a class="reference internal" href="#check-if-a-module-is-already-installed" id="id20">Check if a module is already installed</a></li>
+<li><a class="reference internal" href="#to-use-the-viewers-orb-viewer-and-orb-viewer3d" id="id21">To use the Viewers (orb-viewer and orb-viewer3d)</a></li>
+<li><a class="reference internal" href="#scipy-and-numpy" id="id22">Scipy and Numpy</a></li>
+<li><a class="reference internal" href="#pyfits" id="id23">PyFITS</a></li>
+<li><a class="reference internal" href="#parallel-python" id="id24">Parallel Python</a></li>
+<li><a class="reference internal" href="#pywcs" id="id25">PyWCS</a></li>
+<li><a class="reference internal" href="#bottleneck" id="id26">Bottleneck</a></li>
+<li><a class="reference internal" href="#h5py" id="id27">h5py</a><ul>
+<li><a class="reference internal" href="#install-szip" id="id28">Install SZIP</a></li>
+<li><a class="reference internal" href="#install-hdf5" id="id29">Install HDF5</a></li>
+<li><a class="reference internal" href="#install-h5py-pip-cannot-be-used-directly" id="id30">Install H5PY (pip cannot be used directly)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#cython" id="id29">Cython</a></li>
+<li><a class="reference internal" href="#cython" id="id31">Cython</a></li>
+<li><a class="reference internal" href="#install-pyfftw" id="id32">Install PyFFTW</a></li>
 </ul>
 </li>
 </ul>
@@ -210,7 +212,7 @@ installation can be used with pip or setup.py and its the same
 for Mac <a class="reference internal" href="_images/os_apple.png"><img alt="Mac" src="_images/os_apple.png" style="width: 28.0px; height: 28.0px;" /></a> (see below).</p>
 </div>
 <div class="section" id="fast-installation-sequence-for-mac-users">
-<h2><a class="toc-backref" href="#id15">Fast installation sequence for MAC users</a><a class="headerlink" href="#fast-installation-sequence-for-mac-users" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id17">Fast installation sequence for MAC users</a><a class="headerlink" href="#fast-installation-sequence-for-mac-users" title="Permalink to this headline">¶</a></h2>
 <p>Most of the installation process can be done with pip:</p>
 <div class="highlight-python"><div class="highlight"><pre>sudo easy_install pip
 sudo pip install pip --upgrade
@@ -225,6 +227,10 @@ sudo pip install h5py --upgrade
 install them using python. Download the archive, unzip it and, in the
 unzipped folder type:</p>
 <div class="highlight-python"><div class="highlight"><pre>sudo python setup.py install
+</pre></div>
+</div>
+<p>You must also install fftw3 libraries (see <a class="reference external" href="https://pypi.python.org/pypi/h5py/2.5.0">here</a>) and then install the pyfftw wrapper with pip:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo pip install pyfftw --upgrade
 </pre></div>
 </div>
 </div>
@@ -245,7 +251,7 @@ Python 3 !</p>
 </div>
 </div>
 <div class="section" id="modules">
-<h2><a class="toc-backref" href="#id17">Modules</a><a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id19">Modules</a><a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
 <p>The following modules are needed for the reduction pipeline, minimum
 version required is in parenthesis (in general always try to use use
 the <strong>latest version</strong>) :</p>
@@ -259,11 +265,12 @@ the <strong>latest version</strong>) :</p>
 <li><a class="reference external" href="https://pypi.python.org/pypi/Bottleneck">Bottleneck</a> (v0.8.0)</li>
 <li><a class="reference external" href="https://pypi.python.org/pypi/h5py/2.5.0">h5py</a> (v2.5.0)</li>
 <li><a class="reference external" href="http://cython.org/">Cython</a> : Needed to compile <a class="reference external" href="http://cython.org/">Cython</a> functions in cutils.pyx</li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/pyFFTW">pyFFTW</a> (v0.10.1)</li>
 </ul>
 </div></blockquote>
 <p>The following modules are optional.</p>
 <div class="section" id="check-if-a-module-is-already-installed">
-<h3><a class="toc-backref" href="#id18">Check if a module is already installed</a><a class="headerlink" href="#check-if-a-module-is-already-installed" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id20">Check if a module is already installed</a><a class="headerlink" href="#check-if-a-module-is-already-installed" title="Permalink to this headline">¶</a></h3>
 <p>To check if a module is installed just try the following:</p>
 <div class="highlight-python"><div class="highlight"><pre>python
 &gt;&gt; import module_name
@@ -271,7 +278,7 @@ the <strong>latest version</strong>) :</p>
 </div>
 </div>
 <div class="section" id="to-use-the-viewers-orb-viewer-and-orb-viewer3d">
-<h3><a class="toc-backref" href="#id19">To use the Viewers (orb-viewer and orb-viewer3d)</a><a class="headerlink" href="#to-use-the-viewers-orb-viewer-and-orb-viewer3d" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id21">To use the Viewers (orb-viewer and orb-viewer3d)</a><a class="headerlink" href="#to-use-the-viewers-orb-viewer-and-orb-viewer3d" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li>Install pygtk</li>
 </ol>
@@ -362,7 +369,7 @@ run:</p>
 </div>
 </div>
 <div class="section" id="pywcs">
-<h3><a class="toc-backref" href="#id23">PyWCS</a><a class="headerlink" href="#pywcs" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id25">PyWCS</a><a class="headerlink" href="#pywcs" title="Permalink to this headline">¶</a></h3>
 <p>PyWCS is a set of routines for handling the FITS World Coordinate
 System (WCS) standard. It can be downloaded <a class="reference external" href="https://pypi.python.org/pypi/pywcs">here</a> (pywcs-1.xx.tar.gz). Once downloaded you must untar it and run:</p>
 <div class="highlight-python"><div class="highlight"><pre>sudo python setup.py install
@@ -378,11 +385,11 @@ uncompressed directory run:</p>
 </div>
 </div>
 <div class="section" id="h5py">
-<h3><a class="toc-backref" href="#id25">h5py</a><a class="headerlink" href="#h5py" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id27">h5py</a><a class="headerlink" href="#h5py" title="Permalink to this headline">¶</a></h3>
 <p>Installation must be manual because the SZIP library must be installed
 and linked to hdf5 which can finally be linked to h5py.</p>
 <div class="section" id="install-szip">
-<h4><a class="toc-backref" href="#id26">Install SZIP</a><a class="headerlink" href="#install-szip" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id28">Install SZIP</a><a class="headerlink" href="#install-szip" title="Permalink to this headline">¶</a></h4>
 <p>You can find SZIP <a class="reference external" href="http://www.hdfgroup.org/ftp/lib-external/szip/2.1/src/szip-2.1.tar.gz">here</a>
 and info on SZIP compression in HDF5 <a class="reference external" href="https://www.hdfgroup.org/doc_resource/SZIP/">here</a>. Then after the
 extraction you can go in the extracted folder and do:</p>
@@ -399,7 +406,7 @@ you also change it in the following installation steps.</p>
 </div>
 </div>
 <div class="section" id="install-hdf5">
-<h4><a class="toc-backref" href="#id27">Install HDF5</a><a class="headerlink" href="#install-hdf5" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id29">Install HDF5</a><a class="headerlink" href="#install-hdf5" title="Permalink to this headline">¶</a></h4>
 <p>You can find HDF5 sources <a class="reference external" href="https://www.hdfgroup.org/HDF5/release/obtainsrc.html">here</a>. Then extract the
 sources and jump into the extracted folder before typing:</p>
 <div class="highlight-python"><div class="highlight"><pre>sudo ./configure --prefix=/usr/local/lib/hdf5 --with-szlib=/usr/local/lib/szip
@@ -410,7 +417,7 @@ sudo make install
 </div>
 </div>
 <div class="section" id="install-h5py-pip-cannot-be-used-directly">
-<h4><a class="toc-backref" href="#id28">Install H5PY (pip cannot be used directly)</a><a class="headerlink" href="#install-h5py-pip-cannot-be-used-directly" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id30">Install H5PY (pip cannot be used directly)</a><a class="headerlink" href="#install-h5py-pip-cannot-be-used-directly" title="Permalink to this headline">¶</a></h4>
 <p>You can find h5py sources <a class="reference external" href="https://pypi.python.org/pypi/h5py/2.5.0">here</a>. After extraction, just
 run the following into the extracted folder:</p>
 <div class="highlight-python"><div class="highlight"><pre>sudo python setup.py configure --hdf5=/usr/local/lib/hdf5
@@ -424,6 +431,17 @@ sudo python setup.py install
 <h3><a class="reference external" href="http://cython.org/">Cython</a><a class="headerlink" href="#cython" title="Permalink to this headline">¶</a></h3>
 <p>To install <a class="reference external" href="http://cython.org/">Cython</a>:</p>
 <div class="highlight-python"><div class="highlight"><pre>sudo pip install cython --upgrade
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-pyfftw">
+<h3><a class="toc-backref" href="#id32">Install PyFFTW</a><a class="headerlink" href="#install-pyfftw" title="Permalink to this headline">¶</a></h3>
+<p>FFTW3 library must be installed (see <a class="reference external" href="https://pypi.python.org/pypi/pyFFTW">here</a>):</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install libfftw3-dev
+</pre></div>
+</div>
+<p>then the package can be installed via pip:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo pip install pyfftw
 </pre></div>
 </div>
 </div>
@@ -471,7 +489,7 @@ sudo python setup.py install
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.1',
+            VERSION:'2.0-DR1-beta',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -27,6 +27,10 @@ unzipped folder type::
 
   sudo python setup.py install
 
+You must also install fftw3 libraries (see `here <https://pypi.python.org/pypi/h5py/2.5.0>`_) and then install the pyfftw wrapper with pip::
+
+  sudo pip install pyfftw --upgrade
+
 
 
 
@@ -64,6 +68,7 @@ the **latest version**) :
   * Bottleneck_ (v0.8.0)
   * h5py_ (v2.5.0)
   * Cython_ : Needed to compile Cython_ functions in cutils.pyx
+  * pyFFTW_ (v0.10.1)
 
 The following modules are optional. 
 
@@ -226,8 +231,7 @@ sources and jump into the extracted folder before typing::
 Install H5PY (pip cannot be used directly)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can find h5py sources `here
-<https://pypi.python.org/pypi/h5py/2.5.0>`_. After extraction, just
+You can find h5py sources `here <https://pypi.python.org/pypi/h5py/2.5.0>`_. After extraction, just
 run the following into the extracted folder::
 
   sudo python setup.py configure --hdf5=/usr/local/lib/hdf5
@@ -235,14 +239,25 @@ run the following into the extracted folder::
   sudo python setup.py install
 
 
-
-
 Cython_
 -------
 
 To install Cython_::
 
-    sudo pip install cython --upgrade
+  sudo pip install cython --upgrade
+
+
+Install PyFFTW
+--------------
+
+FFTW3 library must be installed (see `here
+<https://pypi.python.org/pypi/pyFFTW>`_)::
+
+  sudo apt-get install libfftw3-dev
+
+then the package can be installed via pip::
+
+  sudo pip install pyfftw
 
 
 
@@ -266,3 +281,4 @@ To install Cython_::
 .. _Bottleneck: https://pypi.python.org/pypi/Bottleneck
 .. _PIP: https://pypi.python.org/pypi/pip
 .. _h5py: https://pypi.python.org/pypi/h5py/2.5.0
+.. _pyFFTW: https://pypi.python.org/pypi/pyFFTW

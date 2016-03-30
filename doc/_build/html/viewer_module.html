@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Viewer module &mdash; Orb 1.6.1 documentation</title>
+  <title>Viewer module &mdash; Orb 2.0-DR1-beta documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
         <link rel="next" title="Fit module" href="fit_module.html"/>
         <link rel="prev" title="Astrometry module" href="astrometry_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.6.1
+                2.0-DR1-beta
               </div>
             
           
@@ -525,12 +525,12 @@ defined.</td>
 <h2><a class="toc-backref" href="#id5">ZPlotWindow class</a><a class="headerlink" href="#zplotwindow-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="orb.viewer.ZPlotWindow">
-<em class="property">class </em><code class="descclassname">orb.viewer.</code><code class="descname">ZPlotWindow</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>wavenumber</em>, <em>bunit</em>, <em>title='Zdata'</em>, <em>simple=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.ZPlotWindow" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">orb.viewer.</code><code class="descname">ZPlotWindow</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>wavenumber</em>, <em>bunit</em>, <em>axis_corr=1.0</em>, <em>title='Zdata'</em>, <em>simple=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.ZPlotWindow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#orb.viewer.PopupWindow" title="orb.viewer.PopupWindow"><code class="xref py py-class docutils literal"><span class="pre">orb.viewer.PopupWindow</span></code></a></p>
 <p>Implement a window for plotting zaxis data.</p>
 <dl class="method">
 <dt id="orb.viewer.ZPlotWindow.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>wavenumber</em>, <em>bunit</em>, <em>title='Zdata'</em>, <em>simple=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.ZPlotWindow.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>wavenumber</em>, <em>bunit</em>, <em>axis_corr=1.0</em>, <em>title='Zdata'</em>, <em>simple=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.ZPlotWindow.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Init and construct spectrum window.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -540,6 +540,8 @@ defined.</td>
 <li><span class="target" id="orb.viewer.ZPlotWindow.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.ZPlotWindow.params.step">¶</a> &#8211; Step size [in nm]</li>
 <li><span class="target" id="orb.viewer.ZPlotWindow.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.ZPlotWindow.params.order">¶</a> &#8211; Aliasing Order</li>
 <li><span class="target" id="orb.viewer.ZPlotWindow.params.bunit"></span><strong>bunit</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.ZPlotWindow.params.bunit">¶</a> &#8211; Flux unit (string)</li>
+<li><span class="target" id="orb.viewer.ZPlotWindow.params.axis_corr"></span><strong>axis_corr</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.ZPlotWindow.params.axis_corr">¶</a> &#8211; (Optional) Wave axis correction coefficient
+(default 1.)</li>
 <li><span class="target" id="orb.viewer.ZPlotWindow.params.title"></span><strong>title</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.ZPlotWindow.params.title">¶</a> &#8211; (Optional) Window title (default Zdata)</li>
 <li><span class="target" id="orb.viewer.ZPlotWindow.params.simple"></span><strong>simple</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.ZPlotWindow.params.simple">¶</a> &#8211; (Optional) If True, window display only a plot
 (no fit plugin) (default False).</li>
@@ -593,12 +595,12 @@ wavelength, None otherwise.</p>
 <h2><a class="toc-backref" href="#id6">FitPlugin class</a><a class="headerlink" href="#fitplugin-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="orb.viewer.FitPlugin">
-<em class="property">class </em><code class="descclassname">orb.viewer.</code><code class="descname">FitPlugin</code><span class="sig-paren">(</span><em>step=None</em>, <em>order=None</em>, <em>apod=None</em>, <em>update_cb=None</em>, <em>wavenumber=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.FitPlugin" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">orb.viewer.</code><code class="descname">FitPlugin</code><span class="sig-paren">(</span><em>step=None</em>, <em>order=None</em>, <em>axis_corr=1.0</em>, <em>apod=None</em>, <em>update_cb=None</em>, <em>wavenumber=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.FitPlugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Fitting plugin that can be added to the ZPlot module.</p>
 <dl class="method">
 <dt id="orb.viewer.FitPlugin.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>step=None</em>, <em>order=None</em>, <em>apod=None</em>, <em>update_cb=None</em>, <em>wavenumber=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.FitPlugin.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>step=None</em>, <em>order=None</em>, <em>axis_corr=1.0</em>, <em>apod=None</em>, <em>update_cb=None</em>, <em>wavenumber=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.viewer.FitPlugin.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Init FitPlugin class</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -607,6 +609,8 @@ wavelength, None otherwise.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="orb.viewer.FitPlugin.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.FitPlugin.params.step">¶</a> &#8211; (Optional) Step size in nm (default None).</li>
 <li><span class="target" id="orb.viewer.FitPlugin.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.FitPlugin.params.order">¶</a> &#8211; (Optional) Folding order (default None).</li>
+<li><span class="target" id="orb.viewer.FitPlugin.params.axis_corr"></span><strong>axis_corr</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.FitPlugin.params.axis_corr">¶</a> &#8211; (Optional) Wave axis correction coefficient
+(default 1.)</li>
 <li><span class="target" id="orb.viewer.FitPlugin.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.FitPlugin.params.apod">¶</a> &#8211; (Optional) Apodization (default None).</li>
 <li><span class="target" id="orb.viewer.FitPlugin.params.update_cb"></span><strong>update_cb</strong><a class="paramlink headerlink reference internal" href="#orb.viewer.FitPlugin.params.update_cb">¶</a> &#8211; (Optional) function to call when the visual
 object displaying the spectrum must be updated (e.g. ZPlot
@@ -1138,7 +1142,7 @@ window when region properties are changed (default None).</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.1',
+            VERSION:'2.0-DR1-beta',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

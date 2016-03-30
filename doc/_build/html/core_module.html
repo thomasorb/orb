@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 1.6.1 documentation</title>
+  <title>Core module &mdash; Orb 2.0-DR1-beta documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
         <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.6.1
+                2.0-DR1-beta
               </div>
             
           
@@ -102,6 +102,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#cube-class">Cube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#hdfcube-class">HDFCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#outhdfcube-class">OutHDFCube class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#outhdfquadcube-class">OutHDFQuadCube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#textcolor-class">TextColor class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#progressbar-class">ProgressBar class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#indexer-class">Indexer class</a></li>
@@ -110,6 +111,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#paramsfile-class">ParamsFile class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logger-class">Logger class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#waves-class">Waves class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standard-class">Standard class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -176,14 +178,16 @@
 <li><a class="reference internal" href="#cube-class" id="id3">Cube class</a></li>
 <li><a class="reference internal" href="#hdfcube-class" id="id4">HDFCube class</a></li>
 <li><a class="reference internal" href="#outhdfcube-class" id="id5">OutHDFCube class</a></li>
-<li><a class="reference internal" href="#textcolor-class" id="id6">TextColor class</a></li>
-<li><a class="reference internal" href="#progressbar-class" id="id7">ProgressBar class</a></li>
-<li><a class="reference internal" href="#indexer-class" id="id8">Indexer class</a></li>
-<li><a class="reference internal" href="#lines-class" id="id9">Lines class</a></li>
-<li><a class="reference internal" href="#optionfile-class" id="id10">OptionFile class</a></li>
-<li><a class="reference internal" href="#paramsfile-class" id="id11">ParamsFile class</a></li>
-<li><a class="reference internal" href="#logger-class" id="id12">Logger class</a></li>
-<li><a class="reference internal" href="#waves-class" id="id13">Waves class</a></li>
+<li><a class="reference internal" href="#outhdfquadcube-class" id="id6">OutHDFQuadCube class</a></li>
+<li><a class="reference internal" href="#textcolor-class" id="id7">TextColor class</a></li>
+<li><a class="reference internal" href="#progressbar-class" id="id8">ProgressBar class</a></li>
+<li><a class="reference internal" href="#indexer-class" id="id9">Indexer class</a></li>
+<li><a class="reference internal" href="#lines-class" id="id10">Lines class</a></li>
+<li><a class="reference internal" href="#optionfile-class" id="id11">OptionFile class</a></li>
+<li><a class="reference internal" href="#paramsfile-class" id="id12">ParamsFile class</a></li>
+<li><a class="reference internal" href="#logger-class" id="id13">Logger class</a></li>
+<li><a class="reference internal" href="#waves-class" id="id14">Waves class</a></li>
+<li><a class="reference internal" href="#standard-class" id="id15">Standard class</a></li>
 </ul>
 </li>
 </ul>
@@ -337,6 +341,12 @@ check is done. this is faster but less safe (default True).</li>
 (e.g. <code class="xref py py-mod docutils literal"><span class="pre">orb.utils</span></code>) to <code class="xref py py-meth docutils literal"><span class="pre">orb._print_warning()</span></code>.</p>
 <p>The parameters are the same parameters as the method
 warnings.showwarning (see the python module warnings).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_atmospheric_extinction_file_path">
+<code class="descname">_get_atmospheric_extinction_file_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_atmospheric_extinction_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the path to the atmospheric extinction file</p>
 </dd></dl>
 
 <dl class="method">
@@ -623,6 +633,48 @@ returned (default False).</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._get_hdf5_quad_data_path">
+<code class="descname">_get_hdf5_quad_data_path</code><span class="sig-paren">(</span><em>quad_index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdf5_quad_data_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path to the data of a given quad in an HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_hdf5_quad_data_path.params.quad_index"></span><strong>quad_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_quad_data_path.params.quad_index">¶</a> &#8211; Index of the quadrant</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_hdf5_quad_header_path">
+<code class="descname">_get_hdf5_quad_header_path</code><span class="sig-paren">(</span><em>quad_index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdf5_quad_header_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path to the header of a given quadrant in an HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_hdf5_quad_header_path.params.frame_index"></span><strong>frame_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_quad_header_path.params.frame_index">¶</a> &#8211; Index of the quadrant</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_hdf5_quad_path">
+<code class="descname">_get_hdf5_quad_path</code><span class="sig-paren">(</span><em>quad_index</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdf5_quad_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return path to a given quadrant in an HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_hdf5_quad_path.params.quad_index"></span><strong>quad_index</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_hdf5_quad_path.params.quad_index">¶</a> &#8211; Index of the quad.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._get_hdu_data_index">
 <code class="descname">_get_hdu_data_index</code><span class="sig-paren">(</span><em>hdul</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_hdu_data_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the first header data unit (HDU) containing data.</p>
@@ -652,9 +704,32 @@ FITS file.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Tools._get_mirror_transmission_file_path">
+<code class="descname">_get_mirror_transmission_file_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_mirror_transmission_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the path to the telescope mirror transmission file</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Tools._get_msg_class_hdr">
 <code class="descname">_get_msg_class_hdr</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_msg_class_hdr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of the displayed messages.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_optics_file_path">
+<code class="descname">_get_optics_file_path</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_optics_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full path to the optics transmission file given
+the name of the filter.</p>
+<p>The filter file name must be filter_FILTER_NAME and it must be
+located in orb/data/.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_optics_file_path.params.filter_name"></span><strong>filter_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_optics_file_path.params.filter_name">¶</a> &#8211; Name of the filter.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -666,6 +741,59 @@ FITS file.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_orb_data_file_path.params.file_name"></span><strong>file_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_orb_data_file_path.params.file_name">¶</a> &#8211; Name of the file in ORB data folder.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_phase_file_path">
+<code class="descname">_get_phase_file_path</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_phase_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full path to the phase file given the name of
+the filter.</p>
+<p>The filter name must be filter_FILTER_NAME and the phase file
+must be located in orb/data/.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_phase_file_path.params.filter_name"></span><strong>filter_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_phase_file_path.params.filter_name">¶</a> &#8211; Name of the filter.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_quadrant_dims">
+<code class="descname">_get_quadrant_dims</code><span class="sig-paren">(</span><em>quad_number</em>, <em>dimx</em>, <em>dimy</em>, <em>div_nb</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_quadrant_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the indices of a quadrant along x and y axes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Tools._get_quadrant_dims.params.quad_number"></span><strong>quad_number</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_quadrant_dims.params.quad_number">¶</a> &#8211; Quadrant number</li>
+<li><span class="target" id="core.Tools._get_quadrant_dims.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_quadrant_dims.params.dimx">¶</a> &#8211; X axis dimension.</li>
+<li><span class="target" id="core.Tools._get_quadrant_dims.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_quadrant_dims.params.dimy">¶</a> &#8211; Y axis dimension.</li>
+<li><span class="target" id="core.Tools._get_quadrant_dims.params.div_nb"></span><strong>div_nb</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_quadrant_dims.params.div_nb">¶</a> &#8211; Number of divisions along x and y axes. (e.g. if
+div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
+number of quadrant is 16)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_quantum_efficiency_file_path">
+<code class="descname">_get_quantum_efficiency_file_path</code><span class="sig-paren">(</span><em>camera_number</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_quantum_efficiency_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the path to the quantum efficiency file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_quantum_efficiency_file_path.params.camera_number"></span><strong>camera_number</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_quantum_efficiency_file_path.params.camera_number">¶</a> &#8211; Number of the camera, can be 1 or 2.</td>
 </tr>
 </tbody>
 </table>
@@ -719,6 +847,30 @@ can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_standard_list.params.standard_table_name"></span><strong>standard_table_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_list.params.standard_table_name">¶</a> &#8211; (Optional) Name of the standard
 table file (default std_table.orb).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_standard_radec">
+<code class="descname">_get_standard_radec</code><span class="sig-paren">(</span><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_radec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a standard spectrum file path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="core.Tools._get_standard_radec.params.standard_name"></span><strong>standard_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_radec.params.standard_name">¶</a> &#8211; Name of the standard star. Must be
+recorded in the standard table.</li>
+<li><span class="target" id="core.Tools._get_standard_radec.params.standard_table_name"></span><strong>standard_table_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_radec.params.standard_table_name">¶</a> &#8211; (Optional) Name of the standard
+table file (default std_table.orb).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple [standard file path, standard type]. Standard type
+can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -967,28 +1119,6 @@ more information on PyFITS module. And
 <a class="reference external" href="http://fits.gsfc.nasa.gov/">http://fits.gsfc.nasa.gov/</a> for more information on FITS
 files.</p>
 </div>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.Tools.get_quadrant_dims">
-<code class="descname">get_quadrant_dims</code><span class="sig-paren">(</span><em>quad_number</em>, <em>dimx</em>, <em>dimy</em>, <em>div_nb</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.get_quadrant_dims" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the indices of a quadrant along x and y axes.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="core.Tools.get_quadrant_dims.params.quad_number"></span><strong>quad_number</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.quad_number">¶</a> &#8211; Quadrant number</li>
-<li><span class="target" id="core.Tools.get_quadrant_dims.params.dimx"></span><strong>dimx</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.dimx">¶</a> &#8211; X axis dimension.</li>
-<li><span class="target" id="core.Tools.get_quadrant_dims.params.dimy"></span><strong>dimy</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.dimy">¶</a> &#8211; Y axis dimension.</li>
-<li><span class="target" id="core.Tools.get_quadrant_dims.params.div_nb"></span><strong>div_nb</strong><a class="paramlink headerlink reference internal" href="#core.Tools.get_quadrant_dims.params.div_nb">¶</a> &#8211; Number of divisions along x and y axes. (e.g. if
-div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
-number of quadrant is 16)</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -2058,6 +2188,12 @@ even if it is already present in the cube (default False).</td>
 dataset) return it directly.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="core.HDFCube.is_quad_cube">
+<code class="descname">is_quad_cube</code><em class="property"> = None</em><a class="headerlink" href="#core.HDFCube.is_quad_cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to True if data is complex</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -2225,8 +2361,76 @@ compressed using a gzip algorithm (default False).</li>
 </dd></dl>
 
 </div>
+<div class="section" id="outhdfquadcube-class">
+<h2><a class="toc-backref" href="#id6">OutHDFQuadCube class</a><a class="headerlink" href="#outhdfquadcube-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.OutHDFQuadCube">
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">OutHDFQuadCube</code><span class="sig-paren">(</span><em>export_path</em>, <em>shape</em>, <em>quad_nb</em>, <em>overwrite=False</em>, <em>reset=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFQuadCube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">core.OutHDFCube</span></code></a></p>
+<p>Output HDF5 Cube class saved in quadrants.</p>
+<p>This class can be used to output a valid HDF5 cube.</p>
+<dl class="method">
+<dt id="core.OutHDFQuadCube.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>export_path</em>, <em>shape</em>, <em>quad_nb</em>, <em>overwrite=False</em>, <em>reset=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFQuadCube.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Init OutHDFQuadCube class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OutHDFQuadCube.params.export_path"></span><strong>export_path</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.params.export_path">¶</a> &#8211; Path ot the output HDF5 cube to create.</li>
+<li><span class="target" id="core.OutHDFQuadCube.params.shape"></span><strong>shape</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.params.shape">¶</a> &#8211; Data shape. Must be a 3-Tuple (dimx, dimy, dimz)</li>
+<li><span class="target" id="core.OutHDFQuadCube.params.quad_nb"></span><strong>quad_nb</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.params.quad_nb">¶</a> &#8211; Number of quadrants in the cube.</li>
+<li><span class="target" id="core.OutHDFQuadCube.params.overwrite"></span><strong>overwrite</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.params.overwrite">¶</a> &#8211; (Optional) If True data will be overwritten
+but existing data will not be removed (default False).</li>
+<li><span class="target" id="core.OutHDFQuadCube.params.reset"></span><strong>reset</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.params.reset">¶</a> &#8211; (Optional) If True and if the file already
+exists, it is deleted (default False).</li>
+<li><span class="target" id="core.OutHDFQuadCube.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.OutHDFQuadCube.write_quad">
+<code class="descname">write_quad</code><span class="sig-paren">(</span><em>index</em>, <em>data=None</em>, <em>header=None</em>, <em>force_float32=True</em>, <em>force_complex64=False</em>, <em>compress=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFQuadCube.write_quad" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8220;Write a quadrant</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.index"></span><strong>index</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.index">¶</a> &#8211; Index of the quadrant</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.data"></span><strong>data</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.data">¶</a> &#8211; (Optional) Frame data (default None).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.header">¶</a> &#8211; (Optional) Frame header (default None).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.mask">¶</a> &#8211; (Optional) Frame mask (default None).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.record_stats"></span><strong>record_stats</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.record_stats">¶</a> &#8211; (Optional) If True Mean and Median of the
+frame are appended as attributes (data must be set) (defaut
+False).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.force_float32"></span><strong>force_float32</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.force_float32">¶</a> &#8211; (Optional) If True, data type is forced
+to numpy.float32 type (default True).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.section"></span><strong>section</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.section">¶</a> &#8211; (Optional) If not None, must be a 4-tuple
+[xmin, xmax, ymin, ymax] giving the section to write instead
+of the whole frame. Useful to modify only a part of the
+frame (deafult None).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.force_complex64"></span><strong>force_complex64</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.force_complex64">¶</a> &#8211; (Optional) If True, data type is
+forced to numpy.complex64 type (default False).</li>
+<li><span class="target" id="core.OutHDFQuadCube.write_quad.params.compress"></span><strong>compress</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFQuadCube.write_quad.params.compress">¶</a> &#8211; (Optional) If True, data is lossely
+compressed using a gzip algorithm (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="textcolor-class">
-<h2><a class="toc-backref" href="#id6">TextColor class</a><a class="headerlink" href="#textcolor-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id7">TextColor class</a><a class="headerlink" href="#textcolor-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.TextColor">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">TextColor</code><a class="headerlink" href="#core.TextColor" title="Permalink to this definition">¶</a></dt>
@@ -2246,7 +2450,7 @@ disable() function to disable coloured text.</p>
 
 </div>
 <div class="section" id="progressbar-class">
-<h2><a class="toc-backref" href="#id7">ProgressBar class</a><a class="headerlink" href="#progressbar-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id8">ProgressBar class</a><a class="headerlink" href="#progressbar-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.ProgressBar">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">ProgressBar</code><span class="sig-paren">(</span><em>max_index</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ProgressBar" title="Permalink to this definition">¶</a></dt>
@@ -2344,7 +2548,7 @@ made (default True).</li>
 
 </div>
 <div class="section" id="indexer-class">
-<h2><a class="toc-backref" href="#id8">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id9">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Indexer">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Indexer</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
@@ -2464,7 +2668,7 @@ set to None.</td>
 
 </div>
 <div class="section" id="lines-class">
-<h2><a class="toc-backref" href="#id9">Lines class</a><a class="headerlink" href="#lines-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id10">Lines class</a><a class="headerlink" href="#lines-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Lines">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Lines</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines" title="Permalink to this definition">¶</a></dt>
@@ -2619,7 +2823,7 @@ retrieve. If 0 all lines are given (default 0).</li>
 
 </div>
 <div class="section" id="optionfile-class">
-<h2><a class="toc-backref" href="#id10">OptionFile class</a><a class="headerlink" href="#optionfile-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">OptionFile class</a><a class="headerlink" href="#optionfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.OptionFile">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">OptionFile</code><span class="sig-paren">(</span><em>option_file_path</em>, <em>protected_keys=[]</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OptionFile" title="Permalink to this definition">¶</a></dt>
@@ -2771,7 +2975,7 @@ of this interval are merged (default None).</li>
 
 </div>
 <div class="section" id="paramsfile-class">
-<h2><a class="toc-backref" href="#id11">ParamsFile class</a><a class="headerlink" href="#paramsfile-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id12">ParamsFile class</a><a class="headerlink" href="#paramsfile-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.ParamsFile">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">ParamsFile</code><span class="sig-paren">(</span><em>file_path</em>, <em>reset=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.ParamsFile" title="Permalink to this definition">¶</a></dt>
@@ -2833,7 +3037,7 @@ True).</li>
 
 </div>
 <div class="section" id="logger-class">
-<h2><a class="toc-backref" href="#id12">Logger class</a><a class="headerlink" href="#logger-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id13">Logger class</a><a class="headerlink" href="#logger-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Logger">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Logger</code><span class="sig-paren">(</span><em>name</em>, <em>mode='a'</em>, <em>noprint=False</em>, <em>nolog=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Logger" title="Permalink to this definition">¶</a></dt>
@@ -2905,7 +3109,7 @@ logfile (default False).</li>
 
 </div>
 <div class="section" id="waves-class">
-<h2><a class="toc-backref" href="#id13">Waves class</a><a class="headerlink" href="#waves-class" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id14">Waves class</a><a class="headerlink" href="#waves-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Waves">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">Waves</code><span class="sig-paren">(</span><em>nm</em>, <em>velocity=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Waves" title="Permalink to this definition">¶</a></dt>
@@ -2984,6 +3188,147 @@ wavelengths.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="standard-class">
+<h2><a class="toc-backref" href="#id15">Standard class</a><a class="headerlink" href="#standard-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.Standard">
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Standard</code><span class="sig-paren">(</span><em>std_name</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
+<p>Manage standard files and photometrical calibration</p>
+<dl class="method">
+<dt id="core.Standard.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>std_name</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize Standard class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Standard.params.std_name"></span><strong>std_name</strong><a class="paramlink headerlink reference internal" href="#core.Standard.params.std_name">¶</a> &#8211; Name of the standard.</li>
+<li><span class="target" id="core.Standard.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.Standard.params.kwargs">¶</a> &#8211; Kwargs are <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-meth docutils literal"><span class="pre">core.Tools()</span></code></a> properties.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Standard._read_calspec_fits">
+<code class="descname">_read_calspec_fits</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard._read_calspec_fits" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Read a CALSPEC fits file containing a standard spectrum and</dt>
+<dd>return a tuple of arrays (wavelength, flux).</dd>
+</dl>
+<p>Returned wavelength axis is in A. Returned flux is in
+erg/cm^2/s/A.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Standard._read_calspec_fits.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard._read_calspec_fits.params.file_path">¶</a> &#8211; Path to the Massey dat file (generally
+&#8216;spXX.dat&#8217;).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Standard._read_massey_dat">
+<code class="descname">_read_massey_dat</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard._read_massey_dat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a data file from Massey et al., Spectrophotometric
+Standards (1988) and return a tuple of arrays (wavelength,
+flux).</p>
+<p>Returned wavelength axis is in A. Returned flux is converted
+in erg/cm^2/s/A.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Standard._read_massey_dat.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard._read_massey_dat.params.file_path">¶</a> &#8211; Path to the Massey dat file (generally
+&#8216;spXX.dat&#8217;).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Standard.compute_optimal_texp">
+<code class="descname">compute_optimal_texp</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>seeing</em>, <em>filter_name</em>, <em>camera_number</em>, <em>saturation=30000</em>, <em>airmass=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.compute_optimal_texp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the optimal exposition time given the total flux of
+the star in ADU/s.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.seeing"></span><strong>seeing</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.seeing">¶</a> &#8211; Star&#8217;s FWHM in arcsec</li>
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.filter_name"></span><strong>filter_name</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.filter_name">¶</a> &#8211; Name of the filter</li>
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.camera_number"></span><strong>camera_number</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.camera_number">¶</a> &#8211; Number of the camera</li>
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.saturation"></span><strong>saturation</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.saturation">¶</a> &#8211; (Optional) Saturation value of the detector
+(default 30000).</li>
+<li><span class="target" id="core.Standard.compute_optimal_texp.params.airmass"></span><strong>airmass</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_optimal_texp.params.airmass">¶</a> &#8211; (Optional) Airmass (default 1)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Standard.compute_star_flux_in_frame">
+<code class="descname">compute_star_flux_in_frame</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>filter_file_path</em>, <em>optics_file_path</em>, <em>camera_number</em>, <em>airmass=1.0</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.compute_star_flux_in_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return flux in ADU/s in an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.filter_file_path">¶</a> &#8211; Path to the filter file</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.optics_file_path"></span><strong>optics_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.optics_file_path">¶</a> &#8211; Path to the optics file</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.camera_number"></span><strong>camera_number</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.camera_number">¶</a> &#8211; Number of the camera</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.airmass"></span><strong>airmass</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.airmass">¶</a> &#8211; (Optional) Airmass (default 1)</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Standard.get_spectrum">
+<code class="descname">get_spectrum</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>n</em>, <em>wavenumber=False</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.get_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return part of the standard spectrum corresponding to the
+observation parameters.</p>
+<p>Returned spectrum is calibrated in erg/cm^2/s/A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Standard.get_spectrum.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#core.Standard.get_spectrum.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="core.Standard.get_spectrum.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#core.Standard.get_spectrum.params.step">¶</a> &#8211; Step size in um</li>
+<li><span class="target" id="core.Standard.get_spectrum.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#core.Standard.get_spectrum.params.n">¶</a> &#8211; Number of steps</li>
+<li><span class="target" id="core.Standard.get_spectrum.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#core.Standard.get_spectrum.params.wavenumber">¶</a> &#8211; (Optional) If True spectrum is returned along a
+wavenumber axis (default False).</li>
+<li><span class="target" id="core.Standard.get_spectrum.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#core.Standard.get_spectrum.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the incident
+angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -3027,7 +3372,7 @@ wavelengths.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.1',
+            VERSION:'2.0-DR1-beta',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

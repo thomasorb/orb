@@ -72,6 +72,15 @@ Parallel
    :private-members:
    :show-inheritance:
 
+
+Photometry
+----------
+
+.. automodule:: orb.utils.photometry
+   :members:
+   :private-members:
+   :show-inheritance:
+
 Pyneb
 -----
 

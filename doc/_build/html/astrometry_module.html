@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Astrometry module &mdash; Orb 1.6.1 documentation</title>
+  <title>Astrometry module &mdash; Orb 2.0-DR1-beta documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
         <link rel="next" title="Viewer module" href="viewer_module.html"/>
         <link rel="prev" title="CUtils module" href="cutils_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.6.1
+                2.0-DR1-beta
               </div>
             
           
@@ -185,12 +185,6 @@ fit parameters.</p>
 <p>Possible fitting profiles are at least Gaussian and Moffat. Other
 profiles can be created by expanding <code class="xref py py-class docutils literal"><span class="pre">PSF</span></code>
 class.</p>
-<dl class="attribute">
-<dt id="astrometry.Astrometry.BASE_URL">
-<code class="descname">BASE_URL</code><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.BASE_URL" title="Permalink to this definition">¶</a></dt>
-<dd><p>Beginning of the URL to the Vizer server by default</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="astrometry.Astrometry._get_combined_frame">
 <code class="descname">_get_combined_frame</code><span class="sig-paren">(</span><em>use_deep_frame=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry._get_combined_frame" title="Permalink to this definition">¶</a></dt>
@@ -234,21 +228,9 @@ results.</p>
 </table>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="astrometry.Astrometry.base_url">
-<code class="descname">base_url</code><em class="property"> = 'http://webviz.u-strasbg.fr/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url" title="Permalink to this definition">¶</a></dt>
-<dd><p>Beginning of the URL to the Vizier server</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="astrometry.Astrometry.base_url_ca">
-<code class="descname">base_url_ca</code><em class="property"> = 'http://vizier.hia.nrc.ca/viz-bin/'</em><a class="headerlink" href="#astrometry.Astrometry.base_url_ca" title="Permalink to this definition">¶</a></dt>
-<dd><p>Beginning of the URL to the Vizier server in Canada</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="astrometry.Astrometry.brute_force_guess">
-<code class="descname">brute_force_guess</code><span class="sig-paren">(</span><em>image</em>, <em>star_list</em>, <em>x_range</em>, <em>y_range</em>, <em>r_range</em>, <em>rc</em>, <em>zoom_factor</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.brute_force_guess" title="Permalink to this definition">¶</a></dt>
+<code class="descname">brute_force_guess</code><span class="sig-paren">(</span><em>image</em>, <em>star_list</em>, <em>x_range</em>, <em>y_range</em>, <em>r_range</em>, <em>rc</em>, <em>zoom_factor</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.brute_force_guess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine a precise alignment guess by brute force.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -261,6 +243,8 @@ results.</p>
 <li><span class="target" id="astrometry.Astrometry.brute_force_guess.params.r_range"></span><strong>r_range</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.brute_force_guess.params.r_range">¶</a> &#8211; range of angle values to check</li>
 <li><span class="target" id="astrometry.Astrometry.brute_force_guess.params.rc"></span><strong>rc</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.brute_force_guess.params.rc">¶</a> &#8211; rotation center (rc, ry)</li>
 <li><span class="target" id="astrometry.Astrometry.brute_force_guess.params.zoom_factor"></span><strong>zoom_factor</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.brute_force_guess.params.zoom_factor">¶</a> &#8211; zoom_factor</li>
+<li><span class="target" id="astrometry.Astrometry.brute_force_guess.params.verbose"></span><strong>verbose</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.brute_force_guess.params.verbose">¶</a> &#8211; (Optional) If True print some informations
+(default True).</li>
 </ul>
 </td>
 </tr>
@@ -566,6 +550,20 @@ optional arguments thus cannot be passed:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="astrometry.Astrometry.fwhm">
+<code class="descname">fwhm</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return fwhm from width</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="astrometry.Astrometry.fwhm.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.fwhm.params.x">¶</a> &#8211; width</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="astrometry.Astrometry.get_alignment_vectors">
 <code class="descname">get_alignment_vectors</code><span class="sig-paren">(</span><em>fit_cube=False</em>, <em>min_coeff=0.2</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.get_alignment_vectors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return alignement vectors</p>
@@ -632,9 +630,6 @@ fitted to assume a good enough calculated disalignment
 <dd><p>Return a list of star coordinates around an object in a
 given radius based on a query to VizieR Services
 (<a class="reference external" href="http://vizier.u-strasbg.fr/viz-bin/VizieR">http://vizier.u-strasbg.fr/viz-bin/VizieR</a>)</p>
-<p>Note that the idea of this method has been picked from an IDL
-function: QUERYVIZIER
-(<a class="reference external" href="http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro">http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro</a>)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -651,17 +646,9 @@ database (see notes) (default &#8216;USNO-B1&#8217;)</li>
 </tr>
 </tbody>
 </table>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Some catalogs that can be used::
-&#8216;V/139&#8217; - Sloan SDSS photometric catalog Release 9 (2012)
-&#8216;2MASS-PSC&#8217; - 2MASS point source catalog (2003)
-&#8216;GSC2.3&#8217; - Version 2.3.2 of the HST Guide Star Catalog (2006)
-&#8216;USNO-B1&#8217; - Verson B1 of the US Naval Observatory catalog (2003)
-&#8216;UCAC4&#8217;  - 4th U.S. Naval Observatory CCD Astrograph Catalog (2012)
-&#8216;B/DENIS/DENIS&#8217; - 2nd Deep Near Infrared Survey of southern Sky (2005)
-&#8216;I/259/TYC2&#8217; - Tycho-2 main catalog (2000)
-&#8216;I/311/HIP2&#8217; - Hipparcos main catalog, new reduction (2007)</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="utils_module.html#orb.utils.web.query_vizier" title="orb.utils.web.query_vizier"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.web.query_vizier()</span></code></a></p>
 </div>
 </dd></dl>
 
@@ -789,6 +776,20 @@ fitting. Can be &#8216;moffat&#8217; or &#8216;gaussian&#8217;.</td>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="astrometry.Astrometry.reset_star_list.params.star_list"></span><strong>star_list</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.reset_star_list.params.star_list">¶</a> &#8211; An array of shape (star_nb, 2) giving the
 positions in x and y of the stars.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="astrometry.Astrometry.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#astrometry.Astrometry.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return width from fwhm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="astrometry.Astrometry.width.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#astrometry.Astrometry.width.params.x">¶</a> &#8211; fwhm.</td>
 </tr>
 </tbody>
 </table>
@@ -1022,7 +1023,7 @@ written in the root group.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.1',
+            VERSION:'2.0-DR1-beta',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

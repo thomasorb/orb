@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.interpolate
 
-lmax = 685.882862762
-lmin = 646.334877829
+lmax = 386.006200207
+lmin = 362.218740625
 
 t = np.zeros(2000, dtype=float)
 w = np.linspace(200, 1000, 2000)
@@ -15,7 +15,7 @@ w = w[::-1]
 t = t[::-1]
 
 
-with open('optics_SN3.orb', 'w') as f:
+with open('optics_SN1.orb', 'w') as f:
     for i in range(len(x)):
         f.write('{} {}\n'.format(
             w[i], t[i]))

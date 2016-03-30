@@ -40,6 +40,15 @@ OutHDFCube class
    :special-members:
    :show-inheritance:
 
+OutHDFQuadCube class
+--------------------
+
+.. autoclass:: core.OutHDFQuadCube
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
 
 TextColor class
 ---------------

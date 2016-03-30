@@ -40,6 +40,15 @@ OutHDFCube class
    :special-members:
    :show-inheritance:
 
+OutHDFQuadCube class
+--------------------
+
+.. autoclass:: core.OutHDFQuadCube
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
 
 TextColor class
 ---------------
@@ -107,6 +116,16 @@ Waves class
 ------------
 
 .. autoclass:: core.Waves
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:
+
+
+Standard class
+--------------
+
+.. autoclass:: core.Standard
    :members:
    :private-members:
    :special-members:

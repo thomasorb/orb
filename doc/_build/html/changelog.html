@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; Orb 1.6.1 documentation</title>
+  <title>Changelog &mdash; Orb 2.0-DR1-beta documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
         <link rel="prev" title="Constants module" href="constants_module.html"/> 
 
   
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                1.6.1
+                2.0-DR1-beta
               </div>
             
           
@@ -208,6 +208,23 @@
 <li class="toctree-l4"><a class="reference internal" href="#id8">Miscellaneous</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#v-1-6-2">v.1.6.2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#photometry">Photometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#quadcube">QuadCube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id9">Miscellaneous</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v-1-6-3">v.1.6.3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v-2-data-release-1">v.2. Data Release 1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#v-2-0-dr1-beta">v.2.0-DR1-beta</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#outhdfquadcube">OutHDFQuadCube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id10">Photometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fit-module">Fit module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id11">Compression</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -257,114 +274,131 @@
            <div itemprop="articleBody">
             
   <div class="section" id="changelog">
-<h1><a class="toc-backref" href="#id9">Changelog</a><a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<h1><a class="toc-backref" href="#id12">Changelog</a><a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#changelog" id="id9">Changelog</a><ul>
-<li><a class="reference internal" href="#v1-0-creation-of-orb" id="id10">v1.0 Creation of ORB</a></li>
-<li><a class="reference internal" href="#v1-1" id="id11">v1.1</a><ul>
-<li><a class="reference internal" href="#multi-fit-of-stars" id="id12">Multi fit of stars</a></li>
-<li><a class="reference internal" href="#usno-b1-based-star-detection" id="id13">USNO-B1 based star detection</a></li>
+<li><a class="reference internal" href="#changelog" id="id12">Changelog</a><ul>
+<li><a class="reference internal" href="#v1-0-creation-of-orb" id="id13">v1.0 Creation of ORB</a></li>
+<li><a class="reference internal" href="#v1-1" id="id14">v1.1</a><ul>
+<li><a class="reference internal" href="#multi-fit-of-stars" id="id15">Multi fit of stars</a></li>
+<li><a class="reference internal" href="#usno-b1-based-star-detection" id="id16">USNO-B1 based star detection</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-2" id="id14">v1.2</a><ul>
-<li><a class="reference internal" href="#v1-2-1" id="id15">v1.2.1</a></li>
-<li><a class="reference internal" href="#v1-2-2" id="id16">v1.2.2</a><ul>
-<li><a class="reference internal" href="#orcs-integration" id="id17">ORCS integration</a></li>
-<li><a class="reference internal" href="#orb-s-scripts" id="id18">ORB&#8217;s scripts</a></li>
+<li><a class="reference internal" href="#v1-2" id="id17">v1.2</a><ul>
+<li><a class="reference internal" href="#v1-2-1" id="id18">v1.2.1</a></li>
+<li><a class="reference internal" href="#v1-2-2" id="id19">v1.2.2</a><ul>
+<li><a class="reference internal" href="#orcs-integration" id="id20">ORCS integration</a></li>
+<li><a class="reference internal" href="#orb-s-scripts" id="id21">ORB&#8217;s scripts</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-2-3" id="id19">v1.2.3</a></li>
-<li><a class="reference internal" href="#v1-2-4" id="id20">v1.2.4</a><ul>
-<li><a class="reference internal" href="#miscellaneous" id="id21">Miscellaneous</a></li>
-<li><a class="reference internal" href="#sitelle-data" id="id22">SITELLE data</a><ul>
-<li><a class="reference internal" href="#sitelle-image-mode" id="id23">Sitelle image mode</a></li>
-<li><a class="reference internal" href="#prebinning" id="id24">Prebinning</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#v1-2-4-1" id="id25">v1.2.4.1</a></li>
-<li><a class="reference internal" href="#v1-2-4-2" id="id26">v1.2.4.2</a><ul>
-<li><a class="reference internal" href="#astropy" id="id27">Astropy</a></li>
-<li><a class="reference internal" href="#better-star-fit" id="id28">Better Star fit</a></li>
-<li><a class="reference internal" href="#spiomm-bias-overscan-for-camera-2" id="id29">SpIOMM bias overscan for camera 2</a></li>
-<li><a class="reference internal" href="#id1" id="id30">Miscellaneous</a></li>
+<li><a class="reference internal" href="#v1-2-3" id="id22">v1.2.3</a></li>
+<li><a class="reference internal" href="#v1-2-4" id="id23">v1.2.4</a><ul>
+<li><a class="reference internal" href="#miscellaneous" id="id24">Miscellaneous</a></li>
+<li><a class="reference internal" href="#sitelle-data" id="id25">SITELLE data</a><ul>
+<li><a class="reference internal" href="#sitelle-image-mode" id="id26">Sitelle image mode</a></li>
+<li><a class="reference internal" href="#prebinning" id="id27">Prebinning</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-3-start-of-cfht-integration" id="id31">v1.3 Start of CFHT integration</a><ul>
-<li><a class="reference internal" href="#v1-3-0-orb-viewer" id="id32">v1.3.0 ORB-Viewer</a></li>
-<li><a class="reference internal" href="#v1-3-1" id="id33">v1.3.1</a><ul>
-<li><a class="reference internal" href="#orb-header" id="id34">orb-header</a></li>
-<li><a class="reference internal" href="#id2" id="id35">Miscellaneous</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#v1-3-2" id="id36">v1.3.2</a><ul>
-<li><a class="reference internal" href="#scripts" id="id37">scripts</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#v1-3-3" id="id38">v1.3.3</a><ul>
-<li><a class="reference internal" href="#alignement" id="id39">Alignement</a></li>
-<li><a class="reference internal" href="#sip-distorsion" id="id40">SIP/Distorsion</a></li>
-<li><a class="reference internal" href="#hdf5" id="id41">HDF5</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#v1-3-4-0" id="id42">v1.3.4.0</a><ul>
-<li><a class="reference internal" href="#binning-detection" id="id43">Binning detection</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#v1-3-4-1" id="id44">v1.3.4.1</a><ul>
-<li><a class="reference internal" href="#doc-update" id="id45">Doc update</a></li>
-<li><a class="reference internal" href="#id3" id="id46">Miscellaneous</a></li>
+<li><a class="reference internal" href="#v1-2-4-1" id="id28">v1.2.4.1</a></li>
+<li><a class="reference internal" href="#v1-2-4-2" id="id29">v1.2.4.2</a><ul>
+<li><a class="reference internal" href="#astropy" id="id30">Astropy</a></li>
+<li><a class="reference internal" href="#better-star-fit" id="id31">Better Star fit</a></li>
+<li><a class="reference internal" href="#spiomm-bias-overscan-for-camera-2" id="id32">SpIOMM bias overscan for camera 2</a></li>
+<li><a class="reference internal" href="#id1" id="id33">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-4-the-hdf5-miracle" id="id47">v1.4 The HDF5 miracle</a><ul>
-<li><a class="reference internal" href="#v1-4-0" id="id48">v1.4.0</a><ul>
-<li><a class="reference internal" href="#visual-module" id="id49">Visual module</a></li>
-<li><a class="reference internal" href="#orb-viewer" id="id50">Orb-viewer</a></li>
-<li><a class="reference internal" href="#data-module" id="id51">Data module</a></li>
-<li><a class="reference internal" href="#id4" id="id52">Miscellaneous</a></li>
+<li><a class="reference internal" href="#v1-3-start-of-cfht-integration" id="id34">v1.3 Start of CFHT integration</a><ul>
+<li><a class="reference internal" href="#v1-3-0-orb-viewer" id="id35">v1.3.0 ORB-Viewer</a></li>
+<li><a class="reference internal" href="#v1-3-1" id="id36">v1.3.1</a><ul>
+<li><a class="reference internal" href="#orb-header" id="id37">orb-header</a></li>
+<li><a class="reference internal" href="#id2" id="id38">Miscellaneous</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-3-2" id="id39">v1.3.2</a><ul>
+<li><a class="reference internal" href="#scripts" id="id40">scripts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-3-3" id="id41">v1.3.3</a><ul>
+<li><a class="reference internal" href="#alignement" id="id42">Alignement</a></li>
+<li><a class="reference internal" href="#sip-distorsion" id="id43">SIP/Distorsion</a></li>
+<li><a class="reference internal" href="#hdf5" id="id44">HDF5</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-3-4-0" id="id45">v1.3.4.0</a><ul>
+<li><a class="reference internal" href="#binning-detection" id="id46">Binning detection</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-3-4-1" id="id47">v1.3.4.1</a><ul>
+<li><a class="reference internal" href="#doc-update" id="id48">Doc update</a></li>
+<li><a class="reference internal" href="#id3" id="id49">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-5-handing-sitelle-s-real-data-cubes" id="id53">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
-<li><a class="reference internal" href="#v1-5-0" id="id54">v1.5.0</a><ul>
-<li><a class="reference internal" href="#phase-correction" id="id55">Phase correction</a></li>
-<li><a class="reference internal" href="#point-source-detection" id="id56">Point source detection</a></li>
-<li><a class="reference internal" href="#d-viewer" id="id57">3D Viewer</a></li>
-<li><a class="reference internal" href="#id5" id="id58">Miscellaneous</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#v1-5-1" id="id59">v1.5.1</a><ul>
-<li><a class="reference internal" href="#hdf5-final-output-format" id="id60">HDF5 Final output format</a></li>
-<li><a class="reference internal" href="#complex-data-cubes" id="id61">Complex data cubes</a></li>
-<li><a class="reference internal" href="#no-more-automatic-logging" id="id62">No more automatic logging</a></li>
-<li><a class="reference internal" href="#calibration-laser-map-fit" id="id63">Calibration laser map fit</a></li>
-<li><a class="reference internal" href="#phase-map-fit" id="id64">Phase map fit</a></li>
-<li><a class="reference internal" href="#id6" id="id65">2D viewer</a></li>
-<li><a class="reference internal" href="#id7" id="id66">Miscellaneous</a></li>
+<li><a class="reference internal" href="#v1-4-the-hdf5-miracle" id="id50">v1.4 The HDF5 miracle</a><ul>
+<li><a class="reference internal" href="#v1-4-0" id="id51">v1.4.0</a><ul>
+<li><a class="reference internal" href="#visual-module" id="id52">Visual module</a></li>
+<li><a class="reference internal" href="#orb-viewer" id="id53">Orb-viewer</a></li>
+<li><a class="reference internal" href="#data-module" id="id54">Data module</a></li>
+<li><a class="reference internal" href="#id4" id="id55">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v1-6-architectural-changes" id="id67">v1.6: Architectural changes</a><ul>
-<li><a class="reference internal" href="#v1-6-0" id="id68">v1.6.0</a><ul>
-<li><a class="reference internal" href="#architecture" id="id69">Architecture</a></li>
-<li><a class="reference internal" href="#new-fit-classes" id="id70">New Fit classes</a></li>
-<li><a class="reference internal" href="#compression" id="id71">Compression</a></li>
-<li><a class="reference internal" href="#adaptation-to-sitelle" id="id72">Adaptation to SITELLE</a></li>
+<li><a class="reference internal" href="#v1-5-handing-sitelle-s-real-data-cubes" id="id56">v1.5: Handing SITELLE&#8217;s real data cubes</a><ul>
+<li><a class="reference internal" href="#v1-5-0" id="id57">v1.5.0</a><ul>
+<li><a class="reference internal" href="#phase-correction" id="id58">Phase correction</a></li>
+<li><a class="reference internal" href="#point-source-detection" id="id59">Point source detection</a></li>
+<li><a class="reference internal" href="#d-viewer" id="id60">3D Viewer</a></li>
+<li><a class="reference internal" href="#id5" id="id61">Miscellaneous</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#v-1-6-1" id="id73">v.1.6.1</a><ul>
-<li><a class="reference internal" href="#zernike-modes-fit" id="id74">Zernike Modes Fit</a></li>
-<li><a class="reference internal" href="#new-module-utils-io" id="id75">New module utils.IO</a></li>
-<li><a class="reference internal" href="#id8" id="id76">Miscellaneous</a></li>
+<li><a class="reference internal" href="#v1-5-1" id="id62">v1.5.1</a><ul>
+<li><a class="reference internal" href="#hdf5-final-output-format" id="id63">HDF5 Final output format</a></li>
+<li><a class="reference internal" href="#complex-data-cubes" id="id64">Complex data cubes</a></li>
+<li><a class="reference internal" href="#no-more-automatic-logging" id="id65">No more automatic logging</a></li>
+<li><a class="reference internal" href="#calibration-laser-map-fit" id="id66">Calibration laser map fit</a></li>
+<li><a class="reference internal" href="#phase-map-fit" id="id67">Phase map fit</a></li>
+<li><a class="reference internal" href="#id6" id="id68">2D viewer</a></li>
+<li><a class="reference internal" href="#id7" id="id69">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-6-architectural-changes" id="id70">v1.6: Architectural changes</a><ul>
+<li><a class="reference internal" href="#v1-6-0" id="id71">v1.6.0</a><ul>
+<li><a class="reference internal" href="#architecture" id="id72">Architecture</a></li>
+<li><a class="reference internal" href="#new-fit-classes" id="id73">New Fit classes</a></li>
+<li><a class="reference internal" href="#compression" id="id74">Compression</a></li>
+<li><a class="reference internal" href="#adaptation-to-sitelle" id="id75">Adaptation to SITELLE</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v-1-6-1" id="id76">v.1.6.1</a><ul>
+<li><a class="reference internal" href="#zernike-modes-fit" id="id77">Zernike Modes Fit</a></li>
+<li><a class="reference internal" href="#new-module-utils-io" id="id78">New module utils.IO</a></li>
+<li><a class="reference internal" href="#id8" id="id79">Miscellaneous</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v-1-6-2" id="id80">v.1.6.2</a><ul>
+<li><a class="reference internal" href="#photometry" id="id81">Photometry</a></li>
+<li><a class="reference internal" href="#quadcube" id="id82">QuadCube</a></li>
+<li><a class="reference internal" href="#id9" id="id83">Miscellaneous</a></li>
+<li><a class="reference internal" href="#v-1-6-3" id="id84">v.1.6.3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v-2-data-release-1" id="id85">v.2. Data Release 1</a><ul>
+<li><a class="reference internal" href="#v-2-0-dr1-beta" id="id86">v.2.0-DR1-beta</a><ul>
+<li><a class="reference internal" href="#outhdfquadcube" id="id87">OutHDFQuadCube</a></li>
+<li><a class="reference internal" href="#id10" id="id88">Photometry</a></li>
+<li><a class="reference internal" href="#fit-module" id="id89">Fit module</a></li>
+<li><a class="reference internal" href="#id11" id="id90">Compression</a></li>
 </ul>
 </li>
 </ul>
@@ -374,7 +408,7 @@
 </ul>
 </div>
 <div class="section" id="v1-0-creation-of-orb">
-<h2><a class="toc-backref" href="#id10">v1.0 Creation of ORB</a><a class="headerlink" href="#v1-0-creation-of-orb" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id13">v1.0 Creation of ORB</a><a class="headerlink" href="#v1-0-creation-of-orb" title="Permalink to this headline">¶</a></h2>
 <p>Major modification of ORBS architecture. All the shared content
 originally in the ORBS module have been moved to ORB. This way, ORBS,
 ORCS, OACS, IRIS and ORUS can share the same core module without
@@ -383,9 +417,9 @@ softwares, just wraps around ORB module and is not any more the
 central part of the whole suite of softwares.</p>
 </div>
 <div class="section" id="v1-1">
-<h2><a class="toc-backref" href="#id11">v1.1</a><a class="headerlink" href="#v1-1" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id14">v1.1</a><a class="headerlink" href="#v1-1" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="multi-fit-of-stars">
-<h3><a class="toc-backref" href="#id12">Multi fit of stars</a><a class="headerlink" href="#multi-fit-of-stars" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">Multi fit of stars</a><a class="headerlink" href="#multi-fit-of-stars" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></code> has been updated to fit
 multiple stars at the same time (see:
@@ -394,7 +428,7 @@ robust.</li>
 </ul>
 </div>
 <div class="section" id="usno-b1-based-star-detection">
-<h3><a class="toc-backref" href="#id13">USNO-B1 based star detection</a><a class="headerlink" href="#usno-b1-based-star-detection" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">USNO-B1 based star detection</a><a class="headerlink" href="#usno-b1-based-star-detection" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><code class="xref py py-meth docutils literal"><span class="pre">query_vizier()</span></code></a> and
 <a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> have been moved from
@@ -408,7 +442,7 @@ galaxies to avoid the confision of HII regions and stars.</li>
 </div>
 </div>
 <div class="section" id="v1-2">
-<h2><a class="toc-backref" href="#id14">v1.2</a><a class="headerlink" href="#v1-2" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id17">v1.2</a><a class="headerlink" href="#v1-2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code></a> noise estimation
 enhanced. The initial estimation of the shift has also been updated.</li>
@@ -418,7 +452,7 @@ version ready for release.</li>
 robust and precise)</li>
 </ul>
 <div class="section" id="v1-2-1">
-<h3><a class="toc-backref" href="#id15">v1.2.1</a><a class="headerlink" href="#v1-2-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id18">v1.2.1</a><a class="headerlink" href="#v1-2-1" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">transform_spectrum()</span></code> and
 <code class="xref py py-meth docutils literal"><span class="pre">transform_interferogram()</span></code> adjusted to lose no energy
@@ -432,7 +466,7 @@ space back and forth)&#8217;</li>
 </ul>
 </div>
 <div class="section" id="v1-2-2">
-<h3><a class="toc-backref" href="#id16">v1.2.2</a><a class="headerlink" href="#v1-2-2" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id19">v1.2.2</a><a class="headerlink" href="#v1-2-2" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></code> and
 <code class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></code> Cythonised to
@@ -442,7 +476,7 @@ space back and forth)&#8217;</li>
 <code class="xref py py-meth docutils literal"><span class="pre">orbs.orbs.Orbs.__init__()</span></code>.</li>
 </ul>
 <div class="section" id="orcs-integration">
-<h4><a class="toc-backref" href="#id17">ORCS integration</a><a class="headerlink" href="#orcs-integration" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id20">ORCS integration</a><a class="headerlink" href="#orcs-integration" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>new keywords in config.orb: OBS_LAT, OBS_LON, OBS_ALT for ORCS.</li>
 <li>new general keyword in OptionFile: INCLUDE, used to include the
@@ -456,7 +490,7 @@ method accessible to ORCS.</li>
 </ul>
 </div>
 <div class="section" id="orb-s-scripts">
-<h4><a class="toc-backref" href="#id18">ORB&#8217;s scripts</a><a class="headerlink" href="#orb-s-scripts" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id21">ORB&#8217;s scripts</a><a class="headerlink" href="#orb-s-scripts" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>move ORB&#8217;s scripts (dstack, combine, rollxz, rollyz, reduce) from
 orbs/scripts to orb/scripts so that only ORBS specific scripts are
@@ -466,7 +500,7 @@ in orbs/scripts.</li>
 </div>
 </div>
 <div class="section" id="v1-2-3">
-<h3><a class="toc-backref" href="#id19">v1.2.3</a><a class="headerlink" href="#v1-2-3" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id22">v1.2.3</a><a class="headerlink" href="#v1-2-3" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>add <code class="xref py py-meth docutils literal"><span class="pre">flambda2ABmag()</span></code></li>
 <li>change file globals.py for constants.py</li>
@@ -487,9 +521,9 @@ and is now more robust and use NaNs instead of zeros.</li>
 </ul>
 </div>
 <div class="section" id="v1-2-4">
-<h3><a class="toc-backref" href="#id20">v1.2.4</a><a class="headerlink" href="#v1-2-4" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id23">v1.2.4</a><a class="headerlink" href="#v1-2-4" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="miscellaneous">
-<h4><a class="toc-backref" href="#id21">Miscellaneous</a><a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id24">Miscellaneous</a><a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>all scripts have been renamed to orb-*</li>
 <li>&#8211;nostar and &#8211;flat bug fixed. Cosmic ray detection will not be done
@@ -497,7 +531,7 @@ if those options are given.</li>
 </ul>
 </div>
 <div class="section" id="sitelle-data">
-<h4><a class="toc-backref" href="#id22">SITELLE data</a><a class="headerlink" href="#sitelle-data" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id25">SITELLE data</a><a class="headerlink" href="#sitelle-data" title="Permalink to this headline">¶</a></h4>
 <ul>
 <li><p class="first">new command: <strong>orb-conf</strong>. Its general purpose is to help the
 administrator to quickly change ORB configuration. Its first use is
@@ -514,7 +548,7 @@ the ORB installation folder.</p>
 </li>
 </ul>
 <div class="section" id="sitelle-image-mode">
-<h5><a class="toc-backref" href="#id23">Sitelle image mode</a><a class="headerlink" href="#sitelle-image-mode" title="Permalink to this headline">¶</a></h5>
+<h5><a class="toc-backref" href="#id26">Sitelle image mode</a><a class="headerlink" href="#sitelle-image-mode" title="Permalink to this headline">¶</a></h5>
 <ul>
 <li><p class="first">if ORBS is in <strong>sitelle mode</strong> (if the configuration file points to
 config.sitelle.orb), SITELLE&#8217;s data frames are handled at the core
@@ -546,7 +580,7 @@ image. This default behaviour can be canceled in the future.</p>
 </ul>
 </div>
 <div class="section" id="prebinning">
-<h5><a class="toc-backref" href="#id24">Prebinning</a><a class="headerlink" href="#prebinning" title="Permalink to this headline">¶</a></h5>
+<h5><a class="toc-backref" href="#id27">Prebinning</a><a class="headerlink" href="#prebinning" title="Permalink to this headline">¶</a></h5>
 <p>Used for faster computation of big data set. It
 can also be useful if the user simply wants binned data. At the user
 level only one option must be passed to the option file:</p>
@@ -578,7 +612,7 @@ directive that is added at the beginning of an image list file.</p>
 </div>
 </div>
 <div class="section" id="v1-2-4-1">
-<h3><a class="toc-backref" href="#id25">v1.2.4.1</a><a class="headerlink" href="#v1-2-4-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id28">v1.2.4.1</a><a class="headerlink" href="#v1-2-4-1" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Enhanced frame
 registration. <a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> now takes
@@ -590,9 +624,9 @@ phase fit lowered to 1/3 of the column length instead of 1/2.</li>
 </ul>
 </div>
 <div class="section" id="v1-2-4-2">
-<h3><a class="toc-backref" href="#id26">v1.2.4.2</a><a class="headerlink" href="#v1-2-4-2" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id29">v1.2.4.2</a><a class="headerlink" href="#v1-2-4-2" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="astropy">
-<h4><a class="toc-backref" href="#id27">Astropy</a><a class="headerlink" href="#astropy" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id30">Astropy</a><a class="headerlink" href="#astropy" title="Permalink to this headline">¶</a></h4>
 <p>Astropy (<a class="reference external" href="http://www.astropy.org/">http://www.astropy.org/</a>) is definitly needed, pyfits and
 pywcs standalone modules are not needed anymore by ORBS (but they
 still can be used by other modules ;) even modules imported by ORBS so
@@ -603,7 +637,7 @@ becarefull before removing them)</p>
 </ul>
 </div>
 <div class="section" id="better-star-fit">
-<h4><a class="toc-backref" href="#id28">Better Star fit</a><a class="headerlink" href="#better-star-fit" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id31">Better Star fit</a><a class="headerlink" href="#better-star-fit" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code></a>: tilted background added to the model</li>
 <li>detected stars are selected not too far from the center of the
@@ -613,7 +647,7 @@ around stars.</li>
 </ul>
 </div>
 <div class="section" id="spiomm-bias-overscan-for-camera-2">
-<h4><a class="toc-backref" href="#id29">SpIOMM bias overscan for camera 2</a><a class="headerlink" href="#spiomm-bias-overscan-for-camera-2" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id32">SpIOMM bias overscan for camera 2</a><a class="headerlink" href="#spiomm-bias-overscan-for-camera-2" title="Permalink to this headline">¶</a></h4>
 <p>When it exists, the bias overscan created with each frame of the
 camera 2 is used to remove automatically the bias. Note that in this
 case <strong>the path to the bias frames must not be given to ORBS</strong> because
@@ -623,7 +657,7 @@ is removed from the bias frames also. The impact of giving the path to
 the bias frame is thus not dramatic. But it is better not to give it.</p>
 </div>
 <div class="section" id="id1">
-<h4><a class="toc-backref" href="#id30">Miscellaneous</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id33">Miscellaneous</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> optimization routine is
 based on a least square fit instead of a powell algorithm.</li>
@@ -641,9 +675,9 @@ vector.</li>
 </div>
 </div>
 <div class="section" id="v1-3-start-of-cfht-integration">
-<h2><a class="toc-backref" href="#id31">v1.3 Start of CFHT integration</a><a class="headerlink" href="#v1-3-start-of-cfht-integration" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id34">v1.3 Start of CFHT integration</a><a class="headerlink" href="#v1-3-start-of-cfht-integration" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="v1-3-0-orb-viewer">
-<h3><a class="toc-backref" href="#id32">v1.3.0 ORB-Viewer</a><a class="headerlink" href="#v1-3-0-orb-viewer" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id35">v1.3.0 ORB-Viewer</a><a class="headerlink" href="#v1-3-0-orb-viewer" title="Permalink to this headline">¶</a></h3>
 <p>A viewer based on Ginga (<a class="reference external" href="https://github.com/ejeschke/ginga">https://github.com/ejeschke/ginga</a>) has been
 added to ORB (scripts/<strong>orb-viewer</strong>). It can be used to analyse
 reduced data cube (spectral cube) or raw interferometric cubes. Basic
@@ -651,14 +685,14 @@ functionalities (fft, spectrum fit, image operations ...)  have been
 implemented.</p>
 </div>
 <div class="section" id="v1-3-1">
-<h3><a class="toc-backref" href="#id33">v1.3.1</a><a class="headerlink" href="#v1-3-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id36">v1.3.1</a><a class="headerlink" href="#v1-3-1" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="orb-header">
-<h4><a class="toc-backref" href="#id34">orb-header</a><a class="headerlink" href="#orb-header" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id37">orb-header</a><a class="headerlink" href="#orb-header" title="Permalink to this headline">¶</a></h4>
 <p>script <strong>orb-header</strong> added to display and manipulate headers of FITS
 files.</p>
 </div>
 <div class="section" id="id2">
-<h4><a class="toc-backref" href="#id35">Miscellaneous</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id38">Miscellaneous</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>All classes which inherit from <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> can be passed
 all Tools arguments even if the __init__ method has been
@@ -681,7 +715,7 @@ list. It is now able to filter SITELLE files to get only the
 </div>
 </div>
 <div class="section" id="v1-3-2">
-<h3><a class="toc-backref" href="#id36">v1.3.2</a><a class="headerlink" href="#v1-3-2" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id39">v1.3.2</a><a class="headerlink" href="#v1-3-2" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference internal" href="core_module.html#core.Tools._read_sitelle_chip" title="core.Tools._read_sitelle_chip"><code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code></a> : bias is now computed on
 half of the overscan part, because the pixel on the very border of
@@ -698,7 +732,7 @@ to NaNs</li>
 <li>config files updated for SpIOMM and SITELLE.</li>
 </ul>
 <div class="section" id="scripts">
-<h4><a class="toc-backref" href="#id37">scripts</a><a class="headerlink" href="#scripts" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id40">scripts</a><a class="headerlink" href="#scripts" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><strong>orb-aligner</strong>: graphical inteface created to help in
 manually align images if needed.</li>
@@ -710,9 +744,9 @@ of keyword values.</li>
 </div>
 </div>
 <div class="section" id="v1-3-3">
-<h3><a class="toc-backref" href="#id38">v1.3.3</a><a class="headerlink" href="#v1-3-3" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id41">v1.3.3</a><a class="headerlink" href="#v1-3-3" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="alignement">
-<h4><a class="toc-backref" href="#id39">Alignement</a><a class="headerlink" href="#alignement" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id42">Alignement</a><a class="headerlink" href="#alignement" title="Permalink to this headline">¶</a></h4>
 <p>The alignment procedure has been completely changed and is now more
 than ten times faster. Two steps only are required: One brute force
 step (<code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.brute_force()</span></code>) based on fast
@@ -721,7 +755,7 @@ photometry and a fine fit step to get all alignment parameters.</p>
 alignment procedure.</p>
 </div>
 <div class="section" id="sip-distorsion">
-<h4><a class="toc-backref" href="#id40">SIP/Distorsion</a><a class="headerlink" href="#sip-distorsion" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id43">SIP/Distorsion</a><a class="headerlink" href="#sip-distorsion" title="Permalink to this headline">¶</a></h4>
 <p>Computation of the SIP (Simple Imaging Polynomial) distorsion
 correction has been implemented in
 <a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.register()</span></code></a>. All the geometrical
@@ -730,16 +764,16 @@ fitting procedure <code class="xref py py-meth docutils literal"><span class="pr
 updated.</p>
 </div>
 <div class="section" id="hdf5">
-<h4><a class="toc-backref" href="#id41">HDF5</a><a class="headerlink" href="#hdf5" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id44">HDF5</a><a class="headerlink" href="#hdf5" title="Permalink to this headline">¶</a></h4>
 <p><a class="reference internal" href="astrometry_module.html#astrometry.StarsParams" title="astrometry.StarsParams"><code class="xref py py-class docutils literal"><span class="pre">astrometry.StarsParams</span></code></a> saves its data in HDF5 format to
 provide an easier and more robust way of accessing and viewing the
 parameters. The module h5py is now required to use ORB.</p>
 </div>
 </div>
 <div class="section" id="v1-3-4-0">
-<h3><a class="toc-backref" href="#id42">v1.3.4.0</a><a class="headerlink" href="#v1-3-4-0" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id45">v1.3.4.0</a><a class="headerlink" href="#v1-3-4-0" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="binning-detection">
-<h4><a class="toc-backref" href="#id43">Binning detection</a><a class="headerlink" href="#binning-detection" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id46">Binning detection</a><a class="headerlink" href="#binning-detection" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>keywords <strong>CAM1_DETECTOR_SIZE_X</strong>, <strong>CAM1_DETECTOR_SIZE_Y</strong>,
 <strong>CAM2_DETECTOR_SIZE_X</strong>, <strong>CAM2_DETECTOR_SIZE_Y</strong> added to the
@@ -750,12 +784,12 @@ binning.</li>
 </div>
 </div>
 <div class="section" id="v1-3-4-1">
-<h3><a class="toc-backref" href="#id44">v1.3.4.1</a><a class="headerlink" href="#v1-3-4-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id47">v1.3.4.1</a><a class="headerlink" href="#v1-3-4-1" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="doc-update">
-<h4><a class="toc-backref" href="#id45">Doc update</a><a class="headerlink" href="#doc-update" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id48">Doc update</a><a class="headerlink" href="#doc-update" title="Permalink to this headline">¶</a></h4>
 </div>
 <div class="section" id="id3">
-<h4><a class="toc-backref" href="#id46">Miscellaneous</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id49">Miscellaneous</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">optimize_phase()</span></code> added to optimize a linear phase
 vector based on the minimization of the imaginary part. Can be used
@@ -765,7 +799,7 @@ to get the phase of a laser spectrum (with no continuum emission).</li>
 </div>
 </div>
 <div class="section" id="v1-4-the-hdf5-miracle">
-<h2><a class="toc-backref" href="#id47">v1.4 The HDF5 miracle</a><a class="headerlink" href="#v1-4-the-hdf5-miracle" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id50">v1.4 The HDF5 miracle</a><a class="headerlink" href="#v1-4-the-hdf5-miracle" title="Permalink to this headline">¶</a></h2>
 <p>All ORBS internal cubes used for computation have been passed to an
 HDF5 format which makes data loading incredibly faster. If those
 changes have small effects on small data cubes like SpIOMM data, it
@@ -774,7 +808,7 @@ from ~10 hours to 6.5 hours on a 16 procs machine).</p>
 <p>The HDF5 format is also very useful to display large data cubes with
 <strong>orb-viewer</strong> without loading the full cube in memory.</p>
 <div class="section" id="v1-4-0">
-<h3><a class="toc-backref" href="#id48">v1.4.0</a><a class="headerlink" href="#v1-4-0" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id51">v1.4.0</a><a class="headerlink" href="#v1-4-0" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> created. It inherits of
 <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a> but it is built over an HDF5 cube. An HDF5
@@ -790,7 +824,7 @@ frame divided FITS cube) in HDF5 format.</li>
 <li>script <strong>orb-dstack</strong> can also export a cube in hdf5 format.</li>
 </ul>
 <div class="section" id="visual-module">
-<h4><a class="toc-backref" href="#id49">Visual module</a><a class="headerlink" href="#visual-module" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id52">Visual module</a><a class="headerlink" href="#visual-module" title="Permalink to this headline">¶</a></h4>
 <p>New module created <code class="xref py py-mod docutils literal"><span class="pre">orb.visual</span></code> aimed to contain basic visual
 classes to construct viewer in other ORB softwares like ORBS, IRIS,
 ORCS...</p>
@@ -801,7 +835,7 @@ created to display FITS/HDF5 cubes.</li>
 </ul>
 </div>
 <div class="section" id="orb-viewer">
-<h4><a class="toc-backref" href="#id50">Orb-viewer</a><a class="headerlink" href="#orb-viewer" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id53">Orb-viewer</a><a class="headerlink" href="#orb-viewer" title="Permalink to this headline">¶</a></h4>
 <p>The basic viewer <strong>orb-viewer</strong> has been completly rewritten. It has
 less functionnality than the previous one, but it is nearly bug-free
 and much better coded. Its frame will serve as a basic frame for more
@@ -809,7 +843,7 @@ specialized viewer (e.g. <strong>iris-viewer</strong> of IRIS and other to come 
 ORCS).</p>
 </div>
 <div class="section" id="data-module">
-<h4><a class="toc-backref" href="#id51">Data module</a><a class="headerlink" href="#data-module" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id54">Data module</a><a class="headerlink" href="#data-module" title="Permalink to this headline">¶</a></h4>
 <p>Module <code class="xref py py-mod docutils literal"><span class="pre">data</span></code> used to propagate uncertainty when doing
 operations on 1D or 2D data. Useful for IRIS and OACS.</p>
 <ul class="simple">
@@ -818,7 +852,7 @@ operations on 1D or 2D data. Useful for IRIS and OACS.</p>
 </ul>
 </div>
 <div class="section" id="id4">
-<h4><a class="toc-backref" href="#id52">Miscellaneous</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id55">Miscellaneous</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
 <p><code class="xref py py-meth docutils literal"><span class="pre">orb.astrometry.StarsParams.load_stars_parameters()</span></code> and
 <code class="xref py py-meth docutils literal"><span class="pre">orb.astrometry.StarsParams.save_stars_parameters()</span></code> changed to
 output the parameters in HDF5 format. saving and loading is much
@@ -827,11 +861,11 @@ more efficient.</p>
 </div>
 </div>
 <div class="section" id="v1-5-handing-sitelle-s-real-data-cubes">
-<h2><a class="toc-backref" href="#id53">v1.5: Handing SITELLE&#8217;s real data cubes</a><a class="headerlink" href="#v1-5-handing-sitelle-s-real-data-cubes" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id56">v1.5: Handing SITELLE&#8217;s real data cubes</a><a class="headerlink" href="#v1-5-handing-sitelle-s-real-data-cubes" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="v1-5-0">
-<h3><a class="toc-backref" href="#id54">v1.5.0</a><a class="headerlink" href="#v1-5-0" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id57">v1.5.0</a><a class="headerlink" href="#v1-5-0" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="phase-correction">
-<h4><a class="toc-backref" href="#id55">Phase correction</a><a class="headerlink" href="#phase-correction" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id58">Phase correction</a><a class="headerlink" href="#phase-correction" title="Permalink to this headline">¶</a></h4>
 <p>SITELLE&#8217;s phase map is nearly ideal so that a <strong>better kind of phase
 correction is possible</strong>. Now, the &#8216;order 0 phase map&#8217; depends only on
 the OPD path i.e. the incident angle of the light (if we consider that
@@ -858,7 +892,7 @@ conditions (gravity vector, temperature and so on).</li>
 </ul>
 </div>
 <div class="section" id="point-source-detection">
-<h4><a class="toc-backref" href="#id56">Point source detection</a><a class="headerlink" href="#point-source-detection" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id59">Point source detection</a><a class="headerlink" href="#point-source-detection" title="Permalink to this headline">¶</a></h4>
 <p><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.detect_all_sources" title="astrometry.Astrometry.detect_all_sources"><code class="xref py py-meth docutils literal"><span class="pre">detect_all_sources()</span></code></a> detects all
 point sources in a cube (HII regions, distant galaxies, stars and
 filamentary knots can be detected). This method is used to shield the
@@ -866,13 +900,13 @@ point sources during the cosmic ray detection and will be certainly
 useful for automatic point source extraction.</p>
 </div>
 <div class="section" id="d-viewer">
-<h4><a class="toc-backref" href="#id57">3D Viewer</a><a class="headerlink" href="#d-viewer" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id60">3D Viewer</a><a class="headerlink" href="#d-viewer" title="Permalink to this headline">¶</a></h4>
 <p>A 3D viewer has been created (<strong>orb-viewer3d</strong>) based on vispy library
 (<a class="reference external" href="http://vispy.org">http://vispy.org</a>) which is an easy to use OpenGL API. It is still at
 a development level but it works well enough to travel into spectral cubes and  make beautiful 3D videos.</p>
 </div>
 <div class="section" id="id5">
-<h4><a class="toc-backref" href="#id58">Miscellaneous</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id61">Miscellaneous</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
 <p><code class="xref py py-meth docutils literal"><span class="pre">transform_interferogram()</span></code> does not make any use of the
 old low resolution phase computation
 (<code class="xref py py-meth docutils literal"><span class="pre">get_lr_phase()</span></code>). The phase can be directly obtained
@@ -883,15 +917,15 @@ length phase vector is now computed every time the phase is needed.</p>
 </div>
 </div>
 <div class="section" id="v1-5-1">
-<h3><a class="toc-backref" href="#id59">v1.5.1</a><a class="headerlink" href="#v1-5-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id62">v1.5.1</a><a class="headerlink" href="#v1-5-1" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="hdf5-final-output-format">
-<h4><a class="toc-backref" href="#id60">HDF5 Final output format</a><a class="headerlink" href="#hdf5-final-output-format" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id63">HDF5 Final output format</a><a class="headerlink" href="#hdf5-final-output-format" title="Permalink to this headline">¶</a></h4>
 <p>The final output format is now an HDF5 cube. A FITS cube can then be
 obtained by using the script <strong>orb-extract</strong>. The HDF5 cube can be
 handled directly by ORCS.</p>
 </div>
 <div class="section" id="complex-data-cubes">
-<h4><a class="toc-backref" href="#id61">Complex data cubes</a><a class="headerlink" href="#complex-data-cubes" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id64">Complex data cubes</a><a class="headerlink" href="#complex-data-cubes" title="Permalink to this headline">¶</a></h4>
 <p><a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> and <a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> now handles
 complex data sets. If a complex data cube is opened returned data will
 be complex. The user of the class must make sure that the complex data
@@ -903,7 +937,7 @@ check if the phase correction is correct. This check is made during
 the calibration step.</p>
 </div>
 <div class="section" id="no-more-automatic-logging">
-<h4><a class="toc-backref" href="#id62">No more automatic logging</a><a class="headerlink" href="#no-more-automatic-logging" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id65">No more automatic logging</a><a class="headerlink" href="#no-more-automatic-logging" title="Permalink to this headline">¶</a></h4>
 <p>Automatic logging originally handled by <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> is now
 handled by <a class="reference internal" href="core_module.html#core.Logger" title="core.Logger"><code class="xref py py-class docutils literal"><span class="pre">Logger</span></code></a> which must be initialised by the
 main script. No more logfile name has to be passed to
@@ -912,7 +946,7 @@ main script. No more logfile name has to be passed to
 logfile for all the launched processes has also been suppressed.</p>
 </div>
 <div class="section" id="calibration-laser-map-fit">
-<h4><a class="toc-backref" href="#id63">Calibration laser map fit</a><a class="headerlink" href="#calibration-laser-map-fit" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id66">Calibration laser map fit</a><a class="headerlink" href="#calibration-laser-map-fit" title="Permalink to this headline">¶</a></h4>
 <p><code class="xref py py-meth docutils literal"><span class="pre">fit_calibration_laser_map()</span></code>: The residual of the
 modelized fit of the calibration laser map is now fitted with a 2D
 polynomial. The precision is of the order of 10 m/s which gives enough
@@ -923,7 +957,7 @@ map when it is used to calibrate a cube. The script
 <strong>orbs-fit-calibration-laser-map</strong> hase been created for that.</p>
 </div>
 <div class="section" id="phase-map-fit">
-<h4><a class="toc-backref" href="#id64">Phase map fit</a><a class="headerlink" href="#phase-map-fit" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id67">Phase map fit</a><a class="headerlink" href="#phase-map-fit" title="Permalink to this headline">¶</a></h4>
 <p><code class="xref py py-meth docutils literal"><span class="pre">simulate_calibration_laser_map()</span></code>,
 <code class="xref py py-meth docutils literal"><span class="pre">fit_calibration_laser_map()</span></code> and
 <code class="xref py py-meth docutils literal"><span class="pre">fit_sitelle_phase_map()</span></code> have been updated to deliver
@@ -934,21 +968,21 @@ residual which must be taken into account. This might come in the
 future (see above).</p>
 </div>
 <div class="section" id="id6">
-<h4><a class="toc-backref" href="#id65">2D viewer</a><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id68">2D viewer</a><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
 <p>2D Viewer has been updated to handle colormaps. Different shapes
 (circle and square) and different combining methods (mean, median,
 sum) of the regions are possible. A fitting module process has been
 added to the spectrum window. Some bugs have also been corrected.</p>
 </div>
 <div class="section" id="id7">
-<h4><a class="toc-backref" href="#id66">Miscellaneous</a><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id69">Miscellaneous</a><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">aperture_photometry()</span></code> and
 <code class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></code> can now return
 photometrical data without background sustraction. This is used in
 source extraction (less noisy for faint sources).</li>
 <li>The implementation of <a class="reference internal" href="core_module.html#core.Cube.get_quadrant_dims" title="core.Cube.get_quadrant_dims"><code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code></a> has
-been moved to <a class="reference internal" href="core_module.html#core.Tools.get_quadrant_dims" title="core.Tools.get_quadrant_dims"><code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code></a>.</li>
+been moved to <code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code>.</li>
 <li><a class="reference internal" href="cutils_module.html#cutils.nanbin_image" title="cutils.nanbin_image"><code class="xref py py-meth docutils literal"><span class="pre">nanbin_image()</span></code></a> and
 <a class="reference internal" href="cutils_module.html#cutils.unbin_image" title="cutils.unbin_image"><code class="xref py py-meth docutils literal"><span class="pre">unbin_image()</span></code></a> created to bin and unbin images
 during phase maps fitting. It permits to accelerate the process a
@@ -963,12 +997,12 @@ this version).</li>
 </div>
 </div>
 <div class="section" id="v1-6-architectural-changes">
-<h2><a class="toc-backref" href="#id67">v1.6: Architectural changes</a><a class="headerlink" href="#v1-6-architectural-changes" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id70">v1.6: Architectural changes</a><a class="headerlink" href="#v1-6-architectural-changes" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="v1-6-0">
-<h3><a class="toc-backref" href="#id68">v1.6.0</a><a class="headerlink" href="#v1-6-0" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id71">v1.6.0</a><a class="headerlink" href="#v1-6-0" title="Permalink to this headline">¶</a></h3>
 <p>A lot of changes have been made. Only the most important are summarized.</p>
 <div class="section" id="architecture">
-<h4><a class="toc-backref" href="#id69">Architecture</a><a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id72">Architecture</a><a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h4>
 <p>The old orb/utils.py has been transformed into a real module:
 <a class="reference internal" href="utils_module.html#utils-module"><span>Utils module</span></a>, utils function have been ordered by type:
 astrometry, fft, spectrum, vector, image, stats, parallel, web ...</p>
@@ -976,28 +1010,28 @@ astrometry, fft, spectrum, vector, image, stats, parallel, web ...</p>
 function created by Simon Prunet, see: <a class="reference internal" href="cutils_module.html#cutils.sincgauss1d" title="cutils.sincgauss1d"><code class="xref py py-meth docutils literal"><span class="pre">sincgauss1d()</span></code></a></p>
 </div>
 <div class="section" id="new-fit-classes">
-<h4><a class="toc-backref" href="#id70">New Fit classes</a><a class="headerlink" href="#new-fit-classes" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id73">New Fit classes</a><a class="headerlink" href="#new-fit-classes" title="Permalink to this headline">¶</a></h4>
 <p>The whole fit concept has been enhanced. A fitting module has been
 created (<code class="xref py py-mod docutils literal"><span class="pre">fit</span></code>, see <a class="reference internal" href="fit_module.html#fit-module"><span>Fit module</span></a>) It is now governed by a Fit class
 (<a class="reference internal" href="fit_module.html#fit.FitVector" title="fit.FitVector"><code class="xref py py-class docutils literal"><span class="pre">fit.FitVector</span></code></a>) which can aggregates models based on a
 Template class (<a class="reference internal" href="fit_module.html#fit.Model" title="fit.Model"><code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code></a>).</p>
 </div>
 <div class="section" id="compression">
-<h4><a class="toc-backref" href="#id71">Compression</a><a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id74">Compression</a><a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h4>
 <p>A small compression of the HDF5 files is now automaticcaly done. It
 slows the process but makes the siez of the reduction file on disk
 much smaller.</p>
 </div>
 <div class="section" id="adaptation-to-sitelle">
-<h4><a class="toc-backref" href="#id72">Adaptation to SITELLE</a><a class="headerlink" href="#adaptation-to-sitelle" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id75">Adaptation to SITELLE</a><a class="headerlink" href="#adaptation-to-sitelle" title="Permalink to this headline">¶</a></h4>
 <p><strong>Phase correction</strong> and <strong>cosmic-ray detection</strong> have been reworked. Cosmic
 ray detection now uses both cubes and is much more robust than before.</p>
 </div>
 </div>
 <div class="section" id="v-1-6-1">
-<h3><a class="toc-backref" href="#id73">v.1.6.1</a><a class="headerlink" href="#v-1-6-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id76">v.1.6.1</a><a class="headerlink" href="#v-1-6-1" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="zernike-modes-fit">
-<h4><a class="toc-backref" href="#id74">Zernike Modes Fit</a><a class="headerlink" href="#zernike-modes-fit" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id77">Zernike Modes Fit</a><a class="headerlink" href="#zernike-modes-fit" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>External module <code class="xref py py-mod docutils literal"><span class="pre">orb.ext.zern</span></code> added to fit Zernike
 modes. This module has been created by Tim van Werkhoven
@@ -1005,14 +1039,14 @@ modes. This module has been created by Tim van Werkhoven
 </ul>
 </div>
 <div class="section" id="new-module-utils-io">
-<h4><a class="toc-backref" href="#id75">New module utils.IO</a><a class="headerlink" href="#new-module-utils-io" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id78">New module utils.IO</a><a class="headerlink" href="#new-module-utils-io" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>module <a class="reference internal" href="utils_module.html#module-orb.utils.io" title="orb.utils.io"><code class="xref py py-mod docutils literal"><span class="pre">orb.utils.io</span></code></a> created to put input/output functions
 related to write/read FITS and HDF5 single files.</li>
 </ul>
 </div>
 <div class="section" id="id8">
-<h4><a class="toc-backref" href="#id76">Miscellaneous</a><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id79">Miscellaneous</a><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.brute_force_guess" title="astrometry.Astrometry.brute_force_guess"><code class="xref py py-meth docutils literal"><span class="pre">brute_force_guess()</span></code></a> Brute force
 guess extended to cover a wider region by default. Initial guess on
@@ -1031,6 +1065,84 @@ expected to keep the same number of sample at the input and the
 output.</li>
 <li><code class="xref py py-mod docutils literal"><span class="pre">orb.viewer</span></code> updated for the last matplotlib version (1.5.1).</li>
 </ul>
+</div>
+</div>
+<div class="section" id="v-1-6-2">
+<h3><a class="toc-backref" href="#id80">v.1.6.2</a><a class="headerlink" href="#v-1-6-2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="photometry">
+<h4><a class="toc-backref" href="#id81">Photometry</a><a class="headerlink" href="#photometry" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>Standard class moved from orbs/process.py to core.py.</li>
+<li>new utils/photometry.py</li>
+</ul>
+</div>
+<div class="section" id="quadcube">
+<h4><a class="toc-backref" href="#id82">QuadCube</a><a class="headerlink" href="#quadcube" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>New major upgrade working.</li>
+</ul>
+</div>
+<div class="section" id="id9">
+<h4><a class="toc-backref" href="#id83">Miscellaneous</a><a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>brute_force_guess made more robust (frame is cleaned from all other
+things than detected stars to remove bad brilliant object
+&#8211;e.g. saturated stars&#8211;)</li>
+<li>brute_force_guess made faster by moving the core functions to
+cutils.py</li>
+</ul>
+</div>
+<div class="section" id="v-1-6-3">
+<h4><a class="toc-backref" href="#id84">v.1.6.3</a><a class="headerlink" href="#v-1-6-3" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>star photometry is now computed on the axis at the center of the
+frame instead of the axis at 0 degrees (interferometer axis). This
+way the filter and standrd curve are well centered instead of beeing
+moved too much to the left and cut (which was resulting in an
+underestimation of a few percent on the std star theoretical flux).</li>
+<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> : registration is now
+only made by photometry optimization (brute force) and does not rely
+on fit because the distorsion are too big to give correct fit
+results. If it can be less precise (a precision better than 1 pixel
+is impossible by definition) it is much more robust. Note that after
+all distorsion are bigger than 3 to 4 pixels.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="v-2-data-release-1">
+<h2><a class="toc-backref" href="#id85">v.2. Data Release 1</a><a class="headerlink" href="#v-2-data-release-1" title="Permalink to this headline">¶</a></h2>
+<p>This is a major version corresponding to the first Data Release of
+SITELLE made in March 2016.</p>
+<div class="section" id="v-2-0-dr1-beta">
+<h3><a class="toc-backref" href="#id86">v.2.0-DR1-beta</a><a class="headerlink" href="#v-2-0-dr1-beta" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="outhdfquadcube">
+<h4><a class="toc-backref" href="#id87">OutHDFQuadCube</a><a class="headerlink" href="#outhdfquadcube" title="Permalink to this headline">¶</a></h4>
+<p>Quad divided HDF cube. Much much faster when dealing with quads or
+spectra. This is now the default HDF5 cube for the final output and
+all the spectrum related processes like spectrum computation and
+calibration.</p>
+</div>
+<div class="section" id="id10">
+<h4><a class="toc-backref" href="#id88">Photometry</a><a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>Standard class moved from ORBS to ORB. This class manage standard
+related files and compute a estimated flux in a frame.</li>
+<li>A lot has been developped to compute a precise estimation of the
+number of counts. All the functions related to photometry have been
+stored in utils/photometry.py.</li>
+</ul>
+</div>
+<div class="section" id="fit-module">
+<h4><a class="toc-backref" href="#id89">Fit module</a><a class="headerlink" href="#fit-module" title="Permalink to this headline">¶</a></h4>
+<p>The fit module is now stable and robust. Models can be easily created
+and aggregated to a global model. Model for continuum, emission lines
+and filter have been designed.</p>
+</div>
+<div class="section" id="id11">
+<h4><a class="toc-backref" href="#id90">Compression</a><a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
+<p>Compression has been removed. Even a small compression slows down the
+process too much.It could be used for archiving though.</p>
 </div>
 </div>
 </div>
@@ -1075,7 +1187,7 @@ output.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.1',
+            VERSION:'2.0-DR1-beta',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

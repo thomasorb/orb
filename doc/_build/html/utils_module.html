@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Utils module &mdash; Orb 1.6.1 documentation</title>
+  <title>Utils module &mdash; Orb 2.0-DR1-beta documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 1.6.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
         <link rel="next" title="CUtils module" href="cutils_module.html"/>
         <link rel="prev" title="Core module" href="core_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.6.1
+                2.0-DR1-beta
               </div>
             
           
@@ -107,6 +107,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.io">IO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.misc">Miscellaneous</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.parallel">Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.photometry">Photometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.pyneb">Pyneb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.spectrum">Spectrum</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.stats">Stats</a></li>
@@ -181,11 +182,12 @@
 <li><a class="reference internal" href="#module-orb.utils.io" id="id10">IO</a></li>
 <li><a class="reference internal" href="#module-orb.utils.misc" id="id11">Miscellaneous</a></li>
 <li><a class="reference internal" href="#module-orb.utils.parallel" id="id12">Parallel</a></li>
-<li><a class="reference internal" href="#module-orb.utils.pyneb" id="id13">Pyneb</a></li>
-<li><a class="reference internal" href="#module-orb.utils.spectrum" id="id14">Spectrum</a></li>
-<li><a class="reference internal" href="#module-orb.utils.stats" id="id15">Stats</a></li>
-<li><a class="reference internal" href="#module-orb.utils.vector" id="id16">Vector</a></li>
-<li><a class="reference internal" href="#module-orb.utils.web" id="id17">Web</a></li>
+<li><a class="reference internal" href="#module-orb.utils.photometry" id="id13">Photometry</a></li>
+<li><a class="reference internal" href="#module-orb.utils.pyneb" id="id14">Pyneb</a></li>
+<li><a class="reference internal" href="#module-orb.utils.spectrum" id="id15">Spectrum</a></li>
+<li><a class="reference internal" href="#module-orb.utils.stats" id="id16">Stats</a></li>
+<li><a class="reference internal" href="#module-orb.utils.vector" id="id17">Vector</a></li>
+<li><a class="reference internal" href="#module-orb.utils.web" id="id18">Web</a></li>
 </ul>
 </li>
 </ul>
@@ -396,7 +398,7 @@ array.</p>
 
 <dl class="function">
 <dt id="orb.utils.astrometry.aperture_photometry">
-<code class="descclassname">orb.utils.astrometry.</code><code class="descname">aperture_photometry</code><span class="sig-paren">(</span><em>star_box</em>, <em>fwhm_guess</em>, <em>background_guess=None</em>, <em>background_guess_err=0.0</em>, <em>aper_coeff=3.0</em>, <em>warn=True</em>, <em>x_guess=None</em>, <em>y_guess=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.aperture_photometry" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">aperture_photometry</code><span class="sig-paren">(</span><em>star_box</em>, <em>fwhm_guess</em>, <em>background_guess=None</em>, <em>background_guess_err=0.0</em>, <em>aper_coeff=3.0</em>, <em>warn=True</em>, <em>x_guess=None</em>, <em>y_guess=None</em>, <em>return_surfaces=False</em>, <em>aperture_surface=None</em>, <em>annulus_surface=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.aperture_photometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the aperture photometry of a star centered in a star box.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -415,7 +417,7 @@ radius is Rap = aper_coeff * FWHM. Better when between 1.5 to
 reduce the variation of the collected photons with varying FWHM
 and 3. to account for the flux in the wings (default 3., better
 for Moffat stars with a high SNR).</li>
-<li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.warn">¶</a> &#8211; If True, print a warning when the background cannot
+<li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.warn"></span><strong>warn</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.warn">¶</a> &#8211; (Optional) If True, print a warning when the background cannot
 be well estimated (default True).</li>
 <li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.x_guess"></span><strong>x_guess</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.x_guess">¶</a> &#8211; (Optional) position of the star along x axis. If
 None, star is assumed to lie at the very center of the frame
@@ -423,6 +425,19 @@ None, star is assumed to lie at the very center of the frame
 <li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.y_guess"></span><strong>y_guess</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.y_guess">¶</a> &#8211; (Optional) position of the star along y axis. If
 None, star is assumed to lie at the very center of the frame
 (default None).</li>
+<li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.return_surfaces"></span><strong>return_surfaces</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.return_surfaces">¶</a> &#8211; (Optional) If True returns also the
+aperture_surface and annulus_surface computed. Useful if
+multiple stars with the same FWHM must be done (default False).</li>
+<li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.aperture_surface"></span><strong>aperture_surface</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.aperture_surface">¶</a> &#8211; (Optional) Pre-computed
+aperture_surface. Accelerate the process for multiple stars with
+the same FWHM but must be used with caution. aper_coeff is of no
+use if aperture_surface if given (default None). See
+<a class="reference internal" href="#orb.utils.astrometry.multi_aperture_photometry" title="orb.utils.astrometry.multi_aperture_photometry"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.astrometry.multi_aperture_photometry()</span></code></a>.</li>
+<li><span class="target" id="orb.utils.astrometry.aperture_photometry.params.annulus_surface"></span><strong>annulus_surface</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.aperture_photometry.params.annulus_surface">¶</a> &#8211; (Optional) Pre-computed
+annulus_surface. Accelerate the process for multiple stars with
+the same FWHM but must be used with caution. aper_coeff is of no
+use if annulus_surface if given (default None). See
+<a class="reference internal" href="#orb.utils.astrometry.multi_aperture_photometry" title="orb.utils.astrometry.multi_aperture_photometry"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.astrometry.multi_aperture_photometry()</span></code></a>.</li>
 </ul>
 </td>
 </tr>
@@ -461,6 +476,37 @@ coefficient (Cout): Cout = sqrt(3*Cap^2 + Cin^2)</p>
 <p class="last">The star MUST be at the center (+/- 1 pixel) of the
 star box.</p>
 </div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#orb.utils.astrometry.multi_aperture_photometry" title="orb.utils.astrometry.multi_aperture_photometry"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.astrometry.multi_aperture_photometry()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.astrometry.detect_fwhm_in_frame">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">detect_fwhm_in_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>star_list</em>, <em>fwhm_guess_pix</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.detect_fwhm_in_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect stars FWHM in a frame.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">star positions must be known precisely</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.astrometry.detect_fwhm_in_frame.params.frame"></span><strong>frame</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.detect_fwhm_in_frame.params.frame">¶</a> &#8211; Frame</li>
+<li><span class="target" id="orb.utils.astrometry.detect_fwhm_in_frame.params.star_list"></span><strong>star_list</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.detect_fwhm_in_frame.params.star_list">¶</a> &#8211; List of the positions of the stars used to
+detect FWHM.</li>
+<li><span class="target" id="orb.utils.astrometry.detect_fwhm_in_frame.params.fwhm_guess_pix"></span><strong>fwhm_guess_pix</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.detect_fwhm_in_frame.params.fwhm_guess_pix">¶</a> &#8211; Initial guess on the FWHM of the stars.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(FWHM, FWHM_ERR) in pixels</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -778,9 +824,35 @@ more you select, the better will be the alignment)</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.astrometry.multi_aperture_photometry">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">multi_aperture_photometry</code><span class="sig-paren">(</span><em>frame</em>, <em>pos_list</em>, <em>fwhm_guess_pix</em>, <em>aper_coeff=3.0</em>, <em>detect_fwhm=False</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.multi_aperture_photometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aperture photometry of multiple sources in a frame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.frame"></span><strong>frame</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.frame">¶</a> &#8211; Frame</li>
+<li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.pos_list"></span><strong>pos_list</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.pos_list">¶</a> &#8211; List of the positions of the sources</li>
+<li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.fwhm_guess_pix"></span><strong>fwhm_guess_pix</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.fwhm_guess_pix">¶</a> &#8211; Initial guess on the FWHM of the sources.</li>
+<li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.aper_coeff"></span><strong>aper_coeff</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.aper_coeff">¶</a> &#8211; (Optional) Aperture coefficient used for
+photometry (default 3.).</li>
+<li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.detect_fwhm"></span><strong>detect_fwhm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.detect_fwhm">¶</a> &#8211; (Optional) If True FWHM is automatically
+computed from a fit on the sources. Sources must be stars or
+bright point sources. If most of the sources are stars this
+might work well enough (default False).</li>
+<li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.silent">¶</a> &#8211; (Optional) Silent function if True (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.astrometry.radial_profile">
 <code class="descclassname">orb.utils.astrometry.</code><code class="descname">radial_profile</code><span class="sig-paren">(</span><em>a</em>, <em>xc</em>, <em>yc</em>, <em>rmax</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.radial_profile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the averaged radial profile on a region of a 2D array.</p>
+<dd><p>Return the average radial profile on a region of a 2D array.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1004,18 +1076,18 @@ a nonzero number.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="orb.utils.fft.create_phase_vector">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">create_phase_vector</code><span class="sig-paren">(</span><em>order_0</em>, <em>other_orders</em>, <em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.create_phase_vector" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a phase vector.</p>
+<dt id="orb.utils.fft.create_phase_file">
+<code class="descclassname">orb.utils.fft.</code><code class="descname">create_phase_file</code><span class="sig-paren">(</span><em>file_path</em>, <em>phase_vector</em>, <em>cm1_axis</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.create_phase_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a phase vector in a phase file.</p>
+<p>Phase vector is interpolated via a cubic spline.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.utils.fft.create_phase_vector.params.order_0"></span><strong>order_0</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.create_phase_vector.params.order_0">¶</a> &#8211; Order 0 coefficient</li>
-<li><span class="target" id="orb.utils.fft.create_phase_vector.params.other_orders"></span><strong>other_orders</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.create_phase_vector.params.other_orders">¶</a> &#8211; Other orders coefficients (in ascending
-order).</li>
-<li><span class="target" id="orb.utils.fft.create_phase_vector.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.create_phase_vector.params.n">¶</a> &#8211; Length of the phase vector</li>
+<li><span class="target" id="orb.utils.fft.create_phase_file.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.create_phase_file.params.file_path">¶</a> &#8211; Path to the output phase file.</li>
+<li><span class="target" id="orb.utils.fft.create_phase_file.params.phase_vector"></span><strong>phase_vector</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.create_phase_file.params.phase_vector">¶</a> &#8211; Phase vector</li>
+<li><span class="target" id="orb.utils.fft.create_phase_file.params.cm1_axis"></span><strong>cm1_axis</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.create_phase_file.params.cm1_axis">¶</a> &#8211; Phase vector axis in cm-1</li>
 </ul>
 </td>
 </tr>
@@ -1044,32 +1116,6 @@ beeing the interferogram axis)</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="orb.utils.fft.find_phase_coeffs_brute_force">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">find_phase_coeffs_brute_force</code><span class="sig-paren">(</span><em>interf</em>, <em>step</em>, <em>order</em>, <em>zpd_shift</em>, <em>div_nb=400</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.find_phase_coeffs_brute_force" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return phase coefficients (order0, order1) based on a brute
-force method which finds where the standard deviation of the
-imaginary part is minimized.</p>
-<p>Especially useful to get a good guess on the order 1.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.utils.fft.find_phase_coeffs_brute_force.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_phase_coeffs_brute_force.params.interf">¶</a> &#8211; Interferogram</li>
-<li><span class="target" id="orb.utils.fft.find_phase_coeffs_brute_force.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_phase_coeffs_brute_force.params.step">¶</a> &#8211; Step size in nm.</li>
-<li><span class="target" id="orb.utils.fft.find_phase_coeffs_brute_force.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_phase_coeffs_brute_force.params.order">¶</a> &#8211; Folding order.</li>
-<li><span class="target" id="orb.utils.fft.find_phase_coeffs_brute_force.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_phase_coeffs_brute_force.params.zpd_shift">¶</a> &#8211; ZPD shift.</li>
-<li><span class="target" id="orb.utils.fft.find_phase_coeffs_brute_force.params.div_nb"></span><strong>div_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_phase_coeffs_brute_force.params.div_nb">¶</a> &#8211; (Optional) Number of division along each axis of
-the search matrix (the more divisions, the more precise will be
-the result) (default 400).</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="orb.utils.fft.find_zpd">
 <code class="descclassname">orb.utils.fft.</code><code class="descname">find_zpd</code><span class="sig-paren">(</span><em>interf</em>, <em>step_number=None</em>, <em>return_zpd_shift=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.find_zpd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the ZPD along the z axis.</p>
@@ -1083,29 +1129,6 @@ greater than the number of frames of the cube. Useful when
 the interferograms are non symetric (default None).</li>
 <li><span class="target" id="orb.utils.fft.find_zpd.params.return_zpd_shift"></span><strong>return_zpd_shift</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_zpd.params.return_zpd_shift">¶</a> &#8211; (Optional) If True return ZPD shift
 instead of ZPD index (default False).</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="orb.utils.fft.get_lr_phase">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">get_lr_phase</code><span class="sig-paren">(</span><em>interf</em>, <em>n_phase=None</em>, <em>return_lr_spectrum=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.get_lr_phase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a low resolution phase from a given interferogram vector.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.utils.fft.get_lr_phase.params.interf"></span><strong>interf</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.get_lr_phase.params.interf">¶</a> &#8211; Interferogram vector</li>
-<li><span class="target" id="orb.utils.fft.get_lr_phase.params.n_phase"></span><strong>n_phase</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.get_lr_phase.params.n_phase">¶</a> &#8211; (Optional) Number of points for phase
-computation. Of course it can be no greater than the number of
-points of the interferogram. If None, this is set to 50% of the
-interferogram length (Default None).</li>
-<li><span class="target" id="orb.utils.fft.get_lr_phase.params.return_lr_spectrum"></span><strong>return_lr_spectrum</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.get_lr_phase.params.return_lr_spectrum">¶</a> &#8211; (Optional) If True return also the low
-resolution spectrum from which phase is computed (Default False).</li>
 </ul>
 </td>
 </tr>
@@ -1338,7 +1361,7 @@ Optical Society of America A.</td></tr>
 
 <dl class="function">
 <dt id="orb.utils.fft.optimize_phase">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">optimize_phase</code><span class="sig-paren">(</span><em>interf, step, order, zpd_shift, guess=[0, 0], return_coeffs=False, fixed_params=[0, 0], weights=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.optimize_phase" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.fft.</code><code class="descname">optimize_phase</code><span class="sig-paren">(</span><em>interf, step, order, zpd_shift, calib, nm_laser, guess=[0.0001, 0.0001], return_coeffs=False, fixed_params=[0, 0], weights=None, high_order_phase=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.optimize_phase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an optimized phase vector based on the minimization of
 the imaginary part.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1350,6 +1373,8 @@ the imaginary part.</p>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.step">¶</a> &#8211; Step size (in nm)</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.order">¶</a> &#8211; Alisasing order</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.zpd_shift">¶</a> &#8211; ZPD shift</li>
+<li><span class="target" id="orb.utils.fft.optimize_phase.params.calib"></span><strong>calib</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.calib">¶</a> &#8211; Calibration laser observed wavelength</li>
+<li><span class="target" id="orb.utils.fft.optimize_phase.params.nm_laser"></span><strong>nm_laser</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.nm_laser">¶</a> &#8211; Calibration laser real wavelength</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.guess"></span><strong>guess</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.guess">¶</a> &#8211; (Optional) First guess. The number of values defines the order
 of the polynomial used used to fit (default [0,0]).</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.return_coeffs"></span><strong>return_coeffs</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.return_coeffs">¶</a> &#8211; (Optional) If True, coeffs and residual are
@@ -1358,6 +1383,12 @@ returned instead of the phase vector (default False).</li>
 (1 for fixed, 0 for free, default [0,0])</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.weights">¶</a> &#8211; (Optional) spectrum weighting (a vector with
 values ranging from 0 to 1, 1 being the maximu weight)</li>
+<li><span class="target" id="orb.utils.fft.optimize_phase.params.high_order_phase"></span><strong>high_order_phase</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.high_order_phase">¶</a> &#8211; (Optional) High order phase to be
+subtracted during the optimization process. Can be a path to a
+phase file . Note that if it is not a phase file name it must be
+a scipy.interpolate.UnivariateSpline instance to accelerate the
+process (as returned by
+<a class="reference internal" href="#orb.utils.fft.read_phase_file" title="orb.utils.fft.read_phase_file"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.read_phase_file()</span></code></a>).</li>
 </ul>
 </td>
 </tr>
@@ -1398,6 +1429,31 @@ returned.(default False)</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.fft.read_phase_file">
+<code class="descclassname">orb.utils.fft.</code><code class="descname">read_phase_file</code><span class="sig-paren">(</span><em>file_path</em>, <em>return_spline=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.read_phase_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase file and return its content.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.fft.read_phase_file.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.read_phase_file.params.file_path">¶</a> &#8211; Path to the phase file</li>
+<li><span class="target" id="orb.utils.fft.read_phase_file.params.return_spline"></span><strong>return_spline</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.read_phase_file.params.return_spline">¶</a> &#8211; If True a cubic spline
+(scipy.interpolate.UnivariateSpline instance) is returned
+instead of a tuple.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (Phase axis [cm-1], Phase [radians]) or a
+scipy.interpolate.UnivariateSpline instance if return_spline is
+True.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.fft.real">
 <code class="descclassname">orb.utils.fft.</code><code class="descname">real</code><span class="sig-paren">(</span><em>amp</em>, <em>pha</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.real" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the real part from amplitude and phase</p>
@@ -1419,7 +1475,7 @@ returned.(default False)</li>
 
 <dl class="function">
 <dt id="orb.utils.fft.transform_interferogram">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>phase_correction=True</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>weights=None</em>, <em>polyfit_deg=1</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>conserve_energy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.fft.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>phase_correction=True</em>, <em>wave_calibration=True</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>high_order_phase=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1441,9 +1497,13 @@ ones for bad frames. Bad frames are replaced by zeros using a
 special function that smoothes transition between good parts and
 zeros (default None). This vector must be uncorrected for ZPD
 shift</li>
-<li><span class="target" id="orb.utils.fft.transform_interferogram.params.phase_correction"></span><strong>phase_correction</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.phase_correction">¶</a> &#8211; (Optional) If False, no phase correction will
-be done and the resulting spectrum will be the absolute value of the
-complex spectrum (default True).</li>
+<li><span class="target" id="orb.utils.fft.transform_interferogram.params.phase_correction"></span><strong>phase_correction</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.phase_correction">¶</a> &#8211; (Optional) If False, no phase correction
+will be done and the resulting spectrum will be the absolute
+value of the complex spectrum. Else the ext_phase vector will be
+used for phase correction. If ext_phase is set to None,
+ext_phase will be replaced by a vector of 0 (default True).</li>
+<li><span class="target" id="orb.utils.fft.transform_interferogram.params.wave_calibration"></span><strong>wave_calibration</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.wave_calibration">¶</a> &#8211; (Optional) If True wavenumber/wavelength
+calibration is done (default True).</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.ext_phase"></span><strong>ext_phase</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.ext_phase">¶</a> &#8211; (Optional) External phase vector. If given this
 phase vector is used instead of a low-resolution one. It must be
 as long as the interferogram.</li>
@@ -1452,12 +1512,6 @@ the interferogram and return it. If polyfit_deg is &gt;= 0, return
 the coefficients of the fitted phase (default False). Note that
 this option is not compatible with ext_phase. You must set
 ext_phase to None to set return_phase to True.</li>
-<li><span class="target" id="orb.utils.fft.transform_interferogram.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.weights">¶</a> &#8211; (Optional) A vector of the same length as the
-interferogram giving the weight of each point for interpolation
-(Must be a float between 0. and 1.). If none is given, the
-weights are defined by the amplitude of the vector.</li>
-<li><span class="target" id="orb.utils.fft.transform_interferogram.params.polyfit_deg"></span><strong>polyfit_deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.polyfit_deg">¶</a> &#8211; (Optional) Degree of the polynomial fit to the
-computed phase. If &lt; 0, no fit will be performed (Default 1).</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.smoothing_deg"></span><strong>smoothing_deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.smoothing_deg">¶</a> &#8211; (Optional) Degree of zeros smoothing. A
 higher degree means a smoother transition from zeros parts (bad
 frames) to non-zero parts (good frames) of the
@@ -1484,8 +1538,11 @@ convenient, regular wavelength axis) (default False).</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.low_order_correction"></span><strong>low_order_correction</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.low_order_correction">¶</a> &#8211; (Optional) If True substract a low
 order polynomial to remove low frequency noise. Useful for
 unperfectly corrected interferograms (default False).</li>
-<li><span class="target" id="orb.utils.fft.transform_interferogram.params.conserve_energy"></span><strong>conserve_energy</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.conserve_energy">¶</a> &#8211; (Optional) If True the energy is conserved
-in the transformation (default False).</li>
+<li><span class="target" id="orb.utils.fft.transform_interferogram.params.high_order_phase"></span><strong>high_order_phase</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.high_order_phase">¶</a> &#8211; (Optional) High order phase to be added
+to the phase computed via a low order polynomial (generally 1
+order). Note that it must be a
+scipy.interpolate.UnivariateSpline instance to accelerate the
+process.</li>
 </ul>
 </td>
 </tr>
@@ -1494,6 +1551,10 @@ in the transformation (default False).</li>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Interferogram can be complex</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only NANs or INFs are interpreted as bad values</p>
 </div>
 </dd></dl>
 
@@ -1616,13 +1677,29 @@ considered as bad borders near the filter edges (must be between
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.filters.get_filter_bandpass">
+<code class="descclassname">orb.utils.filters.</code><code class="descname">get_filter_bandpass</code><span class="sig-paren">(</span><em>filter_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_filter_bandpass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the filter bandpass in nm as a tuple (nm_min, nm_max)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.filters.get_filter_bandpass.params.get_filter_bandpass"></span><strong>get_filter_bandpass</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.get_filter_bandpass.params.get_filter_bandpass">¶</a> &#8211; Path to the filter file.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.filters.get_filter_edges_pix">
 <code class="descclassname">orb.utils.filters.</code><code class="descname">get_filter_edges_pix</code><span class="sig-paren">(</span><em>filter_file_path</em>, <em>correction_factor</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>filter_min=None</em>, <em>filter_max=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_filter_edges_pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the position in pixels of the edges of a filter
 corrected for the off-axis effect.</p>
-<p>Note that the axis is assumed to be in wavenumber. Spectra are
-generally given in wavelength but phase vectors are not. So this
-function is best used with phase vectors.</p>
+<p>Note that the axis is assumed to be in wavenumber.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1652,7 +1729,7 @@ filter_min and filter_max must be specified.</li>
 
 <dl class="function">
 <dt id="orb.utils.filters.get_filter_function">
-<code class="descclassname">orb.utils.filters.</code><code class="descname">get_filter_function</code><span class="sig-paren">(</span><em>filter_file_path</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>wavenumber=False</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_filter_function" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.filters.</code><code class="descname">get_filter_function</code><span class="sig-paren">(</span><em>filter_file_path</em>, <em>step</em>, <em>order</em>, <em>n</em>, <em>wavenumber=False</em>, <em>silent=False</em>, <em>corr=1</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_filter_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a filter file and return its function interpolated over
 the desired number of points. Return also the edges position over
 its axis in pixels.</p>
@@ -1670,6 +1747,8 @@ and returned along a wavenumber axis. If False it is returned
 along a wavelength axis (default False).</li>
 <li><span class="target" id="orb.utils.filters.get_filter_function.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.get_filter_function.params.silent">¶</a> &#8211; (Optional) If True, no message is displayed
 (default False).</li>
+<li><span class="target" id="orb.utils.filters.get_filter_function.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.get_filter_function.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
 </ul>
 </td>
 </tr>
@@ -1683,6 +1762,20 @@ and max edges are given in pixels over the interpolation axis.</p>
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">utils.read_filter_file()</span></code></p>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.filters.get_modulation_efficiency">
+<code class="descclassname">orb.utils.filters.</code><code class="descname">get_modulation_efficiency</code><span class="sig-paren">(</span><em>filter_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.get_modulation_efficiency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return modulation efficiency if it exists and 1. instead</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.filters.get_modulation_efficiency.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.filters.get_modulation_efficiency.params.filter_file_path">¶</a> &#8211; Path to the filter file.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -1702,7 +1795,7 @@ and max edges are given in pixels over the interpolation axis.</p>
 <dl class="function">
 <dt id="orb.utils.filters.read_filter_file">
 <code class="descclassname">orb.utils.filters.</code><code class="descname">read_filter_file</code><span class="sig-paren">(</span><em>filter_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.filters.read_filter_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a file containing a the filter transmission function.</p>
+<dd><p>Read a file containing the filter transmission function.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1919,6 +2012,30 @@ libtim. It can be found in ORB module in ./ext/zern.py.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.image.fit_highorder_phase_map">
+<code class="descclassname">orb.utils.image.</code><code class="descname">fit_highorder_phase_map</code><span class="sig-paren">(</span><em>phase_map</em>, <em>err_map</em>, <em>nmodes=10</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_highorder_phase_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Robust fit phase maps of order &gt; 1</p>
+<p>First fit pass is made with a polynomial of order 1.</p>
+<p>Second pass is a Zernike fit of the residual.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.image.fit_highorder_phase_map.params.phase_map"></span><strong>phase_map</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_highorder_phase_map.params.phase_map">¶</a> &#8211; Phase map to fit</li>
+<li><span class="target" id="orb.utils.image.fit_highorder_phase_map.params.err_map"></span><strong>err_map</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_highorder_phase_map.params.err_map">¶</a> &#8211; Error map of phase map values</li>
+<li><span class="target" id="orb.utils.image.fit_highorder_phase_map.params.nmodes"></span><strong>nmodes</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_highorder_phase_map.params.nmodes">¶</a> &#8211; (Optional) Number of Zernike modes (default 10).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple: (Fitted map, residual map)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.image.fit_map">
 <code class="descclassname">orb.utils.image.</code><code class="descname">fit_map</code><span class="sig-paren">(</span><em>data_map</em>, <em>err_map</em>, <em>smooth_deg</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit map with low order polynomials</p>
@@ -1934,7 +2051,7 @@ smoothing degrees)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(fitted data map, error map, fit error)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple: (fitted data map, residual map, fit RMS error)</p>
 </td>
 </tr>
 </tbody>
@@ -1943,7 +2060,7 @@ smoothing degrees)</li>
 
 <dl class="function">
 <dt id="orb.utils.image.fit_map_zernike">
-<code class="descclassname">orb.utils.image.</code><code class="descname">fit_map_zernike</code><span class="sig-paren">(</span><em>data_map</em>, <em>err_map</em>, <em>nmodes</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_map_zernike" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.image.</code><code class="descname">fit_map_zernike</code><span class="sig-paren">(</span><em>data_map</em>, <em>weights_map</em>, <em>nmodes</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.fit_map_zernike" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a map with Zernike polynomials.</p>
 <p>Bad values must be set to NaN (not 0.)</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1952,6 +2069,8 @@ smoothing degrees)</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><span class="target" id="orb.utils.image.fit_map_zernike.params.data_map"></span><strong>data_map</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_map_zernike.params.data_map">¶</a> &#8211; Data map to fit</li>
+<li><span class="target" id="orb.utils.image.fit_map_zernike.params.weights_map"></span><strong>weights_map</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_map_zernike.params.weights_map">¶</a> &#8211; weights map (high weight value stands for high
+precision data)</li>
 <li><span class="target" id="orb.utils.image.fit_map_zernike.params.nmodes"></span><strong>nmodes</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.fit_map_zernike.params.nmodes">¶</a> &#8211; Number of zernike modes to use for fitting.</li>
 </ul>
 </td>
@@ -2709,8 +2828,464 @@ sources and information on Parallel Python software</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-orb.utils.photometry">
+<span id="photometry"></span><h2><a class="toc-backref" href="#id13">Photometry</a><a class="headerlink" href="#module-orb.utils.photometry" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="orb.utils.photometry.ABmag2flambda">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">ABmag2flambda</code><span class="sig-paren">(</span><em>ABmag</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.ABmag2flambda" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert AB magnitude to flux in erg/cm2/s/A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.ABmag2flambda.params.ABmag"></span><strong>ABmag</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.ABmag2flambda.params.ABmag">¶</a> &#8211; A magnitude in the AB magnitude system</li>
+<li><span class="target" id="orb.utils.photometry.ABmag2flambda.params.lam"></span><strong>lam</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.ABmag2flambda.params.lam">¶</a> &#8211; Wavelength in angstrom</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.ABmag2fnu">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">ABmag2fnu</code><span class="sig-paren">(</span><em>ABmag</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.ABmag2fnu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return flux in erg/cm2/s/Hz from AB magnitude (Oke, ApJS, 27,
+21, 1974)</p>
+<p>ABmag = -2.5 * log10(f_nu) - 48.60
+f_nu = 10^(-0.4 * (ABmag + 48.60))</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.ABmag2fnu.params.ABmag"></span><strong>ABmag</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.ABmag2fnu.params.ABmag">¶</a> &#8211; A magnitude in the AB magnitude system</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Definition of the zero-point can change and be
+e.g. 48.59 for Oke standard stars (Hamuy et al., PASP, 104, 533,
+1992). This is the case for Spectrophotometric Standards given
+on the ESO website (<a class="reference external" href="https://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html">https://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html</a>). Here the HST definition is used.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_equivalent_bandwidth">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_equivalent_bandwidth</code><span class="sig-paren">(</span><em>nm_axis</em>, <em>filter_transmission</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_equivalent_bandwidth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the equivalent bandwidth of a given filter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.compute_equivalent_bandwidth.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_equivalent_bandwidth.params.nm_axis">¶</a> &#8211; Filter transmission axis in nm.</li>
+<li><span class="target" id="orb.utils.photometry.compute_equivalent_bandwidth.params.filter_transmission"></span><strong>filter_transmission</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_equivalent_bandwidth.params.filter_transmission">¶</a> &#8211; Filter transmission curve</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_mean_photon_energy">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_mean_photon_energy</code><span class="sig-paren">(</span><em>nm_axis</em>, <em>filter_transmission</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_mean_photon_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mean energy of the photons passing thourgh a given
+filter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.compute_mean_photon_energy.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_mean_photon_energy.params.nm_axis">¶</a> &#8211; Filter transmission axis in nm.</li>
+<li><span class="target" id="orb.utils.photometry.compute_mean_photon_energy.params.filter_transmission"></span><strong>filter_transmission</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_mean_photon_energy.params.filter_transmission">¶</a> &#8211; Filter transmission curve</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_mean_star_flux">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_mean_star_flux</code><span class="sig-paren">(</span><em>star_spectrum</em>, <em>filter_transmission</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_mean_star_flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mean star flux given a spectrum and the filter. Both
+files must be given along the same wavelength/wavenumber axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.compute_mean_star_flux.params.star_spectrum"></span><strong>star_spectrum</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_mean_star_flux.params.star_spectrum">¶</a> &#8211; Spectrum of the star</li>
+<li><span class="target" id="orb.utils.photometry.compute_mean_star_flux.params.filter_transmission"></span><strong>filter_transmission</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_mean_star_flux.params.filter_transmission">¶</a> &#8211; Filter transmission curve</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_optimal_texp">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_optimal_texp</code><span class="sig-paren">(</span><em>star_flux</em>, <em>seeing</em>, <em>plate_scale</em>, <em>saturation=30000</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_optimal_texp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the optimal exposure time given the total flux of the
+star in ADU/s.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.compute_optimal_texp.params.star_flux"></span><strong>star_flux</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_optimal_texp.params.star_flux">¶</a> &#8211; Total star flux in ADU/s</li>
+<li><span class="target" id="orb.utils.photometry.compute_optimal_texp.params.seeing"></span><strong>seeing</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_optimal_texp.params.seeing">¶</a> &#8211; Star FWHM in arcsec</li>
+<li><span class="target" id="orb.utils.photometry.compute_optimal_texp.params.plate_scale"></span><strong>plate_scale</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_optimal_texp.params.plate_scale">¶</a> &#8211; Size of 1 pixel in arcsec.</li>
+<li><span class="target" id="orb.utils.photometry.compute_optimal_texp.params.saturation"></span><strong>saturation</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_optimal_texp.params.saturation">¶</a> &#8211; (Optional) Saturation value (default 30000).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_photon_energy">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_photon_energy</code><span class="sig-paren">(</span><em>nm_axis</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_photon_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the photon energy computed for all the wavelength along
+a given wavelength axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.compute_photon_energy.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_photon_energy.params.nm_axis">¶</a> &#8211; Wavelength axis in nm</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_star_central_pixel_value">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_star_central_pixel_value</code><span class="sig-paren">(</span><em>seeing</em>, <em>plate_scale</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_star_central_pixel_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the relative value of the pixel containing the greatest
+proportion of the flux (central pixel) of Gaussian star.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.compute_star_central_pixel_value.params.seeing"></span><strong>seeing</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_central_pixel_value.params.seeing">¶</a> &#8211; Star FWHM in arcsec</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_central_pixel_value.params.plate_scale"></span><strong>plate_scale</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_central_pixel_value.params.plate_scale">¶</a> &#8211; Size of the pixels in arcsec.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.compute_star_flux_in_frame">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">compute_star_flux_in_frame</code><span class="sig-paren">(</span><em>nm_axis</em>, <em>star_flux</em>, <em>filter_trans</em>, <em>optics_trans</em>, <em>atm_trans</em>, <em>mirror_trans</em>, <em>qe</em>, <em>mirror_surface</em>, <em>ccd_gain</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.compute_star_flux_in_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the estimation of the flux of a star in counts/s in one image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.nm_axis"></span><strong>nm_axis</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.nm_axis">¶</a> &#8211; Wavelentgh axis in nm</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.star_flux"></span><strong>star_flux</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.star_flux">¶</a> &#8211; Star flux curve in ergs/cm2/s/A</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.filter_trans"></span><strong>filter_trans</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.filter_trans">¶</a> &#8211; Transmission curve of the filter</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.optics_trans"></span><strong>optics_trans</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.optics_trans">¶</a> &#8211; Transmission of the optics</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.atm_trans"></span><strong>atm_trans</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.atm_trans">¶</a> &#8211; Transmission of the atmosphere</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.qe"></span><strong>qe</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.qe">¶</a> &#8211; Quantum Efficiency curve of the detector</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.mirror_surface"></span><strong>mirror_surface</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.mirror_surface">¶</a> &#8211; Surface of the primary mirror in cm2</li>
+<li><span class="target" id="orb.utils.photometry.compute_star_flux_in_frame.params.ccd_gain"></span><strong>ccd_gain</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.compute_star_flux_in_frame.params.ccd_gain">¶</a> &#8211; Gain of the detector.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.fit_std_spectrum">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">fit_std_spectrum</code><span class="sig-paren">(</span><em>real_spectrum</em>, <em>std_spectrum</em>, <em>polydeg=2</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.fit_std_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a real spectrum multiplied by a polynomial over a standard
+spectrum.</p>
+<p>Return the polynomial which can be used directly as a calibration
+curve.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.fit_std_spectrum.params.real_spectrum"></span><strong>real_spectrum</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.fit_std_spectrum.params.real_spectrum">¶</a> &#8211; Observed spectrum</li>
+<li><span class="target" id="orb.utils.photometry.fit_std_spectrum.params.std_spectrum"></span><strong>std_spectrum</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.fit_std_spectrum.params.std_spectrum">¶</a> &#8211; Standard spectrum</li>
+<li><span class="target" id="orb.utils.photometry.fit_std_spectrum.params.polydeg"></span><strong>polydeg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.fit_std_spectrum.params.polydeg">¶</a> &#8211; Degree of the polynomial</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.flambda2ABmag">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">flambda2ABmag</code><span class="sig-paren">(</span><em>flambda</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.flambda2ABmag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return AB magnitude from flux in erg/cm2/s/A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.flambda2ABmag.params.flambda"></span><strong>flambda</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.flambda2ABmag.params.flambda">¶</a> &#8211; Flux in erg/cm2/s/A. Can be an array.</li>
+<li><span class="target" id="orb.utils.photometry.flambda2ABmag.params.lambda"></span><strong>lambda</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.flambda2ABmag.params.lambda">¶</a> &#8211; Wavelength in A of the Flux. If flambda is an array
+lambda must have the same shape.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.fnu2flambda">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">fnu2flambda</code><span class="sig-paren">(</span><em>fnu</em>, <em>nu</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.fnu2flambda" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a flux in erg/cm2/s/Hz to a flux in erg/cm2/s/A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.fnu2flambda.params.fnu"></span><strong>fnu</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.fnu2flambda.params.fnu">¶</a> &#8211; Flux in erg/cm2/s/Hz</li>
+<li><span class="target" id="orb.utils.photometry.fnu2flambda.params.nu"></span><strong>nu</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.fnu2flambda.params.nu">¶</a> &#8211; frequency in Hz</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.get_atmospheric_extinction">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">get_atmospheric_extinction</code><span class="sig-paren">(</span><em>file_path</em>, <em>step</em>, <em>order</em>, <em>step_nb</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.get_atmospheric_extinction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the atmospheric extinction curve in mag/airmass in the
+range defined by the observation parameters along a reference nm
+axis (on the interferometer optical axis).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_extinction.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_extinction.params.file_path">¶</a> &#8211; Path to the file</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_extinction.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_extinction.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_extinction.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_extinction.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_extinction.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_extinction.params.step_nb">¶</a> &#8211; Number of step along the nm axis.</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_extinction.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_extinction.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.get_atmospheric_transmission">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">get_atmospheric_transmission</code><span class="sig-paren">(</span><em>file_path</em>, <em>step</em>, <em>order</em>, <em>step_nb</em>, <em>airmass=1</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.get_atmospheric_transmission" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the atmospheric transmission curve at a given airmass
+in the range defined by the observation parameters along a
+reference nm axis (on the interferometer optical axis).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_transmission.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_transmission.params.file_path">¶</a> &#8211; Path to the file</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_transmission.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_transmission.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_transmission.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_transmission.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_transmission.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_transmission.params.step_nb">¶</a> &#8211; Number of step along the nm axis.</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_transmission.params.airmass"></span><strong>airmass</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_transmission.params.airmass">¶</a> &#8211; (Optional) Airmass (default 1)</li>
+<li><span class="target" id="orb.utils.photometry.get_atmospheric_transmission.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_atmospheric_transmission.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.get_mirror_transmission">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">get_mirror_transmission</code><span class="sig-paren">(</span><em>file_path</em>, <em>step</em>, <em>order</em>, <em>step_nb</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.get_mirror_transmission" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mirror transmission curve in mag/airmass in the
+range defined by the observation parameters along a reference nm
+axis (on the interferometer optical axis).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.get_mirror_transmission.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_mirror_transmission.params.file_path">¶</a> &#8211; Path to the file</li>
+<li><span class="target" id="orb.utils.photometry.get_mirror_transmission.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_mirror_transmission.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="orb.utils.photometry.get_mirror_transmission.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_mirror_transmission.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="orb.utils.photometry.get_mirror_transmission.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_mirror_transmission.params.step_nb">¶</a> &#8211; Number of step along the nm axis.</li>
+<li><span class="target" id="orb.utils.photometry.get_mirror_transmission.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_mirror_transmission.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.get_optics_transmission">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">get_optics_transmission</code><span class="sig-paren">(</span><em>file_path</em>, <em>step</em>, <em>order</em>, <em>step_nb</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.get_optics_transmission" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the optics transmission curve in mag/airmass in the
+range defined by the observation parameters along a reference nm
+axis (on the interferometer optical axis).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.get_optics_transmission.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_optics_transmission.params.file_path">¶</a> &#8211; Path to the file</li>
+<li><span class="target" id="orb.utils.photometry.get_optics_transmission.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_optics_transmission.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="orb.utils.photometry.get_optics_transmission.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_optics_transmission.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="orb.utils.photometry.get_optics_transmission.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_optics_transmission.params.step_nb">¶</a> &#8211; Number of step along the nm axis.</li>
+<li><span class="target" id="orb.utils.photometry.get_optics_transmission.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_optics_transmission.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.get_quantum_efficiency">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">get_quantum_efficiency</code><span class="sig-paren">(</span><em>file_path</em>, <em>step</em>, <em>order</em>, <em>step_nb</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.get_quantum_efficiency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the quantum efficiency curve in the range defined by the
+observation parameters along a reference nm axis (on the
+interferometer optical axis).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.photometry.get_quantum_efficiency.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_quantum_efficiency.params.file_path">¶</a> &#8211; Path to the file</li>
+<li><span class="target" id="orb.utils.photometry.get_quantum_efficiency.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_quantum_efficiency.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="orb.utils.photometry.get_quantum_efficiency.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_quantum_efficiency.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="orb.utils.photometry.get_quantum_efficiency.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_quantum_efficiency.params.step_nb">¶</a> &#8211; Number of step along the nm axis.</li>
+<li><span class="target" id="orb.utils.photometry.get_quantum_efficiency.params.corr"></span><strong>corr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.get_quantum_efficiency.params.corr">¶</a> &#8211; (Optional) Correction coefficient related to the
+incident angle (default 1).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.lambda2nu">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">lambda2nu</code><span class="sig-paren">(</span><em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.lambda2nu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert lambda in Ang to nu in Hz</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.lambda2nu.params.lam"></span><strong>lam</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.lambda2nu.params.lam">¶</a> &#8211; Wavelength in angstrom</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.read_atmospheric_extinction_file">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">read_atmospheric_extinction_file</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.read_atmospheric_extinction_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read atmospheric extinction file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.read_atmospheric_extinction_file.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.read_atmospheric_extinction_file.params.file_path">¶</a> &#8211; Path to the atmospheric extinction file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (axis [in nm], atmospheric extinction in
+[mag/airmass])</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.read_mirror_transmission_file">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">read_mirror_transmission_file</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.read_mirror_transmission_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read mirror transmission file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.read_mirror_transmission_file.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.read_mirror_transmission_file.params.file_path">¶</a> &#8211; Path to the file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (axis [in nm], Mirror transmission (from 0 to 1))</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.read_optics_file">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">read_optics_file</code><span class="sig-paren">(</span><em>optics_file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.read_optics_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a file containing the optics transmission function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.read_optics_file.params.optics_file_path"></span><strong>optics_file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.read_optics_file.params.optics_file_path">¶</a> &#8211; Path to the optics file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(wavelength, transmission coefficients)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The optics file used must have two colums separated by a
+space character. The first column contains the wavelength axis
+in nm. The second column contains the transmission
+coefficients. Comments are preceded with a #.</p>
+<blockquote class="last">
+<div>## ORBS optics file 
+# Author: Thomas Martin &lt;<a class="reference external" href="mailto:thomas&#46;martin&#46;1&#37;&#52;&#48;ulaval&#46;ca">thomas<span>&#46;</span>martin<span>&#46;</span>1<span>&#64;</span>ulaval<span>&#46;</span>ca</a>&gt;
+# Filter name : SpIOMM_R
+# Wavelength in nm | Transmission percentage
+1000 0.001201585284
+999.7999878 0.009733387269
+999.5999756 -0.0004460749624
+999.4000244 0.01378122438
+999.2000122 0.002538740868</div></blockquote>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.photometry.read_quantum_efficiency_file">
+<code class="descclassname">orb.utils.photometry.</code><code class="descname">read_quantum_efficiency_file</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.photometry.read_quantum_efficiency_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read quantum efficiency file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.photometry.read_quantum_efficiency_file.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#orb.utils.photometry.read_quantum_efficiency_file.params.file_path">¶</a> &#8211; Path to the file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (axis [in nm], quantum efficiency (from 0 to 1))</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-orb.utils.pyneb">
-<span id="pyneb"></span><h2><a class="toc-backref" href="#id13">Pyneb</a><a class="headerlink" href="#module-orb.utils.pyneb" title="Permalink to this headline">¶</a></h2>
+<span id="pyneb"></span><h2><a class="toc-backref" href="#id14">Pyneb</a><a class="headerlink" href="#module-orb.utils.pyneb" title="Permalink to this headline">¶</a></h2>
 <p>Utils functions derived from pyNeb.</p>
 <p>pyNeb must be installed</p>
 <dl class="function">
@@ -2774,49 +3349,7 @@ is the same used for ha)</li>
 
 </div>
 <div class="section" id="module-orb.utils.spectrum">
-<span id="spectrum"></span><h2><a class="toc-backref" href="#id14">Spectrum</a><a class="headerlink" href="#module-orb.utils.spectrum" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="orb.utils.spectrum.ABmag2flambda">
-<code class="descclassname">orb.utils.spectrum.</code><code class="descname">ABmag2flambda</code><span class="sig-paren">(</span><em>ABmag</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.ABmag2flambda" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert AB magnitude to flux in erg/cm2/s/A</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.utils.spectrum.ABmag2flambda.params.ABmag"></span><strong>ABmag</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.ABmag2flambda.params.ABmag">¶</a> &#8211; A magnitude in the AB magnitude system</li>
-<li><span class="target" id="orb.utils.spectrum.ABmag2flambda.params.lam"></span><strong>lam</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.ABmag2flambda.params.lam">¶</a> &#8211; Wavelength in angstrom</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="orb.utils.spectrum.ABmag2fnu">
-<code class="descclassname">orb.utils.spectrum.</code><code class="descname">ABmag2fnu</code><span class="sig-paren">(</span><em>ABmag</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.ABmag2fnu" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return flux in erg/cm2/s/Hz from AB magnitude (Oke, ApJS, 27,
-21, 1974)</p>
-<p>ABmag = -2.5 * log10(f_nu) - 48.60
-f_nu = 10^(-0.4 * (ABmag + 48.60))</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.spectrum.ABmag2fnu.params.ABmag"></span><strong>ABmag</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.ABmag2fnu.params.ABmag">¶</a> &#8211; A magnitude in the AB magnitude system</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Definition of the zero-point can change and be
-e.g. 48.59 for Oke standard stars (Hamuy et al., PASP, 104, 533,
-1992). This is the case for Spectrophotometric Standards given
-on the ESO website (<a class="reference external" href="https://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html">https://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html</a>). Here the HST definition is used.</p>
-</div>
-</dd></dl>
-
+<span id="spectrum"></span><h2><a class="toc-backref" href="#id15">Spectrum</a><a class="headerlink" href="#module-orb.utils.spectrum" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.spectrum.cm12nm">
 <code class="descclassname">orb.utils.spectrum.</code><code class="descname">cm12nm</code><span class="sig-paren">(</span><em>cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.cm12nm" title="Permalink to this definition">¶</a></dt>
@@ -3001,43 +3534,6 @@ axis in cm-1.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="orb.utils.spectrum.flambda2ABmag">
-<code class="descclassname">orb.utils.spectrum.</code><code class="descname">flambda2ABmag</code><span class="sig-paren">(</span><em>flambda</em>, <em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.flambda2ABmag" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return AB magnitude from flux in erg/cm2/s/A</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.utils.spectrum.flambda2ABmag.params.flambda"></span><strong>flambda</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.flambda2ABmag.params.flambda">¶</a> &#8211; Flux in erg/cm2/s/A. Can be an array.</li>
-<li><span class="target" id="orb.utils.spectrum.flambda2ABmag.params.lambda"></span><strong>lambda</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.flambda2ABmag.params.lambda">¶</a> &#8211; Wavelength in A of the Flux. If flambda is an array
-lambda must have the same shape.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="orb.utils.spectrum.fnu2flambda">
-<code class="descclassname">orb.utils.spectrum.</code><code class="descname">fnu2flambda</code><span class="sig-paren">(</span><em>fnu</em>, <em>nu</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.fnu2flambda" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a flux in erg/cm2/s/Hz to a flux in erg/cm2/s/A</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.utils.spectrum.fnu2flambda.params.fnu"></span><strong>fnu</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fnu2flambda.params.fnu">¶</a> &#8211; Flux in erg/cm2/s/Hz</li>
-<li><span class="target" id="orb.utils.spectrum.fnu2flambda.params.nu"></span><strong>nu</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fnu2flambda.params.nu">¶</a> &#8211; frequency in Hz</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="orb.utils.spectrum.fwhm_cm12nm">
 <code class="descclassname">orb.utils.spectrum.</code><code class="descname">fwhm_cm12nm</code><span class="sig-paren">(</span><em>fwhm_cm1</em>, <em>cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.fwhm_cm12nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a FWHM in cm-1 to a FWHM in nm.</p>
@@ -3091,20 +3587,6 @@ lambda must have the same shape.</li>
 <li><span class="target" id="orb.utils.spectrum.gaussian1d.params.w"></span><strong>w</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d.params.w">¶</a> &#8211; FWHM, <span class="math">\(\text{FWHM} = \text{Width} \times 2 \sqrt{2 \ln 2}\)</span></li>
 </ul>
 </td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="orb.utils.spectrum.lambda2nu">
-<code class="descclassname">orb.utils.spectrum.</code><code class="descname">lambda2nu</code><span class="sig-paren">(</span><em>lam</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.lambda2nu" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert lambda in Ang to nu in Hz</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.spectrum.lambda2nu.params.lam"></span><strong>lam</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.lambda2nu.params.lam">¶</a> &#8211; Wavelength in angstrom</td>
 </tr>
 </tbody>
 </table>
@@ -3236,7 +3718,7 @@ orb.cutils.fast_pix2w is much faster.</p>
 
 </div>
 <div class="section" id="module-orb.utils.stats">
-<span id="stats"></span><h2><a class="toc-backref" href="#id15">Stats</a><a class="headerlink" href="#module-orb.utils.stats" title="Permalink to this headline">¶</a></h2>
+<span id="stats"></span><h2><a class="toc-backref" href="#id16">Stats</a><a class="headerlink" href="#module-orb.utils.stats" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.stats.robust_mean">
 <code class="descclassname">orb.utils.stats.</code><code class="descname">robust_mean</code><span class="sig-paren">(</span><em>a</em>, <em>weights=None</em>, <em>warn=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.stats.robust_mean" title="Permalink to this definition">¶</a></dt>
@@ -3351,7 +3833,7 @@ rejected values is returned also (default False).</li>
 
 </div>
 <div class="section" id="module-orb.utils.vector">
-<span id="vector"></span><h2><a class="toc-backref" href="#id16">Vector</a><a class="headerlink" href="#module-orb.utils.vector" title="Permalink to this headline">¶</a></h2>
+<span id="vector"></span><h2><a class="toc-backref" href="#id17">Vector</a><a class="headerlink" href="#module-orb.utils.vector" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.vector.correct_vector">
 <code class="descclassname">orb.utils.vector.</code><code class="descname">correct_vector</code><span class="sig-paren">(</span><em>vector</em>, <em>bad_value=nan</em>, <em>deg=3</em>, <em>polyfit=False</em>, <em>smoothing=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.vector.correct_vector" title="Permalink to this definition">¶</a></dt>
@@ -3500,22 +3982,71 @@ effect when convolving).</p>
 
 </div>
 <div class="section" id="module-orb.utils.web">
-<span id="web"></span><h2><a class="toc-backref" href="#id17">Web</a><a class="headerlink" href="#module-orb.utils.web" title="Permalink to this headline">¶</a></h2>
+<span id="web"></span><h2><a class="toc-backref" href="#id18">Web</a><a class="headerlink" href="#module-orb.utils.web" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="orb.utils.web.query_sesame">
-<code class="descclassname">orb.utils.web.</code><code class="descname">query_sesame</code><span class="sig-paren">(</span><em>object_name</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.web.query_sesame" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.web.</code><code class="descname">query_sesame</code><span class="sig-paren">(</span><em>object_name</em>, <em>verbose=True</em>, <em>degree=False</em>, <em>pm=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.web.query_sesame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Query the SESAME Database to get RA/DEC given the name of an
 object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.web.query_sesame.params.object_name"></span><strong>object_name</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_sesame.params.object_name">¶</a> &#8211; Name of the object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.web.query_sesame.params.object_name"></span><strong>object_name</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_sesame.params.object_name">¶</a> &#8211; Name of the object</li>
+<li><span class="target" id="orb.utils.web.query_sesame.params.verbose"></span><strong>verbose</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_sesame.params.verbose">¶</a> &#8211; (Optional) If True print messages (default True)</li>
+<li><span class="target" id="orb.utils.web.query_sesame.params.degree"></span><strong>degree</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_sesame.params.degree">¶</a> &#8211; (Optional) If True return RA DEC in degrees
+(default False)</li>
+<li><span class="target" id="orb.utils.web.query_sesame.params.pm"></span><strong>pm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_sesame.params.pm">¶</a> &#8211; (Optional) If True proper motion is also returned
+(default False)</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">[RA, DEC]</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">[RA, DEC]</p>
+</td>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.web.query_vizier">
+<code class="descclassname">orb.utils.web.</code><code class="descname">query_vizier</code><span class="sig-paren">(</span><em>radius</em>, <em>target_ra</em>, <em>target_dec</em>, <em>catalog='USNO-B1.0'</em>, <em>max_stars=100</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.web.query_vizier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of star coordinates around an object in a
+given radius based on a query to VizieR Services
+(<a class="reference external" href="http://vizier.u-strasbg.fr/viz-bin/VizieR">http://vizier.u-strasbg.fr/viz-bin/VizieR</a>)</p>
+<p>Note that the idea of this method has been picked from an IDL
+function: QUERYVIZIER
+(<a class="reference external" href="http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro">http://idlastro.gsfc.nasa.gov/ftp/pro/sockets/queryvizier.pro</a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.web.query_vizier.params.radius"></span><strong>radius</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_vizier.params.radius">¶</a> &#8211; Radius around the target in arc-minutes.</li>
+<li><span class="target" id="orb.utils.web.query_vizier.params.target_ra"></span><strong>target_ra</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_vizier.params.target_ra">¶</a> &#8211; Target RA in degrees</li>
+<li><span class="target" id="orb.utils.web.query_vizier.params.target_dec"></span><strong>target_dec</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_vizier.params.target_dec">¶</a> &#8211; Target DEC in degrees</li>
+<li><span class="target" id="orb.utils.web.query_vizier.params.catalog"></span><strong>catalog</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_vizier.params.catalog">¶</a> &#8211; (Optional) Catalog to ask on the VizieR
+database (see notes) (default &#8216;USNO-B1&#8217;)</li>
+<li><span class="target" id="orb.utils.web.query_vizier.params.max_stars"></span><strong>max_stars</strong><a class="paramlink headerlink reference internal" href="#orb.utils.web.query_vizier.params.max_stars">¶</a> &#8211; (Optional) Maximum number of row to retrieve
+(default 100)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Some catalogs that can be used::
+&#8216;V/139&#8217; - Sloan SDSS photometric catalog Release 9 (2012)
+&#8216;2MASS-PSC&#8217; - 2MASS point source catalog (2003)
+&#8216;GSC2.3&#8217; - Version 2.3.2 of the HST Guide Star Catalog (2006)
+&#8216;USNO-B1&#8217; - Verson B1 of the US Naval Observatory catalog (2003)
+&#8216;UCAC4&#8217;  - 4th U.S. Naval Observatory CCD Astrograph Catalog (2012)
+&#8216;B/DENIS/DENIS&#8217; - 2nd Deep Near Infrared Survey of southern Sky (2005)
+&#8216;I/259/TYC2&#8217; - Tycho-2 main catalog (2000)
+&#8216;I/311/HIP2&#8217; - Hipparcos main catalog, new reduction (2007)</p>
+</div>
 </dd></dl>
 
 </div>
@@ -3562,7 +4093,7 @@ object.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.1',
+            VERSION:'2.0-DR1-beta',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
