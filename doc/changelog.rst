@@ -820,3 +820,16 @@ Compression
 Compression has been removed. Even a small compression slows down the
 process too much.It could be used for archiving though.
 
+
+Miscellaneous
+-------------
+
+* smooothing_deg option in
+  :py:meth:`orb.utils.fft.transform_interferogram` has 1 sample less
+  than replaced by a more robust smoothing_coeff option. The smoohting
+  degree is now defined as smoothing_coeff * interferogram_size. In a
+  general way the smoothing degree (the number of samples smoothed at
+  a transition between a part of zeros and a part of signal in the
+  interferogram) is now bigger because -25/+100 interferogram present
+  a very sharp transition on the left side whcih is very near ZPD and
+  create large wiggles in the spectra. A higher smoothing degree is the solution.

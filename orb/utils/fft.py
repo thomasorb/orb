@@ -389,7 +389,7 @@ def transform_interferogram(interf, nm_laser,
                             wave_calibration=True,
                             return_phase=False, ext_phase=None,
                             balanced=True, bad_frames_vector=None,
-                            smoothing_deg=2, return_complex=False,
+                            smoothing_coeff=0.07, return_complex=False,
                             final_step_nb=None, wavenumber=False,
                             low_order_correction=False,
                             high_order_phase=None):
@@ -438,14 +438,16 @@ def transform_interferogram(interf, nm_laser,
       this option is not compatible with ext_phase. You must set
       ext_phase to None to set return_phase to True.
 
-    :param smoothing_deg: (Optional) Degree of zeros smoothing. A
-      higher degree means a smoother transition from zeros parts (bad
+    :param smoothing_coeff: (Optional) Coefficient of zeros smoothing
+      in proportion of the total interferogram size. A higher
+      coefficient means a smoother transition from zeros parts (bad
       frames) to non-zero parts (good frames) of the
       interferogram. Good parts on the other side of the ZPD in
-      symmetry with zeros parts are multiplied by 2. The same
-      transition is used to multiply interferogram points by zero and
-      2 (default 2). This operation is not done if smoothing_deg is
-      set to 0.
+      symmetry with zeros parts are multiplied by 2 to keep a constant
+      amount of energy. The same transition is used to multiply
+      interferogram points by zero and 2. This operation is not done
+      if smoothing_coeff is set to 0. must be between 0. and 0.2
+      (default 0.07).
 
     :param balanced: (Optional) If False, the interferogram is
       considered as unbalanced. It is flipped before its
@@ -481,7 +483,6 @@ def transform_interferogram(interf, nm_laser,
     .. note:: Only NANs or INFs are interpreted as bad values
     
     """
-    MIN_ZEROS_LENGTH = 8 # Minimum length of a zeros band to smooth it
     interf = np.copy(interf)
     interf_orig = np.copy(interf)
         
@@ -490,12 +491,18 @@ def transform_interferogram(interf, nm_laser,
         wavenumber = True
    
     if return_phase and phase_correction:
-        raise Exception("phase correction and return_phase cannot be all set to True")
+        raise ValueError("phase correction and return_phase cannot be all set to True")
     
     if return_phase and ext_phase is not None:
-        raise Exception("return_phase=True and ext_phase != None options are not compatible. Set the phase or get it !")
-    
+        raise ValueError("return_phase=True and ext_phase != None options are not compatible. Set the phase or get it !")
+
+    if (smoothing_coeff < 0. or smoothing_coeff > 0.2):
+        raise ValueError('smoothing coeff must be between 0. and 0.2')
+
     dimz = interf.shape[0]
+
+    smoothing_deg = math.ceil(dimz * smoothing_coeff)
+    min_zeros_length = smoothing_deg * 2 # Minimum length of a zeros band to smooth it    
 
     if final_step_nb is None:
         final_step_nb = dimz
@@ -552,7 +559,7 @@ def transform_interferogram(interf, nm_laser,
                 bad_frames_vector = None
 
 
-    ### Replace Nans by zeros ininterf vector
+    ### Replace Nans by zeros in interf vector
     interf[np.isnan(interf)] = 0.
     
     #####
@@ -571,7 +578,7 @@ def transform_interferogram(interf, nm_laser,
     if len(np.nonzero(zeros_vector == 0)[0]) > 0:
         # correct only 'bands' of zeros:
         zcounts = count_nonzeros(-zeros_vector + 1)
-        zeros_mask = np.nonzero(zcounts >= MIN_ZEROS_LENGTH)
+        zeros_mask = np.nonzero(zcounts >= min_zeros_length)
         if len(zeros_mask[0]) > 0 and smoothing_deg > 0.:
             for izero in zeros_mask[0]:
                 if (izero > smoothing_deg
@@ -672,7 +679,6 @@ def transform_interferogram(interf, nm_laser,
                               + interf_fft.imag * np.sin(ext_phase))
         spectrum_corr.imag = (interf_fft.imag * np.cos(ext_phase)
                               - interf_fft.real * np.sin(ext_phase))
-
     else:
         spectrum_corr = interf_fft
         
