@@ -69,8 +69,7 @@ class StarsParams(Tools):
     keys = None # Tuple containing the keys of the parameters
     
 
-    def __init__(self, star_nb=1, frame_nb=1,
-                 **kwargs):
+    def __init__(self, star_nb=1, frame_nb=1, **kwargs):
         """StarsParams init
 
         :param star_nb: (Optional) Number of stars (default 1)

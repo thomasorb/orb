@@ -118,7 +118,7 @@ class Tools(object):
     _silent = False # If True only error messages will be diplayed on screen
 
     def __init__(self, data_prefix="./temp/data.", no_log=False,
-                 tuning_parameters=dict(), 
+                 tuning_parameters=dict(), ncpus=None,
                  config_file_name='config.orb', silent=False):
         """Initialize Tools class.
 
@@ -129,6 +129,10 @@ class Tools(object):
         :param no_log: (Optional) If True (and if sys.stdout has been
           redirected to Logger) no log file is created (default
           False).
+
+        :param ncpus: (Optional) Number of CPUs to use for parallel
+          processing. set to None gives the maximum number available
+          (default None).
 
         :param tuning_parameters: (Optional) Some parameters of the
           methods can be tuned externally using this dictionary. The
@@ -153,7 +157,11 @@ class Tools(object):
         self._data_path_hdr = self._get_data_path_hdr()
         self._no_log = no_log
         self._tuning_parameters = tuning_parameters
-        self.ncpus = int(self._get_config_parameter("NCPUS"))
+        if ncpus is None:
+            self.ncpus = int(self._get_config_parameter("NCPUS"))
+        else:
+            self.ncpus = int(ncpus)
+            
         self._silent = silent
         warnings.showwarning = self._custom_warn
         if self._no_log:
@@ -1707,7 +1715,8 @@ class Cube(Tools):
                  config_file_name="config.orb", project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, silent_init=False, no_log=False,
-                 tuning_parameters=dict(), indexer=None, no_sort=False):
+                 tuning_parameters=dict(), indexer=None, no_sort=False,
+                 ncpus=None):
         
         """
         Initialize Cube class.
@@ -1781,6 +1790,10 @@ class Cube(Tools):
 
         :param no_sort: (Optional) If True, no sort of the file list
           is done. Files list is taken as is (default False).
+
+        :param ncpus: (Optional) Number of CPUs to use for parallel
+          processing. set to None gives the maximum number available
+          (default None).
         """
         self.is_complex = False
         self.dtype = float
@@ -1798,8 +1811,11 @@ class Cube(Tools):
             "DIV_NB"))
         self.BIG_DATA = bool(int(self._get_config_parameter(
             "BIG_DATA")))
-        self.ncpus = int(self._get_config_parameter(
-            "NCPUS"))
+        if ncpus is None:
+            self.ncpus = int(self._get_config_parameter(
+                "NCPUS"))
+        else:
+            self.ncpus = int(ncpus)
  
         self._data_prefix = data_prefix
         self._project_header = project_header
