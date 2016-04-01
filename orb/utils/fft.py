@@ -389,7 +389,7 @@ def transform_interferogram(interf, nm_laser,
                             wave_calibration=True,
                             return_phase=False, ext_phase=None,
                             balanced=True, bad_frames_vector=None,
-                            smoothing_coeff=0.07, return_complex=False,
+                            smoothing_coeff=0.04, return_complex=False,
                             final_step_nb=None, wavenumber=False,
                             low_order_correction=False,
                             high_order_phase=None):
@@ -447,7 +447,7 @@ def transform_interferogram(interf, nm_laser,
       amount of energy. The same transition is used to multiply
       interferogram points by zero and 2. This operation is not done
       if smoothing_coeff is set to 0. must be between 0. and 0.2
-      (default 0.07).
+      (default 0.04).
 
     :param balanced: (Optional) If False, the interferogram is
       considered as unbalanced. It is flipped before its
@@ -590,7 +590,7 @@ def transform_interferogram(interf, nm_laser,
                 kind='cos_conv')
             zeros_vector = zeros_vector * (- zeros_vector[::-1] + 2)
             interf *= zeros_vector
-
+           
     #####
     # 5 - Apodization of the real interferogram
     if window_type is not None and window_type != '1.0':

@@ -973,10 +973,15 @@ class LinesModel(Model):
                 if np.isnan(p_array[iline,0]):
                     pos = p_array[iline,1]
                     fwhm = p_array[iline,2]
-                    val_max = np.nanmax(v[
-                        pos - fwhm * FWHM_COEFF
-                        :pos + fwhm * FWHM_COEFF + 1])
+                    pos_min = pos - fwhm * FWHM_COEFF
+                    pos_max = pos + fwhm * FWHM_COEFF + 1
+                    if pos_min < 0: pos_min = 0
+                    if pos_max >= np.size(v): pos_max = np.size(v) - 1
+                    if pos_min < pos_max:
+                        val_max = np.nanmax(v[pos_min:pos_max])
+                    else: val_max = 0.
                     p_array[iline,0] = val_max
+ 
 
         # check sigma
         if self._get_fmodel() == 'sincgauss':
@@ -1314,12 +1319,15 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         axis_step = cutils.get_nm_axis_step(spectrum.shape[0], step, order,
                                             corr=correction_coeff)
         linesmodel = NmLinesModel
+
+    
         
     if signal_range is not None:
         signal_range_pix = cutils.fast_w2pix(
             np.array(signal_range, dtype=float), axis_min, axis_step)
         minx = max(1, int(np.min(signal_range_pix)))
         maxx = min(spectrum.shape[0] - 1, int(math.ceil(np.max(signal_range_pix))))
+        
     else:
         signal_range_pix = None
         
