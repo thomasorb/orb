@@ -869,7 +869,6 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
 
     # Zero-padding of the output
     if zero_padding and final_step_nb < step_nb:
-        print interf.shape, final_step_nb, step_nb
         zp_interf = np.zeros(step_nb, dtype=complex)
         zp_interf[
             int(math.ceil(step_nb/2.))-(final_step_nb/2) - final_step_nb%2:
