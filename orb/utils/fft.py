@@ -501,7 +501,7 @@ def transform_interferogram(interf, nm_laser,
 
     dimz = interf.shape[0]
 
-    smoothing_deg = math.ceil(dimz * smoothing_coeff)
+    smoothing_deg = int(math.ceil(dimz * smoothing_coeff))
     min_zeros_length = smoothing_deg * 2 # Minimum length of a zeros band to smooth it    
 
     if final_step_nb is None:
@@ -543,6 +543,8 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 3 - ZPD shift to center the spectrum
     if zpd_shift != 0:
+        if zpd_shift > interf.shape[0] / 2 + 1:
+            raise Exception('Bad zpd shift (must be <= {})'.format(interf.shape[0]/2 + 1))
         temp_vector = np.zeros(interf.shape[0] + 2 * abs(zpd_shift),
                                dtype=interf.dtype)
         temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = interf
@@ -975,7 +977,7 @@ def optimize_phase(interf, step, order, zpd_shift,
       (1 for fixed, 0 for free, default [0,0])
 
     :param weights: (Optional) spectrum weighting (a vector with
-      values ranging from 0 to 1, 1 being the maximu weight)
+      values ranging from 0 to 1, 1 being the maximum weight)
 
     :param high_order_phase: (Optional) High order phase to be
       subtracted during the optimization process. Can be a path to a

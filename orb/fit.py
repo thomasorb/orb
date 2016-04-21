@@ -42,6 +42,7 @@ import time
 
 import cutils
 import constants
+import utils.spectrum
 
 class FitVector(object):
     """
@@ -821,7 +822,7 @@ class LinesModel(Model):
             key_guess = key + '-guess'
             key_def = key + '-def'
             key_cov = key + '-cov'
-
+            
             ## parse guess
             if key_guess in self.p_dict:
                 p_guess = np.array(self.p_dict[key_guess])
@@ -832,6 +833,7 @@ class LinesModel(Model):
                         p_guess.fill(value)
                     else:
                         raise Exception("{} must have the same size as the number of lines or it must be a float".format(key_guess))
+                    
             else:
                 p_guess = np.empty(line_nb, dtype=float)
                 p_guess.fill(np.nan)
@@ -893,7 +895,6 @@ class LinesModel(Model):
             self.p_def += list(p_def)
             self.p_val += list(p_guess)
             self.p_cov.update(p_cov_dict)
-            
 
         line_nb = self._get_line_nb()
         
@@ -1341,13 +1342,18 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         if not cov_pos: pos_def = 'free'
         else: pos_def = '1'
 
-##     import pylab as pl
-## #    axis = create_cm1_axis(spectrum.shape[0], step, order, corr=nm_laser_obs/nm_laser)
-##     pl.plot(axis, spectrum)
-##     searched_lines = lines + cutils.line_shift(shift_guess, lines, wavenumber=wavenumber)
-##     [pl.axvline(x=iline) for iline in searched_lines]
-##     [pl.axvline(x=iline, ls=':') for iline in signal_range]
-##     pl.show()
+    ## import pylab as pl
+    ## if wavenumber:
+    ##     axis = utils.spectrum.create_cm1_axis(spectrum.shape[0], step, order, corr=nm_laser_obs/nm_laser)
+    ## else:
+    ##     axis = utils.spectrum.create_nm_axis(spectrum.shape[0], step, order, corr=nm_laser_obs/nm_laser)
+    
+    ## pl.plot(axis, spectrum)
+    ## searched_lines = lines + utils.spectrum.line_shift(shift_guess, lines, wavenumber=wavenumber)
+    ## [pl.axvline(x=iline) for iline in searched_lines]
+    ## [pl.axvline(x=iline, ls=':') for iline in signal_range]
+    ## pl.show()
+    ## quit()
 
     if filter_file_path is not None:
         filter_function = orb.utils.filters.get_filter_function(

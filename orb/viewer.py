@@ -1541,7 +1541,7 @@ class FitPlugin(object):
                     
                 # guess fwhm
                 fwhm_guess = utils.spectrum.compute_line_fwhm(
-                    self.spectrum.shape[0]/2., self.step, self.order,
+                    self.spectrum.shape[0]/1.25, self.step, self.order,
                     apod_coeff=self.apod,
                     wavenumber=self.wavenumber)
                 
