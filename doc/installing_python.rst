@@ -4,9 +4,32 @@ Installing Python
 .. contents::
 
 .. note:: Instructions are generally given for Ubuntu |Ubuntu|. It
-     might work for any Debian based operating system. Most of the
-     installation can be used with pip or setup.py and its the same
-     for Mac |Mac| (see below).
+     works also for any Debian based operating system. All the
+     installation can be used with pip or setup.py. Its mostly the
+     same for Mac |Mac| (see below).
+
+Fast installation sequence for Ubuntu/Debian users
+==================================================
+
+.. note:: For Ubuntu users just add sudo in front of all commands
+
+All the installation process can be done with pip and apt-get::
+
+  apt-get install python-pip python-dev build-essential
+  pip install pip --upgrade
+  pip install numpy --upgrade
+  apt-get install libatlas-base-dev gfortran
+  pip install scipy --upgrade
+  pip install cython --upgrade
+  apt-get install libfreetype6-dev pkg-config libcanberra-gtk-module python-pyqt5 pyqt5-dev pyqt5-dev-tools python-cairo python-gtk2-dev python-pyside
+  pip install --upgrade matplotlib
+  pip install vispy
+  pip install astropy --upgrade
+  apt-get install libhdf5-dev libhdf5-8 hdf5-tools
+  pip install h5py --upgrade
+  pip install bottleneck --upgrade
+  pip install pp --upgrade
+  
 
 Fast installation sequence for MAC users
 ========================================
@@ -26,12 +49,6 @@ install them using python. Download the archive, unzip it and, in the
 unzipped folder type::
 
   sudo python setup.py install
-
-You must also install fftw3 libraries (see `here <https://pypi.python.org/pypi/h5py/2.5.0>`_) and then install the pyfftw wrapper with pip::
-
-  sudo pip install pyfftw --upgrade
-
-
 
 
 Python_
@@ -85,19 +102,7 @@ To use the Viewers (orb-viewer and orb-viewer3d)
 ------------------------------------------------
 0. Install dependencies::
   
-  sudo apt-get install libfreetype6-dev pkg-config libcanberra-gtk-module python-pyqt5 pyqt5-dev pyqt5-dev-tools
-
-1. Install pygtk::
-
-  sudo pip install pygtk
-
-2. Install pycairo::
-
-  sudo apt-get install python-cairo
-
-3. Install development libraries for gtk2::
-
-  sudo apt-get install python-gtk2-dev
+  sudo apt-get install libfreetype6-dev pkg-config libcanberra-gtk-module python-pyqt5 pyqt5-dev pyqt5-dev-tools python-cairo python-gtk2-dev python-pyside
 
 4. Rebuild matlplotlib::
 
@@ -105,11 +110,7 @@ To use the Viewers (orb-viewer and orb-viewer3d)
 
 5. Install Vispy (for the 3d viewer)::
 
-  sudo pip install vispy
-
-6. Install PySide (for the 3d viewer)::
-
-  sudo apt-get install python-pyside
+  sudo pip install vispy --upgrade 
 
 .. warning:: If pylab.show() does not work as expected the backend
              must be changed by changing this line to

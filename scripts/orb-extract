@@ -21,7 +21,6 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, os
-import gtk
 from argparse import ArgumentParser
 import argparse
 

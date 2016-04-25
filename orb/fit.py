@@ -1076,6 +1076,7 @@ class LinesModel(Model):
                 mod += cutils.gaussian1d(
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2])
+            
             else:
                 raise ValueError("fmodel must be set to 'sinc', 'gaussian', 'sincgauss', 'lorentzian' or 'sinc2'")
         return mod
