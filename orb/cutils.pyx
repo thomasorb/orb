@@ -883,9 +883,13 @@ def sincgauss1d(np.ndarray[np.float64_t, ndim=1] x,
     :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
     :param sigma: Sigma of the gaussian.
     """
-    if abs(sigma) <= 1e-10:
+    # when sigma/fwhm is too high or too low, a pure sinc or gaussian
+    # is returned (avoid overflow)
+    if abs(sigma / fwhm) < 1e-2:
         return sinc1d(x, h, a, dx, fwhm)
-
+    if abs(sigma / fwhm) > 1e2:
+        return gaussian1d(x, h, a, dx, fwhm)
+    
     sigma = abs(sigma)
     
     fwhm /= M_PI * 1.20671

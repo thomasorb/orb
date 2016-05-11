@@ -23,9 +23,71 @@
 import numpy as np
 import math
 import warnings
+import sys
+import orb.cutils                       
 
-import orb.cutils
-                       
+def aggregate_pixels(pixel_list, radius=1.42):
+    """Aggregate neighbouring pixels into a set of sources. Two
+    neighbours are found if there distance is smaller than a given
+    radius (in pixels).
+
+    :param pixel_list: A list of pixel position as returned by a
+      function like numpy.nonzero.
+
+    :param radius: (Optional) Max separation between two pixels of the
+      same source (default 1.42).
+    
+    :returns: A list of pixel list. Each item of the list corresponds
+      to a source and each source is itself a list of pixel positions
+      (x,y).
+    """
+
+    def get_neighbours(ix, iy, pixel_list, agg_list_ok, radius):
+        
+        _x = pixel_list[0]
+        _y = pixel_list[1]
+        _r = np.sqrt((_x - ix)**2. + (_y - iy)**2.)
+        _r[agg_list_ok == 1] = 2. * radius
+        nei_x = _x[_r < radius]
+        nei_y = _y[_r < radius]
+        agg_list_ok[_r < radius] = True
+        neighbours = list()
+        for inei in range(len(nei_x)):
+            neighbours.append((nei_x[inei], nei_y[inei]))
+    
+        return neighbours, agg_list_ok
+        
+    sources = list()
+    agg_list_ok = np.zeros(len(pixel_list[0]), dtype=bool)
+    x = pixel_list[0]
+    y = pixel_list[1]
+
+    for isource in range(len(x)):
+        ii = x[isource]
+        ij = y[isource]
+        sys.stdout.write(' '*10)
+        sys.stdout.write('\r {}/{}'.format(isource, len(x)))
+        if not agg_list_ok[isource]:
+            agg_list_ok[isource] = True
+            new_source = list()
+            new_source.append((ii,ij))
+            more = True
+            while more:
+                for pix in new_source:
+                    more = False
+                    neighbours, agg_list_ok = get_neighbours(
+                        pix[0], pix[1], pixel_list, agg_list_ok, radius)
+                    if len(neighbours) > 0:
+                        more = True
+                        for inei in neighbours:
+                            new_source.append((inei))
+            if len(new_source) > 1:
+                sources.append(new_source)
+        sys.stdout.flush()
+    print ' '*20
+    print '{} sources detected'.format(len(sources))
+    return sources
+
 
 def get_axis_from_hdr(hdr, axis_index=1):
     """Return axis from a classic FITS header
