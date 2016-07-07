@@ -280,7 +280,7 @@ class Tools(object):
         :param standard_table_name: (Optional) Name of the standard
           table file (default std_table.orb).
         """
-        groups = ['MASSEY', 'MISC', 'CALSPEC', None]
+        groups = ['MASSEY', 'MISC', 'CALSPEC', 'OKE', None]
         if group not in groups:
             self._print_error('Group must be in %s'%str(groups))
         std_table = self.open_file(self._get_standard_table_path(
@@ -309,7 +309,7 @@ class Tools(object):
           table file (default std_table.orb).
 
         :return: A tuple [standard file path, standard type]. Standard type
-          can be 'MASSEY' of 'CALSPEC'.
+          can be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'.
         """
         std_table = self.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
@@ -317,7 +317,7 @@ class Tools(object):
         for iline in std_table:
             iline = iline.split()
             if len(iline) >= 3:
-                if iline[0] == standard_name:
+                if iline[0] in standard_name:
                     file_path = self._get_orb_data_file_path(iline[2])
                     if os.path.exists(file_path):
                         return file_path, iline[1]
@@ -325,7 +325,8 @@ class Tools(object):
         self._print_error('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
 
     def _get_standard_radec(self, standard_name,
-                            standard_table_name='std_table.orb'):
+                            standard_table_name='std_table.orb',
+                            return_pm=False):
         """
         Return a standard spectrum file path.
         
@@ -335,8 +336,11 @@ class Tools(object):
         :param standard_table_name: (Optional) Name of the standard
           table file (default std_table.orb).
 
+        :param return_pm: (Optional) Returns also proper motion if
+          recorded (in mas/yr), else returns 0.
+
         :return: A tuple [standard file path, standard type]. Standard type
-          can be 'MASSEY' of 'CALSPEC'.
+          can be 'MASSEY', 'MISC', 'CALSPEC' or 'OKE'.
         """
         std_table = self.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
@@ -344,11 +348,20 @@ class Tools(object):
         for iline in std_table:
             iline = iline.strip().split()
             if len(iline) >= 3:
-                if iline[0] == standard_name:
+                if iline[0] in standard_name:
                     if len(iline) > 3:
                         ra = float(iline[3])
                         dec = float(iline[4])
-                        return ra, dec
+                        if len(iline) > 5:
+                            pm_ra = float(iline[5])
+                            pm_dec = float(iline[6])
+                        else:
+                            pm_ra = 0.
+                            pm_rec = 0.
+                        if return_pm:
+                            return ra, dec, pm_ra, pm_dec
+                        else:
+                            return ra, dec
                     else:
                         self._print_error('No RA DEC recorded for standard: {}'.format(
                             standard_name))
@@ -3289,6 +3302,18 @@ class Lines(Tools):
         else:
             return lines_nm
 
+    def get_line_cm1(self, lines_name, air=True, round_ang=False):
+        """Return the wavenumber of a line or a list of lines
+
+        :param lines_name: List of line names
+
+        :param air: (Optional) If True, air rest wavenumber are
+          returned. If False, vacuum rest wavenumber are
+          returned (default True).
+        """
+        return utils.spectrum.nm2cm1(
+            self.get_line_nm(lines_name, air=air))
+
     def get_line_name(self, lines, air=True):
         """Return the name of a line or a list of lines given their
         wavelength.
@@ -3577,6 +3602,7 @@ class ParamsFile(Tools):
 
     _params_list = None
     _keys = None
+    _file_path = None
 
     f = None
     
@@ -3620,6 +3646,7 @@ class ParamsFile(Tools):
             self.f.write("## PARAMS FILE\n## created by {:s}\n".format(
                 self.__class__.__name__))
             self.f.flush()
+        self._file_path = file_path
 
     def __del__(self):
         """ParamsFile destructor"""
@@ -4616,9 +4643,11 @@ class Standard(Tools):
             self.ang, self.flux = self._read_massey_dat(std_file_path)
         elif std_type == 'CALSPEC':
             self.ang, self.flux = self._read_calspec_fits(std_file_path)
+        elif std_type == 'OKE':
+            self.ang, self.flux = self._read_oke_dat(std_file_path)
         else:
             self._print_error(
-                "Bad type of standard file. Must be 'MASSEY', 'CALSPEC' or 'MISC'")
+                "Bad type of standard file. Must be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'")
        
 
     def _get_data_prefix(self):
@@ -4652,6 +4681,32 @@ class Standard(Tools):
         
         return axis, utils.vector.interpolate_axis(
             self.flux, axis, 3, old_axis=old_axis)
+
+    def _read_oke_dat(self, file_path):
+        """Read a data file from Oke J. B., Faint spectrophotometric
+        standards, AJ, (1990) and return a tuple of arrays (wavelength,
+        flux).
+        
+        Returned wavelength axis is in A. Returned flux is converted
+        in erg/cm^2/s/A.
+
+        :param file_path: Path to the Oke dat file ('fXX.dat').
+        """
+        std_file = self.open_file(file_path, 'r')
+        
+        spec_ang = list()
+        spec_flux = list()
+        for line in std_file:
+             line = line.split()
+             spec_ang.append(line[0])
+             spec_flux.append(line[1])
+
+        spec_ang = np.array(spec_ang, dtype=float)
+        spec_flux = np.array(spec_flux, dtype=float) * 1e-16
+
+        return spec_ang, spec_flux
+
+
 
     def _read_massey_dat(self, file_path):
         """Read a data file from Massey et al., Spectrophotometric

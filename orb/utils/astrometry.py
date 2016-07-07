@@ -883,7 +883,7 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
     :return: (FWHM, FWHM_ERR) in pixels
     """
     FIT_BOXSZ_COEFF = 4
-    
+   
     fit_params = orb.cutils.multi_fit_stars(
         np.array(frame, dtype=float),
         np.array(star_list), fwhm_guess_pix*FIT_BOXSZ_COEFF,
@@ -898,8 +898,12 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
         enable_zoom=False,
         enable_rotation=False,
         estimate_local_noise=False)
-    
-    return fit_params['stars-params'][0,4], fit_params['stars-params-err'][0,4]
+
+    if fit_params != []:
+        return fit_params['stars-params'][0,4], fit_params['stars-params-err'][0,4]
+    else:
+        warnings.warn('FWHM could not be measured, check star positions')
+        return None, None
 
 
 def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
@@ -926,10 +930,16 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
     PHOT_BOXSZ_COEFF = 17
 
     if detect_fwhm:
-        fwhm_guess_pix, fwhm_err = detect_fwhm_in_frame(
+        res = detect_fwhm_in_frame(
             frame, pos_list, fwhm_guess_pix)
+        if res[0] is not None:
+            fwhm_guess_pix, fwhm_err = res
+        else:
+            fwhm_err = np.nan
         if not silent:
             print 'Detected FWHM: {} [+/- {}] pixels'.format(fwhm_guess_pix, fwhm_err)
+    else: fwhm_err = np.nan
+    
     results = list()
     pos_list = np.array(pos_list)
     aper_surf = None
@@ -951,7 +961,9 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                         'aperture_surface':photom_result[2],
                         'aperture_flux_bad':photom_result[3],
                         'aperture_background':photom_result[4],
-                        'aperture_background_err':photom_result[5]})
+                        'aperture_background_err':photom_result[5],
+                        'fwhm_pix':fwhm_guess_pix,
+                        'fwhm_pix_err':fwhm_err})
     return results
 
 def load_star_list(star_list_path, silent=False):
@@ -1090,14 +1102,43 @@ def sky_background_level(im, smooth_coeff=0.1, return_mode=False, bins=25,
         return orb.utils.stats.robust_mean(im_cut), (orb.utils.stats.robust_std(im_cut)
                                                  / math.sqrt(np.size(im_cut)))
 
+def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
+    """Compute RA/DEC in degrees with proper motion values.
+
+    :param ra_deg: RA in degrees
+
+    :param dec_deg: DEC in degrees
+
+    :param pm_ra_mas: Proper motion along RA axis in mas/yr
+
+    :param pm_dec_mas: Proper motion along DEC axis in mas/yr
+
+    :param yr: Number of years
+    """
+    ra = ra_deg + (pm_ra_mas * yr) * 1e-3 / 3600.
+    dec = dec_deg + (pm_dec_mas * yr) * 1e-3 / 3600.
+    if ra > 360. : ra -= 360.
+    if ra < 0. : ra += 360.
+    if dec > 90.: dec = 90. - dec
+    if dec < 0.: dec = -dec
+    return ra, dec
+
 def ra2deg(ra):
-     ra = np.array(ra, dtype=float)
-     if (ra.shape == (3,)):
-          return (ra[0] + ra[1]/60. + ra[2]/3600.)*(360./24.)
-     else:
-          return None
+    """Convert RA in sexagesimal format to degrees.
+
+    :param ra: RA in sexagesimal format
+    """
+    ra = np.array(ra, dtype=float)
+    if (ra.shape == (3,)):
+        return (ra[0] + ra[1]/60. + ra[2]/3600.)*(360./24.)
+    else:
+        return None
 
 def dec2deg(dec):
+    """Convert DEC in sexagesimal format to degrees.
+
+    :param dec: DEC in sexagesimal format
+    """
     dec = np.array(dec, dtype=float)
     if (dec.shape == (3,)):
         if dec[0] >= 0:
@@ -1108,42 +1149,51 @@ def dec2deg(dec):
         return None   
 
 def deg2ra(deg, string=False):
-     deg=float(deg)
-     ra = np.empty((3), dtype=float)
-     deg = deg*24./360.
-     ra[0] = int(deg)
-     deg = deg - ra[0]
-     deg *= 60.
-     ra[1] = int(deg)
-     deg = deg - ra[1]
-     deg *= 60.
-     ra[2] = deg
-     if not string:
-          return ra
-     else:
-          return "%d:%d:%.2f" % (ra[0], ra[1], ra[2])
+    """Convert RA in degrees to sexagesimal.
+
+    :param deg: RA in degrees
+    """
+    
+    deg=float(deg)
+    ra = np.empty((3), dtype=float)
+    deg = deg*24./360.
+    ra[0] = int(deg)
+    deg = deg - ra[0]
+    deg *= 60.
+    ra[1] = int(deg)
+    deg = deg - ra[1]
+    deg *= 60.
+    ra[2] = deg
+    if not string:
+        return ra
+    else:
+        return "%d:%d:%.2f" % (ra[0], ra[1], ra[2])
 
 def deg2dec(deg, string=False):
-     deg=float(deg)
-     dec = np.empty((3), dtype=float)
-     dec[0] = int(deg)
-     deg = deg - dec[0]
-     deg *= 60.
-     dec[1] = int(deg)
-     deg = deg - dec[1]
-     deg *= 60.
-     dec[2] = deg
-     if (float("%.2f" % (dec[2])) == 60.0):
-          dec[2] = 0.
-          dec[1] += 1
-     if dec[1] == 60:
-          dec[0] += 1
-     if dec[0] < 0:
-         dec[1] = -dec[1]
-         dec[2] = -dec[2]
-     if not string:
-          return dec
-     else:
+    """Convert DEC in degrees to sexagesimal.
+
+    :param deg: DEC in degrees
+    """
+    deg=float(deg)
+    dec = np.empty((3), dtype=float)
+    dec[0] = int(deg)
+    deg = deg - dec[0]
+    deg *= 60.
+    dec[1] = int(deg)
+    deg = deg - dec[1]
+    deg *= 60.
+    dec[2] = deg
+    if (float("%.2f" % (dec[2])) == 60.0):
+        dec[2] = 0.
+        dec[1] += 1
+    if dec[1] == 60:
+        dec[0] += 1
+    if dec[0] < 0:
+        dec[1] = -dec[1]
+        dec[2] = -dec[2]
+    if not string:
+        return dec
+    else:
         return "+%d:%d:%.2f" % (dec[0], dec[1], dec[2])
 
 

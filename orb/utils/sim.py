@@ -61,12 +61,14 @@ def fft(interf, zp_coeff=10, apod=None):
 
     # remove mean
     interf = np.copy(interf) - np.nanmean(interf)
-    
+
     # apodization
     if apod is not None:
-        apodf = orb.utils.fft.norton_beer_window(apod, n= step_nb*2)[step_nb:]
+        
+        apodf = orb.utils.fft.gaussian_window(apod, step_nb*2)[step_nb:]
         interf *= apodf
- 
+
+        
     # zero padding
     zp_nb = step_nb * zp_coeff * 2
     zp_interf = np.zeros(zp_nb, dtype=float)

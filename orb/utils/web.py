@@ -51,7 +51,6 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
         ikey = '%2B'.join(ikey.split('+'))
         keys.append(ikey)
     object_name = '+'.join(keys)
-    
     url = orb.constants.SESAME_URL + '{}'.format(object_name)
     xml_result = urllib2.urlopen(url).read()
     dom = minidom.parseString(xml_result)

@@ -847,3 +847,19 @@ Fit module
 * small bug correction
 
 
+Gaussian apodization
+--------------------
+
+* A new set of Gaussian window function can be used
+  (:py:meth:`̀orb.utils.fft.gaussian_window`). Norton-Beer apodization
+  functions are nto be used anymore.
+
+Standard Proper motion
+----------------------
+
+* Standard table has been update with Oke (1990) standard list. see
+  http://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html
+
+* proper motion can be extracted from standard table
+  ('data/std_table.orb') and the real radec at a given moment can be
+  computed (see :py:meth:`̀orb.utils.astrometry.compute_radec_pm`)

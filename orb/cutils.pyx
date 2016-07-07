@@ -2302,26 +2302,3 @@ def get_nm_axis_step(int n, double step, int order, double corr=1.):
     else: raise ValueError('Order cannot be 0 for a nm axis (stepsize is infinite), use a cm-1 axis instead')
 
 
-def compute_radial_velocity(np.ndarray[float128_t, ndim=1] line,
-                            np.ndarray[float128_t, ndim=1] rest_line,
-                            bool wavenumber=False):
-    """
-    Return radial velocity in km.s-1
-
-    V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0
-
-    :param line: Emission line wavelength/wavenumber (can be a numpy
-      array)
-    
-    :param rest_line: Rest-frame wavelength/wavenumber (can be a numpy
-      array but must have the same size as line)
-
-    :param wavenumber: (Optional) If True the result is returned in cm-1,
-      else it is returned in nm.
-    """
-    cdef np.ndarray[float128_t, ndim=1] delta
-    
-    if wavenumber: delta = rest_line - line
-    else: delta = line - rest_line
-    return np.array(<long double> constants.LIGHT_VEL_KMS
-                    * delta / rest_line, dtype=np.float64)

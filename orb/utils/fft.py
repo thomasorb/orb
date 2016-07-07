@@ -25,6 +25,7 @@ import numpy as np
 import math
 import warnings
 import scipy
+import scipy.special as ss
 from scipy import signal, interpolate
 
 import orb.utils.vector
@@ -32,9 +33,9 @@ import orb.utils.spectrum
 import orb.utils.stats
 import orb.utils.filters
 import orb.cutils
+import orb.constants
 
-
-def apodize(s, apodization_function='2.0'):
+def apodize(s, apodization_function=2.0):
     """Apodize a spectrum
 
     :param s: Spectrum
@@ -43,7 +44,7 @@ def apodize(s, apodization_function='2.0'):
       function (default 2.0)
     """
     s_ifft = np.fft.ifft(s)
-    w = norton_beer_window(apodization_function, s.shape[0])
+    w = gaussian_window(apodization_function, s.shape[0])
     w = np.roll(w, w.shape[0]/2)
     s_ifft *= w
     if np.iscomplexobj(s):
@@ -80,7 +81,7 @@ def find_zpd(interf, step_number=None,
     full_interf[:interf.shape[0]] = interf
     
     # vector is weighted so that the center part is prefered
-    full_interf *= norton_beer_window(fwhm='1.5', n=dimz)
+    full_interf *= gaussian_window(1.5, dimz)
     
     # absolute value of the vector
     full_interf = np.sqrt(full_interf**2.)
@@ -177,7 +178,7 @@ def raw_fft(x, apod=None, inverse=False, return_complex=False,
     
     # apodization
     if apod in windows:
-        x *= norton_beer_window(apod, N)
+        x *= gaussian_window(apod, N)
     elif apod is not None:
         raise Exception("Unknown apodization function try %s"%
                         str(windows))
@@ -209,20 +210,16 @@ def cube_raw_fft(x, apod=None):
     :param x: Interferogram cube
     
     :param apod: (Optional) Apodization function used. See
-      :py:meth:`utils.norton_beer_window` (default None)
+      :py:meth:`utils.gaussian_window` (default None)
     """
     x = np.copy(x)
-    windows = ['1.1', '1.2', '1.3', '1.4', '1.5',
-               '1.6', '1.7', '1.8', '1.9', '2.0']
     N = x.shape[-1]
     # mean substraction
     x = (x.T - np.mean(x, axis=-1)).T
     # apodization
-    if apod in windows:
-        x *= norton_beer_window(apod, N)
-    elif apod is not None:
-        raise Exception("Unknown apodization function try %s"%
-                             str(windows))
+    if apod is not None:
+        x *= gaussian_window(apod, N)
+
     # zero padding
     zv_shape = np.array(x.shape)
     zv_shape[-1] = N*2
@@ -291,6 +288,48 @@ def norton_beer_window(fwhm='1.6', n=1000):
         nb += norton_beer_coeffs[fwhm_index][index+1]*(1. - x**2)**index
     return nb
 
+def apod2width(apod):
+    """Return the width of the gaussian window for a given apodization level.
+
+    :param apod: Apodization level (must be >= 1.)
+
+    The apodization level is the broadening factor of the line (an
+    apodization level of 2 mean that the line fwhm will be 2 times
+    wider).
+    """
+    apod = float(apod)
+    if apod < 1.: raise Exception(
+        'Apodization level (broadening factor) must be > 1')
+
+    return apod - 1. + (ss.erf(math.pi / 2. * np.sqrt(apod - 1.))
+                        * orb.constants.FWHM_SINC_COEFF)
+
+def apod2sigma(apod, fwhm):
+    """Return the broadening ratio (gaussian width/sinc width) of the
+    gaussian-sinc function in the spectrum, given the apodization
+    level. Unit is that of the fwhm.
+
+    :param apod: Apodization level (must be >= 1.)
+    """
+    broadening = 2. * (apod2width(apod) / (math.sqrt(2.) * math.pi)
+                       / orb.utils.spectrum.compute_line_fwhm_pix(
+                           oversampling_ratio=1))
+
+    return broadening * fwhm
+
+def gaussian_window(coeff, n):
+    """Return a Gaussian apodization function for a given broadening
+    factor.
+
+    :param coeff: FWHM relative to the sinc function. Must be a float > 1.
+       
+    :param n: Number of points.
+    """
+    coeff = float(coeff)
+    x = np.linspace(-1., 1., n)
+    w = apod2width(coeff)
+    return np.exp(-x**2 * w**2)
+
 def learner95_window(n):
     """Return the apodization function described in Learner et al.,
     J. Opt. Soc. Am. A, 12, (1995).
@@ -307,8 +346,6 @@ def learner95_window(n):
             + 0.487395 * np.cos(math.pi*x)
             + 0.144234 * np.cos(2.*math.pi*x)
             + 0.012605 * np.cos(3.*math.pi*x))
-
-
 
 def border_cut_window(n, coeff=0.2):
     """Return a window function with only the edges cut by a nice
@@ -329,7 +366,6 @@ def border_cut_window(n, coeff=0.2):
         window[:z] = borders[:z]
         window[-z:] = borders[-z:]
     return window
-
 
 def compute_phase_coeffs_vector(phase_maps,
                                 res_map=None):
@@ -409,7 +445,8 @@ def transform_interferogram(interf, nm_laser,
       on an axis in nm, i.e. wavenumber option is automatically set to
       True).
 
-    :param window_type: Name of the apodization function.
+    :param window_type: Name of the apodization function (can be
+      learner95 or a float > 1.).
 
     :param zpd_shift: Shift of the interferogram to center the ZPD.
 
@@ -596,13 +633,10 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 5 - Apodization of the real interferogram
     if window_type is not None and window_type != '1.0':
-        if window_type in ['1.1', '1.2', '1.3', '1.4', '1.5',
-                           '1.6', '1.7', '1.8', '1.9', '2.0']:
-            window = norton_beer_window(window_type, interf.shape[0])
-        elif window_type == 'learner95':
+        if window_type == 'learner95':
             window = learner95_window(interf.shape[0])
         else:
-            window = signal.get_window((window_type), interf.shape[0])
+            window = gaussian_window(window_type, interf.shape[0])
             
         interf *= window
 
@@ -863,7 +897,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
 
     # De-apodize
     if window_type is not None:
-        window = norton_beer_window(window_type, final_step_nb)
+        window = gaussian_window(window_type, final_step_nb)
         interf /= window
 
     # Normalization to remove zero filling effect on the mean energy

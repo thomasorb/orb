@@ -35,18 +35,18 @@ __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"
 import numpy as np
 import warnings
 import math
-
-import algopy
-import utils.algo
 import copy
-
 import scipy.optimize
 import scipy.interpolate
 import time
 
+import utils.fft
+import orb.data as od
 import cutils
 import constants
 import utils.spectrum
+import utils.fit
+
 
 class FitVector(object):
     """
@@ -221,20 +221,16 @@ class FitVector(object):
         data.
 
         :param all_p_free: Vector of free parameters.
-        """       
+        """
         return (self.vector - self.get_model(all_p_free))[
             np.min(self.signal_range):np.max(self.signal_range)]
 
     def get_jacobian(self, all_p_free):
-        """Return the Jacobian of the objective function. The jacobian
-        is computed with algopy module.
+        """Return the Jacobian of the objective function.
 
         :param all_p_free: Vector of free parameters.    
         """
-
-        ap = algopy.UTPM.init_jacobian(all_p_free)
-        return algopy.UTPM.extract_jacobian(
-            self.get_objective_function(ap))
+        raise Exception('Not implemented')
         
 
     def fit(self, use_jacobian=False):
@@ -261,7 +257,7 @@ class FitVector(object):
                                      maxfev=self.max_fev,
                                      full_output=True,
                                      xtol=self.fit_tol)
-
+        
         if fit[-1] <= 4:
             if fit[2]['nfev'] >= self.max_fev:
                 return [] # reject maxfev bounded fit
@@ -572,9 +568,9 @@ class Model(object):
         free_index = 0
         fixed_index = 0
         if np.size(self.p_free) > 0:
-            self.p_val = algopy.zeros(self.p_val.shape, dtype=self.p_free)
+            self.p_val = np.zeros(np.array(self.p_val).shape)
         else:
-            self.p_val = algopy.zeros(self.p_val.shape, dtype=self.p_fixed)
+            self.p_val = np.zeros(np.array(self.p_val).shape)
             
         for i in range(np.size(self.p_def)):
             if self.p_def[i] == 'free':
@@ -892,10 +888,10 @@ class LinesModel(Model):
             key_guess = key + '-guess'
             key_def = key + '-def'
             key_cov = key + '-cov'
-            
             ## parse guess
             if key_guess in self.p_dict:
                 p_guess = np.array(self.p_dict[key_guess])
+                
                 if np.size(p_guess) != line_nb:
                     if np.size(p_guess) == 1:
                         value = float(p_guess)
@@ -978,7 +974,7 @@ class LinesModel(Model):
             parse_param('sigma', self._get_sigma_cov_operation())
         self.p_def = np.array(self.p_def, dtype=object)
         self.p_val = np.array(self.p_val, dtype=float)
-
+        
     def _get_amp_cov_operation(self):
         """Return covarying amplitude operation"""
         return lambda x, y: x * y
@@ -1127,27 +1123,23 @@ class LinesModel(Model):
         for iline in range(line_nb):
             
             if fmodel == 'sinc':
-                #line_mod = cutils.sinc1d(
-                line_mod = utils.algo.sinc1d(
+                line_mod = utils.spectrum.sinc1d(
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2])
                 
             elif fmodel == 'sincgauss':
-                #line_mod = cutils.sincgauss1d(
-                line_mod = utils.algo.sincgauss1d(
+                line_mod = utils.spectrum.sincgauss1d(
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2],
                     p_array[iline, 3])
                 
             elif fmodel == 'sinc2':
-                #line_mod = np.sqrt(cutils.sinc1d(
-                line_mod =  np.sqrt(utils.algo.sinc1d(
+                line_mod =  np.sqrt(utils.spectrum.sinc1d(
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2])**2.)
                 
             elif fmodel == 'gaussian':
-                #line_mod = cutils.gaussian1d(
-                line_mod = utils.algo.gaussian1d(
+                line_mod = utils.spectrum.gaussian1d(
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2])
             
@@ -1176,19 +1168,17 @@ class Cm1LinesModel(LinesModel):
     """
     def _w2pix(self, w):
         """Translate wavenumber to pixels"""
-        #return cutils.fast_w2pix(w, self.axis_min, self.axis_step)
-        return utils.algo.fast_w2pix(w, self.axis_min, self.axis_step)
+        return utils.spectrum.fast_w2pix(w, self.axis_min, self.axis_step)
 
 
     def _pix2w(self, pix):
         """Translate pixel to wavenumber"""
-        #return cutils.fast_pix2w(pix, self.axis_min, self.axis_step)
-        return utils.algo.fast_pix2w(pix, self.axis_min, self.axis_step)
+        return utils.spectrum.fast_pix2w(pix, self.axis_min, self.axis_step)
 
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
         return lambda lines, vel: lines - lines * vel / constants.LIGHT_VEL_KMS
-
+        
     def _p_val2array(self):
         """Transform :py:attr:`fit.Model.p_val` to :py:attr:`fit.LinesModel.p_array`"""
         p_array = LinesModel._p_val2array(self)
@@ -1196,10 +1186,9 @@ class Cm1LinesModel(LinesModel):
         p_array[:,1] = self._w2pix(lines_cm1) # convert pos cm-1->pix
         p_array[:,2] /= self.axis_step # convert fwhm cm-1->pix
         if self._get_fmodel() == 'sincgauss':
-            # convert sigma km/s->cm-1
-            p_array[:,3] = lines_cm1 * p_array[:,3] / constants.LIGHT_VEL_KMS
-            p_array[:,3] /= self.axis_step # convert sigma cm-1->pix
-            p_array[:,3] = algopy.absolute(p_array[:,3])
+            # convert sigma km/s->pix
+            p_array[:,3] = utils.fit.vel2sigma(
+                p_array[:,3], lines_cm1, self.axis_step)
         return p_array
 
     def _p_array2val(self, p_array):
@@ -1207,10 +1196,9 @@ class Cm1LinesModel(LinesModel):
         p_array[:,1] = self._pix2w(p_array[:,1]) # convert pos pix->cm-1
         p_array[:,2] *= self.axis_step # convert fwhm pix->cm-1
         if self._get_fmodel() == 'sincgauss':
-            p_array[:,3] *= self.axis_step # convert sigma pix->cm-1
-            # convert sigma cm-1-> km/s
-            p_array[:,3] = constants.LIGHT_VEL_KMS * p_array[:,3] / p_array[:,1]
-            p_array[:,3] = algopy.absolute(p_array[:,3])
+            # convert sigma pix-> km/s
+            p_array[:,3] = utils.fit.sigma2vel(
+                p_array[:,3], p_array[:,1], self.axis_step)
         return LinesModel._p_array2val(self, p_array)
       
 
@@ -1305,8 +1293,9 @@ class NmLinesModel(Cm1LinesModel):
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     nm_laser_obs, wavenumber=True, fwhm_guess=3.5, cont_guess=None,
     shift_guess=0., fix_fwhm=False, cov_fwhm=True, cov_pos=True,
-    fit_tol=1e-10, poly_order=0, fmodel='gaussian', signal_range=None,
-    filter_file_path=None, fix_filter=False):
+    fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
+    fmodel='gaussian', signal_range=None, filter_file_path=None,
+    fix_filter=False, apodization=1., velocity_range=None):
     
     """Fit lines in spectrum
 
@@ -1353,7 +1342,20 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       distinguish the covarying lines. Covarying lines must share the
       same number. e.g. on 5 lines, [NII]6548, Halpha, [NII]6584,
       [SII]6717, [SII]6731, if each ion has a different velocity
-      cov_pos can be : [0,1,0,2,2]. (default False).
+      cov_pos can be : [0,1,0,2,2]. (default True).
+
+    :param fix_pos: (Optional) Fix lines position (default False).
+
+    :param cov_sigma: (Optional) If True the estimated enlargment of
+      the lines (the lines parameter) is considered to the same for
+      all the lines. Covarying lines must share the same
+      number. e.g. on 5 lines, [NII]6548, Halpha, [NII]6584,
+      [SII]6717, [SII]6731, if each ion has a different velocity
+      dispersion cov_sigma can be : [0,1,0,2,2]. (default True).
+
+    :param apodization: (Optional) Apodization level. Permit to separate the
+      broadening due to the apodization and the real line broadening
+      (see 'broadening' output parameter, default 1.).
 
     :param fit_tol: (Optional) Tolerance on the fit value (default
       1e-10).
@@ -1370,6 +1372,14 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
     :param fix_filter: (Optional) If True filter position is fixed
       (default False).
+
+    :param velocity_range: (Optional) Range of velocity to check
+      around the shift_guess value. If not None, a brute force
+      algorithm is used to find the best velocity value. If more than
+      one shift_guess is given (e.g. if lines are have different
+      velocities, the mean velocity will be used as an initial
+      velocity guess). The quality of this guess depends strongly on
+      the spectrum noise. Try avoid using it with low a SNR spectrum.
 
     :return: a dictionary containing:
 
@@ -1402,6 +1412,11 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       * fitted spectrum [key: 'fitted-vector']
    
     """
+    all_args = dict(locals()) # used in case fit is retried (must stay
+                              # at the very beginning of the function
+                              # ;)                     
+    SIGMA_COV = 1e-1 # covariant sigma in km/s, must be > 0.
+    
     correction_coeff = float(nm_laser_obs) / nm_laser
 
     if wavenumber:
@@ -1418,27 +1433,63 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                                             corr=correction_coeff)
         linesmodel = NmLinesModel
 
-    
-        
     if signal_range is not None:
-        signal_range_pix = cutils.fast_w2pix(
+        signal_range_pix = utils.spectrum.fast_w2pix(
             np.array(signal_range, dtype=float), axis_min, axis_step)
         minx = max(1, int(np.min(signal_range_pix)))
-        maxx = min(spectrum.shape[0] - 1, int(math.ceil(np.max(signal_range_pix))))
+        maxx = min(spectrum.shape[0] - 1,
+                   int(math.ceil(np.max(signal_range_pix))))
         
     else:
-        signal_range_pix = None
+        signal_range_pix = [10, np.size(spectrum)-10]
+
+    # brute force over the velocity range to find the best lines position
+    if velocity_range is not None:
+        # velocity step of one channel
+        bf_step_kms = axis_step / lines[0] * constants.LIGHT_VEL_KMS
+        bf_flux = list()
+        mean_shift_guess = np.nanmean(shift_guess)
+        bf_range = np.arange(mean_shift_guess - velocity_range,
+                             mean_shift_guess + velocity_range,
+                             bf_step_kms)
+        if np.size(bf_range) > 1:
+            # get the total flux in the lines channels for each velocity
+            for ivel in bf_range:
+                ilines_wav = utils.spectrum.line_shift(
+                    ivel, lines, wavenumber=wavenumber)
+                ilines_pix = utils.spectrum.fast_w2pix(
+                    np.array(lines + ilines_wav, dtype=float),
+                    axis_min, axis_step)
+                bf_flux.append(np.nansum(spectrum[np.array(
+                    np.round(ilines_pix), dtype=int)]))
+            shift_guess = bf_range[np.nanargmax(bf_flux)]
         
     if fix_fwhm: fwhm_def = 'fixed'
     elif cov_fwhm: fwhm_def = '1'
     else: fwhm_def = 'free'
 
-    if np.size(cov_pos) > 1:
-        pos_def = cov_pos
-    else:
-        if not cov_pos: pos_def = 'free'
-        else: pos_def = '1'
+    if not fix_pos:
+        if np.size(cov_pos) > 1:
+            pos_def = cov_pos
+        else:
+            if not cov_pos: pos_def = 'free'
+            else: pos_def = '1'
+    else: pos_def = 'fixed'
 
+    if np.size(cov_sigma) > 1:
+        sigma_def = cov_sigma
+    else:
+        if not cov_sigma: sigma_def = 'free'
+        else: sigma_def = '1'
+
+    if apodization == 1.:
+        sigma_cov = SIGMA_COV # km/s
+    else:
+        sigma_cov = utils.fit.sigma2vel(
+            utils.fft.apod2sigma(apodization, fwhm_guess) / axis_step,
+            lines, axis_step)
+        #if sigma_cov == 0.: sigma_cov = SIGMA_COV
+        
     ## import pylab as pl
     ## if wavenumber:
     ##     axis = utils.spectrum.create_cm1_axis(spectrum.shape[0], step, order, corr=nm_laser_obs/nm_laser)
@@ -1448,12 +1499,12 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     ## pl.plot(axis, spectrum)
     ## searched_lines = lines + utils.spectrum.line_shift(shift_guess, lines, wavenumber=wavenumber)
     ## [pl.axvline(x=iline) for iline in searched_lines]
-    ## [pl.axvline(x=iline, ls=':') for iline in signal_range]
+    ## #[pl.axvline(x=iline, ls=':') for iline in signal_range]
     ## pl.show()
     ## quit()
 
     if filter_file_path is not None:
-        filter_function = orb.utils.filters.get_filter_function(
+        filter_function = utils.filters.get_filter_function(
             filter_file_path, step, order, spectrum.shape[0],
             wavenumber=wavenumber,
             silent=True)[0]
@@ -1468,7 +1519,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             filter_axis_calib = create_nm_axis(spectrum.shape[0], step, order,
                                                corr=correction_coeff)
             
-        filter_function = orb.utils.vector.interpolate_axis(
+        filter_function = utils.vector.interpolate_axis(
             filter_function, filter_axis_calib, 1, old_axis=filter_axis)
         if fix_filter:
             filter_def = 'fixed'
@@ -1478,6 +1529,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     else:
         filter_function = np.ones(spectrum.shape[0], dtype=float)
         filter_def = 'fixed'
+
+
 
     fs = FitVector(spectrum,
                    ((linesmodel, 'add'),
@@ -1496,9 +1549,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                      'pos-def':pos_def,
                      'fmodel':fmodel,
                      'fwhm-guess':fwhm_guess,
-                     'sigma-def':'1',
+                     'sigma-def':sigma_def,
                      'sigma-guess':0.,
-                     'sigma-cov':10.},
+                     'sigma-cov':sigma_cov},
                     {'poly-order':poly_order,
                      'poly-guess':cont_guess},
                     {'filter-function':filter_function,
@@ -1507,14 +1560,16 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                    signal_range=signal_range_pix)
     
     fit = fs.fit()
+    
     if fit != []:
-        # compute velocity
+        ## create a formated version of the parameters:
+        ## [N_LINES, (H, A, DX, FWHM, SIGMA)]
+
         line_params = fit['fit-params'][0]
         line_nb = np.size(lines)
         line_params = line_params.reshape(
             (line_params.shape[0]/line_nb, line_nb)).T
        
-        pos_wave = line_params[:,1]
         if fmodel == 'sincgauss':
             line_params[:,3] = np.abs(line_params[:,3])
         else:
@@ -1523,68 +1578,108 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             line_params = np.append(line_params.T, nan_col)
             line_params = line_params.reshape(
                 line_params.shape[0]/line_nb, line_nb).T
-        
-        fit['velocity'] = cutils.compute_radial_velocity(
-            np.array(pos_wave, dtype=np.longdouble),
-            np.array(lines, dtype=np.longdouble),
-            wavenumber=wavenumber)
-        
+
+        # evaluate continuum level at each position
+        cont_params = fit['fit-params'][1]
+        pos_pix = utils.spectrum.fast_w2pix(
+            line_params[:,1], axis_min, axis_step)
+        cont_model = fs.models[1]
+        cont_model.set_p_val(cont_params)
+        cont_level = cont_model.get_model(pos_pix)
+        all_params = np.append(cont_level, line_params.T)
+        line_params = all_params.reshape(
+            (all_params.shape[0]/line_nb, line_nb)).T
+            
         if 'fit-params-err' in fit:
             # compute vel err
             line_params_err = fit['fit-params-err'][0]
             line_params_err = line_params_err.reshape(
                 (line_params_err.shape[0]/line_nb, line_nb)).T
+            
             if fmodel != 'sincgauss':
                 line_params_err = np.append(line_params_err.T, nan_col)
                 line_params_err = line_params_err.reshape(
                     line_params_err.shape[0]/line_nb, line_nb).T
-                
-            pos_wave_err = line_params_err[:,1]
-            
-            fit['velocity-err'] = np.abs(cutils.compute_radial_velocity(
-                np.array(pos_wave + pos_wave_err, dtype=np.longdouble),
-                np.array(pos_wave, dtype=np.longdouble),
-                wavenumber=wavenumber))
-        
-        ## create a formated version of the parameters:
-        ## [N_LINES, (H, A, DX, FWHM)]
-        cont_params = fit['fit-params'][1]
-        
-        # evaluate continuum level at each position
-        pos_pix = cutils.fast_w2pix(
-            pos_wave, axis_min, axis_step)
-        cont_model = fs.models[1]
-        cont_model.set_p_val(cont_params)
-        cont_level = cont_model.get_model(pos_pix)
-        all_params = np.append(cont_level, line_params.T)
-        fit['lines-params'] = all_params.reshape(
-            (all_params.shape[0]/line_nb, line_nb)).T
-        
-        if 'fit-params-err' in fit:
-            cont_params_err = fit['fit-params-err'][1]
+
             # evaluate error on continuum level at each position
+            cont_params_err = fit['fit-params-err'][1]
             cont_model.set_p_val(cont_params + cont_params_err / 2.)
             cont_level_max = cont_model.get_model(pos_pix)
             cont_model.set_p_val(cont_params - cont_params_err / 2.)
             cont_level_min = cont_model.get_model(pos_pix)
             cont_level_err = np.abs(cont_level_max - cont_level_min)
             all_params_err = np.append(cont_level_err, line_params_err.T)
-            fit['lines-params-err'] = all_params_err.reshape(
+            line_params_err = all_params_err.reshape(
                 (all_params_err.shape[0]/line_nb, line_nb)).T
 
-            fit['snr'] = fit['lines-params'][:,1] / fit['lines-params-err'][:,1]
+        
+        ## elif fmodel == 'sincgauss':
+        ##     # no error with sincgauss means sigma is too small: retry
+        ##     # with a pure sinc
+        ##     all_args['fmodel'] = 'sinc'
+        ##     return fit_lines_in_spectrum(**all_args)
+        
+        else:
+            line_params_err = None
 
+        # set 0 sigma to nan
+        if fmodel == 'sincgauss':
+            line_params[:,4][line_params[:,4] == 0.] = np.nan
+            if 'fit-params-err' in fit:
+                line_params_err[:,4][line_params_err[:,4] == 0.] = np.nan
+
+        ## compute errors
+        line_params = od.array(line_params, line_params_err)
+
+        # compute velocity
+        pos_wave = line_params[:,2]
+    
+        velocity = utils.spectrum.compute_radial_velocity(
+            pos_wave.astype(np.longdouble),
+            od.array(lines, dtype=np.longdouble),
+            wavenumber=wavenumber)
+
+        fit['velocity'] = velocity.dat
+        if line_params_err is not None:
+            fit['velocity-err'] = velocity.err
+        
+        # compute broadening
+        sigma_total_kms = line_params[:,4]
+                                   
+        sigma_apod_kms = od.array(utils.fit.sigma2vel(
+            utils.fft.apod2sigma(
+                apodization, line_params[:,3]) / axis_step,
+            pos_wave, axis_step))
+        broadening = od.sqrt(od.abs(sigma_total_kms**2
+                                    - sigma_apod_kms**2))
+       
+        fit['broadening'] = broadening.dat
+        if line_params_err is not None:
+            fit['broadening-err'] = broadening.err
+        
+        if line_params_err is not None:
+            fit['snr'] = line_params.dat[:,1] / line_params.err[:,1]
+
+        fit['lines-params'] = line_params.dat
+        if line_params_err is not None:
+            fit['lines-params-err'] = line_params.err
+        
         return fit
     
     else:
+        if fmodel == 'sincgauss':
+            all_args['fmodel'] = 'sinc'
+            return fit_lines_in_spectrum(**all_args)
+        
         return []
     
 
 
-def fit_lines_in_vector(vector, lines, fwhm_guess=3.5, cont_guess=None,
-    shift_guess=0., fix_fwhm=False, cov_fwhm=True, cov_pos=True,
-    fit_tol=1e-10, poly_order=0, fmodel='gaussian', signal_range=None,
-    filter_file_path=None, fix_filter=False):
+def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
+    cont_guess=None, shift_guess=0., fix_fwhm=False, cov_fwhm=True,
+    cov_pos=True, fix_pos=False, fit_tol=1e-10, poly_order=0,
+    fmodel='gaussian', signal_range=None, filter_file_path=None,
+    fix_filter=False):
     
     """Fit lines in a vector
 
@@ -1626,6 +1721,9 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5, cont_guess=None,
       [SII]6717, [SII]6731, if each ion has a different velocity
       cov_pos can be : [0,1,0,2,2]. (default False).
 
+    :param fix_pos: (Optional) If True line position is fixed (default
+      False).
+
     :param fit_tol: (Optional) Tolerance on the fit value (default
       1e-10).
 
@@ -1663,7 +1761,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5, cont_guess=None,
 
       * fitted spectrum [key: 'fitted-vector']
    
-    """    
+    """
     if signal_range is not None:
         minx = max(1, int(np.min(signal_range)))
         maxx = min(vector.shape[0] - 1, int(math.ceil(np.max(signal_range))))
@@ -1675,11 +1773,13 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5, cont_guess=None,
     elif cov_fwhm: fwhm_def = '1'
     else: fwhm_def = 'free'
 
-    if np.size(cov_pos) > 1:
-        pos_def = cov_pos
-    else:
-        if not cov_pos: pos_def = 'free'
-        else: pos_def = '1'
+    if not fix_pos:
+        if np.size(cov_pos) > 1:
+            pos_def = cov_pos
+        else:
+            if not cov_pos: pos_def = 'free'
+            else: pos_def = '1'
+    else: pos_def = 'fixed'
 
     fs = FitVector(vector,
                    ((LinesModel, 'add'),

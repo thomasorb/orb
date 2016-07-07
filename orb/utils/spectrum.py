@@ -22,13 +22,12 @@
 
 import numpy as np
 import math
-from scipy import interpolate, optimize
+from scipy import interpolate, optimize, special
 import warnings
 import time
 
 import orb.constants
 import orb.cutils
-
 
 def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.
@@ -88,7 +87,7 @@ def pix2nm(nm_axis, pix):
      in nm
 
      .. warning:: Slow because of interpolation : using
-       orb.cutils.fast_pix2w is much faster.
+       fast_pix2w is much faster.
 
      :param nm_axis: Axis in nm
      
@@ -104,7 +103,7 @@ def nm2pix(nm_axis, nm):
      in nm
 
      .. warning:: Slow because of interpolation : using
-       orb.cutils.fast_w2pix is much faster.
+       fast_w2pix is much faster.
 
      :param nm_axis: Axis in nm
      
@@ -230,14 +229,14 @@ def compute_line_fwhm(step_nb, step, order, apod_coeff=1., corr=1.,
     else:
         return orb.constants.FWHM_SINC_COEFF / opd_max * apod_coeff * 1e7
         
-def compute_line_fwhm_pix(step_nb):
+def compute_line_fwhm_pix(oversampling_ratio=1.):
     """Return the expected FWHM of an unapodized sinc line in pixels.
-    
-    :param step_nb: Number of steps from the zpd to the longest side
-      of the interferogram.
+
+    :oversampling_ratio: Ratio of the real number of steps of the
+      spectrum vs step_nb (must be > 1.) For a two sided interferogram
+      the oversampling ratio is 2.
     """
-    return (2. * ((float(step_nb) - 1.) / float(step_nb))
-            * orb.constants.FWHM_SINC_COEFF)
+    return orb.constants.FWHM_SINC_COEFF * oversampling_ratio
     
 def compute_mean_shift(velocity, step_nb, step, order, wavenumber=False):
     """Return the mean shift at the central wavelength of the band
@@ -280,12 +279,17 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    line = np.array(line, dtype=np.longdouble)
-    rest_line = np.array(rest_line, dtype=np.longdouble)
-    return orb.cutils.compute_radial_velocity(
-        np.array(line, dtype=np.longdouble),
-        np.array(rest_line, dtype=np.longdouble),
-        wavenumber=wavenumber)
+    if line.dtype != np.longdouble:
+        line = np.array(line, dtype=np.longdouble)
+    if rest_line.dtype != np.longdouble:
+        rest_line = np.array(rest_line, dtype=np.longdouble)
+
+    if wavenumber:
+        delta = rest_line - line
+    else:
+        delta = line - rest_line
+    return orb.constants.LIGHT_VEL_KMS * delta / rest_line
+    
 
 def lorentzian1d(x, h, a, dx, fwhm):
     """Return a 1D lorentzian
@@ -328,4 +332,52 @@ def gaussian1d(x,h,a,dx,fwhm):
     return orb.cutils.gaussian1d(
         x, float(h), float(a), float(dx), float(fwhm))
                         
+def sincgauss1d(x, h, a, dx, fwhm, sigma):
+    """Return a 1D sinc convoluted with a gaussian of parameter sigma.
+
+    If sigma == 0 returns a pure sinc.
+
+    :param x: 1D array of float64 giving the positions where the
+      sinc is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
+    :param sigma: Sigma of the gaussian.
+    """
+    
+    width = fwhm / orb.constants.FWHM_SINC_COEFF
+    width /= math.pi # because sinc = sin(pi*X)/(pi*X)
+    a_ = sigma / math.sqrt(2) / width
+    b_ = ((x - dx) / math.sqrt(2) / sigma)
+    
+    dawson1 = special.dawsn(1j*a_ + b_) * np.exp(2.*1j*a_*b_)
+    dawson2 = special.dawsn(1j*a_ - b_) * np.exp(-2.*1j*a_*b_)
+    dawson3 = special.dawsn(1j*a_)
+    
+    return (a/2. * (dawson1 + dawson2)/dawson3).real
+
+def fast_w2pix(w, axis_min, axis_step):
+    """Fast conversion of wavelength/wavenumber to pixel
+
+    :param w: wavelength/wavenumber
+    
+    :param axis_min: min axis wavelength/wavenumber
+    
+    :param axis_step: axis step size in wavelength/wavenumber
+    """
+    return np.abs(w - axis_min) / axis_step
+
+def fast_pix2w(pix, axis_min, axis_step):
+    """Fast conversion of pixel to wavelength/wavenumber
+
+    :param pix: position along axis in pixels
+    
+    :param axis_min: min axis wavelength/wavenumber
+    
+    :param axis_step: axis step size in wavelength/wavenumber
+    """
+    return pix * axis_step + axis_min
+
 
