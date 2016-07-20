@@ -28,6 +28,7 @@ import time
 
 import orb.constants
 import orb.cutils
+import orb.data as od
 
 def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.
@@ -297,7 +298,7 @@ def lorentzian1d(x, h, a, dx, fwhm):
     :param h: Height
     :param a: Amplitude
     :param dx: Position of the center
-    :param w: FWHM
+    :param fwhm: FWHM
     """
     return h + (a / (1. + ((x-dx)/(fwhm/2.))**2.))
 
@@ -307,7 +308,7 @@ def sinc1d(x, h, a, dx, fwhm):
     :param h: Height
     :param a: Amplitude
     :param dx: Position of the center
-    :param w: FWHM
+    :param fwhm: FWHM
     """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
@@ -323,7 +324,7 @@ def gaussian1d(x,h,a,dx,fwhm):
     :param h: Height
     :param a: Amplitude
     :param dx: Position of the center
-    :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
+    :param fwhm: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
     """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
@@ -343,12 +344,13 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     :param h: Height
     :param a: Amplitude
     :param dx: Position of the center
-    :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
+    :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
     """
-    
-    width = fwhm / orb.constants.FWHM_SINC_COEFF
-    width /= math.pi # because sinc = sin(pi*X)/(pi*X)
+    if sigma / fwhm < 1e-10:
+        return sinc1d(x, h, a, dx, fwhm)
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= math.pi ###
     a_ = sigma / math.sqrt(2) / width
     b_ = ((x - dx) / math.sqrt(2) / sigma)
     
@@ -356,8 +358,41 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     dawson2 = special.dawsn(1j*a_ - b_) * np.exp(-2.*1j*a_*b_)
     dawson3 = special.dawsn(1j*a_)
     
-    return (a/2. * (dawson1 + dawson2)/dawson3).real
+    return h + (a/2. * (dawson1 + dawson2)/dawson3).real
 
+
+def gaussian1d_flux(a, fwhm):
+    """Compute flux of a 1D Gaussian.
+
+    :param a: Amplitude
+    :param fwhm: FWHM
+    """
+    width = fwhm / orb.constants.FWHM_COEFF
+    return od.abs(a * math.sqrt(2*math.pi) * width)
+
+def sinc1d_flux(a, fwhm):
+    """Compute flux of a 1D sinc.
+
+    :param a: Amplitude
+    :param fwhm: FWHM
+    """
+    width = fwhm / orb.constants.FWHM_SINC_COEFF
+    return od.abs(a * width)
+
+def sincgauss1d_flux(a, fwhm, sigma):
+    """Compute flux of a 1D sinc convoluted with a Gaussian of
+    parameter sigma.
+
+    :param a: Amplitude
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian
+    """
+    width = fwhm / orb.constants.FWHM_SINC_COEFF
+    width /= math.pi
+    return od.abs((a * 1j * math.pi / math.sqrt(2.) * sigma
+                  * od.exp(sigma**2./2./width**2.)
+                  / (od.dawsn(1j * sigma / (math.sqrt(2) * width)))).real())
+   
 def fast_w2pix(w, axis_min, axis_step):
     """Fast conversion of wavelength/wavenumber to pixel
 

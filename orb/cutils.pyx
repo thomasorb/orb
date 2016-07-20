@@ -868,41 +868,41 @@ def sinc1d(np.ndarray[np.float64_t, ndim=1] x,
     return h + a * np.sinc(X)
 
 
-def sincgauss1d(np.ndarray[np.float64_t, ndim=1] x,
-                double h, double a, double dx, double fwhm, double sigma):
-    """Return a 1D sinc convoluted with a gaussian of parameter sigma.
+## def sincgauss1d(np.ndarray[np.float64_t, ndim=1] x,
+##                 double h, double a, double dx, double fwhm, double sigma):
+##     """Return a 1D sinc convoluted with a gaussian of parameter sigma.
 
-    If sigma == 0 returns a pure sinc.
+##     If sigma == 0 returns a pure sinc.
 
-    :param x: 1D array of float64 giving the positions where the
-      sinc is evaluated
+##     :param x: 1D array of float64 giving the positions where the
+##       sinc is evaluated
     
-    :param h: Height
-    :param a: Amplitude
-    :param dx: Position of the center
-    :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
-    :param sigma: Sigma of the gaussian.
-    """
-    # when sigma/fwhm is too high or too low, a pure sinc or gaussian
-    # is returned (avoid overflow)
-    if abs(sigma / fwhm) < 1e-2:
-        return sinc1d(x, h, a, dx, fwhm)
-    if abs(sigma / fwhm) > 1e2:
-        return gaussian1d(x, h, a, dx, fwhm)
+##     :param h: Height
+##     :param a: Amplitude
+##     :param dx: Position of the center
+##     :param w: FWHM, :math:`\\text{FWHM} = \\text{Width} \\times 2 \\sqrt{2 \\ln 2}`
+##     :param sigma: Sigma of the gaussian.
+##     """
+##     # when sigma/fwhm is too high or too low, a pure sinc or gaussian
+##     # is returned (avoid overflow)
+##     if abs(sigma / fwhm) < 1e-2:
+##         return sinc1d(x, h, a, dx, fwhm)
+##     if abs(sigma / fwhm) > 1e2:
+##         return gaussian1d(x, h, a, dx, fwhm)
     
-    sigma = abs(sigma)
+##     sigma = abs(sigma)
     
-    fwhm /= M_PI * 1.20671
-    cdef double complex e = exp(-sigma**2. / 2.) / (sqrt(2.) * sigma * 1j)
-    cdef np.ndarray[np.complex128_t, ndim=1] dawson1, dawson2
-    dawson1 = (scipy.special.dawsn((1j * sigma**2 - (x - dx) / fwhm)
-                                   /(sqrt(2.) * sigma))
-               * np.exp(-1j * (x - dx) / fwhm))
-    dawson2 = (scipy.special.dawsn((-1j * sigma**2 - (x - dx) / fwhm)
-                                   / (sqrt(2.) * sigma))
-               * np.exp(1j *(x - dx) / fwhm))
+##     fwhm /= M_PI * 1.20671
+##     cdef double complex e = exp(-sigma**2. / 2.) / (sqrt(2.) * sigma * 1j)
+##     cdef np.ndarray[np.complex128_t, ndim=1] dawson1, dawson2
+##     dawson1 = (scipy.special.dawsn((1j * sigma**2 - (x - dx) / fwhm)
+##                                    /(sqrt(2.) * sigma))
+##                * np.exp(-1j * (x - dx) / fwhm))
+##     dawson2 = (scipy.special.dawsn((-1j * sigma**2 - (x - dx) / fwhm)
+##                                    / (sqrt(2.) * sigma))
+##                * np.exp(1j *(x - dx) / fwhm))
     
-    return (h + a * e * (dawson1 - dawson2)).real
+##     return (h + a * e * (dawson1 - dawson2)).real
 
 def interf_mean_energy(np.ndarray interf):
     """Return the mean energy of an interferogram by step.

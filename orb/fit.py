@@ -40,6 +40,8 @@ import scipy.optimize
 import scipy.interpolate
 import time
 
+import emcee
+
 import utils.fft
 import orb.data as od
 import cutils
@@ -106,6 +108,7 @@ class FitVector(object):
         if len(models) != len(params):
             raise Exception('there must be exactly one parameter dictionary by model')
 
+        self.retry_count = 0
         self.models = list()
         self.models_operation = list()
         self.p_init_list = list()
@@ -167,7 +170,7 @@ class FitVector(object):
             last_index = int(new_index)
         return p_list
 
-    def get_model(self, all_p_free, return_models=False):
+    def get_model(self, all_p_free, return_models=False, x=None):
         """Return the combined model of the vector given a set of free
         parameters.
 
@@ -179,15 +182,21 @@ class FitVector(object):
 
         :param return_models: (Optional) If True return also
           individual models (default False)
+
+        :param x: (Optional) array of data points on which model is
+          computed instead of a typical np.arange(step_nb) (default
+          None).
         """
         step_nb = self.vector.shape[0]
-        model = None#np.zeros(step_nb)
+        if x is None:
+            x = np.arange(step_nb, dtype=float)
+       
+        model = None
         models = list()
         all_p_list = self._all_p_vect2list(all_p_free)
         for i in range(len(self.models)):
             model_list = self.models[i].get_model(
-                np.arange(step_nb, dtype=float),
-                all_p_list[i], return_models=return_models)
+                x, all_p_list[i], return_models=return_models)
             if return_models:
                 model_to_append, models_to_append = model_list
                 models.append(models_to_append)
@@ -225,24 +234,131 @@ class FitVector(object):
         return (self.vector - self.get_model(all_p_free))[
             np.min(self.signal_range):np.max(self.signal_range)]
 
+    def _get_model_onrange(self, x, *all_p_free):
+        """Return the part of the model contained in the signal
+        range.
+
+        .. note:: This function has been defined only to be used with
+          scipy.optimize.curve_fit.
+
+        :param x: x vector on which model is computed
+
+        :param *all_p_free: Vector of free parameters.
+        """
+        return self.get_model(all_p_free, x=x)[
+            np.min(self.signal_range):np.max(self.signal_range)]
+
+    def _get_vector_onrange(self):
+        """Return the part of the vector contained in the signal
+        range.
+
+        .. note:: This function has been defined only to be used with
+          scipy.optimize.curve_fit.
+        """
+        return self.vector[
+            np.min(self.signal_range):np.max(self.signal_range)]
+
     def get_jacobian(self, all_p_free):
         """Return the Jacobian of the objective function.
 
         :param all_p_free: Vector of free parameters.    
         """
         raise Exception('Not implemented')
-        
 
-    def fit(self, use_jacobian=False):
+    def get_lnlikelihood(self, all_p_free, sigma):
+        inv_sigma2 = 1.0 / (sigma**2.)
+        return -0.5 * np.nansum(
+            self.get_objective_function(all_p_free)**2. * inv_sigma2
+            - np.log(inv_sigma2))
+
+    def get_lnprior(self, all_p_free):
+        return 0.
+
+    def get_lnposterior_probability(self, all_p_free, sigma):
+        lp = self.get_lnprior(all_p_free)
+        if not np.isfinite(lp):
+            return -np.inf
+        return lp + self.get_lnlikelihood(all_p_free, sigma)        
+
+    def _compute_mcmc_error(self, p, p_err, sigma):
+        """Return Markov chain Monte Carlo error on the fit parameters.
+
+        :param p: Fitted parameters
+        :param p_err: Fitted uncertainty
+        :param sigma: Noise on the spectrum
+        
+        .. warning:: This function has not been extensively tested.
+        """     
+        PERCENTILE = 16 # corresponds to a 1-sigma uncertainty
+        NWALKERS_COEFF = 2 # number of walkers
+        MCMC_RUN_NB = 1000 # number of walker steps
+        MCMC_RUN_THRESHOLD = 250 # Burn-in samples threshold
+                
+        # walkers definition which starts around a tiny gaussian ball around
+        # the maximum likelihood found with a classic optimization
+        ndim, nwalkers = np.size(p), np.size(p) * NWALKERS_COEFF
+        pos = [p + p_err * np.random.randn(ndim) for i in range(nwalkers)]
+           
+        # noise evaluation
+        sampler = emcee.EnsembleSampler(nwalkers, ndim,
+                                        self.get_lnposterior_probability,
+                                        args=(sigma,))
+        sampler.run_mcmc(pos, MCMC_RUN_NB)
+        samples = sampler.chain[:, MCMC_RUN_THRESHOLD:, :].reshape((-1, ndim))
+
+        err_mcmc = np.array(
+            zip(*np.percentile(samples, [PERCENTILE, 100-PERCENTILE],
+                               axis=0)))
+        err_min_mcmc = err_mcmc[:,0] - p
+        err_max_mcmc = err_mcmc[:,1] - p
+        p_mcmc_err_list = self._all_p_vect2list(np.nanmean(
+            (np.abs(err_min_mcmc),
+             np.abs(err_max_mcmc)), axis=0))
+             
+        full_p_mcmc_err_list = list()
+        for i in range(len(self.models)):
+            # recompute p_val error from p_free error
+            full_p_mcmc_err_list.append(self.models[i].get_p_val_err(
+                p_mcmc_err_list[i]))
+            
+        ## import pylab as pl
+        ## for i in range(ndim):
+        ##     pl.hist(samples[:,i], bins=100)
+        ##     pl.show()
+
+        ## for iparam in range(ndim):
+        ##     print samples[:, iparam]
+        
+        ## ## print sampler.chain.shape
+        ## ## [pl.plot(sampler.chain[i,:,0]) for i in range(sampler.chain.shape[0])]       ## ## pl.show()
+        
+        return np.abs(full_p_mcmc_err_list)
+               
+
+    def fit(self, use_jacobian=False, compute_mcmc_error=False):
         """Fit data vector.
 
         This is the central function of the class.
 
-        :param use_jacobian: if True the Jacobian is used during least
+        :param use_jacobian: (Optional) if True the Jacobian is used during least
           square computation: less iteration, but possibly longer. Be
           careful when using it because its robustness (and
           usefullness) have not been demonstrated (default False).
+
+        :param compute_mcmc_error: (Optional) Compute Markov chain
+          Monte-Carlo error on the fit parameters (Uncertainty
+          estimates might be slighly better constrained but computing
+          time can be orders of magnitude longer) (default False).
         """
+        all_args = dict(locals()) # used in case fit is retried (must stay
+                                  # at the very beginning of the
+                                  # function ;)
+
+        RETRY_MAX_NFEV_BYPARAM = 30
+        RETRY_MAX_COUNTS_BYPARAM = 10
+        RETRY_RANDOM_COEFF = 5e-2
+        MCMC_RANDOM_COEFF = 1e-2
+        
         start_time = time.time()
         p_init_vect = self._all_p_list2vect(self.p_init_list)
 
@@ -251,13 +367,20 @@ class FitVector(object):
         else:
             Dfun = None
 
-        fit = scipy.optimize.leastsq(self.get_objective_function,
-                                     p_init_vect,
-                                     Dfun=Dfun,
-                                     maxfev=self.max_fev,
-                                     full_output=True,
-                                     xtol=self.fit_tol)
-        
+        try:
+            fit = scipy.optimize.curve_fit(
+                self._get_model_onrange,
+                np.arange(self.vector.shape[0]),
+                self._get_vector_onrange(),
+                p0=p_init_vect,
+                method='lm',
+                Dfun=Dfun,
+                maxfev=self.max_fev,
+                full_output=True,
+                xtol=self.fit_tol)
+        except RuntimeError:
+            fit = [5]
+            
         if fit[-1] <= 4:
             if fit[2]['nfev'] >= self.max_fev:
                 return [] # reject maxfev bounded fit
@@ -288,24 +411,56 @@ class FitVector(object):
             red_chisq = chisq / (np.size(self.vector) - np.size(fit[0]))
             returned_data['reduced-chi-square'] = red_chisq
             returned_data['chi-square'] = chisq
-            returned_data['residual'] = last_diff #* noise_value
+            returned_data['residual'] = last_diff
             
             # compute least square fit errors
             cov_x = fit[1]
-            if cov_x is not None:
-                cov_x *= returned_data['reduced-chi-square']
-                cov_diag = np.sqrt(np.abs(
-                    np.array([cov_x[i,i] for i in range(cov_x.shape[0])])))
+            if np.all(np.isfinite(cov_x)):
+                self.retry_count = 0
+                cov_diag = np.sqrt(np.diag(cov_x))
                 p_fit_err_list = self._all_p_vect2list(cov_diag)
+                
                 full_p_err_list = list()
                 for i in range(len(self.models)):
                     # recompute p_val error from p_free error
                     full_p_err_list.append(self.models[i].get_p_val_err(
                         p_fit_err_list[i]))
                 
-                returned_data['fit-params-err'] = full_p_err_list
+                returned_data['fit-params-err'] = np.abs(full_p_err_list)
+
+                # compute MCMC uncertainty estimates
+                if compute_mcmc_error:
+                    sigma = np.nanstd(last_diff)
+                    returned_data['fit-params-err-mcmc'] = (
+                        self._compute_mcmc_error(
+                            fit[0], cov_diag, sigma))
+                    
+            # if no covariance matrix can be obtained, maybe fit is
+            # just too good and has converged too fast on one or more
+            # parameter.
+            elif fit[2]['nfev'] < RETRY_MAX_NFEV_BYPARAM * np.size(fit[0]):
+                if self.retry_count < RETRY_MAX_COUNTS_BYPARAM * np.size(fit[0]):
+                    # first retry the fit with initial value set to a
+                    # small random variation around the fitted values.
+                    self.retry_count += 1
+                    self.p_init_list = self._all_p_vect2list(
+                        fit[0]
+                        + np.random.randn(np.size(fit[0]))
+                        * RETRY_RANDOM_COEFF * fit[0])
+                    del all_args['self']
+                    return self.fit(**all_args)
+                else:
+                    # compute uncertainty via a Markov chain Monte
+                    # Carlo algorithm
+                    sigma = np.nanstd(last_diff)
+                    returned_data['fit-params-err-mcmc'] = (
+                        self._compute_mcmc_error(
+                            fit[0], fit[0] * MCMC_RANDOM_COEFF, sigma))
+                    returned_data['fit-params-err'] = returned_data['fit-params-err-mcmc']
+        
                 
             returned_data['fit-time'] = time.time() - start_time
+            
         else:
             return []
 
@@ -1295,7 +1450,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     shift_guess=0., fix_fwhm=False, cov_fwhm=True, cov_pos=True,
     fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
     fmodel='gaussian', signal_range=None, filter_file_path=None,
-    fix_filter=False, apodization=1., velocity_range=None):
+    fix_filter=False, apodization=1., velocity_range=None,
+    compute_mcmc_error=False):
     
     """Fit lines in spectrum
 
@@ -1380,6 +1536,11 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       velocities, the mean velocity will be used as an initial
       velocity guess). The quality of this guess depends strongly on
       the spectrum noise. Try avoid using it with low a SNR spectrum.
+
+    :param compute_mcmc_error: (Optional) If True, uncertainty
+      estimates are computed from a Markov chain Monte-Carlo
+      algorithm. If the estimates can be better constrained, the
+      fitting time is orders of magnitude longer (default False).
 
     :return: a dictionary containing:
 
@@ -1559,9 +1720,15 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                    fit_tol=fit_tol,
                    signal_range=signal_range_pix)
     
-    fit = fs.fit()
+    fit = fs.fit(compute_mcmc_error=compute_mcmc_error)
     
     if fit != []:
+
+        if compute_mcmc_error:
+            fit_params_err_key = 'fit-params-err-mcmc'
+        else:
+            fit_params_err_key = 'fit-params-err'
+        
         ## create a formated version of the parameters:
         ## [N_LINES, (H, A, DX, FWHM, SIGMA)]
 
@@ -1590,9 +1757,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         line_params = all_params.reshape(
             (all_params.shape[0]/line_nb, line_nb)).T
             
-        if 'fit-params-err' in fit:
+        if fit_params_err_key in fit:
             # compute vel err
-            line_params_err = fit['fit-params-err'][0]
+            line_params_err = fit[fit_params_err_key][0]
             line_params_err = line_params_err.reshape(
                 (line_params_err.shape[0]/line_nb, line_nb)).T
             
@@ -1602,7 +1769,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                     line_params_err.shape[0]/line_nb, line_nb).T
 
             # evaluate error on continuum level at each position
-            cont_params_err = fit['fit-params-err'][1]
+            cont_params_err = fit[fit_params_err_key][1]
             cont_model.set_p_val(cont_params + cont_params_err / 2.)
             cont_level_max = cont_model.get_model(pos_pix)
             cont_model.set_p_val(cont_params - cont_params_err / 2.)
@@ -1611,13 +1778,6 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             all_params_err = np.append(cont_level_err, line_params_err.T)
             line_params_err = all_params_err.reshape(
                 (all_params_err.shape[0]/line_nb, line_nb)).T
-
-        
-        ## elif fmodel == 'sincgauss':
-        ##     # no error with sincgauss means sigma is too small: retry
-        ##     # with a pure sinc
-        ##     all_args['fmodel'] = 'sinc'
-        ##     return fit_lines_in_spectrum(**all_args)
         
         else:
             line_params_err = None
@@ -1625,7 +1785,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         # set 0 sigma to nan
         if fmodel == 'sincgauss':
             line_params[:,4][line_params[:,4] == 0.] = np.nan
-            if 'fit-params-err' in fit:
+            if fit_params_err_key in fit:
                 line_params_err[:,4][line_params_err[:,4] == 0.] = np.nan
 
         ## compute errors
@@ -1656,10 +1816,39 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         fit['broadening'] = broadening.dat
         if line_params_err is not None:
             fit['broadening-err'] = broadening.err
+
+        # compute flux
         
+        # If calibrated, amplitude unit must be in erg/cm2/s/A, then
+        # fwhm/width units must be in Angströms
+        if wavenumber:
+            fwhm_ang = utils.spectrum.fwhm_cm12nm(
+                line_params[:,3], line_params[:,2]) * 10.
+        else:
+            fwhm_ang = line_params[:,3] * 10.
+            
+        sigma_ang = utils.fit.vel2sigma(
+            line_params[:,4], line_params[:,2], axis_step)
+
+        if fmodel == 'sincgauss':
+            flux = utils.spectrum.sincgauss1d_flux(
+                line_params[:,1], fwhm_ang, sigma_ang)
+        elif fmodel == 'gaussian':
+            flux = utils.spectrum.gaussian1d_flux(
+                line_params[:,1], fwhm_ang)
+        elif fmodel == 'sinc':
+            flux = utils.spectrum.sinc1d_flux(
+                line_params[:,1], fwhm_ang)
+            
+        fit['flux'] = flux.dat
+        if line_params_err is not None:
+            fit['flux-err'] = flux.err
+
+        # compute SNR
         if line_params_err is not None:
             fit['snr'] = line_params.dat[:,1] / line_params.err[:,1]
 
+        # store lines-params
         fit['lines-params'] = line_params.dat
         if line_params_err is not None:
             fit['lines-params-err'] = line_params.err

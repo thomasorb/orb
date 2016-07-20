@@ -621,7 +621,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
             
         fit_params['reduced-chi-square'] = (
             fit_params['chi-square']
-            / (np.size(star_box - np.size(free_params))))
+            / (np.size(star_box) - np.size(free_params)))
 
         # restore level correction:
         fit_params['height'] += level_correction

@@ -357,7 +357,7 @@ class Tools(object):
                             pm_dec = float(iline[6])
                         else:
                             pm_ra = 0.
-                            pm_rec = 0.
+                            pm_dec = 0.
                         if return_pm:
                             return ra, dec, pm_ra, pm_dec
                         else:

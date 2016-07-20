@@ -863,3 +863,37 @@ Standard Proper motion
 * proper motion can be extracted from standard table
   ('data/std_table.orb') and the real radec at a given moment can be
   computed (see :py:meth:`̀orb.utils.astrometry.compute_radec_pm`)
+
+
+v.2.1.0
+=======
+
+
+Fit module
+----------
+
+* core fit function :py:meth:`scipy.optimize.leastsq` replaced by
+  :py:meth:`scipy.optimize.curve_fit` which computes the covariance
+  matrix itself. Returned uncertainties on the fitted parameters are
+  now much better calculated. The estimation has been tested against a
+  real measurement (through simulations with random noise) and shows a
+  perfect accordance over multiple decades of noise from a SNR of 1000
+  down to a SNR of 10. The fitting algorithm is still a
+  Levenberg-Marquardt.
+
+
+* MCMC: Markov chain Monte-Carlo algorithm can be used to compute
+  uncertainty on the fit parameters. This function has not been
+  extensively tested and does not seem to provide much better
+  estimation for a decent computing time (only 10 or 20 times longer
+  than fit alone). Can be used to check posterior probability
+  distribution on the fit parameters.
+
+* Fit is automatically tried again with a slight random change of the
+  initial parameters if the convergence is too fast and no error
+  estimation can be found via L-M algorithm. After a certain number of
+  retries error is estimated via MCMC.
+
+* flux is now computed with analytic error propagation for sinc,
+  gaussian and sincgauss (see :py:class:`orb.data` and
+  :py:meth:`orb.utils.spectrum.sincgauss1d_flux`)

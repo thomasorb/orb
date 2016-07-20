@@ -30,6 +30,7 @@ __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"
 __docformat__ = 'reStructuredText'
 
 import numpy as np
+import scipy.special as ss
 import math
 
     
@@ -81,11 +82,11 @@ class Data(object):
         :param err: Absolute error map. Must have the same shape as
           dat.
         """
-        if isinstance(dat, np.ndarray):
+        if isinstance(dat, np.ndarray) or np.isscalar(dat):
             self._dat = np.array(dat, dtype=dtype)
             self.dtype = self._dat.dtype
         else:
-            raise ValueError('Data must be a numpy array')
+            raise ValueError('Data must be a numpy array (actual type: {})'.format(type(dat)))
 
         self._err = self._check_data(err, err=True)
 
@@ -135,6 +136,7 @@ class Data(object):
             self._dat = result
             
         else:
+            if np.any(np.iscomplex(b)): self._ascomplex()    
             self._dat *= b
             if self._err is not None:
                 self._err *= b
@@ -180,6 +182,7 @@ class Data(object):
             self._dat = result
             
         else:
+            if np.any(np.iscomplex(b)): self._ascomplex()
             self._dat /= b
             if self._err is not None:
                 self._err /= b
@@ -212,6 +215,7 @@ class Data(object):
                                     + (b.err)**2.)
             self._dat = result
         else:
+            if np.any(np.iscomplex(b)): self._ascomplex()
             self._dat += np.array(b)
             
         return self
@@ -248,6 +252,7 @@ class Data(object):
                                     + (b.err)**2.)
             self._dat = result
         else:
+            if np.any(np.iscomplex(b)): self._ascomplex()
             self._dat -= b
             
         return self
@@ -281,6 +286,12 @@ class Data(object):
         """Implement ``+ b``."""
         return self.copy()
 
+    def _ascomplex(self):
+        """Change data type to complex type"""
+        if not np.all(np.iscomplex(self._dat)):
+            self._dat = self._dat.astype(np.complex)
+            self._err = self._err.astype(np.complex)
+            
     def _check_data(self, m, err=False):
         """Check passed data
 
@@ -331,7 +342,7 @@ class Data(object):
         Called by ``a = self.err``.
         """
         if self._err is not None:
-            self._err = np.copy(np.abs(self._err))
+            self._err = np.copy(self._err)
         else:
             self._err = np.zeros(self.shape, dtype=self.dtype)
         return np.copy(self._err)
@@ -379,6 +390,16 @@ class Data(object):
         else:
             return Data(np.copy(self._dat.astype(dtype)),
                         None)
+
+    def real(self):
+        """Implement ndarray.real"""
+        if self._err is not None:
+            return Data(np.copy(self._dat.real),
+                        np.copy(self._err.real))
+        else:
+            return Data(np.copy(self._dat.real),
+                        None)
+
 
 
 #################################################
@@ -467,7 +488,38 @@ def abs(a):
         return result
     else:
         return np.abs(a)
+
+def erf(a):
+    """Error function.
+
+    Uncertainty obtained via :math:`err = \sigma_x \frac{d}{dx}erf(x)`
+    """
+    if isnpdata(a): a = array(a)
+        
+    if isinstance(a, Data):
+        result = a.copy()
+        result.dat = ss.erf(a.dat)
+        result.err = 2. * np.exp(-a.dat**2) / math.sqrt(math.pi) * a.err
+        return result
+    else:
+        return ss.erf(a)
+
+def dawsn(a):
+    """Dawson function
+
+    Uncertainty obtained via :math:`err = \sigma_x \frac{d}{dx}daws(x)`
+    """
     
+    if isnpdata(a): a = array(a)
+        
+    if isinstance(a, Data):
+        result = a.copy()
+        result.dat = ss.dawsn(a.dat)
+        result.err = (1. - 2. * a.dat * ss.dawsn(a.dat)) * a.err
+        return result
+    else:
+        return ss.dawsn(a)
+
 
 def log10(a):
     """Log10 of a Data array"""
