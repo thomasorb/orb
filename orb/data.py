@@ -33,8 +33,6 @@ import numpy as np
 import scipy.special as ss
 import math
 
-    
-
 #################################################
 #### CLASS Data #################################
 #################################################
@@ -66,6 +64,8 @@ class Data(object):
     ## data
     ## err
     ## shape
+    ## real
+    ## imag
     
     _dat = None
     _err = None
@@ -363,10 +363,36 @@ class Data(object):
         Called by ``a = self.shape``.
         """
         return self._dat.shape
-    
+
+    def _get_real(self):
+        """Getter for real property. Implement ndarray.real
+
+        Called by ``a = self.real``.
+        """
+        if self._err is not None:
+            return Data(np.copy(self._dat.real),
+                        np.copy(self._err.real))
+        else:
+            return Data(np.copy(self._dat.real),
+                        None)
+
+    def _get_imag(self):
+        """Getter for imag property. Implement ndarray.imag
+
+        Called by ``a = self.imag``.
+        """
+        if self._err is not None:
+            return Data(np.copy(self._dat.imag),
+                        np.copy(self._err.imag))
+        else:
+            return Data(np.copy(self._dat.imag),
+                        None)
+
     dat = property(_get_dat, _set_dat)
     err = property(_get_err, _set_err)
     shape = property(_get_shape)
+    real = property(_get_real)
+    imag = property(_get_imag)
 
     def copy(self):
         """Return a copy of self."""
@@ -390,16 +416,6 @@ class Data(object):
         else:
             return Data(np.copy(self._dat.astype(dtype)),
                         None)
-
-    def real(self):
-        """Implement ndarray.real"""
-        if self._err is not None:
-            return Data(np.copy(self._dat.real),
-                        np.copy(self._err.real))
-        else:
-            return Data(np.copy(self._dat.real),
-                        None)
-
 
 
 #################################################

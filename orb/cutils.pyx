@@ -1205,7 +1205,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                     np.ndarray[np.float64_t, ndim=2] pos,
                     int box_size,
                     double height_guess=np.nan,
-                    double fwhm_guess=np.nan,
+                    np.ndarray[np.float64_t, ndim=1] fwhm_guess=np.array(
+                        [np.nan], dtype=float),
                     bool cov_height=False,
                     bool cov_pos=True,
                     bool cov_fwhm=True,
@@ -1238,7 +1239,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
       parameter (default NaN).
       
     :param fwhm_guess: (Optional) Initial guess on the FWHM parameter
-      (default NaN).
+      must a numpy.ndarray.
 
     :param cov_height: (Optional) If True, height is considered to be
       the same for all the stars. It is then a covarying parameter
@@ -1469,7 +1470,13 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         
         params = np.copy(stars_p)
         params[:,0] += cov_p[0] # COV HEIGHT
-        params[:,4] += cov_p[3] # COV FWHM
+
+        # COV FWHM: here FWHM covariance is best interpreted as the
+        # convolution of the original gaussian with another gaussian
+        # psf. In this case, the fwhm of two convoluted gaussian is
+        # the quadratic sum of the psf's.
+        #params[:,4] += cov_p[3] # COV FWHM
+        params[:,4] = np.sqrt(params[:,4]**2. + cov_p[3]**2.) 
 
         # dx, dy & zoom & rotation
         for istar in range(stars_p.shape[0]):
@@ -1508,6 +1515,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     cdef int star_nb = new_pos.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
         (star_nb, PARAMS_NB), dtype=float) # [STARS_NB * (H,A,DX,DY,FWHM)]
+
+    cdef np.ndarray[np.float64_t, ndim=1] fwhm_pix = np.zeros(
+        (star_nb), dtype=float)
+
     cdef np.ndarray[np.float64_t, ndim=2] stars_err = np.zeros_like(
         stars_p, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=2] new_stars_p = np.zeros(
@@ -1560,8 +1571,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     if box_size % 2 == 0: box_size += 1
 
     # fwhm guess
-    if np.isnan(fwhm_guess):
-        fwhm_guess = <double> box_size / 3.
+    if np.any(np.isnan(fwhm_guess)):
+        fwhm_guess[np.isnan(fwhm_guess)] = <double> box_size / 3.
 
     # initial parameters    
     stars_p[:,4] = fwhm_guess
@@ -1635,7 +1646,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         S_sky = surface_value(
             box.shape[0], box.shape[1],
             stars_p[istar,2] + cov_p[1] - x_min,
-            stars_p[istar,3] + cov_p[2] - y_min, FWHM_SKY_COEFF * fwhm_guess,
+            stars_p[istar,3] + cov_p[2] - y_min,
+            FWHM_SKY_COEFF * np.nanmedian(
+                fwhm_guess),
             np.max([box.shape[0], box.shape[1]]), SUB_DIV)
        
         sky_pixels = box * S_sky
@@ -1660,9 +1673,10 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     if np.isnan(dcl) or estimate_local_noise:
         dcl = 0.
 
-    # define masks
+    # define masks and init cov_p
     cov_p_mask.fill(0)
     stars_p_mask.fill(1)
+    cov_p[3] = 1. # cov fwhm starts at 1 for a quadratic sum
     cov_p[4] = 1.
     cov_p[5] = 1.
     cov_p[6] = 0.
@@ -1684,7 +1698,6 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         
     free_p, fixed_p = params_arrays2vect(stars_p, stars_p_mask,
                                          cov_p, cov_p_mask)
-    
     ### FIT ###
     try:
         fit = scipy.optimize.leastsq(diff, free_p,
@@ -1717,9 +1730,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         returned_data['cov_dy'] = cov_p[2]
         
         # cov height and fwhm
-        stars_p[:,0] += cov_p[0] - added_height
-        stars_p[:,4] += cov_p[3]
-        
+        stars_p[:,0] += cov_p[0] - added_height # HEIGHT
+        stars_p[:,4] = np.sqrt(stars_p[:,4]**2. + cov_p[3]**2.) # FWHM
         # compute least square fit errors and add cov dx, dy and zoom
         rcx = <double> frame.shape[0] / 2.
         rcy = <double> frame.shape[1] / 2.

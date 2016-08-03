@@ -1447,7 +1447,7 @@ class NmLinesModel(Cm1LinesModel):
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     nm_laser_obs, wavenumber=True, fwhm_guess=3.5, cont_guess=None,
-    shift_guess=0., fix_fwhm=False, cov_fwhm=True, cov_pos=True,
+    shift_guess=0., sigma_guess=0., fix_fwhm=False, cov_fwhm=True, cov_pos=True,
     fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
     fmodel='gaussian', signal_range=None, filter_file_path=None,
     fix_filter=False, apodization=1., velocity_range=None,
@@ -1481,6 +1481,10 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
     :param shift_guess: (Optional) Initial guess on the global shift
       of the lines in km/s (default 0.).
+
+    :param sigma_guess: (Optional) Initial guess on the line
+      broadening in km/s (apodization broadening must not be taken
+      into account) (default 0.).
 
     :param fix_fwhm: (Optional) If True, FWHM value is fixed to the
       initial guess (default False).
@@ -1649,6 +1653,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         sigma_cov = utils.fit.sigma2vel(
             utils.fft.apod2sigma(apodization, fwhm_guess) / axis_step,
             lines, axis_step)
+    sigma_cov = np.sqrt(sigma_cov**2. + sigma_guess**2.)
         #if sigma_cov == 0.: sigma_cov = SIGMA_COV
         
     ## import pylab as pl

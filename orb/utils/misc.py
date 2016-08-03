@@ -135,12 +135,13 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
         reg_line = reg_line.split('#')[0]
         reg_line = reg_line[4:]
         if '"' in reg_line:
-            reg_line = reg_line[:-3]
-        else:
             reg_line = reg_line[:-2]
+        else:
+            reg_line = reg_line[:-1]
 
         if ',' in reg_line:
-            box_coords = np.array(reg_line.split(","), dtype=float)
+            box_coords = reg_line.split(",")
+            box_coords = [float(coord) for coord in box_coords]
         else:
             raise Exception('Bad coordinates, check if coordinates are in pixels')
 
@@ -213,7 +214,7 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
                     if orb.cutils.point_inside_polygon(ipix, jpix, poly):
                          x_list.append(ipix)
                          y_list.append(jpix)
-
+                         
     x_list = np.array(x_list)
     y_list = np.array(y_list)
 

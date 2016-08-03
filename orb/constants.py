@@ -24,7 +24,7 @@
 import math, os
 
 ##
-## This file only contains some useful constants
+## This file contains some useful constants
 ##
 
 
@@ -40,7 +40,8 @@ LIGHT_VEL_KMS = 299792.458
 FITS_CARD_MAX_STR_LENGTH = 18
 """Max length of a FITS string card"""
 
-SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/SNVA?"
+#SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/SNVA?"
+SESAME_URL = "http://vizier.cfa.harvard.edu/viz-bin/nph-sesame/-oxp/SNVA?"
 """Sesame URL """
 
 VIZIER_URL_CA = "http://vizier.hia.nrc.ca/viz-bin/"
@@ -51,3 +52,9 @@ VIZIER_URL = "http://webviz.u-strasbg.fr/viz-bin/"
 
 HEISEN = 6.6260755e-27
 """Heisenberg constant in erg.s """
+
+K_BOLTZMANN = 1.38064852e-16
+"""Boltzmann constant in erg/K"""
+
+ATOMIC_MASS = 1.66053886e-24
+"""1 Atomic mass in g"""

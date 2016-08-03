@@ -1253,3 +1253,85 @@ def interpolate_map(m, dimx, dimy):
     y_map = np.arange(m.shape[1])
     interp = interpolate.RectBivariateSpline(x_map, y_map, m)
     return interp(x_int, y_int)
+
+
+
+def on_ellipse(x, y, x0, y0, rX, rY, theta, e=0.5):
+    """Tell whether a pixel is on the ellipse or not.
+
+    :param x: X position of the point
+    :param y: Y position of the point
+    :param x0: X position of the center
+    :parma y0: Y position of the center
+    :param theta: Angle of the ellipse (in deg)
+    :param rX: Radius of the X axis
+    :param rY: Radius of the Y axis
+    :param e: (Optional) Precision in pixels (default 0.5).
+    """
+    a = theta / 180 * math.pi
+    e = float(rX) / float(rY) # ellipticity
+    X = (x - x0) * np.cos(a) + (y - y0) * np.sin(a)
+    Y = (x - x0) * np.sin(a) - (y - y0) * np.cos(a)
+    return np.abs(np.sqrt(X**2. + (e*Y)**2.) - rX) <= e
+
+
+def in_ellipse(x, y, x0, y0, rX, rY, theta):
+    """Tell whether a pixel is in the ellipse or not.
+
+    :param x: X position of the point
+    :param y: Y position of the point
+    :param x0: X position of the center
+    :parma y0: Y position of the center
+    :param theta: Angle of the ellipse (in deg)
+    :param rX: Radius of the X axis
+    :param rY: Radius of the Y axis
+    """
+    a = theta / 180. * math.pi
+    e = float(rX) / float(rY) # ellipticity
+    X = (x - x0) * np.cos(a) + (y - y0) * np.sin(a)
+    Y = (x - x0) * np.sin(a) - (y - y0) * np.cos(a)
+    return np.sqrt(X**2. + (e*Y)**2.) < rX
+
+def extract_elliptical_profile(im, x0, y0, rX, rY, theta, n=20, percentile=None):
+    """Extract the elliptical profile of a source
+
+    :param im: Image
+    :param x0: X position of the center
+    :parma y0: Y position of the center
+    :param theta: Angle of the ellipse (in deg)
+    :param rX: Radius of the X axis
+    :param rY: Radius of the Y axis
+    :param n: (Optional) Number of divisions (default 20)
+    
+    :param percentile: (Optional) percentile instead of std. Return
+      (r, lmedian, [lmin, lmax]). Remember that the 1-sigma percentile
+      is 18.865 for a gaussian distribution (default None).
+    
+
+    :return: a tuple (r, l, lerr) where r is the list of radiuses
+      along rX, l the mean luminosity in the ellipse portion
+      corresponding to the radius, lerr the standard deviation of the
+      luminosity in the same portion of the ellipse.
+    """
+    im = im
+    X, Y = np.mgrid[0:im.shape[0],0:im.shape[1]]
+    l = list()
+    lerr = list()
+    r = list()
+    coeffs = np.linspace(0, 1, n+1)[1:]
+    for i in range(n):
+        mask = in_ellipse(X, Y, x0, y0, coeffs[i]*rX, coeffs[i]*rY, theta)
+        if i > 0:
+            mask -= in_ellipse(X, Y, x0, y0, coeffs[i-1]*rX, coeffs[i-1]*rY, theta)
+            r.append((coeffs[i] + coeffs[i-1])/2. * rX)
+        else: r.append(coeffs[i]/2. * rX)
+        l.append(np.nanmedian(im[mask]))
+        if percentile is None:
+            lerr.append(np.nanstd(im[mask]))
+        else:
+            lerr.append([
+                np.nanpercentile(im[mask], percentile),
+                np.nanpercentile(im[mask], 100. - percentile)])
+    return np.array(r), np.array(l), np.array(lerr)
+      
+    

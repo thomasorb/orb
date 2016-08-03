@@ -391,7 +391,7 @@ def sincgauss1d_flux(a, fwhm, sigma):
     width /= math.pi
     return od.abs((a * 1j * math.pi / math.sqrt(2.) * sigma
                   * od.exp(sigma**2./2./width**2.)
-                  / (od.dawsn(1j * sigma / (math.sqrt(2) * width)))).real())
+                  / (od.dawsn(1j * sigma / (math.sqrt(2) * width)))).real)
    
 def fast_w2pix(w, axis_min, axis_step):
     """Fast conversion of wavelength/wavenumber to pixel
@@ -416,3 +416,18 @@ def fast_pix2w(pix, axis_min, axis_step):
     return pix * axis_step + axis_min
 
 
+
+def thermal_broadening_kms(wl, aw, T):
+    """
+    Return the width of the line due to thermal broadening in km/s.
+
+    Equation can be refered to Harwit (Astrophysical concepts) but his
+    definition gives the HWHM (Half-Width at Half-Maximum).
+    
+    :param wl: Wavelength of the line (in nm)
+    :param aw: Atomic weight of the emitting atom
+    :param T: Temperature in K
+    """
+    E = aw * orb.constants.ATOMIC_MASS * (orb.constants.LIGHT_VEL_KMS * 1e5) **2.
+    width = wl * np.sqrt(orb.constants.K_BOLTZMANN * T / E) # nm
+    return orb.constants.LIGHT_VEL_KMS *  width / wl # kms

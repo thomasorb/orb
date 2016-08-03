@@ -883,12 +883,13 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
     :return: (FWHM, FWHM_ERR) in pixels
     """
     FIT_BOXSZ_COEFF = 4
-   
+
     fit_params = orb.cutils.multi_fit_stars(
         np.array(frame, dtype=float),
-        np.array(star_list), fwhm_guess_pix*FIT_BOXSZ_COEFF,
+        np.array(star_list, dtype=float),
+        int(np.nanmedian(fwhm_guess_pix*FIT_BOXSZ_COEFF)),
         height_guess=np.nanmedian(frame),
-        fwhm_guess=np.array(fwhm_guess_pix, dtype=np.float),
+        fwhm_guess=np.atleast_1d(fwhm_guess_pix),
         cov_height=False,
         cov_pos=True,
         cov_fwhm=True,
@@ -900,7 +901,7 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
         estimate_local_noise=False)
 
     if fit_params != []:
-        return fit_params['stars-params'][0,4], fit_params['stars-params-err'][0,4]
+        return fit_params['stars-params'][:,4], fit_params['stars-params-err'][:,4]
     else:
         warnings.warn('FWHM could not be measured, check star positions')
         return None, None
@@ -928,7 +929,7 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
     :param silent: (Optional) Silent function if True (default False).
     """
     PHOT_BOXSZ_COEFF = 17
-
+    pos_list = np.array(pos_list)
     if detect_fwhm:
         res = detect_fwhm_in_frame(
             frame, pos_list, fwhm_guess_pix)
@@ -937,8 +938,16 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
         else:
             fwhm_err = np.nan
         if not silent:
-            print 'Detected FWHM: {} [+/- {}] pixels'.format(fwhm_guess_pix, fwhm_err)
-    else: fwhm_err = np.nan
+            print 'Detected FWHM: {} [+/- {}] pixels'.format(
+                np.nanmedian(fwhm_guess_pix), np.nanmedian(fwhm_err))
+    else:
+        fwhm_err = np.empty(pos_list.shape[0], dtype=float)
+        fwhm_err.fill(np.nan)
+
+    if np.size(fwhm_guess_pix) <= 1:
+        temp_arr = np.empty(pos_list.shape[0], dtype=float)
+        temp_arr.fill(fwhm_guess_pix)
+        fwhm_guess_pix = temp_arr
     
     results = list()
     pos_list = np.array(pos_list)
@@ -947,12 +956,12 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
     for istar in range(pos_list.shape[0]):
         ix, iy = pos_list[istar, :2]
         x_min, x_max, y_min, y_max = orb.utils.image.get_box_coords(
-            ix, iy, fwhm_guess_pix*PHOT_BOXSZ_COEFF,
+            ix, iy, int(np.nanmedian(fwhm_guess_pix)*PHOT_BOXSZ_COEFF),
             0, frame.shape[0],
             0, frame.shape[1])
         star_box = frame[x_min:x_max, y_min:y_max]
         photom_result, aper_surf, annu_surf = aperture_photometry(
-            star_box, fwhm_guess_pix, aper_coeff=aper_coeff,
+            star_box, fwhm_guess_pix[istar], aper_coeff=aper_coeff,
             return_surfaces=True, aperture_surface=aper_surf,
             annulus_surface=annu_surf)
         
@@ -962,8 +971,8 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                         'aperture_flux_bad':photom_result[3],
                         'aperture_background':photom_result[4],
                         'aperture_background_err':photom_result[5],
-                        'fwhm_pix':fwhm_guess_pix,
-                        'fwhm_pix_err':fwhm_err})
+                        'fwhm_pix':fwhm_guess_pix[istar],
+                        'fwhm_pix_err':fwhm_err[istar]})
     return results
 
 def load_star_list(star_list_path, silent=False):
@@ -1522,7 +1531,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
             fit_params = orb.cutils.multi_fit_stars(
                 np.array(fit_frame, dtype=float), np.array(star_list), box_size,
                 height_guess=np.array(background, dtype=np.float),
-                fwhm_guess=np.array(fwhm_pix, dtype=np.float),
+                fwhm_guess=np.atleast_1d(fwhm_pix),
                 cov_height=cov_height,
                 cov_pos=True,
                 cov_fwhm=True,
