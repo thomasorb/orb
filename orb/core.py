@@ -2621,7 +2621,8 @@ class Cube(Tools):
        
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
-               force_hdf5=False, force_fits=False):
+               force_hdf5=False, force_fits=False,
+               calibration_laser_map_path=None):
         
         """Export cube as one FITS/HDF5 file.
 
@@ -2649,6 +2650,9 @@ class Cube(Tools):
         :param force_fits: (Optional) If True, output is in FITS
           format. If False it will be in the format of the input files
           (default False).
+
+        :param calibration_laser_map_path: (Optional) Path to a
+          calibration laser map to append (default None).
         """
         if force_fits and force_hdf5:
             self._print_error('force_fits and force_hdf5 cannot be both set to True')
@@ -2691,20 +2695,33 @@ class Cube(Tools):
                     self.QUAD_NB,
                     overwrite=overwrite,
                     reset=True)
-            
-            outcube.append_image_list(self.image_list)
-            if header is not None:
-                outcube.append_header(header)
 
+            outcube.append_image_list(self.image_list)
+            if header is None:
+                header = self.get_cube_header()
+            outcube.append_header(header)
+
+            if calibration_laser_map_path is None:
+                calibration_laser_map = self.get_calibration_laser_map()
+            else:
+                calibration_laser_map = self.read_fits(calibration_laser_map_path)
+                if (calibration_laser_map.shape[0] != self.dimx):
+                    calibration_laser_map = orb.utils.image.interpolate_map(
+                        calibration_laser_map, self.dimx, self.dimy)
+
+            if calibration_laser_map is not None:
+                outcube.append_calibration_laser_map(calibration_laser_map)
+            
             if not self.is_quad_cube: # frames export
                 progress = ProgressBar(zmax-zmin)
                 for iframe in range(zmin, zmax):
                     progress.update(iframe-zmin, info='exporting frame {}'.format(iframe))
                     outcube.write_frame(
                         iframe,
-                        data=self.get_data(xmin, xmax, ymin, ymax,
-                                           iframe, iframe + 1,
-                                           silent=True),
+                        data=self.get_data(
+                            xmin, xmax, ymin, ymax,
+                            iframe, iframe + 1,
+                            silent=True),
                         header=self.get_frame_header(iframe),
                         force_float32=True)
                 progress.end()
@@ -2717,7 +2734,8 @@ class Cube(Tools):
                             iquad))
                     
                     x_min, x_max, y_min, y_max = self._get_quadrant_dims(
-                        iquad, self.dimx, self.dimy, int(math.sqrt(float(self.quad_nb))))
+                        iquad, self.dimx, self.dimy,
+                        int(math.sqrt(float(self.quad_nb))))
                     
                     data_quad = self.get_data(x_min, x_max,
                                               y_min, y_max,
@@ -4040,6 +4058,16 @@ class HDFCube(Cube):
                 return self._header_hdf52fits(f['header'][:])
             else:
                 return pyfits.Header()
+
+    def get_calibration_laser_map(self):
+        """Return stored calibration laser map"""
+        with self.open_hdf5(self.cube_path, 'r') as f:
+            if 'calib_map' in f:
+                return f['calib_map'][:]
+            else:
+                self._print_warning('No calibration laser map stored')
+                return None
+
            
     def get_mean_image(self, recompute=False):
         """Return the deep frame of the cube.
@@ -4347,6 +4375,17 @@ class OutHDFCube(Tools):
             del self.f['energy_map']
             
         self.f['energy_map'] = energy_map
+
+    
+    def append_calibration_laser_map(self, calib_map):
+        """Append a calibration laser map to the HDF5 cube.
+
+        :param calib_map: Calibration laser map to append.
+        """
+        if 'calib_map' in self.f:
+            del self.f['calib_map']
+            
+        self.f['calib_map'] = calib_map
 
     def append_header(self, header):
         """Append a header to the HDF5 cube.
@@ -4851,3 +4890,25 @@ class Standard(Tools):
             star_flux, seeing,
             plate_scale,
             saturation=saturation)
+
+
+#################################################
+#### CLASS Header ###############################
+#################################################
+class Header(pyfits.Header):
+    """Extension of :py:class:`astropy.io.fits.Header`"""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize Header class.
+
+        :param args: args of :py:class:`astropy.io.fits.Header`
+
+        :param kwargs: Kwargs of :py:class:`astropy.io.fits.Header`
+        """
+        pyfits.Header.__init__(self, *args, **kwargs)
+        self.wcs = pywcs.WCS(self)
+
+    def bin_wcs(self, binning):
+        self.wcs.wcs.crpix /= binning
+        self.wcs.wcs.cdelt *= binning
+        self.extend(self.wcs.to_header(), update=True)

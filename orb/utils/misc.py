@@ -124,31 +124,33 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
     .. note:: Coordinates can be image coordinates (x,y) or sky
         coordinates in degrees (ra, dec)
     """
+    shapes = ['circle', 'box', 'polygon']
+
     x_list = list()
     y_list = list()
 
     if len(reg_line) <= 3:
         warnings.warn('Bad region line')
         return None
+
+    reg_line = reg_line.split('#')[0].strip()
+    if not np.any([shape in reg_line for shape in shapes]):
+        return [x_list, y_list]
+    
+    shape, coords = reg_line.split('(')
+    if not shape in shapes:
+        return [x_list, y_list]
+
+    coords = coords.split(')')[0]
+    coords = coords.split(',')
+    coords = np.array([float(coord) for coord in coords], dtype=float)
+    
         
-    if reg_line[:3] == 'box':
-        reg_line = reg_line.split('#')[0]
-        reg_line = reg_line[4:]
-        if '"' in reg_line:
-            reg_line = reg_line[:-2]
-        else:
-            reg_line = reg_line[:-1]
-
-        if ',' in reg_line:
-            box_coords = reg_line.split(",")
-            box_coords = [float(coord) for coord in box_coords]
-        else:
-            raise Exception('Bad coordinates, check if coordinates are in pixels')
-
-        x_min = round(box_coords[0] - (box_coords[2] / 2.) - 1.5)
-        x_max = round(box_coords[0] + (box_coords[2] / 2.) + .5)
-        y_min = round(box_coords[1] - (box_coords[3] / 2.) - 1.5) 
-        y_max = round(box_coords[1] + (box_coords[3] / 2.) + .5)        
+    if shape == 'box':
+        x_min = round(coords[0] - (coords[2] / 2.) - 1.5)
+        x_max = round(coords[0] + (coords[2] / 2.) + .5)
+        y_min = round(coords[1] - (coords[3] / 2.) - 1.5) 
+        y_max = round(coords[1] + (coords[3] / 2.) + .5)        
         if x_range is not None:
             if x_min < np.min(x_range) : x_min = np.min(x_range)
             if x_max > np.max(x_range) : x_max = np.max(x_range)
@@ -161,18 +163,11 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
                 x_list.append(ipix)
                 y_list.append(jpix)
 
-    if reg_line[:6] == 'circle':
-        reg_line = reg_line.split('#')[0]
-        reg_line = reg_line[7:]
-        if '"' in reg_line:
-            reg_line = reg_line[:-3]
-        else:
-            reg_line = reg_line[:-2]
-        cir_coords = np.array(reg_line.split(","), dtype=float)
-        x_min = round(cir_coords[0] - (cir_coords[2]) - 1.5)
-        x_max = round(cir_coords[0] + (cir_coords[2]) + .5)
-        y_min = round(cir_coords[1] - (cir_coords[2]) - 1.5)
-        y_max = round(cir_coords[1] + (cir_coords[2]) + .5)
+    if shape == 'circle':
+        x_min = round(coords[0] - (coords[2]) - 1.5)
+        x_max = round(coords[0] + (coords[2]) + .5)
+        y_min = round(coords[1] - (coords[2]) - 1.5)
+        y_max = round(coords[1] + (coords[2]) + .5)
         if x_range is not None:
             if x_min < np.min(x_range) : x_min = np.min(x_range)
             if x_max > np.max(x_range) : x_max = np.max(x_range)
@@ -183,19 +178,16 @@ def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
 
         for ipix in range(int(x_min), int(x_max)):
             for jpix in range(int(y_min), int(y_max)):
-                if (math.sqrt((ipix - cir_coords[0] + 1.)**2
-                             + (jpix - cir_coords[1] + 1.)**2)
-                    <= round(cir_coords[2])):
+                if (math.sqrt((ipix - coords[0] + 1.)**2
+                             + (jpix - coords[1] + 1.)**2)
+                    <= round(coords[2])):
                     x_list.append(ipix)
                     y_list.append(jpix)
 
-    if reg_line[:7] == 'polygon':
-        reg_line = reg_line.split('#')[0]
-        reg_line = reg_line[8:-2]
-        reg_line = np.array(reg_line.split(',')).astype(float)
-        if np.size(reg_line) > 0:
-            poly = [(reg_line[i], reg_line[i+1]) for i in range(
-                0,np.size(reg_line),2)]
+    if shape == 'polygon':
+        if np.size(coords) > 0:
+            poly = [(coords[i], coords[i+1]) for i in range(
+                0,np.size(coords),2)]
             poly_x = np.array(poly)[:,0]
             poly_y = np.array(poly)[:,1]
             x_min = np.min(poly_x)

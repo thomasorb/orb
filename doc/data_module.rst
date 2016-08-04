@@ -8,6 +8,11 @@ Data functions
 --------------
 
 .. autofunction:: data.array
+.. autofunction:: data.isdata
+.. autofunction:: data.isnpdata
+
+.. autofunction:: data.erf
+.. autofunction:: data.dawsn
 
 .. autofunction:: data.exp
 
@@ -33,20 +38,3 @@ Data class
    :special-members:
    :show-inheritance:
 
-Data1D class
-------------
-
-.. autoclass:: data.Data1D
-   :members:
-   :private-members:
-   :special-members:
-   :show-inheritance:
-
-Data2D class
-------------
-
-.. autoclass:: data.Data2D
-   :members:
-   :private-members:
-   :special-members:
-   :show-inheritance:

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CUtils module &mdash; Orb 2.0-DR1-beta documentation</title>
+  <title>CUtils module &mdash; Orb 2.1.1-pre-July2016-mission documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.1.1-pre-July2016-mission documentation" href="index.html"/>
         <link rel="next" title="Astrometry module" href="astrometry_module.html"/>
         <link rel="prev" title="Utils module" href="utils_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                2.0-DR1-beta
+                2.1.1-pre-July2016-mission
               </div>
             
           
@@ -99,7 +99,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">CUtils module</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CUtils module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#contents">Contents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-cutils">Cutils</a></li>
 </ul>
@@ -134,7 +134,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -229,86 +229,80 @@
 <tr class="row-odd"><td><a class="reference internal" href="#cutils.sinc1d" title="cutils.sinc1d"><code class="xref py py-obj docutils literal"><span class="pre">cutils.sinc1d</span></code></a></td>
 <td>Return a 1D sinc given a set of parameters.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.sincgauss1d" title="cutils.sincgauss1d"><code class="xref py py-obj docutils literal"><span class="pre">cutils.sincgauss1d</span></code></a></td>
-<td>Return a 1D sinc convoluted with a gaussian of parameter sigma.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.interf_mean_energy" title="cutils.interf_mean_energy"><code class="xref py py-obj docutils literal"><span class="pre">cutils.interf_mean_energy</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.interf_mean_energy" title="cutils.interf_mean_energy"><code class="xref py py-obj docutils literal"><span class="pre">cutils.interf_mean_energy</span></code></a></td>
 <td>Return the mean energy of an interferogram by step.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.spectrum_mean_energy" title="cutils.spectrum_mean_energy"><code class="xref py py-obj docutils literal"><span class="pre">cutils.spectrum_mean_energy</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.spectrum_mean_energy" title="cutils.spectrum_mean_energy"><code class="xref py py-obj docutils literal"><span class="pre">cutils.spectrum_mean_energy</span></code></a></td>
 <td>Return the mean energy of a spectrum by channel.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.fft_filter" title="cutils.fft_filter"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fft_filter</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.fft_filter" title="cutils.fft_filter"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fft_filter</span></code></a></td>
 <td>Simple lowpass or highpass FFT filter (high pass or low pass)</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.low_pass_image_filter" title="cutils.low_pass_image_filter"><code class="xref py py-obj docutils literal"><span class="pre">cutils.low_pass_image_filter</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.low_pass_image_filter" title="cutils.low_pass_image_filter"><code class="xref py py-obj docutils literal"><span class="pre">cutils.low_pass_image_filter</span></code></a></td>
 <td>Low pass image filter by convolution with a gaussian kernel.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.fast_gaussian_kernel" title="cutils.fast_gaussian_kernel"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fast_gaussian_kernel</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.fast_gaussian_kernel" title="cutils.fast_gaussian_kernel"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fast_gaussian_kernel</span></code></a></td>
 <td>Return a fast gaussian kernel.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.gaussian_kernel" title="cutils.gaussian_kernel"><code class="xref py py-obj docutils literal"><span class="pre">cutils.gaussian_kernel</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.gaussian_kernel" title="cutils.gaussian_kernel"><code class="xref py py-obj docutils literal"><span class="pre">cutils.gaussian_kernel</span></code></a></td>
 <td>Return a gaussian kernel.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_box_coords" title="cutils.get_box_coords"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_box_coords</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.get_box_coords" title="cutils.get_box_coords"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_box_coords</span></code></a></td>
 <td>Return the coordinates of a box given the center of the box, its size and the limits of the range along x and y axes.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.point_inside_polygon" title="cutils.point_inside_polygon"><code class="xref py py-obj docutils literal"><span class="pre">cutils.point_inside_polygon</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.point_inside_polygon" title="cutils.point_inside_polygon"><code class="xref py py-obj docutils literal"><span class="pre">cutils.point_inside_polygon</span></code></a></td>
 <td>Determine if a point is inside a given polygon or not Polygon is a list of (x,y) pairs.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-obj docutils literal"><span class="pre">cutils.multi_fit_stars</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-obj docutils literal"><span class="pre">cutils.multi_fit_stars</span></code></a></td>
 <td>Fit multiple stars at the same time.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.part_value" title="cutils.part_value"><code class="xref py py-obj docutils literal"><span class="pre">cutils.part_value</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.part_value" title="cutils.part_value"><code class="xref py py-obj docutils literal"><span class="pre">cutils.part_value</span></code></a></td>
 <td>Return the value lying between two parts of a partition</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.indft" title="cutils.indft"><code class="xref py py-obj docutils literal"><span class="pre">cutils.indft</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.indft" title="cutils.indft"><code class="xref py py-obj docutils literal"><span class="pre">cutils.indft</span></code></a></td>
 <td>Inverse Non-uniform Discret Fourier Transform.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.map_me" title="cutils.map_me"><code class="xref py py-obj docutils literal"><span class="pre">cutils.map_me</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.map_me" title="cutils.map_me"><code class="xref py py-obj docutils literal"><span class="pre">cutils.map_me</span></code></a></td>
 <td>Create a map of the modulation efficiency from a laser frame.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.nanbin_image" title="cutils.nanbin_image"><code class="xref py py-obj docutils literal"><span class="pre">cutils.nanbin_image</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.nanbin_image" title="cutils.nanbin_image"><code class="xref py py-obj docutils literal"><span class="pre">cutils.nanbin_image</span></code></a></td>
 <td>Mean image binning robust to NaNs.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.unbin_image" title="cutils.unbin_image"><code class="xref py py-obj docutils literal"><span class="pre">cutils.unbin_image</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.unbin_image" title="cutils.unbin_image"><code class="xref py py-obj docutils literal"><span class="pre">cutils.unbin_image</span></code></a></td>
 <td>Unbin a binned image (restore the image binned with the function <code class="xref py py-func docutils literal"><span class="pre">nanbin_image()</span></code>).</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.im2rgba" title="cutils.im2rgba"><code class="xref py py-obj docutils literal"><span class="pre">cutils.im2rgba</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.im2rgba" title="cutils.im2rgba"><code class="xref py py-obj docutils literal"><span class="pre">cutils.im2rgba</span></code></a></td>
 <td>Compute RGBA from image given a matplotlib colorbar instance.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.detect_cosmic_rays" title="cutils.detect_cosmic_rays"><code class="xref py py-obj docutils literal"><span class="pre">cutils.detect_cosmic_rays</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.detect_cosmic_rays" title="cutils.detect_cosmic_rays"><code class="xref py py-obj docutils literal"><span class="pre">cutils.detect_cosmic_rays</span></code></a></td>
 <td>Check if a given pixel is a cosmic ray (classic detection).</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.check_cosmic_rays_neighbourhood" title="cutils.check_cosmic_rays_neighbourhood"><code class="xref py py-obj docutils literal"><span class="pre">cutils.check_cosmic_rays_neighbourhood</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.check_cosmic_rays_neighbourhood" title="cutils.check_cosmic_rays_neighbourhood"><code class="xref py py-obj docutils literal"><span class="pre">cutils.check_cosmic_rays_neighbourhood</span></code></a></td>
 <td>Check the neighbourhood around detected cosmic rays in a frame.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.fast_w2pix" title="cutils.fast_w2pix"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fast_w2pix</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.fast_w2pix" title="cutils.fast_w2pix"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fast_w2pix</span></code></a></td>
 <td>Fast conversion of wavelength/wavenumber to pixel</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.fast_pix2w" title="cutils.fast_pix2w"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fast_pix2w</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.fast_pix2w" title="cutils.fast_pix2w"><code class="xref py py-obj docutils literal"><span class="pre">cutils.fast_pix2w</span></code></a></td>
 <td>Fast conversion of pixel to wavelength/wavenumber</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.get_cm1_axis_min" title="cutils.get_cm1_axis_min"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_cm1_axis_min</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_cm1_axis_min" title="cutils.get_cm1_axis_min"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_cm1_axis_min</span></code></a></td>
 <td>Return min wavenumber of a regular wavenumber axis in cm-1.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_cm1_axis_max" title="cutils.get_cm1_axis_max"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_cm1_axis_max</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.get_cm1_axis_max" title="cutils.get_cm1_axis_max"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_cm1_axis_max</span></code></a></td>
 <td>Return max wavenumber of a regular wavenumber axis in cm-1.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.get_cm1_axis_step" title="cutils.get_cm1_axis_step"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_cm1_axis_step</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_cm1_axis_step" title="cutils.get_cm1_axis_step"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_cm1_axis_step</span></code></a></td>
 <td>Return step size of a regular wavenumber axis in cm-1.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_nm_axis_min" title="cutils.get_nm_axis_min"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_nm_axis_min</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.get_nm_axis_min" title="cutils.get_nm_axis_min"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_nm_axis_min</span></code></a></td>
 <td>Return min wavelength of regular wavelength axis in nm.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.get_nm_axis_max" title="cutils.get_nm_axis_max"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_nm_axis_max</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_nm_axis_max" title="cutils.get_nm_axis_max"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_nm_axis_max</span></code></a></td>
 <td>Return max wavelength of regular wavelength axis in nm.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#cutils.get_nm_axis_step" title="cutils.get_nm_axis_step"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_nm_axis_step</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#cutils.get_nm_axis_step" title="cutils.get_nm_axis_step"><code class="xref py py-obj docutils literal"><span class="pre">cutils.get_nm_axis_step</span></code></a></td>
 <td>Return step size of a regular wavelength axis in nm.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#cutils.compute_radial_velocity" title="cutils.compute_radial_velocity"><code class="xref py py-obj docutils literal"><span class="pre">cutils.compute_radial_velocity</span></code></a></td>
-<td>Return radial velocity in km.s-1</td>
 </tr>
 </tbody>
 </table>
@@ -817,30 +811,6 @@ sinc is evaluated</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="cutils.sincgauss1d">
-<code class="descclassname">cutils.</code><code class="descname">sincgauss1d</code><span class="sig-paren">(</span><em>ndarray x</em>, <em>double h</em>, <em>double a</em>, <em>double dx</em>, <em>double fwhm</em>, <em>double sigma</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.sincgauss1d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a 1D sinc convoluted with a gaussian of parameter sigma.</p>
-<p>If sigma == 0 returns a pure sinc.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="cutils.sincgauss1d.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#cutils.sincgauss1d.params.x">¶</a> &#8211; 1D array of float64 giving the positions where the
-sinc is evaluated</li>
-<li><span class="target" id="cutils.sincgauss1d.params.h"></span><strong>h</strong><a class="paramlink headerlink reference internal" href="#cutils.sincgauss1d.params.h">¶</a> &#8211; Height</li>
-<li><span class="target" id="cutils.sincgauss1d.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#cutils.sincgauss1d.params.a">¶</a> &#8211; Amplitude</li>
-<li><span class="target" id="cutils.sincgauss1d.params.dx"></span><strong>dx</strong><a class="paramlink headerlink reference internal" href="#cutils.sincgauss1d.params.dx">¶</a> &#8211; Position of the center</li>
-<li><span class="target" id="cutils.sincgauss1d.params.w"></span><strong>w</strong><a class="paramlink headerlink reference internal" href="#cutils.sincgauss1d.params.w">¶</a> &#8211; FWHM, <span class="math">\(\text{FWHM} = \text{Width} \times 2 \sqrt{2 \ln 2}\)</span></li>
-<li><span class="target" id="cutils.sincgauss1d.params.sigma"></span><strong>sigma</strong><a class="paramlink headerlink reference internal" href="#cutils.sincgauss1d.params.sigma">¶</a> &#8211; Sigma of the gaussian.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="cutils.interf_mean_energy">
 <code class="descclassname">cutils.</code><code class="descname">interf_mean_energy</code><span class="sig-paren">(</span><em>ndarray interf</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.interf_mean_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the mean energy of an interferogram by step.</p>
@@ -1004,7 +974,7 @@ Polygon is a list of (x,y) pairs.</p>
 
 <dl class="function">
 <dt id="cutils.multi_fit_stars">
-<code class="descclassname">cutils.</code><code class="descname">multi_fit_stars</code><span class="sig-paren">(</span><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>double fwhm_guess=np.nan</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em>, <em>sip=None</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cutils.</code><code class="descname">multi_fit_stars</code><span class="sig-paren">(</span><em>ndarray frame</em>, <em>ndarray pos</em>, <em>int box_size</em>, <em>double height_guess=np.nan</em>, <em>ndarray fwhm_guess=&lt;???&gt;</em>, <em>bool cov_height=False</em>, <em>bool cov_pos=True</em>, <em>bool cov_fwhm=True</em>, <em>bool fix_height=False</em>, <em>bool fix_pos=False</em>, <em>bool fix_fwhm=False</em>, <em>double fit_tol=0.001</em>, <em>double ron=np.nan</em>, <em>double dcl=np.nan</em>, <em>bool enable_zoom=False</em>, <em>bool enable_rotation=False</em>, <em>bool estimate_local_noise=True</em>, <em>double saturation=0</em>, <em>sip=None</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.multi_fit_stars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit multiple stars at the same time.</p>
 <p>Useful if the relative positions of the stars are well known. In
 this case the pattern of position can be shifted, zoomed and
@@ -1021,7 +991,7 @@ rotated in order to be adjusted to the stars in the frame.</p>
 <li><span class="target" id="cutils.multi_fit_stars.params.height_guess"></span><strong>height_guess</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.height_guess">¶</a> &#8211; (Optional) Initial guess on the height
 parameter (default NaN).</li>
 <li><span class="target" id="cutils.multi_fit_stars.params.fwhm_guess"></span><strong>fwhm_guess</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.fwhm_guess">¶</a> &#8211; (Optional) Initial guess on the FWHM parameter
-(default NaN).</li>
+must a numpy.ndarray.</li>
 <li><span class="target" id="cutils.multi_fit_stars.params.cov_height"></span><strong>cov_height</strong><a class="paramlink headerlink reference internal" href="#cutils.multi_fit_stars.params.cov_height">¶</a> &#8211; (Optional) If True, height is considered to be
 the same for all the stars. It is then a covarying parameter
 (default False).</li>
@@ -1393,29 +1363,6 @@ threshold)</li>
 </table>
 </dd></dl>
 
-<dl class="function">
-<dt id="cutils.compute_radial_velocity">
-<code class="descclassname">cutils.</code><code class="descname">compute_radial_velocity</code><span class="sig-paren">(</span><em>ndarray line</em>, <em>ndarray rest_line</em>, <em>bool wavenumber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cutils.compute_radial_velocity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return radial velocity in km.s-1</p>
-<p>V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="cutils.compute_radial_velocity.params.line"></span><strong>line</strong><a class="paramlink headerlink reference internal" href="#cutils.compute_radial_velocity.params.line">¶</a> &#8211; Emission line wavelength/wavenumber (can be a numpy
-array)</li>
-<li><span class="target" id="cutils.compute_radial_velocity.params.rest_line"></span><strong>rest_line</strong><a class="paramlink headerlink reference internal" href="#cutils.compute_radial_velocity.params.rest_line">¶</a> &#8211; Rest-frame wavelength/wavenumber (can be a numpy
-array but must have the same size as line)</li>
-<li><span class="target" id="cutils.compute_radial_velocity.params.wavenumber"></span><strong>wavenumber</strong><a class="paramlink headerlink reference internal" href="#cutils.compute_radial_velocity.params.wavenumber">¶</a> &#8211; (Optional) If True the result is returned in cm-1,
-else it is returned in nm.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 </div>
 
@@ -1460,7 +1407,7 @@ else it is returned in nm.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.0-DR1-beta',
+            VERSION:'2.1.1-pre-July2016-mission',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

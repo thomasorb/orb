@@ -820,3 +820,99 @@ Compression
 Compression has been removed. Even a small compression slows down the
 process too much.It could be used for archiving though.
 
+
+Miscellaneous
+-------------
+
+* smoothing_deg option in
+  :py:meth:`orb.utils.fft.transform_interferogram` has 1 sample less
+  than replaced by a more robust smoothing_coeff option. The smoohting
+  degree is now defined as smoothing_coeff * interferogram_size. In a
+  general way the smoothing degree (the number of samples smoothed at
+  a transition between a part of zeros and a part of signal in the
+  interferogram) is now bigger because -25/+100 interferogram present
+  a very sharp transition on the left side which is very near ZPD and
+  create large wiggles in the spectra. A higher smoothing degree is the solution.
+
+
+v.2.0.1
+=======
+
+Fit module
+----------
+
+* :py:meth:`~cutils.sincgauss1d`: sigma minimum limit set at
+  1e-5. Below this value a pure sinc is returned.
+
+* small bug correction
+
+
+Gaussian apodization
+--------------------
+
+* A new set of Gaussian window function can be used
+  (:py:meth:`̀orb.utils.fft.gaussian_window`). Norton-Beer apodization
+  functions are nto be used anymore.
+
+Standard Proper motion
+----------------------
+
+* Standard table has been update with Oke (1990) standard list. see
+  http://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html
+
+* proper motion can be extracted from standard table
+  ('data/std_table.orb') and the real radec at a given moment can be
+  computed (see :py:meth:`̀orb.utils.astrometry.compute_radec_pm`)
+
+
+v.2.1.0
+=======
+
+
+Fit module
+----------
+
+* core fit function :py:meth:`scipy.optimize.leastsq` replaced by
+  :py:meth:`scipy.optimize.curve_fit` which computes the covariance
+  matrix itself. Returned uncertainties on the fitted parameters are
+  now much better calculated. The estimation has been tested against a
+  real measurement (through simulations with random noise) and shows a
+  perfect accordance over multiple decades of noise from a SNR of 1000
+  down to a SNR of 10. The fitting algorithm is still a
+  Levenberg-Marquardt.
+
+
+* MCMC: Markov chain Monte-Carlo algorithm can be used to compute
+  uncertainty on the fit parameters. This function has not been
+  extensively tested and does not seem to provide much better
+  estimation for a decent computing time (only 10 or 20 times longer
+  than fit alone). Can be used to check posterior probability
+  distribution on the fit parameters.
+
+* Fit is automatically tried again with a slight random change of the
+  initial parameters if the convergence is too fast and no error
+  estimation can be found via L-M algorithm. After a certain number of
+  retries error is estimated via MCMC.
+
+* flux is now computed with analytic error propagation for sinc,
+  gaussian and sincgauss (see :py:class:`orb.data` and
+  :py:meth:`orb.utils.spectrum.sincgauss1d_flux`)
+
+
+Data module
+-----------
+
+:py:class:`orb.data.Data1D` and :py:class:`orb.data.Data2D` removed
+and replaced by only one general class
+:py:class:`orb.data.Data`. Dawson and Erf functions added along with
+complex data managing.
+    
+
+Miscellaneous
+-------------
+
+* Minor changes in ds9 region file loading function
+
+* :py:class:`orb.core.Header` class added as an extension of
+  :py:class:`astropy.wcs.Header` to manage Headers. It is just an
+  initial framework.

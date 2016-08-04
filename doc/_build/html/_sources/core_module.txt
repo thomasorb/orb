@@ -130,3 +130,12 @@ Standard class
    :private-members:
    :special-members:
    :show-inheritance:
+
+Header class
+------------
+
+.. autoclass:: core.Header
+   :members:
+   :private-members:
+   :special-members:
+   :show-inheritance:

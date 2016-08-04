@@ -28,7 +28,6 @@ Contents
     cutils.robust_average
     cutils.gaussian1d
     cutils.sinc1d
-    cutils.sincgauss1d
     cutils.interf_mean_energy
     cutils.spectrum_mean_energy
     cutils.fft_filter
@@ -54,7 +53,6 @@ Contents
     cutils.get_nm_axis_min
     cutils.get_nm_axis_max
     cutils.get_nm_axis_step
-    cutils.compute_radial_velocity
 
 Cutils
 ------
@@ -86,7 +84,6 @@ Cutils
 .. autofunction:: robust_average
 .. autofunction:: gaussian1d
 .. autofunction:: sinc1d
-.. autofunction:: sincgauss1d
 .. autofunction:: interf_mean_energy
 .. autofunction:: spectrum_mean_energy
 .. autofunction:: fft_filter
@@ -112,4 +109,3 @@ Cutils
 .. autofunction:: get_nm_axis_min
 .. autofunction:: get_nm_axis_max
 .. autofunction:: get_nm_axis_step
-.. autofunction:: compute_radial_velocity

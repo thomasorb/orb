@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Utils module &mdash; Orb 2.0-DR1-beta documentation</title>
+  <title>Utils module &mdash; Orb 2.1.1-pre-July2016-mission documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.1.1-pre-July2016-mission documentation" href="index.html"/>
         <link rel="next" title="CUtils module" href="cutils_module.html"/>
         <link rel="prev" title="Core module" href="core_module.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                2.0-DR1-beta
+                2.1.1-pre-July2016-mission
               </div>
             
           
@@ -98,7 +98,7 @@
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Utils module</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utils module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.astrometry">Astrometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.debug">Debug</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-orb.utils.fft">FFT</a></li>
@@ -146,7 +146,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -483,6 +483,69 @@ star box.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.astrometry.compute_radec_pm">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">compute_radec_pm</code><span class="sig-paren">(</span><em>ra_deg</em>, <em>dec_deg</em>, <em>pm_ra_mas</em>, <em>pm_dec_mas</em>, <em>yr</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.compute_radec_pm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute RA/DEC in degrees with proper motion values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.astrometry.compute_radec_pm.params.ra_deg"></span><strong>ra_deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.compute_radec_pm.params.ra_deg">¶</a> &#8211; RA in degrees</li>
+<li><span class="target" id="orb.utils.astrometry.compute_radec_pm.params.dec_deg"></span><strong>dec_deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.compute_radec_pm.params.dec_deg">¶</a> &#8211; DEC in degrees</li>
+<li><span class="target" id="orb.utils.astrometry.compute_radec_pm.params.pm_ra_mas"></span><strong>pm_ra_mas</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.compute_radec_pm.params.pm_ra_mas">¶</a> &#8211; Proper motion along RA axis in mas/yr</li>
+<li><span class="target" id="orb.utils.astrometry.compute_radec_pm.params.pm_dec_mas"></span><strong>pm_dec_mas</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.compute_radec_pm.params.pm_dec_mas">¶</a> &#8211; Proper motion along DEC axis in mas/yr</li>
+<li><span class="target" id="orb.utils.astrometry.compute_radec_pm.params.yr"></span><strong>yr</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.compute_radec_pm.params.yr">¶</a> &#8211; Number of years</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.astrometry.dec2deg">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">dec2deg</code><span class="sig-paren">(</span><em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.dec2deg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert DEC in sexagesimal format to degrees.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.astrometry.dec2deg.params.dec"></span><strong>dec</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.dec2deg.params.dec">¶</a> &#8211; DEC in sexagesimal format</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.astrometry.deg2dec">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">deg2dec</code><span class="sig-paren">(</span><em>deg</em>, <em>string=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.deg2dec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert DEC in degrees to sexagesimal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.astrometry.deg2dec.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.deg2dec.params.deg">¶</a> &#8211; DEC in degrees</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.astrometry.deg2ra">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">deg2ra</code><span class="sig-paren">(</span><em>deg</em>, <em>string=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.deg2ra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert RA in degrees to sexagesimal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.astrometry.deg2ra.params.deg"></span><strong>deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.deg2ra.params.deg">¶</a> &#8211; RA in degrees</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.astrometry.detect_fwhm_in_frame">
 <code class="descclassname">orb.utils.astrometry.</code><code class="descname">detect_fwhm_in_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>star_list</em>, <em>fwhm_guess_pix</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.detect_fwhm_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detect stars FWHM in a frame.</p>
@@ -782,11 +845,11 @@ False).</li>
 y). Each set of coordinates is separated by a line
 break. There must not be any blank line or comments.</p>
 <p>For example:</p>
-<div class="last highlight-python"><div class="highlight"><pre>221.994164678 62.8374036151
-135.052291354 274.848787038
-186.478298303 11.8162949818
-362.642981933 323.083868198
-193.546595814 321.017948051
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="mf">221.994164678</span> <span class="mf">62.8374036151</span>
+<span class="mf">135.052291354</span> <span class="mf">274.848787038</span>
+<span class="mf">186.478298303</span> <span class="mf">11.8162949818</span>
+<span class="mf">362.642981933</span> <span class="mf">323.083868198</span>
+<span class="mf">193.546595814</span> <span class="mf">321.017948051</span>
 </pre></div>
 </div>
 </div>
@@ -844,6 +907,20 @@ might work well enough (default False).</li>
 <li><span class="target" id="orb.utils.astrometry.multi_aperture_photometry.params.silent"></span><strong>silent</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.multi_aperture_photometry.params.silent">¶</a> &#8211; (Optional) Silent function if True (default False).</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.astrometry.ra2deg">
+<code class="descclassname">orb.utils.astrometry.</code><code class="descname">ra2deg</code><span class="sig-paren">(</span><em>ra</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.astrometry.ra2deg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert RA in sexagesimal format to degrees.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.astrometry.ra2deg.params.ra"></span><strong>ra</strong><a class="paramlink headerlink reference internal" href="#orb.utils.astrometry.ra2deg.params.ra">¶</a> &#8211; RA in sexagesimal format</td>
 </tr>
 </tbody>
 </table>
@@ -947,8 +1024,8 @@ estimation is returned (default False).</li>
 B given the transformation parameters.</p>
 <p>Optionally SIP distorsion parameters can be given.</p>
 <p>The transformation steps are:</p>
-<div class="highlight-python"><div class="highlight"><pre>dist_pix_camA -&gt; perf_pix_camA -&gt; geometric transformation_A2B
--&gt; perf_pix_camB -&gt; dist_pix_camB
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dist_pix_camA</span> <span class="o">-&gt;</span> <span class="n">perf_pix_camA</span> <span class="o">-&gt;</span> <span class="n">geometric</span> <span class="n">transformation_A2B</span>
+<span class="o">-&gt;</span> <span class="n">perf_pix_camB</span> <span class="o">-&gt;</span> <span class="n">dist_pix_camB</span>
 </pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -999,8 +1076,41 @@ parameters of the frame B (default None).</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.fft.apod2sigma">
+<code class="descclassname">orb.utils.fft.</code><code class="descname">apod2sigma</code><span class="sig-paren">(</span><em>apod</em>, <em>fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.apod2sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the broadening ratio (gaussian width/sinc width) of the
+gaussian-sinc function in the spectrum, given the apodization
+level. Unit is that of the fwhm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.fft.apod2sigma.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.apod2sigma.params.apod">¶</a> &#8211; Apodization level (must be &gt;= 1.)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.fft.apod2width">
+<code class="descclassname">orb.utils.fft.</code><code class="descname">apod2width</code><span class="sig-paren">(</span><em>apod</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.apod2width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the width of the gaussian window for a given apodization level.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.fft.apod2width.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.apod2width.params.apod">¶</a> &#8211; Apodization level (must be &gt;= 1.)</td>
+</tr>
+</tbody>
+</table>
+<p>The apodization level is the broadening factor of the line (an
+apodization level of 2 mean that the line fwhm will be 2 times
+wider).</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.fft.apodize">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">apodize</code><span class="sig-paren">(</span><em>s</em>, <em>apodization_function='2.0'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.apodize" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.fft.</code><code class="descname">apodize</code><span class="sig-paren">(</span><em>s</em>, <em>apodization_function=2.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.apodize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apodize a spectrum</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1107,7 +1217,7 @@ beeing the interferogram axis)</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="orb.utils.fft.cube_raw_fft.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.cube_raw_fft.params.x">¶</a> &#8211; Interferogram cube</li>
 <li><span class="target" id="orb.utils.fft.cube_raw_fft.params.apod"></span><strong>apod</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.cube_raw_fft.params.apod">¶</a> &#8211; (Optional) Apodization function used. See
-<code class="xref py py-meth docutils literal"><span class="pre">utils.norton_beer_window()</span></code> (default None)</li>
+<code class="xref py py-meth docutils literal"><span class="pre">utils.gaussian_window()</span></code> (default None)</li>
 </ul>
 </td>
 </tr>
@@ -1129,6 +1239,25 @@ greater than the number of frames of the cube. Useful when
 the interferograms are non symetric (default None).</li>
 <li><span class="target" id="orb.utils.fft.find_zpd.params.return_zpd_shift"></span><strong>return_zpd_shift</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.find_zpd.params.return_zpd_shift">¶</a> &#8211; (Optional) If True return ZPD shift
 instead of ZPD index (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.fft.gaussian_window">
+<code class="descclassname">orb.utils.fft.</code><code class="descname">gaussian_window</code><span class="sig-paren">(</span><em>coeff</em>, <em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.gaussian_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Gaussian apodization function for a given broadening
+factor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.fft.gaussian_window.params.coeff"></span><strong>coeff</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.gaussian_window.params.coeff">¶</a> &#8211; FWHM relative to the sinc function. Must be a float &gt; 1.</li>
+<li><span class="target" id="orb.utils.fft.gaussian_window.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.gaussian_window.params.n">¶</a> &#8211; Number of points.</li>
 </ul>
 </td>
 </tr>
@@ -1382,7 +1511,7 @@ returned instead of the phase vector (default False).</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.fixed_params"></span><strong>fixed_params</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.fixed_params">¶</a> &#8211; (Optional) Define free and fixed parameters
 (1 for fixed, 0 for free, default [0,0])</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.weights"></span><strong>weights</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.weights">¶</a> &#8211; (Optional) spectrum weighting (a vector with
-values ranging from 0 to 1, 1 being the maximu weight)</li>
+values ranging from 0 to 1, 1 being the maximum weight)</li>
 <li><span class="target" id="orb.utils.fft.optimize_phase.params.high_order_phase"></span><strong>high_order_phase</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.optimize_phase.params.high_order_phase">¶</a> &#8211; (Optional) High order phase to be
 subtracted during the optimization process. Can be a path to a
 phase file . Note that if it is not a phase file name it must be
@@ -1475,7 +1604,7 @@ True.</p>
 
 <dl class="function">
 <dt id="orb.utils.fft.transform_interferogram">
-<code class="descclassname">orb.utils.fft.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>phase_correction=True</em>, <em>wave_calibration=True</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_deg=2</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>high_order_phase=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.transform_interferogram" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.fft.</code><code class="descname">transform_interferogram</code><span class="sig-paren">(</span><em>interf</em>, <em>nm_laser</em>, <em>calibration_coeff</em>, <em>step</em>, <em>order</em>, <em>window_type</em>, <em>zpd_shift</em>, <em>phase_correction=True</em>, <em>wave_calibration=True</em>, <em>return_phase=False</em>, <em>ext_phase=None</em>, <em>balanced=True</em>, <em>bad_frames_vector=None</em>, <em>smoothing_coeff=0.04</em>, <em>return_complex=False</em>, <em>final_step_nb=None</em>, <em>wavenumber=False</em>, <em>low_order_correction=False</em>, <em>high_order_phase=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.transform_interferogram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform an interferogram into a spectrum.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1490,7 +1619,8 @@ corresponding to the computed interferogram.</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.order">¶</a> &#8211; Folding order (if 0 the result cannot be projected
 on an axis in nm, i.e. wavenumber option is automatically set to
 True).</li>
-<li><span class="target" id="orb.utils.fft.transform_interferogram.params.window_type"></span><strong>window_type</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.window_type">¶</a> &#8211; Name of the apodization function.</li>
+<li><span class="target" id="orb.utils.fft.transform_interferogram.params.window_type"></span><strong>window_type</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.window_type">¶</a> &#8211; Name of the apodization function (can be
+learner95 or a float &gt; 1.).</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.zpd_shift"></span><strong>zpd_shift</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.zpd_shift">¶</a> &#8211; Shift of the interferogram to center the ZPD.</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.bad_frames_vector"></span><strong>bad_frames_vector</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.bad_frames_vector">¶</a> &#8211; (Optional) Mask-like vector containing
 ones for bad frames. Bad frames are replaced by zeros using a
@@ -1512,14 +1642,16 @@ the interferogram and return it. If polyfit_deg is &gt;= 0, return
 the coefficients of the fitted phase (default False). Note that
 this option is not compatible with ext_phase. You must set
 ext_phase to None to set return_phase to True.</li>
-<li><span class="target" id="orb.utils.fft.transform_interferogram.params.smoothing_deg"></span><strong>smoothing_deg</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.smoothing_deg">¶</a> &#8211; (Optional) Degree of zeros smoothing. A
-higher degree means a smoother transition from zeros parts (bad
+<li><span class="target" id="orb.utils.fft.transform_interferogram.params.smoothing_coeff"></span><strong>smoothing_coeff</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.smoothing_coeff">¶</a> &#8211; (Optional) Coefficient of zeros smoothing
+in proportion of the total interferogram size. A higher
+coefficient means a smoother transition from zeros parts (bad
 frames) to non-zero parts (good frames) of the
 interferogram. Good parts on the other side of the ZPD in
-symmetry with zeros parts are multiplied by 2. The same
-transition is used to multiply interferogram points by zero and
-2 (default 2). This operation is not done if smoothing_deg is
-set to 0.</li>
+symmetry with zeros parts are multiplied by 2 to keep a constant
+amount of energy. The same transition is used to multiply
+interferogram points by zero and 2. This operation is not done
+if smoothing_coeff is set to 0. must be between 0. and 0.2
+(default 0.04).</li>
 <li><span class="target" id="orb.utils.fft.transform_interferogram.params.balanced"></span><strong>balanced</strong><a class="paramlink headerlink reference internal" href="#orb.utils.fft.transform_interferogram.params.balanced">¶</a> &#8211; (Optional) If False, the interferogram is
 considered as unbalanced. It is flipped before its
 transformation to get a positive spectrum. Note
@@ -1816,17 +1948,17 @@ space character. The first column contains the wavelength axis
 in nm. The second column contains the transmission
 coefficients. Comments are preceded with a #.  Filter edges can
 be specified using the keywords : FILTER_MIN and FILTER_MAX:</p>
-<div class="last highlight-python"><div class="highlight"><pre>## ORBS filter file 
-# Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;
-# Filter name : SpIOMM_R
-# Wavelength in nm | Transmission percentage
-# FILTER_MIN 648
-# FILTER_MAX 678
-1000 0.001201585284
-999.7999878 0.009733387269
-999.5999756 -0.0004460749624
-999.4000244 0.01378122438
-999.2000122 0.002538740868
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="c1">## ORBS filter file </span>
+<span class="c1"># Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1"># Filter name : SpIOMM_R</span>
+<span class="c1"># Wavelength in nm | Transmission percentage</span>
+<span class="c1"># FILTER_MIN 648</span>
+<span class="c1"># FILTER_MAX 678</span>
+<span class="mi">1000</span> <span class="mf">0.001201585284</span>
+<span class="mf">999.7999878</span> <span class="mf">0.009733387269</span>
+<span class="mf">999.5999756</span> <span class="o">-</span><span class="mf">0.0004460749624</span>
+<span class="mf">999.4000244</span> <span class="mf">0.01378122438</span>
+<span class="mf">999.2000122</span> <span class="mf">0.002538740868</span>
 </pre></div>
 </div>
 </div>
@@ -1976,6 +2108,40 @@ rejected.</li>
 <p class="last">No rejection operation can be performed with less
 than 3 frames.</p>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.image.extract_elliptical_profile">
+<code class="descclassname">orb.utils.image.</code><code class="descname">extract_elliptical_profile</code><span class="sig-paren">(</span><em>im</em>, <em>x0</em>, <em>y0</em>, <em>rX</em>, <em>rY</em>, <em>theta</em>, <em>n=20</em>, <em>percentile=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.extract_elliptical_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the elliptical profile of a source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.im">¶</a> &#8211; Image</li>
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.x0"></span><strong>x0</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.x0">¶</a> &#8211; X position of the center</li>
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.theta"></span><strong>theta</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.theta">¶</a> &#8211; Angle of the ellipse (in deg)</li>
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.rX"></span><strong>rX</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.rX">¶</a> &#8211; Radius of the X axis</li>
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.rY"></span><strong>rY</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.rY">¶</a> &#8211; Radius of the Y axis</li>
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.n"></span><strong>n</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.n">¶</a> &#8211; (Optional) Number of divisions (default 20)</li>
+<li><span class="target" id="orb.utils.image.extract_elliptical_profile.params.percentile"></span><strong>percentile</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.extract_elliptical_profile.params.percentile">¶</a> &#8211; (Optional) percentile instead of std. Return
+(r, lmedian, [lmin, lmax]). Remember that the 1-sigma percentile
+is 18.865 for a gaussian distribution (default None).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parma y0:</th><td class="field-body"><p class="first">Y position of the center</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (r, l, lerr) where r is the list of radiuses
+along rX, l the mean luminosity in the ellipse portion
+corresponding to the radius, lerr the standard deviation of the
+luminosity in the same portion of the ellipse.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -2186,6 +2352,31 @@ filter. Must be &gt; 0 (default 1).</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.image.in_ellipse">
+<code class="descclassname">orb.utils.image.</code><code class="descname">in_ellipse</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>x0</em>, <em>y0</em>, <em>rX</em>, <em>rY</em>, <em>theta</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.in_ellipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tell whether a pixel is in the ellipse or not.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.image.in_ellipse.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.in_ellipse.params.x">¶</a> &#8211; X position of the point</li>
+<li><span class="target" id="orb.utils.image.in_ellipse.params.y"></span><strong>y</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.in_ellipse.params.y">¶</a> &#8211; Y position of the point</li>
+<li><span class="target" id="orb.utils.image.in_ellipse.params.x0"></span><strong>x0</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.in_ellipse.params.x0">¶</a> &#8211; X position of the center</li>
+<li><span class="target" id="orb.utils.image.in_ellipse.params.theta"></span><strong>theta</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.in_ellipse.params.theta">¶</a> &#8211; Angle of the ellipse (in deg)</li>
+<li><span class="target" id="orb.utils.image.in_ellipse.params.rX"></span><strong>rX</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.in_ellipse.params.rX">¶</a> &#8211; Radius of the X axis</li>
+<li><span class="target" id="orb.utils.image.in_ellipse.params.rY"></span><strong>rY</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.in_ellipse.params.rY">¶</a> &#8211; Radius of the Y axis</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parma y0:</th><td class="field-body"><p class="first last">Y position of the center</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.image.interpolate_map">
 <code class="descclassname">orb.utils.image.</code><code class="descname">interpolate_map</code><span class="sig-paren">(</span><em>m</em>, <em>dimx</em>, <em>dimy</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.interpolate_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolate 2D data map.</p>
@@ -2240,6 +2431,32 @@ present in the map.</p>
 <li><span class="target" id="orb.utils.image.nanbin_image.params.im"></span><strong>im</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.nanbin_image.params.im">¶</a> &#8211; Image to bin</li>
 <li><span class="target" id="orb.utils.image.nanbin_image.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.nanbin_image.params.binning">¶</a> &#8211; Binning factor (must be an integer)</li>
 </ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.image.on_ellipse">
+<code class="descclassname">orb.utils.image.</code><code class="descname">on_ellipse</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>x0</em>, <em>y0</em>, <em>rX</em>, <em>rY</em>, <em>theta</em>, <em>e=0.5</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.image.on_ellipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tell whether a pixel is on the ellipse or not.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.image.on_ellipse.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.x">¶</a> &#8211; X position of the point</li>
+<li><span class="target" id="orb.utils.image.on_ellipse.params.y"></span><strong>y</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.y">¶</a> &#8211; Y position of the point</li>
+<li><span class="target" id="orb.utils.image.on_ellipse.params.x0"></span><strong>x0</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.x0">¶</a> &#8211; X position of the center</li>
+<li><span class="target" id="orb.utils.image.on_ellipse.params.theta"></span><strong>theta</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.theta">¶</a> &#8211; Angle of the ellipse (in deg)</li>
+<li><span class="target" id="orb.utils.image.on_ellipse.params.rX"></span><strong>rX</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.rX">¶</a> &#8211; Radius of the X axis</li>
+<li><span class="target" id="orb.utils.image.on_ellipse.params.rY"></span><strong>rY</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.rY">¶</a> &#8211; Radius of the Y axis</li>
+<li><span class="target" id="orb.utils.image.on_ellipse.params.e"></span><strong>e</strong><a class="paramlink headerlink reference internal" href="#orb.utils.image.on_ellipse.params.e">¶</a> &#8211; (Optional) Precision in pixels (default 0.5).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parma y0:</th><td class="field-body"><p class="first last">Y position of the center</p>
 </td>
 </tr>
 </tbody>
@@ -2642,6 +2859,33 @@ files.</p>
 </div>
 <div class="section" id="module-orb.utils.misc">
 <span id="miscellaneous"></span><h2><a class="toc-backref" href="#id11">Miscellaneous</a><a class="headerlink" href="#module-orb.utils.misc" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="orb.utils.misc.aggregate_pixels">
+<code class="descclassname">orb.utils.misc.</code><code class="descname">aggregate_pixels</code><span class="sig-paren">(</span><em>pixel_list</em>, <em>radius=1.42</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.misc.aggregate_pixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregate neighbouring pixels into a set of sources. Two
+neighbours are found if there distance is smaller than a given
+radius (in pixels).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.misc.aggregate_pixels.params.pixel_list"></span><strong>pixel_list</strong><a class="paramlink headerlink reference internal" href="#orb.utils.misc.aggregate_pixels.params.pixel_list">¶</a> &#8211; A list of pixel position as returned by a
+function like numpy.nonzero.</li>
+<li><span class="target" id="orb.utils.misc.aggregate_pixels.params.radius"></span><strong>radius</strong><a class="paramlink headerlink reference internal" href="#orb.utils.misc.aggregate_pixels.params.radius">¶</a> &#8211; (Optional) Max separation between two pixels of the
+same source (default 1.42).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of pixel list. Each item of the list corresponds
+to a source and each source is itself a list of pixel positions
+(x,y).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="function">
 <dt id="orb.utils.misc.compute_obs_params">
 <code class="descclassname">orb.utils.misc.</code><code class="descname">compute_obs_params</code><span class="sig-paren">(</span><em>nm_min_filter</em>, <em>nm_max_filter</em>, <em>theta_min=5.01</em>, <em>theta_max=11.28</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.misc.compute_obs_params" title="Permalink to this definition">¶</a></dt>
@@ -3412,14 +3656,16 @@ else it is returned in nm.</li>
 
 <dl class="function">
 <dt id="orb.utils.spectrum.compute_line_fwhm_pix">
-<code class="descclassname">orb.utils.spectrum.</code><code class="descname">compute_line_fwhm_pix</code><span class="sig-paren">(</span><em>step_nb</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.compute_line_fwhm_pix" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">compute_line_fwhm_pix</code><span class="sig-paren">(</span><em>oversampling_ratio=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.compute_line_fwhm_pix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the expected FWHM of an unapodized sinc line in pixels.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.utils.spectrum.compute_line_fwhm_pix.params.step_nb"></span><strong>step_nb</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.compute_line_fwhm_pix.params.step_nb">¶</a> &#8211; Number of steps from the zpd to the longest side
-of the interferogram.</td>
+<tr class="field-odd field"><th class="field-name" colspan="2">Oversampling_ratio:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Ratio of the real number of steps of the
+spectrum vs step_nb (must be &gt; 1.) For a two sided interferogram
+the oversampling ratio is 2.</td>
 </tr>
 </tbody>
 </table>
@@ -3534,6 +3780,44 @@ axis in cm-1.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.spectrum.fast_pix2w">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">fast_pix2w</code><span class="sig-paren">(</span><em>pix</em>, <em>axis_min</em>, <em>axis_step</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.fast_pix2w" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fast conversion of pixel to wavelength/wavenumber</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.fast_pix2w.params.pix"></span><strong>pix</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fast_pix2w.params.pix">¶</a> &#8211; position along axis in pixels</li>
+<li><span class="target" id="orb.utils.spectrum.fast_pix2w.params.axis_min"></span><strong>axis_min</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fast_pix2w.params.axis_min">¶</a> &#8211; min axis wavelength/wavenumber</li>
+<li><span class="target" id="orb.utils.spectrum.fast_pix2w.params.axis_step"></span><strong>axis_step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fast_pix2w.params.axis_step">¶</a> &#8211; axis step size in wavelength/wavenumber</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.spectrum.fast_w2pix">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">fast_w2pix</code><span class="sig-paren">(</span><em>w</em>, <em>axis_min</em>, <em>axis_step</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.fast_w2pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fast conversion of wavelength/wavenumber to pixel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.fast_w2pix.params.w"></span><strong>w</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fast_w2pix.params.w">¶</a> &#8211; wavelength/wavenumber</li>
+<li><span class="target" id="orb.utils.spectrum.fast_w2pix.params.axis_min"></span><strong>axis_min</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fast_w2pix.params.axis_min">¶</a> &#8211; min axis wavelength/wavenumber</li>
+<li><span class="target" id="orb.utils.spectrum.fast_w2pix.params.axis_step"></span><strong>axis_step</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.fast_w2pix.params.axis_step">¶</a> &#8211; axis step size in wavelength/wavenumber</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.spectrum.fwhm_cm12nm">
 <code class="descclassname">orb.utils.spectrum.</code><code class="descname">fwhm_cm12nm</code><span class="sig-paren">(</span><em>fwhm_cm1</em>, <em>cm1</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.fwhm_cm12nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a FWHM in cm-1 to a FWHM in nm.</p>
@@ -3584,7 +3868,25 @@ axis in cm-1.</p>
 <li><span class="target" id="orb.utils.spectrum.gaussian1d.params.h"></span><strong>h</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d.params.h">¶</a> &#8211; Height</li>
 <li><span class="target" id="orb.utils.spectrum.gaussian1d.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d.params.a">¶</a> &#8211; Amplitude</li>
 <li><span class="target" id="orb.utils.spectrum.gaussian1d.params.dx"></span><strong>dx</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d.params.dx">¶</a> &#8211; Position of the center</li>
-<li><span class="target" id="orb.utils.spectrum.gaussian1d.params.w"></span><strong>w</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d.params.w">¶</a> &#8211; FWHM, <span class="math">\(\text{FWHM} = \text{Width} \times 2 \sqrt{2 \ln 2}\)</span></li>
+<li><span class="target" id="orb.utils.spectrum.gaussian1d.params.fwhm"></span><strong>fwhm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d.params.fwhm">¶</a> &#8211; FWHM, <span class="math">\(\text{FWHM} = \text{Width} \times 2 \sqrt{2 \ln 2}\)</span></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.spectrum.gaussian1d_flux">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">gaussian1d_flux</code><span class="sig-paren">(</span><em>a</em>, <em>fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.gaussian1d_flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute flux of a 1D Gaussian.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.gaussian1d_flux.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d_flux.params.a">¶</a> &#8211; Amplitude</li>
+<li><span class="target" id="orb.utils.spectrum.gaussian1d_flux.params.fwhm"></span><strong>fwhm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.gaussian1d_flux.params.fwhm">¶</a> &#8211; FWHM</li>
 </ul>
 </td>
 </tr>
@@ -3621,7 +3923,7 @@ else it is returned in nm.</li>
 :param _sphinx_paramlinks_orb.utils.spectrum.lorentzian1d.h: Height
 :param _sphinx_paramlinks_orb.utils.spectrum.lorentzian1d.a: Amplitude
 :param _sphinx_paramlinks_orb.utils.spectrum.lorentzian1d.dx: Position of the center
-:param _sphinx_paramlinks_orb.utils.spectrum.lorentzian1d.w: FWHM</p>
+:param _sphinx_paramlinks_orb.utils.spectrum.lorentzian1d.fwhm: FWHM</p>
 </dd></dl>
 
 <dl class="function">
@@ -3646,7 +3948,7 @@ in nm</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">Slow because of interpolation : using
-orb.cutils.fast_w2pix is much faster.</p>
+fast_w2pix is much faster.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3689,7 +3991,7 @@ in nm</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">Slow because of interpolation : using
-orb.cutils.fast_pix2w is much faster.</p>
+fast_pix2w is much faster.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3713,7 +4015,90 @@ orb.cutils.fast_pix2w is much faster.</p>
 :param _sphinx_paramlinks_orb.utils.spectrum.sinc1d.h: Height
 :param _sphinx_paramlinks_orb.utils.spectrum.sinc1d.a: Amplitude
 :param _sphinx_paramlinks_orb.utils.spectrum.sinc1d.dx: Position of the center
-:param _sphinx_paramlinks_orb.utils.spectrum.sinc1d.w: FWHM</p>
+:param _sphinx_paramlinks_orb.utils.spectrum.sinc1d.fwhm: FWHM</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.spectrum.sinc1d_flux">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">sinc1d_flux</code><span class="sig-paren">(</span><em>a</em>, <em>fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.sinc1d_flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute flux of a 1D sinc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.sinc1d_flux.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sinc1d_flux.params.a">¶</a> &#8211; Amplitude</li>
+<li><span class="target" id="orb.utils.spectrum.sinc1d_flux.params.fwhm"></span><strong>fwhm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sinc1d_flux.params.fwhm">¶</a> &#8211; FWHM</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.spectrum.sincgauss1d">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">sincgauss1d</code><span class="sig-paren">(</span><em>x</em>, <em>h</em>, <em>a</em>, <em>dx</em>, <em>fwhm</em>, <em>sigma</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.sincgauss1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 1D sinc convoluted with a gaussian of parameter sigma.</p>
+<p>If sigma == 0 returns a pure sinc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d.params.x">¶</a> &#8211; 1D array of float64 giving the positions where the
+sinc is evaluated</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d.params.h"></span><strong>h</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d.params.h">¶</a> &#8211; Height</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d.params.a">¶</a> &#8211; Amplitude</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d.params.dx"></span><strong>dx</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d.params.dx">¶</a> &#8211; Position of the center</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d.params.fwhm"></span><strong>fwhm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d.params.fwhm">¶</a> &#8211; FWHM of the sinc</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d.params.sigma"></span><strong>sigma</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d.params.sigma">¶</a> &#8211; Sigma of the gaussian.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.spectrum.sincgauss1d_flux">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">sincgauss1d_flux</code><span class="sig-paren">(</span><em>a</em>, <em>fwhm</em>, <em>sigma</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.sincgauss1d_flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute flux of a 1D sinc convoluted with a Gaussian of
+parameter sigma.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d_flux.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d_flux.params.a">¶</a> &#8211; Amplitude</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d_flux.params.fwhm"></span><strong>fwhm</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d_flux.params.fwhm">¶</a> &#8211; FWHM of the sinc</li>
+<li><span class="target" id="orb.utils.spectrum.sincgauss1d_flux.params.sigma"></span><strong>sigma</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.sincgauss1d_flux.params.sigma">¶</a> &#8211; Sigma of the gaussian</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.spectrum.thermal_broadening_kms">
+<code class="descclassname">orb.utils.spectrum.</code><code class="descname">thermal_broadening_kms</code><span class="sig-paren">(</span><em>wl</em>, <em>aw</em>, <em>T</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.spectrum.thermal_broadening_kms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the width of the line due to thermal broadening in km/s.</p>
+<p>Equation can be refered to Harwit (Astrophysical concepts) but his
+definition gives the HWHM (Half-Width at Half-Maximum).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.spectrum.thermal_broadening_kms.params.wl"></span><strong>wl</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.thermal_broadening_kms.params.wl">¶</a> &#8211; Wavelength of the line (in nm)</li>
+<li><span class="target" id="orb.utils.spectrum.thermal_broadening_kms.params.aw"></span><strong>aw</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.thermal_broadening_kms.params.aw">¶</a> &#8211; Atomic weight of the emitting atom</li>
+<li><span class="target" id="orb.utils.spectrum.thermal_broadening_kms.params.T"></span><strong>T</strong><a class="paramlink headerlink reference internal" href="#orb.utils.spectrum.thermal_broadening_kms.params.T">¶</a> &#8211; Temperature in K</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -4093,7 +4478,7 @@ database (see notes) (default &#8216;USNO-B1&#8217;)</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.0-DR1-beta',
+            VERSION:'2.1.1-pre-July2016-mission',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

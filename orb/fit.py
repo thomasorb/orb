@@ -299,22 +299,29 @@ class FitVector(object):
         ndim, nwalkers = np.size(p), np.size(p) * NWALKERS_COEFF
         pos = [p + p_err * np.random.randn(ndim) for i in range(nwalkers)]
            
-        # noise evaluation
-        sampler = emcee.EnsembleSampler(nwalkers, ndim,
-                                        self.get_lnposterior_probability,
-                                        args=(sigma,))
-        sampler.run_mcmc(pos, MCMC_RUN_NB)
-        samples = sampler.chain[:, MCMC_RUN_THRESHOLD:, :].reshape((-1, ndim))
+        try:
+            sampler = emcee.EnsembleSampler(nwalkers, ndim,
+                                            self.get_lnposterior_probability,
+                                            args=(sigma,))
+            sampler.run_mcmc(pos, MCMC_RUN_NB)
+            samples = sampler.chain[:, MCMC_RUN_THRESHOLD:, :].reshape((-1, ndim))
+            
+            err_mcmc = np.array(
+                zip(*np.percentile(samples, [PERCENTILE, 100-PERCENTILE],
+                                   axis=0)))
+            err_min_mcmc = err_mcmc[:,0] - p
+            err_max_mcmc = err_mcmc[:,1] - p
+            p_mcmc_err_list = self._all_p_vect2list(np.nanmean(
+                (np.abs(err_min_mcmc),
+                 np.abs(err_max_mcmc)), axis=0))
 
-        err_mcmc = np.array(
-            zip(*np.percentile(samples, [PERCENTILE, 100-PERCENTILE],
-                               axis=0)))
-        err_min_mcmc = err_mcmc[:,0] - p
-        err_max_mcmc = err_mcmc[:,1] - p
-        p_mcmc_err_list = self._all_p_vect2list(np.nanmean(
-            (np.abs(err_min_mcmc),
-             np.abs(err_max_mcmc)), axis=0))
-             
+        except Exception, e:
+            warnings.warn('An error has occured during MCMC uncertainty computation : {}'.format(e))
+            err_mcmc = np.empty_like(p)
+            err_mcmc.fill(np.nan)
+            p_mcmc_err_list = self._all_p_vect2list(err_mcmc)
+            
+                        
         full_p_mcmc_err_list = list()
         for i in range(len(self.models)):
             # recompute p_val error from p_free error
@@ -330,7 +337,8 @@ class FitVector(object):
         ##     print samples[:, iparam]
         
         ## ## print sampler.chain.shape
-        ## ## [pl.plot(sampler.chain[i,:,0]) for i in range(sampler.chain.shape[0])]       ## ## pl.show()
+        ## ## [pl.plot(sampler.chain[i,:,0]) for i in range(sampler.chain.shape[0])]
+        ## ## pl.show()
         
         return np.abs(full_p_mcmc_err_list)
                
@@ -355,7 +363,7 @@ class FitVector(object):
                                   # function ;)
 
         RETRY_MAX_NFEV_BYPARAM = 30
-        RETRY_MAX_COUNTS_BYPARAM = 10
+        RETRY_MAX_COUNTS_BYPARAM = 2
         RETRY_RANDOM_COEFF = 5e-2
         MCMC_RANDOM_COEFF = 1e-2
         
@@ -431,9 +439,9 @@ class FitVector(object):
                 # compute MCMC uncertainty estimates
                 if compute_mcmc_error:
                     sigma = np.nanstd(last_diff)
-                    returned_data['fit-params-err-mcmc'] = (
-                        self._compute_mcmc_error(
-                            fit[0], cov_diag, sigma))
+                    returned_data['fit-params-err-mcmc'] = self._compute_mcmc_error(
+                        fit[0], cov_diag, sigma)
+                    
                     
             # if no covariance matrix can be obtained, maybe fit is
             # just too good and has converged too fast on one or more
@@ -1696,8 +1704,6 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         filter_function = np.ones(spectrum.shape[0], dtype=float)
         filter_def = 'fixed'
 
-
-
     fs = FitVector(spectrum,
                    ((linesmodel, 'add'),
                     (ContinuumModel, 'add'),
@@ -1805,8 +1811,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             wavenumber=wavenumber)
 
         fit['velocity'] = velocity.dat
+        
         if line_params_err is not None:
-            fit['velocity-err'] = velocity.err
+            fit['velocity-err'] = np.abs(velocity.err)
         
         # compute broadening
         sigma_total_kms = line_params[:,4]
@@ -1820,7 +1827,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
        
         fit['broadening'] = broadening.dat
         if line_params_err is not None:
-            fit['broadening-err'] = broadening.err
+            fit['broadening-err'] = np.abs(broadening.err)
 
         # compute flux
         
@@ -1847,7 +1854,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             
         fit['flux'] = flux.dat
         if line_params_err is not None:
-            fit['flux-err'] = flux.err
+            fit['flux-err'] = np.abs(flux.err)
 
         # compute SNR
         if line_params_err is not None:
@@ -1856,7 +1863,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         # store lines-params
         fit['lines-params'] = line_params.dat
         if line_params_err is not None:
-            fit['lines-params-err'] = line_params.err
+            fit['lines-params-err'] = np.abs(line_params.err)
         
         return fit
     

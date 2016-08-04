@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 2.0-DR1-beta documentation</title>
+  <title>Core module &mdash; Orb 2.1.1-pre-July2016-mission documentation</title>
   
 
   
@@ -34,7 +34,7 @@
   
 
   
-    <link rel="top" title="Orb 2.0-DR1-beta documentation" href="index.html"/>
+    <link rel="top" title="Orb 2.1.1-pre-July2016-mission documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
         <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                2.0-DR1-beta
+                2.1.1-pre-July2016-mission
               </div>
             
           
@@ -97,7 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">Core module</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#tools-class">Tools class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cube-class">Cube class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#hdfcube-class">HDFCube class</a></li>
@@ -112,6 +112,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#logger-class">Logger class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#waves-class">Waves class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#standard-class">Standard class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#header-class">Header class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
@@ -146,7 +147,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -188,6 +189,7 @@
 <li><a class="reference internal" href="#logger-class" id="id13">Logger class</a></li>
 <li><a class="reference internal" href="#waves-class" id="id14">Waves class</a></li>
 <li><a class="reference internal" href="#standard-class" id="id15">Standard class</a></li>
+<li><a class="reference internal" href="#header-class" id="id16">Header class</a></li>
 </ul>
 </li>
 </ul>
@@ -196,14 +198,14 @@
 <h2><a class="toc-backref" href="#id2">Tools class</a><a class="headerlink" href="#tools-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Tools">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Tools</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Tools</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>ncpus=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Parent class of all classes of orb.</p>
 <p>Manage configuration file, implement basic methods and manage the
 server for parallel processing.</p>
 <dl class="method">
 <dt id="core.Tools.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>ncpus=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize Tools class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -216,6 +218,9 @@ header of the name of each created file (default
 <li><span class="target" id="core.Tools.params.no_log"></span><strong>no_log</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.no_log">¶</a> &#8211; (Optional) If True (and if sys.stdout has been
 redirected to Logger) no log file is created (default
 False).</li>
+<li><span class="target" id="core.Tools.params.ncpus"></span><strong>ncpus</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.ncpus">¶</a> &#8211; (Optional) Number of CPUs to use for parallel
+processing. set to None gives the maximum number available
+(default None).</li>
 <li><span class="target" id="core.Tools.params.tuning_parameters"></span><strong>tuning_parameters</strong><a class="paramlink headerlink reference internal" href="#core.Tools.params.tuning_parameters">¶</a> &#8211; (Optional) Some parameters of the
 methods can be tuned externally using this dictionary. The
 dictionary must contains the full parameter name
@@ -529,12 +534,12 @@ parameter (in one word - no empty space). The following
 words on the same line are not read. A line not starting by
 a parameter key is considered as a comment. Please refer to
 the configuration file in orb/data/ folder:</p>
-<div class="last highlight-python"><div class="highlight"><pre>## ORB configuration file 
-# Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="c1">## ORB configuration file </span>
+<span class="c1"># Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
 
-## Instrumental parameters
-PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
-PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
+<span class="c1">## Instrumental parameters</span>
+<span class="n">PIX_SIZE_CAM1</span> <span class="mi">20</span> <span class="c1"># Size of one pixel of the camera 1 in um</span>
+<span class="n">PIX_SIZE_CAM2</span> <span class="mi">15</span> <span class="c1"># Size of one pixel of the camera 2 in um  </span>
 </pre></div>
 </div>
 </div>
@@ -830,7 +835,7 @@ table file (default std_table.orb).</li>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple [standard file path, standard type]. Standard type
-can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
+can be &#8216;MASSEY&#8217;, &#8216;CALSPEC&#8217;, &#8216;MISC&#8217; or &#8216;OKE&#8217;.</p>
 </td>
 </tr>
 </tbody>
@@ -854,7 +859,7 @@ table file (default std_table.orb).</td>
 
 <dl class="method">
 <dt id="core.Tools._get_standard_radec">
-<code class="descname">_get_standard_radec</code><span class="sig-paren">(</span><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_radec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_get_standard_radec</code><span class="sig-paren">(</span><em>standard_name</em>, <em>standard_table_name='std_table.orb'</em>, <em>return_pm=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_standard_radec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a standard spectrum file path.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -865,11 +870,13 @@ table file (default std_table.orb).</td>
 recorded in the standard table.</li>
 <li><span class="target" id="core.Tools._get_standard_radec.params.standard_table_name"></span><strong>standard_table_name</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_radec.params.standard_table_name">¶</a> &#8211; (Optional) Name of the standard
 table file (default std_table.orb).</li>
+<li><span class="target" id="core.Tools._get_standard_radec.params.return_pm"></span><strong>return_pm</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_standard_radec.params.return_pm">¶</a> &#8211; (Optional) Returns also proper motion if
+recorded (in mas/yr), else returns 0.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple [standard file path, standard type]. Standard type
-can be &#8216;MASSEY&#8217; of &#8216;CALSPEC&#8217;.</p>
+can be &#8216;MASSEY&#8217;, &#8216;MISC&#8217;, &#8216;CALSPEC&#8217; or &#8216;OKE&#8217;.</p>
 </td>
 </tr>
 </tbody>
@@ -1438,7 +1445,7 @@ must be installed (default False).</li>
 <h2><a class="toc-backref" href="#id3">Cube class</a><a class="headerlink" href="#cube-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Cube">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>no_sort=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>no_sort=False</em>, <em>ncpus=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Generate and manage a <strong>virtual frame-divided cube</strong>.</p>
 <div class="admonition note">
@@ -1451,7 +1458,7 @@ data file and loading an entire cube to process it.</p>
 can be accessed virtually as if it was loaded in memory.</p>
 <div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
-3</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">cube</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">(</span><span class="s1">&#39;liste&#39;</span><span class="p">)</span> <span class="c1"># A simple list is enough to initialize a Cube instance</span>
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">cube</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">(</span><span class="s1">&#39;liste&#39;</span><span class="p">)</span> <span class="c1"># A simple list is enough to initialize a Cube instance</span>
 <span class="n">quadrant</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">[</span><span class="mi">25</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span> <span class="p">:]</span> <span class="c1"># Here you just load a small quadrant</span>
 <span class="n">spectrum</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">[</span><span class="mi">84</span><span class="p">,</span><span class="mi">58</span><span class="p">,:]</span> <span class="c1"># load spectrum at pixel [84,58]</span>
 </pre></div>
@@ -1469,7 +1476,7 @@ Cube()._silent_load to True.</p>
 
 <dl class="method">
 <dt id="core.Cube.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>no_sort=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>image_list_path</em>, <em>image_mode='classic'</em>, <em>chip_index=1</em>, <em>binning=1</em>, <em>data_prefix='./temp/data.'</em>, <em>config_file_name='config.orb'</em>, <em>project_header=[]</em>, <em>wcs_header=[]</em>, <em>calibration_laser_header=[]</em>, <em>overwrite=False</em>, <em>silent_init=False</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>indexer=None</em>, <em>no_sort=False</em>, <em>ncpus=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize Cube class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1531,6 +1538,9 @@ instance. If not None created files can be indexed by this
 instance.</li>
 <li><span class="target" id="core.Cube.params.no_sort"></span><strong>no_sort</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.no_sort">¶</a> &#8211; (Optional) If True, no sort of the file list
 is done. Files list is taken as is (default False).</li>
+<li><span class="target" id="core.Cube.params.ncpus"></span><strong>ncpus</strong><a class="paramlink headerlink reference internal" href="#core.Cube.params.ncpus">¶</a> &#8211; (Optional) Number of CPUs to use for parallel
+processing. set to None gives the maximum number available
+(default None).</li>
 </ul>
 </td>
 </tr>
@@ -1595,7 +1605,7 @@ frame.</p>
 
 <dl class="method">
 <dt id="core.Cube.export">
-<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>header=None</em>, <em>overwrite=False</em>, <em>force_hdf5=False</em>, <em>force_fits=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
+<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>header=None</em>, <em>overwrite=False</em>, <em>force_hdf5=False</em>, <em>force_fits=False</em>, <em>calibration_laser_map_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
 <dd><p>Export cube as one FITS/HDF5 file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1619,6 +1629,8 @@ will be in the format of the input files (default False).</li>
 <li><span class="target" id="core.Cube.export.params.force_fits"></span><strong>force_fits</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.force_fits">¶</a> &#8211; (Optional) If True, output is in FITS
 format. If False it will be in the format of the input files
 (default False).</li>
+<li><span class="target" id="core.Cube.export.params.calibration_laser_map_path"></span><strong>calibration_laser_map_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.calibration_laser_map_path">¶</a> &#8211; (Optional) Path to a
+calibration laser map to append (default None).</li>
 </ul>
 </td>
 </tr>
@@ -2078,6 +2090,12 @@ considered as invalid and an exception is raised.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.HDFCube.get_calibration_laser_map">
+<code class="descname">get_calibration_laser_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return stored calibration laser map</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.HDFCube.get_cube_header">
 <code class="descname">get_cube_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.HDFCube.get_cube_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the header of a the cube.</p>
@@ -2240,6 +2258,20 @@ exists, it is deleted (default False).</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.OutHDFCube.append_calibration_laser_map">
+<code class="descname">append_calibration_laser_map</code><span class="sig-paren">(</span><em>calib_map</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a calibration laser map to the HDF5 cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.OutHDFCube.append_calibration_laser_map.params.calib_map"></span><strong>calib_map</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_calibration_laser_map.params.calib_map">¶</a> &#8211; Calibration laser map to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.OutHDFCube.append_deep_frame">
 <code class="descname">append_deep_frame</code><span class="sig-paren">(</span><em>deep_frame</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_deep_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Append a deep frame to the HDF5 cube.</p>
@@ -2300,7 +2332,7 @@ exists, it is deleted (default False).</li>
 <code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the HDF5 cube. Class cannot work properly once this
 method is called so delete it. e.g.:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">outhdfcube</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">outhdfcube</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="k">del</span> <span class="n">outhdfcube</span>
 </pre></div>
 </div>
@@ -2551,7 +2583,7 @@ made (default True).</li>
 <h2><a class="toc-backref" href="#id9">Indexer class</a><a class="headerlink" href="#indexer-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="core.Indexer">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Indexer</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Indexer</code><span class="sig-paren">(</span><em>data_prefix='./temp/data.'</em>, <em>no_log=False</em>, <em>tuning_parameters={}</em>, <em>ncpus=None</em>, <em>config_file_name='config.orb'</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Indexer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>Manage locations of created files.</p>
 <p>All files locations are stored in a text-like file: the index
@@ -2675,23 +2707,23 @@ set to None.</td>
 <dd><p>Bases: <a class="reference internal" href="#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">core.Tools</span></code></a></p>
 <p>This class manages emission lines names and wavelengths.</p>
 <p>Spectral lines rest wavelength:</p>
-<div class="highlight-python"><div class="highlight"><pre>============ ======== =======
-  Em. Line    Vaccum    Air
-============ ======== =======
-[OII]3726    372.709  372.603
-[OII]3729    372.988  372.882
-Hepsilon     397.119  397.007
-Hdelta       410.292  410.176
-Hgamma       434.169  434.047
-[OIII]4363   436.444  436.321
-Hbeta        486.269  486.133
-[OIII]4959   496.030  495.892
-[OIII]5007   500.824  500.684
-[NII]6548    654.984  654.803
-Halpha       656.461  656.280
-[NII]6583    658.523  658.341
-[SII]6716    671.832  671.647
-[SII]6731    673.271  673.085
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">============</span> <span class="o">========</span> <span class="o">=======</span>
+  <span class="n">Em</span><span class="o">.</span> <span class="n">Line</span>    <span class="n">Vaccum</span>    <span class="n">Air</span>
+<span class="o">============</span> <span class="o">========</span> <span class="o">=======</span>
+<span class="p">[</span><span class="n">OII</span><span class="p">]</span><span class="mi">3726</span>    <span class="mf">372.709</span>  <span class="mf">372.603</span>
+<span class="p">[</span><span class="n">OII</span><span class="p">]</span><span class="mi">3729</span>    <span class="mf">372.988</span>  <span class="mf">372.882</span>
+<span class="n">Hepsilon</span>     <span class="mf">397.119</span>  <span class="mf">397.007</span>
+<span class="n">Hdelta</span>       <span class="mf">410.292</span>  <span class="mf">410.176</span>
+<span class="n">Hgamma</span>       <span class="mf">434.169</span>  <span class="mf">434.047</span>
+<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">4363</span>   <span class="mf">436.444</span>  <span class="mf">436.321</span>
+<span class="n">Hbeta</span>        <span class="mf">486.269</span>  <span class="mf">486.133</span>
+<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">4959</span>   <span class="mf">496.030</span>  <span class="mf">495.892</span>
+<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">5007</span>   <span class="mf">500.824</span>  <span class="mf">500.684</span>
+<span class="p">[</span><span class="n">NII</span><span class="p">]</span><span class="mi">6548</span>    <span class="mf">654.984</span>  <span class="mf">654.803</span>
+<span class="n">Halpha</span>       <span class="mf">656.461</span>  <span class="mf">656.280</span>
+<span class="p">[</span><span class="n">NII</span><span class="p">]</span><span class="mi">6583</span>    <span class="mf">658.523</span>  <span class="mf">658.341</span>
+<span class="p">[</span><span class="n">SII</span><span class="p">]</span><span class="mi">6716</span>    <span class="mf">671.832</span>  <span class="mf">671.647</span>
+<span class="p">[</span><span class="n">SII</span><span class="p">]</span><span class="mi">6731</span>    <span class="mf">673.271</span>  <span class="mf">673.085</span>
 </pre></div>
 </div>
 <dl class="method">
@@ -2724,6 +2756,26 @@ Halpha       656.461  656.280
 <dt id="core.Lines.air_sky_lines_nm">
 <code class="descname">air_sky_lines_nm</code><em class="property"> = None</em><a class="headerlink" href="#core.Lines.air_sky_lines_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Air sky lines wavelength</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Lines.get_line_cm1">
+<code class="descname">get_line_cm1</code><span class="sig-paren">(</span><em>lines_name</em>, <em>air=True</em>, <em>round_ang=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Lines.get_line_cm1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the wavenumber of a line or a list of lines</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Lines.get_line_cm1.params.lines_name"></span><strong>lines_name</strong><a class="paramlink headerlink reference internal" href="#core.Lines.get_line_cm1.params.lines_name">¶</a> &#8211; List of line names</li>
+<li><span class="target" id="core.Lines.get_line_cm1.params.air"></span><strong>air</strong><a class="paramlink headerlink reference internal" href="#core.Lines.get_line_cm1.params.air">¶</a> &#8211; (Optional) If True, air rest wavenumber are
+returned. If False, vacuum rest wavenumber are
+returned (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -2831,15 +2883,15 @@ retrieve. If 0 all lines are given (default 0).</li>
 <p>Manage an option file.</p>
 <p>An option file is a file containing keywords and values and
 optionally some comments indicated by &#8216;#&#8217;, e.g.:</p>
-<div class="highlight-python"><div class="highlight"><pre>## ORBS configuration file 
-# Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;
-# File : config.orb
-## Observatory
-OBSERVATORY_NAME OMM # Observatory name
-TELESCOPE_NAME OMM # Telescope name
-INSTRUMENT_NAME SpIOMM # Instrument name
-OBS_LAT 45.455000 # Observatory latitude
-OBS_LON -71.153000 # Observatory longitude
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">## ORBS configuration file </span>
+<span class="c1"># Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1"># File : config.orb</span>
+<span class="c1">## Observatory</span>
+<span class="n">OBSERVATORY_NAME</span> <span class="n">OMM</span> <span class="c1"># Observatory name</span>
+<span class="n">TELESCOPE_NAME</span> <span class="n">OMM</span> <span class="c1"># Telescope name</span>
+<span class="n">INSTRUMENT_NAME</span> <span class="n">SpIOMM</span> <span class="c1"># Instrument name</span>
+<span class="n">OBS_LAT</span> <span class="mf">45.455000</span> <span class="c1"># Observatory latitude</span>
+<span class="n">OBS_LON</span> <span class="o">-</span><span class="mf">71.153000</span> <span class="c1"># Observatory longitude</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -3253,6 +3305,24 @@ in erg/cm^2/s/A.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.Standard._read_oke_dat">
+<code class="descname">_read_oke_dat</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard._read_oke_dat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a data file from Oke J. B., Faint spectrophotometric
+standards, AJ, (1990) and return a tuple of arrays (wavelength,
+flux).</p>
+<p>Returned wavelength axis is in A. Returned flux is converted
+in erg/cm^2/s/A.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Standard._read_oke_dat.params.file_path"></span><strong>file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard._read_oke_dat.params.file_path">¶</a> &#8211; Path to the Oke dat file (&#8216;fXX.dat&#8217;).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.Standard.compute_optimal_texp">
 <code class="descname">compute_optimal_texp</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>seeing</em>, <em>filter_name</em>, <em>camera_number</em>, <em>saturation=30000</em>, <em>airmass=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.compute_optimal_texp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the optimal exposition time given the total flux of
@@ -3329,6 +3399,34 @@ angle (default 1).</li>
 </dd></dl>
 
 </div>
+<div class="section" id="header-class">
+<h2><a class="toc-backref" href="#id16">Header class</a><a class="headerlink" href="#header-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="core.Header">
+<em class="property">class </em><code class="descclassname">core.</code><code class="descname">Header</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">astropy.io.fits.header.Header</span></code></p>
+<p>Extension of <code class="xref py py-class docutils literal"><span class="pre">astropy.io.fits.Header</span></code></p>
+<dl class="method">
+<dt id="core.Header.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Header.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize Header class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.Header.params.args"></span><strong>args</strong><a class="paramlink headerlink reference internal" href="#core.Header.params.args">¶</a> &#8211; args of <code class="xref py py-class docutils literal"><span class="pre">astropy.io.fits.Header</span></code></li>
+<li><span class="target" id="core.Header.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#core.Header.params.kwargs">¶</a> &#8211; Kwargs of <code class="xref py py-class docutils literal"><span class="pre">astropy.io.fits.Header</span></code></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -3372,7 +3470,7 @@ angle (default 1).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.0-DR1-beta',
+            VERSION:'2.1.1-pre-July2016-mission',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

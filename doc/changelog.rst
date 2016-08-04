@@ -897,3 +897,22 @@ Fit module
 * flux is now computed with analytic error propagation for sinc,
   gaussian and sincgauss (see :py:class:`orb.data` and
   :py:meth:`orb.utils.spectrum.sincgauss1d_flux`)
+
+
+Data module
+-----------
+
+:py:class:`orb.data.Data1D` and :py:class:`orb.data.Data2D` removed
+and replaced by only one general class
+:py:class:`orb.data.Data`. Dawson and Erf functions added along with
+complex data managing.
+    
+
+Miscellaneous
+-------------
+
+* Minor changes in ds9 region file loading function
+
+* :py:class:`orb.core.Header` class added as an extension of
+  :py:class:`astropy.wcs.Header` to manage Headers. It is just an
+  initial framework.
