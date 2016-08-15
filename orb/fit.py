@@ -291,21 +291,25 @@ class FitVector(object):
         """     
         PERCENTILE = 16 # corresponds to a 1-sigma uncertainty
         NWALKERS_COEFF = 2 # number of walkers
-        MCMC_RUN_NB = 1000 # number of walker steps
-        MCMC_RUN_THRESHOLD = 250 # Burn-in samples threshold
+        MCMC_RUN_NB = 500 # number of walker steps
+        MCMC_RUN_THRESHOLD = 100 # Burn-in samples threshold
                 
         # walkers definition which starts around a tiny gaussian ball around
         # the maximum likelihood found with a classic optimization
         ndim, nwalkers = np.size(p), np.size(p) * NWALKERS_COEFF
         pos = [p + p_err * np.random.randn(ndim) for i in range(nwalkers)]
-           
         try:
             sampler = emcee.EnsembleSampler(nwalkers, ndim,
                                             self.get_lnposterior_probability,
                                             args=(sigma,))
             sampler.run_mcmc(pos, MCMC_RUN_NB)
             samples = sampler.chain[:, MCMC_RUN_THRESHOLD:, :].reshape((-1, ndim))
-            
+        
+            ## import corner
+            ## fig = corner.corner(samples, truths=p)
+            ## fig.savefig("triangle.svg")
+            ## fig.savefig("triangle.pdf")
+
             err_mcmc = np.array(
                 zip(*np.percentile(samples, [PERCENTILE, 100-PERCENTILE],
                                    axis=0)))
@@ -327,7 +331,8 @@ class FitVector(object):
             # recompute p_val error from p_free error
             full_p_mcmc_err_list.append(self.models[i].get_p_val_err(
                 p_mcmc_err_list[i]))
-            
+
+        
         ## import pylab as pl
         ## for i in range(ndim):
         ##     pl.hist(samples[:,i], bins=100)
@@ -343,7 +348,7 @@ class FitVector(object):
         return np.abs(full_p_mcmc_err_list)
                
 
-    def fit(self, use_jacobian=False, compute_mcmc_error=False):
+    def fit(self, use_jacobian=False, compute_mcmc_error=False, no_error=False):
         """Fit data vector.
 
         This is the central function of the class.
@@ -357,6 +362,9 @@ class FitVector(object):
           Monte-Carlo error on the fit parameters (Uncertainty
           estimates might be slighly better constrained but computing
           time can be orders of magnitude longer) (default False).
+
+        :param no_error: (Optional) If True, uncertainties are not
+          computed (default False).
         """
         all_args = dict(locals()) # used in case fit is retried (must stay
                                   # at the very beginning of the
@@ -381,8 +389,9 @@ class FitVector(object):
                 np.arange(self.vector.shape[0]),
                 self._get_vector_onrange(),
                 p0=p_init_vect,
+                sigma=None,
                 method='lm',
-                Dfun=Dfun,
+                jac=Dfun,
                 maxfev=self.max_fev,
                 full_output=True,
                 xtol=self.fit_tol)
@@ -420,54 +429,55 @@ class FitVector(object):
             returned_data['reduced-chi-square'] = red_chisq
             returned_data['chi-square'] = chisq
             returned_data['residual'] = last_diff
-            
-            # compute least square fit errors
-            cov_x = fit[1]
-            if np.all(np.isfinite(cov_x)):
-                self.retry_count = 0
-                cov_diag = np.sqrt(np.diag(cov_x))
-                p_fit_err_list = self._all_p_vect2list(cov_diag)
-                
-                full_p_err_list = list()
-                for i in range(len(self.models)):
-                    # recompute p_val error from p_free error
-                    full_p_err_list.append(self.models[i].get_p_val_err(
-                        p_fit_err_list[i]))
-                
-                returned_data['fit-params-err'] = np.abs(full_p_err_list)
 
-                # compute MCMC uncertainty estimates
-                if compute_mcmc_error:
-                    sigma = np.nanstd(last_diff)
-                    returned_data['fit-params-err-mcmc'] = self._compute_mcmc_error(
-                        fit[0], cov_diag, sigma)
-                    
-                    
-            # if no covariance matrix can be obtained, maybe fit is
-            # just too good and has converged too fast on one or more
-            # parameter.
-            elif fit[2]['nfev'] < RETRY_MAX_NFEV_BYPARAM * np.size(fit[0]):
-                if self.retry_count < RETRY_MAX_COUNTS_BYPARAM * np.size(fit[0]):
-                    # first retry the fit with initial value set to a
-                    # small random variation around the fitted values.
-                    self.retry_count += 1
-                    self.p_init_list = self._all_p_vect2list(
-                        fit[0]
-                        + np.random.randn(np.size(fit[0]))
-                        * RETRY_RANDOM_COEFF * fit[0])
-                    del all_args['self']
-                    return self.fit(**all_args)
-                else:
-                    # compute uncertainty via a Markov chain Monte
-                    # Carlo algorithm
-                    sigma = np.nanstd(last_diff)
-                    returned_data['fit-params-err-mcmc'] = (
-                        self._compute_mcmc_error(
-                            fit[0], fit[0] * MCMC_RANDOM_COEFF, sigma))
-                    returned_data['fit-params-err'] = returned_data['fit-params-err-mcmc']
-        
-                
-            returned_data['fit-time'] = time.time() - start_time
+            if not no_error:
+                # compute least square fit errors
+                cov_x = fit[1]
+                if np.all(np.isfinite(cov_x)):
+                    self.retry_count = 0
+                    cov_diag = np.sqrt(np.diag(cov_x))
+                    p_fit_err_list = self._all_p_vect2list(cov_diag)
+
+                    full_p_err_list = list()
+                    for i in range(len(self.models)):
+                        # recompute p_val error from p_free error
+                        full_p_err_list.append(self.models[i].get_p_val_err(
+                            p_fit_err_list[i]))
+
+                    returned_data['fit-params-err'] = np.abs(full_p_err_list)
+
+                    # compute MCMC uncertainty estimates
+                    if compute_mcmc_error:
+                        sigma = np.nanstd(last_diff)
+                        returned_data['fit-params-err-mcmc'] = self._compute_mcmc_error(
+                            fit[0], cov_diag, sigma)
+
+
+                # if no covariance matrix can be obtained, maybe fit is
+                # just too good and has converged too fast on one or more
+                # parameter.
+                elif fit[2]['nfev'] < RETRY_MAX_NFEV_BYPARAM * np.size(fit[0]):
+                    if self.retry_count < RETRY_MAX_COUNTS_BYPARAM * np.size(fit[0]):
+                        # first retry the fit with initial value set to a
+                        # small random variation around the fitted values.
+                        self.retry_count += 1
+                        self.p_init_list = self._all_p_vect2list(
+                            fit[0]
+                            + np.random.randn(np.size(fit[0]))
+                            * RETRY_RANDOM_COEFF * fit[0])
+                        del all_args['self']
+                        return self.fit(**all_args)
+                    else:
+                        # compute uncertainty via a Markov chain Monte
+                        # Carlo algorithm
+                        sigma = np.nanstd(last_diff)
+                        returned_data['fit-params-err-mcmc'] = (
+                            self._compute_mcmc_error(
+                                fit[0], fit[0] * MCMC_RANDOM_COEFF, sigma))
+                        returned_data['fit-params-err'] = returned_data['fit-params-err-mcmc']
+
+
+                returned_data['fit-time'] = time.time() - start_time
             
         else:
             return []
@@ -1295,7 +1305,6 @@ class LinesModel(Model):
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2],
                     p_array[iline, 3])
-                
             elif fmodel == 'sinc2':
                 line_mod =  np.sqrt(utils.spectrum.sinc1d(
                     x, 0., p_array[iline, 0],
@@ -1309,9 +1318,9 @@ class LinesModel(Model):
             else:
                 raise ValueError("fmodel must be set to 'sinc', 'gaussian', 'sincgauss' or 'sinc2'")
             if mod is None:
-                mod = line_mod
+                mod = np.copy(line_mod)
             else:
-                mod += line_mod
+                mod += np.copy(line_mod)
             models.append(line_mod)
         if return_models:
             return mod, models
@@ -1459,7 +1468,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
     fmodel='gaussian', signal_range=None, filter_file_path=None,
     fix_filter=False, apodization=1., velocity_range=None,
-    compute_mcmc_error=False):
+    compute_mcmc_error=False, no_error=False):
     
     """Fit lines in spectrum
 
@@ -1553,6 +1562,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       estimates are computed from a Markov chain Monte-Carlo
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
+
+    :param no_error: (Optional) If True, uncertainties are not
+      computed (default False).
 
     :return: a dictionary containing:
 
@@ -1731,7 +1743,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                    fit_tol=fit_tol,
                    signal_range=signal_range_pix)
     
-    fit = fs.fit(compute_mcmc_error=compute_mcmc_error)
+    fit = fs.fit(compute_mcmc_error=compute_mcmc_error,
+                 no_error=no_error)
     
     if fit != []:
 
@@ -1804,7 +1817,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
         # compute velocity
         pos_wave = line_params[:,2]
-    
+
         velocity = utils.spectrum.compute_radial_velocity(
             pos_wave.astype(np.longdouble),
             od.array(lines, dtype=np.longdouble),

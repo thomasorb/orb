@@ -8,6 +8,7 @@ Installing Python
      installation can be used with pip or setup.py. Its mostly the
      same for Mac |Mac| (see below).
 
+
 Fast installation sequence for Ubuntu/Debian users
 ==================================================
 
@@ -29,6 +30,7 @@ All the installation process can be done with pip and apt-get::
   pip install h5py --upgrade
   pip install bottleneck --upgrade
   pip install pp --upgrade
+  pip install pyregion --upgrade
   
 
 Fast installation sequence for MAC users
@@ -43,6 +45,8 @@ Most of the installation process can be done with pip::
   sudo pip install cython --upgrade
   sudo pip install astropy --upgrade
   sudo pip install h5py --upgrade
+  sudo pip install bottleneck --upgrade
+  sudo pip install pyregion --upgrade
   
 For the libraries that are not accessible via pip (e.g. pp) you can
 install them using python. Download the archive, unzip it and, in the
@@ -50,6 +54,9 @@ unzipped folder type::
 
   sudo python setup.py install
 
+**Compile Cutils**
+  
+  
 
 Python_
 =======

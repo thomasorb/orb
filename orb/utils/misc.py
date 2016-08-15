@@ -25,6 +25,9 @@ import math
 import warnings
 import sys
 import orb.cutils                       
+import pyregion
+import astropy.io.fits as pyfits
+
 
 def aggregate_pixels(pixel_list, radius=1.42):
     """Aggregate neighbouring pixels into a set of sources. Two
@@ -102,153 +105,63 @@ def get_axis_from_hdr(hdr, axis_index=1):
     crval = float(hdr['CRVAL{}'.format(axis_index)])
     cdelt = float(hdr['CDELT{}'.format(axis_index)])
     return (np.arange(naxis, dtype=float) + 1. - crpix) * cdelt + crval
-    
-    
-def get_mask_from_ds9_region_line(reg_line, x_range=None, y_range=None):
-    """Read one line of a ds9 region file and return the list of
-    pixels in the region.
-
-    :param reg_line: Line of the ds9 region file
-    
-    :param x_range: (Optional) Range of x image coordinates
-        considered as valid. Pixels outside this range are
-        rejected. If None, no validation is done (default None).
-
-    :param y_range: (Optional) Range of y image coordinates
-        considered as valid. Pixels outside this range are
-        rejected. If None, no validation is done (default None).
-
-    .. note:: The returned array can be used like a list of
-        indices returned by e.g. numpy.nonzero().
-
-    .. note:: Coordinates can be image coordinates (x,y) or sky
-        coordinates in degrees (ra, dec)
-    """
-    shapes = ['circle', 'box', 'polygon']
-
-    x_list = list()
-    y_list = list()
-
-    if len(reg_line) <= 3:
-        warnings.warn('Bad region line')
-        return None
-
-    reg_line = reg_line.split('#')[0].strip()
-    if not np.any([shape in reg_line for shape in shapes]):
-        return [x_list, y_list]
-    
-    shape, coords = reg_line.split('(')
-    if not shape in shapes:
-        return [x_list, y_list]
-
-    coords = coords.split(')')[0]
-    coords = coords.split(',')
-    coords = np.array([float(coord) for coord in coords], dtype=float)
-    
-        
-    if shape == 'box':
-        x_min = round(coords[0] - (coords[2] / 2.) - 1.5)
-        x_max = round(coords[0] + (coords[2] / 2.) + .5)
-        y_min = round(coords[1] - (coords[3] / 2.) - 1.5) 
-        y_max = round(coords[1] + (coords[3] / 2.) + .5)        
-        if x_range is not None:
-            if x_min < np.min(x_range) : x_min = np.min(x_range)
-            if x_max > np.max(x_range) : x_max = np.max(x_range)
-        if y_range is not None:
-            if y_min < np.min(y_range) : y_min = np.min(y_range)
-            if y_max > np.max(y_range) : y_max = np.max(y_range)
-
-        for ipix in range(int(x_min), int(x_max)):
-            for jpix in range(int(y_min), int(y_max)):
-                x_list.append(ipix)
-                y_list.append(jpix)
-
-    if shape == 'circle':
-        x_min = round(coords[0] - (coords[2]) - 1.5)
-        x_max = round(coords[0] + (coords[2]) + .5)
-        y_min = round(coords[1] - (coords[2]) - 1.5)
-        y_max = round(coords[1] + (coords[2]) + .5)
-        if x_range is not None:
-            if x_min < np.min(x_range) : x_min = np.min(x_range)
-            if x_max > np.max(x_range) : x_max = np.max(x_range)
-        if y_range is not None:
-            if y_min < np.min(y_range) : y_min = np.min(y_range)
-            if y_max > np.max(y_range) : y_max = np.max(y_range)
-
-
-        for ipix in range(int(x_min), int(x_max)):
-            for jpix in range(int(y_min), int(y_max)):
-                if (math.sqrt((ipix - coords[0] + 1.)**2
-                             + (jpix - coords[1] + 1.)**2)
-                    <= round(coords[2])):
-                    x_list.append(ipix)
-                    y_list.append(jpix)
-
-    if shape == 'polygon':
-        if np.size(coords) > 0:
-            poly = [(coords[i], coords[i+1]) for i in range(
-                0,np.size(coords),2)]
-            poly_x = np.array(poly)[:,0]
-            poly_y = np.array(poly)[:,1]
-            x_min = np.min(poly_x)
-            x_max = np.max(poly_x)
-            y_min = np.min(poly_y)
-            y_max = np.max(poly_y)
-            if x_range is not None:
-                if x_min < np.min(x_range) : x_min = np.min(x_range)
-                if x_max > np.max(x_range) : x_max = np.max(x_range)
-            if y_range is not None:
-                if y_min < np.min(y_range) : y_min = np.min(y_range)
-                if y_max > np.max(y_range) : y_max = np.max(y_range)
-
-            for ipix in range(int(x_min), int(x_max)):
-                for jpix in range(int(y_min), int(y_max)):
-                    if orb.cutils.point_inside_polygon(ipix, jpix, poly):
-                         x_list.append(ipix)
-                         y_list.append(jpix)
-                         
-    x_list = np.array(x_list)
-    y_list = np.array(y_list)
-
-    return list([x_list, y_list])
-
                         
-def get_mask_from_ds9_region_file(reg_path, x_range=None,
-                                  y_range=None):
+def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
+                                  integrate=True):
     """Return the indices of the elements inside 'box', 'circle' and
     'polygon' regions.
 
     :param reg_path: Path to a ds9 region file
 
-    :param x_range: (Optional) Range of x image coordinates
+    :param x_range: Range of x image coordinates
         considered as valid. Pixels outside this range are
-        rejected. If None, no validation is done (default None).
+        rejected..
 
-    :param y_range: (Optional) Range of y image coordinates
+    :param y_range: Range of y image coordinates
         considered as valid. Pixels outside this range are
-        rejected. If None, no validation is done (default None).
+        rejected.
+
+    :param integrate: (Optional) If True, all pixels are integrated
+      into one mask, else a list of region masks is returned (default
+      True)
 
     .. note:: The returned array can be used like a list of
         indices returned by e.g. numpy.nonzero().
 
-    .. note:: Coordinates can be image coordinates (x,y) or sky
-        coordinates in degrees (ra, dec)
+    .. note:: Coordinates must be image coordinates (x,y) 
     """
-    f = open(reg_path, 'r')
-    x_list = list()
-    y_list = list()
-                    
-    for iline in f:
-        if len(iline) > 3:
-            mask = get_mask_from_ds9_region_line(iline, x_range=x_range,
-                                                 y_range=y_range)
-            x_list += list(mask[0])
-            y_list += list(mask[1])
-                            
-    x_list = np.array(x_list)
-    y_list = np.array(y_list)
+    ### Warning: pyregion works in 'transposed' coordinates
+    ### We will work here in python (y,x) convention
 
-    return list([x_list, y_list])
+    _regions = pyregion.open(reg_path)
+    shape = (np.max(y_range), np.max(x_range))
+    mask = np.zeros(shape, dtype=float)
+    hdu = pyfits.PrimaryHDU(mask)
+    mask_list = list()
+    for _region in _regions:
+        print 'loading region: ', _region
+        imask = np.nonzero(pyregion.get_mask([_region], hdu))
+        _imaskx = list()
+        _imasky = list()
+        # filtering
+        for i in range(len(imask[0])):
+            if (np.min(x_range) < imask[1][i] < np.max(x_range)
+                and np.min(y_range) < imask[0][i] < np.max(y_range)):
+                _imaskx.append(imask[1][i])
+                _imasky.append(imask[0][i])
+        imask = [_imasky, _imaskx]
+        
+        if integrate:
+            mask[imask] = True
+        else:
+            mask_list.append([imask[1], imask[0]]) # transposed for
+                                                   # return
+        
+    if integrate:
+        return np.nonzero(mask.T) # transposed for return
+    else:
+        return mask_list
+
 
 def compute_obs_params(nm_min_filter, nm_max_filter,
                        theta_min=5.01, theta_max=11.28):

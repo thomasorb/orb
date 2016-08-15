@@ -71,7 +71,8 @@ class Data(object):
     _err = None
     _shape = None
     dtype = None
-
+    dtypes =  [np.float, np.float16, np.float32, np.float64,
+               np.complex64, np.complex128, np.longdouble]
     
     def __init__(self, dat, err=None, dtype=None):
         """
@@ -83,6 +84,8 @@ class Data(object):
           dat.
         """
         if isinstance(dat, np.ndarray) or np.isscalar(dat):
+            if dat.dtype not in self.dtypes:
+                dtype = np.float
             self._dat = np.array(dat, dtype=dtype)
             self.dtype = self._dat.dtype
         else:
@@ -276,6 +279,26 @@ class Data(object):
         a.dat = result
         return a
 
+    def __rpow__(self, b):
+        """Implement ``b ** self``
+
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
+        b = array(b)
+        a = self.copy()
+        result = b.dat ** a.dat
+        
+        # error propagation
+        if a.err is not None or b.err is not None:
+            b.err = np.abs(result) * np.sqrt(
+                (a.dat / b.dat * b.err)**2.
+                + (np.log(b.dat) * a.err)**2.)
+        
+        b.dat = result
+        return b
+
+
     def __neg__(self):
         """Implement ``- b``."""
         result = self.copy()
@@ -300,6 +323,7 @@ class Data(object):
         :param err: (Optional) True if data is an uncertainty (default
           False).
         """
+        
         if m is not None:
             if not isinstance(m, np.ndarray):
                 m = np.array(m)         
@@ -307,7 +331,11 @@ class Data(object):
             if (m.shape == self.shape):
                 return np.array(m, dtype=self.dtype)
             elif np.size(m) == np.size(self._dat):
-                m = np.broadcast_to(m, self.shape)
+                return np.broadcast_to(m, self.shape)
+            elif np.size(m) == 1:
+                return np.array(m, dtype=self.dtype)
+            elif np.size(self._dat) == 1:
+                return np.array(m, dtype=self.dtype)
             else:
                 raise ValueError(
                     'Bad shape. Must be {}'.format(

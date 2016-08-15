@@ -911,8 +911,11 @@ complex data managing.
 Miscellaneous
 -------------
 
-* Minor changes in ds9 region file loading function
+* ds9 region file loading function now uses pyregion packages
 
 * :py:class:`orb.core.Header` class added as an extension of
   :py:class:`astropy.wcs.Header` to manage Headers. It is just an
   initial framework.
+
+* scipy.optimize.curve_fit call in fit.py updated to follow the
+  changes in the new version of scipy (0.18.0).

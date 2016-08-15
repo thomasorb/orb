@@ -2618,6 +2618,11 @@ class Cube(Tools):
 
         return Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
+
+    def get_calibration_laser_map(self):
+        """Not implemented in Cube class but implemented in children
+        classes."""
+        return None
        
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
@@ -4909,6 +4914,10 @@ class Header(pyfits.Header):
         self.wcs = pywcs.WCS(self)
 
     def bin_wcs(self, binning):
+        """Bin WCS
+
+        :param binning: Binning
+        """
         self.wcs.wcs.crpix /= binning
         self.wcs.wcs.cdelt *= binning
         self.extend(self.wcs.to_header(), update=True)
