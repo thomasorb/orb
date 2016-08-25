@@ -58,9 +58,9 @@ def compute_weights(calib, nm_laser, step_nb, step, order,
     range_size = abs(np.diff(filter_range)[0])
     
     weights = np.ones(step_nb, dtype=float)
-    weights[:np.min(filter_range)
+    weights[:int(np.min(filter_range))
             + int(range_border_coeff * range_size)] = 1e-35
-    weights[np.max(filter_range)
+    weights[int(np.max(filter_range))
             - int(range_border_coeff * range_size):] = 1e-35
     return weights, filter_range
 

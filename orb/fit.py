@@ -1893,7 +1893,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     cont_guess=None, shift_guess=0., fix_fwhm=False, cov_fwhm=True,
     cov_pos=True, fix_pos=False, fit_tol=1e-10, poly_order=0,
     fmodel='gaussian', signal_range=None, filter_file_path=None,
-    fix_filter=False):
+    fix_filter=False, compute_mcmc_error=False, no_error=False):
     
     """Fit lines in a vector
 
@@ -1950,6 +1950,15 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     :param signal_range: (Optional) A tuple (x_min, x_max) in channels
       giving the lowest and highest wavelength/wavenumber containing
       signal.
+
+    :param compute_mcmc_error: (Optional) If True, uncertainty
+      estimates are computed from a Markov chain Monte-Carlo
+      algorithm. If the estimates can be better constrained, the
+      fitting time is orders of magnitude longer (default False).
+
+    :param no_error: (Optional) If True, uncertainties are not
+      computed (default False).
+
 
     :return: a dictionary containing:
 
@@ -2014,7 +2023,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                    fit_tol=fit_tol,
                    signal_range=[minx, maxx])
     
-    fit = fs.fit()
+    fit = fs.fit(compute_mcmc_error=compute_mcmc_error,
+                 no_error=no_error)
     if fit != []:
         line_params = fit['fit-params'][0]
         line_nb = np.size(lines)

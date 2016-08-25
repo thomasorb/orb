@@ -32,6 +32,8 @@ def line_interf(sigma, step_nb):
     """
     Simulate a simple line interferogram (a cosine)
 
+    ZPD is on the first sample of the returned interferogram.
+
     :param sigma: line frequency (must be < step_nb/2)
 
     :param step_nb: Length of the interferogram
@@ -47,7 +49,7 @@ def fft(interf, zp_coeff=10, apod=None):
 
     Useful to compute a quick assumption-less FFT.
 
-    ZPD is assumed to be ont the first sample of the interferogram
+    ZPD is assumed to be on the first sample of the interferogram
     
     :param a: interferogram
 

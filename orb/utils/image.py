@@ -1052,7 +1052,8 @@ def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
 
 
 def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
-                          calib_laser_nm, pixel_size=15., binning=4):
+                          calib_laser_nm, pixel_size=15., binning=4,
+                          return_coeffs=False):
 
     """Fit a SITELLE phase map (order 0 map of the phase) using a
     model based on a simulated calibration laser map..
@@ -1078,8 +1079,12 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     :param binning: (Optional) Maps are binned to accelerate the
       process. Set the binning factor (default 4).
 
+    :param return_coeffs: (Optional) If True, transformation
+      coefficients are returned also (default False).
+
     :return: a tuple (fitted phase map, error map, fit error, new
-      calibration laser map)
+      calibration laser map) + a tuple of transformation coefficients
+      (a0 and a1) if return_coeffs is True.
     """
     def model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c):
         return simulate_calibration_laser_map(
@@ -1087,8 +1092,8 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
             calib_laser_nm, p[0], theta_c, 0., 0., p[1])
 
     def model_phase_map(p, calib, calib_laser_nm, pixel_size, theta_c):
-        return p[2] + p[3] * model_laser_map(
-            p[:2], calib, calib_laser_nm, pixel_size, theta_c)
+        return orb.utils.fft.calib_map2phase_map0([p[2], p[3]],model_laser_map(
+            p[:2], calib, calib_laser_nm, pixel_size, theta_c), calib_laser_nm)
 
     def get_p(p_var, p_fix, p_ind):
         """p_ind = 0: variable parameter, index=1: fixed parameter
@@ -1111,8 +1116,8 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         print ('> Phase map fit parameters:\n'
                + 'distance to mirror: {} cm (fixed)\n'.format(params[0]*1e-4)
                + 'X angle from the optical axis to the center: {} degrees (fixed)\n'.format(math.fmod(float(params[1]),2.*math.pi))
-               + 'order 0: {} radians\n'.format(params[2])
-               + 'order 1: {} radians\n'.format(params[3]))
+               + 'a0: {} radians\n'.format(params[2])
+               + 'a1: {} radians\n'.format(params[3]))
 
     ZERN_MODES = 30 # number of Zernike modes to fit
 
@@ -1189,14 +1194,15 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
 
 
-    ### Zernike fit: Instead of fitting the residual of the phase map,
-    ## the residual of the laser map if fitted (because it is a simple
+    ### Zernike fit: Instead of fitting the residuals of the phase map,
+    ## the residuals of the laser map are fitted (because it is a simple
     ## linear conversion of the laser map). This way a best fitted
     ## laser map is also obtained along with the best fitted phase
     ## map. the obtained laser map might be used for better precision.
     
-    print '> Phase map residual fit with Zernike polynomials ({} modes)'.format(ZERN_MODES)
-    real_calib_laser_map = (phase_map - params[2]) / params[3]
+    print '> Phase map residuals fit with Zernike polynomials ({} modes)'.format(ZERN_MODES)
+    real_calib_laser_map = orb.utils.fft.phase_map02calib_map(
+        [params[2], params[3]], phase_map, calib_laser_nm)
     
     mod_calib_laser_map = model_laser_map(
         params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
@@ -1209,7 +1215,8 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         res_map, np.ones_like(res_map), ZERN_MODES)
 
     fitted_laser_map = mod_calib_laser_map + res_map_fit
-    fitted_phase_map = params[2] + params[3] * fitted_laser_map
+    fitted_phase_map = orb.utils.fft.calib_map2phase_map0(
+        [params[2], params[3]], fitted_laser_map, calib_laser_nm)
     
     ## Error computation
     # Creation of the error map: The error map gives the 
@@ -1228,7 +1235,10 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
 
     print '> Final fit std: {} radians'.format(fit_error)
 
-    return fitted_phase_map, error_map, fit_error_rms, fitted_laser_map
+    if not return_coeffs:
+        return fitted_phase_map, error_map, fit_error_rms, fitted_laser_map
+    else:
+        return fitted_phase_map, error_map, fit_error_rms, fitted_laser_map, [params[2], params[3]]
     
 def interpolate_map(m, dimx, dimy):
     """Interpolate 2D data map.
@@ -1305,7 +1315,7 @@ def extract_elliptical_profile(im, x0, y0, rX, rY, theta, n=20, percentile=None)
     
     :param percentile: (Optional) percentile instead of std. Return
       (r, lmedian, [lmin, lmax]). Remember that the 1-sigma percentile
-      is 18.865 for a gaussian distribution (default None).
+      is 15.865 for a gaussian distribution (default None).
     
 
     :return: a tuple (r, l, lerr) where r is the list of radiuses

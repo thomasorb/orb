@@ -26,7 +26,7 @@ import math
 import warnings
 import scipy
 import scipy.special as ss
-from scipy import signal, interpolate
+from scipy import signal, interpolate, optimize
 
 import orb.utils.vector
 import orb.utils.spectrum
@@ -34,6 +34,7 @@ import orb.utils.stats
 import orb.utils.filters
 import orb.cutils
 import orb.constants
+import orb.fit
 
 def apodize(s, apodization_function=2.0):
     """Apodize a spectrum
@@ -1053,7 +1054,8 @@ def optimize_phase(interf, step, order, zpd_shift,
 
     if high_order_phase is not None:
         if isinstance(high_order_phase, str):
-            high_order_phase = read_phase_file(high_order_phase, return_spline=True)
+            high_order_phase = read_phase_file(
+                high_order_phase, return_spline=True)
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
             interf.shape[0], step, order,
             corr=calib/nm_laser).astype(np.float64)
@@ -1085,6 +1087,142 @@ def optimize_phase(interf, step, order, zpd_shift,
     else: return None
 
 
+def optimize_phase3d(interf_cube, step, order, zpd_shift,
+                     calib_map, nm_laser,
+                     high_order_phase, p_init=None):
+    """Return the 3 coefficents that define the linear phase terms (p0
+    + p1 * x).
+
+    The optimization is based on the minimization of the imaginary
+    part of the spectrum. It is done on the complete interferogram
+    cube (a binned version is much faster) with a given calibration
+    map. In this process the calibration map is considered to be exact
+    and the order 0 phase map is directly calculated from it.
+
+    This method is very efficient for cubes with poor phase
+    informations in each pixel: e.g. extended galactic nebula that
+    covers the whole field of view.
+
+    :param interf_cube: Interferogram cube
+    
+    :param step: Step size
+    
+    :param order: Folding order
+    
+    :param zpd_shift: ZPD shift
+    
+    :param calib_map: Calibration laser map
+    
+    :param nm_laser: Calibration laser wavelength
+    
+    :param high_order_phase: A scipy.Spline instance of the high order
+      phase.
+      
+    :param p_init: (Optional) guess on the transformation parameters
+      for the order 0 phase map.
+    """
+
+    def compute_phase3d(pfree, pfixed, interf_cube_fft, 
+                        calib_map, nm_laser, Z, high_order_cube, w3d):
+        pfixed = np.array(pfixed)
+        p = np.copy(pfixed)
+        p[np.isnan(pfixed)] = np.array(pfree)
+        pm0 = calib_map2phase_map0([p[0], p[1]], calib_map, nm_laser)
+        ext_phase = (pm0.T + (p[2] * Z).T).T + high_order_cube        
+        fft_imag3d =  (interf_cube_fft.imag * np.cos(ext_phase)
+                     - interf_cube_fft.real * np.sin(ext_phase))
+        fft_imag3d *= w3d
+        fft_imag = fft_imag3d.flatten()
+        fft_imag = fft_imag[np.nonzero(~np.isnan(fft_imag))]
+        return fft_imag
+
+    # Oth order map coefficients initial guess
+    A0 = np.pi
+    A1 = 100
+
+    if p_init is not None:
+        A0 = p_init[0]
+        A1 = p_init[1]
+
+    dimx, dimy, dimz = interf_cube.shape
+    
+    # compute complex fft of interf cube
+    interf_cube_fft = np.empty_like(interf_cube, dtype=complex)
+    high_order_cube = np.empty_like(interf_cube)
+    for ii in range(dimx):
+        sys.stdout.write('\rTransforming column {}/{}'.format(ii, dimx-1))
+        sys.stdout.flush()
+        for ij in range(dimy):
+            interf_cube_fft[ii,ij] = transform_interferogram(
+                interf_cube[ii,ij], 1., 1., step, order, '2.0', zpd_shift,
+                wavenumber=True,
+                ext_phase=np.zeros(dimz, dtype=float),
+                phase_correction=True,
+                return_complex=True)
+            phase_axis = orb.utils.spectrum.create_cm1_axis(
+                dimz, step, order,
+                corr=float(calib_map[ii,ij]) / nm_laser).astype(np.float64)
+            high_order_cube[ii,ij] = high_order_phase(phase_axis)
+    sys.stdout.write('\n')
+    ## orb.utils.io.write_fits('interf_cube_fft.real.fits', interf_cube_fft.real,
+    ##                         overwrite=True)
+    ## orb.utils.io.write_fits('interf_cube_fft.imag.fits', interf_cube_fft.imag,
+    ##                         overwrite=True)
+    ## orb.utils.io.write_fits('high_order_cube.fits', high_order_cube,
+    ##                         overwrite=True)
+    ## interf_cube_fft.real = orb.utils.io.read_fits('interf_cube_fft.real.fits')
+    ## interf_cube_fft.imag = orb.utils.io.read_fits('interf_cube_fft.imag.fits')
+    ## high_order_cube = orb.utils.io.read_fits('high_order_cube.fits')
+
+    # compute weight
+    w3d = np.abs(interf_cube_fft)
+    w3d = w3d**2
+    w3d /= np.nansum(w3d)    
+
+    Z = np.mgrid[:dimx, :dimy, :dimz][2,:,:,:]
+
+    # compute first order phase
+    print 'Fitting order 1'
+    pfixed = [A0, A1, np.nan]
+    pfree = [1e-5]
+
+    fit = optimize.leastsq(compute_phase3d, pfree,
+                           args=(pfixed, interf_cube_fft, calib_map, nm_laser,
+                                 Z, high_order_cube, w3d))
+    order1_fit = fit[0]
+    print 'Order 1 fitted value: {}'.format(order1_fit)
+    
+    # compute 0th order phase
+    print 'Fitting order 0 coefficients'
+
+    pfree = [A0, A1]
+    pfixed = [np.nan, np.nan, order1_fit]
+
+    fit = optimize.leastsq(compute_phase3d, pfree,
+                           args=(pfixed, interf_cube_fft, calib_map, nm_laser,
+                                 Z, high_order_cube, w3d))
+    a0_fit, a1_fit = fit[0]
+    print 'Order 0 fitted coefficients: a0: {}, a1: {}'.format(a0_fit, a1_fit)
+    
+    return a0_fit, a1_fit, order1_fit
+    
+def calib_map2phase_map0(p, calib_map, nm_laser):
+    """Compute order 0 phase map from calibration laser map 
+
+    :param p: Transformation parameters [a0, a1]
+    :param calib_map: Calibration laser map
+    :param nm_laser: Calibration laser wavelength
+    """
+    return p[0] + p[1] * (1 - (calib_map / nm_laser))
+
+def phase_map02calib_map(p, phase_map0, nm_laser):
+    """Compute calibration laser map from order 0 phase map.
+
+    :param p: Transformation parameters [a0, a1]
+    :param calib_map: Order 0 phase map
+    :param nm_laser: Calibration laser wavelength
+    """
+    return nm_laser * (1 - ((phase_map0 - p[0])/p[1]))
 
 ## def create_mean_phase_vector(phase_cube, step, order,
 ##                              calib_map, nm_laser,

@@ -415,8 +415,6 @@ def fast_pix2w(pix, axis_min, axis_step):
     """
     return pix * axis_step + axis_min
 
-
-
 def thermal_broadening_kms(wl, aw, T):
     """
     Return the width of the line due to thermal broadening in km/s.
@@ -431,3 +429,20 @@ def thermal_broadening_kms(wl, aw, T):
     E = aw * orb.constants.ATOMIC_MASS * (orb.constants.LIGHT_VEL_KMS * 1e5) **2.
     width = wl * np.sqrt(orb.constants.K_BOLTZMANN * T / E) # nm
     return orb.constants.LIGHT_VEL_KMS *  width / wl # kms
+
+def phase_shift_cm1_axis(step_nb, step, order, nm_laser_obs, nm_laser):
+    """Compute phase shift on a given cm1 axis
+
+    :param step_nb: Number of steps
+    :param step: Step size in nm
+    :param order: Folding order
+    :param nm_laser_obs: Observed calibration laser wavelength (in nm)
+    :param nm_laser: Calibration laser wavelength (in nm)
+    """
+    corr = nm_laser_obs / nm_laser
+    cm1_min_corr = orb.cutils.get_cm1_axis_min(step_nb, step, order, corr=corr)
+    cm1_min_base = orb.cutils.get_cm1_axis_min(step_nb, step, order)
+    cm1_axis_step =  orb.cutils.get_cm1_axis_step(step_nb, step, corr=corr)
+    delta_cm1 = cm1_min_corr - cm1_min_base
+    delta_x = - (delta_cm1 / cm1_axis_step)
+    return delta_x

@@ -2259,7 +2259,7 @@ def get_cm1_axis_max(int n, double step, int order, double corr=1.):
         cm1_max -= get_cm1_axis_step(n, step, corr=corr)
     return cm1_max
 
-def get_cm1_axis_step(int n, double step, corr=1.):
+def get_cm1_axis_step(int n, double step, double corr=1.):
     """Return step size of a regular wavenumber axis in cm-1.
 
     :param n: Number of steps on the axis
