@@ -140,25 +140,20 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
     mask_list = list()
     for _region in _regions:
         print 'loading region: ', _region
-        imask = np.nonzero(pyregion.get_mask([_region], hdu))
-        _imaskx = list()
-        _imasky = list()
-        # filtering
-        for i in range(len(imask[0])):
-            if (np.min(x_range) < imask[1][i] < np.max(x_range)
-                and np.min(y_range) < imask[0][i] < np.max(y_range)):
-                _imaskx.append(imask[1][i])
-                _imasky.append(imask[0][i])
-        imask = [_imasky, _imaskx]
+        imask2d = pyregion.get_mask([_region], hdu)
+        imask2d[:np.min(x_range), :] = 0
+        imask2d[:, :np.min(y_range)] = 0
+        imask = np.nonzero(imask2d)
+        mask[imask] = 1
         
         if integrate:
             mask[imask] = True
         else:
-            mask_list.append([imask[1], imask[0]]) # transposed for
+            mask_list.append([imask[1], imask[0]]) # transposed to
                                                    # return
         
     if integrate:
-        return np.nonzero(mask.T) # transposed for return
+        return np.nonzero(mask.T) # transposed to return
     else:
         return mask_list
 

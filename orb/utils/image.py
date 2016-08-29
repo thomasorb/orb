@@ -1056,9 +1056,9 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                           return_coeffs=False):
 
     """Fit a SITELLE phase map (order 0 map of the phase) using a
-    model based on a simulated calibration laser map..
+    model based on a simulated calibration laser map.
 
-    A real calibration laser map is needed first to get a first guess
+    A real calibration laser map is needed first to get an initial guess
     on the parameters of the fit. Then the whole phase map is modeled
     to fit the real phase map.
 
@@ -1206,6 +1206,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     
     mod_calib_laser_map = model_laser_map(
         params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+
     res_map = real_calib_laser_map - mod_calib_laser_map
     
     res_map[np.nonzero(phase_map == 0.)] = np.nan # 0s are replaced
@@ -1215,6 +1216,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         res_map, np.ones_like(res_map), ZERN_MODES)
 
     fitted_laser_map = mod_calib_laser_map + res_map_fit
+
     fitted_phase_map = orb.utils.fft.calib_map2phase_map0(
         [params[2], params[3]], fitted_laser_map, calib_laser_nm)
     

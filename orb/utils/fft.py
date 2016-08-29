@@ -544,7 +544,7 @@ def transform_interferogram(interf, nm_laser,
 
     if final_step_nb is None:
         final_step_nb = dimz
-    
+
     # discard zeros and nans interferogram
     if len(np.nonzero(interf)[0]) == 0:
         if return_phase:
@@ -580,57 +580,99 @@ def transform_interferogram(interf, nm_laser,
         
     #####
     # 3 - ZPD shift to center the spectrum
-    if zpd_shift != 0:
-        if zpd_shift > interf.shape[0] / 2 + 1:
+    
+    # Check phase vector to guess a better ZPD shift
+    if ext_phase is not None:
+        order1 = np.median(np.diff(ext_phase)) * ext_phase.shape[0]
+        phase_shift = int(round(order1 / np.pi))
+        ext_phase_corr = ext_phase - np.arange(ext_phase.shape[0]) * phase_shift * np.pi / ext_phase.shape[0]
+        zpd_shift_corr = int(zpd_shift) + phase_shift
+    else:
+        ext_phase_corr = None
+        zpd_shift_corr = int(zpd_shift)
+
+    if zpd_shift_corr != 0:
+        if zpd_shift_corr > interf.shape[0] / 2 + 1:
             raise Exception('Bad zpd shift (must be <= {})'.format(interf.shape[0]/2 + 1))
-        temp_vector = np.zeros(interf.shape[0] + 2 * abs(zpd_shift),
+        temp_vector = np.zeros(interf.shape[0] + 2 * abs(zpd_shift_corr),
                                dtype=interf.dtype)
-        temp_vector[abs(zpd_shift):abs(zpd_shift) + dimz] = interf
+        temp_vector[abs(zpd_shift_corr):abs(zpd_shift_corr) + dimz] = interf
         interf = np.copy(temp_vector)
-        interf = np.roll(interf, zpd_shift)
+        interf = np.roll(interf, zpd_shift_corr)
         
         if bad_frames_vector is not None:
             if np.any(bad_frames_vector > 0):
                 temp_vector[
-                    abs(zpd_shift):abs(zpd_shift) + dimz] = bad_frames_vector
+                    abs(zpd_shift_corr):abs(zpd_shift_corr) + dimz] = bad_frames_vector
                 bad_frames_vector = np.copy(temp_vector)
-                bad_frames_vector = np.roll(bad_frames_vector, zpd_shift)
+                bad_frames_vector = np.roll(bad_frames_vector, zpd_shift_corr)
             else:
                 bad_frames_vector = None
 
-
+                
     ### Replace Nans by zeros in interf vector
     interf[np.isnan(interf)] = 0.
     
     #####
-    # 4 - Zeros smoothing
+    # 4 - Zeros smoothing - DEACTIVATED, bad for SITELLE's asymmetric
+    # interferograms
     #
     # Smooth the transition between good parts and 'zeros' parts. We
     # use here a concept from Learner et al. (1995) Journal of the
     # Optical Society of America A, 12(10), 2165
+
     
-    zeros_vector = np.ones_like(interf)
-    zeros_vector[interf == 0.] = 0.
-    zeros_vector = zeros_vector.real # in case interf is complex
+    ## zeros_vector = np.ones_like(interf)
+    ## zeros_vector[interf == 0.] = 0.
+    ## zeros_vector = zeros_vector.real # in case interf is complex
+
+    ## if bad_frames_vector is not None:
+    ##     zeros_vector[np.nonzero(bad_frames_vector)] = 0
+    ## if len(np.nonzero(zeros_vector == 0)[0]) > 0:
+    ##     # correct only 'bands' of zeros:
+    ##     zcounts = count_nonzeros(-zeros_vector + 1)
+    ##     zeros_mask = np.nonzero(zcounts >= min_zeros_length)
+    ##     if len(zeros_mask[0]) > 0 and smoothing_deg > 0.:
+    ##         for izero in zeros_mask[0]:
+    ##             if (izero > smoothing_deg
+    ##                 and izero < interf.shape[0] - 1 - smoothing_deg):
+    ##                 zeros_vector[izero - smoothing_deg:
+    ##                              izero + smoothing_deg + 1] = 0
+    ##         zeros_vector = orb.utils.vector.smooth(
+    ##             np.copy(zeros_vector), deg=smoothing_deg,
+    ##             kind='cos_conv')
+    ##         zeros_vector = zeros_vector * (- zeros_vector[::-1] + 2)
+    ##         interf *= zeros_vector
+
+    #####
+    # 4 - Ramp-like truncation function from Mertz (1967) Infrared
+    # Physics, 7, 17-23
     
-    if bad_frames_vector is not None:
-        zeros_vector[np.nonzero(bad_frames_vector)] = 0
-    if len(np.nonzero(zeros_vector == 0)[0]) > 0:
-        # correct only 'bands' of zeros:
-        zcounts = count_nonzeros(-zeros_vector + 1)
-        zeros_mask = np.nonzero(zcounts >= min_zeros_length)
-        if len(zeros_mask[0]) > 0 and smoothing_deg > 0.:
-            for izero in zeros_mask[0]:
-                if (izero > smoothing_deg
-                    and izero < interf.shape[0] - 1 - smoothing_deg):
-                    zeros_vector[izero - smoothing_deg:
-                                 izero + smoothing_deg + 1] = 0
-            zeros_vector = orb.utils.vector.smooth(
-                np.copy(zeros_vector), deg=smoothing_deg,
-                kind='cos_conv')
-            zeros_vector = zeros_vector * (- zeros_vector[::-1] + 2)
-            interf *= zeros_vector
-           
+    
+    # count zeros to detect which side is the truncation
+    zpd_pos = interf.shape[0]/2
+    
+    if interf[0] == 0.:
+        left_zeros_nb = np.argmax(np.diff(interf[:zpd_pos]) > 0)
+    else: left_zeros_nb = 0
+    
+    if interf[-1] == 0.:
+        right_zeros_nb = np.argmax(np.diff(interf[zpd_pos:][::-1]) > 0)
+    else: right_zeros_nb = 0
+
+    # create ramp
+    start_pos = interf.shape[0] - dimz
+    sym_len = abs(zpd_pos - start_pos) * 2
+    
+    zeros_vector = np.zeros_like(interf)
+    zeros_vector[start_pos:start_pos+sym_len] = np.linspace(0,2,sym_len)
+    zeros_vector[start_pos+sym_len:] = 2.
+
+    if left_zeros_nb < right_zeros_nb:
+        zeros_vector = zeros_vector[::-1]
+        
+    interf *= zeros_vector
+
     #####
     # 5 - Apodization of the real interferogram
     if window_type is not None and window_type != '1.0':
@@ -697,25 +739,25 @@ def transform_interferogram(interf, nm_laser,
     #####
     # 9 - Phase correction
     if phase_correction:
-        if ext_phase is None:
-            ext_phase = np.zeros(dimz, dtype=float)
+        if ext_phase_corr is None:
+            ext_phase_corr = np.zeros(dimz, dtype=float)
 
         if high_order_phase is not None:
             phase_axis = orb.utils.spectrum.create_cm1_axis(
                 interf_fft.shape[0], step, order,
                 corr=float(calibration_coeff) / nm_laser).astype(np.float64)
-            ext_phase += high_order_phase(phase_axis)
+            ext_phase_corr += high_order_phase(phase_axis)
 
         # interpolation of the phase to zero padded size
-        ext_phase = orb.utils.vector.interpolate_size(
-            ext_phase, interf_fft.shape[0], 1)
+        ext_phase_corr = orb.utils.vector.interpolate_size(
+            ext_phase_corr, interf_fft.shape[0], 1)
 
     
         spectrum_corr = np.empty_like(interf_fft)
-        spectrum_corr.real = (interf_fft.real * np.cos(ext_phase)
-                              + interf_fft.imag * np.sin(ext_phase))
-        spectrum_corr.imag = (interf_fft.imag * np.cos(ext_phase)
-                              - interf_fft.real * np.sin(ext_phase))
+        spectrum_corr.real = (interf_fft.real * np.cos(ext_phase_corr)
+                              + interf_fft.imag * np.sin(ext_phase_corr))
+        spectrum_corr.imag = (interf_fft.imag * np.cos(ext_phase_corr)
+                              - interf_fft.real * np.sin(ext_phase_corr))
     else:
         spectrum_corr = interf_fft
         
@@ -828,6 +870,10 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     
     .. note:: Interferogram can be complex
     """
+    if not isinstance(zpd_shift, int):
+        warnings.warn("ZPD shift must be an integer and will be converted")
+        zpd_shift = int(zpd_shift)
+
     if order ==0 and not wavenumber:
         wavenumber = True
         warnings.warn("Order 0: spectrum input automatically set to wavenumber. Please set manually wavenumber option to True if you don't want this warning message to be printed.")
@@ -884,7 +930,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
     # IFFT and re-shift + center burst
     if sampling_vector is None:
         interf = np.fft.ifft(spectrum)
-        interf = np.roll(interf, step_nb - zpd_shift)
+        interf = np.roll(interf, int(step_nb - zpd_shift))
         interf = interf[
             step_nb-(final_step_nb/2) - final_step_nb%2:
             step_nb+(final_step_nb/2)]
@@ -1136,6 +1182,8 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
         fft_imag = fft_imag[np.nonzero(~np.isnan(fft_imag))]
         return fft_imag
 
+    BORDER = 0.2
+
     # Oth order map coefficients initial guess
     A0 = np.pi
     A1 = 100
@@ -1177,7 +1225,12 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
     # compute weight
     w3d = np.abs(interf_cube_fft)
     w3d = w3d**2
-    w3d /= np.nansum(w3d)    
+    w3d /= np.nansum(w3d)
+    w3d[:BORDER*dimx,:,:] = 0.
+    w3d[-BORDER*dimx:,:,:] = 0.
+    w3d[:,:BORDER*dimy,:] = 0.
+    w3d[:,-BORDER*dimy:,:] = 0.
+    
 
     Z = np.mgrid[:dimx, :dimy, :dimz][2,:,:,:]
 

@@ -88,6 +88,10 @@ def write_fits(fits_path, fits_data, fits_header=None,
       http://fits.gsfc.nasa.gov/ for more information on FITS
       files.
     """
+    SECURED_KEYS = ['SIMPLE', 'BITPIX', 'NAXIS', 'NAXIS1',
+                    'NAXIS2', 'NAXIS3', 'EXTEND', 'INHERIT',
+                    'BZERO', 'BSCALE']
+
     if not isinstance(fits_data, np.ndarray):
         raise ValueError('Data type must be numpy.ndarray')
 
@@ -155,8 +159,13 @@ def write_fits(fits_path, fits_data, fits_header=None,
                 hdu_mask = pyfits.PrimaryHDU(mask.transpose())
             # add header optional keywords
             if fits_header is not None:
+                ## remove keys of the passed header which corresponds
+                ## to the description of the data set
+                for ikey in SECURED_KEYS:
+                    if ikey in fits_header: fits_header.pop(ikey)
                 hdu.header.extend(fits_header, strip=False,
                                   update=True, end=True)
+                
                 # Remove 3rd axis related keywords if there is no
                 # 3rd axis
                 if len(fits_data.shape) <= 2:

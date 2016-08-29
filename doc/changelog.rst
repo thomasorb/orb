@@ -919,3 +919,15 @@ Miscellaneous
 
 * scipy.optimize.curve_fit call in fit.py updated to follow the
   changes in the new version of scipy (0.18.0).
+
+
+v.2.2.0
+=======
+
+* :py:meth:`orb.utils.fft.transform_interferogram`: zeros_smoothing
+  deactivated and replaced by a ramp truncation function as
+  recommendaed by Mertz (1967). A much better shape of the continnum
+  is obtained.
+
+* Phase optimization in 3d with
+  :py:meth:`orb.utils.fft.optimize_phase3d`.
