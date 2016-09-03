@@ -31,6 +31,7 @@ import orb.utils.stats
 import orb.utils.vector
 import orb.utils.parallel
 import orb.utils.io
+import orb.utils.fft
 import orb.cutils
 
 import orb.ext.zern
@@ -976,8 +977,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     
     # Zernike fit of the diff map
     print '  > Zernike polynomials fit of the residual'
-    res_map = calib_laser_map - new_calib_laser_map
-    
+    res_map = calib_laser_map - new_calib_laser_map    
     res_map[np.nonzero(res_map == 0.)] = np.nan
     res_map_fit, _err_map, _fit_error = fit_map_zernike(
         res_map, np.ones_like(res_map), ZERN_MODES)
@@ -1127,7 +1127,6 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     # bad values are filtered and phase map is cropped to remove
     # borders with erroneous phase values.
     phase_map[np.nonzero(phase_map==0)] = np.nan
-    
     xmin,xmax,ymin,ymax = get_box_coords(
         phase_map.shape[0]/2,
         phase_map.shape[1]/2,
@@ -1193,13 +1192,16 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     fitted_phase_map = model_phase_map(
         params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
 
+    ## computed calibration laser map from instrumental parameters
+    ## This calibration laser map is more likely to be trusted than
+    ## the one computed after zernike fit.
+    new_calib_laser_map = model_laser_map(params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
 
     ### Zernike fit: Instead of fitting the residuals of the phase map,
     ## the residuals of the laser map are fitted (because it is a simple
     ## linear conversion of the laser map). This way a best fitted
     ## laser map is also obtained along with the best fitted phase
     ## map. the obtained laser map might be used for better precision.
-    
     print '> Phase map residuals fit with Zernike polynomials ({} modes)'.format(ZERN_MODES)
     real_calib_laser_map = orb.utils.fft.phase_map02calib_map(
         [params[2], params[3]], phase_map, calib_laser_nm)
@@ -1219,7 +1221,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
 
     fitted_phase_map = orb.utils.fft.calib_map2phase_map0(
         [params[2], params[3]], fitted_laser_map, calib_laser_nm)
-    
+
     ## Error computation
     # Creation of the error map: The error map gives the 
     # Squared Error for each point used in the fit point. 
@@ -1238,10 +1240,30 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     print '> Final fit std: {} radians'.format(fit_error)
 
     if not return_coeffs:
-        return fitted_phase_map, error_map, fit_error_rms, fitted_laser_map
+        return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map#fitted_laser_map
     else:
-        return fitted_phase_map, error_map, fit_error_rms, fitted_laser_map, [params[2], params[3]]
-    
+        return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map, [params[2], params[3]]
+
+
+def fit_phase_map02calib_map(calib, pm0, nm_laser):
+    def diff(p, calib, pm0, nm_laser):
+        
+        res = orb.utils.fft.calib_map2phase_map0(
+            p, calib, nm_laser) - pm0
+        return res[np.nonzero(~np.isnan(res))]
+
+
+    p0 = [np.pi, 100]
+
+    fit = scipy.optimize.leastsq(
+        diff, p0, args=(calib, pm0, nm_laser),
+        full_output=True)
+    if fit[-1] < 5:
+        return fit[0]
+    else:
+        warnings.warn('Phase map 2 calibration laser map fit failed: {}'.format(fit[-2]))
+        return None
+        
 def interpolate_map(m, dimx, dimy):
     """Interpolate 2D data map.
 

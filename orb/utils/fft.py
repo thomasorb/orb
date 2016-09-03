@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import sys
 import numpy as np
 import math
@@ -585,7 +586,8 @@ def transform_interferogram(interf, nm_laser,
     if ext_phase is not None:
         order1 = np.median(np.diff(ext_phase)) * ext_phase.shape[0]
         phase_shift = int(round(order1 / np.pi))
-        ext_phase_corr = ext_phase - np.arange(ext_phase.shape[0]) * phase_shift * np.pi / ext_phase.shape[0]
+        ext_phase_corr = (ext_phase - np.arange(ext_phase.shape[0])
+                          * phase_shift * np.pi / ext_phase.shape[0])
         zpd_shift_corr = int(zpd_shift) + phase_shift
     else:
         ext_phase_corr = None
@@ -1135,15 +1137,16 @@ def optimize_phase(interf, step, order, zpd_shift,
 
 def optimize_phase3d(interf_cube, step, order, zpd_shift,
                      calib_map, nm_laser,
-                     high_order_phase, p_init=None):
+                     high_order_phase, pm0=None, pm1=None):
     """Return the 3 coefficents that define the linear phase terms (p0
     + p1 * x).
 
-    The optimization is based on the minimization of the imaginary
-    part of the spectrum. It is done on the complete interferogram
-    cube (a binned version is much faster) with a given calibration
-    map. In this process the calibration map is considered to be exact
-    and the order 0 phase map is directly calculated from it.
+    The optimization is based on the maximization of the real part of
+    the spectrum. It is done on the complete interferogram cube (a
+    binned version is much faster) with a given calibration map. In
+    this process the calibration map is considered to be exact and the
+    order 0 phase map is directly calculated from it unless a phase
+    map is given.
 
     This method is very efficient for cubes with poor phase
     informations in each pixel: e.g. extended galactic nebula that
@@ -1163,36 +1166,139 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
     
     :param high_order_phase: A scipy.Spline instance of the high order
       phase.
+
+    :param pm0: (Optional) Order 0 phase map. This map is adjusted
+      instead of calculating a phase map from a calibration laser
+      frame (default None).
       
-    :param p_init: (Optional) guess on the transformation parameters
-      for the order 0 phase map.
+    :param pm1: (Optional) Order 1 phase map. This map is adjusted
+      instead of considering a single order 1 coefficient (default
+      None). WARNING: this phase map must be in a "portable format",
+      i.e.: it must have been multiplied by the number of steps of the
+      original cube.
+  
+    :return: Phase map coefficients (a0, a1, p1) if the phase map has
+      to be calculated from the calibration map (pm0 set to None) or
+      (a0, p1) if the order 0 phase map is given
     """
 
-    def compute_phase3d(pfree, pfixed, interf_cube_fft, 
-                        calib_map, nm_laser, Z, high_order_cube, w3d):
+    def model(p, interf_cube_fft, calib_map, nm_laser,
+              high_order_cube, Z, real, pm0, pm1):
+        if pm1 is None:
+            _pm1 = np.ones_like(calib_map)
+        else:
+            _pm1 = np.copy(pm1) / interf_cube_fft.shape[-1]
+            
+        if pm0 is None:
+            _pm0 = calib_map2phase_map0([p[0], p[1]], np.copy(calib_map), nm_laser)
+            _pm1 = _pm1 + p[2]
+        else:
+            _pm0 = p[0] + pm0
+            _pm1 = _pm1 + p[1]
+    
+        ext_phase = (_pm0.T + (_pm1.T * Z.T)).T + high_order_cube
+        if real:
+            return (interf_cube_fft.imag * np.sin(ext_phase)
+                    + interf_cube_fft.real * np.cos(ext_phase))
+        else:
+            return (interf_cube_fft.imag * np.cos(ext_phase)
+                    - interf_cube_fft.real * np.sin(ext_phase))
+        
+
+    def objf(pfree, pfixed, interf_cube_fft, 
+             calib_map, nm_laser, Z, high_order_cube, w3d,
+             real, pm0, pm1):
         pfixed = np.array(pfixed)
         p = np.copy(pfixed)
         p[np.isnan(pfixed)] = np.array(pfree)
-        pm0 = calib_map2phase_map0([p[0], p[1]], calib_map, nm_laser)
-        ext_phase = (pm0.T + (p[2] * Z).T).T + high_order_cube        
-        fft_imag3d =  (interf_cube_fft.imag * np.cos(ext_phase)
-                     - interf_cube_fft.real * np.sin(ext_phase))
-        fft_imag3d *= w3d
-        fft_imag = fft_imag3d.flatten()
-        fft_imag = fft_imag[np.nonzero(~np.isnan(fft_imag))]
-        return fft_imag
+        
+        fft_3d = np.copy(model(p, interf_cube_fft, calib_map,
+                               nm_laser, high_order_cube, Z, real, pm0, pm1))
+        fft_3d *= w3d
+        if real:
+            return -np.nanmean(fft_3d)
+        else:
+            return np.nanstd(fft_3d)
 
-    BORDER = 0.2
+    def brute(gridsz, guess_min, guess_max, use_pm1):
 
-    # Oth order map coefficients initial guess
-    A0 = np.pi
-    A1 = 100
+        if r_pm1 is not None:
+            if use_pm1: _r_pm1 = np.copy(r_pm1)
+            else: _r_pm1 = None
+            
+        axes = list()
+        slices = list()
+        p_fixed = list()
+        steps = list()
+        
+        print 'Brute force exploration space:'
+        
+        for i in range(len(guess_min)):
+            slices.append(slice(guess_min[i], guess_max[i], gridsz*1j))
+            p_fixed.append(np.nan)
+            axes.append(np.linspace(guess_min[i], guess_max[i], gridsz))
+            steps.append(axes[i][1] - axes[i][0])
+            print ' a{}: {} to {} [{}]'.format(
+                i, guess_min[i], guess_max[i], np.diff(axes[i])[0])
 
-    if p_init is not None:
-        A0 = p_init[0]
-        A1 = p_init[1]
+        start_brute_time = time.time()
+        brute = optimize.brute(
+            objf, slices,
+            args=(p_fixed,
+                  r_interf_cube_fft, r_calib_map, nm_laser,
+                  r_Z, r_high_order_cube, r_w3d, True, r_pm0, _r_pm1),
+            full_output=True, finish=None)
+        print 'Brute force exploration time: {} s'.format(
+            time.time() - start_brute_time)
+        print 'Brute force guess: {} [min value: {:.4e}]'.format(
+            brute[0], brute[1])
+
+        ## brute_gridv = brute[3]
+        ## best_index = np.unravel_index(np.argmin(brute_gridv),
+        ##                               brute_gridv.shape)        
+        ## orb.utils.io.write_fits('brute_gridv.fits', brute_gridv, overwrite=True)
+        ## import pylab as pl
+        ## pl.figure(0)
+        ## pl.plot(axes[0], brute_gridv[:,best_index[1]]) # x
+        ## pl.figure(1)
+        ## pl.plot(axes[1], brute_gridv[best_index[0],:]) # y        
+        ## pl.show()
+        ## import pylab as pl
+        ## pl.figure(0)
+        ## pl.plot(axes[0], np.nanmin(np.nanmin(brute_gridv, axis=2), axis=1)) # x
+        ## pl.figure(1)
+        ## pl.plot(axes[1], np.nanmin(np.nanmin(brute_gridv, axis=2), axis=0)) # y
+        ## pl.figure(2)
+        ## pl.plot(axes[2], np.nanmin(np.nanmin(brute_gridv, axis=0), axis=0)) # z
+        ## pl.show()
+
+        return np.array(brute[0]), np.array(steps)
+                
+    BORDER = 0.1 # Relative size of the borders
+    ZPD_RANGE = 5 # range checked around the real ZPD
+    RND_COEFF = 0.2 # ratio of the randomly picked interferograms
+    GRIDSZ = 40 # Brute force grid size
+    SUB_GRIDSZ = GRIDSZ / 2 # Brute force subgrid size
+    REFINE_COEFF = 2 # number of steps of the grid used for the subgrid
 
     dimx, dimy, dimz = interf_cube.shape
+
+    # compute ZPD shift
+    if pm1 is None:
+        zpd_pos = dimz / 2 - zpd_shift
+        zpd_check_range = zpd_pos - ZPD_RANGE, zpd_pos + ZPD_RANGE + 1
+        zpd_check_list = list()
+        for i in range(min(zpd_check_range), max(zpd_check_range)):
+            frame = interf_cube[:,:,i]
+            zpd_check_list.append(
+                np.nanpercentile(frame, 0.9) - np.nanpercentile(frame, 0.1))
+
+        new_zpd_pos = np.nanargmax(zpd_check_list) + min(zpd_check_range)
+        new_zpd_shift = dimz/2 - new_zpd_pos
+        print 'Init ZPD shift: {}, real ZPD shift: {}'.format(
+            zpd_shift, new_zpd_shift)
+    else:
+        new_zpd_shift = int(zpd_shift)
     
     # compute complex fft of interf cube
     interf_cube_fft = np.empty_like(interf_cube, dtype=complex)
@@ -1202,7 +1308,7 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
         sys.stdout.flush()
         for ij in range(dimy):
             interf_cube_fft[ii,ij] = transform_interferogram(
-                interf_cube[ii,ij], 1., 1., step, order, '2.0', zpd_shift,
+                interf_cube[ii,ij], 1., 1., step, order, '1.0', new_zpd_shift,
                 wavenumber=True,
                 ext_phase=np.zeros(dimz, dtype=float),
                 phase_correction=True,
@@ -1222,42 +1328,86 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
     ## interf_cube_fft.imag = orb.utils.io.read_fits('interf_cube_fft.imag.fits')
     ## high_order_cube = orb.utils.io.read_fits('high_order_cube.fits')
 
-    # compute weight
-    w3d = np.abs(interf_cube_fft)
-    w3d = w3d**2
-    w3d /= np.nansum(w3d)
-    w3d[:BORDER*dimx,:,:] = 0.
-    w3d[-BORDER*dimx:,:,:] = 0.
-    w3d[:,:BORDER*dimy,:] = 0.
-    w3d[:,-BORDER*dimy:,:] = 0.
+    # compute weights
+    w3d = np.ones_like(interf_cube_fft, dtype=float)
+    w3d[:int(BORDER*dimx),:,:] = 0.
+    w3d[-int(BORDER*dimx):,:,:] = 0.
+    w3d[:,:int(BORDER*dimy),:] = 0.
+    w3d[:,-int(BORDER*dimy):,:] = 0.
     
-
     Z = np.mgrid[:dimx, :dimy, :dimz][2,:,:,:]
 
-    # compute first order phase
-    print 'Fitting order 1'
-    pfixed = [A0, A1, np.nan]
-    pfree = [1e-5]
+    # create randomized cubes to accelerate the process
+    rndsize = int(dimx * dimy * RND_COEFF)
+    rndx = np.random.randint(0, dimx, 2*rndsize)
+    rndy = np.random.randint(0, dimy, 2*rndsize)
 
-    fit = optimize.leastsq(compute_phase3d, pfree,
-                           args=(pfixed, interf_cube_fft, calib_map, nm_laser,
-                                 Z, high_order_cube, w3d))
-    order1_fit = fit[0]
-    print 'Order 1 fitted value: {}'.format(order1_fit)
+    r_interf_cube_fft = np.empty((rndsize, dimz), dtype=complex)
+    r_calib_map = np.empty(rndsize, dtype=float)
+    r_Z = np.empty((rndsize, dimz), dtype=float)
+    r_high_order_cube = np.empty((rndsize, dimz), dtype=float)
+    r_w3d = np.empty((rndsize, dimz), dtype=float)
+    r_pm0 = np.empty(rndsize, dtype=float)
+    r_pm1 = np.empty(rndsize, dtype=float)
+
+    for i in range(rndsize):
+        ix = rndx[i]
+        iy = rndy[i]
+        if np.nanmax(np.abs(interf_cube_fft[ix, iy, :])) < 45000:
+            r_interf_cube_fft[i, :] = interf_cube_fft[ix, iy, :]
+            r_calib_map[i] = calib_map[ix, iy]
+            r_Z[i, :] = Z[ix, iy, :]
+            r_high_order_cube[i, :] = high_order_cube[ix, iy, :]
+            r_w3d[i, :] = w3d[ix, iy, :]
+            if pm0 is not None: r_pm0[i] = pm0[ix, iy]
+            else: r_pm0 = None
+            if pm1 is not None: r_pm1[i] = pm1[ix, iy]
+            else: r_pm1 = None
+        
+    # brute force exploration
+    if pm1 is None:
+        order1_max = 1.5 * np.pi / dimz
+        order1_min = -order1_max
+    else:
+        order1_min = -0.2
+        order1_max = 0.2
+
+    if pm0 is None:
+        a0_min = - np.pi
+        a0_max = np.pi
+        a1_min = 100
+        a1_max = 250
+        guess_min = [a0_min, a1_min, order1_min]
+        guess_max = [a0_max, a1_max, order1_max]
+    else:
+        a0_min = 0
+        a0_max = 2 * np.pi
+        guess_min = [a0_min, order1_min]
+        guess_max = [a0_max, order1_max]
+
+    best_coeffs, steps = brute(
+        GRIDSZ, guess_min, guess_max, True)
+
+    for _ in range(6):
+        guess_min = best_coeffs - REFINE_COEFF * steps
+        guess_max = best_coeffs + REFINE_COEFF * steps
+        best_coeffs, steps = brute(
+            SUB_GRIDSZ, guess_min, guess_max, True)
     
-    # compute 0th order phase
-    print 'Fitting order 0 coefficients'
+    ## orb.utils.io.write_fits(
+    ##     'fftreal3d.fits',
+    ##     model(best_coeffs,
+    ##           interf_cube_fft,
+    ##           calib_map, nm_laser, high_order_cube, Z, True, pm0, pm1),
+    ##     overwrite=True)
 
-    pfree = [A0, A1]
-    pfixed = [np.nan, np.nan, order1_fit]
-
-    fit = optimize.leastsq(compute_phase3d, pfree,
-                           args=(pfixed, interf_cube_fft, calib_map, nm_laser,
-                                 Z, high_order_cube, w3d))
-    a0_fit, a1_fit = fit[0]
-    print 'Order 0 fitted coefficients: a0: {}, a1: {}'.format(a0_fit, a1_fit)
+    if pm1 is None:
+        # order 1 is corrected for the new zpd shift
+        best_coeffs[-1] += (new_zpd_shift - zpd_shift) * math.pi / dimz
     
-    return a0_fit, a1_fit, order1_fit
+        print 'Order 1 fitted value corrected for ZPD init shift ({} steps): {}'.format(new_zpd_shift - zpd_shift, best_coeffs[-1])
+        
+    return best_coeffs
     
 def calib_map2phase_map0(p, calib_map, nm_laser):
     """Compute order 0 phase map from calibration laser map 

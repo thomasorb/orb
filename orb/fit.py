@@ -1852,8 +1852,10 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         else:
             fwhm_ang = line_params[:,3] * 10.
             
-        sigma_ang = utils.fit.vel2sigma(
-            line_params[:,4], line_params[:,2], axis_step)
+        sigma_ang = utils.spectrum.fwhm_cm12nm(
+            utils.fit.vel2sigma(
+                line_params[:,4], line_params[:,2], axis_step),
+            line_params[:,2]) * 10.
 
         if fmodel == 'sincgauss':
             flux = utils.spectrum.sincgauss1d_flux(
