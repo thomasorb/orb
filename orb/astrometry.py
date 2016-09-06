@@ -154,6 +154,8 @@ class StarsParams(Tools):
                     self._print_error("Number of elements is not the same") 
             elif isinstance(item, dict):
                 self.data[key] = item
+            elif item is None:
+                self.data[key] = None
             else:
                 self._print_error("item to set is neither a StarsParams instance or a dict")
                 
@@ -1153,8 +1155,6 @@ class Astrometry(Tools):
                 if res is not None:
                     for istar in range(len(star_list)):
                         self.fit_results[istar, ik+ijob] = res[istar]
-                    
-                        
                 
             progress.update(ik, info="frame : " + str(ik))
             
