@@ -226,8 +226,8 @@ class Tools(object):
         """Return the full path to the phase file given the name of
         the filter.
 
-        The filter name must be filter_FILTER_NAME and the phase file
-        must be located in orb/data/.
+        The file name must be 'phase_FILTER_NAME.orb' and it must be
+        located in orb/data/.
 
         :param filter_name: Name of the filter.
         """
@@ -1331,7 +1331,7 @@ class Tools(object):
         :py:meth:`core.Tools.write_fits`.
 
         .. note:: The output HDF5 file can contain mutiple data header
-          units (HDU). Each HDU is in a spcific group named 'hdu*', *
+          units (HDU). Each HDU is in a specific group named 'hdu*', *
           being the index of the HDU. The first HDU is named
           HDU0. Each HDU contains one data group (HDU*/data) which
           contains a numpy.ndarray and one header group
@@ -1353,7 +1353,7 @@ class Tools(object):
           None). It can also be a list of headers if a list of arrays
           has been passed to the option 'data'.    
 
-        :param max_hdu_check: (Optional): When True, ff the input data
+        :param max_hdu_check: (Optional): When True, if the input data
           is a list (interpreted as a list of data unit), check if
           it's length is not too long to make sure that the input list
           is not a single data array that has not been converted to a
@@ -2627,7 +2627,7 @@ class Cube(Tools):
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
                force_hdf5=False, force_fits=False,
-               calibration_laser_map_path=None):
+               calibration_laser_map_path=None, mask=None):
         
         """Export cube as one FITS/HDF5 file.
 
@@ -2658,6 +2658,10 @@ class Cube(Tools):
 
         :param calibration_laser_map_path: (Optional) Path to a
           calibration laser map to append (default None).
+
+        :param mask: (Optional) If a mask is given. Exported data is
+          masked. A NaN in the mask flags for a masked pixel. Other
+          values are not considered (default None).
         """
         if force_fits and force_hdf5:
             self._print_error('force_fits and force_hdf5 cannot be both set to True')
@@ -2721,12 +2725,17 @@ class Cube(Tools):
                 progress = ProgressBar(zmax-zmin)
                 for iframe in range(zmin, zmax):
                     progress.update(iframe-zmin, info='exporting frame {}'.format(iframe))
+                    idata = self.get_data(
+                        xmin, xmax, ymin, ymax,
+                        iframe, iframe + 1,
+                        silent=True)
+                    
+                    if mask is not None:
+                        idata[np.nonzero(np.isnan(mask))] = np.nan
+                    
                     outcube.write_frame(
                         iframe,
-                        data=self.get_data(
-                            xmin, xmax, ymin, ymax,
-                            iframe, iframe + 1,
-                            silent=True),
+                        data=idata,
                         header=self.get_frame_header(iframe),
                         force_float32=True)
                 progress.end()
@@ -2747,11 +2756,14 @@ class Cube(Tools):
                                               0, self.dimz,
                                               silent=True)
 
+                    if mask is not None:
+                        data_quad[np.nonzero(np.isnan(mask)),:] = np.nan
+                    
                     # write data
                     outcube.write_quad(iquad,
                                        data=data_quad,
                                        force_float32=True)
-
+                    
                 progress.end()
                 
             outcube.close()
@@ -2788,6 +2800,9 @@ class Cube(Tools):
                 self._close_pp_server(job_server)
             else:
                 data = self.get_data(xmin, xmax, ymin, ymax, zmin, zmax)
+
+            if mask is not None:
+                data[np.nonzero(np.isnan(mask)),:] = np.nan
                 
             self.write_fits(export_path, data, overwrite=overwrite,
                             fits_header=header)
@@ -4805,14 +4820,13 @@ class Standard(Tools):
         return spec_ang, spec_flux
 
 
-    def compute_star_flux_in_frame(self, step, order, filter_file_path,
-                                   optics_file_path,
+    def compute_star_flux_in_frame(self, step, order, filter_name,
                                    camera_number, airmass=1., corr=1.):
         """Return flux in ADU/s in an image.
 
         :param step: Step size in nm
         :param order: Folding order
-        :param filter_file_path: Path to the filter file
+        :param filter_name: Name fo the filter
         :param optics_file_path: Path to the optics file
         :param camera_number: Number of the camera
         :param airmass: (Optional) Airmass (default 1)
@@ -4826,8 +4840,8 @@ class Standard(Tools):
             self._print_error('Camera number must be 1 or 2')
         
         (filter_trans,
-         filter_min, filter_max) = utils.filters.get_filter_function(
-            filter_file_path, step, order, STEP_NB, corr=corr)
+         filter_min, filter_max) = FilterFile(filter_name).get_filter_function(
+            filter_name, step, order, STEP_NB, corr=corr)
         
         nm_axis, std_spectrum = self.get_spectrum(step, order, STEP_NB, corr=corr)
 
@@ -4844,7 +4858,7 @@ class Standard(Tools):
             step, order, STEP_NB, corr=corr)
         
         optics_trans = utils.photometry.get_optics_transmission(
-            optics_file_path,
+            self._get_optics_file_path(filter_name),
             step, order, STEP_NB, corr=corr)
 
         star_flux = utils.photometry.compute_star_flux_in_frame(
@@ -4879,8 +4893,7 @@ class Standard(Tools):
         :param airmass: (Optional) Airmass (default 1)    
         """
         star_flux = self.compute_star_flux_in_frame(
-            step, order, self._get_filter_file_path(filter_name),
-            self._get_optics_file_path(filter_name),
+            step, order, filter_name,
             camera_number, airmass=airmass)
         
         dimx = float(self._get_config_parameter(
@@ -4921,3 +4934,187 @@ class Header(pyfits.Header):
         self.wcs.wcs.crpix /= binning
         self.wcs.wcs.cdelt *= binning
         self.extend(self.wcs.to_header(), update=True)
+
+
+#################################################
+#### CLASS FilterFile ###########################
+#################################################
+class FilterFile(Tools):
+    """Manage filter files"""
+
+    def __init__(self, filter_name, **kwargs):
+        """Initialize FilterFile class.
+
+        :param filter_name: Name of the filter.
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        Tools.__init__(self, **kwargs)
+        self.basic_path = self._get_filter_file_path(filter_name)
+
+    def read_filter_file(self):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.read_filter_file`
+        """
+        return utils.filters.read_filter_file(
+            self.basic_path)
+
+    def get_filter_function(self, step, order, step_nb,
+                            wavenumber=False, silent=False, corr=1.):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.get_filter_function`.
+
+        Parameters are the same.
+        """
+        return utils.filters.get_filter_function(
+            self.basic_path, step, order,
+            step_nb, wavenumber=wavenumber,
+            corr=corr)
+
+    def get_modulation_efficiency(self):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.get_modulation_efficiency`
+        """
+        return utils.filters.get_modulation_efficiency(
+            self.basic_path)
+
+    def get_observation_params(self):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.get_observation_params`
+        """
+        return utils.filters.get_observation_params(
+            self.basic_path)
+
+    def get_phase_fit_order(self):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.get_phase_fit_order`
+        """
+        return utils.filters.get_phase_fit_order(
+            self.basic_path)
+
+    def get_filter_bandpass(self):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.get_filter_bandpass`
+        """
+        return utils.filters.get_filter_bandpass(
+            self.basic_path)
+
+
+#################################################
+#### CLASS PhaseFile ############################
+#################################################
+class PhaseFile(Tools):
+    """Manage phase files"""
+
+    def __init__(self, filter_name, **kwargs):
+        """Initialize PhaseFile class.
+
+        :param filter_name: Name of the filter.
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        Tools.__init__(self, **kwargs)
+        self.basic_path = self._get_phase_file_path(filter_name)
+        self.improved_path = os.path.splitext(self.basic_path)[0] + '.hdf5'
+
+        if not os.path.exists(self.improved_path):
+            self._print_warning('Improved phase file {} does not exist !'.format(self.improved_path))
+            self.basic_phase = utils.fft.read_phase_file(
+                self.basic_path, return_spline=True)
+        else:
+            self.basic_phase = None
+
+            with self.open_hdf5(self.improved_path, 'r') as inf:
+                if 'angles' in inf:
+                    self.angles = inf['angles'][:]
+                else: self._print_error('Badly formatted phase file: angles is missing')
+                if 'phases' in inf:
+                    self.phases = inf['phases'][:]
+                else: self._print_error('Badly formatted phase file: phases is missing')
+                if 'phases_err_min' in inf:
+                    self.phases_err_min = inf['phases_err_min'][:]
+                else: self._print_error('Badly formatted phase file: phases_err_min is missing')
+                if 'phases_err_max' in inf:
+                    self.phases_err_max = inf['phases_err_max'][:]
+                else: self._print_error('Badly formatted phase file: phases_err_max is missing')
+
+                if 'step' in inf.attrs:
+                    self.step = inf.attrs['step']
+                else: self._print_error('Badly formatted phase file: step attribute is missing')
+                if 'order' in inf.attrs:
+                    self.order = inf.attrs['order']
+                else: self._print_error('Badly formatted phase file: order attribute is missing')
+
+            
+
+
+    def write_improved_phase_file(self, step, order, angles, phases,
+                                  phases_err_min, phases_err_max):
+        """Write an improved phase file as an hdf5 archive.
+
+        :param step: Step size in nm
+
+        :param order: Folding order.
+        
+        :param angles: limit angles of each phase group.
+        
+        :param phases: list of phase vectors corresponding to each
+          angle group.
+        
+        :param phases_err_min: list of min error vectors of each phase
+          vector.
+        
+        :param phases_err_max: list of max error vectors of each phase
+          vector.
+
+        .. warning:: To avoid unwanted replacement of ORB's data files
+          the phase file is not written in ORB folder but at the root
+          folder. It must thus be placed in the orb/data folder to be
+          readable with self.read_improved_phase_file.
+        """
+        path = os.path.split(self.improved_path)[1]
+        with self.open_hdf5(path, 'w') as outf:
+            outf.attrs['step'] = step
+            outf.attrs['order'] = order
+            outf.create_dataset('angles', data=np.array(angles))
+            outf.create_dataset('phases', data=np.array(phases))
+            outf.create_dataset('phases_err_min', data=np.array(phases_err_min))
+            outf.create_dataset('phases_err_max', data=np.array(phases_err_max))
+        self._print_msg('Improved phase file {} written'.format(path))
+        
+
+    def get_improved_phase(self, calib_laser_nm, return_spline=True):
+        """Return a scipy.interpolate.UnivariateSpline instance
+        corresponding to the phase at a given calibration laser
+        wavelength (i.e. a given incident angle theta).
+
+        :param calib_laser_nm: Calibration laser wavelength in nm.
+
+        :param return_spline: (Optional) If not True, the phase vector
+          is returned without any spline interpolation. Useful and
+          faster when no interpolation is needed (default True).
+
+        .. note:: The returned spline is projected along an axis in
+          cm-1
+        """
+
+        if self.basic_phase is not None: return self.basic_phase
+        
+        argmax = np.nanargmax(self.angles > calib_laser_nm)
+        calib_max = self.angles[argmax]
+        calib_min = self.angles[argmax - 1]
+        ratio = (calib_laser_nm - calib_min) / (calib_max - calib_min)
+        ph_max = self.phases[argmax,:]
+        ph_min = self.phases[argmax - 1,:]
+        phase = (ph_max * ratio + ph_min * (1.-ratio))
+        
+        cm1_axis = utils.spectrum.create_cm1_axis(
+            phase.shape[0], self.step, self.order,
+            corr=calib_laser_nm/float(
+                self._get_config_parameter('CALIB_NM_LASER')))
+        if return_spline:
+            nonans = ~np.isnan(phase)
+            return interpolate.UnivariateSpline(
+                cm1_axis[nonans], phase[nonans], k=3, s=0, ext=0)
+        else: return phase
+            

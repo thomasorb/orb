@@ -422,7 +422,7 @@ def compute_phase_coeffs_vector(phase_maps,
     return phase_coeffs
     
 def transform_interferogram(interf, nm_laser, 
-                            calibration_coeff, step, order, 
+                            calibration_nm_laser, step, order, 
                             window_type, zpd_shift, phase_correction=True,
                             wave_calibration=True,
                             return_phase=False, ext_phase=None,
@@ -438,7 +438,7 @@ def transform_interferogram(interf, nm_laser,
     
     :param nm_laser: Wavelength of the laser used for calibration.
     
-    :param calibration_coeff: Wavelength of the laser emission line
+    :param calibration_nm_laser: Wavelength of the laser emission line
       corresponding to the computed interferogram.
 
     :param step: Step size of the moving mirror in nm.
@@ -513,7 +513,7 @@ def transform_interferogram(interf, nm_laser,
 
     :param high_order_phase: (Optional) High order phase to be added
       to the phase computed via a low order polynomial (generally 1
-      order). Note that it must be a
+      order). Note that it must be a orb.core.PhaseFile instance or a
       scipy.interpolate.UnivariateSpline instance to accelerate the
       process.
 
@@ -726,7 +726,7 @@ def transform_interferogram(interf, nm_laser,
 
     #### Create spectrum original cm-1 axis
     if wave_calibration:
-        correction_coeff = float(calibration_coeff) / nm_laser
+        correction_coeff = float(calibration_nm_laser) / nm_laser
     else:
         correction_coeff = 1.
 
@@ -747,7 +747,11 @@ def transform_interferogram(interf, nm_laser,
         if high_order_phase is not None:
             phase_axis = orb.utils.spectrum.create_cm1_axis(
                 interf_fft.shape[0], step, order,
-                corr=float(calibration_coeff) / nm_laser).astype(np.float64)
+                corr=float(calibration_nm_laser) / nm_laser).astype(np.float64)
+            try: # if high_order_phase is a PhaseFile instance
+                high_order_phase = high_order_phase.get_improved_phase(
+                    float(calibration_nm_laser))
+            except AttributeError: pass
             ext_phase_corr += high_order_phase(phase_axis)
 
         # interpolation of the phase to zero padded size
@@ -805,7 +809,7 @@ def transform_interferogram(interf, nm_laser,
             return np.copy(np.abs(spectrum))
 
 
-def transform_spectrum(spectrum, nm_laser, calibration_coeff,
+def transform_spectrum(spectrum, nm_laser, calibration_nm_laser,
                        step, order, window_type, zpd_shift,
                        ext_phase=None, return_complex=False, wavenumber=False,
                        final_step_nb=None, sampling_vector=None,
@@ -823,7 +827,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
 
     :param nm_laser: Wavelength of the laser used for calibration.
     
-    :param calibration_coeff: Wavelength of the laser emission line
+    :param calibration_nm_laser: Wavelength of the laser emission line
       corresponding to the computed interferogram.
 
     :param step: Step size of the moving mirror in nm.
@@ -849,7 +853,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
 
     :param wavenumber: (Optional) If True the spectrum axis is in
       cm-1. In this case, and if no wavelength correction has to be
-      applied (calibration_coeff == nm_laser) there will be no
+      applied (calibration_nm_laser == nm_laser) there will be no
       interpolation of the original spectrum (better precision)
       (default False).
 
@@ -889,7 +893,7 @@ def transform_spectrum(spectrum, nm_laser, calibration_coeff,
         final_step_nb = step_nb
 
     # On-axis -> Off-axis [nm - > cm-1]
-    correction_coeff = calibration_coeff / nm_laser
+    correction_coeff = calibration_nm_laser / nm_laser
     
     if not wavenumber:
         base_axis = orb.utils.spectrum.create_nm_axis(
@@ -1063,9 +1067,9 @@ def optimize_phase(interf, step, order, zpd_shift,
       values ranging from 0 to 1, 1 being the maximum weight)
 
     :param high_order_phase: (Optional) High order phase to be
-      subtracted during the optimization process. Can be a path to a
-      phase file . Note that if it is not a phase file name it must be
-      a scipy.interpolate.UnivariateSpline instance to accelerate the
+      subtracted during the optimization process. Must be a
+      orb.core.PhaseFile instance or a
+      scipy.interpolate.UnivariateSpline instance to accelerate the
       process (as returned by
       :py:meth:`orb.utils.fft.read_phase_file`).
     """
@@ -1101,12 +1105,13 @@ def optimize_phase(interf, step, order, zpd_shift,
         return_complex=True)
 
     if high_order_phase is not None:
-        if isinstance(high_order_phase, str):
-            high_order_phase = read_phase_file(
-                high_order_phase, return_spline=True)
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
             interf.shape[0], step, order,
             corr=calib/nm_laser).astype(np.float64)
+        try: # if high_order_phase is a PhaseFile instance
+            high_order_phase = high_order_phase.get_improved_phase(calib)
+        except AttributeError: pass
+            
         high_phase = high_order_phase(cm1_axis)
     else:
         high_phase = None
@@ -1165,7 +1170,7 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
     :param nm_laser: Calibration laser wavelength
     
     :param high_order_phase: A scipy.Spline instance of the high order
-      phase.
+      phase or an orb.core.PhaseFile instance.
 
     :param pm0: (Optional) Order 0 phase map. This map is adjusted
       instead of calculating a phase map from a calibration laser
@@ -1316,6 +1321,10 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
             phase_axis = orb.utils.spectrum.create_cm1_axis(
                 dimz, step, order,
                 corr=float(calib_map[ii,ij]) / nm_laser).astype(np.float64)
+            try: # if high_order_phase is a PhaseFile instance
+                high_order_phase = high_order_phase.get_improved_phase(
+                    float(calib_map[ii,ij]))
+            except AttributeError: pass
             high_order_cube[ii,ij] = high_order_phase(phase_axis)
     sys.stdout.write('\n')
     ## orb.utils.io.write_fits('interf_cube_fft.real.fits', interf_cube_fft.real,
@@ -1554,7 +1563,7 @@ def create_phase_file(file_path, phase_vector, cm1_axis):
 
 
 def read_phase_file(file_path, return_spline=False):
-    """Read a phase file and return its content.
+    """Read a basic phase file and return its content.
 
     :param file_path: Path to the phase file
 
@@ -1581,21 +1590,3 @@ def read_phase_file(file_path, return_spline=False):
     else:
         return interpolate.UnivariateSpline(
             cm1_axis, phase, k=3, s=0, ext=0)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

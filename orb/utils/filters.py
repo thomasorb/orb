@@ -64,6 +64,20 @@ def compute_weights(calib, nm_laser, step_nb, step, order,
             - int(range_border_coeff * range_size):] = 1e-35
     return weights, filter_range
 
+def get_key(filter_file_path, key, cast):
+    """
+    Return key value if it exists, None instead.
+    
+    :param filter_file_path: Path to the filter file.
+    """
+    with open(filter_file_path, 'r') as f:
+        for line in f:
+            if len(line) > 2:
+                if '# {}'.format(key) in line:
+                    return cast(line.strip().split()[2])
+    warnings.warn('{} keyword not in filter file: {}'.format(key, filter_file_path))
+    return None
+
 
 def get_phase_fit_order(filter_file_path):
     """
@@ -71,13 +85,19 @@ def get_phase_fit_order(filter_file_path):
     
     :param filter_file_path: Path to the filter file.
     """
-    with open(filter_file_path, 'r') as f:
-        for line in f:
-            if len(line) > 2:
-                if '# PHASE_FIT_ORDER' in line:
-                    return int(line.strip().split()[2])
-    warnings.warn('PHASE_FIT_ORDER keyword not in filter file: {}'.format(filter_file_path))
-    return None
+    return get_key(filter_file_path, 'PHASE_FIT_ORDER', int)
+
+def get_observation_params(filter_file_path):
+    """
+    Return observation params as tuple (step, order).
+    
+    :param filter_file_path: Path to the filter file.
+    """
+    _order = get_key(filter_file_path, 'ORDER', int)
+    _step = get_key(filter_file_path, 'STEP', float)
+    if _order is None or _step is None:
+        raise Exception('Observations params (ORDER, STEP) not in filter file')
+    else: return (_step, _order)
 
 
 def get_modulation_efficiency(filter_file_path):
@@ -86,25 +106,26 @@ def get_modulation_efficiency(filter_file_path):
     
     :param filter_file_path: Path to the filter file.
     """
-    with open(filter_file_path, 'r') as f:
-        for line in f:
-            if len(line) > 2:
-                if '# MODULATION_EFFICIENCY' in line:
-                    return float(line.strip().split()[2])
-    warnings.warn('MODULATION_EFFICIENCY keyword not in filter file: {}'.format(filter_file_path))
-    return 1.
+    _me = get_key(filter_file_path, 'MODULATION_EFFICIENCY', float)
+    if _me is None: return 1.
+    else: return _me
 
 
-def read_filter_file(filter_file_path):
+def read_filter_file(filter_file_path, return_spline=False):
     """
     Read a file containing the filter transmission function.
 
     :param filter_file_path: Path to the filter file.
 
+    :param return_spline: If True a cubic spline
+      (scipy.interpolate.UnivariateSpline instance) is returned
+      instead of a tuple.
+
     :returns: (list of filter wavelength, list of corresponding
       transmission coefficients, minimum edge of the filter, maximum
       edge of the filter) (Both min and max edges can be None if they
-      were not recorded in the file)
+      were not recorded in the file) or a spline if return_spline set
+      to True.
       
     .. note:: The filter file used must have two colums separated by a
       space character. The first column contains the wavelength axis
@@ -149,8 +170,12 @@ def read_filter_file(filter_file_path):
         filter_trans = filter_trans[::-1]
 
     filter_file.close()
-        
-    return filter_nm, filter_trans, filter_min, filter_max
+
+    if not return_spline:
+        return filter_nm, filter_trans, filter_min, filter_max
+    else:
+        return interpolate.UnivariateSpline(
+            filter_nm, filter_trans, k=3, s=0, ext=0)
 
 
 def get_filter_bandpass(filter_file_path):

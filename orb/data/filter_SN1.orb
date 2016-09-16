@@ -4,6 +4,8 @@
 # Wavelength in nm | Transmission percentage
 # FILTER_MIN 362.6
 # FILTER_MAX 385.6
+# ORDER 8
+# STEP 1647
 # PHASE_FIT_ORDER 1
 # MODULATION_EFFICIENCY 0.6
 1000.0 0.0
