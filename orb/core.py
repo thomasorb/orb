@@ -4841,7 +4841,7 @@ class Standard(Tools):
         
         (filter_trans,
          filter_min, filter_max) = FilterFile(filter_name).get_filter_function(
-            filter_name, step, order, STEP_NB, corr=corr)
+            step, order, STEP_NB, corr=corr)
         
         nm_axis, std_spectrum = self.get_spectrum(step, order, STEP_NB, corr=corr)
 

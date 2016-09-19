@@ -42,9 +42,11 @@ def create_nm_axis(n, step, order, corr=1.):
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
     
-    nm_min = orb.cutils.get_nm_axis_min(n, step, order, corr=corr)
+    nm_min = orb.cutils.get_nm_axis_min(int(n), float(step),
+                                        int(order), corr=float(corr))
     if (order > 0): 
-        nm_max = orb.cutils.get_nm_axis_max(n, step, order, corr=corr)
+        nm_max = orb.cutils.get_nm_axis_max(int(n), float(step),
+                                            int(order), corr=float(corr))
         return np.linspace(nm_min, nm_max, n, dtype=np.longdouble)
     else:
         raise Exception("order must be > 0")
@@ -60,8 +62,10 @@ def create_cm1_axis(n, step, order, corr=1.):
     
     :param corr: (Optional) Coefficient of correction (default 1.)
     """
-    cm1_min = orb.cutils.get_cm1_axis_min(n, step, order, corr=corr)
-    cm1_max = orb.cutils.get_cm1_axis_max(n, step, order, corr=corr)
+    cm1_min = orb.cutils.get_cm1_axis_min(int(n), float(step),
+                                          int(order), corr=float(corr))
+    cm1_max = orb.cutils.get_cm1_axis_max(int(n), float(step),
+                                          int(order), corr=float(corr))
     return np.linspace(cm1_min, cm1_max, n, dtype=np.longdouble) 
     
     
@@ -440,9 +444,13 @@ def phase_shift_cm1_axis(step_nb, step, order, nm_laser_obs, nm_laser):
     :param nm_laser: Calibration laser wavelength (in nm)
     """
     corr = nm_laser_obs / nm_laser
-    cm1_min_corr = orb.cutils.get_cm1_axis_min(step_nb, step, order, corr=corr)
-    cm1_min_base = orb.cutils.get_cm1_axis_min(step_nb, step, order)
-    cm1_axis_step =  orb.cutils.get_cm1_axis_step(step_nb, step, corr=corr)
+    cm1_min_corr = orb.cutils.get_cm1_axis_min(int(step_nb), float(step),
+                                               int(order), corr=float(corr))
+    cm1_min_base = orb.cutils.get_cm1_axis_min(int(step_nb), float(step),
+                                               int(order))
+    cm1_axis_step =  orb.cutils.get_cm1_axis_step(int(step_nb),
+                                                  float(step),
+                                                  corr=float(corr))
     delta_cm1 = cm1_min_corr - cm1_min_base
     delta_x = - (delta_cm1 / cm1_axis_step)
     return delta_x

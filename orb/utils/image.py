@@ -1052,10 +1052,9 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     """Robust fit phase maps of order > 1
 
-    First fit pass is made with a polynomial of order 1.
+    Uses a theta dependant fit model base on a spline. See
+    py:meth:`utils.fit_map_cos`.
     
-    Second pass is a Zernike fit of the residual.
-
     :param phase_map: Phase map to fit
 
     :param err_map: Error map of phase map values
@@ -1065,9 +1064,7 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     :param nm_laser: Calibration laser wavelength in nm.
 
     :return: A tuple: (Fitted map, residual map)
-    """
-    # order 1 fit
-    
+    """    
     CROP_COEFF = 0.85 # proportion of the phase map to keep when
                       # cropping
 
@@ -1092,17 +1089,6 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     print ' > Residual STD after cos theta fit: {}'.format(np.nanstd(res_map))
 
     return phase_map_fit, phase_map - phase_map_fit
-    ## # residual fit with zernike
-    ## w_map = np.copy(err_map)
-    ## w_map = np.abs(w_map)
-    ## w_map = 1./w_map
-    ## w_map /= orb.cutils.part_value(w_map.flatten(), 0.95)
-    ## w_map[w_map > 1.] = 1.
-    ## res_map_fit, res_res_map, fit_error = fit_map_zernike(res_map, w_map, nmodes)
-    ## print ' > Residual STD after Zernike fit of the residual: {}'.format(np.nanstd(res_res_map))
-    ## full_fit = phase_map_fit + res_map_fit
-    
-    ## return full_fit, phase_map - full_fit
     
     
 

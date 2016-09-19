@@ -247,7 +247,7 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
 
 
 def get_filter_function(filter_file_path, step, order, n,
-                        wavenumber=False, silent=False, corr=1):
+                        wavenumber=False, silent=False, corr=1.):
     """Read a filter file and return its function interpolated over
     the desired number of points. Return also the edges position over
     its axis in pixels.
