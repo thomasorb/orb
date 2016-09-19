@@ -533,6 +533,60 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
+def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=10):
+    """Fit a map with a theta dependant value. The function f(theta)
+    is a spline with a given number of knots.
+
+    :param data_map: Data map
+
+    :param err_map: Error map
+
+    :param calib_map: Calibration laser map
+
+    :param nm_laser: Calibration laser wavelength in nm
+
+    :param knb: (Optional) Number of knots for the spline (default
+      10).
+    """
+    
+    costheta = nm_laser / calib_map
+    err_map = np.abs(err_map)
+    min_threshold = np.nanpercentile(err_map, 30.) # avoid "too good"
+                                                   # points
+    err_map[err_map <=  min_threshold] = min_threshold
+    err_map /= np.nanpercentile(err_map, 99.9)
+    err_map[err_map >= 1] = 1.
+    
+    def model(p, costheta, thetas):
+        spl = interpolate.UnivariateSpline(thetas, np.array(p), k=1, s=0)
+        return spl(costheta)
+        
+    def diff(p, data, costheta, err, thetas):
+        res = (model(p, costheta, thetas) - data) / err
+        res = res.flatten()
+        return res[~np.isnan(res)]
+
+    thetas = np.linspace(np.nanmin(costheta), np.nanmax(costheta), knb)
+    guess = np.zeros(knb, dtype=float)
+    guess.fill(np.nanmedian(data_map))
+    fit = scipy.optimize.leastsq(
+        diff, guess,
+        args=(data_map, costheta, err_map, thetas),
+        full_output=True)
+
+    data_map_fit = model(fit[0], costheta, thetas)
+    res_map = (data_map - data_map_fit)
+    fit_error_map = np.abs(res_map) / np.abs(data_map)
+    fit_error_map[np.isinf(fit_error_map)] = np.nan
+    fit_res_std = np.nanstd(res_map)
+    fit_error = np.nanmedian(fit_error_map)
+    print 'Standard deviation of the residual: {}'.format(fit_res_std)
+    print 'Median relative error (err/val)): {:.2f}%'.format(
+        fit_error * 100.)
+
+    return data_map_fit, res_map, fit_error
+
+
 def fit_map_zernike(data_map, weights_map, nmodes):
     """
     Fit a map with Zernike polynomials.
@@ -558,7 +612,7 @@ def fit_map_zernike(data_map, weights_map, nmodes):
     borders = (np.array(data_map_big.shape) - np.array(data_map.shape))/2.
     data_map_big[borders[0]:borders[0]+data_map.shape[0],
                  borders[1]:borders[1]+data_map.shape[1]] = np.copy(data_map)
-    mask = np.ones_like(data_map_big, dtype=float)
+    mask = np.zeros_like(data_map_big, dtype=float)
     weights_map = np.abs(weights_map)
     weights_map /= np.nanmax(weights_map) # error map is normalized
     mask[borders[0]:borders[0]+data_map.shape[0],
@@ -570,7 +624,6 @@ def fit_map_zernike(data_map, weights_map, nmodes):
     
     # nans are replaced by zeros in the fitted map
     data_map_big[np.nonzero(np.isnan(data_map_big))] = 0. 
-
     (wf_zern_vec, wf_zern_rec, fitdiff) = orb.ext.zern.fit_zernike(
         data_map_big, fitweight=mask, startmode=1, nmodes=nmodes)
 
@@ -996,7 +1049,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
 
 
-def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
+def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     """Robust fit phase maps of order > 1
 
     First fit pass is made with a polynomial of order 1.
@@ -1007,7 +1060,9 @@ def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
 
     :param err_map: Error map of phase map values
 
-    :param nmodes: (Optional) Number of Zernike modes (default 10).
+    :param calib_map: Calibration laser map.
+
+    :param nm_laser: Calibration laser wavelength in nm.
 
     :return: A tuple: (Fitted map, residual map)
     """
@@ -1033,20 +1088,21 @@ def fit_highorder_phase_map(phase_map, err_map, nmodes=10):
     
     err_map[np.nonzero(np.isnan(phase_map))] = np.nan
     
-    phase_map_fit, res_map, rms_error = fit_map(phase_map, err_map, 1)
-    print ' > Residual STD after 1st order fit: {}'.format(np.nanstd(res_map))
+    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser)
+    print ' > Residual STD after cos theta fit: {}'.format(np.nanstd(res_map))
+
+    return phase_map_fit, phase_map - phase_map_fit
+    ## # residual fit with zernike
+    ## w_map = np.copy(err_map)
+    ## w_map = np.abs(w_map)
+    ## w_map = 1./w_map
+    ## w_map /= orb.cutils.part_value(w_map.flatten(), 0.95)
+    ## w_map[w_map > 1.] = 1.
+    ## res_map_fit, res_res_map, fit_error = fit_map_zernike(res_map, w_map, nmodes)
+    ## print ' > Residual STD after Zernike fit of the residual: {}'.format(np.nanstd(res_res_map))
+    ## full_fit = phase_map_fit + res_map_fit
     
-    # residual fit with zernike
-    w_map = np.copy(err_map)
-    w_map = np.abs(w_map)
-    w_map = 1./w_map
-    w_map /= orb.cutils.part_value(w_map.flatten(), 0.95)
-    w_map[w_map > 1.] = 1.
-    res_map_fit, res_res_map, fit_error = fit_map_zernike(res_map, w_map, nmodes)
-    print ' > Residual STD after Zernike fit of the residual: {}'.format(np.nanstd(res_res_map))
-    full_fit = phase_map_fit + res_map_fit
-    
-    return full_fit, phase_map - full_fit
+    ## return full_fit, phase_map - full_fit
     
     
 
@@ -1119,9 +1175,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                + 'a0: {} radians\n'.format(params[2])
                + 'a1: {} radians\n'.format(params[3]))
 
-    ZERN_MODES = 30 # number of Zernike modes to fit
-
-    CROP_COEFF = 0.85 # proportion of the phase map to keep when
+    CROP_COEFF = 0.75 # proportion of the phase map to keep when
                       # cropping
 
     # bad values are filtered and phase map is cropped to remove
@@ -1194,15 +1248,16 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
 
     ## computed calibration laser map from instrumental parameters
     ## This calibration laser map is more likely to be trusted than
-    ## the one computed after zernike fit.
-    new_calib_laser_map = model_laser_map(params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+    ## the one computed after the cos theta fit.
+    new_calib_laser_map = model_laser_map(
+        params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
 
-    ### Zernike fit: Instead of fitting the residuals of the phase map,
+    ### Instead of fitting the residuals of the phase map,
     ## the residuals of the laser map are fitted (because it is a simple
     ## linear conversion of the laser map). This way a best fitted
     ## laser map is also obtained along with the best fitted phase
     ## map. the obtained laser map might be used for better precision.
-    print '> Phase map residuals fit with Zernike polynomials ({} modes)'.format(ZERN_MODES)
+    print '> Phase map residuals fit with cos theta fit'
     real_calib_laser_map = orb.utils.fft.phase_map02calib_map(
         [params[2], params[3]], phase_map, calib_laser_nm)
     
@@ -1214,8 +1269,10 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     res_map[np.nonzero(phase_map == 0.)] = np.nan # 0s are replaced
                                                   # with nans
     
-    res_map_fit, _err_map, _fit_error = fit_map_zernike(
-        res_map, np.ones_like(res_map), ZERN_MODES)
+    res_map_fit, _err_map, _fit_error = fit_map_cos(
+        res_map, np.ones_like(res_map),
+        real_calib_laser_map, calib_laser_nm, knb=5)
+    
 
     fitted_laser_map = mod_calib_laser_map + res_map_fit
 
