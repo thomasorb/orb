@@ -838,7 +838,7 @@ def simulate_calibration_laser_map(nx, ny, pixel_size, calib_laser_wl,
     
     :param phi_y: Tilt of the mirror along Y in degrees
     
-    :param phi_r: angle from the center of the frame to the optical
+    :param phi_r: Angle from the center of the frame to the optical
       axis along X axis in degrees (equivalent to a rotation of the
       camera)
     """
