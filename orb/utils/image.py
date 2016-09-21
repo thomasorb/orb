@@ -1151,6 +1151,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         model_map = model_phase_map(p_all, calib, calib_laser_nm, pixel_size,
                                     theta_c)
         result = (model_map - pm) / pm_err
+        result[np.isinf(result)] = np.nan
         result = result[np.nonzero(~np.isnan(result))]
         return result
 
