@@ -814,8 +814,45 @@ def tilt_calibration_laser_map(cmap, calib_laser_nm, phi_x, phi_y, phi_r):
     
     return new_calib_map
 
+def simulate_theta_map(nx, ny, pixel_size,
+                       mirror_distance,
+                       theta_cx, theta_cy,
+                       phi_x, phi_y, phi_r):
+    
+    theta_cx = np.deg2rad(theta_cx)
+    theta_cy = np.deg2rad(theta_cy)
+    phi_x = np.deg2rad(phi_x)
+    phi_y = np.deg2rad(phi_y)
+    phi_r = np.deg2rad(phi_r)
 
-def simulate_calibration_laser_map(nx, ny, pixel_size, calib_laser_wl,
+    X, Y = np.mgrid[:nx,:ny].astype(float)
+    X -= nx / 2. - 0.5
+    Y -= ny / 2. - 0.5
+    X *= pixel_size
+    Y *= pixel_size
+    X *= np.cos(phi_x)
+    Y *= np.cos(phi_y)
+
+    Xr = X * np.cos(phi_r) + Y * np.sin(phi_r)
+    Yr = Y * np.cos(phi_r) - X * np.sin(phi_r)
+
+    thetax = theta_cx + np.arctan(Xr / mirror_distance)
+    thetay = theta_cy + np.arctan(Yr / mirror_distance)
+
+    return np.rad2deg(np.sqrt(thetax**2 + thetay**2))
+
+def simulate_calibration_laser_map(nx, ny, pixel_size,
+                                   mirror_distance,
+                                   theta_cx, theta_cy,
+                                   phi_x, phi_y, phi_r,
+                                   calib_laser_nm):
+    
+    return calib_laser_nm / np.cos(np.deg2rad(simulate_theta_map(
+        nx, ny, pixel_size, mirror_distance,
+        theta_cx, theta_cy, phi_x, phi_y, phi_r)))
+
+
+def simulate_calibration_laser_map_old(nx, ny, pixel_size, calib_laser_wl,
                                    mirror_distance,
                                    theta_c, phi_x, phi_y, phi_r):
     """Simulate a calibration laser map from optical and mechanical parameters
@@ -911,7 +948,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         """
         return simulate_calibration_laser_map(
             calib.shape[0], calib.shape[1], pixel_size,
-            calib_laser_nm, p[0], theta_c, 0., 0., p[1])
+            p[0], 0., theta_c, 0., 0., p[1], calib_laser_nm)
 
     def diff_laser_map(p_var, p_fix, p_ind, calib, calib_laser_nm, pixel_size,
                        theta_c):
@@ -1131,7 +1168,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     def model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c):
         return simulate_calibration_laser_map(
             calib.shape[0], calib.shape[1], pixel_size,
-            calib_laser_nm, p[0], theta_c, 0., 0., p[1])
+            p[0], 0., theta_c, 0., 0., p[1], calib_laser_nm)
 
     def model_phase_map(p, calib, calib_laser_nm, pixel_size, theta_c):
         return orb.utils.fft.calib_map2phase_map0([p[2], p[3]],model_laser_map(
