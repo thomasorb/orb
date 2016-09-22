@@ -818,6 +818,44 @@ def simulate_theta_map(nx, ny, pixel_size,
                        mirror_distance,
                        theta_cx, theta_cy,
                        phi_x, phi_y, phi_r):
+    """Simulate incident angle (theta) map from optical and mechanical
+    parameters
+
+    :param nx: Number of pixels along X
+    
+    :param ny: Number of pixels along Y
+    
+    :param pixel_size: Size of a pixel in microns
+    
+    :param mirror_distance: Distance to the mirror in microns on the
+      optical axis.
+    
+    :param theta_cx: Angle from the optical axis to the mirror
+      center in degrees along X axis (in degrees)
+
+    :param theta_cy: Angle from the optical axis to the mirror
+      center in degrees along Y axis (in degrees)
+
+    :param phi_x: Tilt of the mirror along X in degrees
+    
+    :param phi_y: Tilt of the mirror along Y in degrees
+    
+    :param phi_r: Rotation angle of the camera in degrees
+    """
+    
+    def x2theta(x, D, alpha):
+        return (np.arctan(
+            (x - D) / (x + D)
+            / np.tan((alpha + np.pi / 2.)/2.))
+                - alpha / 2. + np.pi / 4.)
+
+    def central_angle(phiX, phiY):
+        """from Vincenty's formula"""
+        return np.arctan2(
+            np.sqrt(
+                (np.cos(phiY) * np.sin(phiX))**2.
+                + np.sin(phiY)**2.),
+            np.cos(phiY) * np.cos(phiX))
     
     theta_cx = np.deg2rad(theta_cx)
     theta_cy = np.deg2rad(theta_cy)
@@ -830,32 +868,25 @@ def simulate_theta_map(nx, ny, pixel_size,
     Y -= ny / 2. - 0.5
     X *= pixel_size
     Y *= pixel_size
-    X *= np.cos(phi_x)
-    Y *= np.cos(phi_y)
-
+    
     Xr = X * np.cos(phi_r) + Y * np.sin(phi_r)
     Yr = Y * np.cos(phi_r) - X * np.sin(phi_r)
 
-    thetax = theta_cx + np.arctan(Xr / mirror_distance)
-    thetay = theta_cy + np.arctan(Yr / mirror_distance)
+    thetax = theta_cx + x2theta(Xr, mirror_distance, phi_x)
+    thetay = theta_cy + x2theta(Yr, mirror_distance, phi_y)
 
-    return np.rad2deg(np.sqrt(thetax**2 + thetay**2))
+    return np.rad2deg(central_angle(thetax, thetay))
+
+    #return np.rad2deg(np.sqrt(thetax**2 + thetay**2))
 
 def simulate_calibration_laser_map(nx, ny, pixel_size,
                                    mirror_distance,
                                    theta_cx, theta_cy,
                                    phi_x, phi_y, phi_r,
                                    calib_laser_nm):
-    
-    return calib_laser_nm / np.cos(np.deg2rad(simulate_theta_map(
-        nx, ny, pixel_size, mirror_distance,
-        theta_cx, theta_cy, phi_x, phi_y, phi_r)))
 
-
-def simulate_calibration_laser_map_old(nx, ny, pixel_size, calib_laser_wl,
-                                   mirror_distance,
-                                   theta_c, phi_x, phi_y, phi_r):
-    """Simulate a calibration laser map from optical and mechanical parameters
+    """Simulate a calibration laser map from optical and mechanical
+    parameters
 
     :param nx: Number of pixels along X
     
@@ -863,48 +894,27 @@ def simulate_calibration_laser_map_old(nx, ny, pixel_size, calib_laser_wl,
     
     :param pixel_size: Size of a pixel in microns
     
-    :param calib_laser_wl: Calibration laser wavelength in nm
-    
     :param mirror_distance: Distance to the mirror in microns on the
       optical axis.
     
-    :param theta_c: Angle from the optical axis to the mirror
-      center in degrees
+    :param theta_cx: Angle from the optical axis to the mirror
+      center in degrees along X axis (in degrees)
+
+    :param theta_cy: Angle from the optical axis to the mirror
+      center in degrees along Y axis (in degrees)
 
     :param phi_x: Tilt of the mirror along X in degrees
     
     :param phi_y: Tilt of the mirror along Y in degrees
     
-    :param phi_r: Angle from the center of the frame to the optical
-      axis along X axis in degrees (equivalent to a rotation of the
-      camera)
+    :param phi_r: Rotation angle of the camera in degrees
+    
+    :param calib_laser_nm: Calibration laser wavelength in nm
     """
-    
-    pixel_scale = math.atan(pixel_size/mirror_distance)
-    phi_x = phi_x / 180. * math.pi
-    phi_y = phi_y / 180. * math.pi
-    phi_r = phi_r / 180. * math.pi
-    theta_c = theta_c / 180. * math.pi
 
-    X, Y = np.mgrid[0:nx, 0:ny].astype(float)
-    X -= nx / 2. - 0.5
-    Y -= ny / 2. - 0.5
-    X *= pixel_scale * mirror_distance
-    Y *= pixel_scale * mirror_distance
-
-    X *= math.cos(phi_x)
-    Y *= math.cos(phi_y)
-    
-    xc = phi_r * mirror_distance
-    
-    yc = mirror_distance * theta_c
-    
-    d_map = np.sqrt((X+xc)**2. + (Y+yc)**2.)
-    theta_map = d_map / mirror_distance
-    calib_map = calib_laser_wl/np.cos(theta_map)
-    
-    return calib_map
-
+    return calib_laser_nm / np.cos(np.deg2rad(simulate_theta_map(
+        nx, ny, pixel_size, mirror_distance,
+        theta_cx, theta_cy, phi_x, phi_y, phi_r)))
 
 def nanbin_image(im, binning):
     """Mean image binning robust to NaNs.
@@ -1019,8 +1029,8 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     print '> Calibration laser map fit'
 
-    # mirror_dist, Y angle
-    # p_ind = 0: variable parameter, index=1: fixed parameter
+    ## mirror_dist, Y angle
+    ## p_ind = 0: variable parameter, index=1: fixed parameter
 
     print '  > First fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100)
     xmin,xmax,ymin,ymax = get_box_coords(
