@@ -4982,6 +4982,7 @@ class FilterFile(Tools):
         """Wrapper around
         :py:meth:`orb.utils.filters.get_observation_params`
         """
+        if self.basic_path is None: return None, None
         return utils.filters.get_observation_params(
             self.basic_path)
 

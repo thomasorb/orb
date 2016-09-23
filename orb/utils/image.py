@@ -558,7 +558,8 @@ def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=10):
     err_map[err_map >= 1] = 1.
     
     def model(p, costheta, thetas):
-        spl = interpolate.UnivariateSpline(thetas, np.array(p), k=1, s=0)
+        spl = interpolate.UnivariateSpline(thetas, np.array(p),
+                                           k=1, s=0, ext=0)
         return spl(costheta)
         
     def diff(p, data, costheta, err, thetas):
@@ -953,17 +954,25 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
       libtim. It can be found in ORB module in ./ext/zern.py.
     """
 
-    def model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c):
-        """p_ind = 0: variable parameter, index=1: fixed parameter
+    def model_laser_map(p, calib, calib_laser_nm, pixel_size):
+        """
+        0: mirror_distance
+        1: theta_cx
+        2: theta_cy
+        3: phi_x
+        4: phi_y
+        5: phi_r    
         """
         return simulate_calibration_laser_map(
             calib.shape[0], calib.shape[1], pixel_size,
-            p[0], 0., theta_c, 0., 0., p[1], calib_laser_nm)
+            p[0], p[1], p[2], p[3], p[4], p[5], calib_laser_nm)
 
-    def diff_laser_map(p_var, p_fix, p_ind, calib, calib_laser_nm, pixel_size,
-                       theta_c):
+    def diff_laser_map(p_var, p_fix, p_ind, calib, calib_laser_nm, pixel_size):
+        """p_ind = 0: variable parameter, index=1: fixed parameter
+        """
+
         p = get_p(p_var, p_fix, p_ind)
-        res = model_laser_map(p, calib, calib_laser_nm, pixel_size, theta_c)
+        res = model_laser_map(p, calib, calib_laser_nm, pixel_size)
         res -= calib
         res = res[np.nonzero(~np.isnan(res))]
         #res = orb.utils.stats.sigmacut(res)
@@ -983,8 +992,12 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
             else: return ''
         print ('    > Calibration laser map fit parameters:\n'
                + '    distance to mirror: {} cm {}\n'.format(
-                   params[0]*1e-4, print_fix(0))
-               + '    X angle from the optical axis to the center: {} degrees {}\n'.format(math.fmod(float(params[1]),2.*math.pi), print_fix(1))
+                   params[0] * 1e-4, print_fix(0))
+               + '    X angle from the optical axis to the center: {} degrees {}\n'.format(math.fmod(float(params[1]),360), print_fix(1))
+               + '    Y angle from the optical axis to the center: {} degrees {}\n'.format(math.fmod(float(params[2]),360), print_fix(2))
+               + '    Tip-tilt angle of the detector along X: {} degrees {}\n'.format(math.fmod(float(params[3]),360), print_fix(3))
+               + '    Tip-tilt angle of the detector along Y: {} degrees {}\n'.format(math.fmod(float(params[4]),360), print_fix(4))
+               + '    Rotation angle of the detector: {} degrees {}\n'.format(math.fmod(float(params[5]),360), print_fix(5))
                + '    Error on fit: mean {}, std {} (in nm)\n'.format(
                    np.nanmean(fvec), np.nanstd(fvec))
                + '    Error on fit: mean {}, std {} (in km/s)'.format(
@@ -993,7 +1006,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     CENTER_COEFF = 0.5
     LARGE_COEFF = 0.95
-    ZERN_MODES = 20 # number of Zernike modes to fit 
+    ZERN_MODES = 30 # number of Zernike modes to fit 
     BORDER_SIZE = 10 # in pixels
     ANGLE_RANGE = 4 # in degrees
 
@@ -1031,6 +1044,13 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     ## mirror_dist, Y angle
     ## p_ind = 0: variable parameter, index=1: fixed parameter
+    ## 0: mirror_distance
+    ## 1: theta_cx
+    ## 2: theta_cy
+    ## 3: phi_x
+    ## 4: phi_y
+    ## 5: phi_r    
+
 
     print '  > First fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100)
     xmin,xmax,ymin,ymax = get_box_coords(
@@ -1041,18 +1061,34 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         0, calib_laser_map_bin.shape[1])
     calib_laser_map_bin_center = calib_laser_map_bin[xmin:xmax,ymin:ymax]
 
-    p_var = np.array([mirror_distance_guess, 0.])
-    p_ind = np.array([0, 0])
-    p_fix = np.array([])
+    p_var = np.array([mirror_distance_guess, theta_c])
+    p_ind = np.array([0, 1, 0, 1, 1, 1])
+    p_fix = np.array([0., 0., 0., 0.])
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_center,
                                        calib_laser_nm,
-                                       float(pixel_size*binning), theta_c),
+                                       float(pixel_size*binning)),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
+   
     print_params(params, fit[2]['fvec'], p_ind)
 
-    print '  > Second fit on all the map ({:.1f}% of the total size)'.format(LARGE_COEFF*100)
+    print '  > Second fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100)
+    p_var = np.array([params[0], 0., params[2], 0., 0., 0.])
+    p_ind = np.array([0, 0, 0, 0, 0, 0])
+    p_fix = np.array([])
+
+    fit = scipy.optimize.leastsq(diff_laser_map, p_var,
+                                 args=(p_fix, p_ind, calib_laser_map_bin_center,
+                                       calib_laser_nm,
+                                       float(pixel_size*binning)),
+                                 full_output=True)
+    params = get_p(fit[0], p_fix, p_ind)
+   
+    print_params(params, fit[2]['fvec'], p_ind)
+
+
+    print '  > Third fit on all the map ({:.1f}% of the total size)'.format(LARGE_COEFF*100)
     xmin,xmax,ymin,ymax = get_box_coords(
         calib_laser_map_bin.shape[0]/2,
         calib_laser_map_bin.shape[1]/2,
@@ -1060,20 +1096,20 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         0, calib_laser_map_bin.shape[0],
         0, calib_laser_map_bin.shape[1])
     calib_laser_map_bin_large = calib_laser_map_bin[xmin:xmax,ymin:ymax]
-    p_var = np.array([params[0], params[1]])
-    p_ind = np.array([0, 0])
+    p_var = np.array(params)
+    p_ind = np.array([0, 0, 0, 0, 0, 0])
     p_fix = np.array([])
     
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_large,
                                        calib_laser_nm,
-                                       float(pixel_size*binning), theta_c),
+                                       float(pixel_size*binning)),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
     print_params(params, fit[2]['fvec'], p_ind)
     
     new_calib_laser_map = model_laser_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+        params, calib_laser_map, calib_laser_nm, pixel_size)
     
     # Zernike fit of the diff map
     print '  > Zernike polynomials fit of the residual'
@@ -1215,6 +1251,8 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     # bad values are filtered and phase map is cropped to remove
     # borders with erroneous phase values.
     phase_map[np.nonzero(phase_map==0)] = np.nan
+    uncropped_phase_map = np.copy(phase_map)
+
     xmin,xmax,ymin,ymax = get_box_coords(
         phase_map.shape[0]/2,
         phase_map.shape[1]/2,
@@ -1286,32 +1324,42 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     new_calib_laser_map = model_laser_map(
         params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
 
-    ### Instead of fitting the residuals of the phase map,
-    ## the residuals of the laser map are fitted (because it is a simple
-    ## linear conversion of the laser map). This way a best fitted
-    ## laser map is also obtained along with the best fitted phase
-    ## map. the obtained laser map might be used for better precision.
+    ### Instead of fitting the residuals of the phase map, the
+    ## residuals of the laser map are fitted (because it is a simple
+    ## linear conversion of the laser map - no so true in fact
+    ## ...). This way a best fitted laser map is also obtained along
+    ## with the best fitted phase map. the obtained laser map might be
+    ## used for better precision.
     print '> Phase map residuals fit with cos theta fit'
-    real_calib_laser_map = orb.utils.fft.phase_map02calib_map(
-        [params[2], params[3]], phase_map, calib_laser_nm)
-    
-    mod_calib_laser_map = model_laser_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+    ## real_calib_laser_map = orb.utils.fft.phase_map02calib_map(
+    ##     [params[2], params[3]], uncropped_phase_map, calib_laser_nm)
 
-    res_map = real_calib_laser_map - mod_calib_laser_map
     
-    res_map[np.nonzero(phase_map == 0.)] = np.nan # 0s are replaced
-                                                  # with nans
+    ## mod_calib_laser_map = model_laser_map(
+    ##     params, calib_laser_map, calib_laser_nm, pixel_size, theta_c)
+
+    ## res_map = real_calib_laser_map - mod_calib_laser_map
     
-    res_map_fit, _err_map, _fit_error = fit_map_cos(
-        res_map, np.ones_like(res_map),
-        real_calib_laser_map, calib_laser_nm, knb=5)
+    ## res_map[np.nonzero(
+    ##     uncropped_phase_map == 0.)] = np.nan # 0s are replaced
+    ##                                          # with nans
+    
+    ## res_map_fit, _err_map, _fit_error = fit_map_cos(
+    ##     res_map, np.ones_like(res_map),
+    ##     real_calib_laser_map, calib_laser_nm, knb=5)
     
 
-    fitted_laser_map = mod_calib_laser_map + res_map_fit
+    ## fitted_laser_map = mod_calib_laser_map + res_map_fit
+    ## fitted_phase_map = orb.utils.fft.calib_map2phase_map0(
+    ##     [params[2], params[3]], fitted_laser_map, calib_laser_nm)
 
-    fitted_phase_map = orb.utils.fft.calib_map2phase_map0(
-        [params[2], params[3]], fitted_laser_map, calib_laser_nm)
+    res_phase_map = uncropped_phase_map - fitted_phase_map 
+
+    res_phase_map_fit, _err_map, _fit_error = fit_map_cos(
+        res_phase_map, np.ones_like(res_phase_map),
+        new_calib_laser_map, calib_laser_nm, knb=5)
+    
+    fitted_phase_map += res_phase_map_fit
 
     ## Error computation
     # Creation of the error map: The error map gives the 
@@ -1324,25 +1372,34 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     # by the range of the values fitted. This gives the Normalized
     # root-mean-square deviation
     fit_error_rms =(np.nanmean(np.sqrt(error_map**2.))
-                / (np.nanmax(phase_map) - np.nanmin(phase_map)))
+                / (np.nanpercentile(phase_map, 84)
+                   - np.nanpercentile(phase_map, 16)))
 
     fit_error = np.nanstd(error_map)
 
     print '> Final fit std: {} radians'.format(fit_error)
 
     if not return_coeffs:
-        return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map#fitted_laser_map
+        return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map
     else:
         return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map, [params[2], params[3]]
 
 
 def fit_phase_map02calib_map(calib, pm0, nm_laser):
+    """Return the best transformation parameters that permit to
+    compute an order 0 phase map from a calibration laser map
+
+    :param calib: Calibration laser map
+
+    :param pm0: Order 0 phase map
+
+    :param nm_laser: Calibration laser wavelength in nm.
+    """
     def diff(p, calib, pm0, nm_laser):
         
         res = orb.utils.fft.calib_map2phase_map0(
             p, calib, nm_laser) - pm0
         return res[np.nonzero(~np.isnan(res))]
-
 
     p0 = [np.pi, 100]
 
