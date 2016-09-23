@@ -105,7 +105,7 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
 
 
 def query_vizier(radius, target_ra, target_dec,
-                 catalog='USNO-B1.0', max_stars=100):
+                 catalog='gaia', max_stars=100):
     """Return a list of star coordinates around an object in a
     given radius based on a query to VizieR Services
     (http://vizier.u-strasbg.fr/viz-bin/VizieR)
@@ -126,17 +126,19 @@ def query_vizier(radius, target_ra, target_dec,
     :param max_stars: (Optional) Maximum number of row to retrieve
       (default 100)
 
-    .. note:: Some catalogs that can be used::
-      'V/139' - Sloan SDSS photometric catalog Release 9 (2012)
-      '2MASS-PSC' - 2MASS point source catalog (2003)
-      'GSC2.3' - Version 2.3.2 of the HST Guide Star Catalog (2006)
-      'USNO-B1' - Verson B1 of the US Naval Observatory catalog (2003)
-      'UCAC4'  - 4th U.S. Naval Observatory CCD Astrograph Catalog (2012)
-      'B/DENIS/DENIS' - 2nd Deep Near Infrared Survey of southern Sky (2005)
-      'I/259/TYC2' - Tycho-2 main catalog (2000)
-      'I/311/HIP2' - Hipparcos main catalog, new reduction (2007)
+    :param catalog: (Optional) can be 'usno' - Verson B1 of the US Naval Observatory catalog (2003) or 'gaia' (default Gaia)
     """
     MAX_RETRY = 5
+
+    if catalog == 'usno':
+        catalog_id = 'USNO-B1.0'
+        out = '_RAJ2000,_DEJ2000,e_RAJ2000,e_DEJ2000,R2mag'
+        sort = '-R2mag'
+    elif catalog == 'gaia':
+        catalog_id = 'I/337/gaia'
+        out = 'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,<Gmag>'
+        sort='-<Gmag>'
+    else: raise Exception("Bad catalog name. Can be 'usno' or 'gaia'")
 
     print "Sending query to VizieR server"
     print "Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec)
@@ -145,7 +147,7 @@ def query_vizier(radius, target_ra, target_dec,
            + "&-c.ra=%f"%target_ra + '&-c.dec=%f'%target_dec
            + "&-c.rm=%d"%int(radius)
            + '&-out.max=unlimited&-out.meta=-huD'
-           + '&-out=_RAJ2000,_DEJ2000,e_RAJ2000,e_DEJ2000,R2mag&-sort=-R2mag'
+           + '&-out={}&-sort={}'.format(out, sort)           
            + '&-out.max=%d'%max_stars)
 
     retry = 0

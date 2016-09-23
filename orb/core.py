@@ -2262,6 +2262,7 @@ class Cube(Tools):
         if not self.is_hdf5_frames:
             hdu = self.read_fits(self.image_list[index],
                                  return_hdu_only=True)
+            hdu.verify('silentfix')
             return hdu[0].header
         else:
             hdu = self.open_hdf5(self.image_list[index], 'r')

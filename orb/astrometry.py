@@ -1687,7 +1687,7 @@ class Astrometry(Tools):
                 
         return alignment_vector_x, alignment_vector_y, alignment_error
 
-    def query_vizier(self, catalog='USNO-B1.0', max_stars=100):
+    def query_vizier(self, catalog='gaia', max_stars=100):
         """Return a list of star coordinates around an object in a
         given radius based on a query to VizieR Services
         (http://vizier.u-strasbg.fr/viz-bin/VizieR)    
@@ -1696,7 +1696,7 @@ class Astrometry(Tools):
           arc-minutes (default 7).
 
         :param catalog: (Optional) Catalog to ask on the VizieR
-          database (see notes) (default 'USNO-B1')
+          database (see notes) (default 'gaia')
 
         :param max_stars: (Optional) Maximum number of row to retrieve
           (default 100)
