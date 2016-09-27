@@ -307,9 +307,8 @@ def apod2width(apod):
                         * orb.constants.FWHM_SINC_COEFF)
 
 def apod2sigma(apod, fwhm):
-    """Return the broadening ratio (gaussian width/sinc width) of the
-    gaussian-sinc function in the spectrum, given the apodization
-    level. Unit is that of the fwhm.
+    """Return the broadening of the gaussian-sinc function in the
+    spectrum for a given apodization level. Unit is that of the fwhm.
 
     :param apod: Apodization level (must be >= 1.)
     """

@@ -1468,7 +1468,7 @@ class Astrometry(Tools):
         self._print_msg("Detecting stars", color=True)
         
         im = self._get_combined_frame(use_deep_frame=use_deep_frame)
-        
+
         # high pass filtering of the image to remove nebulosities
         if filter_image:
             start_time = time.time()
@@ -1478,7 +1478,7 @@ class Astrometry(Tools):
                 time.time() - start_time))
         else:
             hp_im = np.copy(im)
-        
+
         # preselection
         self._print_msg("Stars preselection")
         mean_hp_im = np.nanmean(hp_im)
@@ -1489,10 +1489,9 @@ class Astrometry(Tools):
         
         old_star_list = []
         while(star_number > PRE_DETECT_COEFF * min_star_number):
-            pre_star_list = np.array(np.nonzero(hp_im > 
-                                                mean_hp_im 
-                                                + THRESHOLD_COEFF 
-                                                * std_hp_im))
+            pre_star_list = np.array(np.nonzero(
+                (hp_im > mean_hp_im + THRESHOLD_COEFF * std_hp_im)
+                * (im < saturation_threshold)))
             star_list = list()
             for istar in range(pre_star_list.shape[1]):
                 ix = pre_star_list[0, istar]

@@ -225,14 +225,14 @@ def compute_line_fwhm(step_nb, step, order, apod_coeff=1., corr=1.,
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    opd_max = step_nb * step * 2. / corr
+    opd_max = step_nb * step / corr
     if not wavenumber:
         nm_axis = create_nm_axis(step_nb, step, order)
         nm_mean = (nm_axis[-1] + nm_axis[0])/2.
         return (nm_mean**2. * orb.constants.FWHM_SINC_COEFF
-                / opd_max * apod_coeff)
+                / (2 * opd_max) * apod_coeff)
     else:
-        return orb.constants.FWHM_SINC_COEFF / opd_max * apod_coeff * 1e7
+        return orb.constants.FWHM_SINC_COEFF / (2 * opd_max) * apod_coeff * 1e7
         
 def compute_line_fwhm_pix(oversampling_ratio=1.):
     """Return the expected FWHM of an unapodized sinc line in pixels.
@@ -268,6 +268,25 @@ def compute_mean_shift(velocity, step_nb, step, order, wavenumber=False):
         
     return line_shift(velocity, mean, wavenumber=wavenumber)
         
+
+def compute_step_nb(resolution, step, order):
+    """Return the number of steps on the longest side of the
+    interferogram given the resolution and the observation
+    parameters.
+
+    :param resolution: Resolution
+    
+    :param step: Step size (in nm)
+    
+    :param order: Folding order
+    """
+    cm1_axis = create_cm1_axis(100, step, order)
+    mean_sigma = (cm1_axis[-1] + cm1_axis[0])/2.
+    return (orb.constants.FWHM_SINC_COEFF
+            * resolution
+            / (2 * mean_sigma * step * 1e-7))
+
+
 
 def compute_radial_velocity(line, rest_line, wavenumber=False):
     """

@@ -38,7 +38,7 @@ def vel2sigma(vel, lines, axis_step):
 
 
 def sigma2vel(sigma, lines, axis_step):
-    """Convert a broadening in pixels to a velocity in km/s
+    """Convert a broadening in channels to a velocity in km/s
     :param sigma: broadening in channels
     :param lines: line position in the unit of axis_step
     :param axis_step: axis step size

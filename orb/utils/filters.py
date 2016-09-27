@@ -292,8 +292,8 @@ def get_filter_function(filter_file_path, step, order, n,
 
     f_axis = interpolate.UnivariateSpline(np.arange(n),
                                           spectrum_axis)
-    fpix_axis = interpolate.UnivariateSpline(spectrum_axis,
-                                             np.arange(n))
+    fpix_axis = interpolate.UnivariateSpline(spectrum_axis[::-1],
+                                             np.arange(n)[::-1])
 
     # Interpolation of the filter function
     interpol_f = interpolate.UnivariateSpline(filter_nm, filter_trans, 
@@ -318,6 +318,7 @@ def get_filter_function(filter_file_path, step, order, n,
     else:
         if not silent:
             print "Filter edges read from filter file: %f -- %f"%(filter_min, filter_max)
+
         # filter edges converted to index of the filter vector
         filter_min = int(fpix_axis(filter_min))
         filter_max = int(fpix_axis(filter_max))
