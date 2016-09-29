@@ -2637,7 +2637,7 @@ static PyObject *__pyx_pf_3orb_6cutils_78fast_w2pix(CYTHON_UNUSED PyObject *__py
 static PyObject *__pyx_pf_3orb_6cutils_80fast_pix2w(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_pix, double __pyx_v_axis_min, double __pyx_v_axis_step); /* proto */
 static PyObject *__pyx_pf_3orb_6cutils_82get_cm1_axis_min(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, int __pyx_v_order, double __pyx_v_corr); /* proto */
 static PyObject *__pyx_pf_3orb_6cutils_84get_cm1_axis_max(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, int __pyx_v_order, double __pyx_v_corr); /* proto */
-static PyObject *__pyx_pf_3orb_6cutils_86get_cm1_axis_step(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, PyObject *__pyx_v_corr); /* proto */
+static PyObject *__pyx_pf_3orb_6cutils_86get_cm1_axis_step(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, double __pyx_v_corr); /* proto */
 static PyObject *__pyx_pf_3orb_6cutils_88get_nm_axis_min(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, int __pyx_v_order, double __pyx_v_corr); /* proto */
 static PyObject *__pyx_pf_3orb_6cutils_90get_nm_axis_max(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, int __pyx_v_order, double __pyx_v_corr); /* proto */
 static PyObject *__pyx_pf_3orb_6cutils_92get_nm_axis_step(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, int __pyx_v_order, double __pyx_v_corr); /* proto */
@@ -33767,7 +33767,6 @@ static PyObject *__pyx_pf_3orb_6cutils_58multi_fit_stars(CYTHON_UNUSED PyObject 
     goto __pyx_L57_try_end;
     __pyx_L50_error:;
     __Pyx_PyThreadState_assign
-    __Pyx_XDECREF(__pyx_t_49); __pyx_t_49 = 0;
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_XDECREF(__pyx_t_44); __pyx_t_44 = 0;
     __Pyx_XDECREF(__pyx_t_43); __pyx_t_43 = 0;
@@ -33780,6 +33779,7 @@ static PyObject *__pyx_pf_3orb_6cutils_58multi_fit_stars(CYTHON_UNUSED PyObject 
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_XDECREF(__pyx_t_72); __pyx_t_72 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_XDECREF(__pyx_t_49); __pyx_t_49 = 0;
 
     /* "orb/cutils.pyx":1710
  *                                      maxfev=500, full_output=True,
@@ -43880,7 +43880,7 @@ static PyObject *__pyx_pf_3orb_6cutils_84get_cm1_axis_max(CYTHON_UNUSED PyObject
  *         cm1_max -= get_cm1_axis_step(n, step, corr=corr)
  *     return cm1_max             # <<<<<<<<<<<<<<
  * 
- * def get_cm1_axis_step(int n, double step, corr=1.):
+ * def get_cm1_axis_step(int n, double step, double corr=1.):
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_7 = PyFloat_FromDouble(__pyx_v_cm1_max); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2260, __pyx_L1_error)
@@ -43915,26 +43915,25 @@ static PyObject *__pyx_pf_3orb_6cutils_84get_cm1_axis_max(CYTHON_UNUSED PyObject
 /* "orb/cutils.pyx":2262
  *     return cm1_max
  * 
- * def get_cm1_axis_step(int n, double step, corr=1.):             # <<<<<<<<<<<<<<
+ * def get_cm1_axis_step(int n, double step, double corr=1.):             # <<<<<<<<<<<<<<
  *     """Return step size of a regular wavenumber axis in cm-1.
  * 
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_3orb_6cutils_87get_cm1_axis_step(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_3orb_6cutils_86get_cm1_axis_step[] = "get_cm1_axis_step(int n, double step, corr=1.0)\nReturn step size of a regular wavenumber axis in cm-1.\n\n    :param n: Number of steps on the axis\n    \n    :param step: Step size in nm\n    \n    :param corr: (Optional) Coefficient of correction (default 1.)\n    ";
+static char __pyx_doc_3orb_6cutils_86get_cm1_axis_step[] = "get_cm1_axis_step(int n, double step, double corr=1.0)\nReturn step size of a regular wavenumber axis in cm-1.\n\n    :param n: Number of steps on the axis\n    \n    :param step: Step size in nm\n    \n    :param corr: (Optional) Coefficient of correction (default 1.)\n    ";
 static PyMethodDef __pyx_mdef_3orb_6cutils_87get_cm1_axis_step = {"get_cm1_axis_step", (PyCFunction)__pyx_pw_3orb_6cutils_87get_cm1_axis_step, METH_VARARGS|METH_KEYWORDS, __pyx_doc_3orb_6cutils_86get_cm1_axis_step};
 static PyObject *__pyx_pw_3orb_6cutils_87get_cm1_axis_step(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_n;
   double __pyx_v_step;
-  PyObject *__pyx_v_corr = 0;
+  double __pyx_v_corr;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_cm1_axis_step (wrapper)", 0);
   {
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_n,&__pyx_n_s_step,&__pyx_n_s_corr,0};
     PyObject* values[3] = {0,0,0};
-    values[2] = ((PyObject *)__pyx_float_1_);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
@@ -43975,7 +43974,11 @@ static PyObject *__pyx_pw_3orb_6cutils_87get_cm1_axis_step(PyObject *__pyx_self,
     }
     __pyx_v_n = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_n == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2262, __pyx_L3_error)
     __pyx_v_step = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_step == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 2262, __pyx_L3_error)
-    __pyx_v_corr = values[2];
+    if (values[2]) {
+      __pyx_v_corr = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_corr == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 2262, __pyx_L3_error)
+    } else {
+      __pyx_v_corr = ((double)1.);
+    }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
@@ -43992,10 +43995,10 @@ static PyObject *__pyx_pw_3orb_6cutils_87get_cm1_axis_step(PyObject *__pyx_self,
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_3orb_6cutils_86get_cm1_axis_step(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, PyObject *__pyx_v_corr) {
+static PyObject *__pyx_pf_3orb_6cutils_86get_cm1_axis_step(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n, double __pyx_v_step, double __pyx_v_corr) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  double __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
   __Pyx_RefNannySetupContext("get_cm1_axis_step", 0);
 
@@ -44007,29 +44010,27 @@ static PyObject *__pyx_pf_3orb_6cutils_86get_cm1_axis_step(CYTHON_UNUSED PyObjec
  * def get_nm_axis_min(int n, double step, int order, double corr=1.):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(((2. * ((double)__pyx_v_n)) * __pyx_v_step)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2271, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_v_corr, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_1 = ((2. * ((double)__pyx_v_n)) * __pyx_v_step);
+  if (unlikely(__pyx_t_1 == 0)) {
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    __PYX_ERR(0, 2271, __pyx_L1_error)
+  }
+  __pyx_t_2 = PyFloat_FromDouble(((__pyx_v_corr / __pyx_t_1) * 1e7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_Multiply(__pyx_t_2, __pyx_float_1e7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2271, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
+  __pyx_r = __pyx_t_2;
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
   /* "orb/cutils.pyx":2262
  *     return cm1_max
  * 
- * def get_cm1_axis_step(int n, double step, corr=1.):             # <<<<<<<<<<<<<<
+ * def get_cm1_axis_step(int n, double step, double corr=1.):             # <<<<<<<<<<<<<<
  *     """Return step size of a regular wavenumber axis in cm-1.
  * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("orb.cutils.get_cm1_axis_step", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
@@ -48976,7 +48977,7 @@ static int __Pyx_InitCachedConstants(void) {
   /* "orb/cutils.pyx":2262
  *     return cm1_max
  * 
- * def get_cm1_axis_step(int n, double step, corr=1.):             # <<<<<<<<<<<<<<
+ * def get_cm1_axis_step(int n, double step, double corr=1.):             # <<<<<<<<<<<<<<
  *     """Return step size of a regular wavenumber axis in cm-1.
  * 
  */
@@ -49899,7 +49900,7 @@ PyMODINIT_FUNC PyInit_cutils(void)
   /* "orb/cutils.pyx":2262
  *     return cm1_max
  * 
- * def get_cm1_axis_step(int n, double step, corr=1.):             # <<<<<<<<<<<<<<
+ * def get_cm1_axis_step(int n, double step, double corr=1.):             # <<<<<<<<<<<<<<
  *     """Return step size of a regular wavenumber axis in cm-1.
  * 
  */

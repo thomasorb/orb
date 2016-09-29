@@ -1291,6 +1291,7 @@ class LinesModel(Model):
         line_nb = self._get_line_nb()
         fmodel = self._get_fmodel()
         p_array = self._p_val2array()
+        
         mod = None
         models = list()
         for iline in range(line_nb):
@@ -1349,7 +1350,7 @@ class Cm1LinesModel(LinesModel):
 
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
-        return lambda lines, vel: lines - lines * vel / constants.LIGHT_VEL_KMS
+        return lambda lines, vel: lines * (1. - vel / constants.LIGHT_VEL_KMS)
         
     def _p_val2array(self):
         """Transform :py:attr:`fit.Model.p_val` to :py:attr:`fit.LinesModel.p_array`"""
@@ -1448,7 +1449,7 @@ class NmLinesModel(Cm1LinesModel):
     """
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
-        return lambda lines, vel: lines + lines * vel / constants.LIGHT_VEL_KMS
+        return lambda lines, vel: lines * (1. + vel / constants.LIGHT_VEL_KMS)
     
     def parse_dict(self):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""
@@ -1600,7 +1601,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     all_args = dict(locals()) # used in case fit is retried (must stay
                               # at the very beginning of the function
                               # ;)                     
-    SIGMA_COV = 1e-1 # covariant sigma in km/s, must be > 0.
+    SIGMA_COV_VEL = 1e-2 # covariant sigma in km/s, must be > 0.
     
     correction_coeff = float(nm_laser_obs) / nm_laser
 
@@ -1648,33 +1649,18 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                 bf_flux.append(np.nansum(spectrum[np.array(
                     np.round(ilines_pix), dtype=int)]))
             shift_guess = bf_range[np.nanargmax(bf_flux)]
+
+    fwhm_def, pos_def, sigma_def = _translate_fit_inputs(
+        fix_fwhm, cov_fwhm, fix_pos, cov_pos, cov_sigma)
         
-    if fix_fwhm: fwhm_def = 'fixed'
-    elif cov_fwhm: fwhm_def = '1'
-    else: fwhm_def = 'free'
-
-    if not fix_pos:
-        if np.size(cov_pos) > 1:
-            pos_def = cov_pos
-        else:
-            if not cov_pos: pos_def = 'free'
-            else: pos_def = '1'
-    else: pos_def = 'fixed'
-
-    if np.size(cov_sigma) > 1:
-        sigma_def = cov_sigma
-    else:
-        if not cov_sigma: sigma_def = 'free'
-        else: sigma_def = '1'
-
     if apodization == 1.:
-        sigma_cov = SIGMA_COV # km/s
+        sigma_cov_vel = SIGMA_COV_VEL # km/s
     else:
-        sigma_cov = utils.fit.sigma2vel(
+        sigma_cov_vel = utils.fit.sigma2vel(
             utils.fft.apod2sigma(apodization, fwhm_guess) / axis_step,
             lines, axis_step)
-    sigma_cov = np.sqrt(sigma_cov**2. + sigma_guess**2.)
-        #if sigma_cov == 0.: sigma_cov = SIGMA_COV
+    sigma_cov_vel = np.sqrt(sigma_cov_vel**2. + sigma_guess**2.)
+        #if sigma_cov_vel == 0.: sigma_cov_vel = SIGMA_COV_VEL
         
     ## import pylab as pl
     ## if wavenumber:
@@ -1735,7 +1721,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                      'fwhm-guess':fwhm_guess,
                      'sigma-def':sigma_def,
                      'sigma-guess':0.,
-                     'sigma-cov':sigma_cov},
+                     'sigma-cov':sigma_cov_vel},
                     {'poly-order':poly_order,
                      'poly-guess':cont_guess},
                     {'filter-function':filter_function,
@@ -1765,7 +1751,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
 def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     cont_guess=None, shift_guess=0., fix_fwhm=False, cov_fwhm=True,
-    cov_pos=True, fix_pos=False, fit_tol=1e-10, poly_order=0,
+    cov_pos=True, fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
     fmodel='gaussian', signal_range=None, filter_file_path=None,
     fix_filter=False, compute_mcmc_error=False, no_error=False):
     
@@ -1808,6 +1794,13 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
       same number. e.g. on 5 lines, [NII]6548, Halpha, [NII]6584,
       [SII]6717, [SII]6731, if each ion has a different velocity
       cov_pos can be : [0,1,0,2,2]. (default False).
+
+    :param cov_sigma: (Optional) If True the estimated enlargment of
+      the lines (the lines parameter) is considered to the same for
+      all the lines. Covarying lines must share the same
+      number. e.g. on 5 lines, [NII]6548, Halpha, [NII]6584,
+      [SII]6717, [SII]6731, if each ion has a different velocity
+      dispersion cov_sigma can be : [0,1,0,2,2]. (default True).
 
     :param fix_pos: (Optional) If True line position is fixed (default
       False).
@@ -1864,19 +1857,9 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
         maxx = min(vector.shape[0] - 1, int(math.ceil(np.max(signal_range))))
     else:
         minx = 0 ; maxx = vector.shape[0] - 1
-    
-        
-    if fix_fwhm: fwhm_def = 'fixed'
-    elif cov_fwhm: fwhm_def = '1'
-    else: fwhm_def = 'free'
 
-    if not fix_pos:
-        if np.size(cov_pos) > 1:
-            pos_def = cov_pos
-        else:
-            if not cov_pos: pos_def = 'free'
-            else: pos_def = '1'
-    else: pos_def = 'fixed'
+    fwhm_def, pos_def, sigma_def = _translate_fit_inputs(
+        fix_fwhm, cov_fwhm, fix_pos, cov_pos, cov_sigma)
 
     fs = FitVector(vector,
                    ((LinesModel, 'add'),
@@ -1889,9 +1872,9 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                      'pos-def':pos_def,
                      'fmodel':fmodel,
                      'fwhm-guess':fwhm_guess,
-                     'sigma-def':'1',
+                     'sigma-def':sigma_def,
                      'sigma-guess':0.,
-                     'sigma-cov':1.},
+                     'sigma-cov':cov_sigma},
                     {'poly-order':poly_order,
                      'poly-guess':cont_guess}),
                    fit_tol=fit_tol,
@@ -1909,6 +1892,40 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     
 
 
+def _translate_fit_inputs(fix_fwhm, cov_fwhm,
+                          fix_pos, cov_pos,
+                          cov_sigma):
+    """Translate inputs of the fitting routines.
+
+    Parameters have the same definition as in
+    :py:meth:`fit_lines_in_vector` and
+    :py:meth:`fit_lines_in_spectrum`.
+
+    :return: fwhm_def, pos_def, sigma_def
+    """
+
+
+    if fix_fwhm: fwhm_def = 'fixed'
+    elif cov_fwhm: fwhm_def = '1'
+    else: fwhm_def = 'free'
+
+    if not fix_pos:
+        if np.size(cov_pos) > 1:
+            pos_def = cov_pos
+        else:
+            if not cov_pos: pos_def = 'free'
+            else: pos_def = '1'
+    else: pos_def = 'fixed'
+
+    if np.size(cov_sigma) > 1:
+        sigma_def = cov_sigma
+    else:
+        if not cov_sigma: sigma_def = 'free'
+        else: sigma_def = '1'
+
+    return fwhm_def, pos_def, sigma_def
+
+
 
 
 def _translate_fit_results(fit_results, fs, lines, fmodel,
@@ -1919,7 +1936,8 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
 
     :param fit_results: Output of FitVector.fit()
 
-    :param wavenumber: True if unit is in cm-1, False if unit is in nm, None if unit is in channels.
+    :param wavenumber: True if unit is in cm-1, False if unit is in
+      nm, None if unit is in channels.
     """
     units = [None, True, False]        
 
@@ -2075,3 +2093,198 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
         fit_results['lines-params-err'] = np.abs(line_params.err)
 
     return fit_results
+
+
+
+
+def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
+                           theta, vel=0., sigma=0.):
+    """Return a simple emission-line spectrum model in cm-1
+
+    :param lines: lines in cm-1
+    
+    :param amp: Amplitude (must have the same size as lines)
+    
+    :param step: Step size
+
+    :param order: Folding order
+
+    :param resolution: Resolution of the spectrum
+
+    :param theta: Incident angle
+
+    :param step_nb: Number of steps of the spectrum.
+    
+    :param vel: (Optional) Global velocity shift applied to all the
+      lines (in km/s, default 0.)
+    
+    :param sigma: (Optional) Line broadening (in km/s, default 0.)
+    """
+
+
+    if np.size(amp) != np.size(lines_cm1):
+        raise Exception('The number of lines and the length of the amplitude vector must be the same')
+
+    nm_laser = 543.5 # can be anything
+    nm_laser_obs = nm_laser / np.cos(np.deg2rad(theta))
+    
+    step_nb = utils.spectrum.compute_step_nb(resolution, step, order)
+    fwhm_guess = utils.spectrum.compute_line_fwhm(
+        step_nb, step, order, nm_laser_obs / nm_laser, wavenumber=True)
+
+    lines_model = Cm1LinesModel(    
+        {'step-nb':step_nb,
+         'step':step,
+         'order':order,
+         'nm-laser':nm_laser,
+         'nm-laser-obs':nm_laser_obs,
+         'line-nb':np.size(lines_cm1),
+         'amp-def':'free',
+         'fwhm-def':'1',
+         'pos-guess':lines_cm1,
+         'pos-cov':vel,
+         'pos-def':'1',
+         'fmodel':'sincgauss',
+         'fwhm-guess':fwhm_guess,
+         'sigma-def':'1',
+         'sigma-guess':sigma,
+         'sigma-cov':0.})
+    p_free = np.copy(lines_model.p_free)
+    p_free[:np.size(lines_cm1)] = amp
+    lines_model.set_p_free(p_free)
+    spectrum = lines_model.get_model(np.arange(step_nb))
+    #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
+    return spectrum
+
+def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0., sigma=0.):
+    """Return a simple emission-line spectrum model with no physical units.
+
+    :param lines: lines channels
+    
+    :param amp: Amplitude (must have the same size as lines)
+    
+    :param fwhm: lines FWHM (in channels)
+    
+    :param step_nb: Number of steps of the spectrum.
+    
+    :param line_shift: (Optional) Global shift applied to all the
+      lines (in channels, default 0.)
+    
+    :param sigma: (Optional) Sigma of the lines (in channels, default
+      0.)
+    """
+
+    if np.size(amp) != np.size(lines):
+        raise Exception('The number of lines and the length of the amplitude vector must be the same')
+
+    lines_model = LinesModel(    
+        {'line-nb':np.size(lines),
+         'amp-def':'free',
+         'fwhm-def':'1',
+         'pos-guess':lines,
+         'pos-cov':line_shift,
+         'pos-def':'1',
+         'fmodel':'sincgauss',
+         'fwhm-guess':fwhm,
+         'sigma-def':'1',
+         'sigma-guess':sigma,
+         'sigma-cov':0.})
+    p_free = np.copy(lines_model.p_free)
+    p_free[:np.size(lines)] = amp
+    lines_model.set_p_free(p_free)
+    spectrum = lines_model.get_model(np.arange(step_nb))
+    #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
+    return spectrum
+
+
+
+
+def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
+                  snr, sigma=0, vel=0):
+    """Create a model and fit it.
+
+    This is a good way to check the quality and the internal coherency
+    of the fitting routine.
+
+    :param lines_cm1: Lines rest wavenumber in cm-1
+
+    :param amp: Amplitude of the lines
+
+    :param step: Step size in nm
+
+    :param oder: Folding order
+
+    :param resolution: Resolution
+
+    :param theta: Incident angle
+
+    :param snr: SNR of the strongest line
+
+    :param sigma: (Optional) Line broadening in km/s (default 0.)
+
+    :param vel: (Optional) Velocity in km/s (default 0.)
+    """
+    
+    spectrum = create_cm1_lines_model(lines_cm1, amp, step,
+                                      order, resolution, theta,
+                                      sigma=sigma, vel=vel)
+
+    # add noise
+    if snr > 0.:
+        spectrum += np.random.standard_normal(
+            spectrum.shape[0]) * np.nanmax(amp)/snr
+
+    cos_theta =  np.cos(np.deg2rad(theta))
+    step_nb = spectrum.shape[0]
+    fwhm_guess = utils.spectrum.compute_line_fwhm(
+        step_nb, step, order, 1 / cos_theta, wavenumber=True)
+
+    fit = fit_lines_in_spectrum(
+        spectrum, lines_cm1, step, order, 1., 1./cos_theta,
+        wavenumber=True, 
+        fmodel='sincgauss', shift_guess=vel, cov_pos=True,
+        fwhm_guess=fwhm_guess, fix_fwhm=True, fix_pos=False,
+        cov_sigma=True, compute_mcmc_error=False, no_error=True)
+
+    return fit, spectrum
+
+
+def check_fit(lines, amp, fwhm, step_nb, snr, line_shift=0, sigma=0):
+    """Create a model and fit it.
+
+    This is a good way to check the quality and the internal coherency
+    of the fitting routine.
+
+    :param lines: lines channels
+    
+    :param amp: Amplitude (must have the same size as lines)
+    
+    :param fwhm: lines FWHM (in channels)
+    
+    :param step_nb: Number of steps of the spectrum.
+
+    :param snr: SNR of the strongest line
+    
+    :param line_shift: (Optional) Global shift applied to all the
+      lines (in channels, default 0.)
+    
+    :param sigma: (Optional) Sigma of the lines (in channels, default
+      0.)
+    """
+    
+    spectrum = create_lines_model(lines, amp, fwhm, step_nb,
+                                  line_shift=line_shift, sigma=sigma)
+
+    # add noise
+    if snr > 0.:
+        spectrum += np.random.standard_normal(
+            spectrum.shape[0]) * np.nanmax(amp)/snr
+
+
+    fit = fit_lines_in_vector(
+        spectrum, lines, 
+        fmodel='sincgauss', shift_guess=line_shift, cov_pos=True,
+        fwhm_guess=fwhm, fix_fwhm=True, fix_pos=False,
+        cov_sigma=True, compute_mcmc_error=False, no_error=True)
+
+    return fit, spectrum

@@ -282,7 +282,7 @@ def compute_step_nb(resolution, step, order):
     """
     cm1_axis = create_cm1_axis(100, step, order)
     mean_sigma = (cm1_axis[-1] + cm1_axis[0])/2.
-    return (orb.constants.FWHM_SINC_COEFF
+    return math.ceil(orb.constants.FWHM_SINC_COEFF
             * resolution
             / (2 * mean_sigma * step * 1e-7))
 
@@ -372,11 +372,12 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     """
     if sigma / fwhm < 1e-10:
         return sinc1d(x, h, a, dx, fwhm)
+
     width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= math.pi ###
     a_ = sigma / math.sqrt(2) / width
-    b_ = ((x - dx) / math.sqrt(2) / sigma)
-    
+    b_ = ((x - dx) / math.sqrt(2) / sigma).astype(float)
+
     dawson1 = special.dawsn(1j*a_ + b_) * np.exp(2.*1j*a_*b_)
     dawson2 = special.dawsn(1j*a_ - b_) * np.exp(-2.*1j*a_*b_)
     dawson3 = special.dawsn(1j*a_)
