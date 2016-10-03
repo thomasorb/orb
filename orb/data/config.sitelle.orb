@@ -35,11 +35,11 @@ CAM1_QE_FILE SITELLE.cam1.QE.orb # Camera 1 Quantum efficiency file
 CAM2_QE_FILE SITELLE.cam2.QE.orb # Camera 1 Quantum efficiency file
 				 # path
 
-## Disalignment guess (last update 2016-09-30 from data obtained 2016-07-09)
-INIT_ANGLE 2.8 # Rough angle between images of the camera 1 and
+## Disalignment guess (last update 2016-09-30 from data obtained 2016-08-29)
+INIT_ANGLE 2.09 # Rough angle between images of the camera 1 and
 	       # images of the camera 2 [in degree]
-INIT_DX -31 # Rough x axis disalignment [in pixel] (unbinned)
-INIT_DY -23 # Rough y axis disalignment [in pixel] (unbinned)
+INIT_DX -29.8 # Rough x axis disalignment [in pixel] (unbinned)
+INIT_DY -23.6 # Rough y axis disalignment [in pixel] (unbinned)
 
 ## Calibration parameters
 CALIB_NM_LASER 543.5 # Wavelength of the calibration laser [in nm]
