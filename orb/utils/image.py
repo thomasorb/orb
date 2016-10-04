@@ -927,12 +927,13 @@ def nanbin_image(im, binning):
 
 
 def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
-                              binning=4, mirror_distance_guess=2.4e5):
+                              binning=4, mirror_distance_guess=2.4e5,
+                              return_model_fit=False):
     """
     Fit a calibration laser map.
 
-    Fit a classic optical model first and uses Zernike polynomials to
-    fit the residual.
+    Fit an opto-mechanical model first and uses Zernike polynomials to
+    fit the residual wavefront error.
 
     The model is based on optical parameters.
     
@@ -948,6 +949,10 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     :param mirror_distance_guess: (Optional) Guess on the mirror
       distance in um (default 2.2e5).
+
+    :param return_model_fit: (Optional) If True the optical model fit
+      is also returned (i.e. without the wavefront modeling with Zernike
+      polynomials) (default False).
 
     .. note:: Zernike polynomial fit routine has been written by Tim
       van Werkhoven (werkhoven@strw.leidenuniv.nl) as a part of
@@ -1111,8 +1116,10 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     new_calib_laser_map = model_laser_map(
         params, calib_laser_map, calib_laser_nm, pixel_size)
     
+    model_fit_calib_laser_map = np.copy(new_calib_laser_map)
+    
     # Zernike fit of the diff map
-    print '  > Zernike polynomials fit of the residual'
+    print '  > Zernike polynomials fit of the residual wavefront'
     res_map = calib_laser_map - new_calib_laser_map    
     res_map[np.nonzero(res_map == 0.)] = np.nan
     res_map_fit, _err_map, _fit_error = fit_map_zernike(
@@ -1128,8 +1135,10 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     print '> final error (std on {:.1f}% of the total size): {:.3e} nm, {:.3e} km/s'.format(LARGE_COEFF*100., std_err, std_err/calib_laser_nm*3e5)
 
     params = np.array(list(params) + list([theta_c]))
-    return params, new_calib_laser_map
-
+    if return_model_fit:
+        return params, new_calib_laser_map, model_fit_calib_laser_map
+    else:
+        return params, new_calib_laser_map
 
 
 def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
