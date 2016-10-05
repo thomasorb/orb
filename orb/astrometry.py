@@ -885,6 +885,7 @@ class Astrometry(Tools):
         # fit
         _fit_results = utils.astrometry.fit_stars_in_frame(
             frame, self.star_list, self.box_size, **kwargs)
+        
 
         # convert results to a StarParams instance
         for istar in range(len(self.star_list)):
@@ -2718,7 +2719,7 @@ class Aligner(Tools):
                 fit = optimize.leastsq(diff, p,
                                        args=(slin, slout, rc, zf, sip1, sip2),
                                        full_output=True, xtol=1e-6)
-            except Exception(), e:
+            except Exception, e:
                 raise Exception('No matching parameters found: {}'.format(e))
             
             if fit[-1] <= 4:
@@ -2729,6 +2730,37 @@ class Aligner(Tools):
             
             else:
                 raise Exception('No matching parameters found')
+
+        def brute_force_alignment(xystep_size, angle_range, angle_steps, range_coeff):
+            # define the ranges in x and y for the rough optimization
+            x_range_len = range_coeff * float(self.astro2.dimx)
+            y_range_len = range_coeff * float(self.astro2.dimy)
+
+            x_hrange = np.arange(xystep_size, x_range_len/2, xystep_size)
+            x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + self.dx
+            
+            y_hrange = np.arange(xystep_size, y_range_len/2, xystep_size)
+            y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + self.dy
+            
+          
+            r_range = np.linspace(-angle_range/2.,
+                                  angle_range/2.,
+                                  angle_steps) + self.dr
+
+            (self.dx, self.dy, self.dr, guess_matrix) = (
+                self.astro2.brute_force_guess(
+                    self.image2, self.astro1.star_list,
+                    x_range, y_range, r_range,
+                    self.rc, self.zoom_factor))
+            self.da = 0.
+            self.db = 0.
+
+            # Save guess matrix
+            self.write_fits(self._get_guess_matrix_path(),
+                            guess_matrix,
+                            fits_header=self._get_guess_matrix_header(),
+                            overwrite=self.overwrite)
+
         
             
         ERROR_RATIO = 0.2 # Minimum ratio of fitted stars once the
@@ -2770,37 +2802,6 @@ class Aligner(Tools):
 
         self.astro2.reset_fwhm_arc(fwhm_arc)
         self.astro1.reset_fwhm_arc(fwhm_arc)
-
-
-        def brute_force_alignment(xystep_size, angle_range, angle_steps, range_coeff):
-            # define the ranges in x and y for the rough optimization
-            x_range_len = range_coeff * float(self.astro2.dimx)
-            y_range_len = range_coeff * float(self.astro2.dimy)
-
-            x_hrange = np.arange(xystep_size, x_range_len/2, xystep_size)
-            x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + self.dx
-            
-            y_hrange = np.arange(xystep_size, y_range_len/2, xystep_size)
-            y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + self.dy
-            
-          
-            r_range = np.linspace(-angle_range/2.,
-                                  angle_range/2.,
-                                  angle_steps) + self.dr
-
-            (self.dx, self.dy, self.dr, guess_matrix) = (
-                self.astro2.brute_force_guess(
-                    self.image2, self.astro1.star_list,
-                    x_range, y_range, r_range,
-                    self.rc, self.zoom_factor))
-            self.da = 0.
-            self.db = 0.
-
-            # Save guess matrix
-            self.write_fits(self._get_guess_matrix_path(),
-                            guess_matrix,
-                            fits_header=self._get_guess_matrix_header(),
-                            overwrite=self.overwrite)
 
 
         ##########################################

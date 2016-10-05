@@ -1507,10 +1507,11 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
 
     new_pos = pos[np.nonzero(pos_mask)]
 
+
     # stop here if no star positions are in the frame
     if np.size(new_pos) == 0:
         return []
-    
+
     cdef int PARAMS_NB = 5
     cdef int star_nb = new_pos.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
@@ -1655,6 +1656,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         sky_pixels = np.sort(sky_pixels[np.nonzero(sky_pixels)])[1:-1]
         # guess background
         stars_p[istar,0] = bn.nanmedian(sky_pixels)
+        if np.isnan(stars_p[istar,0]): stars_p[istar,0] = 0.
+        
         # guess noise
         noise_guess[istar] = bn.nanstd(sky_pixels) #- sqrt(stars_p[istar,0])
 
@@ -1662,6 +1665,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         stars_p[:,0] = height_guess
 
     # height guess
+    amp_guess[np.isnan(amp_guess)] = 1.
     stars_p[:,1] = amp_guess - stars_p[:,0]
 
     if bn.anynan(stars_p): return []
