@@ -429,7 +429,8 @@ def transform_interferogram(interf, nm_laser,
                             smoothing_coeff=0.04, return_complex=False,
                             final_step_nb=None, wavenumber=False,
                             low_order_correction=False,
-                            high_order_phase=None):
+                            high_order_phase=None,
+                            return_zp_vector=False):
     
     """Transform an interferogram into a spectrum.
     
@@ -711,6 +712,9 @@ def transform_interferogram(interf, nm_laser,
     # zero_padded_size / 2 + 1 which would output a spectrum with 1
     # more sample than the input length. Computed axis must be
     # cropped accordingly.
+    if return_zp_vector:
+        return zero_padded_vector
+    
     interf_fft = np.fft.fft(zero_padded_vector)[:center]
     
     # normalization of the vector to take into account zero-padding

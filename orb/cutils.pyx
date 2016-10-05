@@ -1860,7 +1860,36 @@ def indft(np.ndarray[np.float64_t, ndim=1] a,
     f.imag = fimag
     return f / N
 
+def dft(np.ndarray[np.float64_t, ndim=1] a,
+          np.ndarray[np.float64_t, ndim=1] x):
+    """Discret Fourier Transform.
 
+    Compute an irregularly sampled spectrum from a regularly
+    sampled interferogram.
+
+    :param a: regularly sampled interferogram.
+    
+    :param x: positions of the spectrum samples. If x =
+      range(size(a)), this function is equivalent to an fft. Note that
+      the fft is of course much faster to compute. This vector may
+      have any length.
+    """
+    cdef int N = a.shape[0]
+    cdef int M = x.shape[0]
+    cdef float angle = 0.
+    cdef int m, n
+    
+    f = np.zeros(M, dtype=complex)
+    cdef np.ndarray[np.float64_t, ndim=1] freal = np.zeros(M, dtype=float)
+    cdef np.ndarray[np.float64_t, ndim=1] fimag = np.zeros(M, dtype=float)
+    for m in xrange(M):
+        for n in xrange(N):
+            angle = -2. * M_PI * x[m] * n / N
+            freal[m] += a[n] * cos(angle)
+            fimag[m] += a[n] * sin(angle)
+    f.real = freal
+    f.imag = fimag
+    return f
 
           
 def map_me(np.ndarray[np.float64_t, ndim=2] frame):
