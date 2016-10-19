@@ -43,7 +43,7 @@ def line_interf(sigma, step_nb):
     a = np.cos(x*sigma*2.*math.pi) / 2. + 0.5
     return a
 
-def fft(interf, zp_coeff=10, apod=None):
+def fft(interf, zp_coeff=10, apod=None, phase=None):
     """
     Basic Fourier Transform with zero-padding.
 
@@ -65,8 +65,7 @@ def fft(interf, zp_coeff=10, apod=None):
     interf = np.copy(interf) - np.nanmean(interf)
 
     # apodization
-    if apod is not None:
-        
+    if apod is not None:        
         apodf = orb.utils.fft.gaussian_window(apod, step_nb*2)[step_nb:]
         interf *= apodf
 
@@ -75,7 +74,11 @@ def fft(interf, zp_coeff=10, apod=None):
     zp_nb = step_nb * zp_coeff * 2
     zp_interf = np.zeros(zp_nb, dtype=float)
     zp_interf[:step_nb] = interf
+
+    # dft
     interf_fft = np.fft.fft(zp_interf)
+    if phase is not None:
+        interf_fft *= np.exp(1j * orb.utils.vector.interpolate_size(phase, interf_fft.shape[0], 1))
     interf_fft = interf_fft[:interf_fft.shape[0]/2+1]
     axis = np.linspace(0, (step_nb - 1)/2., interf_fft.shape[0])
     return axis, interf_fft

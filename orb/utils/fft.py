@@ -1428,7 +1428,8 @@ def calib_map2phase_map0(p, calib_map, nm_laser):
     :param calib_map: Calibration laser map
     :param nm_laser: Calibration laser wavelength
     """
-    return p[0] + p[1] * (1 - (calib_map / nm_laser))
+    theta_inv = 1 - (calib_map / nm_laser)
+    return p[0] + p[1] * theta_inv + p[2] * theta_inv**2
 
 def phase_map02calib_map(p, phase_map0, nm_laser):
     """Compute calibration laser map from order 0 phase map.
