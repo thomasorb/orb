@@ -1307,7 +1307,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     phase_map[:,ymax:] = np.nan
 
     if wavefront_map is None:
-        wavefront_map = np.zeros_like(calibration_laser_map)
+        wavefront_map = np.zeros_like(phase_map)
     
     # Data is binned to accelerate the fit
     if binning > 1:
@@ -1341,7 +1341,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     ## 7: phi_r    
 
     # first fit of the linear parameters
-    p_ind = np.array([0,0,0,1,1,1,1,1,1])
+    p_ind = np.array(list([0])*(POLY_DEG+1) + [1,1,1,1,1,1])
     p_fix = calib_fit_params[:-1]
     fit = scipy.optimize.leastsq(diff_phase_map,
                                  [0., 0., 0.],
@@ -1364,7 +1364,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
 
 
     # second fit
-    p_ind = np.array([1,1,1,1,0,1,0,0,0])
+    p_ind = np.array(list([1])*(POLY_DEG+1) + [1,0,1,0,0,0])   
     p_fix = params[p_ind.astype(bool)]
     p_var = params[~p_ind.astype(bool)]
     fit = scipy.optimize.leastsq(diff_phase_map,
@@ -1387,7 +1387,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         100 * (1. - np.cos(np.nanstd(res_phase_map))))
 
     # third fit
-    p_ind = np.array([0,0,0,1,0,1,0,0,0])
+    p_ind = np.array(list([0])*(POLY_DEG+1) + [1,0,1,0,0,0])   
     p_fix = params[p_ind.astype(bool)]
     p_var = params[~p_ind.astype(bool)]
     fit = scipy.optimize.leastsq(diff_phase_map,
