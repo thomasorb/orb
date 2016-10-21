@@ -198,9 +198,11 @@ def line_shift(velocity, line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    vel = (np.array(line, dtype=np.longdouble)
-           * np.array(velocity, dtype=np.longdouble)
+    is_data = od.isdata(velocity) or od.isdata(line)
+    vel = (od.array(line, dtype=np.longdouble)
+           * od.array(velocity, dtype=np.longdouble)
            / float(orb.constants.LIGHT_VEL_KMS))
+    if not is_data: vel = vel.dat
     if wavenumber: return -vel
     else: return vel
     
@@ -303,6 +305,8 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
+    line = np.array(line)
+    rest_line = np.array(rest_line)
     if line.dtype != np.longdouble:
         line = np.array(line, dtype=np.longdouble)
     if rest_line.dtype != np.longdouble:

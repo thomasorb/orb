@@ -1011,7 +1011,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     CENTER_COEFF = 0.5
     LARGE_COEFF = 0.95
-    ZERN_MODES = 30 # number of Zernike modes to fit 
+    ZERN_MODES = 20 # number of Zernike modes to fit 
     BORDER_SIZE = 10 # in pixels
     ANGLE_RANGE = 4 # in degrees
 
@@ -1363,51 +1363,51 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         100 * (1. - np.cos(np.nanstd(res_phase_map))))
 
 
-    # second fit
-    p_ind = np.array(list([1])*(POLY_DEG+1) + [1,0,1,0,0,0])   
-    p_fix = params[p_ind.astype(bool)]
-    p_var = params[~p_ind.astype(bool)]
-    fit = scipy.optimize.leastsq(diff_phase_map,
-                                 p_var,
-                                 args=(calib_laser_map_bin,
-                                       calib_laser_nm,
-                                       float(pixel_size*binning),
-                                       phase_map_bin,
-                                       phase_map_err_bin,
-                                       p_fix, p_ind, POLY_DEG,
-                                       wavefront_map_bin),
-                                 full_output=True)
-    params = get_p(fit[0], p_fix, p_ind)
-    print_params(params, p_ind, POLY_DEG)
-    res_phase_map = phase_map - model_phase_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
-        wavefront_map)
-    print 'residual std: {} (flux error: {}%)'.format(
-        np.nanstd(res_phase_map),
-        100 * (1. - np.cos(np.nanstd(res_phase_map))))
+    ## # second fit
+    ## p_ind = np.array(list([1])*(POLY_DEG+1) + [1,0,1,1,1,0])
+    ## p_fix = params[p_ind.astype(bool)]
+    ## p_var = params[~p_ind.astype(bool)]
+    ## fit = scipy.optimize.leastsq(diff_phase_map,
+    ##                              p_var,
+    ##                              args=(calib_laser_map_bin,
+    ##                                    calib_laser_nm,
+    ##                                    float(pixel_size*binning),
+    ##                                    phase_map_bin,
+    ##                                    phase_map_err_bin,
+    ##                                    p_fix, p_ind, POLY_DEG,
+    ##                                    wavefront_map_bin),
+    ##                              full_output=True)
+    ## params = get_p(fit[0], p_fix, p_ind)
+    ## print_params(params, p_ind, POLY_DEG)
+    ## res_phase_map = phase_map - model_phase_map(
+    ##     params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
+    ##     wavefront_map)
+    ## print 'residual std: {} (flux error: {}%)'.format(
+    ##     np.nanstd(res_phase_map),
+    ##     100 * (1. - np.cos(np.nanstd(res_phase_map))))
 
-    # third fit
-    p_ind = np.array(list([0])*(POLY_DEG+1) + [1,0,1,0,0,0])   
-    p_fix = params[p_ind.astype(bool)]
-    p_var = params[~p_ind.astype(bool)]
-    fit = scipy.optimize.leastsq(diff_phase_map,
-                                 p_var,
-                                 args=(calib_laser_map_bin,
-                                       calib_laser_nm,
-                                       float(pixel_size*binning),
-                                       phase_map_bin,
-                                       phase_map_err_bin,
-                                       p_fix, p_ind, POLY_DEG,
-                                       wavefront_map_bin),
-                                 full_output=True)
-    params = get_p(fit[0], p_fix, p_ind)
-    print_params(params, p_ind, POLY_DEG)
-    res_phase_map = phase_map - model_phase_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
-        wavefront_map)
-    print 'residual std: {} (flux error: {}%)'.format(
-        np.nanstd(res_phase_map),
-        100 * (1. - np.cos(np.nanstd(res_phase_map))))
+    ## # third fit
+    ## p_ind = np.array(list([0])*(POLY_DEG+1) + [1,0,0,1,1,0])   
+    ## p_fix = params[p_ind.astype(bool)]
+    ## p_var = params[~p_ind.astype(bool)]
+    ## fit = scipy.optimize.leastsq(diff_phase_map,
+    ##                              p_var,
+    ##                              args=(calib_laser_map_bin,
+    ##                                    calib_laser_nm,
+    ##                                    float(pixel_size*binning),
+    ##                                    phase_map_bin,
+    ##                                    phase_map_err_bin,
+    ##                                    p_fix, p_ind, POLY_DEG,
+    ##                                    wavefront_map_bin),
+    ##                              full_output=True)
+    ## params = get_p(fit[0], p_fix, p_ind)
+    ## print_params(params, p_ind, POLY_DEG)
+    ## res_phase_map = phase_map - model_phase_map(
+    ##     params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
+    ##     wavefront_map)
+    ## print 'residual std: {} (flux error: {}%)'.format(
+    ##     np.nanstd(res_phase_map),
+    ##     100 * (1. - np.cos(np.nanstd(res_phase_map))))
 
     
     fitted_phase_map = model_phase_map(
