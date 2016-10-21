@@ -305,12 +305,16 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    line = np.array(line)
-    rest_line = np.array(rest_line)
-    if line.dtype != np.longdouble:
+    if (not isinstance(line, np.ndarray)
+        and not isinstance(line, od.Data)):
         line = np.array(line, dtype=np.longdouble)
-    if rest_line.dtype != np.longdouble:
+    if (not isinstance(rest_line, np.ndarray)
+        and not isinstance(line, od.Data)):
         rest_line = np.array(rest_line, dtype=np.longdouble)
+    if line.dtype != np.longdouble:
+        line = line.astype(np.longdouble)
+    if rest_line.dtype != np.longdouble:
+        rest_line = rest_line.astype(np.longdouble)
 
     if wavenumber:
         delta = rest_line - line
