@@ -216,6 +216,8 @@ def sip_im2pix(np.ndarray[np.float64_t, ndim=2] im_coords, sip,
     :param im_coords: perfect pixel positions as an Nx2 array of floats.
     :param sip: pywcs.WCS() instance containing SIP parameters.
     :param tolerance: tolerance on the iterative method.
+
+    .. warning:: SIP.foc2pix must be used instead
     """
     cdef np.ndarray[np.float64_t, ndim=1] xcoord = np.empty(
         im_coords.shape[0], dtype=np.float64)
@@ -232,6 +234,8 @@ def sip_pix2im(np.ndarray[np.float64_t, ndim=2] pix_coords, sip):
 
     :param pix_coords: distorded pixel positions as an Nx2 array of floats.
     :param sip: pywcs.WCS() instance containing SIP parameters.
+
+    .. warning:: SIP.pix2foc must be used instead
     """
     cdef np.ndarray[np.float64_t, ndim=1] xcoord = np.empty(
         pix_coords.shape[0], dtype=np.float64)
@@ -1861,7 +1865,7 @@ def indft(np.ndarray[np.float64_t, ndim=1] a,
     return f / N
 
 def dft(np.ndarray[np.float64_t, ndim=1] a,
-          np.ndarray[np.float64_t, ndim=1] x):
+        np.ndarray[np.float64_t, ndim=1] x):
     """Discret Fourier Transform.
 
     Compute an irregularly sampled spectrum from a regularly
@@ -2127,8 +2131,6 @@ def brute_photometry(np.ndarray[np.float64_t, ndim=2] im,
                                 total_flux += val
     return total_flux
 
-                     
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def detect_cosmic_rays(np.ndarray[np.float64_t, ndim=2] frame,
@@ -2347,3 +2349,99 @@ def get_nm_axis_step(int n, double step, int order, double corr=1.):
     else: raise ValueError('Order cannot be 0 for a nm axis (stepsize is infinite), use a cm-1 axis instead')
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def filter_background(np.ndarray[np.float64_t, ndim=2] frame,
+                      int box_size, int big_box_coeff):
+    """Replace each pixel by the value in a box around it minus the
+    median of the baclground.
+    
+    :param frame: Frame to filter
+    
+    :param box_size: Size of the box
+    
+    :param big_box_coeff: Coeff by which the bo size is multiplied to
+      get the background box size.
+    """
+    
+    cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
+    cdef np.ndarray[np.float64_t, ndim=2] box
+    cdef np.ndarray[np.float64_t, ndim=2] back
+    
+    
+    cdef int ii, ij, dimx, dimy, back_size, nans, ik
+    cdef float mean_box, median_back
+    cdef int xmin, xmax, ymin, ymax, xminb, xmaxb, yminb, ymaxb
+
+    back_size = big_box_coeff * box_size
+
+    dimx = frame.shape[0]
+    dimy = frame.shape[1]
+    
+    
+    for ii in range(dimx):
+        for ij in range(dimy):
+
+            xmin, xmax, ymin, ymax = get_box_coords(
+                ii, ij, box_size,
+                0, dimx, 0, dimy)
+            box = frame[xmin:xmax, ymin:ymax]
+            mean_box = mean2d(box)
+            xminb, xmaxb, yminb, ymaxb = (
+                get_box_coords(
+                    ii, ij, back_size, 0, dimx,
+                    0, dimy))
+            back = np.copy(frame[xminb:xmaxb, yminb:ymaxb])
+            back[xmin - xminb:xmax - xminb,
+                 ymin - yminb:ymax - yminb] = np.nan
+                             
+            median_back = median2d(back)
+            workframe[ii, ij] = mean_box - median_back
+                                  
+    return workframe
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def mean2d(np.ndarray[np.float64_t, ndim=2] box):
+    """Return the mean of a 2d box with no GIL
+
+    :param box: 2d array
+    """
+    cdef int ii, ij
+    cdef int dimx, dimy, nb
+    cdef double val
+    dimx = box.shape[0]
+    dimy = box.shape[1]
+    val = 0
+    nb = 0
+    with nogil:
+        for ii in range(dimx):
+            for ij in range(dimy):
+                if not isnan(box[ii,ij]):
+                    val += box[ii,ij]
+                    nb += 1
+    return val / <float> nb
+                
+        
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def median2d(np.ndarray[np.float64_t, ndim=2] box):
+    """Return the median of a 2d box with no GIL
+
+    :param box: 2d array
+    """
+    cdef int ii, ij
+    cdef int dimx, dimy, nb
+    cdef np.ndarray[np.float64_t, ndim=1] box_s = np.empty(
+        np.size(box), dtype=float)
+
+    box_s = np.sort(box.flatten())
+    dimx = box_s.shape[0]
+    with nogil:
+        for ii in range(dimx):
+            if not isnan(box_s[dimx-ii-1]):
+                nb = ii
+                break
+    return box_s[(dimx-nb)/2]
+            

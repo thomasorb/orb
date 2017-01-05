@@ -31,7 +31,7 @@ All the installation process can be done with pip and apt-get::
   pip install bottleneck --upgrade
   pip install pp --upgrade
   pip install pyregion --upgrade
-  
+  pip install dill --upgrade
 
 Fast installation sequence for MAC users
 ========================================
@@ -47,6 +47,8 @@ Most of the installation process can be done with pip::
   sudo pip install h5py --upgrade
   sudo pip install bottleneck --upgrade
   sudo pip install pyregion --upgrade
+  sudo pip install dill --upgrade
+  
   
 For the libraries that are not accessible via pip (e.g. pp) you can
 install them using python. Download the archive, unzip it and, in the
@@ -57,7 +59,6 @@ unzipped folder type::
 **Compile Cutils**
   
   
-
 Python_
 =======
 
@@ -263,8 +264,8 @@ To install Cython_::
   sudo pip install cython --upgrade
 
 
-Install PyFFTW
---------------
+Install PyFFTW (still not used, here for reference)
+---------------------------------------------------
 
 FFTW3 library must be installed (see `here
 <https://pypi.python.org/pypi/pyFFTW>`_)::

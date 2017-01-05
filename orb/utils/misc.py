@@ -27,7 +27,7 @@ import sys
 import orb.cutils                       
 import pyregion
 import astropy.io.fits as pyfits
-
+import dill
 
 def aggregate_pixels(pixel_list, radius=1.42):
     """Aggregate neighbouring pixels into a set of sources. Two
@@ -226,3 +226,18 @@ def restore_error_settings(old_settings):
     np.seterr(under = old_settings["under"])
     np.seterr(invalid = old_settings["invalid"])
 
+def save_dill(dill_path):
+    """Save a dill object
+
+    :param dill_path: Path to the output file
+    """
+    with open(dill_path, 'wb') as f:
+        dill.dump(rbf, f)
+
+def load_dill(dill_path):
+    """Save a dill object
+    
+    :param dill_path: Path to the input file
+    """
+    with open(dill_path, 'rb') as f:
+        return dill.load(f)

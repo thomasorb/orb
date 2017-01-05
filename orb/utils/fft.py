@@ -430,7 +430,8 @@ def transform_interferogram(interf, nm_laser,
                             final_step_nb=None, wavenumber=False,
                             low_order_correction=False,
                             high_order_phase=None,
-                            return_zp_vector=False):
+                            return_zp_vector=False,
+                            sampling_steps=None):
     
     """Transform an interferogram into a spectrum.
     
@@ -517,6 +518,11 @@ def transform_interferogram(interf, nm_laser,
       scipy.interpolate.UnivariateSpline instance to accelerate the
       process.
 
+    :param sampling_steps: (Optional) If the sampling steps are not
+      uniform, the real sampling function can be given. It must have
+      the exact same size as the interferogram. Note that a NDFT will
+      be performed which is much slower than a FFT.
+
     .. note:: Interferogram can be complex
 
     .. note:: Only NANs or INFs are interpreted as bad values
@@ -537,6 +543,10 @@ def transform_interferogram(interf, nm_laser,
 
     if (smoothing_coeff < 0. or smoothing_coeff > 0.2):
         raise ValueError('smoothing coeff must be between 0. and 0.2')
+
+    if sampling_steps is not None:
+        sampling_steps = np.array(sampling_steps)
+        assert sampling_steps.size == interf.size, 'sampling_steps must have the same size as interf'
 
     dimz = interf.shape[0]
 
@@ -600,9 +610,9 @@ def transform_interferogram(interf, nm_laser,
                                dtype=interf.dtype)
         temp_vector[abs(zpd_shift_corr):abs(zpd_shift_corr) + dimz] = interf
         interf = np.copy(temp_vector)
-        interf = np.roll(interf, zpd_shift_corr)
-        
+        interf = np.roll(interf, zpd_shift_corr)            
         if bad_frames_vector is not None:
+            warnings.warn('bad frames handling not implemented')
             if np.any(bad_frames_vector > 0):
                 temp_vector[
                     abs(zpd_shift_corr):abs(zpd_shift_corr) + dimz] = bad_frames_vector
@@ -610,41 +620,10 @@ def transform_interferogram(interf, nm_laser,
                 bad_frames_vector = np.roll(bad_frames_vector, zpd_shift_corr)
             else:
                 bad_frames_vector = None
-
                 
     ### Replace Nans by zeros in interf vector
     interf[np.isnan(interf)] = 0.
     
-    #####
-    # 4 - Zeros smoothing - DEACTIVATED, bad for SITELLE's asymmetric
-    # interferograms
-    #
-    # Smooth the transition between good parts and 'zeros' parts. We
-    # use here a concept from Learner et al. (1995) Journal of the
-    # Optical Society of America A, 12(10), 2165
-
-    
-    ## zeros_vector = np.ones_like(interf)
-    ## zeros_vector[interf == 0.] = 0.
-    ## zeros_vector = zeros_vector.real # in case interf is complex
-
-    ## if bad_frames_vector is not None:
-    ##     zeros_vector[np.nonzero(bad_frames_vector)] = 0
-    ## if len(np.nonzero(zeros_vector == 0)[0]) > 0:
-    ##     # correct only 'bands' of zeros:
-    ##     zcounts = count_nonzeros(-zeros_vector + 1)
-    ##     zeros_mask = np.nonzero(zcounts >= min_zeros_length)
-    ##     if len(zeros_mask[0]) > 0 and smoothing_deg > 0.:
-    ##         for izero in zeros_mask[0]:
-    ##             if (izero > smoothing_deg
-    ##                 and izero < interf.shape[0] - 1 - smoothing_deg):
-    ##                 zeros_vector[izero - smoothing_deg:
-    ##                              izero + smoothing_deg + 1] = 0
-    ##         zeros_vector = orb.utils.vector.smooth(
-    ##             np.copy(zeros_vector), deg=smoothing_deg,
-    ##             kind='cos_conv')
-    ##         zeros_vector = zeros_vector * (- zeros_vector[::-1] + 2)
-    ##         interf *= zeros_vector
 
     #####
     # 4 - Ramp-like truncation function from Mertz (1967) Infrared
@@ -691,7 +670,7 @@ def transform_interferogram(interf, nm_laser,
     # Define the size of the zero padded vector to have at
     # least 2 times more points than the initial vector to
     # compute its FFT. FFT computation is faster for a vector
-    # size equal to a power of 2.
+    # size equal to a power of 2. ???
     #zero_padded_size = next_power_of_two(2*final_step_nb)
     zero_padded_size = 2 * final_step_nb
     
@@ -714,9 +693,17 @@ def transform_interferogram(interf, nm_laser,
     # cropped accordingly.
     if return_zp_vector:
         return zero_padded_vector
-    
-    interf_fft = np.fft.fft(zero_padded_vector)[:center]
-    
+
+    if sampling_steps is None:
+        interf_fft = np.fft.fft(zero_padded_vector)[:center]
+    else:
+        sampling_steps = np.hstack((sampling_steps,
+                                    np.arange(zero_padded_vector.size - sampling_steps.size)
+                                    + sampling_steps.size))        
+        interf_fft = ndft(zero_padded_vector,
+                          sampling_steps,
+                          np.arange(zero_padded_vector.size))[:center]
+        
     # normalization of the vector to take into account zero-padding
     # and mimic a dispersive instrument: if the same energy is
     # dispersed over more channels (more zeros) then you get less
@@ -749,7 +736,7 @@ def transform_interferogram(interf, nm_laser,
 
         if high_order_phase is not None:
             phase_axis = orb.utils.spectrum.create_cm1_axis(
-                interf_fft.shape[0], step, order,
+                dimz, step, order,
                 corr=float(calibration_nm_laser) / nm_laser).astype(np.float64)
             try: # if high_order_phase is a PhaseFile instance
                 high_order_phase = high_order_phase.get_improved_phase(
@@ -971,6 +958,41 @@ def transform_spectrum(spectrum, nm_laser, calibration_nm_laser,
         return interf
     else:
         return interf.real
+
+def ndft(a, xk, vj):
+    """Non-uniform Discret Fourier Tranform
+
+    Compute the spectrum from an interferogram. Noth axis can be
+    irregularly sampled.
+
+    If the spectral axis (output axis) is irregular the result is
+    exact. But there is no magic: if the input axis (interferogram
+    sampling) is irregular the output spectrum is not exact because
+    the projection basis is not orthonormal.
+
+    If the interferogram is the addition of multiple regularly sampled
+    scans with a opd shift between each scan, the result will be good
+    as long as there are not too much scans added one after the
+    other. But if the interferogram steps are randomly distributed, it
+    will be better to use a classic FFT because the resulting noise
+    will be much lower.
+
+    :param a: 1D interferogram
+    
+    :param xk: 1D sampling steps of the interferogram. Must have the
+      same size as a and must be relative to the real step length,
+      i.e. if the sampling is uniform xk = np.arange(a.size).
+    
+    :param vj: 1D frequency sampling of the output spectrum.
+    """
+    assert a.ndim == 1, 'a must be a 1d vector'
+    assert vj.ndim == 1, 'vj must be a 1d vector'
+    assert a.size == xk.size, 'size of a must equal size of xk'
+    
+    angle = np.inner((-2.j * np.pi * xk / xk.size)[:,None], vj[:,None])
+    return np.dot(a, np.exp(angle))
+
+
 
 def indft(a, x):
     """Inverse Non-uniform Discret Fourier Transform.

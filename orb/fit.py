@@ -294,7 +294,7 @@ class FitVector(object):
         MCMC_RUN_NB = 500 # number of walker steps
         MCMC_RUN_THRESHOLD = 100 # Burn-in samples threshold
                 
-        # walkers definition which starts around a tiny gaussian ball around
+        # walkers definition which starts in a tiny gaussian ball around
         # the maximum likelihood found with a classic optimization
         ndim, nwalkers = np.size(p), np.size(p) * NWALKERS_COEFF
         pos = [p + p_err * np.random.randn(ndim) for i in range(nwalkers)]
@@ -2078,10 +2078,13 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
     elif fmodel == 'sinc':
         flux = utils.spectrum.sinc1d_flux(
             line_params[:,1], fwhm)
+    else:
+        flux = None
 
-    fit_results['flux'] = flux.dat
-    if line_params_err is not None:
-        fit_results['flux-err'] = np.abs(flux.err)
+    if flux is not None:
+        fit_results['flux'] = flux.dat
+        if line_params_err is not None:
+            fit_results['flux-err'] = np.abs(flux.err)
 
     # compute SNR
     if line_params_err is not None:

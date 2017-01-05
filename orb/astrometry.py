@@ -35,7 +35,8 @@ import warnings
 import time
 
 import numpy as np
-from scipy import optimize
+from scipy import optimize, interpolate, signal
+from scipy import interpolate
 import astropy.wcs as pywcs
 import bottleneck as bn
 
@@ -48,7 +49,7 @@ import utils.stats
 import utils.vector
 import utils.web
 import cutils
-
+import utils.misc
 
 ##################################################
 #### CLASS StarsParams ###########################
@@ -486,7 +487,7 @@ class Astrometry(Tools):
                  check_mask=True, reduced_chi_square_limit=1.5,
                  readout_noise=10., dark_current_level=0.,
                  target_radec=None, target_xy=None, wcs_rotation=None,
-                 **kwargs):
+                 sip=None, **kwargs):
 
         """
         Init astrometry class.
@@ -559,6 +560,9 @@ class Astrometry(Tools):
           options target_radec and target_xy are also given. In this
           case, WCS registration and catalogued star detection are
           possible (default None).
+
+        :param sip: (Optional) An astropy.wcs.WCS instance containing
+          the SIP parameters of the distortion map (default None).
         """
         Tools.__init__(self, **kwargs)
        
@@ -634,6 +638,14 @@ class Astrometry(Tools):
             self.target_x = None
             self.target_y = None
         self.wcs_rotation = wcs_rotation
+
+        self.sip = None
+        if sip is not None:
+            if isinstance(sip, pywcs.WCS):
+                self.sip = sip
+            else:
+                self._print_error('sip must be an astropy.wcs.WCS instance')
+                
     
     def _get_star_list_path(self):
         """Return the default path to the star list file."""
@@ -644,20 +656,79 @@ class Astrometry(Tools):
         results."""
         return self._data_path_hdr + "fit_results.hdf5"
 
-    def _get_combined_frame(self, use_deep_frame=False):
+    def _get_combined_frame(self, use_deep_frame=False, realign=False):
         """Return a combined frame to work on.
 
         :param use_deep_frame: (Optional) If True returned frame is a
           deep frame instead of a combination of the first frames only
           (default False)
+
+        :param realign: (Optional) Realign frames with a
+          cross-correlation algorithm (default False). Much better if
+          used on a small number of frames.
         """
-        # If we have 3D data we work on a combined image of the first
-        # frames
         if self.deep_frame is not None:
             return np.copy(self.deep_frame)
+        
+        _cube = self.data[:,:,:]
+
+        # realignment of the frames if necessary
+        if realign and self.dimz > 1:
+            im1 = _cube[:,:,0]
+            src1_list = np.nonzero(im1 > np.nanpercentile(im1, 99.9))
+            agg1_list = utils.misc.aggregate_pixels(src1_list)
+
+            isrcx = list() ; isrcy = list()
+            for isrc in agg1_list:
+                isrc = np.array(isrc)
+                isrcx.append(np.nanmean(isrc[:,0]))
+                isrcy.append(np.nanmean(isrc[:,1]))
+            isrcx = np.array(isrcx)
+            isrcy = np.array(isrcy)
+
+            for ik in range(1, self.data.dimz):
+                # detect sources
+                im2 = _cube[:,:,ik]
+                src2_list = np.nonzero(im2 > np.nanpercentile(im2, 99.9))
+                agg2_list = utils.misc.aggregate_pixels(src2_list)
+                isrcx2 = list() ; isrcy2 = list()
+                for isrc2 in agg2_list:
+                    isrc2 = np.array(isrc2)
+                    isrcx2.append(np.nanmean(isrc2[:,0]))
+                    isrcy2.append(np.nanmean(isrc2[:,1]))
+                isrcx2 = np.array(isrcx2)
+                isrcy2 = np.array(isrcy2)
+
+                neix = list()
+                neiy = list()
+                for ii in range(isrcx.size):
+                    idx = isrcx2 - isrcx[ii]
+                    idy = isrcy2 - isrcy[ii]
+                    ir = np.sqrt(idx**2. + idy**2.)
+                    inei = np.nanargmin(ir)
+                    neix.append(idx[inei])
+                    neiy.append(idy[inei])
+                ## import pylab as pl
+                ## pl.plot(neix)
+                ## pl.plot(neiy)
+                ## pl.show()
+                    
+                dx = -np.nanmean(utils.stats.sigmacut(neix, sigma=2.))
+                dy = -np.nanmean(utils.stats.sigmacut(neiy, sigma=2.))
+                
+                self._print_msg('dx: {}, dy: {}'.format(dx, dy))
+                _cube[:,:,ik] = utils.image.transform_frame(
+                    im2, 0, im2.shape[0], 0, im2.shape[1], [dx, dy, 0, 0, 0],
+                    (im2.shape[0]/2., im2.shape[1]/2.), 1., 1)                
+                
+        # If we have 3D data we work on a combined image of the first
+        # frames
         if self.dimz > 1:
             if use_deep_frame:
-                self.deep_frame = self.data.get_median_image().astype(float)
+                if _cube is None:
+                    self.deep_frame = self.data.get_median_image().astype(float)
+                else:
+                    self.deep_frame = np.nanmedian(_cube, axis=2)
                 return self.deep_frame
             
             
@@ -665,16 +736,15 @@ class Astrometry(Tools):
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
 
+            if _cube is None: dat = _cube
+            else: dat = self.data[
+                :,:, int(self.DETECT_INDEX):
+                int(self.DETECT_INDEX+stack_nb)]
+                
             if not self.BIG_DATA:
-                im = utils.image.create_master_frame(
-                    self.data[:,:,
-                              int(self.DETECT_INDEX):
-                              int(self.DETECT_INDEX+stack_nb)])
+                im = utils.image.create_master_frame(dat)
             else:
-                im = utils.image.pp_create_master_frame(
-                    self.data[:,:,
-                              int(self.DETECT_INDEX):
-                              int(self.DETECT_INDEX+stack_nb)])
+                im = utils.image.pp_create_master_frame(dat)
                 
         # else we just return the only frame we have
         else:
@@ -848,6 +918,7 @@ class Astrometry(Tools):
             * dark_current_level
           
         """
+        print
         if self.data is None: self._print_error(
             "Some data must be loaded first")
         
@@ -1177,7 +1248,7 @@ class Astrometry(Tools):
 
 
     def detect_stars_from_catalogue(self, min_star_number=4, no_save=False,
-                                    saturation_threshold=35000):
+                                    saturation_threshold=35000, realign=False):
         """Detect star positions in data from a catalogue.
 
         :param index: Minimum index of the images used for star detection.
@@ -1194,6 +1265,11 @@ class Astrometry(Tools):
           because at the ZPD the intensity of a star can be twice the
           intensity far from it (default 35000).
 
+        :param realign: (Optional) Realign frames with a
+          cross-correlation algorithm (default False). Much better if
+          used on a small number of frames.
+
+
         :return: (star_list_path, mean_fwhm_arc) : (a path to a list
           of the dected stars, the mean FWHM of the stars in arcsec)
         """
@@ -1206,7 +1282,7 @@ class Astrometry(Tools):
         # is created.
         self.register()
 
-        deep_frame = self._get_combined_frame()
+        deep_frame = self._get_combined_frame(realign=realign)
         fit_params = self.fit_stars_in_frame(deep_frame, multi_fit=False,
                                              local_background=True,
                                              save=False)
@@ -1259,7 +1335,7 @@ class Astrometry(Tools):
         return self._get_star_list_path(), self.pix2arc(mean_fwhm)
 
 
-    def detect_all_sources(self, use_deep_frame=False):
+    def detect_all_sources(self, use_deep_frame=False, realign=False):
         """Detect all point sources in the cube regardless of there FWHM.
 
         Galaxies, HII regions, filamentary knots and stars might be
@@ -1268,6 +1344,10 @@ class Astrometry(Tools):
         :param use_deep_frame: (Optional) If True a deep frame of the
           cube is used instead of combinig only the first frames
           (default False).
+
+        :param realign: (Optional) Realign frames with a
+          cross-correlation algorithm (default False). Much better if
+          used on a small number of frames.   
         """
 
         SOURCE_SIZE = 2
@@ -1308,7 +1388,8 @@ class Astrometry(Tools):
         
         self._print_msg("Detecting all point sources in the cube", color=True)
 
-        im = self._get_combined_frame(use_deep_frame=use_deep_frame)
+        im = self._get_combined_frame(use_deep_frame=use_deep_frame,
+                                      realign=realign)
         
         start_time = time.time()
         self._print_msg("Filtering master image")
@@ -1348,7 +1429,7 @@ class Astrometry(Tools):
     def detect_stars(self, min_star_number=4, no_save=False,
                      saturation_threshold=35000, try_catalogue=False,
                      use_deep_frame=False, r_max_coeff=0.6,
-                     filter_image=True):
+                     filter_image=True, realign=False):
         """Detect star positions in data.
 
         :param index: Minimum index of the images used for star detection.
@@ -1382,6 +1463,10 @@ class Astrometry(Tools):
 
         :param filter_image: (Optional) If True, image is filtered
           before detection to remove nebulosities (default True).
+
+        :param realign: (Optional) Realign frames with a
+          cross-correlation algorithm (default False). Much better if
+          used on a small number of frames.
 
         :return: (star_list_path, mean_fwhm_arc) : (a path to a list
           of the dected stars, the mean FWHM of the stars in arcsec)
@@ -1467,8 +1552,8 @@ class Astrometry(Tools):
          
 
         self._print_msg("Detecting stars", color=True)
-        
-        im = self._get_combined_frame(use_deep_frame=use_deep_frame)
+        im = self._get_combined_frame(use_deep_frame=use_deep_frame,
+                                      realign=realign)
 
         # high pass filtering of the image to remove nebulosities
         if filter_image:
@@ -1692,9 +1777,6 @@ class Astrometry(Tools):
         given radius based on a query to VizieR Services
         (http://vizier.u-strasbg.fr/viz-bin/VizieR)    
 
-        :param radius: (Optional) Radius around the target in
-          arc-minutes (default 7).
-
         :param catalog: (Optional) Catalog to ask on the VizieR
           database (see notes) (default 'gaia')
 
@@ -1712,11 +1794,19 @@ class Astrometry(Tools):
             catalog=catalog, max_stars=max_stars)
 
 
-
-    def register(self, max_stars=100, full_deep_frame=False,
+    def register(self, max_stars_detect=60,
+                 full_deep_frame=False,
                  return_fit_params=False, rscale_coeff=1.,
-                 compute_precision=True, compute_distorsion=False):
-        """Register data and return a corrected pywcs.WCS object.
+                 compute_precision=True, compute_distortion=False,
+                 realign=False):
+        """Register data and return a corrected pywcs.WCS
+        object. Optionally (if compute_distortion set to True) 2
+        distortion maps used to refine a calculated SIP distortion
+        model
+
+        ..note:: The distortion maps are scipy.interpolate.RBF
+          instances that can pickled and saved/loaded with
+          orb.utils.misc.save_dill and orb.utils.misc.load_dill.
         
         Precise RA/DEC positions of the stars in the field are
         recorded from a catalog of the VIZIER server.
@@ -1724,8 +1814,8 @@ class Astrometry(Tools):
         Using the real position of the same stars in the frame, WCS
         transformation parameters are optimized.
         
-        :param max_stars: (Optional) Maximum number of stars used to
-          fit (default 50)
+        :param max_stars_detect: (Optional) Number of detected stars
+          in the frame for the initial wcs parameters (default 60).
           
         :param full_deep_frame: (Optional) If True all the frames of
           the cube are used to create a deep frame. Use it only when
@@ -1739,12 +1829,17 @@ class Astrometry(Tools):
           radius of the fitted stars to compute scale. When rscale_coeff
           = 1, rmax is half the longer side of the image (default 1).
 
-        :param compute_distorsion: (Optional) If True, optical
-          distorsion (SIP) are computed. Note that a frame with a lot
+        :param compute_distortion: (Optional) If True, optical
+          distortion (SIP) are computed. Note that a frame with a lot
           of stars is better for this purpose (default False).
 
         :param compute_precision: (Optional) If True, astrometrical
           precision is computed (default True).
+
+        :param realign: (Optional) Realign frames with a
+          cross-correlation algorithm (default False). Much better if
+          used on a small number of frames.
+
         """
         def get_transformation_error(guess, deg_list, fit_list,
                                      target_ra, target_dec):
@@ -1790,18 +1885,26 @@ class Astrometry(Tools):
             star_list = np.array(star_list)
             out_list = list()
             for istar in range(star_list.shape[0]):
-                out_list.append(wcs.wcs_world2pix(
+                out_list.append(wcs.all_world2pix(
                     star_list[istar,0],
-                    star_list[istar,1], 0))
+                    star_list[istar,1], 0, quiet=True))
             return np.array(out_list)
 
         def update_wcs(wcs, target_x, target_y, deltax, deltay, target_ra,
-                       target_dec, wcs_rotation):
+                       target_dec, wcs_rotation, sip=None):
+            
             wcs.wcs.crpix = [target_x, target_y]
             wcs.wcs.cdelt = np.array([-deltax, deltay])
             wcs.wcs.crval = [target_ra, target_dec]
-            wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+            wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
             wcs.wcs.crota = [wcs_rotation, wcs_rotation]
+            # force wcs to CD definition (for SIP)
+            wcs.wcs.cd = np.dot(np.diag(wcs.wcs.get_cdelt()), wcs.wcs.get_pc())
+            wcs.wcs.radesys = 'FK5'
+            wcs.wcs.equinox = 2000.
+            del wcs.wcs.crota
+            if sip is not None:
+                wcs.sip = sip.sip
             return wcs
 
         def get_filtered_params(fit_params, snr_min=None,
@@ -1814,7 +1917,7 @@ class Astrometry(Tools):
             else:
                 param_list = fit_params[:,param]
             snr = fit_params[:,'snr']
-
+            
             if snr_min is None:
                 snr_min = max(utils.stats.robust_median(snr), 3.)
             
@@ -1841,13 +1944,11 @@ class Astrometry(Tools):
       
         MIN_STAR_NB = 4 # Minimum number of stars to get a correct WCS
 
-        XYRANGE_STEP_NB = 100 # Define the number of steps for the
-                              # brute force guess
+        XYRANGE_STEP_NB = 20 # Define the number of steps for the
+                             # brute force guess
+        XY_HIST_BINS = 200 # Define the number of steps for the
+                           # histogram registration
         
-        SIZE_COEFF = 0.100 # Define the range of pixels around the
-                           # initial value of shift where the correct
-                           # shift parameters must be found.
-
         ANGLE_STEPS = 60
         ANGLE_RANGE = 12.0
         ZOOM_RANGE_COEFF = 0.015
@@ -1861,23 +1962,25 @@ class Astrometry(Tools):
 
         self._print_msg("Initial scale: {} arcsec/pixel".format(self.scale))
         self._print_msg("Initial rotation: {} degrees".format(self.wcs_rotation))
-        self._print_msg("Initial target position in the image (X,Y): {} {}".format(
+        self._print_msg("Initial target position in the image (X,Y): {} {}".format(
             self.target_x, self.target_y))
 
         # get deep frame
         deep_frame = self._get_combined_frame(
-            use_deep_frame=full_deep_frame)
-
-        ## self.write_fits('deep.fits', deep_frame, overwrite=True) ; quit()
-            
+            use_deep_frame=full_deep_frame, realign=realign)
+    
         deltax = self.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
 
         # get FWHM
-        star_list_init_path, fwhm_arc = self.detect_stars(
-            min_star_number=60,
+        star_list_fit_init_path, fwhm_arc = self.detect_stars(
+            min_star_number=max_stars_detect,
             use_deep_frame=full_deep_frame)
-        star_list_init = self.load_star_list(star_list_init_path)
+        star_list_fit_init = self.load_star_list(star_list_fit_init_path)
+        ## star_list_fit_init = self.load_star_list(
+        ##     './temp/data.Astrometry.star_list)'
+        ## fwhm_arc= 1.
+        
         self.box_size_coeff = 5.
         self.reset_fwhm_arc(fwhm_arc)
 
@@ -1885,10 +1988,10 @@ class Astrometry(Tools):
         # detected stars to avoid strong saturated stars.
         deep_frame_corr = np.empty_like(deep_frame)
         deep_frame_corr.fill(np.nan)
-        for istar in range(star_list_init.shape[0]):
+        for istar in range(star_list_fit_init.shape[0]):
             x_min, x_max, y_min, y_max = utils.image.get_box_coords(
-                star_list_init[istar, 0],
-                star_list_init[istar, 1],
+                star_list_fit_init[istar, 0],
+                star_list_fit_init[istar, 1],
                 self.fwhm_pix*7,
                 0, deep_frame.shape[0],
                 0, deep_frame.shape[1])
@@ -1897,62 +2000,95 @@ class Astrometry(Tools):
                                                       y_min:y_max]
         
         # Query to get reference star positions in degrees
-        star_list_query = self.query_vizier(max_stars=30 * max_stars)
+        star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
+        ## self.write_fits('star_list_query.fits', star_list_query, overwrite=True)
+        ## star_list_query = self.read_fits('star_list_query.fits')
         
         if len(star_list_query) < MIN_STAR_NB:
             self._print_error("Not enough stars found in the field (%d < %d)"%(len(star_list_query), MIN_STAR_NB))
             
         # reference star position list in degrees
-        star_list_deg = star_list_query[:max_stars]
+        star_list_deg = star_list_query[:max_stars_detect*20]
 
         ## Define a basic WCS        
         wcs = update_wcs(pywcs.WCS(naxis=2), self.target_x, self.target_y,
                          deltax, deltay, self.target_ra, self.target_dec,
-                         self.wcs_rotation)
+                         self.wcs_rotation, sip=self.sip)
         
         # Compute initial star positions from initial transformation
         # parameters
-        rmax = max(self.dimx, self.dimy) /2.#/ math.sqrt(2)
+        rmax = max(self.dimx, self.dimy) / math.sqrt(2)
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_deg), rmax)
         self.reset_star_list(star_list_pix)
 
-        ## Fit stars from computed position in the image
-
+        ## Plot star lists #####
         ## import pylab as pl
         ## pl.imshow(
         ##     deep_frame.T,
         ##     vmin=cutils.part_value(deep_frame.flatten(), 0.02),
-        ##     vmax=cutils.part_value(deep_frame.flatten(), 0.98),
+        ##     vmax=cutils.part_value(deep_frame.flatten(), 0.995),
         ##     cmap=pl.gray())
-        
-        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1])
+        ## pl.scatter(star_list_fit_init[:,0], star_list_fit_init[:,1])
+        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1], c='red')
         ## pl.show()
         ## quit()
 
+        # fast histogram determination of the inital parameters
+        max_list = list()
+        for iangle in np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2., ANGLE_STEPS):
+            iwcs = update_wcs(pywcs.WCS(naxis=2), self.target_x, self.target_y,
+                              deltax, deltay, self.target_ra, self.target_dec,
+                              self.wcs_rotation + iangle, sip=self.sip)
+            istar_list_pix = radius_filter(
+                world2pix(iwcs, star_list_deg), rmax)
+
+            max_corr, max_dx, max_dy = utils.astrometry.histogram_registration(
+                star_list_fit_init, istar_list_pix, self.dimx, self.dimy, XY_HIST_BINS)
+            
+            max_list.append((max_corr, iangle, max_dx, max_dy))
+            self._print_msg('histogram check: correlation level {}, angle {}, dx {}, dy {}'.format(*max_list[-1]))
+        max_list = sorted(max_list, key = lambda imax: imax[0], reverse=True)
+        self.target_x += max_list[0][2]
+        self.target_y += max_list[0][3]
+        self.wcs_rotation = max_list[0][1]
+
+        # update wcs
+        wcs = update_wcs(wcs, self.target_x, self.target_y,
+                         deltax, deltay, self.target_ra, self.target_dec,
+                         self.wcs_rotation, sip=self.sip)
+        star_list_pix = radius_filter(
+            world2pix(wcs, star_list_deg), rmax)
+        self.reset_star_list(star_list_pix)
+
+
+        self._print_msg(
+            "Histogram guess of the parameters:\n"
+            + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
+            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                self.target_x, self.target_y))
+
+        
         ## brute force guess ####
-        x_range_len = SIZE_COEFF * float(self.dimx)
-        y_range_len = SIZE_COEFF * float(self.dimy)
-  
+        x_range_len = max(self.dimx, self.dimy) / float(XY_HIST_BINS) * 4
+        y_range_len = x_range_len
+        r_range_len = ANGLE_RANGE / float(ANGLE_STEPS) * 4
         x_range = np.linspace(-x_range_len/2, x_range_len/2,
                               XYRANGE_STEP_NB)
         y_range = np.linspace(-y_range_len/2, y_range_len/2,
                               XYRANGE_STEP_NB)
-        r_range = np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2.,
+        r_range = np.linspace(-r_range_len, r_range_len,
                               ANGLE_STEPS)
         
         dx, dy, dr, guess_matrix = self.brute_force_guess(
             deep_frame_corr,
             star_list_pix, x_range, y_range, r_range,
             [self.target_x, self.target_y], 1.)
-
-        ## self.write_fits('guess.fits', guess_matrix, overwrite=True) ; quit()
         
         # refined brute force guess
-        x_range_len = max(SIZE_COEFF / 20. * float(self.dimx), self.fwhm_pix * 3) # 3 FWHM min
-        y_range_len = max(SIZE_COEFF / 20. * float(self.dimy), self.fwhm_pix * 3) # 10 pixels min
-        
-        finer_angle_range = ANGLE_RANGE / 6
+        x_range_len = max(np.diff(x_range)[0] * 4, self.fwhm_pix * 3) # 3 FWHM min
+        y_range_len = x_range_len
+        finer_angle_range = np.diff(r_range)[0] * 4.
         finer_xy_step = min(XYRANGE_STEP_NB / 4,
                             int(x_range_len) + 1) # avoid xystep < 1 pixel
 
@@ -1995,10 +2131,20 @@ class Astrometry(Tools):
             + "> Scale Y (arcsec/pixel): {:.5f}".format(
                 deltay * 3600.))
 
+        ## > Rotation angle [in degree]: 0.167
+        ## > Target position [in pixel]: (1073.728, 1033.728)
+        ## > Scale X (arcsec/pixel): 0.32360
+        ## > Scale Y (arcsec/pixel): 0.32360        
+        ## self.target_x = 1073.728
+        ## self.target_y = 1033.728
+        ## deltax = 0.32360
+        ## deltay = 0.32360
+        ## self.wcs_rotation = 0.167
+
         # update wcs
         wcs = update_wcs(wcs, self.target_x, self.target_y,
                          deltax, deltay, self.target_ra, self.target_dec,
-                         self.wcs_rotation)
+                         self.wcs_rotation, sip=self.sip)
         
 
         # recompute star list with corrected parameters
@@ -2018,151 +2164,148 @@ class Astrometry(Tools):
         ##            edgecolor='blue', linewidth=2., alpha=1.,
         ##            facecolor=(0,0,0,0))
         ## pl.show()
-            
-        # 1st fit pass
-        ## self._print_msg('Fitting {} stars'.format(
-        ##     star_list_pix.shape[0]))
-        
-        ## fit_params = self.fit_stars_in_frame(deep_frame, local_background=False,
-        ##                                      multi_fit=True, enable_zoom=True,
-        ##                                      enable_rotation=True, save=False,
-        ##                                      fix_fwhm=False, fix_pos=False)
-        ## star_list_fit = fit_params.get_star_list(all_params=True)
-
-        ############################
-        ### plot stars positions ###
-        ############################
-        ## import pylab as pl
-        ## im = pl.imshow(deep_frame.T,
-        ##                vmin=np.nanmedian(deep_frame),
-        ##                vmax=np.nanmedian(deep_frame)+200)
-        ## im.set_cmap('gray')
-        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
-        ##            edgecolor='blue', linewidth=2., alpha=1.,
-        ##            facecolor=(0,0,0,0))
-        ## pl.scatter(star_list_fit[:,0], star_list_fit[:,1],
-        ##            edgecolor='red', linewidth=2., alpha=1.,
-        ##            facecolor=(0,0,0,0))
-        ## pl.show()
-        
-        ## fwhm_pix = utils.stats.robust_median(fit_params[:,'fwhm_pix'])
-        
-        ## self.reset_fwhm_arc(self.pix2arc(fwhm_pix))
-        ## if self.dimz > 1:
-        ##     self.fit_results[:,0] = fit_params
-        ## else:
-        ##     self.fit_results = fit_params
-
-        ## # get median snr to remove bad fitted stars from all the lists
-        ## snr = fit_params[:,'snr']
-    
-        ## # min SNR must be > 3
-        ## snr_med = np.nanmax([utils.stats.robust_median(snr), 3.])
-        
-
-        ## star_list_deg_temp = list()
-        ## star_list_pix_temp = list()
-        ## star_list_fit_temp = list()
-        ## for istar in range(len(snr)):
-        ##     if snr[istar] > snr_med:
-        ##         star_list_deg_temp.append(star_list_deg[istar])
-        ##         star_list_pix_temp.append(star_list_pix[istar])
-        ##         star_list_fit_temp.append(star_list_fit[istar])
-
-        ## star_list_deg = star_list_deg_temp
-        ## star_list_pix = star_list_pix_temp
-        ## star_list_fit = star_list_fit_temp
-
-        ## self._print_msg("Best stars: %d (SNR threshold: %f)"%(
-        ##     len(star_list_deg), snr_med))
-
-        ## if len(star_list_deg) < MIN_STAR_NB:
-        ##     self._print_error(
-        ##         'Not enough good star to register frame')
-
-        ## # Optimization of the transformation parameters
-        ## progress = ProgressBar(0)
-
-        ## guess = np.array([self.wcs_rotation, self.target_x,
-        ##                   self.target_y, deltax, deltay])
-        
-        ## optim = optimize.leastsq(
-        ##     get_transformation_error, guess, 
-        ##     args=(star_list_deg, star_list_fit,
-        ##           self.target_ra, self.target_dec),
-        ##     ftol=1e-10, xtol=1e-10,
-        ##     full_output=True)
-        ## progress.end()
-        ## if optim[-1] <= 4:
-        ##     [self.wcs_rotation, self.target_x, self.target_y, deltax, deltay] = optim[0]
-        ##     res = np.sqrt(np.nansum(optim[2]['fvec']**2.))
-        ##     if res < 1e-3:
-        ##         self._print_msg('Optimization residual: {}'.format(res))
-        ##     else:
-        ##         self._print_warning('Bad optimization residual: {}'.format(res))
-        ## else:
-        ##     self._print_error('Bad optimization of transformation parameters')
-
-
-        ## FIT procedure (see above) is not made anymore because
-        ## optical distrosion are too important. It could be used
-        ## again with a good optical model.
-        ## star_list_fit = np.copy(star_list_pix)
-        
+                    
         # update WCS
         wcs = update_wcs(wcs, self.target_x, self.target_y,
                          deltax, deltay, self.target_ra, self.target_dec,
-                         self.wcs_rotation)
+                         self.wcs_rotation, sip=self.sip)
 
         ## COMPUTE SIP
-        if compute_distorsion:
-            self._print_msg('Computing distorsion polynomial (SIP)')
-            # compute optical distorsion with a greater list of stars
-            rmax = max(self.dimx, self.dimy) / math.sqrt(2)
+        dxrbf = None ; dyrbf = None
+        if compute_distortion:
+            self._print_msg('Computing SIP coefficients')
+            if self.sip is None:
+                self._print_warning('As no prior SIP has been given, this initial SIP is computed over the field inner circle. To cover the whole field the result of this registration must be passed at the definitionof the class')
+                r_coeff = 0.5
+            else:
+                r_coeff = 1./np.sqrt(2)
+                
+            # compute optical distortion with a greater list of stars
+            rmax = max(self.dimx, self.dimy) * r_coeff
+
             star_list_pix = radius_filter(
-                world2pix(wcs, star_list_query), rmax, borders=[
-                    0, self.dimx, 0, self.dimy])
+                world2pix(wcs, star_list_query), rmax,
+                borders=[0, self.dimx, 0, self.dimy])
             self.reset_star_list(star_list_pix)
-            
             
             fit_params = self.fit_stars_in_frame(
                 deep_frame, local_background=True,
                 multi_fit=False, fix_fwhm=True,
                 no_aperture_photometry=True, save=False)
-
+            
             ## SNR and DIST filter
             star_list_fit, index = get_filtered_params(
-                fit_params, param='star_list', dist_min=1.,
+                fit_params, param='star_list', dist_min=15.,
                 return_index=True)
+            
             star_list_pix = star_list_pix[np.nonzero(index)]
-            err = fit_params[:, 'x_err'][np.nonzero(index)]
-
+            
             ############################
             ### plot stars positions ###
             ############################
             ## import pylab as pl
-            ## im = pl.imshow(self.data.T, vmin=0, vmax=1000)
-            ## im.set_cmap('gray')
-            ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
-            ##            edgecolor='red', linewidth=2., alpha=1.,
-            ##            facecolor=(0,0,0,0))
+            ## pl.imshow(self.data.T, vmin=30, vmax=279, cmap='gray',
+            ##           interpolation='None')
             ## pl.scatter(star_list_fit[:,0], star_list_fit[:,1],
             ##            edgecolor='blue', linewidth=2., alpha=1.,
             ##            facecolor=(0,0,0,0))
+
+            ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
             ## pl.show()
-                        
-            wcs = self.fit_sip(star_list_fit,
-                               star_list_pix,
+            
+            wcs = self.fit_sip(star_list_pix,
+                               star_list_fit,
                                params=None, init_sip=wcs,
-                               err=err)
+                               err=None, sip_order=3)
+
+            ## star_list_pix = wcs.all_world2pix(star_list_query[:,:2], 0)
+            ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
+            ##            edgecolor='green', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            
+            # computing distortion maps
+            self._print_msg('Computing distortion maps')
+            rmax = max(self.dimx, self.dimy) * r_coeff
+
+            star_list_pix = radius_filter(
+                world2pix(wcs, star_list_query), rmax, borders=[
+                    0, self.dimx, 0, self.dimy])
+            self.reset_star_list(star_list_pix)
+
+            # fit based on SIP corrected parameters
+            fit_params = self.fit_stars_in_frame(
+                deep_frame, local_background=False,
+                multi_fit=False, fix_fwhm=True,
+                no_aperture_photometry=True,
+                save=False)
+
+            _x = fit_params[:,'x']
+            _y = fit_params[:,'y']
+            _r = np.sqrt((_x - self.dimx / 2.)**2.
+                         + (_y - self.dimy / 2.)**2.)
+            
+            _dx = fit_params[:, 'dx']
+            _dy = fit_params[:, 'dy']
+            
+            # filtering badly fitted stars (jumping stars)
+            _x[np.nonzero(np.abs(_dx) > 5.)] = np.nan
+            _x[np.nonzero(np.abs(_dy) > 5.)] = np.nan
+            _x[np.nonzero(_r > rmax)] = np.nan
+
+            # avoids duplicate of the same star (singluar matric error
+            # with RBF)
+            for ix in range(_x.size):
+                if np.nansum(_x == _x[ix]) > 1:
+                     _x[ix] = np.nan
+            
+            nonans = np.nonzero(~np.isnan(_x))
+            _w = 1./fit_params[:, 'x_err'][nonans]
+            _x = fit_params[:, 'x'][nonans]
+            _y = fit_params[:, 'y'][nonans]
+            _dx = fit_params[:, 'dx'][nonans]
+            _dy = fit_params[:, 'dy'][nonans]
+            
+            dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
+            dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
+
+            ## import pylab as pl
+            ## X, Y = np.mgrid[:self.dimx:200j,:self.dimy:200j]
+            ## dxmap = dxrbf(X, Y)
+            ## dymap = dyrbf(X, Y)
+            ## pl.figure(1)
+            ## pl.imshow(dxmap.T, interpolation='none')
+            ## pl.colorbar()
+            ## pl.scatter(_x/10., _y/10.,
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.figure(2)
+            ## pl.imshow(dymap.T, interpolation='none')
+            ## pl.colorbar()            
+            ## pl.scatter(_x/10., _y/10.,
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.show()
+
             
         ## COMPUTE PRECISION
         if compute_precision:
-            self._print_msg('Computing astrometrical precision')
+            self._print_msg('Computing astrometrical precision (inner circle) (note that if the SIP parameters are computed along with the the distortion maps, the precision must be much smaller than 0.5 pixels - usually 0.05 pixels or less. This must not be considered as the real precision.)')
+            rmax = max(self.dimx, self.dimy) / 2.
+
             # compute astrometrical precision with a greater list of stars
             star_list_pix = radius_filter(
                 world2pix(wcs, star_list_query), rmax, borders=[
                     0, self.dimx, 0, self.dimy])
+            # refine position with calculated dxmap and dymap
+            if dxrbf is not None:
+                star_list_pix_old = np.copy(star_list_pix)
+                star_list_pix[:,0] += dxrbf(star_list_pix_old[:,0],
+                                            star_list_pix_old[:,1])
+                star_list_pix[:,1] += dyrbf(star_list_pix_old[:,0],
+                                            star_list_pix_old[:,1])
+                
             self.reset_star_list(star_list_pix)
 
             fit_params = self.fit_stars_in_frame(
@@ -2170,6 +2313,27 @@ class Astrometry(Tools):
                 multi_fit=False, fix_fwhm=True,
                 no_aperture_photometry=True,
                 save=False)
+            
+            ############################
+            ### plot stars positions ###
+            ############################
+            ## import pylab as pl
+            ## pl.imshow(self.data.T, vmin=30, vmax=279, cmap='gray',
+            ##           interpolation='None')
+            ## star_list_fit, index = get_filtered_params(
+            ##     fit_params, param='star_list', dist_min=15.,
+            ##     return_index=True)
+            ## star_list_pix = star_list_pix[np.nonzero(index)]
+            ## pl.scatter(star_list_fit[:,0], star_list_fit[:,1],
+            ##            edgecolor='blue', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.scatter(star_list_pix_old[:,0], star_list_pix_old[:,1],
+            ##            edgecolor='green', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.show()
 
             # results must be filtered for 'jumping' stars
             # when fitted independantly the most brilliant stars in
@@ -2187,20 +2351,13 @@ class Astrometry(Tools):
             y_err = get_filtered_params(
                 fit_params, param='y_err',
                 dist_min=self.fwhm_pix*2.)
-            
+
             precision = np.sqrt(dx**2. + dy**2.)
-            precision_err = np.sqrt((dx**2. * x_err**2.
-                                     + dy**2. * y_err**2.)
-                                    /(dx**2. + dy**2.))
-            precision_w = 1. / precision_err
-            precision_w /= np.nanmean(precision_w)
-
-            # mean precision is the weighted mean
-            precision_mean = cutils.robust_average(precision, precision_w)
-            precision_mean_err = cutils.robust_average(precision_err, precision_w)
-
-            precision_mean *= np.mean((deltax, deltay)) * 3600.
-            precision_mean_err *= np.mean((deltax, deltay)) * 3600.
+            precision_mean = np.sqrt(np.nanmedian(np.abs(dx))**2.
+                                     + np.nanmedian(np.abs(dy))**2.)
+            precision_mean_err = np.sqrt(
+                (np.nanpercentile(dx, 84) - precision_mean)**2.
+                 + (np.nanpercentile(dy, 84) - precision_mean)**2.)
 
             self._print_msg(
                 "Astrometrical precision [in arcsec]: {:.3f} [+/-{:.3f}] computed over {} stars".format(
@@ -2236,14 +2393,17 @@ class Astrometry(Tools):
         
         self._print_msg('Corrected WCS computed')
         if not return_fit_params:
-            return wcs
+            if compute_distortion:
+                return wcs, dxrbf, dyrbf
+            else:
+                return wcs
         else:
             return fit_params
 
 
     def fit_sip(self, star_list1, star_list2, params=None, init_sip=None,
-                err=None):
-        """FIT the distorsion correction polynomial to match two lists
+                err=None, sip_order=2, crpix=None, crval=None):
+        """FIT the distortion correction polynomial to match two lists
         of stars (the list of stars 2 is distorded to match the list
         of stars 1).
 
@@ -2260,114 +2420,20 @@ class Astrometry(Tools):
 
         :param err: (Optional) error on the star positions of the star
           list 2 (default None).
+          
+        :param sip_order: (Optional) SIP order (default 3).
+
+        :param crpix: (Optional) If an initial wcs is not given (init_sip
+          set to None) this header value must be given.
+
+        :param crval: (Optional) If an initial wcs is not given (init_sip
+          set to None) this header value must be given.
+
         """
-        sip_keys = ['A_1_1', 'BP_2_0', 'B_1_1',
-                    'B_2_0', 'BP_0_2', 'AP_2_0', 'A_0_2', 'BP_1_1',
-                    'BP_1_0', 'A_2_0',  'AP_1_0', 'AP_1_1',
-                    'BP_0_1', 'AP_0_1', 'B_0_2', 'AP_0_2']
-
-        def p2sip(p, sip, keys):
-            hdr = sip.to_header(relax=True)
-            for ikey in range(len(keys)):
-                hdr[keys[ikey]] = p[ikey]
-            sip = pywcs.WCS(hdr, relax=True)
-            return sip
-
-        def sip2p(sip, keys):
-            p = list()
-            hdr = sip.to_header(relax=True)
-            for key in keys:
-                if key in hdr:
-                    p.append(hdr[key])
-                else:
-                    p.append(0.)
-            return p
-
-        def diff(p, star_list2, star_list1, 
-                 params, sip, keys, err):
-            sip = p2sip(p, sip, keys)
-            try:
-                star_list_t = utils.astrometry.transform_star_position_A_to_B(
-                    star_list1, params[:5],
-                    (params[5], params[6]),
-                    (params[7], params[8]),
-                    sip_A=sip, sip_B=None)
-                
-                dx = (star_list_t - star_list2)[:,0]
-                dy = (star_list_t - star_list2)[:,1]
-                
-                result = np.array(list(dx/err) + list(dy/err))
-                if not np.all(np.isnan(result)):
-                    return math.sqrt(np.nanmean(result**2.))
-                else: return 1e9
-            except Exception, e:
-                import warnings
-                warnings.warn(str(e))
-                return 1e9
-
-        def create_basic_wcs():
-            wcs = pywcs.WCS(naxis=2)
-            wcs.wcs.crpix = (self.dimx / 2.,
-                             self.dimy / 2.)
-            wcs.wcs.cdelt = np.array([-self.scale / 3600.,
-                                      self.scale / 3600.])
-            wcs.wcs.crval = [0, 0]
-            wcs.wcs.ctype = ['RA---TAN-SIP', 'DEC--TAN-SIP']
-            wcs.wcs.crota = [0., 0.]
-            wcs.wcs.equinox = 2000.
-            wcs.wcs.latpole = 0.
-            return wcs
-
-        def add_sip_keys(wcs):
-            wcs_hdr = wcs.to_header(relax=True)
-            wcs_hdr['CTYPE1'] = 'RA---TAN-SIP'
-            wcs_hdr['CTYPE2'] = 'DEC--TAN-SIP'
-            wcs_hdr['A_ORDER'] = 2
-            wcs_hdr['B_ORDER'] = 2
-            wcs_hdr['AP_ORDER'] = 2
-            wcs_hdr['BP_ORDER'] = 2
-            
-            for key in sip_keys:
-                wcs_hdr[key] = 0.
-                
-            return pywcs.WCS(wcs_hdr, relax=True)
-        
-        if params is None: params = [0., 0., 0., 0., 0., 0., 0., 1., 1.]
-
-        if init_sip is None:
-            init_sip = create_basic_wcs()
-
-        if 'A_1_1' not in init_sip.to_header(relax=True):
-            init_sip = add_sip_keys(init_sip)
-
-        # sip is formatted to the canonical PC
-        init_sip.wcs.set()
-   
-        if err is None:
-            err = np.ones(star_list.shape[0], dtype=float)
-        elif np.all(np.isnan(err)):
-            err = np.ones(star_list.shape[0], dtype=float)
-            
-        err /= np.nanmean(err)
-         
-        guess = sip2p(init_sip, sip_keys)
-        init_sip = p2sip(guess, init_sip, sip_keys)
-
-
-        fit = optimize.fmin(diff, guess,
-                            args=(star_list2, star_list1, params,
-                                  init_sip, sip_keys, err),
-                            full_output=True, xtol=1e-6, disp=False)
-
-        
-        if fit[-1] <= 4:
-            self._print_msg('Optimized average radius (in pixel) {}'.format(
-                fit[1]))
-            return p2sip(fit[0], init_sip, sip_keys)
-
-        else:
-            self._print_error('SIP fit failed')
-
+        return utils.astrometry.fit_sip(
+            self.dimx, self.dimy, self.scale, star_list1, star_list2,
+            params=params, init_sip=init_sip, err=err, sip_order=sip_order,
+            crpix=crpix, crval=crval)
 
     def brute_force_guess(self, image, star_list, x_range, y_range, r_range,
                           rc, zoom_factor, verbose=True):
@@ -2402,7 +2468,8 @@ class Astrometry(Tools):
                          guess_list[ik, 1],
                          guess_list[ik, 2], 0., 0.)
 
-                star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(np.copy(star_list), guess, rc, zoom_factor)
+                star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(
+                    np.copy(star_list), guess, rc, zoom_factor)
 
                 total_flux = orb.cutils.brute_photometry(
                     image, star_list2, kernel, box_size)
@@ -2512,7 +2579,7 @@ class Astrometry(Tools):
             
 class Aligner(Tools):
     """This class is aimed to align two images of the same field of
-    stars and correct for optical distorsions.
+    stars and correct for optical distortions.
 
     Primarily designed to align the cube of the camera 2 onto the cube
     of the camera 1 it can be used to align any other kind of images
@@ -2655,13 +2722,13 @@ class Aligner(Tools):
                         "> da : " + str(self.da) + "\n" +
                         "> db : " + str(self.db))
     
-    def compute_alignment_parameters(self, correct_distorsion=False,
+    def compute_alignment_parameters(self, correct_distortion=False,
                                      star_list_path1=None, fwhm_arc=None,
                                      brute_force=True):
         """Return the alignment coefficients that match the stars of the
         frame 2 to the stars of the frame 1.
 
-        :param correct_distorsion: (Optional) If True, a SIP is computed to
+        :param correct_distortion: (Optional) If True, a SIP is computed to
           match stars from frame 2 onto the stars from frame 1. But it
           needs a lot of stars to run correctly (default False).
 
@@ -2848,11 +2915,11 @@ class Aligner(Tools):
                 
 
         #####################################
-        ### COMPUTE DISTORSION CORRECTION ###
+        ### COMPUTE DISTORTION CORRECTION ###
         #####################################
 
-        if correct_distorsion:
-            self._print_msg('Computing distorsion correction polynomial (SIP)')
+        if correct_distortion:
+            self._print_msg('Computing distortion correction polynomial (SIP)')
             # try to detect a maximum number of stars in frame 1
             star_list1_path1, fwhm_arc = self.astro1.detect_stars(
                 min_star_number=400,
@@ -2887,14 +2954,15 @@ class Aligner(Tools):
 
 
             ## FIT SIP 
-            ## SIP 1 and SIP 2 are replaced by only one SIP that match the
+            ## SIP 1 and SIP 2 are replaced by only one SIP that matches the
             ## stars of the frame 2 onto the stars of the frame 1
             self.sip1 = self.astro1.fit_sip(
                 np.copy(self.astro1.star_list),
                 fit_results.get_star_list(all_params=True),
                 params=[self.dx, self.dy, self.dr, self.da, self.db,
                         self.rc[0], self.rc[1], self.zoom_factor],
-                init_sip=self.sip1, err=err)
+                init_sip=None, err=None, crpix=self.sip1.wcs.crpix,
+                crval=self.sip1.wcs.crval)
             self.sip2 = None
 
 

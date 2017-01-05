@@ -20,17 +20,18 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
-from scipy import optimize
+from scipy import optimize, interpolate, signal
 import math
 import bottleneck as bn
 import numpy as np
 import warnings
+import astropy.wcs as pywcs
 
 import orb.cutils
 import orb.utils.stats
 import orb.utils.image
 import orb.utils.vector
-
+import copy
 
 
 ##################################################
@@ -1206,22 +1207,24 @@ def deg2dec(deg, string=False):
         return "+%d:%d:%.2f" % (dec[0], dec[1], dec[2])
 
 
-def sip_im2pix(im_coords, sip, tolerance=1e-8):
-    """Transform perfect pixel positions to distorded pixels positions 
+## def sip_im2pix(im_coords, sip, tolerance=1e-8):
+##     """Transform perfect pixel positions to distorded pixels positions 
 
-    :param im_coords: perfect pixel positions as an Nx2 array of floats.
-    :param sip: pywcs.WCS() instance containing SIP parameters.
-    :param tolerance: tolerance on the iterative method.
-    """
-    return orb.cutils.sip_im2pix(im_coords, sip, tolerance=1e-8)
+##     :param im_coords: perfect pixel positions as an Nx2 array of floats.
+##     :param sip: pywcs.WCS() instance containing SIP parameters.
+##     :param tolerance: tolerance on the iterative method.
+##     """
+##     #return sip.foc2pix(im_coords, 0)   
+##     return orb.cutils.sip_im2pix(im_coords, sip, tolerance=1e-8)
 
-def sip_pix2im(pix_coords, sip):
-    """Transform distorded pixel positions to perfect pixels positions 
+## def sip_pix2im(pix_coords, sip):
+##     """Transform distorded pixel positions to perfect pixels positions 
 
-    :param pix_coords: distorded pixel positions as an Nx2 array of floats.
-    :param sip: pywcs.WCS() instance containing SIP parameters.
-    """
-    return orb.cutils.sip_pix2im(pix_coords, sip)
+##     :param pix_coords: distorded pixel positions as an Nx2 array of floats.
+##     :param sip: pywcs.WCS() instance containing SIP parameters.
+##     """
+##     #return sip.pix2foc(pix_coords, 0)   
+##     return orb.cutils.sip_pix2im(pix_coords, sip)
 
 def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
                                    sip_A=None, sip_B=None):
@@ -1236,7 +1239,9 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
       -> perf_pix_camB -> dist_pix_camB
 
     :param star_list_A: List of star coordinates in the cube A.
+    
     :param params: Transformation parameters [dx, dy, dr, da, db].
+    
     :param rc: Rotation center coordinates.
     
     :param zoom_factor: Zooming factor between the two cameras. Can be
@@ -1244,6 +1249,7 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
     
     :param sip_A: (Optional) pywcs.WCS instance containing SIP
       parameters of the frame A (default None).
+      
     :param sip_B: (Optional) pywcs.WCS instance containing SIP
       parameters of the frame B (default None).
     """
@@ -1263,7 +1269,10 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
 
     # dist_pix_camA -> perf_pix_camA
     if sip_A is not None:
-        star_list_A = sip_pix2im(star_list_A, sip_A)
+        #star_list_A = sip_pix2im(star_list_A, sip_A)
+        ## star_list_A = sip_A.sip.pix2foc(star_list_A) + sip_A.wcs.crpix
+        raise Exception('must be checked')
+        
         
     # geometric transformation_A2B
     if np.any(params):
@@ -1277,7 +1286,8 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
         
     # perf_pix_camB -> dist_pix_camB
     if sip_B is not None:
-      star_list_B = sip_im2pix(star_list_B, sip_B)
+        ## star_list_B = sip_im2pix(star_list_B, sip_B)
+        raise Exception('must be checked')
         
     return star_list_B
 
@@ -1767,3 +1777,217 @@ def fit_stars_in_frame(frame, star_list, box_size,
         print "%d/%d stars fitted" %(len(fitted_stars_params), star_list.shape[0])
 
     return fit_results
+
+
+
+def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=None,
+            err=None, sip_order=4, crpix=None, crval=None):
+    """FIT the distortion correction polynomial to match two lists
+    of stars (the list of stars 2 is distorded to match the list
+    of stars 1).
+
+    :param dimx: X dimension of the image
+
+    :param dimy: Y dimension of the image
+
+    :param scale: Plate scale of the image in arcseconds
+
+    :param star_list1: list of stars 1
+
+    :param star_list2: list of stars 2
+
+    :param params: (Optional) Transformation parameter to go from
+      the list of stars 1 to the list of stars 2. Must be a tuple
+      [dx, dy, dr, da, db, rcx, rcy, zoom_factor] (default None).
+
+    :param init_sip: (Optional) Initial SIP (an astropy.wcs.WCS object,
+      default None)
+
+    :param err: (Optional) error on the star positions of the star
+      list 2 (default None).
+
+    :param sip_order: (Optional) SIP order (default 3).
+
+    :param crpix: (Optional) If an initial wcs is not given (init_sip
+      set to None) this header value must be given.
+
+    :param crval: (Optional) If an initial wcs is not given (init_sip
+      set to None) this header value must be given.
+    """
+    def p2sip(p, sip, direct):
+        if direct:
+            sip.sip.a[:] = np.reshape(
+                p[:(sip.sip.a_order + 1)**2],
+                (sip.sip.a_order + 1, sip.sip.a_order + 1))
+            p = p[(sip.sip.a_order + 1)**2:]
+            sip.sip.b[:] = np.reshape(
+                p[:(sip.sip.b_order + 1)**2],
+                (sip.sip.b_order + 1, sip.sip.b_order + 1))
+        else:
+            sip.sip.ap[:] = np.reshape(
+                p[:(sip.sip.a_order + 1)**2],
+                (sip.sip.a_order + 1, sip.sip.a_order + 1))
+            p = p[(sip.sip.a_order + 1)**2:]
+            sip.sip.bp[:] = np.reshape(
+                p[:(sip.sip.b_order + 1)**2],
+                (sip.sip.b_order + 1, sip.sip.b_order + 1))
+        return sip
+
+    def sip2p(sip, direct):
+        p = list()
+        if direct:
+            p += list(sip.sip.a.flatten())
+            p += list(sip.sip.b.flatten())
+        else:
+            p += list(sip.sip.ap.flatten())
+            p += list(sip.sip.bp.flatten())
+        return p
+
+    def diff(p, star_list2, star_list1, 
+             params, sip, err, direct):
+        sip = p2sip(p, sip, direct)
+        try:
+            if direct:
+                star_list_2t = sip.sip.pix2foc(star_list2, 0) + sip.wcs.crpix
+            
+                star_list_1t = transform_star_position_A_to_B(
+                    star_list1, params[:5],
+                    (params[5], params[6]),
+                    (params[7], params[8]),
+                    sip_A=None, sip_B=None)
+
+                dx = (star_list_2t - star_list_1t)[:,0]
+                dy = (star_list_2t - star_list_1t)[:,1]
+
+            else:
+                star_list_2t = sip.all_pix2world(star_list2, 0)
+                star_list_2t = sip.all_world2pix(star_list_2t, 0)
+                            
+                dx = (star_list_2t - star_list2)[:,0]
+                dy = (star_list_2t - star_list2)[:,1]
+
+            result = np.array(list(dx/err) + list(dy/err))
+            if not np.all(np.isnan(result)):
+                return math.sqrt(np.nanmean(result**2.))
+            else: return 1e9
+        except Exception, e:
+            import warnings
+            warnings.warn(str(e))
+            return 1e9
+
+    def create_basic_wcs():
+        wcs = pywcs.WCS(naxis=2)
+        wcs.wcs.crpix = crpix
+        wcs.wcs.cdelt = np.array([-scale / 3600.,
+                                  scale / 3600.])
+        wcs.wcs.crval = crval
+        wcs.wcs.ctype = ['RA---TAN-SIP', 'DEC--TAN-SIP']
+        wcs.wcs.crota = [0., 0.]
+        wcs.wcs.equinox = 2000.
+        wcs.wcs.latpole = 0.
+        wcs.wcs.cd = np.dot(
+            np.diag(wcs.wcs.get_cdelt()),
+            wcs.wcs.get_pc())
+        del wcs.wcs.crota
+        return wcs
+
+    def add_sip(wcs):
+        wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
+        wcs.sip = pywcs.wcs.Sip(np.zeros((sip_order + 1, sip_order + 1)),
+                                np.zeros((sip_order + 1, sip_order + 1)),
+                                np.zeros((sip_order + 1, sip_order + 1)),
+                                np.zeros((sip_order + 1, sip_order + 1)),
+                                wcs.wcs.crpix)
+        return wcs
+
+    if params is None: params = [0., 0., 0., 0., 0., 0., 0., 1., 1.]
+
+    if init_sip is None:
+        if crpix is None or crval is None:
+            raise Exception('If an initial wcs is not given (init_sip set to None) CRPIX and CRVAL must be given.')
+        init_sip = create_basic_wcs()
+    else:
+        init_sipt = pywcs.WCS(init_sip.to_header(relax=True))
+        init_sipt.sip = copy.copy(init_sip.sip)
+        init_sip = init_sipt
+        
+    if init_sip.sip is None:
+        init_sip = add_sip(init_sip)
+
+    if err is None:
+        err = np.ones(star_list1.shape[0], dtype=float)
+    elif np.all(np.isnan(err)):
+        err = np.ones(star_list1.shape[0], dtype=float)
+
+    err /= np.nanmean(err)
+
+    guess = np.array(sip2p(init_sip, True))
+
+    # look for direct transformation parameters (A, B matrices)
+    fit = optimize.fmin(diff, guess,
+                        args=(star_list2, star_list1, params,
+                              init_sip, err, True),
+                        full_output=True, xtol=1e-6, disp=False)
+
+    if fit[-1] <= 4:
+        print 'Optimized average radius for direct transformation (in pixel) {}'.format(fit[1])
+        init_sip = p2sip(fit[0], init_sip, True)
+
+    else:
+        raise Exception('SIP direct transformation fit failed')
+
+    # look for reverse transformation parameters (AP, BP matrices)
+    fit = optimize.fmin(diff, -fit[0],
+                        args=(star_list2, star_list1, params,
+                              init_sip, err, False),
+                        full_output=True, xtol=1e-6, disp=False)
+
+    if fit[-1] <= 4:
+        print 'Optimized average radius for reverse transformation (in pixel) {}'.format(fit[1])
+        new_wcs = p2sip(fit[0], init_sip, False)
+        new_wcs.wcs.cd = np.dot(np.diag(new_wcs.wcs.get_cdelt()),
+                                new_wcs.wcs.get_pc())
+            
+        return new_wcs
+
+    else:
+        raise Exception('SIP reverse transformation fit failed')
+    
+
+def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
+    """Fast histogram registration of an image based on the comparison
+    of two star lists: one created from the real star position in the
+    image and the other from, e.g. a catalog.
+
+    :param star_list1: first list of stars
+
+    :param star_list2: second list of stars
+
+    :param dimx: X dimension of the image in pixels
+
+    :param dimy: Y dimension of the image inp ixels
+
+    :param xy_bins: number of bins along X and Y
+
+    :param angle_range: (min angle, max angle)
+
+    :param angle_bins: number of bins in the angle range.
+
+    .. warning:: This kind of registration is very sensitive to the
+      angle between each list. It is better to use it on a range of
+      angles (steps of 0.5 degree) to make sure the best correlation
+      is found.
+    """
+
+    hist_bins = np.linspace(0, max(dimx, dimy), xy_bins)
+    hist1, axes = np.histogramdd(
+        star_list1, bins=[hist_bins,hist_bins])
+    hist2, axes = np.histogramdd(
+        star_list2, bins=[hist_bins,hist_bins])
+    hist_corr = signal.correlate2d(hist1, hist2, mode='same')
+    max_index = np.unravel_index(np.nanargmax(hist_corr), hist1.shape)
+    max_corr = np.nanmax(hist_corr)
+    max_dx = hist_bins[max_index[0]] - dimx / 2.
+    max_dy = hist_bins[max_index[1]] - dimx / 2.
+
+    return max_corr, max_dx, max_dy    

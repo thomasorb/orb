@@ -120,16 +120,13 @@ def query_vizier(radius, target_ra, target_dec,
 
     :param target_dec: Target DEC in degrees
 
-    :param catalog: (Optional) Catalog to ask on the VizieR
-      database (see notes) (default 'USNO-B1')
-
-    :param max_stars: (Optional) Maximum number of row to retrieve
+    :param max_stars: (Optional) Maximum number of rows to retrieve
       (default 100)
 
-    :param catalog: (Optional) can be 'usno' - Verson B1 of the US Naval Observatory catalog (2003) or 'gaia' (default Gaia)
+    :param catalog: (Optional) can be 'usno' - Verson B1 of the US
+      Naval Observatory catalog (2003) or 'gaia' (default Gaia)
     """
     MAX_RETRY = 5
-
     if catalog == 'usno':
         catalog_id = 'USNO-B1.0'
         out = '_RAJ2000,_DEJ2000,e_RAJ2000,e_DEJ2000,R2mag'
@@ -140,15 +137,14 @@ def query_vizier(radius, target_ra, target_dec,
         sort='-<Gmag>'
     else: raise Exception("Bad catalog name. Can be 'usno' or 'gaia'")
 
-    print "Sending query to VizieR server"
+    print "Sending query to VizieR server (catalog: {})".format(catalog)
     print "Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec)
 
     URL = (orb.constants.VIZIER_URL + "asu-tsv/?-source=" + catalog
            + "&-c.ra=%f"%target_ra + '&-c.dec=%f'%target_dec
            + "&-c.rm=%d"%int(radius)
            + '&-out.max=unlimited&-out.meta=-huD'
-           + '&-out={}&-sort={}'.format(out, sort)           
-           + '&-out.max=%d'%max_stars)
+           + '&-out={}&-sort={}'.format(out, sort))
 
     retry = 0
     while retry <= MAX_RETRY:
@@ -190,4 +186,4 @@ def query_vizier(radius, target_ra, target_dec,
     print "%d stars recorded in the given field"%len(star_list)
     print "Magnitude min: {}, max:{}".format(
         np.min(star_list[:,2]), np.max(star_list[:,2]))
-    return star_list
+    return star_list[:max_stars,:]

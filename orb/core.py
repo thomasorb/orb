@@ -48,6 +48,7 @@ import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
 import h5py
+import dill
 
 ## ORB IMPORTS
 import utils.spectrum, utils.parallel, utils.io, utils.filters
@@ -240,6 +241,33 @@ class Tools(object):
              return None
          
         return phase_file_path
+
+    def _get_sip_file_path(self, camera_number):
+        """Return the full path to the FITS file containing the SIP
+        header given the camera number.
+    
+
+        The file name must be 'sip.*.fits' and it must be
+        located in orb/data/.
+
+        :param camera_number: Camera number (can be 1,2 or 0 for
+          merged data)
+        """
+        if camera_number == 0: cam_name = 'merged'
+        elif camera_number == 1: cam_name = 'cam1'
+        elif camera_number == 2: cam_name = 'cam2'
+        else: self._print_error('Bad camera number, must be 0, 1 or 2')
+        
+        sip_file_path =  self._get_orb_data_file_path(
+            "sip." + cam_name + ".fits")
+        
+        if not os.path.exists(sip_file_path):
+             self._print_warning(
+                 "SIP file %s does not exist !"%sip_file_path)
+             return None
+         
+        return sip_file_path
+
 
     def _get_optics_file_path(self, filter_name):
         """Return the full path to the optics transmission file given
@@ -1246,25 +1274,6 @@ class Tools(object):
             
         return file_list
 
-    def _clean_sip(self, hdr):
-        """Clean a hdr from all but the SIP keywords.
-
-        :param hdr: The header to clean
-        """
-        ## sip_keys = ('WCSAXES', 'CRPIX1', 'CRPIX2', 'CTYPE1', 'CTYPE2',
-        ##             'BP_ORDER', 'A_1_1', 'BP_2_0', 'B_1_1', 'B_ORDER',
-        ##             'B_2_0', 'BP_0_2', 'AP_2_0', 'A_0_2', 'BP_1_1',
-        ##             'BP_1_0', 'A_2_0', 'A_ORDER', 'AP_1_0', 'AP_1_1',
-        ##             'AP_ORDER', 'BP_0_1', 'AP_0_1', 'B_0_2', 'AP_0_2')
-
-        if 'CTYPE1' in hdr:
-            if hdr['CTYPE1'] != 'RA---TAN-SIP':
-                self._print_error('This file does not contain any SIP transformation parameters')
-                
-        clean_hdr = pywcs.WCS(hdr).to_fits(relax=True)[0].header
-     
-        return clean_hdr
-
     def save_sip(self, fits_path, hdr, overwrite=True):
         """Save SIP parameters from a header to a blanck FITS file.
 
@@ -1285,8 +1294,7 @@ class Tools(object):
         :param fits_path: Path to the FITS file    
         """
         hdr = self.read_fits(fits_path, return_hdu_only=True)[0].header
-        clean_hdr = self._clean_sip(hdr)
-        return pywcs.WCS(clean_hdr)
+        return pywcs.WCS(hdr)
 
 
     def open_hdf5(self, file_path, mode):
@@ -1507,8 +1515,8 @@ class Tools(object):
         :param hdf5_header: Header of the HDF5 file
         """
         def cast(a, t_str):
-            for _t in [int, float, bool, str, np.int64,
-                       np.float64, long, np.float128]:
+            for _t in [int, float, bool, str, unicode,
+                       np.int64, np.float64, long, np.float128]:
                 if t_str == repr(_t):
                     return _t(a)
             raise Exception('Bad type string {}'.format(t_str))
@@ -2713,14 +2721,17 @@ class Cube(Tools):
 
             if calibration_laser_map_path is None:
                 calibration_laser_map = self.get_calibration_laser_map()
+                calib_map_hdr = None
             else:
-                calibration_laser_map = self.read_fits(calibration_laser_map_path)
+                calibration_laser_map, calib_map_hdr = self.read_fits(
+                    calibration_laser_map_path, return_header=True)
                 if (calibration_laser_map.shape[0] != self.dimx):
                     calibration_laser_map = orb.utils.image.interpolate_map(
                         calibration_laser_map, self.dimx, self.dimy)
 
             if calibration_laser_map is not None:
-                outcube.append_calibration_laser_map(calibration_laser_map)
+                outcube.append_calibration_laser_map(calibration_laser_map,
+                                                     header=calib_map_hdr)
             
             if not self.is_quad_cube: # frames export
                 progress = ProgressBar(zmax-zmin)
@@ -4398,15 +4409,19 @@ class OutHDFCube(Tools):
         self.f['energy_map'] = energy_map
 
     
-    def append_calibration_laser_map(self, calib_map):
+    def append_calibration_laser_map(self, calib_map, header=None):
         """Append a calibration laser map to the HDF5 cube.
 
         :param calib_map: Calibration laser map to append.
+
+        :param header: (Optional) Header to append (default None)
         """
         if 'calib_map' in self.f:
             del self.f['calib_map']
             
         self.f['calib_map'] = calib_map
+        if header is not None:
+            self.f['calib_map_hdr'] = self._header_fits2hdf5(header)
 
     def append_header(self, header):
         """Append a header to the HDF5 cube.

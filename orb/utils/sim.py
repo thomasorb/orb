@@ -28,7 +28,7 @@ import orb.cutils
 import orb.utils.fft
 import orb.utils.vector
 
-def line_interf(sigma, step_nb):
+def line_interf(sigma, step_nb, phi=0):
     """
     Simulate a simple line interferogram (a cosine)
 
@@ -37,10 +37,12 @@ def line_interf(sigma, step_nb):
     :param sigma: line frequency (must be < step_nb/2)
 
     :param step_nb: Length of the interferogram
+
+    :param phi: (Optional) Phase of the line (in radians) (default 0).
     """
     if sigma > step_nb / 2.: raise Exception('Sigma must be < step_nb/2')
     x = np.arange(step_nb, dtype=float) / (step_nb-1)
-    a = np.cos(x*sigma*2.*math.pi) / 2. + 0.5
+    a = np.cos(x*sigma*2.*math.pi + phi) / 2. + 0.5
     return a
 
 def fft(interf, zp_coeff=10, apod=None, phase=None):

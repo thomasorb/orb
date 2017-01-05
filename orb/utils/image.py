@@ -912,7 +912,6 @@ def simulate_calibration_laser_map(nx, ny, pixel_size,
     
     :param calib_laser_nm: Calibration laser wavelength in nm
     """
-
     return calib_laser_nm / np.cos(np.deg2rad(simulate_theta_map(
         nx, ny, pixel_size, mirror_distance,
         theta_cx, theta_cy, phi_x, phi_y, phi_r)))
@@ -959,7 +958,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
       libtim. It can be found in ORB module in ./ext/zern.py.
     """
 
-    def model_laser_map(p, calib, calib_laser_nm, pixel_size):
+    def model_laser_map(p, nx, ny, pixel_size):
         """
         0: mirror_distance
         1: theta_cx
@@ -969,15 +968,15 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         5: phi_r    
         """
         return simulate_calibration_laser_map(
-            calib.shape[0], calib.shape[1], pixel_size,
-            p[0], p[1], p[2], p[3], p[4], p[5], calib_laser_nm)
+            nx, ny, pixel_size,
+            p[0], p[1], p[2], p[3], p[4], p[5], p[6])
 
-    def diff_laser_map(p_var, p_fix, p_ind, calib, calib_laser_nm, pixel_size):
+    def diff_laser_map(p_var, p_fix, p_ind, calib, pixel_size):
         """p_ind = 0: variable parameter, index=1: fixed parameter
         """
 
         p = get_p(p_var, p_fix, p_ind)
-        res = model_laser_map(p, calib, calib_laser_nm, pixel_size)
+        res = model_laser_map(p, calib.shape[0], calib.shape[1], pixel_size)
         res -= calib
         res = res[np.nonzero(~np.isnan(res))]
         #res = orb.utils.stats.sigmacut(res)
@@ -998,11 +997,18 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         print ('    > Calibration laser map fit parameters:\n'
                + '    distance to mirror: {} cm {}\n'.format(
                    params[0] * 1e-4, print_fix(0))
-               + '    X angle from the optical axis to the center: {} degrees {}\n'.format(math.fmod(float(params[1]),360), print_fix(1))
-               + '    Y angle from the optical axis to the center: {} degrees {}\n'.format(math.fmod(float(params[2]),360), print_fix(2))
-               + '    Tip-tilt angle of the detector along X: {} degrees {}\n'.format(math.fmod(float(params[3]),360), print_fix(3))
-               + '    Tip-tilt angle of the detector along Y: {} degrees {}\n'.format(math.fmod(float(params[4]),360), print_fix(4))
-               + '    Rotation angle of the detector: {} degrees {}\n'.format(math.fmod(float(params[5]),360), print_fix(5))
+               + '    X angle from the optical axis to the center: {} degrees {}\n'.format(
+                   math.fmod(float(params[1]),360), print_fix(1))
+               + '    Y angle from the optical axis to the center: {} degrees {}\n'.format(
+                   math.fmod(float(params[2]),360), print_fix(2))
+               + '    Tip-tilt angle of the detector along X: {} degrees {}\n'.format(
+                   math.fmod(float(params[3]),360), print_fix(3))
+               + '    Tip-tilt angle of the detector along Y: {} degrees {}\n'.format(
+                   math.fmod(float(params[4]),360), print_fix(4))
+               + '    Rotation angle of the detector: {} degrees {}\n'.format(
+                   math.fmod(float(params[5]),360), print_fix(5))
+               + '    Calibration laser wavelength: {} nm {}\n'.format(
+                   params[6], print_fix(6))
                + '    Error on fit: mean {}, std {} (in nm)\n'.format(
                    np.nanmean(fvec), np.nanstd(fvec))
                + '    Error on fit: mean {}, std {} (in km/s)'.format(
@@ -1067,11 +1073,10 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     calib_laser_map_bin_center = calib_laser_map_bin[xmin:xmax,ymin:ymax]
 
     p_var = np.array([mirror_distance_guess, theta_c])
-    p_ind = np.array([0, 1, 0, 1, 1, 1])
-    p_fix = np.array([0., 0., 0., 0.])
+    p_ind = np.array([0, 1, 0, 1, 1, 1, 1])
+    p_fix = np.array([0., 0., 0., 0., calib_laser_nm])
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_center,
-                                       calib_laser_nm,
                                        float(pixel_size*binning)),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
@@ -1080,12 +1085,11 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
     print '  > Second fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100)
     p_var = np.array([params[0], 0., params[2], 0., 0., 0.])
-    p_ind = np.array([0, 0, 0, 0, 0, 0])
-    p_fix = np.array([])
+    p_ind = np.array([0, 0, 0, 0, 0, 0, 1])
+    p_fix = np.array([calib_laser_nm])
 
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_center,
-                                       calib_laser_nm,
                                        float(pixel_size*binning)),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
@@ -1101,20 +1105,19 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         0, calib_laser_map_bin.shape[0],
         0, calib_laser_map_bin.shape[1])
     calib_laser_map_bin_large = calib_laser_map_bin[xmin:xmax,ymin:ymax]
-    p_var = np.array(params)
-    p_ind = np.array([0, 0, 0, 0, 0, 0])
-    p_fix = np.array([])
+    p_var = np.array(params[:-1])
+    p_ind = np.array([0, 0, 0, 0, 0, 0, 1])
+    p_fix = np.array([calib_laser_nm])
     
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_large,
-                                       calib_laser_nm,
                                        float(pixel_size*binning)),
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
     print_params(params, fit[2]['fvec'], p_ind)
     
     new_calib_laser_map = model_laser_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size)
+        params, calib_laser_map.shape[0], calib_laser_map.shape[1], pixel_size)
     
     model_fit_calib_laser_map = np.copy(new_calib_laser_map)
     
@@ -1820,4 +1823,4 @@ def bf_laser_aligner(im1, im2, init_dx, init_dy, init_angle, zf,  binning=4):
          slice(init_angle - R_RANGE, init_angle + R_RANGE, R_STEPS * 1j)),
         args=(im1, im2, xmin, xmax, ymin, ymax, zf))
 
-    
+            
