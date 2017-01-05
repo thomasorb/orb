@@ -1350,8 +1350,9 @@ class Cm1LinesModel(LinesModel):
 
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
-        return lambda lines, vel: lines * (1. - vel / constants.LIGHT_VEL_KMS)
-        
+        return lambda lines, vel: lines * np.sqrt((1. - vel / constants.LIGHT_VEL_KMS)
+                                                  / (1. + vel / constants.LIGHT_VEL_KMS))
+         
     def _p_val2array(self):
         """Transform :py:attr:`fit.Model.p_val` to :py:attr:`fit.LinesModel.p_array`"""
         p_array = LinesModel._p_val2array(self)
@@ -1449,7 +1450,9 @@ class NmLinesModel(Cm1LinesModel):
     """
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
-        return lambda lines, vel: lines * (1. + vel / constants.LIGHT_VEL_KMS)
+        return lambda lines, vel: lines * np.sqrt((1. + vel / constants.LIGHT_VEL_KMS)
+                                                  / (1. - vel / constants.LIGHT_VEL_KMS))
+
     
     def parse_dict(self):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""

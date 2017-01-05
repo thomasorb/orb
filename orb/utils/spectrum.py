@@ -190,6 +190,12 @@ def fwhm_cm12nm(fwhm_cm1, cm1):
 def line_shift(velocity, line, wavenumber=False):
     """Return the line shift given its velocity in nm or in cm-1.
 
+    beta = v / c
+
+    gamma = sqrt((1 + beta) / (1 - beta))
+
+    lambda - lambda_0 = lambda_0  * (gamma - 1)
+
     :param velocity: Line velocity in km.s-1
 
     :param line: Wavelength/wavenumber of the line. Must be in cm-1 if
@@ -202,10 +208,15 @@ def line_shift(velocity, line, wavenumber=False):
     vel = (od.array(line, dtype=np.longdouble)
            * od.array(velocity, dtype=np.longdouble)
            / float(orb.constants.LIGHT_VEL_KMS))
-    if not is_data: vel = vel.dat
-    if wavenumber: return -vel
-    else: return vel
-    
+    beta = od.array(velocity, dtype=np.longdouble) / float(orb.constants.LIGHT_VEL_KMS)
+    gamma = od.sqrt((1. + beta) / (1. - beta))
+    if wavenumber: 
+        shift = od.array(line, dtype=np.longdouble) * (1. / gamma - 1.)
+    else:
+        shift = od.array(line, dtype=np.longdouble) * (gamma - 1.)
+    if not is_data: shift = shift.dat
+    return shift
+
 def compute_line_fwhm(step_nb, step, order, apod_coeff=1., corr=1.,
                       wavenumber=False):
     """Return the expected FWHM (in nm or in cm-1) of a line given the
@@ -270,7 +281,6 @@ def compute_mean_shift(velocity, step_nb, step, order, wavenumber=False):
         
     return line_shift(velocity, mean, wavenumber=wavenumber)
         
-
 def compute_step_nb(resolution, step, order):
     """Return the number of steps on the longest side of the
     interferogram given the resolution and the observation
@@ -288,13 +298,11 @@ def compute_step_nb(resolution, step, order):
             * resolution
             / (2 * mean_sigma * step * 1e-7))
 
-
-
 def compute_radial_velocity(line, rest_line, wavenumber=False):
     """
     Return radial velocity in km.s-1
 
-    V [km.s-1] = c [km.s-1]* (Lambda - Lambda_0) / Lambda_0
+    V [km.s-1] = c [km.s-1]* (Lambda^2 / Lambda_0^2 - 1) / (Lambda^2 / Lambda_0^2 + 1)
 
     :param line: Emission line wavelength/wavenumber (can be a numpy
       array)
@@ -317,10 +325,10 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
         rest_line = rest_line.astype(np.longdouble)
 
     if wavenumber:
-        delta = rest_line - line
+        ratio = (rest_line / line)**2.
     else:
-        delta = line - rest_line
-    return orb.constants.LIGHT_VEL_KMS * delta / rest_line
+        ratio = (line / rest_line)**2.
+    return orb.constants.LIGHT_VEL_KMS * (ratio - 1) / (ratio + 1)
     
 
 def lorentzian1d(x, h, a, dx, fwhm):
