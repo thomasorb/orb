@@ -1467,12 +1467,16 @@ class NmLinesModel(Cm1LinesModel):
 
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
-    nm_laser_obs, wavenumber=True, fwhm_guess=3.5, cont_guess=None,
-    shift_guess=0., sigma_guess=0., fix_fwhm=False, cov_fwhm=True, cov_pos=True,
-    fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
-    fmodel='gaussian', signal_range=None, filter_file_path=None,
-    fix_filter=False, apodization=1., velocity_range=None,
-    compute_mcmc_error=False, no_error=False):
+                          nm_laser_obs, wavenumber=True,
+                          fwhm_guess=3.5, cont_guess=None,
+                          shift_guess=0., sigma_guess=0.,
+                          fix_fwhm=False, cov_fwhm=True, cov_pos=True,
+                          fix_pos=False, cov_sigma=True,
+                          fit_tol=1e-10, poly_order=0,
+                          fmodel='gaussian', signal_range=None,
+                          filter_file_path=None, fix_filter=False,
+                          apodization=1., velocity_range=None,
+                          compute_mcmc_error=False, no_error=False):
     
     """Fit lines in spectrum
 
@@ -2052,7 +2056,7 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
         if line_params_err is not None:
             fit_results['broadening-err'] = np.abs(broadening.err)
 
-        # compute flux
+        # compute fwhm in Angstroms to get flux
         # If calibrated, amplitude unit must be in erg/cm2/s/A, then
         # fwhm/width units must be in Angströms
         if wavenumber:
@@ -2061,6 +2065,7 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
         else:
             fwhm = line_params[:,3] * 10.
 
+        # compute sigma in Angstroms to get flux
         sigma = utils.spectrum.fwhm_cm12nm(
             utils.fit.vel2sigma(
                 line_params[:,4], line_params[:,2],

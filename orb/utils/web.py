@@ -26,6 +26,7 @@ import StringIO
 import numpy as np
 import socket
 import orb.constants
+import warnings
 
 def query_sesame(object_name, verbose=True, degree=False, pm=False):
     """Query the SESAME Database to get RA/DEC given the name of an
@@ -123,8 +124,9 @@ def query_vizier(radius, target_ra, target_dec,
     :param max_stars: (Optional) Maximum number of rows to retrieve
       (default 100)
 
-    :param catalog: (Optional) can be 'usno' - Verson B1 of the US
-      Naval Observatory catalog (2003) or 'gaia' (default Gaia)
+    :param catalog: (Optional) can be 'usno' - Version B1 of the US
+      Naval Observatory catalog (2003), 'gaia' - GAIA DR1, or '2mass'
+      - 2MASS (default Gaia)
     """
     MAX_RETRY = 5
     if catalog == 'usno':
@@ -135,7 +137,14 @@ def query_vizier(radius, target_ra, target_dec,
         catalog_id = 'I/337/gaia'
         out = 'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,<Gmag>'
         sort='-<Gmag>'
-    else: raise Exception("Bad catalog name. Can be 'usno' or 'gaia'")
+    elif catalog == '2mass':
+        catalog_id = 'II/246/out'
+        out = 'RAJ2000,DEJ2000,errMaj,errMin,Jmag'
+        sort='-Jmag'
+
+    else: raise Exception("Bad catalog name. Can be 'usno', 'gaia' or '2mass'")
+
+    params_number = len(out.split(','))
 
     print "Sending query to VizieR server (catalog: {})".format(catalog)
     print "Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec)
@@ -173,12 +182,12 @@ def query_vizier(radius, target_ra, target_dec,
     for iline in output:
         if iline[0] != '#' and iline[0] != '-' and len(iline) > 3:
             iline = iline.split()
-            if len(iline) == 5:
+            if len(iline) == params_number:
                 if ((float(iline[2])/1000.) < 0.5
                     and (float(iline[3])/1000.) < 0.5):
                     star_list.append((float(iline[0]),
                                       float(iline[1]),
-                                      float(iline[4])))
+                                      float(iline[4])))                    
 
     # sorting list to get the brightest stars first
     star_list = np.array(sorted(star_list, key=lambda istar: istar[2]))

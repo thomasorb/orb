@@ -31,6 +31,9 @@ import orb.cutils
 import orb.utils.stats
 import orb.utils.image
 import orb.utils.vector
+import orb.utils.parallel
+import orb.utils.misc
+
 import copy
 
 
@@ -1843,21 +1846,21 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
             p += list(sip.sip.bp.flatten())
         return p
 
-    def diff(p, star_list2, star_list1, 
+    def diff(p, star_list2, star_list_deg1, 
              params, sip, err, direct):
         sip = p2sip(p, sip, direct)
         try:
             if direct:
-                star_list_2t = sip.sip.pix2foc(star_list2, 0) + sip.wcs.crpix
+                star_list_1t = sip.all_world2pix(star_list_deg1, 0)
             
-                star_list_1t = transform_star_position_A_to_B(
-                    star_list1, params[:5],
-                    (params[5], params[6]),
-                    (params[7], params[8]),
-                    sip_A=None, sip_B=None)
+                ## star_list_1t = transform_star_position_A_to_B(
+                ##     star_list1, params[:5],
+                ##     (params[5], params[6]),
+                ##     (params[7], params[8]),
+                ##     sip_A=None, sip_B=None)
 
-                dx = (star_list_2t - star_list_1t)[:,0]
-                dy = (star_list_2t - star_list_1t)[:,1]
+                dx = (star_list2 - star_list_1t)[:,0]
+                dy = (star_list2 - star_list_1t)[:,1]
 
             else:
                 star_list_2t = sip.all_pix2world(star_list2, 0)
@@ -1875,22 +1878,6 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
             warnings.warn(str(e))
             return 1e9
 
-    def create_basic_wcs():
-        wcs = pywcs.WCS(naxis=2)
-        wcs.wcs.crpix = crpix
-        wcs.wcs.cdelt = np.array([-scale / 3600.,
-                                  scale / 3600.])
-        wcs.wcs.crval = crval
-        wcs.wcs.ctype = ['RA---TAN-SIP', 'DEC--TAN-SIP']
-        wcs.wcs.crota = [0., 0.]
-        wcs.wcs.equinox = 2000.
-        wcs.wcs.latpole = 0.
-        wcs.wcs.cd = np.dot(
-            np.diag(wcs.wcs.get_cdelt()),
-            wcs.wcs.get_pc())
-        del wcs.wcs.crota
-        return wcs
-
     def add_sip(wcs):
         wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
         wcs.sip = pywcs.wcs.Sip(np.zeros((sip_order + 1, sip_order + 1)),
@@ -1900,19 +1887,31 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
                                 wcs.wcs.crpix)
         return wcs
 
-    if params is None: params = [0., 0., 0., 0., 0., 0., 0., 1., 1.]
 
+
+    if params is not None:
+        raise Exception('Not implemented')
+
+
+    # initialize WCS and SIP if not given
     if init_sip is None:
         if crpix is None or crval is None:
             raise Exception('If an initial wcs is not given (init_sip set to None) CRPIX and CRVAL must be given.')
-        init_sip = create_basic_wcs()
-    else:
+        
+        init_sip = create_wcs(crpix[0], crpix[1],
+                              scale / 3600., scale / 3600.,
+                              crval[0], crval[1], 0.)
+    else: # WCS copy to avoid modifing the original WCS
         init_sipt = pywcs.WCS(init_sip.to_header(relax=True))
         init_sipt.sip = copy.copy(init_sip.sip)
         init_sip = init_sipt
         
     if init_sip.sip is None:
         init_sip = add_sip(init_sip)
+
+    # computation of a reference ra/dec list of stars from the
+    # reference list of pixels (star_list1)
+    star_list_deg1 = init_sip.all_pix2world(star_list1, 0)
 
     if err is None:
         err = np.ones(star_list1.shape[0], dtype=float)
@@ -1925,7 +1924,7 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
 
     # look for direct transformation parameters (A, B matrices)
     fit = optimize.fmin(diff, guess,
-                        args=(star_list2, star_list1, params,
+                        args=(star_list2, star_list_deg1, params,
                               init_sip, err, True),
                         full_output=True, xtol=1e-6, disp=False)
 
@@ -1938,7 +1937,7 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
 
     # look for reverse transformation parameters (AP, BP matrices)
     fit = optimize.fmin(diff, -fit[0],
-                        args=(star_list2, star_list1, params,
+                        args=(star_list2, star_list_deg1, params,
                               init_sip, err, False),
                         full_output=True, xtol=1e-6, disp=False)
 
@@ -1991,3 +1990,406 @@ def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
     max_dy = hist_bins[max_index[1]] - dimx / 2.
 
     return max_corr, max_dx, max_dy    
+
+
+def create_wcs(target_x, target_y, deltax, deltay, target_ra,
+               target_dec, rotation, sip=None):
+    """Create a WCS with an optional SIP distortion model.
+
+    :param wcs: Original WCS. If None, a 2 axis WCS is created instead.
+
+    :param target_x: Target X position in pixels
+
+    :param target_y: Target Y position in pixels
+
+    :param deltax: Plate scale in arcdeg / pixel along X axis (don't forget to
+      divide by 3600 if originally in arcsec by pixels)
+
+    :param deltax: Plate scale in arcdeg / pixel along Y axis (don't forget to
+      divide by 3600 if originally in arcsec by pixels)
+
+    :param target_ra: Target RA
+
+    :param target_dec: Target DEC
+
+    :param rotation: Rotation angle
+
+    :param sip: (Optional) astropy.WCS instance containing a valid SIP.
+    """
+
+    _wcs = pywcs.WCS(naxis=2) # a new WCS must be created. Never update
+                             # an old WCS!
+        
+    _wcs.wcs.crpix = [target_x, target_y]
+    _wcs.wcs.cdelt = np.array([-deltax, deltay])
+    _wcs.wcs.crval = [target_ra, target_dec]
+    # !! must stay here because get_pc does not work with RA---TAN-SIP type
+    _wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"] 
+    _wcs.wcs.crota = [rotation, rotation]
+    # force wcs to CD definition (for SIP)
+    _wcs.wcs.cd = np.dot(
+        np.diag(_wcs.wcs.get_cdelt()),
+        _wcs.wcs.get_pc())
+    _wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
+    _wcs.wcs.radesys = 'FK5'
+    _wcs.wcs.equinox = 2000.
+    del _wcs.wcs.crota
+    if sip is not None:
+        _wcs.sip = sip.sip
+    return _wcs
+
+def get_wcs_parameters(_wcs):
+    """Return comprehensive parameters from a simple WCS as created
+    with orb.utils.astrometry.create_wcs.
+
+    :param wcs: An astropy.wcs.WCS instance created with
+      orb.utils.astrometry.create_wcs.
+
+    :return: target_x, target_y, deltax, deltay, target_ra,
+      target_dec, rotation
+    """
+    target_x, target_y = _wcs.wcs.crpix
+    target_ra, target_dec = _wcs.wcs.crval
+    try:
+        cd = np.copy(_wcs.wcs.cd)
+        rotation = np.rad2deg(np.arctan2(-cd[0,1], -cd[0,0]))
+        deltax = - cd[0,0] / np.cos(np.deg2rad(rotation))
+        deltay = - cd[0,1] / np.sin(np.deg2rad(rotation))
+    except AttributeError: # no cd is present
+        pc = np.copy(_wcs.wcs.get_pc())
+        rotation = np.rad2deg(np.arctan2(pc[0,1], pc[0,0]))
+        deltax, deltay = _wcs.wcs.cdelt
+        deltax = -deltax
+
+    if deltax < 0.: raise Exception('deltax and deltay must be equal and > 0')
+    if abs(rotation) > 90. : raise Exception('rotation angle must be < 90. There must be an error.')
+    if not np.allclose(deltax, deltay): raise Exception('deltax must be equal to deltay')
+    deltay = float(deltax)
+    
+    return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
+
+def brute_force_guess(image, star_list, x_range, y_range, r_range,
+                      rc, zoom_factor, box_size, verbose=True, init_wcs=None):
+    """Determine a precise alignment guess by brute force.
+
+    :param star_list: List of star position. Must be given in pixels
+      if no wcs is given (wcs set to None). If a wcs is given must be a
+      list of ra/dec coordinates.
+
+    :param x_range: range of x values to check
+
+    :param y_range: range of y values to check
+
+    :param r_range: range of angle values to check
+
+    :param rc: rotation center (rc, ry). If a WCS is given the
+      rotation center is obtaind from the wcs itself and must be set to
+      None.
+
+    :param zoom_factor: zoom_factor
+
+    :param verbose: (Optional) If True, print some informations
+      (default True).
+
+    :param init_wcs: (Optional) WCS instance (can contain an SIP distortion
+      model, default None).
+    """
+
+    def get_total_flux(guess_list, image, star_list,
+                       rc, zoom_factor, box_size, kernel, _wcs, _wcsp):
+        """Return the sum of the flux around a transformed list of
+        star positions for a list of parameters.        
+        """        
+        result = np.empty((guess_list.shape[0], 4))
+        result.fill(np.nan)
+        if _wcsp is not None:
+            (target_x, target_y, deltax, deltay,
+             target_ra, target_dec, rotation) = _wcsp
+                
+        for ik in range(guess_list.shape[0]):
+            guess = (guess_list[ik, 0],
+                     guess_list[ik, 1],
+                     guess_list[ik, 2], 0., 0.)
+
+            if _wcs is not None:
+                iwcs = create_wcs(
+                    target_x - guess[0],
+                    target_y - guess[1],
+                    deltax * zoom_factor,
+                    deltay * zoom_factor,
+                    target_ra, target_dec,
+                    rotation - guess[2], sip=_wcs)
+                star_list = np.array(star_list)
+                star_list_t = np.array(iwcs.all_world2pix(
+                    star_list[:,0],
+                    star_list[:,1], 0, quiet=True)).T
+                star_list2 = list()
+                # removing stars not in the image
+                for istar in range(star_list_t.shape[0]):
+                    if (star_list_t[istar,0] > 0.
+                        and star_list_t[istar,0] < image.shape[0]
+                        and star_list_t[istar,1] > 0.
+                        and star_list_t[istar,1] < image.shape[1]):
+                        star_list2.append(star_list_t[istar,:])
+                star_list2 = np.array(star_list2)
+            else:
+                star_list2 = transform_star_position_A_to_B(
+                    np.copy(star_list), guess, rc, zoom_factor)
+
+            total_flux = orb.cutils.brute_photometry(
+                image, star_list2, kernel, box_size)
+            result[ik, 0] = total_flux
+            result[ik, 1:] = guess_list[ik]
+        return result
+    
+    if init_wcs is not None and rc is not None:
+        warnings.warn('rc must be set to None if a wcs is given. rc automatically set to None.')
+        rc = None
+    if verbose:
+        print 'Brute force range:'
+        if len(x_range) > 1:
+            print 'X = {:.2f}:{:.2f}:{:.2f}'.format(
+                np.min(x_range), np.max(x_range), x_range[1] - x_range[0])
+        if len(y_range) > 1:
+            print 'Y = {:.2f}:{:.2f}:{:.2f}'.format(
+                np.min(y_range), np.max(y_range), y_range[1] - y_range[0])
+        if len(r_range) > 1:
+            print 'R = {:.2f}:{:.2f}:{:.2f}'.format(
+                np.min(r_range), np.max(r_range), r_range[1] - r_range[0])
+
+
+    guess_list = list()
+    guess_matrix = np.empty((len(x_range),
+                             len(y_range),
+                             len(r_range)), dtype=float)
+    guess_matrix_index_list = list()
+
+    box_size = int(box_size)
+    if not box_size&1: box_size += 1 # box_size must be odd
+    kernel = orb.cutils.gaussian_array2d(0., 1., box_size /2. - 0.5,
+                                         box_size /2. - 0.5, box_size / 3.,
+                                         box_size, box_size)
+    kernel /= np.nansum(kernel)
+
+    for idx in range(len(x_range)):
+        for idy in range(len(y_range)):
+            for idr in range(len(r_range)):
+                guess_matrix_index_list.append((idx, idy, idr))
+                guess_list.append(np.array([x_range[idx],
+                                            y_range[idy],
+                                            r_range[idr]]))
+
+    guess_list = np.array(guess_list)
+    # Init of the multiprocessing server
+    job_server, ncpus = orb.utils.parallel.init_pp_server()
+    ncpus_max = ncpus
+
+    # divide guess list in smaller lists for parallelization
+    pguess_cut_indexes = np.linspace(
+        0, guess_list.shape[0], ncpus_max+1).astype(int)
+    pguess_lists = [guess_list[
+        pguess_cut_indexes[i]:pguess_cut_indexes[i+1]]
+                    for i in range(ncpus_max)]
+
+    total_flux_list = np.empty((guess_list.shape[0], 4), dtype=float)
+
+    if init_wcs is not None:
+        wcs_params = get_wcs_parameters(init_wcs)
+    else:
+        wcs_params = None
+        
+    # parallel processing of each guess list part
+    jobs = [(ijob, job_server.submit(
+        get_total_flux, 
+        args=(pguess_lists[ijob], image,
+              star_list, rc, zoom_factor,
+              box_size, kernel, init_wcs, wcs_params),
+        globals=globals(),
+        modules=("import numpy as np",
+                 "import astropy.wcs as pywcs",
+                 "import orb.cutils",
+                 "import warnings")))
+            for ijob in range(ncpus)]
+
+    for ijob, job in jobs:
+        total_flux_list[
+            pguess_cut_indexes[ijob]
+            :pguess_cut_indexes[ijob + 1], :] = job()
+
+    orb.utils.parallel.close_pp_server(job_server)
+
+    # rebuilding guess matrix
+    for ik in range(guess_list.shape[0]):
+        guess_matrix[
+            guess_matrix_index_list[ik][0],
+            guess_matrix_index_list[ik][1],
+            guess_matrix_index_list[ik][2]] = total_flux_list[ik, 0]
+
+    # avoid a negative guess matrix
+    guess_matrix -= np.nanmin(guess_matrix)
+
+    # maximum value of the guess matrix is the best estimate
+    rough_dx, rough_dy, rough_dr =  np.unravel_index(
+        np.argmax(guess_matrix), guess_matrix.shape)
+
+    index1d = np.ravel_multi_index((rough_dx, rough_dy, rough_dr),
+                                   guess_matrix.shape)
+
+    dx = total_flux_list[index1d, 1]
+    dy = total_flux_list[index1d, 2]
+    dr = total_flux_list[index1d, 3]
+
+    if verbose:
+        print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
+            dx, dy, dr)
+
+    return dx, dy, dr, np.squeeze(guess_matrix)
+
+
+
+def world2pix(hdr, dimx, dimy, star_list_deg, dxmap, dymap):
+    """Convert RA/DEC coordinates to pixel positions.
+
+    :param hdr: pyfits.Header instance
+
+    :param dimx: Image dimension along X
+
+    :param dimy: Image dimension along Y
+
+    :param star_list_deg: List of star coordinates in degrees
+
+    :param dxmap: Distortion error map along X axis returned by
+      orb.astrometry.Astrometry.register().
+
+    :param dymap: Distortion error map along Y axis returned by
+      orb.astrometry.Astrometry.register().
+    """
+    dxspl = interpolate.RectBivariateSpline(
+        np.linspace(0, dimx, dxmap.shape[0]),
+        np.linspace(0, dimy, dxmap.shape[1]),
+        dxmap, kx=3, ky=3)
+    
+    dyspl = interpolate.RectBivariateSpline(
+        np.linspace(0, dimx, dymap.shape[0]),
+        np.linspace(0, dimy, dymap.shape[1]),
+        dymap, kx=3, ky=3)
+
+    wcs = pywcs.WCS(hdr, relax=True)
+    
+    star_list_pix = np.array(
+        wcs.all_world2pix(
+            star_list_deg[:,0],
+            star_list_deg[:,1], 0,
+            detect_divergence=False,
+            quiet=True)).T
+
+    dx = dxspl.ev(star_list_pix[:,0],
+                  star_list_pix[:,1])
+    dy = dyspl.ev(star_list_pix[:,0],
+                  star_list_pix[:,1])
+
+    star_list_pix[:,0] += dx
+    star_list_pix[:,1] += dy
+
+    return star_list_pix
+
+    
+def pix2world(hdr, dimx, dimy, star_list_pix, dxmap, dymap):
+    """Convert pixel positions to RA/DEC coordinates.
+
+    :param hdr: pyfits.Header instance
+
+    :param dimx: Image dimension along X
+
+    :param dimy: Image dimension along Y
+
+    :param star_list_pix: List of star coordinates in pixels
+
+    :param dxmap: Distortion error map along X axis returned by
+      orb.astrometry.Astrometry.register().
+
+    :param dymap: Distortion error map along Y axis returned by
+      orb.astrometry.Astrometry.register().
+    """
+    dxspl = interpolate.RectBivariateSpline(
+        np.linspace(0, dimx, dxmap.shape[0]),
+        np.linspace(0, dimy, dxmap.shape[1]),
+        dxmap, kx=3, ky=3)
+    
+    dyspl = interpolate.RectBivariateSpline(
+        np.linspace(0, dimx, dymap.shape[0]),
+        np.linspace(0, dimy, dymap.shape[1]),
+        dymap, kx=3, ky=3)
+
+    wcs = pywcs.WCS(hdr, relax=True)
+    
+    dx = dxspl.ev(star_list_pix[:,0],
+                  star_list_pix[:,1])
+    dy = dyspl.ev(star_list_pix[:,0],
+                  star_list_pix[:,1])
+
+    star_list_pixt = np.copy(star_list_pix)
+    star_list_pixt[:,0] -= dx
+    star_list_pixt[:,1] -= dy
+
+    star_list_deg = np.array(
+        wcs.all_pix2world(
+            star_list_pixt[:,0],
+            star_list_pixt[:,1], 0)).T
+
+    return star_list_deg
+
+
+def realign_images(_cube):
+    """Realign images of a small cube of images
+
+    :param _cube: A 3 dimensional np.ndarray.
+
+    .. warning:: This procedure is robust but very slow. Do not use it
+      to realign a large number of images.
+    """
+    
+    im1 = _cube[:,:,0]
+    dimz = _cube.shape[2]
+    src1_list = np.nonzero(im1 > np.nanpercentile(im1, 99.9))
+    agg1_list = orb.utils.misc.aggregate_pixels(src1_list)
+
+    isrcx = list() ; isrcy = list()
+    for isrc in agg1_list:
+        isrc = np.array(isrc)
+        isrcx.append(np.nanmean(isrc[:,0]))
+        isrcy.append(np.nanmean(isrc[:,1]))
+    isrcx = np.array(isrcx)
+    isrcy = np.array(isrcy)
+
+    for ik in range(1, dimz):
+        # detect sources
+        im2 = _cube[:,:,ik]
+        src2_list = np.nonzero(im2 > np.nanpercentile(im2, 99.9))
+        agg2_list = orb.utils.misc.aggregate_pixels(src2_list)
+        isrcx2 = list() ; isrcy2 = list()
+        for isrc2 in agg2_list:
+            isrc2 = np.array(isrc2)
+            isrcx2.append(np.nanmean(isrc2[:,0]))
+            isrcy2.append(np.nanmean(isrc2[:,1]))
+        isrcx2 = np.array(isrcx2)
+        isrcy2 = np.array(isrcy2)
+
+        neix = list()
+        neiy = list()
+        for ii in range(isrcx.size):
+            idx = isrcx2 - isrcx[ii]
+            idy = isrcy2 - isrcy[ii]
+            ir = np.sqrt(idx**2. + idy**2.)
+            inei = np.nanargmin(ir)
+            neix.append(idx[inei])
+            neiy.append(idy[inei])
+
+        dx = -np.nanmean(orb.utils.stats.sigmacut(neix, sigma=2.))
+        dy = -np.nanmean(orb.utils.stats.sigmacut(neiy, sigma=2.))
+
+        print 'dx: {}, dy: {}'.format(dx, dy)
+        _cube[:,:,ik] = orb.utils.image.transform_frame(
+            im2, 0, im2.shape[0], 0, im2.shape[1], [dx, dy, 0, 0, 0],
+            (im2.shape[0]/2., im2.shape[1]/2.), 1., 1)
+    return _cube
