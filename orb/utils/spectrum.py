@@ -205,9 +205,9 @@ def line_shift(velocity, line, wavenumber=False):
       else it is returned in nm.
     """
     is_data = od.isdata(velocity) or od.isdata(line)
-    vel = (od.array(line, dtype=np.longdouble)
-           * od.array(velocity, dtype=np.longdouble)
-           / float(orb.constants.LIGHT_VEL_KMS))
+    ## vel = (od.array(line, dtype=np.longdouble)
+    ##        * od.array(velocity, dtype=np.longdouble)
+    ##        / float(orb.constants.LIGHT_VEL_KMS))
     beta = od.array(velocity, dtype=np.longdouble) / float(orb.constants.LIGHT_VEL_KMS)
     gamma = od.sqrt((1. + beta) / (1. - beta))
     if wavenumber: 
@@ -427,6 +427,9 @@ def sincgauss1d_flux(a, fwhm, sigma):
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian
     """
+    if sigma / fwhm < 1e-10:
+        return sinc1d_flux(a, fwhm)
+
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     width /= math.pi
     return od.abs((a * 1j * math.pi / math.sqrt(2.) * sigma

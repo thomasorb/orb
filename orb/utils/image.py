@@ -608,9 +608,9 @@ def fit_map_zernike(data_map, weights_map, nmodes):
       libtim. It can be found in ORB module in ./ext/zern.py.
     """
     # bigger version used to fit corners
-    data_map_big = np.zeros(np.array(data_map.shape) * math.sqrt(2.) + 1,
-                           dtype=float)
-    borders = (np.array(data_map_big.shape) - np.array(data_map.shape))/2.
+    data_map_big = np.zeros(list((np.array(data_map.shape) * math.sqrt(2.) + 1).astype(int)),
+                            dtype=float)
+    borders = ((np.array(data_map_big.shape) - np.array(data_map.shape))/2.).astype(int)
     data_map_big[borders[0]:borders[0]+data_map.shape[0],
                  borders[1]:borders[1]+data_map.shape[1]] = np.copy(data_map)
     mask = np.zeros_like(data_map_big, dtype=float)
@@ -1025,8 +1025,8 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     cx = calib_laser_map.shape[0]/2.
     cy = calib_laser_map.shape[1]/2.
     center_calib_nm = np.nanmean(
-        calib_laser_map[int(cx-0.5):math.ceil(cx-0.5+1),
-                        int(cy-0.5):math.ceil(cy-0.5+1)])
+        calib_laser_map[int(cx-0.5):int(math.ceil(cx-0.5+1)),
+                        int(cy-0.5):int(math.ceil(cy-0.5+1))])
     
     theta_c = math.acos(calib_laser_nm/center_calib_nm) / math.pi * 180.
     print 'Angle at the center of the frame: {}'.format(theta_c)

@@ -427,3 +427,80 @@ def fit_std_spectrum(real_spectrum, std_spectrum, polydeg=2):
             real_spectrum))[0]
     
     return np.polynomial.polynomial.polyval(x, p)
+
+
+def convert_cm1_flux2fluxdensity(a, cm1_axis):
+    """ Convert a spectrum in X/s to X/s/A (X may be ADU or erg/cm^2)
+
+    :param a: spectrum
+
+    :param cm1_axis: Axis of the spectrum in cm-1
+    """
+
+    _cm1_axis_plus1 = np.hstack((cm1_axis, cm1_axis[-1]
+                                 + np.diff(cm1_axis)[0]))
+    _channel_A = np.abs(np.diff(1e7/_cm1_axis_plus1)) * 10.
+    
+    return np.copy(a) / _channel_A.astype(float)
+    
+
+def compute_flux_calibration_vector(re_spectrum, th_spectrum,
+                                    std_step, std_order, std_exp_time,
+                                    std_corr, filter_function,
+                                    filter_min_pix, filter_max_pix):
+    """Compute the flux calibration vector from an observed spectrum
+    and the standard spectrum.
+
+    :param re_spectrum: Observed spectrum in wavenumber.
+
+    :param th_spectrum: standard spectrum (in erg/cm2/s/A) in wavenumber.
+
+    :param std_step: Standard step size (in nm)
+
+    :param std_order: Standard folding order
+
+    :param std_exp_time: Standard Exposition time
+
+    :param std_corr: Standard Correction coeff.
+
+    :param filter_function: Filter function
+
+    :param filter_min_pix: Filter min position in pixels
+
+    :param filter_max_pix: Filter max position in pixels
+    """
+    
+    std_step_nb = re_spectrum.shape[0]
+    std_cm1_axis = orb.utils.spectrum.create_cm1_axis(
+        std_step_nb, std_step, std_order, corr=std_corr)
+
+    # Real spectrum is converted to ADU/s
+    # We must divide by the total exposition time
+    re_spectrum /= std_exp_time * std_step_nb # ADU -> ADU/s
+
+    # Real spectrum is converted to ADU/A/s
+    re_spectrum  = convert_cm1_flux2fluxdensity(
+        re_spectrum, std_cm1_axis)
+
+    # Remove portions outside the filter
+    border = int(0.02 * np.size(re_spectrum))
+    re_spectrum[:filter_min_pix + border] = np.nan
+    re_spectrum[filter_max_pix - border:] = np.nan
+
+    th_spectrum[np.nonzero(np.isnan(re_spectrum))] = np.nan
+
+    # fit model * polynomial to adjust model and spectrum
+    flux_calibf = orb.utils.photometry.fit_std_spectrum(
+        re_spectrum, th_spectrum)
+
+
+    ## import pylab as pl
+    ## pl.plot(std_cm1_axis, re_spectrum * flux_calibf)
+    ## pl.plot(std_cm1_axis, th_spectrum)
+    ## pl.show()
+
+    print 'Mean theoretical flux of the star: %e ergs/cm^2/A/s'%orb.utils.stats.robust_mean(th_spectrum)
+    print 'Mean flux of the star in the cube: %e ADU/A/s'%orb.utils.stats.robust_mean(re_spectrum)
+    print 'Mean Flambda calibration: %e ergs/cm^2/[ADU]'%np.nanmean(flux_calibf[~np.isnan(th_spectrum)])
+
+    return std_cm1_axis, flux_calibf

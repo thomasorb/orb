@@ -369,10 +369,17 @@ class Data(object):
 
         Called by ``a = self.err``.
         """
+        
         if self._err is not None:
             self._err = np.copy(self._err)
+            self._err.real = np.abs(self._err.real)
+            if np.any(np.iscomplex(self._err)):
+                self._err.imag = np.abs(self._err.imag)
+
         else:
             self._err = np.zeros(self.shape, dtype=self.dtype)
+            
+        
         return np.copy(self._err)
 
     def _set_err(self, m):
@@ -520,86 +527,68 @@ def isnpdata(a):
 # Replaces numpy operations on data with error
 # propagation.
 
+def _has_complex_error(a_err):
+    """Check if the error is complex and different from 0 in both the
+    real and the imaginary part.
 
+    :param a_err: Error array
+    """
+    if np.any(np.iscomplex(a_err)):
+        if np.any(a_err.real) and np.any(a_err.imag):
+            return True
+    return False
+
+def _compute_err(fdat, ferr, _a):
+    if isnpdata(_a): _a = array(_a)
+        
+    if isinstance(_a, Data):
+        _result = _a.copy()
+        _result.dat = fdat(_a.dat)
+        if _has_complex_error(_a.err):
+            _result.err = mcu(fdat, _a)
+            return _result
+
+        _result.err = ferr(_a.dat, _a.err)
+        return _result
+    else:
+        return fdat(_a)
+    
 def abs(a):
     """Absolute value of a Data array"""
-    if isnpdata(a): a = array(a)
-        
-    if isinstance(a, Data):
-        result = a.copy()
-        result.dat = np.abs(a.dat)
-        result.err = a.err
-        return result
-    else:
-        return np.abs(a)
+    ferr = lambda a_dat, a_err: np.abs(a_err)
+    return _compute_err(np.abs, ferr, a)
 
 def erf(a):
     """Error function.
 
     Uncertainty obtained via :math:`err = \sigma_x \frac{d}{dx}erf(x)`
     """
-    if isnpdata(a): a = array(a)
-        
-    if isinstance(a, Data):
-        result = a.copy()
-        result.dat = ss.erf(a.dat)
-        result.err = 2. * np.exp(-a.dat**2) / math.sqrt(math.pi) * a.err
-        return result
-    else:
-        return ss.erf(a)
+    ferr = lambda a_dat, a_err: 2. * np.exp(-a_dat**2) / math.sqrt(math.pi) * a_err
+    return _compute_err(ss.erf, ferr, a)
 
 def dawsn(a):
     """Dawson function
 
     Uncertainty obtained via :math:`err = \sigma_x \frac{d}{dx}daws(x)`
     """
-    
-    if isnpdata(a): a = array(a)
-        
-    if isinstance(a, Data):
-        result = a.copy()
-        result.dat = ss.dawsn(a.dat)
-        result.err = (1. - 2. * a.dat * ss.dawsn(a.dat)) * a.err
-        return result
-    else:
-        return ss.dawsn(a)
-
+    ferr = lambda a_dat, a_err:  (1. - 2. * a_dat * ss.dawsn(a_dat)) * a_err
+    return _compute_err(ss.dawsn, ferr, a)
 
 def log10(a):
     """Log10 of a Data array"""
-    if isnpdata(a): a = array(a)
-    
-    if isinstance(a, Data):
-        result = a.copy()
-        result.dat = np.log10(a.dat)
-        result.err = (a.err / a.dat) * math.log10(math.exp(1))
-        return result
-    else:
-        return np.log10(a)
+    ferr = lambda a_dat, a_err: (a_err / a_dat) * math.log10(math.exp(1))
+    return _compute_err(np.log10, ferr, a)
+
 
 def exp(a):
     """exponential of a Data array"""
-    if isnpdata(a): a = array(a)
-    
-    if isinstance(a, Data):
-        result = a.copy()
-        result.dat = np.exp(a.dat)
-        result.err = result.dat * a.err
-        return result
-    else:
-        return np.exp(a)
+    ferr = lambda a_dat, a_err: np.exp(a_dat) * a_err
+    return _compute_err(np.exp, ferr, a)
 
 def sqrt(a):
     """exponential of a Data array"""
-    if isnpdata(a): a = array(a)
-    
-    if isinstance(a, Data):
-        result = a.copy()
-        result.dat = np.sqrt(a.dat)
-        result.err = (result.dat * 0.5 * (a.err)) / a.dat
-        return result
-    else:
-        return np.sqrt(a)
+    ferr = lambda a_dat, a_err: (np.sqrt(a_dat) * 0.5 * (a_err)) / a_dat
+    return _compute_err(np.sqrt, ferr, a)
 
 def sum(a):
     """Sum of a Data array"""
@@ -631,3 +620,163 @@ def nanmean(a):
     
     return nansum(a) / np.sum(~np.isnan(a.dat))
 
+
+
+
+##############################################
+#### Monte-Carlo approximation ###############
+##############################################
+
+def mcu_one_val(f, val, err):
+    """Monte-Carlo approximation of the uncertainty of one value
+    through a function f.
+
+    :param f: function
+    :param val: Value
+    :param err: Uncertainty on the value
+
+    :return: Uncertainty on f(val)
+    """
+    N = 100
+    if not np.isscalar(val) or not np.isscalar(err):
+        raise Exception('val and err must be scalars (real or complex)')
+    
+    if np.iscomplex(val) or np.iscomplex(err):
+        idist = val + (np.random.standard_normal(N) * err.real
+                       + 1j * np.random.standard_normal(N) * err.imag)
+    else:
+        idist = val + np.random.standard_normal(N) * err
+        
+    idist = f(idist)
+    if np.iscomplex(val) or np.iscomplex(err):
+        return np.nanstd(idist.real) + 1j*np.nanstd(idist.imag)
+    else:
+        return np.nanstd(idist)
+    
+def mcu(f, arr):
+    """Monte-Carlo approximation of the uncertainty on an array
+    through a function f.
+
+    :param f: function
+    :param arr: orb.Data instance
+
+    :return: Uncertainty on f(arr)
+    """
+    arr = array(arr)
+    err = np.empty(arr.shape, dtype=arr.dtype)
+    if arr.dat.size > 1:
+        for i in range(arr.dat.size):
+            err[i] = mcu_one_val(f, arr.dat[i], arr.err[i])
+    return err
+        
+
+
+
+##############################################
+#### Testing functions #######################
+##############################################
+
+
+
+def uncertainty_testing(f, val_min, val_max, err, show=True):
+    """Test returned uncertainty.
+
+    :param f: function to test
+    :param val_min: Min value, can be complex
+    :param val_max: Max value, can be complex
+    :param err: uncertainty on the value, can be complex
+    
+    :param show: (Optional) If True show the results (default True).
+    """
+
+    N = 1e4
+    PARTS = 101
+
+    if np.iscomplex(val_min) or np.iscomplex(val_max) or np.iscomplex(err):
+        IS_COMPLEX = True
+        val_min = complex(val_min)
+        val_max = complex(val_max)
+        err = complex(err)
+    else:
+        IS_COMPLEX = False
+        
+
+    if IS_COMPLEX:
+        vals = np.zeros(int(N))
+        if val_min.real != 0. and val_max.real != 0.:
+            vals += 10**np.linspace(log10(val_min.real), log10(val_max.real), N)
+        if val_min.imag != 0. and val_max.imag != 0.:
+            vals = vals.astype(complex)
+            vals += 1j * 10**np.linspace(log10(val_min.imag), log10(val_max.imag), N)
+             
+        vals_rnd = vals + (np.random.standard_normal(vals.shape[0]) * err.real
+                           + 1j * (np.random.standard_normal(vals.shape[0]) * err.imag))
+        
+    else:
+        vals = 10**np.linspace(log10(val_min), log10(val_max), N)
+        vals_rnd = vals + np.random.standard_normal(vals.shape[0]) * err
+
+    y = f(vals)
+    yrnd = f(vals_rnd)
+    yerr = yrnd - y
+    yerr_sim = f(array(vals, np.ones_like(vals) * err)).err
+
+    part = np.linspace(0, 100, PARTS+1)
+    yerr_std_list = list()
+    vals_bin_list = list()
+    for i in range(part.shape[0] - 1):
+        if IS_COMPLEX:
+            percmin = (np.nanpercentile(vals.real, part[i])
+                       + 1j * np.nanpercentile(vals.imag, part[i]))
+            percmax = (np.nanpercentile(vals.real, part[i+1])
+                       + 1j * np.nanpercentile(vals.imag, part[i+1]))
+            nz_real = np.nonzero((vals.real > percmin.real) * (vals.real <= percmax.real))
+            nz_imag = np.nonzero((vals.imag > percmin.imag) * (vals.imag <= percmax.imag))    
+            vals_bin_list.append(np.nanmedian(vals.real[nz_real])
+                                 + 1j * np.nanmedian(vals.imag[nz_imag]))
+            yerr_std_list.append(np.nanstd(yerr.real[nz_real])
+                                 + 1j * np.nanstd(yerr.imag[nz_imag]))
+
+        else:
+            percmin = np.nanpercentile(vals, part[i])
+            percmax = np.nanpercentile(vals, part[i+1])
+            nz = np.nonzero((vals > percmin) * (vals <= percmax))
+            vals_bin_list.append(np.nanmedian(vals[nz]))
+            yerr_std_list.append(np.nanstd(yerr[nz]))
+
+                
+    yerr_std_list = np.array(yerr_std_list)
+    vals_bin_list = np.array(vals_bin_list)
+
+    if show:
+        import pylab as pl
+        if IS_COMPLEX:
+            pl.figure()
+            pl.scatter(vals.real, yerr.real, marker='+', color='green')
+            pl.plot(vals.real, yerr_sim.real, color='yellow')
+            pl.scatter(vals_bin_list.real, yerr_std_list.real, color = 'red')
+            pl.title('Real part')
+            pl.xscale('log')
+            pl.yscale('log')
+
+            pl.figure()
+            pl.scatter(vals.imag, yerr.imag, marker='+', color='cyan')
+            pl.plot(vals.imag, yerr_sim.imag, color='orange')
+            pl.scatter(vals_bin_list.imag, yerr_std_list.imag, color = 'blue')
+            pl.title('Imaginary part')
+            pl.xscale('log')
+            pl.yscale('log')
+
+        else:
+            pl.scatter(vals, yerr, marker='+', color='cyan')
+            pl.plot(vals, yerr_sim, color='orange')
+            pl.scatter(vals_bin_list, yerr_std_list, color = 'red')
+            pl.xscale('log')
+            pl.yscale('log')
+        pl.show()
+
+        
+
+
+    
+    

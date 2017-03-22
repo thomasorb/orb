@@ -1,20 +1,32 @@
 from orb.core import Tools
-
+import orb.utils.spectrum
 
 class ETC(Tools):
 
     def __init__(self, spectrum_phys, step, order, filter_name,
-                 add_sky=True, **kwargs):
+                 add_sky=True, airmass=1, **kwargs):
         """Initialize class
         
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
 
+        self.step_nb = 500 # any value is ok
+        # correction value at the center of the frame
+        self.axis_corr = 1. / np.cos(float(
+            self._get_config_parameter('OFF_AXIS_ANGLE_CENTER'))) 
+        self.airmass = airmass
         self.step = float(step)
         self.order = int(order)
         self.filter_name = str(filter_name)
+        self.filter_file = FilterFile(self.filter_name)
 
+        self.cm1_axis = orb.utils.spectrum.create_cm1_axis(
+            self.step_nb, self.step, self.order, corr=self.axis_corr)
+
+        self._nm_axis = orb.utils.spectrum.create_nm_axis(
+            self.step_nb, self.step, self.order, corr=self.axis_corr)
+        
         # convert spectrum units from erg/cm2/s/A to counts/A
         self.spectrum_phys = spectrum_phys # erg/cm2/s/A
         
@@ -58,24 +70,39 @@ class ETC(Tools):
 
         # convert from erg/cm2/s/A to counts/A/s
 
-        # eliminate cm2, split light between two ccds
-        mirror_area = float(self._get_config_parameter('MIR_SURFACE'))
-        spectrum *= mirror_area * 0.5
-
         # wavenumber (or wavelength) dependant curves.
         # given on the same wavenumber axis as the spectrum :
         # quantum efficiency, filter transmission (or absorption),
         # atmospheric extinction given in function of airmass
         # and additionnal optics transmission
-        corr = float(self._get_config_parameter('OFF_AXIS_ANGLE_CENTER')) ; quit()
-        (filter_trans,
-         filter_min, filter_max) = FilterFile(self.filter_name).get_filter_function(
-            self.step, self.order, STEP_NB, corr=corr)
-        
-        spectrum *= quantum_efficiency * filter_transmission * atmospheric_extinction * optics_transmission
 
-        # convert ergs to photon count
-        spectrum = erg_to_count(spectrum) #using E=h*nu
+        spectrum_counts = np.copy(self.spectrum_phys)
+        spectrum_counts /= orb.utils.photometry.compute_photon_energy(
+            self._nm_axis)
+        spectrum_counts *= orb.utils.photometry.get_atmospheric_transmission(
+            self._get_atmospheric_extinction_file_path(),
+            self.step, self.order, self.step_nb,
+            airmass=self.airmass, corr=self.axis_corr)
+        spectrum_counts *= get_config_parameter('MIR_SURFACE') # photons/s/A
+        spectrum_counts *= orb.utils.photometry.get_mirror_transmission(
+            self._get_mirror_transmission_file_path(),
+            self.step, self.order, self.step_nb, corr=self.axis_corr)**2 # **2 because we have two mirrors 
+        spectrum_counts *= orb.utils.photometry.get_optics_transmission(
+            self._get_optics_file_path(self.filter_name),
+            self.step, self.order, self.step_nb, corr=self.axis_corr)
+        spectrum_counts *= self.filterfile.get_filter_function(
+            self.step, self.order, self.step_nb,
+            wavenumber=True, corr=self.axis_corr)[0]
+        # must be modified for SpIOMM to use camera 1 or camera 2
+        spectrum_counts *= orb.utils.photometry.get_quantum_efficiency(
+            _get_quantum_efficiency_file_path(1),
+            self.step, self.order, self.step_nb, corr=self.axis_corr) # electrons/s/A
+        spectrum_counts *= self.get_config_parameter("CAM1_GAIN") # counts/s/A
+    
+
+        # eliminate cm2, split light between two ccds
+        mirror_area = float(self._get_config_parameter('MIR_SURFACE'))
+        spectrum *= mirror_area * 0.5
 
         return spectrum
 
@@ -100,7 +127,7 @@ class ETC(Tools):
         while snr != target:
             snr = get_snr(exposition_time)[wavenumber]
             # correct exposition time in function of obtained snr before looping again
-            exposition_time *= (target / snr) ^ 2
+            exposition_time *= (target / snr)**2.
 
     def effective_exposition_time(self, exposition_time, percent, reverse=False):
 

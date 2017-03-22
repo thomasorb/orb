@@ -24,7 +24,6 @@ import numpy as np
 import math
 
 import orb.constants
-import orb.data as od
 
 def vel2sigma(vel, lines, axis_step):
     """Convert a velocity in km/s to a broadening in channels.
@@ -34,7 +33,7 @@ def vel2sigma(vel, lines, axis_step):
     """
     sigma = lines * vel / orb.constants.LIGHT_VEL_KMS
     sigma /= axis_step # convert sigma cm-1->pix
-    return od.abs(sigma)
+    return np.abs(sigma)
 
 
 def sigma2vel(sigma, lines, axis_step):
@@ -46,4 +45,4 @@ def sigma2vel(sigma, lines, axis_step):
     vel = sigma * axis_step # convert sigma pix->cm-1
     # convert sigma cm-1-> km/s
     vel = orb.constants.LIGHT_VEL_KMS * vel / lines
-    return od.abs(vel)
+    return np.abs(vel)

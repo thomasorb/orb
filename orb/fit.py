@@ -1555,6 +1555,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       giving the lowest and highest wavelength/wavenumber containing
       signal.
 
+    :param filter_file_path: (Optional) Filter file path (default
+      None).
+
     :param fix_filter: (Optional) If True filter position is fixed
       (default False).
 
@@ -1688,15 +1691,17 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             wavenumber=wavenumber,
             silent=True)[0]
         if wavenumber:
-            filter_axis = create_cm1_axis(
+            filter_axis = utils.spectrum.create_cm1_axis(
                 spectrum.shape[0], step, order, corr=1.)
-            filter_axis_calib = create_cm1_axis(spectrum.shape[0], step, order,
-                                                corr=correction_coeff)
+            filter_axis_calib = utils.spectrum.create_cm1_axis(
+                spectrum.shape[0], step, order,
+                corr=correction_coeff)
         else:
-            filter_axis = create_nm_axis(
+            filter_axis = utils.spectrum.create_nm_axis(
                 spectrum.shape[0], step, order, corr=1.)
-            filter_axis_calib = create_nm_axis(spectrum.shape[0], step, order,
-                                               corr=correction_coeff)
+            filter_axis_calib = utils.spectrum.create_nm_axis(
+                spectrum.shape[0], step, order,
+                corr=correction_coeff)
             
         filter_function = utils.vector.interpolate_axis(
             filter_function, filter_axis_calib, 1, old_axis=filter_axis)
@@ -2131,7 +2136,6 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     
     :param sigma: (Optional) Line broadening (in km/s, default 0.)
     """
-
 
     if np.size(amp) != np.size(lines_cm1):
         raise Exception('The number of lines and the length of the amplitude vector must be the same')

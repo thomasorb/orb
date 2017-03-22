@@ -886,18 +886,20 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
 
     :return: (FWHM, FWHM_ERR) in pixels
     """
-    FIT_BOXSZ_COEFF = 4
+    FIT_BOXSZ_COEFF = 8
 
+    # note that the fwhm guess is divided by two because it is better
+    # to have a starting guess smaller than the real fwhm value
     fit_params = orb.cutils.multi_fit_stars(
         np.array(frame, dtype=float),
         np.array(star_list, dtype=float),
         int(np.nanmedian(fwhm_guess_pix*FIT_BOXSZ_COEFF)),
         height_guess=np.nanmedian(frame),
-        fwhm_guess=np.atleast_1d(fwhm_guess_pix),
+        fwhm_guess=np.atleast_1d(fwhm_guess_pix) / 2.,
         cov_height=False,
         cov_pos=True,
         cov_fwhm=True,
-        fix_height=True,
+        fix_height=False,
         fix_pos=True,
         fix_fwhm=False,
         enable_zoom=False,
@@ -952,7 +954,7 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
         temp_arr = np.empty(pos_list.shape[0], dtype=float)
         temp_arr.fill(fwhm_guess_pix)
         fwhm_guess_pix = temp_arr
-    
+
     results = list()
     pos_list = np.array(pos_list)
     aper_surf = None
@@ -1208,26 +1210,6 @@ def deg2dec(deg, string=False):
         return dec
     else:
         return "+%d:%d:%.2f" % (dec[0], dec[1], dec[2])
-
-
-## def sip_im2pix(im_coords, sip, tolerance=1e-8):
-##     """Transform perfect pixel positions to distorded pixels positions 
-
-##     :param im_coords: perfect pixel positions as an Nx2 array of floats.
-##     :param sip: pywcs.WCS() instance containing SIP parameters.
-##     :param tolerance: tolerance on the iterative method.
-##     """
-##     #return sip.foc2pix(im_coords, 0)   
-##     return orb.cutils.sip_im2pix(im_coords, sip, tolerance=1e-8)
-
-## def sip_pix2im(pix_coords, sip):
-##     """Transform distorded pixel positions to perfect pixels positions 
-
-##     :param pix_coords: distorded pixel positions as an Nx2 array of floats.
-##     :param sip: pywcs.WCS() instance containing SIP parameters.
-##     """
-##     #return sip.pix2foc(pix_coords, 0)   
-##     return orb.cutils.sip_pix2im(pix_coords, sip)
 
 def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
                                    sip_A=None, sip_B=None):
@@ -1967,10 +1949,6 @@ def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
     :param dimy: Y dimension of the image inp ixels
 
     :param xy_bins: number of bins along X and Y
-
-    :param angle_range: (min angle, max angle)
-
-    :param angle_bins: number of bins in the angle range.
 
     .. warning:: This kind of registration is very sensitive to the
       angle between each list. It is better to use it on a range of
