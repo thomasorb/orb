@@ -22,7 +22,7 @@
 
 import numpy as np
 import math
-
+import orb.data as od
 import orb.constants
 
 def vel2sigma(vel, lines, axis_step):
@@ -33,7 +33,7 @@ def vel2sigma(vel, lines, axis_step):
     """
     sigma = lines * vel / orb.constants.LIGHT_VEL_KMS
     sigma /= axis_step # convert sigma cm-1->pix
-    return np.abs(sigma)
+    return od.abs(sigma)
 
 
 def sigma2vel(sigma, lines, axis_step):
@@ -45,4 +45,4 @@ def sigma2vel(sigma, lines, axis_step):
     vel = sigma * axis_step # convert sigma pix->cm-1
     # convert sigma cm-1-> km/s
     vel = orb.constants.LIGHT_VEL_KMS * vel / lines
-    return np.abs(vel)
+    return od.abs(vel)

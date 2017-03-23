@@ -30,6 +30,7 @@ import orb.constants
 import orb.cutils
 import orb.data as od
 
+
 def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.
 
@@ -419,23 +420,46 @@ def sinc1d_flux(a, fwhm):
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     return od.abs(a * width)
 
-def sincgauss1d_flux(a, fwhm, sigma):
+def sincgauss1d_flux(a, fwhm, sigma, no_err=False):
     """Compute flux of a 1D sinc convoluted with a Gaussian of
     parameter sigma.
 
     :param a: Amplitude
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian
+    :param no_err: (Optional) No error is returned (default False)
     """
-    if sigma / fwhm < 1e-10:
+    if np.all(sigma / fwhm < 1e-10):
         return sinc1d_flux(a, fwhm)
 
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     width /= math.pi
-    return od.abs((a * 1j * math.pi / math.sqrt(2.) * sigma
-                  * od.exp(sigma**2./2./width**2.)
-                  / (od.dawsn(1j * sigma / (math.sqrt(2) * width)))).real)
-   
+
+    has_uncertainty = False
+    
+    if isinstance(a, od.Data):
+        _a = a.dat ; has_uncertainty = True
+    else: _a = a
+    if isinstance(fwhm, od.Data):
+        _fwhm = fwhm.dat ; _width = width.dat
+        has_uncertainty = True
+    else:
+        _fwhm = fwhm ; _width = width
+    if isinstance(sigma, od.Data):
+        _sigma = sigma.dat ; has_uncertainty = True
+    else: _sigma = sigma
+    
+    result = np.abs((_a * 1j * math.pi / math.sqrt(2.) * _sigma
+                     * np.exp(_sigma**2./2./_width**2.)
+                     / (special.dawsn(
+                         1j * _sigma / (math.sqrt(2) * _width)))).real)
+    
+    if no_err or not has_uncertainty: return result
+
+    result = od.array(result)
+    result.err = od.mcu(sincgauss1d_flux, [a, fwhm, sigma], no_err=True)
+        
+    return result
 def fast_w2pix(w, axis_min, axis_step):
     """Fast conversion of wavelength/wavenumber to pixel
 

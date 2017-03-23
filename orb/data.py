@@ -21,8 +21,7 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-With thoses classes uncertainty are ensured to be propagated all along
-operations with 1d and 2d data.
+Manage data with associated uncertainties
 """
 
 __author__ = "Thomas Martin"
@@ -132,14 +131,19 @@ class Data(object):
             # error propagation
             if self._err is not None:
                 if b.err is not None:
-                    self._err = result * np.sqrt((self._err/self._dat)**2.
-                                                 + (b.err/b.dat)**2.)
+                    if self._has_complexity(b):
+                       self._err = self._compute_complex_err(
+                           lambda x1, x2: x1 * x2, b)
+                    else:
+                        self._err = result * np.sqrt(
+                            (self._err/self._dat)**2.
+                            + (b.err/b.dat)**2.)
                 else:
                     self._err *= b
             self._dat = result
             
         else:
-            if np.any(np.iscomplex(b)): self._ascomplex()    
+            if np.any(np.iscomplexobj(b)): self._ascomplex()    
             self._dat *= b
             if self._err is not None:
                 self._err *= b
@@ -178,14 +182,19 @@ class Data(object):
             # error propagation
             if self._err is not None:
                 if b.err is not None:
-                    self._err = result * np.sqrt((self._err/self._dat)**2.
-                                                 + (b.err/b.dat)**2.)
+                    if self._has_complexity(b):
+                        self._err = self._compute_complex_err(
+                            lambda x1, x2: x1 / x2, b)
+                    else:
+                        self._err = result * np.sqrt(
+                            (self._err/self._dat)**2.
+                            + (b.err/b.dat)**2.)
                 else:
                     self._err /= b
             self._dat = result
             
         else:
-            if np.any(np.iscomplex(b)): self._ascomplex()
+            if np.any(np.iscomplexobj(b)): self._ascomplex()
             self._dat /= b
             if self._err is not None:
                 self._err /= b
@@ -214,11 +223,15 @@ class Data(object):
             result = self._dat + b.dat
             # error propagation
             if self._err is not None and b.err is not None:
-                self._err = np.sqrt((self._err)**2.
-                                    + (b.err)**2.)
+                if self._has_complexity(b):
+                    self._err = self._compute_complex_err(
+                        lambda x1, x2: x1 + x2, b)
+                else:
+                    self._err = np.sqrt((self._err)**2.
+                                        + (b.err)**2.)
             self._dat = result
         else:
-            if np.any(np.iscomplex(b)): self._ascomplex()
+            if np.any(np.iscomplexobj(b)): self._ascomplex()
             self._dat += np.array(b)
             
         return self
@@ -251,11 +264,15 @@ class Data(object):
             result = self._dat - b.dat
             # error propagation
             if self._err is not None and b.err is not None:
-                self._err = np.sqrt((self._err)**2.
-                                    + (b.err)**2.)
+                if self._has_complexity(b):
+                    self._err = self._compute_complex_err(
+                        lambda x1, x2: x1 - x2, b)
+                else:
+                    self._err = np.sqrt((self._err)**2.
+                                        + (b.err)**2.)
             self._dat = result
         else:
-            if np.any(np.iscomplex(b)): self._ascomplex()
+            if np.any(np.iscomplexobj(b)): self._ascomplex()
             self._dat -= b
             
         return self
@@ -272,9 +289,13 @@ class Data(object):
         result = a.dat ** b.dat
         # error propagation
         if a.err is not None or b.err is not None:
-            a.err = np.abs(result) * np.sqrt(
-                (b.dat / a.dat * a.err)**2.
-                + (np.log(a.dat) * b.err)**2.)
+            if self._has_complexity(b):
+                a.err = self._compute_complex_err(
+                    lambda x1, x2: x1 ** x2, b, a=a)
+            else:
+                a.err = np.abs(result) * np.sqrt(
+                    (b.dat / a.dat * a.err)**2.
+                    + (np.log(a.dat) * b.err)**2.)
         
         a.dat = result
         return a
@@ -291,9 +312,13 @@ class Data(object):
         
         # error propagation
         if a.err is not None or b.err is not None:
-            b.err = np.abs(result) * np.sqrt(
-                (a.dat / b.dat * b.err)**2.
-                + (np.log(b.dat) * a.err)**2.)
+            if self._has_complexity(b):
+                self._err = self._compute_complex_err(
+                    lambda x1, x2: x2 ** x1, b, a=a)
+            else:
+                b.err = np.abs(result) * np.sqrt(
+                    (a.dat / b.dat * b.err)**2.
+                    + (np.log(b.dat) * a.err)**2.)
         
         b.dat = result
         return b
@@ -309,9 +334,40 @@ class Data(object):
         """Implement ``+ b``."""
         return self.copy()
 
+    def _has_complexity(self, b):
+        """Check if an operation present any complexity that involves a
+        Monte-Carlo simulation
+        """
+        if _has_complex_error(self._err + b.err):
+            return True
+        if (np.iscomplexobj(self.dat)
+            and (np.any(np.iscomplex(self._err))
+                 or np.any(np.iscomplex(b.err)))):
+            return True
+        if np.any(self._dat == 0.) or np.any(b.dat == 0.):
+            return True
+        return False
+                    
+
+    def _compute_complex_err(self, f, b, a=None):
+        """Compute error in the case of complex uncertainties via Monte-Carlo.
+
+        :param f: function to apply
+
+        :param b: A numpy array or a Data instance. Must be
+          broadcastable with self.
+        """
+        if a is None: a = self
+        _err = mcu(f,
+                   [array(np.copy(a._dat),
+                          np.copy(a._err)),
+                    array(np.copy(b._dat),
+                          np.copy(b._err))])
+        return np.copy(_err)
+
     def _ascomplex(self):
         """Change data type to complex type"""
-        if not np.all(np.iscomplex(self._dat)):
+        if not np.all(np.iscomplexobj(self._dat)):
             self._dat = self._dat.astype(np.complex)
             self._err = self._err.astype(np.complex)
             
@@ -326,8 +382,10 @@ class Data(object):
         
         if m is not None:
             if not isinstance(m, np.ndarray):
-                m = np.array(m)         
-            
+                m = np.array(m)
+            if (np.any(np.iscomplexobj(m)) 
+                and not np.any(np.iscomplexobj(self._dat))):
+                raise Exception('Error is complex and data is not !')
             if (m.shape == self.shape):
                 return np.array(m, dtype=self.dtype)
             elif np.size(m) == np.size(self._dat):
@@ -373,7 +431,7 @@ class Data(object):
         if self._err is not None:
             self._err = np.copy(self._err)
             self._err.real = np.abs(self._err.real)
-            if np.any(np.iscomplex(self._err)):
+            if np.any(np.iscomplexobj(self._err)):
                 self._err.imag = np.abs(self._err.imag)
 
         else:
@@ -481,7 +539,7 @@ def array(a, e=None, dtype=None):
     if isinstance(a, Data):
         return a
 
-    if not isinstance(a, np.ndarray):
+    if not isinstance(a, np.ndarray):        
         try:
             a = np.array(a)
         except Exception, err:
@@ -533,7 +591,7 @@ def _has_complex_error(a_err):
 
     :param a_err: Error array
     """
-    if np.any(np.iscomplex(a_err)):
+    if np.any(np.iscomplexobj(a_err)):
         if np.any(a_err.real) and np.any(a_err.imag):
             return True
     return False
@@ -627,46 +685,98 @@ def nanmean(a):
 #### Monte-Carlo approximation ###############
 ##############################################
 
-def mcu_one_val(f, val, err):
+def mcu_one_val(f, val, err, **kwargs):
     """Monte-Carlo approximation of the uncertainty of one value
     through a function f.
 
     :param f: function
-    :param val: Value
-    :param err: Uncertainty on the value
+    
+    :param val: Value (or a list of values if the function needs more
+      than one variable)
+    
+    :param err: Uncertainty on the value (or a list of uncertainties
+      if the function needs more than one variable)
+
+    :param kwargs: keyword arguments passed to f
 
     :return: Uncertainty on f(val)
     """
-    N = 100
-    if not np.isscalar(val) or not np.isscalar(err):
-        raise Exception('val and err must be scalars (real or complex)')
-    
-    if np.iscomplex(val) or np.iscomplex(err):
-        idist = val + (np.random.standard_normal(N) * err.real
-                       + 1j * np.random.standard_normal(N) * err.imag)
-    else:
-        idist = val + np.random.standard_normal(N) * err
+    N = 10000
+    if not isinstance(val, list):
+        if not np.isscalar(val):
+            raise Exception('val must be scalar (real or complex)')
+        val = list([val])
         
-    idist = f(idist)
-    if np.iscomplex(val) or np.iscomplex(err):
-        return np.nanstd(idist.real) + 1j*np.nanstd(idist.imag)
+    if not isinstance(err, list):
+        if not np.isscalar(err):
+            raise Exception('err must be scalar (real or complex)')
+        err = list([err])
+
+    if len(val) != len(err):
+        raise Exception('err and val must have the same length')
+
+    dists = list()
+
+    any_complex = False
+    for i in range(len(val)):
+        if np.iscomplexobj(val[i]) or np.iscomplexobj(err[i]):
+            any_complex = True
+            idist = val[i] + (np.random.standard_normal(N) * err[i].real
+                              + 1j * np.random.standard_normal(N) * err[i].imag)
+        else:
+            idist = val[i] + np.random.standard_normal(N) * err[i]
+        dists.append(idist)
+
+    errdist = f(*dists, **kwargs)
+
+    if any_complex:
+        return np.nanstd(errdist.real) + 1j*np.nanstd(errdist.imag)
     else:
-        return np.nanstd(idist)
+        return np.nanstd(errdist)
     
-def mcu(f, arr):
+def mcu(f, arr, **kwargs):
     """Monte-Carlo approximation of the uncertainty on an array
     through a function f.
 
     :param f: function
-    :param arr: orb.Data instance
+    
+    :param arr: orb.Data instance or a list of orb.Data instances (for
+      a function with mutiple variables, note that all arrays must
+      have the same shape)
+
+
+    :param kwargs: keyword arguments passed to f
 
     :return: Uncertainty on f(arr)
     """
-    arr = array(arr)
-    err = np.empty(arr.shape, dtype=arr.dtype)
-    if arr.dat.size > 1:
-        for i in range(arr.dat.size):
-            err[i] = mcu_one_val(f, arr.dat[i], arr.err[i])
+    if isinstance(arr, list):
+        arrs = list()
+        for iarr in arr:
+            arrs.append(array(iarr))
+        err = np.empty(arrs[0].shape, dtype=arrs[0].dtype)
+        if arrs[0].dat.size > 1:
+            for i in range(arrs[0].dat.size):
+                ivals = list()
+                ierrs = list()
+                for j in range(len(arrs)):
+                    ivals.append(arrs[j].dat[i])
+                    ierrs.append(arrs[j].err[i])
+                err[i] = mcu_one_val(f, ivals, ierrs, **kwargs)
+        else:
+            _dat = [arrs[i].dat for i in range(len(arrs))]
+            _err = [arrs[i].err for i in range(len(arrs))]
+            err = mcu_one_val(f, _dat, _err, **kwargs)
+            
+    else:
+        arr = array(arr)
+        err = np.empty(arr.shape, dtype=arr.dtype)
+        if arr.dat.size > 1:
+            for i in range(arr.dat.size):
+                err[i] = mcu_one_val(f, arr.dat[i], arr.err[i])
+        else:
+            err = mcu_one_val(f, arr.dat, arr.err, **kwargs)
+            
+        
     return err
         
 
@@ -675,6 +785,27 @@ def mcu(f, arr):
 ##############################################
 #### Testing functions #######################
 ##############################################
+
+
+def uncertainty_testing_one_val(f, val, err):
+    N = int(1e4)
+    odval = array(val, err)
+    yerr_sim = f(*odval)
+
+    yerr = list()
+    for j in range(N):
+        val_rnd = list()
+        for i in range(len(val)):
+            val_rnd.append(val[i] + np.random.standard_normal()*err[i])
+        yerr.append(f(*val_rnd))
+    yerr = np.array(yerr)
+    if np.any(np.iscomplexobj(yerr)):
+        yerr_std = np.nanstd(yerr.real) + 1j*np.nanstd(yerr.imag)
+    else:
+        yerr_std = np.nanstd(yerr)
+    print "simulated value: ", yerr_sim
+    print "value obtained from randomized guess: ", np.nanmean(yerr), yerr_std
+    return (yerr_sim.dat - np.nanmean(yerr))/ np.nanmean(yerr), (yerr_sim.err - yerr_std)/yerr_std
 
 
 
@@ -692,7 +823,9 @@ def uncertainty_testing(f, val_min, val_max, err, show=True):
     N = 1e4
     PARTS = 101
 
-    if np.iscomplex(val_min) or np.iscomplex(val_max) or np.iscomplex(err):
+    if (np.iscomplexobj(val_min)
+        or np.iscomplexobj(val_max)
+        or np.iscomplexobj(err)):
         IS_COMPLEX = True
         val_min = complex(val_min)
         val_max = complex(val_max)
