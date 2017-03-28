@@ -2057,7 +2057,7 @@ class Astrometry(Tools):
                 deep_frame,
                 star_list_deg, x_range, y_range, r_range,
                 None, izoom, self.fwhm_pix * 3.,
-                verbose=False, init_wcs=wcs)
+                verbose=False, init_wcs=wcs, raise_border_error=False)
 
             zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
             self._print_msg('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))

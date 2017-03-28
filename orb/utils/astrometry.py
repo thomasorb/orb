@@ -2047,7 +2047,8 @@ def get_wcs_parameters(_wcs):
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
-                      rc, zoom_factor, box_size, verbose=True, init_wcs=None):
+                      rc, zoom_factor, box_size, verbose=True, init_wcs=None,
+                      raise_border_error=True):
     """Determine a precise alignment guess by brute force.
 
     :param star_list: List of star position. Must be given in pixels
@@ -2071,6 +2072,10 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
 
     :param init_wcs: (Optional) WCS instance (can contain an SIP distortion
       model, default None).
+
+    :param raise_border_error: (Optional) if True raise an exception
+      if the returned guess is on the border of the brute force grid
+      (defaut True).
     """
 
     def get_total_flux(guess_list, image, star_list,
@@ -2225,13 +2230,15 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     dy = total_flux_list[index1d, 2]
     dr = total_flux_list[index1d, 3]
 
-    if (dx == np.min(x_range)
-        or dx == np.max(x_range)
-        or dy == np.min(y_range)
-        or dy == np.max(y_range)
-        or dr == np.min(r_range)
-        or dr == np.max(r_range)):
-        raise Exception('Brute force maximum found on grid border !')
+    if raise_border_error:
+        if (dx == np.min(x_range)
+            or dx == np.max(x_range)
+            or dy == np.min(y_range)
+            or dy == np.max(y_range)
+            or dr == np.min(r_range)
+            or dr == np.max(r_range)):
+            raise Exception('Brute force maximum found on grid border !')
+        
     if verbose:
         print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
             dx, dy, dr)
