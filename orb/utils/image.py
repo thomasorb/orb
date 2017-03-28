@@ -533,7 +533,7 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
-def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=10):
+def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=15):
     """Fit a map with a theta dependant value. The function f(theta)
     is a spline with a given number of knots.
 
@@ -1160,7 +1160,7 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
 
     :return: A tuple: (Fitted map, residual map)
     """    
-    CROP_COEFF = 0.85 # proportion of the phase map to keep when
+    CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 
     # bad values are filtered and phase map is cropped to remove

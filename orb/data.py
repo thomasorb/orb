@@ -340,12 +340,12 @@ class Data(object):
         """
         if _has_complex_error(self._err + b.err):
             return True
-        if (np.iscomplexobj(self.dat)
-            and (np.any(np.iscomplex(self._err))
-                 or np.any(np.iscomplex(b.err)))):
-            return True
-        if np.any(self._dat == 0.) or np.any(b.dat == 0.):
-            return True
+        if (np.any(np.iscomplex(self._err))
+            or np.any(np.iscomplex(b.err))):
+            if (np.iscomplexobj(self.dat)):
+                return True
+            if np.any(self._dat == 0.) or np.any(b.dat == 0.):
+                return True
         return False
                     
 

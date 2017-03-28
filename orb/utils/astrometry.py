@@ -2074,13 +2074,14 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     """
 
     def get_total_flux(guess_list, image, star_list,
-                       rc, zoom_factor, box_size, kernel, _wcs, _wcsp):
+                       rc, zoom_factor, box_size, kernel, _wcs_str, _wcsp):
         """Return the sum of the flux around a transformed list of
         star positions for a list of parameters.        
-        """        
+        """
+        _wcs = pywcs.WCS(_wcs_str)
         result = np.empty((guess_list.shape[0], 4))
         result.fill(np.nan)
-        if _wcsp is not None:
+        if _wcsp is not None and _wcs is not None:
             (target_x, target_y, deltax, deltay,
              target_ra, target_dec, rotation) = _wcsp
                 
@@ -2123,6 +2124,11 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     if init_wcs is not None and rc is not None:
         warnings.warn('rc must be set to None if a wcs is given. rc automatically set to None.')
         rc = None
+
+    if init_wcs is None and rc is None:
+        warnings.warn('rc automatically set.')
+        rc = (image.shape[0]/2., image.shape[1]/2.)
+
     if verbose:
         print 'Brute force range:'
         if len(x_range) > 1:
@@ -2175,18 +2181,20 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         wcs_params = get_wcs_parameters(init_wcs)
     else:
         wcs_params = None
-        
+
+    init_wcs_str = init_wcs.to_header_string(relax=True)
     # parallel processing of each guess list part
     jobs = [(ijob, job_server.submit(
         get_total_flux, 
         args=(pguess_lists[ijob], image,
               star_list, rc, zoom_factor,
-              box_size, kernel, init_wcs, wcs_params),
-        globals=globals(),
+              box_size, kernel, init_wcs_str, wcs_params),
         modules=("import numpy as np",
                  "import astropy.wcs as pywcs",
                  "import orb.cutils",
-                 "import warnings")))
+                 "import warnings",
+                 "from orb.utils.astrometry import *",
+                 "import astropy.io.fits as pyfits")))
             for ijob in range(ncpus)]
 
     for ijob, job in jobs:
@@ -2217,6 +2225,13 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     dy = total_flux_list[index1d, 2]
     dr = total_flux_list[index1d, 3]
 
+    if (dx == np.min(x_range)
+        or dx == np.max(x_range)
+        or dy == np.min(y_range)
+        or dy == np.max(y_range)
+        or dr == np.min(r_range)
+        or dr == np.max(r_range)):
+        raise Exception('Brute force maximum found on grid border !')
     if verbose:
         print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
             dx, dy, dr)

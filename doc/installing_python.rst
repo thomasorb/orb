@@ -112,11 +112,16 @@ To use the Viewers (orb-viewer and orb-viewer3d)
   
   sudo apt-get install libfreetype6-dev pkg-config libcanberra-gtk-module python-pyqt5 pyqt5-dev pyqt5-dev-tools python-cairo python-gtk2-dev python-pyside
 
-4. Rebuild matlplotlib::
+1. Rebuild matlplotlib::
 
-  sudo pip install --upgrade matplotlib
+   sudo pip install --upgrade matplotlib
 
-5. Install Vispy (for the 3d viewer)::
+2.  if there is still an error::
+	 
+   sudo apt-get build-dep python-matplotlib
+   sudo pip install matplotlib --force-reinstall --upgrade --no-binary matplotlib
+
+3. Install Vispy (for the 3d viewer)::
 
   sudo pip install vispy --upgrade 
 
