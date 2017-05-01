@@ -2230,6 +2230,10 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     dy = total_flux_list[index1d, 2]
     dr = total_flux_list[index1d, 3]
 
+    if verbose:
+        print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
+            dx, dy, dr)
+
     if raise_border_error:
         if (dx == np.min(x_range)
             or dx == np.max(x_range)
@@ -2239,9 +2243,6 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
             or dr == np.max(r_range)):
             raise Exception('Brute force maximum found on grid border !')
         
-    if verbose:
-        print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
-            dx, dy, dr)
 
     return dx, dy, dr, np.squeeze(guess_matrix)
 

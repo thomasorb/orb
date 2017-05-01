@@ -290,14 +290,14 @@ class FitVector(object):
         .. warning:: This function has not been extensively tested.
         """     
         PERCENTILE = 16 # corresponds to a 1-sigma uncertainty
-        NWALKERS_COEFF = 2 # number of walkers
+        NWALKERS_COEFF = 10 # number of walkers
         MCMC_RUN_NB = 500 # number of walker steps
         MCMC_RUN_THRESHOLD = 100 # Burn-in samples threshold
                 
         # walkers definition which starts in a tiny gaussian ball around
         # the maximum likelihood found with a classic optimization
         ndim, nwalkers = np.size(p), np.size(p) * NWALKERS_COEFF
-        pos = [p + p_err * np.random.randn(ndim) for i in range(nwalkers)]
+        pos = [p + p_err / 10. * np.random.randn(ndim) for i in range(nwalkers)]
         try:
             sampler = emcee.EnsembleSampler(nwalkers, ndim,
                                             self.get_lnposterior_probability,
@@ -310,11 +310,29 @@ class FitVector(object):
             ## fig.savefig("triangle.svg")
             ## fig.savefig("triangle.pdf")
 
+            # clean samples
+            CLEAN_CUT = 0.3
+            for ipar in range(samples.shape[1]):
+                isamples = samples[:,ipar]
+                _min = np.nanpercentile(isamples, CLEAN_CUT)
+                _max = np.nanpercentile(isamples,100-CLEAN_CUT)
+                isamples[np.nonzero((isamples < _min) + (isamples > _max))] = np.nan
+                samples[:,ipar] = isamples
+            
+
             err_mcmc = np.array(
-                zip(*np.percentile(samples, [PERCENTILE, 100-PERCENTILE],
-                                   axis=0)))
+                zip(*np.nanpercentile(samples, [PERCENTILE, 100-PERCENTILE],
+                                      axis=0)))
             err_min_mcmc = err_mcmc[:,0] - p
             err_max_mcmc = err_mcmc[:,1] - p
+
+                
+                
+            ## err_mcmc = [np.nanstd(samples[:,ipar]) for ipar in range(samples.shape[1])]
+            ## err_min_mcmc = err_mcmc
+            ## err_max_mcmc = err_mcmc
+
+            
             p_mcmc_err_list = self._all_p_vect2list(np.nanmean(
                 (np.abs(err_min_mcmc),
                  np.abs(err_max_mcmc)), axis=0))
@@ -335,7 +353,9 @@ class FitVector(object):
         
         ## import pylab as pl
         ## for i in range(ndim):
-        ##     pl.hist(samples[:,i], bins=100)
+        ##     pl.hist(samples[:,i], bins=100, range=(
+        ##         np.nanmin(samples[:,i]),
+        ##         np.nanmax(samples[:,i])))
         ##     pl.show()
 
         ## for iparam in range(ndim):
@@ -603,7 +623,6 @@ class Model(object):
         created. Then :py:meth:`fit.Model.val2free` is called to create
         :py:attr:`fit.Model.p_free` and :py:attr:`fit.Model.p_fixed`.
         """
-
         # parse input dict
         if isinstance(p_dict, dict):
             self.p_dict = dict(p_dict)
@@ -919,8 +938,8 @@ class LinesModel(Model):
       with more physical unities by :py:class:`fit.Cm1LinesModel` or
       :py:class:`fit.NmLinesModel`.
 
-    .. note:: Each line is built on 3 (or 4) parameters : amplitude,
-      FWHM, position and sigma (only for a the sincgauss model -- see
+    .. note:: Each line is built on 3 (or more) parameters : amplitude,
+      FWHM, position and sigma/alpha (the 4th and 5th parameters are used only for some models -- see
       below for details on the different models).
 
       Some lines can have one or more covarying parameters: FWHM can
@@ -939,14 +958,17 @@ class LinesModel(Model):
        'pos-def':,
        'fwhm-def':,
        'sigma-dev':, # only for sincgauss fmodel
+       'alpha-dev':, # only for sincphased fmode
        'amp-cov':,
        'pos-cov':,
        'fwhm-cov':,
        'sigma-cov':, # only for sincgauss fmodel
+       'alpha-cov':, # only for sincphased fmodel
        'amp-guess':,
        'pos-guess':,
        'fwhm-guess':,
-       'sigma-guess':} # only for sincgauss fmodel
+       'sigma-guess':, # only for sincgauss fmodel
+       'alpha-guess':} #  only for sincphased fmodel
 
     :keyword line-nb: Number of lines.
 
@@ -1057,7 +1079,6 @@ class LinesModel(Model):
     def parse_dict(self):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""
         def parse_param(key, cov_operation):
-            
             key_guess = key + '-guess'
             key_def = key + '-def'
             key_cov = key + '-cov'
@@ -1143,8 +1164,10 @@ class LinesModel(Model):
         parse_param('amp', self._get_amp_cov_operation())
         parse_param('pos', self._get_pos_cov_operation())
         parse_param('fwhm', self._get_fwhm_cov_operation())
-        if self._get_fmodel() == 'sincgauss':
-            parse_param('sigma', self._get_sigma_cov_operation())
+        if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
+            parse_param('sigma', self._get_sigma_cov_operation())            
+        if self._get_fmodel() in ['sincphased', 'sincgaussphased']:
+            parse_param('alpha', self._get_alpha_cov_operation())    
         self.p_def = np.array(self.p_def, dtype=object)
         self.p_val = np.array(self.p_val, dtype=float)
         
@@ -1162,6 +1185,10 @@ class LinesModel(Model):
 
     def _get_sigma_cov_operation(self):
         """Return covarying sigma operation"""
+        return lambda x, y: x + y
+
+    def _get_alpha_cov_operation(self):
+        """Return covarying alpha operation"""
         return lambda x, y: x + y
 
 
@@ -1185,9 +1212,20 @@ class LinesModel(Model):
             pass
 
         # check sigma
-        if self._get_fmodel() == 'sincgauss':
+        if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
             if np.any(np.isnan(p_array[:,3])):
                 warnings.warn('No initial sigma given')
+
+        # check alpha
+        if self._get_fmodel() == 'sincphased':
+            if np.any(np.isnan(p_array[:,3])):
+                warnings.warn('No initial alpha given')
+
+        if self._get_fmodel() == 'sincgaussphased':
+            if np.any(np.isnan(p_array[:,4])):
+                warnings.warn('No initial alpha given')
+
+
 
     def make_guess(self, v):
         """If a parameter value at init is a NaN this value is guessed.
@@ -1225,9 +1263,19 @@ class LinesModel(Model):
  
 
         # check sigma
-        if self._get_fmodel() == 'sincgauss':
+        if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
             if np.any(np.isnan(p_array[:,3])):
                 p_array[np.isnan(p_array[:,3]), 3] = 1e-3
+
+        # check alpha
+        if self._get_fmodel() == 'sincphased':
+            if np.any(np.isnan(p_array[:,3])):
+                p_array[np.isnan(p_array[:,3]), 3] = 1e-3
+
+        if self._get_fmodel() == 'sincgaussphased':
+            if np.any(np.isnan(p_array[:,4])):
+                p_array[np.isnan(p_array[:,4]), 4] = 1e-3
+
 
         self.p_val = self._p_array2val(p_array)
         self.val2free()
@@ -1306,6 +1354,20 @@ class LinesModel(Model):
                     x, 0., p_array[iline, 0],
                     p_array[iline, 1], p_array[iline, 2],
                     p_array[iline, 3])
+
+            elif fmodel == 'sincphased':
+                line_mod = utils.spectrum.sinc1d_phased(
+                    x, 0., p_array[iline, 0],
+                    p_array[iline, 1], p_array[iline, 2],
+                    p_array[iline, 3])
+
+            elif fmodel == 'sincgaussphased':
+                line_mod = utils.spectrum.sincgauss1d_phased(
+                    x, 0., p_array[iline, 0],
+                    p_array[iline, 1], p_array[iline, 2],
+                    p_array[iline, 3], p_array[iline, 4])
+
+
             elif fmodel == 'sinc2':
                 line_mod =  np.sqrt(utils.spectrum.sinc1d(
                     x, 0., p_array[iline, 0],
@@ -1317,7 +1379,7 @@ class LinesModel(Model):
                     p_array[iline, 1], p_array[iline, 2])
             
             else:
-                raise ValueError("fmodel must be set to 'sinc', 'gaussian', 'sincgauss' or 'sinc2'")
+                raise ValueError("fmodel must be set to 'sinc', 'gaussian', 'sincgauss', 'sincphased', 'sincgaussphased' or 'sinc2'")
             if mod is None:
                 mod = np.copy(line_mod)
             else:
@@ -1359,7 +1421,7 @@ class Cm1LinesModel(LinesModel):
         lines_cm1 = copy.copy(p_array[:,1])
         p_array[:,1] = self._w2pix(lines_cm1) # convert pos cm-1->pix
         p_array[:,2] /= self.axis_step # convert fwhm cm-1->pix
-        if self._get_fmodel() == 'sincgauss':
+        if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
             # convert sigma km/s->pix
             p_array[:,3] = utils.fit.vel2sigma(
                 p_array[:,3], lines_cm1, self.axis_step)
@@ -1369,7 +1431,7 @@ class Cm1LinesModel(LinesModel):
         """Transform :py:attr:`fit.LinesModel.p_array` to :py:attr:`fit.Model.p_val`."""
         p_array[:,1] = self._pix2w(p_array[:,1]) # convert pos pix->cm-1
         p_array[:,2] *= self.axis_step # convert fwhm pix->cm-1
-        if self._get_fmodel() == 'sincgauss':
+        if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
             # convert sigma pix-> km/s
             p_array[:,3] = utils.fit.sigma2vel(
                 p_array[:,3], p_array[:,1], self.axis_step)
@@ -1472,6 +1534,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           shift_guess=0., sigma_guess=0.,
                           fix_fwhm=False, cov_fwhm=True, cov_pos=True,
                           fix_pos=False, cov_sigma=True,
+                          fix_alpha=False, alpha_guess=0.,
                           fit_tol=1e-10, poly_order=0,
                           fmodel='gaussian', signal_range=None,
                           filter_file_path=None, fix_filter=False,
@@ -1538,6 +1601,12 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       [SII]6717, [SII]6731, if each ion has a different velocity
       dispersion cov_sigma can be : [0,1,0,2,2]. (default True).
 
+    :param fix_alpha: (Optional) If True alpha is fixed to its guess
+      value (defaut False)
+
+    :param alpha_guess: (Optional) guess of the phase parameter alpha
+      (default 0.).
+
     :param apodization: (Optional) Apodization level. Permit to separate the
       broadening due to the apodization and the real line broadening
       (see 'broadening' output parameter, default 1.).
@@ -1548,8 +1617,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     :param poly_order: (Optional) Order of the polynomial used to fit
       continuum. Use high orders carefully (default 0).
 
-    :param fmodel: (Optional) Fitting model. Can be 'gaussian', 
-      'sinc', 'sincgauss' or 'sinc2' (default 'gaussian').
+    :param fmodel: (Optional) Fitting model. Can be 'gaussian',
+      'sinc', 'sincgauss', 'sincphased', 'sincgaussphased' or 'sinc2'
+      (default 'gaussian').
 
     :param signal_range: (Optional) A tuple (x_min, x_max) in nm/cm-1
       giving the lowest and highest wavelength/wavenumber containing
@@ -1660,8 +1730,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                     np.round(ilines_pix), dtype=int)]))
             shift_guess = bf_range[np.nanargmax(bf_flux)]
 
-    fwhm_def, pos_def, sigma_def = _translate_fit_inputs(
-        fix_fwhm, cov_fwhm, fix_pos, cov_pos, cov_sigma)
+    fwhm_def, pos_def, sigma_def, alpha_def = _translate_fit_inputs(
+        fix_fwhm, cov_fwhm, fix_pos, cov_pos, cov_sigma, fix_alpha)
         
     if apodization == 1.:
         sigma_cov_vel = SIGMA_COV_VEL # km/s
@@ -1733,7 +1803,10 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                      'fwhm-guess':fwhm_guess,
                      'sigma-def':sigma_def,
                      'sigma-guess':0.,
-                     'sigma-cov':sigma_cov_vel},
+                     'sigma-cov':sigma_cov_vel,
+                     'alpha-def':alpha_def,
+                     'alpha-guess':alpha_guess,
+                     'alpha-cov':0.01},
                     {'poly-order':poly_order,
                      'poly-guess':cont_guess},
                     {'filter-function':filter_function,
@@ -1753,7 +1826,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
             apodization=apodization)
     
     else:
-        if fmodel == 'sincgauss':
+        if fmodel in ['sincgauss', 'sincgaussphased']:
+            warnings.warn('bad fit, fmodel replaced by a normal sinc')
             all_args['fmodel'] = 'sinc'
             return fit_lines_in_spectrum(**all_args)
         
@@ -1761,9 +1835,12 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     
 
 
-def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
+def fit_lines_in_vector(
+    vector, lines, fwhm_guess=3.5,
     cont_guess=None, shift_guess=0., fix_fwhm=False, cov_fwhm=True,
-    cov_pos=True, fix_pos=False, cov_sigma=True, fit_tol=1e-10, poly_order=0,
+    cov_pos=True, fix_pos=False, cov_sigma=True,
+    fix_alpha=False, alpha_guess=0.,
+    fit_tol=1e-10, poly_order=0,
     fmodel='gaussian', signal_range=None, filter_file_path=None,
     fix_filter=False, compute_mcmc_error=False, no_error=False):
     
@@ -1817,6 +1894,12 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     :param fix_pos: (Optional) If True line position is fixed (default
       False).
 
+    :param fix_alpha: (Optional) If True alpha is fixed to its guess
+      value (defaut False)
+
+    :param alpha_guess: (Optional) guess of the phase parameter alpha
+      (default 0.).
+
     :param fit_tol: (Optional) Tolerance on the fit value (default
       1e-10).
 
@@ -1824,7 +1907,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
       continuum. Use high orders carefully (default 0).
 
     :param fmodel: (Optional) Fitting model. Can be 'gaussian', 
-      'sinc', 'sincgauss' or 'sinc2' (default 'gaussian').
+      'sinc', 'sincgauss', 'sincphased', 'sincgaussphased' or 'sinc2' (default 'gaussian').
 
     :param signal_range: (Optional) A tuple (x_min, x_max) in channels
       giving the lowest and highest wavelength/wavenumber containing
@@ -1870,8 +1953,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
     else:
         minx = 0 ; maxx = vector.shape[0] - 1
 
-    fwhm_def, pos_def, sigma_def = _translate_fit_inputs(
-        fix_fwhm, cov_fwhm, fix_pos, cov_pos, cov_sigma)
+    fwhm_def, pos_def, sigma_def, alpha_def = _translate_fit_inputs(
+        fix_fwhm, cov_fwhm, fix_pos, cov_pos, cov_sigma, fix_alpha)
 
     fs = FitVector(vector,
                    ((LinesModel, 'add'),
@@ -1886,7 +1969,9 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
                      'fwhm-guess':fwhm_guess,
                      'sigma-def':sigma_def,
                      'sigma-guess':0.,
-                     'sigma-cov':cov_sigma},
+                     'sigma-cov':cov_sigma,
+                     'alpha-guess':alpha_guess,
+                     'alpha-def':alpha_def},
                     {'poly-order':poly_order,
                      'poly-guess':cont_guess}),
                    fit_tol=fit_tol,
@@ -1906,20 +1991,24 @@ def fit_lines_in_vector(vector, lines, fwhm_guess=3.5,
 
 def _translate_fit_inputs(fix_fwhm, cov_fwhm,
                           fix_pos, cov_pos,
-                          cov_sigma):
+                          cov_sigma, fix_alpha):
     """Translate inputs of the fitting routines.
 
     Parameters have the same definition as in
     :py:meth:`fit_lines_in_vector` and
     :py:meth:`fit_lines_in_spectrum`.
 
-    :return: fwhm_def, pos_def, sigma_def
+    :return: fwhm_def, pos_def, sigma_def, alpha_def
     """
 
 
     if fix_fwhm: fwhm_def = 'fixed'
     elif cov_fwhm: fwhm_def = '1'
     else: fwhm_def = 'free'
+
+    if fix_alpha: alpha_def = 'fixed'
+    else: alpha_def = '1'
+
 
     if not fix_pos:
         if np.size(cov_pos) > 1:
@@ -1935,7 +2024,7 @@ def _translate_fit_inputs(fix_fwhm, cov_fwhm,
         if not cov_sigma: sigma_def = 'free'
         else: sigma_def = '1'
 
-    return fwhm_def, pos_def, sigma_def
+    return fwhm_def, pos_def, sigma_def, alpha_def
 
 
 
@@ -1966,7 +2055,7 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
         fit_params_err_key = 'fit-params-err'
 
     ## create a formated version of the parameters:
-    ## [N_LINES, (H, A, DX, FWHM, SIGMA)]
+    ## [N_LINES, (H, A, DX, FWHM, SIGMA, ALPHA)]
 
     line_params = fit_results['fit-params'][0]
     line_nb = np.size(lines)
@@ -2004,7 +2093,7 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
         line_params_err = line_params_err.reshape(
             (line_params_err.shape[0]/line_nb, line_nb)).T
 
-        if fmodel != 'sincgauss':
+        if fmodel not in ['sincgauss', 'sincgaussphased']:
             line_params_err = np.append(line_params_err.T, nan_col)
             line_params_err = line_params_err.reshape(
                 line_params_err.shape[0]/line_nb, line_nb).T
@@ -2024,7 +2113,7 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
         line_params_err = None
 
     # set 0 sigma to nan
-    if fmodel == 'sincgauss':
+    if fmodel in ['sincgauss', 'sincgaussphased']:
         line_params[:,4][line_params[:,4] == 0.] = np.nan
         if fit_params_err_key in fit_results:
             line_params_err[:,4][line_params_err[:,4] == 0.] = np.nan
@@ -2082,7 +2171,7 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
 
 
     ## compute flux
-    if fmodel == 'sincgauss':
+    if fmodel in ['sincgauss', 'sincgaussphased']:
         flux = utils.spectrum.sincgauss1d_flux(
             line_params[:,1], fwhm, sigma)
     elif fmodel == 'gaussian':
@@ -2091,6 +2180,10 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
     elif fmodel == 'sinc':
         flux = utils.spectrum.sinc1d_flux(
             line_params[:,1], fwhm)
+    elif fmodel == 'sincphased':
+        flux = utils.spectrum.sinc1d_flux(
+            line_params[:,1], fwhm)
+    
     else:
         flux = None
 
@@ -2114,7 +2207,8 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
 
 
 def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
-                           theta, vel=0., sigma=0.):
+                           theta, vel=0., sigma=0., alpha=0.,
+                           fmodel='sincgauss'):
     """Return a simple emission-line spectrum model in cm-1
 
     :param lines: lines in cm-1
@@ -2135,6 +2229,12 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
       lines (in km/s, default 0.)
     
     :param sigma: (Optional) Line broadening (in km/s, default 0.)
+
+    :param alpha: (Optional) Phase coefficient of the lines (default
+      0.)
+
+    :param fmodel: (Optional) Lines model. Can be 'gaussian', 'sinc',
+      'sincgauss', 'sincphased', 'sincgaussphased' (default sincgauss).
     """
 
     if np.size(amp) != np.size(lines_cm1):
@@ -2159,11 +2259,14 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
          'pos-guess':lines_cm1,
          'pos-cov':vel,
          'pos-def':'1',
-         'fmodel':'sincgauss',
+         'fmodel':fmodel,
          'fwhm-guess':fwhm_guess,
          'sigma-def':'1',
          'sigma-guess':sigma,
-         'sigma-cov':0.})
+         'sigma-cov':0., # never more than 0.
+         'alpha-def':'1',
+         'alpha-guess':alpha,
+         'alpha-cov':0.}) # never more than 0.})
     p_free = np.copy(lines_model.p_free)
     p_free[:np.size(lines_cm1)] = amp
     lines_model.set_p_free(p_free)
@@ -2171,14 +2274,15 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
     return spectrum
 
-def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0., sigma=0.):
+def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
+                       sigma=0., alpha=0., fmodel='sincgauss'):
     """Return a simple emission-line spectrum model with no physical units.
 
-    :param lines: lines channels
+    :param lines: lines channels.
     
-    :param amp: Amplitude (must have the same size as lines)
+    :param amp: Amplitude (must have the same size as lines).
     
-    :param fwhm: lines FWHM (in channels)
+    :param fwhm: lines FWHM (in channels).
     
     :param step_nb: Number of steps of the spectrum.
     
@@ -2187,6 +2291,12 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0., sigma=0.):
     
     :param sigma: (Optional) Sigma of the lines (in channels, default
       0.)
+
+    :param alpha: (Optional) Phase coefficient of the lines (default
+      0.)
+
+    :param fmodel: (Optional) Lines model. Can be 'gaussian', 'sinc',
+      'sincgauss', 'sincphased', 'sincgaussphased' (default sincgauss).
     """
 
     if np.size(amp) != np.size(lines):
@@ -2199,11 +2309,14 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0., sigma=0.):
          'pos-guess':lines,
          'pos-cov':line_shift,
          'pos-def':'1',
-         'fmodel':'sincgauss',
+         'fmodel':fmodel,
          'fwhm-guess':fwhm,
          'sigma-def':'1',
          'sigma-guess':sigma,
-         'sigma-cov':0.})
+         'sigma-cov':0., # never more than 0.
+         'alpha-def':'1',
+         'alpha-guess':alpha,
+         'alpha-cov':0.}) # never more than 0.
     p_free = np.copy(lines_model.p_free)
     p_free[:np.size(lines)] = amp
     lines_model.set_p_free(p_free)
@@ -2215,7 +2328,7 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0., sigma=0.):
 
 
 def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
-                  snr, sigma=0, vel=0):
+                  snr, sigma=0, vel=0, alpha=0., fmodel='sincgauss'):
     """Create a model and fit it.
 
     This is a good way to check the quality and the internal coherency
@@ -2238,11 +2351,15 @@ def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
     :param sigma: (Optional) Line broadening in km/s (default 0.)
 
     :param vel: (Optional) Velocity in km/s (default 0.)
+
+    :param alpha: (Optional) Phase coefficient of the lines (default
+      0.)
     """
     
     spectrum = create_cm1_lines_model(lines_cm1, amp, step,
                                       order, resolution, theta,
-                                      sigma=sigma, vel=vel)
+                                      sigma=sigma, vel=vel, alpha=alpha,
+                                      fmodel=fmodel)
 
     # add noise
     if snr > 0.:
@@ -2257,14 +2374,17 @@ def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
     fit = fit_lines_in_spectrum(
         spectrum, lines_cm1, step, order, 1., 1./cos_theta,
         wavenumber=True, 
-        fmodel='sincgauss', shift_guess=vel, cov_pos=True,
+        fmodel=fmodel, shift_guess=vel, cov_pos=True,
         fwhm_guess=fwhm_guess, fix_fwhm=True, fix_pos=False,
-        cov_sigma=True, compute_mcmc_error=False, no_error=True)
+        cov_sigma=True, compute_mcmc_error=False, no_error=True,
+        fix_alpha=False, alpha_guess=alpha)
 
     return fit, spectrum
 
 
-def check_fit(lines, amp, fwhm, step_nb, snr, line_shift=0, sigma=0):
+def check_fit(lines, amp, fwhm, step_nb, snr,
+              line_shift=0, sigma=0, alpha=0, fmodel='sincgauss',
+              compute_mcmc_error=False):
     """Create a model and fit it.
 
     This is a good way to check the quality and the internal coherency
@@ -2285,10 +2405,21 @@ def check_fit(lines, amp, fwhm, step_nb, snr, line_shift=0, sigma=0):
     
     :param sigma: (Optional) Sigma of the lines (in channels, default
       0.)
+
+    :param alpha: (Optional) Phase coefficient of the lines (default
+      0.)
+
+    :param fmodel: (Optional) Lines model. Can be 'gaussian', 'sinc',
+      'sincgauss', 'sincphased', 'sincgaussphased' (default sincgauss).
+
+    :param compute_mcmc_error: (Optional) If Truem error is estimated
+      with the distribution obtained via a Monte-Carlo Markov Chain
+      algorithm (default False).
     """
     
     spectrum = create_lines_model(lines, amp, fwhm, step_nb,
-                                  line_shift=line_shift, sigma=sigma)
+                                  line_shift=line_shift, sigma=sigma,
+                                  alpha=alpha, fmodel=fmodel)
 
     # add noise
     if snr > 0.:
@@ -2298,8 +2429,9 @@ def check_fit(lines, amp, fwhm, step_nb, snr, line_shift=0, sigma=0):
 
     fit = fit_lines_in_vector(
         spectrum, lines, 
-        fmodel='sincgauss', shift_guess=line_shift, cov_pos=True,
+        fmodel=fmodel, shift_guess=line_shift, cov_pos=True,
         fwhm_guess=fwhm, fix_fwhm=True, fix_pos=False,
-        cov_sigma=True, compute_mcmc_error=False, no_error=True)
+        cov_sigma=True, compute_mcmc_error=compute_mcmc_error, no_error=False,
+        fix_alpha=False, alpha_guess=alpha)
 
     return fit, spectrum

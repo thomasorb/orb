@@ -31,7 +31,7 @@ All the installation process can be done with pip and apt-get::
   pip install bottleneck --upgrade
   pip install pp --upgrade
   pip install pyregion --upgrade
-  pip install dill --upgrade
+  pip install emcee --upgrade
 
 Fast installation sequence for MAC users
 ========================================

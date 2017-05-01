@@ -1015,8 +1015,8 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
                    np.nanmean(fvec)/calib_laser_nm*3e5,
                    np.nanstd(fvec)/calib_laser_nm*3e5))
 
-    CENTER_COEFF = 0.5
-    LARGE_COEFF = 0.95
+    CENTER_COEFF = 0.3
+    LARGE_COEFF = 0.5 # 0.95
     ZERN_MODES = 20 # number of Zernike modes to fit 
     BORDER_SIZE = 10 # in pixels
     ANGLE_RANGE = 4 # in degrees
@@ -1084,9 +1084,12 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     print_params(params, fit[2]['fvec'], p_ind)
 
     print '  > Second fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100)
-    p_var = np.array([params[0], 0., params[2], 0., 0., 0.])
-    p_ind = np.array([0, 0, 0, 0, 0, 0, 1])
-    p_fix = np.array([calib_laser_nm])
+    ## p_var = np.array([params[0], 0., params[2], 0., 0., 0.])
+    ## p_ind = np.array([0, 0, 0, 0, 0, 0, 1])
+    ## p_fix = np.array([calib_laser_nm])
+    p_var = np.array([params[0], 0., params[2], 0., 0.])
+    p_ind = np.array([0, 0, 0, 0, 0, 1, 1])
+    p_fix = np.array([0., calib_laser_nm])
 
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_center,
@@ -1097,7 +1100,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     print_params(params, fit[2]['fvec'], p_ind)
 
 
-    print '  > Third fit on all the map ({:.1f}% of the total size)'.format(LARGE_COEFF*100)
+    print '  > Third fit on a larger portion of the map ({:.1f}% of the total size)'.format(LARGE_COEFF*100)
     xmin,xmax,ymin,ymax = get_box_coords(
         calib_laser_map_bin.shape[0]/2,
         calib_laser_map_bin.shape[1]/2,
@@ -1105,9 +1108,13 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         0, calib_laser_map_bin.shape[0],
         0, calib_laser_map_bin.shape[1])
     calib_laser_map_bin_large = calib_laser_map_bin[xmin:xmax,ymin:ymax]
-    p_var = np.array(params[:-1])
-    p_ind = np.array([0, 0, 0, 0, 0, 0, 1])
-    p_fix = np.array([calib_laser_nm])
+    ## p_var = np.array(params[:-1])
+    ## p_ind = np.array([0, 0, 0, 0, 0, 0, 1])
+    ## p_fix = np.array([calib_laser_nm])
+    p_var = np.array([params[0], 0., params[2], 0., 0.])
+    p_ind = np.array([0, 0, 0, 0, 0, 1, 1])
+    p_fix = np.array([0., calib_laser_nm])
+
     
     fit = scipy.optimize.leastsq(diff_laser_map, p_var,
                                  args=(p_fix, p_ind, calib_laser_map_bin_large,
@@ -1115,6 +1122,26 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
                                  full_output=True)
     params = get_p(fit[0], p_fix, p_ind)
     print_params(params, fit[2]['fvec'], p_ind)
+
+    ## print '  > Third fit on all the map ({:.1f}% of the total size)'.format(LARGE_COEFF*100)
+    ## xmin,xmax,ymin,ymax = get_box_coords(
+    ##     calib_laser_map_bin.shape[0]/2,
+    ##     calib_laser_map_bin.shape[1]/2,
+    ##     int(LARGE_COEFF*calib_laser_map_bin.shape[0]),
+    ##     0, calib_laser_map_bin.shape[0],
+    ##     0, calib_laser_map_bin.shape[1])
+    ## calib_laser_map_bin_large = calib_laser_map_bin[xmin:xmax,ymin:ymax]
+    ## p_var = np.array(params[0:3])
+    ## p_ind = np.array([0, 0, 0, 1, 1, 1, 1])
+    ## p_fix = np.array([0,0,0,calib_laser_nm])
+    
+    ## fit = scipy.optimize.leastsq(diff_laser_map, p_var,
+    ##                              args=(p_fix, p_ind, calib_laser_map_bin_large,
+    ##                                    float(pixel_size*binning)),
+    ##                              full_output=True)
+    ## params = get_p(fit[0], p_fix, p_ind)
+    ## print_params(params, fit[2]['fvec'], p_ind)
+
     
     new_calib_laser_map = model_laser_map(
         params, calib_laser_map.shape[0], calib_laser_map.shape[1], pixel_size)
@@ -1159,7 +1186,9 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     :param nm_laser: Calibration laser wavelength in nm.
 
     :return: A tuple: (Fitted map, residual map)
-    """    
+    """
+    # WARNING: CROP_COEFF must correspond to the CROP_COEFF used in
+    # fit_sitelle_phase_map
     CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 
@@ -1287,7 +1316,9 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                + 'Rotation angle: {} degrees {}\n'.format(
                    ang(params[_i+5]), str_fix(_i+5)))
 
-    CROP_COEFF = 0.75 # proportion of the phase map to keep when
+    # WARNING: CROP_COEFF must correspond to the CROP_COEFF used in
+    # fit_highorder_phase_map
+    CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 
     POLY_DEG = 2 # degree of the polyomial used to transform a
@@ -1486,6 +1517,67 @@ def fit_phase_map02calib_map(calib, pm0, nm_laser):
     else:
         warnings.warn('Phase map 2 calibration laser map fit failed: {}'.format(fit[-2]))
         return None
+
+def unwrap_phase_map0(phase_map):
+    """
+    Phase is defined modulo pi/2. The Unwrapping is a
+    reconstruction of the phase so that the distance between two
+    neighboor pixels is always less than pi/4. Then the real
+    phase pattern can be recovered and fitted easily.
+    
+    The idea is the same as with np.unwrap() but in 2D, on a
+    possibly very noisy map, where a naive 2d unwrapping cannot
+    be done.
+
+    :param phase_map: Order 0 phase map.
+    """
+
+    BIN_SIZE = 20
+    LINE_SIZE = 30
+
+    def unwrap(val, target):
+        while abs(val - target) > math.pi / 2.:
+            if val  - target > 0. :
+                val -= math.pi
+            else:
+                val += math.pi
+        return val
+
+    def unwrap_columns(pm0, bin_size):
+        for ii in range(pm0.shape[0]):
+            for ij in range(pm0.shape[1]):
+                colbin = pm0[ii,ij:ij+bin_size+1]
+                colbin_med = np.nanmedian(colbin)
+                for ik in range(colbin.shape[0]):
+                    colbin[ik] = unwrap(colbin[ik], colbin_med)
+                pm0[ii,ij:ij+bin_size+1] = colbin
+        return pm0
+
+    def unwrap_all(pm0, bin_size):
+        test_line = np.nanmedian(
+            pm0[:, pm0.shape[1]/2-LINE_SIZE/2:pm0.shape[1]/2+LINE_SIZE/2],
+            axis=1)
+        test_line_init = np.copy(test_line)
+        for ii in range(0, test_line.shape[0]-bin_size/2):
+            linebin = test_line[ii:ii+bin_size+1]
+            linebin_med = np.nanmedian(orb.utils.stats.sigmacut(
+                linebin, sigma=2))
+            for ik in range(linebin.shape[0]):
+                linebin[ik] = unwrap(linebin[ik], linebin_med)
+            test_line[ii:ii+bin_size+1] = linebin
+        diff = test_line - test_line_init
+        pm0 = (pm0.T + diff.T).T
+        return pm0
+
+    # unwrap pixels along columns
+    phase_map = unwrap_columns(phase_map, BIN_SIZE)
+    # unwrap columns along a line
+    phase_map = unwrap_all(phase_map, BIN_SIZE)
+
+    phase_map[np.nonzero(np.isnan(phase_map))] = 0.
+
+    return phase_map
+
         
 def interpolate_map(m, dimx, dimy):
     """Interpolate 2D data map.

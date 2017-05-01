@@ -402,6 +402,124 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     return h + (a/2. * (dawson1 + dawson2)/dawson3).real
 
 
+
+def sinc1d_complex(x, h, a, dx, fwhm):
+    """The "complex" version of the sinc (understood as the Fourier
+    Transform of a boxcar function from 0 to MPD).
+
+    This is the real sinc function when ones wants to fit both the real
+    part and the imaginary part of the spectrum.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    """
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi
+    width /= 2.###
+    X = (x-dx) / (2*width)
+
+    s1dc = h + a * (np.sin(X) - 1j * (np.cos(X) - 1)) / (X)
+    s1dc[X == 0] = h + a * (1 + 0j)
+    return s1dc
+
+
+def sinc1d_phased(x, h, a, dx, fwhm, alpha):
+    """The phased version of the sinc function when that can be used to
+    fit a spectrum with a non perfect correction of the order 0 of the
+    phase.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param alpha: Mixing coefficient (in radians).
+    """
+    _sinc = sinc1d_complex(x, h, a, dx, fwhm)
+    return _sinc.real * np.cos(alpha) + _sinc.imag * np.sin(alpha)
+
+def sincgauss1d_complex_erf(x, h, a, dx, fwhm, sigma):
+    """The "complex" version of the sincgauss (erf formulation).
+
+    This is the real sinc*gauss function when ones wants to fit both the real
+    part and the imaginary part of the spectrum.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian.
+    """
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi ###
+
+    a_ = sigma / np.sqrt(2) / width
+    b_ = ((x - dx) / np.sqrt(2) / sigma).astype(float)
+
+    erf1 = special.erf(a_ - 1j*b_)
+    erf2 = special.erf(1j*b_)
+    erf3 = special.erf(a_)
+    
+    return np.exp(-b_**2.) * (erf1 + erf2) / (erf3)
+
+
+def sincgauss1d_complex(x, h, a, dx, fwhm, sigma):
+    """The "complex" version of the sincgauss (dawson definition).
+
+    This is the real sinc*gauss function when ones wants to fit both the real
+    part and the imaginary part of the spectrum.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian.
+    """
+
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi ###
+   
+    a_ = sigma / np.sqrt(2) / width
+    b_ = ((x - dx) / np.sqrt(2) / sigma).astype(float)
+
+    dawson1 = special.dawsn(1j * a_ + b_) * np.exp(2j * a_* b_)
+    dawson2 = special.dawsn(b_) * np.exp(a_**2)
+    dawson3 = special.dawsn(1j * a_)
+
+    return (dawson1 - dawson2) / dawson3
+
+
+def sincgauss1d_phased(x, h, a, dx, fwhm, sigma, alpha):
+    """The phased version of the sinc*gauss function when that can be
+    used to fit a spectrum with a non perfect correction of the order
+    0 of the phase.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian.
+    :param alpha: Mixing coefficient (in radians).
+    """
+    sc = sincgauss1d_complex(x, h, a, dx, fwhm, sigma)
+    return np.cos(alpha) * sc.real + np.sin(alpha) * sc.imag
+
 def gaussian1d_flux(a, fwhm):
     """Compute flux of a 1D Gaussian.
 

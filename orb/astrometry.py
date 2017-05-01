@@ -1892,11 +1892,13 @@ class Astrometry(Tools):
                              # brute force guess
         XY_HIST_BINS = 200 # Define the number of steps for the
                            # histogram registration
-        
-        ANGLE_STEPS = 60
-        ANGLE_RANGE = 12.0
+                           
+        # warning: too much steps is not good. a good value is 40
+        # steps for 12 degrees (i.e. 20 steps for 6 degrees etc.).
+        ANGLE_STEPS = 40 
+        ANGLE_RANGE = 12
         ZOOM_RANGE_COEFF = 0.015
-        
+
         if not (self.target_ra is not None and self.target_dec is not None
                 and self.target_x is not None and self.target_y is not None
                 and self.wcs_rotation is not None):
@@ -1914,7 +1916,8 @@ class Astrometry(Tools):
         # get deep frame
         deep_frame = self._get_combined_frame(
             use_deep_frame=full_deep_frame, realign=realign)
-    
+        ## utils.io.write_fits('deep_frame.fits', deep_frame, overwrite=True)
+
         deltax = self.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
 
