@@ -38,16 +38,16 @@ Fast installation sequence for MAC users
 
 Most of the installation process can be done with pip::
 
-  sudo easy_install pip
-  sudo pip install pip --upgrade
-  sudo pip install numpy --upgrade
-  sudo pip install scipy --upgrade
-  sudo pip install cython --upgrade
-  sudo pip install astropy --upgrade
-  sudo pip install h5py --upgrade
-  sudo pip install bottleneck --upgrade
-  sudo pip install pyregion --upgrade
-  sudo pip install dill --upgrade
+  easy_install pip
+  pip install pip --upgrade
+  pip install numpy --upgrade
+  pip install scipy --upgrade
+  pip install cython --upgrade
+  pip install astropy --upgrade
+  pip install h5py --upgrade
+  pip install bottleneck --upgrade
+  pip install pyregion --upgrade
+  pip install dill --upgrade
   
   
 For the libraries that are not accessible via pip (e.g. pp) you can
@@ -56,7 +56,17 @@ unzipped folder type::
 
   sudo python setup.py install
 
-**Compile Cutils**
+Compile Cutils
+==============
+
+If you have an error with orb.cutils you might have to recompile it. You can do it with::
+
+  python setup.py build_ext --inplace
+
+You might need to specify the path to numpy with the following command (the included path might change)::
+
+  python setup.py build_ext --inplace -I /usr/local/lib/python2.7/sit-packages/numpy/core/include/
+
   
   
 Python_
