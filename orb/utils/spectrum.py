@@ -28,8 +28,9 @@ import time
 
 import orb.constants
 import orb.cutils
-import orb.data as od
+import orb.cgvar
 
+import gvar
 
 def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.
@@ -205,17 +206,12 @@ def line_shift(velocity, line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    is_data = od.isdata(velocity) or od.isdata(line)
-    ## vel = (od.array(line, dtype=np.longdouble)
-    ##        * od.array(velocity, dtype=np.longdouble)
-    ##        / float(orb.constants.LIGHT_VEL_KMS))
-    beta = od.array(velocity, dtype=np.longdouble) / float(orb.constants.LIGHT_VEL_KMS)
-    gamma = od.sqrt((1. + beta) / (1. - beta))
+    beta = velocity / orb.constants.LIGHT_VEL_KMS
+    gamma = gvar.sqrt((1. + beta) / (1. - beta))
     if wavenumber: 
-        shift = od.array(line, dtype=np.longdouble) * (1. / gamma - 1.)
+        shift = line * (1. / gamma - 1.)
     else:
-        shift = od.array(line, dtype=np.longdouble) * (gamma - 1.)
-    if not is_data: shift = shift.dat
+        shift = line * (gamma - 1.)
     return shift
 
 def compute_line_fwhm(step_nb, step, order, apod_coeff=1., corr=1.,
@@ -314,17 +310,6 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    if (not isinstance(line, np.ndarray)
-        and not isinstance(line, od.Data)):
-        line = np.array(line, dtype=np.longdouble)
-    if (not isinstance(rest_line, np.ndarray)
-        and not isinstance(line, od.Data)):
-        rest_line = np.array(rest_line, dtype=np.longdouble)
-    if line.dtype != np.longdouble:
-        line = line.astype(np.longdouble)
-    if rest_line.dtype != np.longdouble:
-        rest_line = rest_line.astype(np.longdouble)
-
     if wavenumber:
         ratio = (rest_line / line)**2.
     else:
@@ -342,21 +327,6 @@ def lorentzian1d(x, h, a, dx, fwhm):
     """
     return h + (a / (1. + ((x-dx)/(fwhm/2.))**2.))
 
-def sinc1d(x, h, a, dx, fwhm):
-    """Return a 1D sinc 
-    :param x: Array giving the positions where the function is evaluated
-    :param h: Height
-    :param a: Amplitude
-    :param dx: Position of the center
-    :param fwhm: FWHM
-    """
-    if not isinstance(x, np.ndarray):
-        x = np.array(x)
-    if x.dtype != float:
-        x = x.astype(float)
-    return orb.cutils.sinc1d(
-        x, float(h), float(a), float(dx), float(fwhm))
-
 def gaussian1d(x,h,a,dx,fwhm):
     """Return a 1D gaussian given a set of parameters.
 
@@ -368,10 +338,23 @@ def gaussian1d(x,h,a,dx,fwhm):
     """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
-    if x.dtype != float:
-        x = x.astype(float)
-    return orb.cutils.gaussian1d(
-        x, float(h), float(a), float(dx), float(fwhm))
+
+    w = fwhm / (2. * gvar.sqrt(2. * gvar.log(2.)))
+    return  h + a * gvar.exp(-(x - dx)**2. / (2. * w**2.))
+
+def sinc1d(x, h, a, dx, fwhm):
+    """Return a 1D sinc 
+    :param x: Array giving the positions where the function is evaluated
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM
+    """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
+        
+    X = ((x - dx) / (fwhm / 1.20671))
+    return h + a * orb.cgvar.sinc1d(X)
                         
 def sincgauss1d(x, h, a, dx, fwhm, sigma):
     """Return a 1D sinc convoluted with a gaussian of parameter sigma.
@@ -387,19 +370,22 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
     """
-    if sigma / fwhm < 1e-10:
+    if sigma / fwhm < 1e-5:
         return sinc1d(x, h, a, dx, fwhm)
 
-    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
-    width /= math.pi ###
-    a_ = sigma / math.sqrt(2) / width
-    b_ = ((x - dx) / math.sqrt(2) / sigma).astype(float)
+    if sigma / fwhm > 1e3:
+        return gaussian1d(x, h, a, dx, sigma)
 
-    dawson1 = special.dawsn(1j*a_ + b_) * np.exp(2.*1j*a_*b_)
-    dawson2 = special.dawsn(1j*a_ - b_) * np.exp(-2.*1j*a_*b_)
-    dawson3 = special.dawsn(1j*a_)
+    if np.isclose(gvar.mean(sigma), 0.):
+        return sinc1d(x, h, a, dx, fwhm)
+
+    width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= math.pi ###
     
-    return h + (a/2. * (dawson1 + dawson2)/dawson3).real
+    a_ = sigma / math.sqrt(2) / width
+    b_ = (x - dx) / math.sqrt(2) / sigma
+
+    return h + a * orb.cgvar.sincgauss1d(a_, b_)
 
 
 
@@ -527,7 +513,7 @@ def gaussian1d_flux(a, fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_COEFF
-    return od.abs(a * math.sqrt(2*math.pi) * width)
+    return gvar.fabs(a * math.sqrt(2*math.pi) * width)
 
 def sinc1d_flux(a, fwhm):
     """Compute flux of a 1D sinc.
@@ -536,9 +522,9 @@ def sinc1d_flux(a, fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_SINC_COEFF
-    return od.abs(a * width)
+    return gvar.fabs(a * width)
 
-def sincgauss1d_flux(a, fwhm, sigma, no_err=False):
+def sincgauss1d_flux(a, fwhm, sigma):
     """Compute flux of a 1D sinc convoluted with a Gaussian of
     parameter sigma.
 
@@ -547,37 +533,22 @@ def sincgauss1d_flux(a, fwhm, sigma, no_err=False):
     :param sigma: Sigma of the gaussian
     :param no_err: (Optional) No error is returned (default False)
     """
-    if np.all(sigma / fwhm < 1e-10):
-        return sinc1d_flux(a, fwhm)
-
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     width /= math.pi
 
-    has_uncertainty = False
-    
-    if isinstance(a, od.Data):
-        _a = a.dat ; has_uncertainty = True
-    else: _a = a
-    if isinstance(fwhm, od.Data):
-        _fwhm = fwhm.dat ; _width = width.dat
-        has_uncertainty = True
-    else:
-        _fwhm = fwhm ; _width = width
-    if isinstance(sigma, od.Data):
-        _sigma = sigma.dat ; has_uncertainty = True
-    else: _sigma = sigma
-    
-    result = np.abs((_a * 1j * math.pi / math.sqrt(2.) * _sigma
-                     * np.exp(_sigma**2./2./_width**2.)
-                     / (special.dawsn(
-                         1j * _sigma / (math.sqrt(2) * _width)))).real)
-    
-    if no_err or not has_uncertainty: return result
-
-    result = od.array(result)
-    result.err = od.mcu(sincgauss1d_flux, [a, fwhm, sigma], no_err=True)
+    def compute_flux(ia, isig, iwid):
+        idia = orb.cgvar.dawsni(isig / (math.sqrt(2) * iwid))
+        expa2 = gvar.exp(isig**2./2./iwid**2.)
+        return ia * math.pi / math.sqrt(2.) * isig * expa2 / idia
         
+    if isinstance(a, np.ndarray):
+        result = np.empty_like(a)
+        for i in range(np.size(a)):
+            result.flat[i] = compute_flux(
+                a.flat[i], sigma.flat[i], width.flat[i])
+    else: result = compute_flux(a, sigma, width)
     return result
+
 def fast_w2pix(w, axis_min, axis_step):
     """Fast conversion of wavelength/wavenumber to pixel
 
@@ -587,7 +558,7 @@ def fast_w2pix(w, axis_min, axis_step):
     
     :param axis_step: axis step size in wavelength/wavenumber
     """
-    return np.abs(w - axis_min) / axis_step
+    return gvar.fabs(w - axis_min) / axis_step
 
 def fast_pix2w(pix, axis_min, axis_step):
     """Fast conversion of pixel to wavelength/wavenumber
@@ -635,3 +606,18 @@ def phase_shift_cm1_axis(step_nb, step, order, nm_laser_obs, nm_laser):
     delta_cm1 = cm1_min_corr - cm1_min_base
     delta_x = - (delta_cm1 / cm1_axis_step)
     return delta_x
+
+def guess_snr(calib_spectrum, flambda, exp_time):
+    """Guess calibrated spectrum snr
+
+    :param calib_spectrum: Calibrated spectrum
+
+    :param flambda: Calibration FLAMBDA
+
+    :param exp_time: Exposure time by step
+    """
+    int_time = calib_spectrum.shape[0] * exp_time # total integration time in s
+    spec_counts = calib_spectrum / flambda * int_time
+    noise = np.sqrt(np.nansum(np.sqrt(spec_counts**2)))
+    signal = np.nanmax(spec_counts) - np.nanmedian(spec_counts)
+    return signal / noise
