@@ -22,7 +22,6 @@
 
 import numpy as np
 import math
-import orb.data as od
 import orb.constants
 import gvar
 
