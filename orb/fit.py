@@ -240,11 +240,15 @@ class FitVector(object):
             
         return p_arr
 
-    def _all_p_arr2dict(self, p_arr):
+    def _all_p_arr2dict(self, p_arr, keep_gvar=False):
         """Return a dict of free parameters from a 1d array of
         free parameters.
 
         :param p_arr: Free parameters array
+
+        :param keep_gvar: (Optional) If True, gvar values of the
+          parameters are kept. Else they are converted to float
+          (default False).
         """
         if self.all_keys_index is None:
             raise Exception('self._all_p_dict2arr() must be called first')
@@ -255,7 +259,9 @@ class FitVector(object):
 
         p_dict = dict()
         for key in self.all_keys_index:
-            p_dict[key] = float(gvar.mean(p_arr[self.all_keys_index[key]]))
+            ival = p_arr[self.all_keys_index[key]]
+            if not keep_gvar: ival = float(gvar.mean(ival))
+            p_dict[key] = ival
 
         return p_dict
         
@@ -338,110 +344,6 @@ class FitVector(object):
         return self.vector[
             np.min(self.signal_range):np.max(self.signal_range)]
 
-    def get_lnlikelihood(self, all_p_free, sigma):
-        inv_sigma2 = 1.0 / (sigma**2.)
-        return -0.5 * np.nansum(
-            self.get_objective_function(all_p_free)**2. * inv_sigma2
-            - np.log(inv_sigma2))
-
-    def get_lnprior(self, all_p_free):
-        return 0.
-
-    def get_lnposterior_probability(self, all_p_free, sigma):
-        lp = self.get_lnprior(all_p_free)
-        if not np.isfinite(lp):
-            return -np.inf
-        return lp + self.get_lnlikelihood(all_p_free, sigma)        
-
-    def _compute_mcmc_error(self, p, p_err, sigma):
-        """Return Markov chain Monte Carlo error on the fit parameters.
-
-        :param p: Fitted parameters
-        :param p_err: Fitted uncertainty
-        :param sigma: Noise on the spectrum
-        
-        .. warning:: This function has not been extensively tested.
-        """     
-        PERCENTILE = 16 # corresponds to a 1-sigma uncertainty
-        NWALKERS_COEFF = 10 # number of walkers
-        MCMC_RUN_NB = 500 # number of walker steps
-        MCMC_RUN_THRESHOLD = 100 # Burn-in samples threshold
-                
-        # walkers definition which starts in a tiny gaussian ball around
-        # the maximum likelihood found with a classic optimization
-        ndim, nwalkers = np.size(p), np.size(p) * NWALKERS_COEFF
-        pos = [p + p_err / 10. * np.random.randn(ndim) for i in range(nwalkers)]
-        try:
-            sampler = emcee.EnsembleSampler(nwalkers, ndim,
-                                            self.get_lnposterior_probability,
-                                            args=(sigma,))
-            sampler.run_mcmc(pos, MCMC_RUN_NB)
-            samples = sampler.chain[:, MCMC_RUN_THRESHOLD:, :].reshape((-1, ndim))
-        
-            ## import corner
-            ## fig = corner.corner(samples, truths=p)
-            ## fig.savefig("triangle.svg")
-            ## fig.savefig("triangle.pdf")
-
-            # clean samples
-            CLEAN_CUT = 0.3
-            for ipar in range(samples.shape[1]):
-                isamples = samples[:,ipar]
-                _min = np.nanpercentile(isamples, CLEAN_CUT)
-                _max = np.nanpercentile(isamples,100-CLEAN_CUT)
-                isamples[np.nonzero((isamples < _min) + (isamples > _max))] = np.nan
-                samples[:,ipar] = isamples
-            
-
-            err_mcmc = np.array(
-                zip(*np.nanpercentile(samples, [PERCENTILE, 100-PERCENTILE],
-                                      axis=0)))
-            err_min_mcmc = err_mcmc[:,0] - p
-            err_max_mcmc = err_mcmc[:,1] - p
-
-                
-                
-            ## err_mcmc = [np.nanstd(samples[:,ipar]) for ipar in range(samples.shape[1])]
-            ## err_min_mcmc = err_mcmc
-            ## err_max_mcmc = err_mcmc
-
-            
-            p_mcmc_err_list = self._all_p_dict2list(np.nanmean(
-                (np.abs(err_min_mcmc),
-                 np.abs(err_max_mcmc)), axis=0))
-
-        except Exception, e:
-            warnings.warn('An error has occured during MCMC uncertainty computation : {}'.format(e))
-            err_mcmc = np.empty_like(p)
-            err_mcmc.fill(np.nan)
-            p_mcmc_err_list = self._all_p_dict2list(err_mcmc)
-            
-                        
-        full_p_mcmc_err_list = list()
-        for i in range(len(self.models)):
-            # recompute p_val error from p_free error
-            full_p_mcmc_err_list.append(self.models[i].get_p_val_err(
-                p_mcmc_err_list[i]))
-
-        
-        ## import pylab as pl
-        ## for i in range(ndim):
-        ##     pl.hist(samples[:,i], bins=100, range=(
-        ##         np.nanmin(samples[:,i]),
-        ##         np.nanmax(samples[:,i])))
-        ##     pl.show()
-
-        ## for iparam in range(ndim):
-        ##     print samples[:, iparam]
-        
-        ## ## print sampler.chain.shape
-        ## ## [pl.plot(sampler.chain[i,:,0]) for i in range(sampler.chain.shape[0])]
-        ## ## pl.show()
-        
-        return np.abs(full_p_mcmc_err_list)
-               
-
-        
 
     def fit(self, compute_mcmc_error=False):
         """Fit data vector.
@@ -468,14 +370,14 @@ class FitVector(object):
                 debug=True, extend=True,
                 tol=self.fit_tol)
 
-            
+
         MCMC_RANDOM_COEFF = 1e-2
         
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
 
-        if self.snr_guess is None:
-            self.classic = True
+        ### CLASSIC MODE ##################
+        if self.classic:
             priors_arr = self._all_p_dict2arr(priors_dict)
 
             fit_classic = scipy.optimize.curve_fit(
@@ -487,11 +389,22 @@ class FitVector(object):
                 full_output=True)
 
             fit = type('fit', (), {})
-            fit.p = self._all_p_arr2dict(gvar.gvar(fit_classic[0], np.zeros_like(fit_classic[0])))
-            
-            fit.chi2 = np.nan
-            fit.dof = np.nan
 
+            last_diff = fit_classic[2]['fvec']
+            fit.chi2 = np.sum(last_diff**2.)
+            fit.dof = self.vector.shape[0] - np.size(fit_classic[0])
+
+            # compute uncertainties
+            cov_x = fit_classic[1]
+            if np.all(np.isfinite(cov_x)):
+                p_err = np.sqrt(np.diag(cov_x))
+            else:
+                p_err = np.empty_like(fit_classic[0])
+                p_err.fill(np.nan)
+                
+            fit.p = self._all_p_arr2dict(gvar.gvar(fit_classic[0], p_err),
+                                         keep_gvar=True)
+            
             if 0 < fit_classic[-1] < 5:
                 fit.stopping_criterion = fit_classic[-1]
                 fit.error = None
@@ -500,8 +413,12 @@ class FitVector(object):
                 fit.error = True
 
             fit.fitter_results = fit_classic[2]
-            
+
+        ### LSQFIT MODE ##################
         else:
+            if self.snr_guess is None:
+                raise Exception('No SNR guess. This fit must be made in classic mode')
+            
             fit = lsqfit.nonlinear_fit(**fit_args(self.snr_guess))
             
         if fit.error is None:
@@ -778,29 +695,6 @@ class Model(object):
             self.p_val = copy.copy(p_val)
             self.val2free()
         else: raise Exception('bad format of passed val parameters')
-
-    def get_p_val_err(self, p_err):
-        """Return the uncertainty of a full set of parameters given
-        the uncertainty on the free parameters.
-
-        :param p_err: Uncertainty on the free parameters.
-        """
-        # copy real p_free and p_fixed values
-        old_p_fixed = copy.copy(self.p_fixed)
-        old_p_free = copy.copy(self.p_free)
-
-        # set p_fixed to 0 and replace p_free with p_err
-        self.p_fixed.fill(0.)
-        self.set_p_free(p_err)
-
-        # p_val_err is computed from the fake p_fixed, p_err set
-        p_val_err = self.get_p_val()
-
-        # class is reset to its original values
-        self.p_fixed = copy.copy(old_p_fixed)
-        self.set_p_free(old_p_free)
-        
-        return p_val_err
         
     def val2free(self):
         """Recompute the set of free parameters
@@ -1769,36 +1663,6 @@ class Cm1LinesModel(LinesModel):
             corr=self.correction_coeff)
         self.axis_step = cutils.get_cm1_axis_step(
             self.step_nb, self.step, corr=self.correction_coeff)
-
-
-    def get_p_val_err(self, p_err):
-        """Return the uncertainty of a full set of parameters given
-        the uncertainty on the free parameters.
-
-        :param p_err: Uncertainty on the free parameters.
-        """
-        raise Exception('not implemented')
-        # copy real p_free and p_fixed values
-        old_p_fixed = copy.copy(self.p_fixed)
-        old_p_free = copy.copy(self.p_free)
-
-        # set p_fixed to 0 and replace p_free with p_err
-        p_array_raw = self._p_val2array_raw(self.get_p_val())
-        lines_orig = copy.copy(p_array_raw[:,1])
-        p_array_raw.fill(0.)
-        p_array_raw[:,1] = lines_orig
-        self.p_val = self._p_array2val_raw(p_array_raw)
-        self.val2free() # set p_fixed from new p_val
-        self.set_p_free(p_err) # set p_free to p_err
-        p_array_err_raw = self._p_val2array_raw(self.get_p_val())
-        p_array_err_raw[:,1] -= lines_orig
-        p_err = self._p_array2val_raw(p_array_err_raw)
-       
-        # reset class to its original values
-        self.p_fixed = copy.copy(old_p_fixed)
-        self.set_p_free(old_p_free)
-        
-        return p_err
 
 
 class NmLinesModel(Cm1LinesModel):
