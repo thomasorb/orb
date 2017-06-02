@@ -370,6 +370,12 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
     """
+    if np.size(sigma) > 1:
+        if np.any(sigma != sigma[0]):
+            raise Exception('Only one value of sigma can be passed')
+        else:
+            sigma = sigma[0]
+            
     if sigma / fwhm < 1e-5:
         return sinc1d(x, h, a, dx, fwhm)
 
@@ -540,7 +546,16 @@ def sincgauss1d_flux(a, fwhm, sigma):
         idia = orb.cgvar.dawsni(isig / (math.sqrt(2) * iwid))
         expa2 = gvar.exp(isig**2./2./iwid**2.)
         return ia * math.pi / math.sqrt(2.) * isig * expa2 / idia
-        
+
+
+    try:
+        _A = sigma / (np.sqrt(2) * width)
+        dia = special.dawsn(1j*_A)
+        expa2 = np.exp(_A**2.)
+    
+        return (a * np.pi / np.sqrt(2.) * 1j * sigma * expa2 / dia).real
+    except TypeError: pass
+
     if isinstance(a, np.ndarray):
         result = np.empty_like(a)
         for i in range(np.size(a)):
@@ -621,3 +636,4 @@ def guess_snr(calib_spectrum, flambda, exp_time):
     noise = np.sqrt(np.nansum(np.sqrt(spec_counts**2)))
     signal = np.nanmax(spec_counts) - np.nanmedian(spec_counts)
     return signal / noise
+                       

@@ -77,7 +77,7 @@ class FitVector(object):
     fit_tol = None
     
     def __init__(self, vector, models, params, snr_guess=None,
-                 fit_tol=1e-8, signal_range=None):
+                 fit_tol=1e-8, signal_range=None, classic=False):
         """
         Init class.
 
@@ -101,9 +101,10 @@ class FitVector(object):
 
         :param signal_range: (Optional) couple (min, max) defining the
           range of values considered in the fitting process.
-        """
-        DEFAULT_SNR = 10
-        
+
+        :param classic: (Optional) If True, fit is forced to be
+          classic. i.e. It makes no use of the priors std (default False).
+        """       
         if not isinstance(models, tuple):
             raise ValueError('models must be a tuple of (model, model_operation).')
 
@@ -118,6 +119,20 @@ class FitVector(object):
         self.normalization_coeff = np.nanmax(self.vector) - np.nanmedian(self.vector)
         self.vector /= self.normalization_coeff
 
+        self.classic = bool(classic)
+        if not self.classic:
+            if snr_guess is None:
+                self.snr_guess = None
+                self.classic = True
+                warnings.warn('No SNR guess given. Fit mode is classic.')
+            else:
+                try:
+                    snr_guess = float(snr_guess)
+                except Exception:
+                    raise Exception('SNR guess is {} but it must be a single number'.format(type(snr_guess)))
+                self.snr_guess = np.fabs(snr_guess)
+        else: self.snr_guess = None
+        
         self.retry_count = 0
         self.models = list()
         self.models_operation = list()
@@ -132,20 +147,11 @@ class FitVector(object):
                 self.models_operations))
             # guess nan values for each model
             self.models[-1].make_guess(self.vector)
-            self.priors_list.append(self.models[-1].get_priors())
+            self.priors_list.append(self.models[-1].get_priors(self.classic))
             self.priors_keys_list.append(self.priors_list[-1].keys())
 
-        # convert data vector to a GVar array
-        self.unknown_snr = False
-        if snr_guess is None:
-            snr_guess = DEFAULT_SNR
-            self.unknown_snr = True
-        try:
-            snr_guess = float(snr_guess)
-        except Exception:
-            raise Exception('SNR guess is {} but it must be a single number'.format(type(snr_guess)))
-        
-        self.snr_guess = np.fabs(snr_guess)
+        self.all_keys_index = None
+
         
 
          
@@ -158,35 +164,34 @@ class FitVector(object):
             else: raise Exception('Bad signal range: {}'.format(signal_range))
             
 
-    def _all_p_list2vect(self, p_list):
-        """Concatenate a list of free parameters into a 1d array ready
-        to be passed to :py:meth:`scipy.optimize.leastsq`
+    def _all_p_list2dict(self, p_list):
+        """Concatenate a list of free parameters into a dictionary
+        ready to be passed to the fit function.
 
         :param p_list: List of free parameters. This list is a list of
           tuple of parameters. Each tuple defining the free parameters
           for each model, i.e. : ([free_params_model1],
           [free_params_model2], ...)
 
-        .. seealso:: :py:meth:`fit.FitVector._all_p_vect2list`
+        .. seealso:: :py:meth:`fit.FitVector._all_p_dict2list`
         """
         all_p = dict()
         for p in p_list:
-            # check if two parameters hae the same key
+            # check if two parameters have the same key
             for _k in p:
                 if _k in all_p.keys():
                     raise Exception('Two parameters are sharing the same key: {}'.format(_k))
             all_p.update(p)
         return all_p
 
-    def _all_p_vect2list(self, p_vect):
-        """Transform a 1d array of free parameters as returned by
-        :py:meth:`scipy.optimize.leastsq` into a more comprehensive
-        list of free parameters (see
-        :py:meth:`fit.FitVector._all_p_list2vect`)
+    def _all_p_dict2list(self, p_vect):
+        """Transform a dictionnary of free parameters as returned by
+        the fit function into a list of free parameters (see
+        :py:meth:`fit.FitVector._all_p_list2dict`)
 
-        :param p_vect: 1d array of free parameters.
+        :param p_vect: dictionnary of free parameters.
 
-        .. seealso:: :py:meth:`fit.FitVector._all_p_list2vect`
+        .. seealso:: :py:meth:`fit.FitVector._all_p_list2dict`
         """
         if isinstance(p_vect, tuple):
             p_vect = p_vect[0]
@@ -208,6 +213,52 @@ class FitVector(object):
             p_list.append(ip_list)
         return p_list
 
+    def _all_p_dict2arr(self, p_dict):
+        """Return a 1d array of free parameters from a dictionary of
+        free parameters.
+
+        :param p_dict: Free parameters dict
+        """
+        if not self.classic:
+            raise Exception('Fit must be in classic mode')
+
+        # check keys and create all_keys_index
+        all_keys_index = dict()
+        index = 0
+        for keys_list in self.priors_keys_list:
+            for key in keys_list:
+                all_keys_index[key] = index
+                index += 1
+        if all_keys_index.viewkeys() != p_dict.viewkeys(): raise Exception(
+            'Badly formatted input dict')
+        
+        self.all_keys_index = all_keys_index # save keys--index dict
+
+        p_arr = np.empty(len(self.all_keys_index), dtype=float)
+        for key in self.all_keys_index:
+            p_arr[self.all_keys_index[key]] = gvar.mean(p_dict[key])
+            
+        return p_arr
+
+    def _all_p_arr2dict(self, p_arr):
+        """Return a dict of free parameters from a 1d array of
+        free parameters.
+
+        :param p_arr: Free parameters array
+        """
+        if self.all_keys_index is None:
+            raise Exception('self._all_p_dict2arr() must be called first')
+        if not self.classic:
+            raise Exception('Fit must be in classic mode')
+        if np.size(p_arr) != len(self.all_keys_index):
+            raise Exception('Badly formatted input array of free parameters')
+
+        p_dict = dict()
+        for key in self.all_keys_index:
+            p_dict[key] = float(gvar.mean(p_arr[self.all_keys_index[key]]))
+
+        return p_dict
+        
     def get_model(self, all_p_free, return_models=False, x=None):
         """Return the combined model of the vector given a set of free
         parameters.
@@ -233,7 +284,7 @@ class FitVector(object):
        
         model = None
         models = list()
-        all_p_list = self._all_p_vect2list(all_p_free)
+        all_p_list = self._all_p_dict2list(all_p_free)
         for i in range(len(self.models)):
             model_list = self.models[i].get_model(
                 x, all_p_list[i], return_models=return_models)
@@ -270,7 +321,10 @@ class FitVector(object):
         :param x: x vector on which model is computed
 
         :param *all_p_free: Vector of free parameters.
-        """        
+        """
+        if self.classic:
+            all_p_free = self._all_p_arr2dict(all_p_free)
+            
         return self.get_model(all_p_free, x=x)[
             np.min(self.signal_range):np.max(self.signal_range)]
 
@@ -352,7 +406,7 @@ class FitVector(object):
             ## err_max_mcmc = err_mcmc
 
             
-            p_mcmc_err_list = self._all_p_vect2list(np.nanmean(
+            p_mcmc_err_list = self._all_p_dict2list(np.nanmean(
                 (np.abs(err_min_mcmc),
                  np.abs(err_max_mcmc)), axis=0))
 
@@ -360,7 +414,7 @@ class FitVector(object):
             warnings.warn('An error has occured during MCMC uncertainty computation : {}'.format(e))
             err_mcmc = np.empty_like(p)
             err_mcmc.fill(np.nan)
-            p_mcmc_err_list = self._all_p_vect2list(err_mcmc)
+            p_mcmc_err_list = self._all_p_dict2list(err_mcmc)
             
                         
         full_p_mcmc_err_list = list()
@@ -409,7 +463,7 @@ class FitVector(object):
             return dict(
                 udata=(np.arange(self.vector.shape[0]),
                        vector),
-                prior=priors_vect,
+                prior=priors_dict,
                 fcn=self._get_model_onrange,
                 debug=True, extend=True,
                 tol=self.fit_tol)
@@ -418,27 +472,34 @@ class FitVector(object):
         MCMC_RANDOM_COEFF = 1e-2
         
         start_time = time.time()
-        priors_vect = self._all_p_list2vect(self.priors_list)
+        priors_dict = self._all_p_list2dict(self.priors_list)
 
-        if self.unknown_snr:
-            #fit, err = lsqfit.empbayes_fit(self.snr_guess, fit_args)
+        if self.snr_guess is None:
+            self.classic = True
+            priors_arr = self._all_p_dict2arr(priors_dict)
+
+            fit_classic = scipy.optimize.curve_fit(
+                self._get_model_onrange,
+                np.arange(self.vector.shape[0]),
+                self._get_vector_onrange(),
+                p0=priors_arr,
+                method='lm',
+                full_output=True)
+
+            fit = type('fit', (), {})
+            fit.p = self._all_p_arr2dict(gvar.gvar(fit_classic[0], np.zeros_like(fit_classic[0])))
             
-            gbfs = list()
-            fits = list()
-            snrs = 3 * 10**(np.linspace(0,3,10))
-            warnings.warn('unknown snr, best snr will be guessed between {} and {} (takes more time)'.format(snrs[0], snrs[-1]))
-            
-            for isnr in snrs:
-                fit = lsqfit.nonlinear_fit(**fit_args(isnr))
-                gbf = fit.logGBF
-                if np.isinf(gbf): gbf = np.nan
-                
-                gbfs.append(gbf)
-                fits.append(fit)
-            fit = fits[np.nanargmax(gbfs)]
-            print 'best snr: {}, gbf: {}'.format(
-                snrs[np.nanargmax(gbfs)],
-                gbfs[np.nanargmax(gbfs)]) 
+            fit.chi2 = np.nan
+            fit.dof = np.nan
+
+            if 0 < fit_classic[-1] < 5:
+                fit.stopping_criterion = fit_classic[-1]
+                fit.error = None
+            else:
+                fit.stopping_criterion = 0
+                fit.error = True
+
+            fit.fitter_results = fit_classic[2]
             
         else:
             fit = lsqfit.nonlinear_fit(**fit_args(self.snr_guess))
@@ -474,7 +535,7 @@ class FitVector(object):
             full_p_list_gvar = list()
             
             
-            p_fit_list = self._all_p_vect2list(fit_p)
+            p_fit_list = self._all_p_dict2list(fit_p)
             for i in range(len(self.models)):
                 # recompute p_val from new p_free
                 self.models[i].set_p_free(p_fit_list[i])
@@ -672,10 +733,19 @@ class Model(object):
         """Return the vector of free parameters :py:attr:`fit.Model.p_free`"""
         return copy.copy(self.p_free)
 
-    def get_priors(self):
-        """Return priors"""
-        return self.get_p_free()
+    def get_priors(self, classic):
+        """Return priors
 
+        :param classic: If True, return classic priors (e.g. no log distribution)
+        """
+        if not classic:
+            return self.get_p_free()
+        else:
+            priors = dict(self.get_p_free())
+            for key in priors:
+                priors[key] = gvar.mean(priors[key])
+            return priors
+        
     def set_p_free(self, p_free):
         """Set the vector of free parameters :py:attr:`fit.Model.p_free`
 
@@ -845,6 +915,10 @@ class FilterModel(Model):
     def make_guess(self, v):
         pass
 
+    def _estimate_sdev(self, idef, mean):
+        SHIFT_SDEV = 3 # channels
+        return gvar.gvar(mean, min(SHIFT_SDEV, self.filter_axis.shape[0] / 20))
+
     def get_model(self, x, p_free=None, return_models=False):
         """Return model M(x, p).
 
@@ -863,7 +937,9 @@ class FilterModel(Model):
         if len(self.p_free) == 0:
             mod = copy.copy(self.filter_function(self.filter_axis))
         else:
-            mod = copy.copy(self.filter_function(self.filter_axis + self.p_free['filter-shift']))
+            mod = copy.copy(self.filter_function(
+                self.filter_axis
+                + gvar.mean(self.p_free['filter-shift'])))
         if return_models:
             return mod, (mod)
         else:
@@ -930,7 +1006,7 @@ class ContinuumModel(Model):
         for ip in range(self.poly_order + 1):
             self.p_val[self._get_ikey(ip)] = 0.                
             self.p_def[self._get_ikey(ip)] = 'free'
-            
+
         if 'poly-guess' in self.p_dict:
             if self.p_dict['poly-guess'] is not None:
                 if np.size(self.p_dict['poly-guess']) == self.poly_order + 1:
@@ -942,13 +1018,20 @@ class ContinuumModel(Model):
         pass
 
     def make_guess(self, v):
-        pass
+        for key in self.p_val.keys():
+            if self.p_val[key] is None:
+                order = self._get_order_from_key(key)
+                self.p_val[key] = np.nanmedian(v)**(1./(order+1))
+
 
     def _estimate_sdev(self, idef, mean):
         """Estimate standard deviation of a free parameter is none is given
         """
-        PSDEV = 1e-2
-        return gvar.gvar(mean, max(PSDEV, mean))
+        PSDEV = 1e3
+        if mean == 0:
+            return gvar.gvar(mean, PSDEV)
+        else:
+            return gvar.gvar(mean, mean*10.)
 
 
     def get_model(self, x, p_free=None, return_models=False):
@@ -1182,12 +1265,21 @@ class LinesModel(Model):
             
         return ans    
 
-    def get_priors(self):
+    def get_priors(self, classic):
         """Return priors. Replace gaussian distribution by lognormal
-        distribution for some parameters."""
+        distribution for some parameters.
+
+        :param classic: If True, return classic priors (e.g. no log
+          distribution)
+        """
+        if classic:
+            priors = dict(self.get_p_free())
+            for key in priors:
+                priors[key] = gvar.mean(priors[key])
+            return priors
+
         priors = dict()
         p_free = self.get_p_free()
-        
         for ip in p_free:
             priors[ip] = gvar.gvar(p_free[ip])
             for ilog in self.log_param_keys:
@@ -1634,9 +1726,9 @@ class Cm1LinesModel(LinesModel):
             return gvar.gvar(mean, mean * 10)
         elif 'pos' in idef:
             fwhm = gvar.mean(self.p_val[self._get_ikey('fwhm', iline)])
-            return gvar.gvar(mean, fwhm_sdev_cm1)
+            return gvar.gvar(np.squeeze(mean), np.squeeze(fwhm_sdev_cm1))
         elif 'fwhm' in idef:
-            return gvar.gvar(mean, max(mean, fwhm_sdev_cm1))
+            return gvar.gvar(np.squeeze(mean), max(mean, fwhm_sdev_cm1))
         elif 'sigma' in idef:
             lines_cm1 = self.p_val[self._get_ikey('pos', iline)]
             sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
@@ -1967,25 +2059,16 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     ## quit()
 
     if filter_file_path is not None:
-        filter_function = utils.filters.get_filter_function(
-            filter_file_path, step, order, spectrum.shape[0],
-            wavenumber=wavenumber,
-            silent=True)[0]
-        if wavenumber:
-            filter_axis = utils.spectrum.create_cm1_axis(
-                spectrum.shape[0], step, order, corr=1.)
-            filter_axis_calib = utils.spectrum.create_cm1_axis(
-                spectrum.shape[0], step, order,
-                corr=correction_coeff)
-        else:
-            filter_axis = utils.spectrum.create_nm_axis(
-                spectrum.shape[0], step, order, corr=1.)
-            filter_axis_calib = utils.spectrum.create_nm_axis(
-                spectrum.shape[0], step, order,
-                corr=correction_coeff)
-            
-        filter_function = utils.vector.interpolate_axis(
-            filter_function, filter_axis_calib, 1, old_axis=filter_axis)
+        ## filter_function = utils.filters.get_filter_function(
+        ##     filter_file_path, step, order, spectrum.shape[0],
+        ##     wavenumber=wavenumber,
+        ##     silent=True, corr=correction_coeff)[0]
+        filter_spline_nm = utils.filters.read_filter_file(
+            filter_file_path, return_spline=True)
+        nm_axis_ireg = utils.spectrum.create_nm_axis_ireg(
+            spectrum.shape[0], step, order, corr=correction_coeff)
+        filter_function = filter_spline_nm(nm_axis_ireg.astype(float)) / 100.
+        
         if fix_filter:
             filter_def = 'fixed'
         else:
@@ -1997,8 +2080,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
     fs = FitVector(spectrum,
                    ((linesmodel, 'add'),
-                    (ContinuumModel, 'add')),
-                    ## (FilterModel, 'mult')),
+                    (ContinuumModel, 'add'),
+                    (FilterModel, 'mult')),
                    ({'step-nb':spectrum.shape[0],
                      'step':step,
                      'order':order,
@@ -2019,9 +2102,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                      'alpha-guess':alpha_guess,
                      'alpha-cov':0.01},
                     {'poly-order':poly_order,
-                     'poly-guess':cont_guess}),
-                    ## {'filter-function':filter_function,
-                    ##  'shift-def':filter_def}),
+                     'poly-guess':cont_guess},
+                    {'filter-function':filter_function,
+                     'shift-def':filter_def}),
                    fit_tol=fit_tol,
                    signal_range=signal_range_pix,
                    snr_guess=snr_guess)
@@ -2211,7 +2294,6 @@ def _translate_fit_inputs(fix_fwhm, cov_fwhm,
     :return: fwhm_def, pos_def, sigma_def, alpha_def
     """
 
-
     if fix_fwhm: fwhm_def = 'fixed'
     elif cov_fwhm: fwhm_def = '1'
     else: fwhm_def = 'free'
@@ -2380,9 +2462,8 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
 
     ## compute flux
     if fmodel in ['sincgauss', 'sincgaussphased']:
-        flux = np.nan
-            ## utils.spectrum.sincgauss1d_flux(
-            ## line_params[:,1], fwhm, sigma)
+        flux = utils.spectrum.sincgauss1d_flux(
+            line_params[:,1], fwhm, sigma)
     elif fmodel == 'gaussian':
         flux = utils.spectrum.gaussian1d_flux(
             line_params[:,1],fwhm)
@@ -2410,9 +2491,6 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
     fit_results['lines-params-err'] = np.abs(gvar.sdev(line_params))
 
     return fit_results
-
-
-
 
 def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
                            theta, vel=0., sigma=0., alpha=0.,
