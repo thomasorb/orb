@@ -106,7 +106,7 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
 
 
 def query_vizier(radius, target_ra, target_dec,
-                 catalog='gaia', max_stars=100):
+                 catalog='gaia', max_stars=100, return_all_columns=False):
     """Return a list of star coordinates around an object in a
     given radius based on a query to VizieR Services
     (http://vizier.u-strasbg.fr/viz-bin/VizieR)
@@ -127,6 +127,9 @@ def query_vizier(radius, target_ra, target_dec,
     :param catalog: (Optional) can be 'usno' - Version B1 of the US
       Naval Observatory catalog (2003), 'gaia' - GAIA DR1, or '2mass'
       - 2MASS (default Gaia)
+
+    :param return_all_columns: (Optional) If True, return all
+      columns. Else only ra, dec and Mag are returned (default False).
     """
     MAX_RETRY = 5
     if catalog == 'usno':
@@ -139,7 +142,7 @@ def query_vizier(radius, target_ra, target_dec,
         sort='-<Gmag>'
     elif catalog == '2mass':
         catalog_id = 'II/246/out'
-        out = 'RAJ2000,DEJ2000,errMaj,errMin,Jmag'
+        out = 'RAJ2000,DEJ2000,errMaj,errMin,Jmag,e_Jmag,Hmag,e_Hmag,Kmag,e_Kmag'
         sort='-Jmag'
 
     else: raise Exception("Bad catalog name. Can be 'usno', 'gaia' or '2mass'")
@@ -185,9 +188,17 @@ def query_vizier(radius, target_ra, target_dec,
             if len(iline) == params_number:
                 if ((float(iline[2])/1000.) < 0.5
                     and (float(iline[3])/1000.) < 0.5):
-                    star_list.append((float(iline[0]),
-                                      float(iline[1]),
-                                      float(iline[4])))                    
+                    if not return_all_columns:
+                        star_list.append((float(iline[0]),
+                                          float(iline[1]),
+                                          float(iline[4])))
+                    else:
+                        star_list.append(
+                            list((float(iline[0]),
+                                  float(iline[1]),
+                                  float(iline[4])))
+                            + list(np.array(iline[5:], dtype=float)))
+                        
 
     # sorting list to get the brightest stars first
     star_list = np.array(sorted(star_list, key=lambda istar: istar[2]))

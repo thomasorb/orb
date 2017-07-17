@@ -143,7 +143,7 @@ class BaseViewer(object):
         self.wcs_rotation = float(
             self.tools._get_config_parameter('WCS_ROTATION'))
         self.fov = float(
-            self.tools._get_config_parameter('FIELD_OF_VIEW'))
+            self.tools._get_config_parameter('FIELD_OF_VIEW_1'))
            
            
         # Define GTK GUI

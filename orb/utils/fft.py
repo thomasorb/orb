@@ -36,7 +36,6 @@ import orb.utils.stats
 import orb.utils.filters
 import orb.cutils
 import orb.constants
-import orb.fit
 
 def apodize(s, apodization_function=2.0):
     """Apodize a spectrum

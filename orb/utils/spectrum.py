@@ -295,6 +295,25 @@ def compute_step_nb(resolution, step, order):
             * resolution
             / (2 * mean_sigma * step * 1e-7))
 
+def compute_resolution(step_nb, step, order, corr):
+    """Return the theoretical resolution of a given scan
+
+    :param step_nb: Number of steps of the longest side of the
+      interferogram.
+    
+    :param step: Step size (in nm)
+    
+    :param order: Folding order
+
+    :param corr: Correction coefficient for the incident angle.
+    """
+    fwhm_cm1 = compute_line_fwhm(
+        step_nb, step, order, wavenumber=True)
+    min_cm1 = orb.cutils.get_cm1_axis_min(step_nb, step, order, corr=corr)
+    max_cm1 = orb.cutils.get_cm1_axis_max(step_nb, step, order, corr=corr)
+    med_cm1 = (min_cm1 + max_cm1) / 2.
+    return med_cm1 / fwhm_cm1
+
 def compute_radial_velocity(line, rest_line, wavenumber=False):
     """
     Return radial velocity in km.s-1

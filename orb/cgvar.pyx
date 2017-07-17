@@ -172,7 +172,7 @@ def sincgauss1d(a, b):
 
     if not isinstance(a, gvar.GVar) and not isinstance(b[0], gvar.GVar):
         return sincgauss_real(a, b)
-
+    
     cdef np.ndarray[object, ndim=1] ans = np.empty(b.shape[0], b.dtype)
     cdef np.ndarray[np.float64_t, ndim=1] f = sincgauss_real(gvar.mean(a), gvar.mean(b))
     cdef np.ndarray[np.float64_t, ndim=1] dfda
@@ -181,6 +181,8 @@ def sincgauss1d(a, b):
     dfda, dfdb = sincgauss_real_dfdx(gvar.mean(a), gvar.mean(b))
         
     for i in range(b.size):
+        if not isinstance(a, gvar.GVar):
+            a = gvar.gvar(a, 0)
         ans[i] = gvar.gvar_function((a, b[i]), f[i], (dfda[i], dfdb[i]))
     return ans
 

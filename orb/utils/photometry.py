@@ -163,7 +163,7 @@ def read_quantum_efficiency_file(file_path):
             if ('#' not in line) and (len(line) > 2):
                 line = np.array(line.strip().split(), dtype=float)
                 wav.append(line[0])
-                qe.append(line[1]/100.) # percent to coeff
+                qe.append(line[1]) # percent to coeff
         
     return np.array(wav), np.array(qe)
 
