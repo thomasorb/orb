@@ -1308,7 +1308,7 @@ class LinesModel(Model):
 
                                 
                             p_cov_dict[cov_symbol] = (
-                                cov_value, cov_operation)
+                                np.squeeze(cov_value), cov_operation)
 
             else:
                 for iline in range(line_nb):
@@ -1764,6 +1764,12 @@ class Params(dict):
     def __setattr__(self, key, value):
         raise Exception('Parameter is read-only')
 
+################################################
+##### CLASS RawInputParams #####################
+################################################
+class RawInputParams(object):
+    pass
+    
 
 ################################################
 #### CLASS InputParams ######################
@@ -1807,7 +1813,6 @@ class InputParams(object):
         maxx = min(self.base_params.step_nb - 1,
                    int(math.ceil(np.max(signal_range_pix))))
         self.signal_range = (minx, maxx)
-        self.signal_range_cm1 = (rmin, rmax)
         self.check_signal_range()
 
     def has_model(self, model):
@@ -1818,6 +1823,19 @@ class InputParams(object):
     def check_signal_range(self):
         pass
 
+    def convert(self):
+        """Convert class to a raw pickable format
+        """
+        raw = RawInputParams()
+        raw.models = list(self.models)
+        raw.params = [dict(_iparams) for _iparams in self.params]
+        raw.allparams = dict()
+        raw.signal_range = list(self.signal_range)
+        raw.base_params = dict(self.base_params)
+        for _iparams in raw.params:
+            raw.allparams.update(_iparams)
+        return raw
+   
     def add_continuum_model(self, poly_order, cont_guess=None):
         params = Params()
         params['poly_order'] = int(poly_order)
@@ -1965,6 +1983,8 @@ class Cm1InputParams(InputParams):
                                                    corr=self.base_params.axis_corr)
         self.axis_max = self.axis_min + (self.base_params.step_nb - 1) * self.axis_step
 
+        self.axis = np.arange(self.base_params.step_nb) * self.axis_step + self.axis_min
+        
         self.set_signal_range(self.axis_min, self.axis_max)
         
     def add_lines_model(self, lines, **kwargs):
@@ -2136,7 +2156,19 @@ class Cm1InputParams(InputParams):
             if (min(self.signal_range_cm1) > min(filter_bandpass)
                 or max(self.signal_range_cm1) < max(filter_bandpass)):
                 warnings.warn('Filter model might be badly constrained with such a signal range')
-        
+
+
+    def set_signal_range(self, rmin, rmax):
+        InputParams.set_signal_range(self, rmin, rmax)
+        self.signal_range_cm1 = (rmin, rmax)
+
+
+    def convert(self):
+        raw = InputParams.convert(self)
+        raw.signal_range_cm1 = self.signal_range_cm1
+        return raw
+
+
 ################################################
 #### CLASS OutputParams ########################
 ################################################
@@ -2250,14 +2282,15 @@ class OutputParams(Params):
             self['velocity_err'] = gvar.sdev(velocity)
 
             # compute broadening
-            sigma_total_kms = line_params[:,4]             
+            sigma_total_kms = line_params[:,4]
             sigma_apod_kms = utils.fit.sigma2vel(
                 utils.fft.apod2sigma(
                     all_inputparams.apodization, line_params[:,3]) / inputparams.axis_step,
                 pos_wave, inputparams.axis_step)
-            broadening = gvar.sqrt(gvar.fabs(sigma_total_kms**2
-                                             - sigma_apod_kms**2))
 
+            broadening = (gvar.fabs(sigma_total_kms**2
+                                    - sigma_apod_kms**2))**0.5
+            
             self['broadening_gvar'] = broadening
             self['broadening'] = gvar.mean(broadening)
             self['broadening_err'] = gvar.sdev(broadening)
@@ -2321,6 +2354,111 @@ class OutputParams(Params):
 #### Functions #################################
 ################################################
 
+
+def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
+                           compute_mcmc_error=False,
+                           snr_guess=None, **kwargs):
+    """raw function for spectrum fitting. Need the InputParams
+    class to be defined before call.
+
+    :param spectrum: The spectrum to fit (1d vector).
+
+    :param ip: InputParams instance (can be created with
+      fit._prepare_input_params())
+
+    :param fit_tol: (Optional) Tolerance on the fit value (default
+      1e-10).
+
+    :param compute_mcmc_error: (Optional) If True, uncertainty
+      estimates are computed from a Markov chain Monte-Carlo
+      algorithm. If the estimates can be better constrained, the
+      fitting time is orders of magnitude longer (default False).
+
+    :param snr_guess: (Optional) Guess on the SNR.
+
+    :param kwargs: (Optional) Model parameters that must be changed in
+      the InputParams instance.
+    """
+    if isinstance(ip, InputParams):
+        rawip = ip.convert()
+
+    for iparams in rawip.params:
+        for key in iparams:
+            if key in kwargs:
+                if kwargs[key] is not None:
+                    iparams[key] = kwargs[key]
+
+    fv = FitVector(spectrum,
+                   rawip.models, rawip.params,
+                   signal_range=rawip.signal_range,
+                   fit_tol=fit_tol,
+                   snr_guess=snr_guess)
+
+    fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
+
+    if fit != []:
+        fit = OutputParams(fit)
+        return fit.translate(ip, fv)
+    
+    else: return []
+
+def _prepare_input_params(step_nb, lines, step, order, nm_laser,
+                          axis_corr, zpd_index, wavenumber=True,
+                          filter_file_path=None,
+                          apodization=1., 
+                          **kwargs):    
+    """Fit lines in spectrum
+
+    .. warning:: If spectrum is in wavenumber (option wavenumber set
+      to True) input and output unit will be in cm-1. If spectrum is
+      in wavelength (option wavenumber set to False) input and output
+      unit will be in nm.
+
+    :param step_nb: Number of steps of the spectrum
+    
+    :param lines: Positions of the lines in nm/cm-1
+
+    :param step: Step size in nm
+
+    :param order: Folding order
+
+    :param nm_laser: Calibration laser wavelength in nm.
+
+    :param axis_corr: Calibration coefficient
+
+    :param zpd_index: Index of the ZPD in the interferogram.
+    
+    :param apodization: (Optional) Apodization level. Permit to separate the
+      broadening due to the apodization and the real line broadening
+      (see 'broadening' output parameter, default 1.).
+
+    :param filter_file_path: (Optional) Filter file path (default
+      None).
+
+    :param kwargs: (Optional) Fitting parameters of
+      :py:class:`orb.fit.Cm1LinesInput` or
+      :py:class:`orb.fit.FitVector`.
+    """
+    if wavenumber:
+        inputparams = Cm1InputParams
+    else:
+        raise Exception('NmInputParams not implemented yet')
+            
+    ip = inputparams(step, order, step_nb,
+                     nm_laser, axis_corr, apodization,
+                     zpd_index, filter_file_path)
+
+    ip.add_lines_model(lines, **kwargs)
+
+    if filter_file_path is not None:
+        ip.add_filter_model(**kwargs)
+        
+    if 'signal_range' in kwargs:
+        if kwargs['signal_range'] is not None:
+            ip.set_signal_range(min(kwargs['signal_range']),
+                                max(kwargs['signal_range']))
+
+    return ip
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           axis_corr, zpd_index, wavenumber=True,
@@ -2416,15 +2554,10 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     all_args = dict(locals()) # used in case fit is retried (must stay
                               # at the very beginning of the function
                               # ;)
-                              
-    if wavenumber:
-        inputparams = Cm1InputParams
-    else:
-        raise Exception('NmInputParams not implemented yet')
-    
 
     if velocity_range is not None:
         raise Exception('Velocity range not implemented yet')
+
     # brute force over the velocity range to find the best lines position
     ## if velocity_range is not None:
     ##     raise Exception('Must be reimplemented')
@@ -2446,34 +2579,23 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     ##             bf_flux.append(np.nansum(spectrum[np.array(
     ##                 np.round(ilines_pix), dtype=int)]))
     ##         shift_guess = bf_range[np.nanargmax(bf_flux)]
-        
-    ip = inputparams(step, order, spectrum.shape[0],
-                     nm_laser, axis_corr, apodization,
-                     zpd_index, filter_file_path)
+                              
 
-    ip.add_lines_model(lines, **kwargs)
+    ip = _prepare_input_params(spectrum.shape[0], lines, step, order, nm_laser,
+                               axis_corr, zpd_index, wavenumber=wavenumber,
+                               filter_file_path=filter_file_path,
+                               apodization=apodization,
+                               **kwargs)
+    
+    fit = _fit_lines_in_spectrum(spectrum, ip,
+                                 fit_tol=fit_tol,
+                                 compute_mcmc_error=compute_mcmc_error,
+                                 snr_guess=snr_guess)
 
-    if filter_file_path is not None:
-        ip.add_filter_model(**kwargs)
-        
-    if 'signal_range' in kwargs:
-        if kwargs['signal_range'] is not None:
-            print kwargs['signal_range']
-            ip.set_signal_range(min(kwargs['signal_range']),
-                                max(kwargs['signal_range']))
-    
-    fv = FitVector(spectrum,
-                   ip.models, ip.params,
-                   signal_range=ip.signal_range,
-                   fit_tol=fit_tol,
-                   snr_guess=snr_guess)
-    
-    fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
     if fit != []:
-        fit = OutputParams(fit)
-        return fit.translate(ip, fv)
-
+        return fit
+    
     elif ip.allparams.fmodel in ['sincgauss', 'sincgaussphased']:
         warnings.warn('bad fit, fmodel replaced by a normal sinc')
         all_args['fmodel'] = 'sinc'

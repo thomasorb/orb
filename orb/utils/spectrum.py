@@ -564,7 +564,9 @@ def sincgauss1d_flux(a, fwhm, sigma):
     def compute_flux(ia, isig, iwid):
         idia = orb.cgvar.dawsni(isig / (math.sqrt(2) * iwid))
         expa2 = gvar.exp(isig**2./2./iwid**2.)
-        return ia * math.pi / math.sqrt(2.) * isig * expa2 / idia
+        if not np.isclose(gvar.mean(idia),0):
+            return ia * math.pi / math.sqrt(2.) * isig * expa2 / idia
+        else: return gvar.gvar(np.inf, np.inf)
 
 
     try:
