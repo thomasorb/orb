@@ -4,13 +4,6 @@ orb.utils package
 Submodules
 ----------
 
-orb.utils.algo.old module
--------------------------
-
-.. automodule:: orb.utils.algo.old
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 orb.utils.astrometry module
 ---------------------------
