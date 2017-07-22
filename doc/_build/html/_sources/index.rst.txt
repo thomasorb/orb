@@ -56,17 +56,10 @@ Documentation
 -------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
-   core_module
-   utils_module
-   cutils_module
-   astrometry_module
-   viewer_module
-   fit_module
-   data_module
-   constants_module
-
+   orb
+	      
 Changelog
 ---------
 

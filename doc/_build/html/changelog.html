@@ -40,7 +40,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="Orb 3.0.1 documentation" href="index.html"/>
-        <link rel="prev" title="Constants module" href="constants_module.html"/> 
+        <link rel="prev" title="orb.utils package" href="orb.utils.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -105,14 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cutils_module.html">CUtils module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="astrometry_module.html">Astrometry module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="viewer_module.html">Viewer module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_module.html">Fit module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="constants_module.html">Constants module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orb.html">orb package</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
@@ -479,15 +472,15 @@ central part of the whole suite of softwares.</p>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></code> has been updated to fit
 multiple stars at the same time (see:
-<a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code></a>). The star fit is now way more
+<code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code>). The star fit is now way more
 robust.</li>
 </ul>
 </div>
 <div class="section" id="usno-b1-based-star-detection">
 <h3><a class="toc-backref" href="#id21">USNO-B1 based star detection</a><a class="headerlink" href="#usno-b1-based-star-detection" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.query_vizier" title="astrometry.Astrometry.query_vizier"><code class="xref py py-meth docutils literal"><span class="pre">query_vizier()</span></code></a> and
-<a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> have been moved from
+<li><code class="xref py py-meth docutils literal"><span class="pre">query_vizier()</span></code> and
+<code class="xref py py-meth docutils literal"><span class="pre">register()</span></code> have been moved from
 <code class="xref py py-class docutils literal"><span class="pre">orbs.process.Spectrum</span></code> so that the registration is part of
 the Astrometry module (which makes more sense). This way it is now
 possible to use a star catalogue like USNO-B1 to detect stars in the
@@ -500,11 +493,11 @@ galaxies to avoid the confision of HII regions and stars.</li>
 <div class="section" id="v1-2">
 <h2><a class="toc-backref" href="#id22">v1.2</a><a class="headerlink" href="#v1-2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code></a> noise estimation
+<li><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code> noise estimation
 enhanced. The initial estimation of the shift has also been updated.</li>
 <li>Minor bugs fix. This version is considered as a nearly stable
 version ready for release.</li>
-<li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code></a> initial estimation enhanced (more
+<li><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code> initial estimation enhanced (more
 robust and precise)</li>
 </ul>
 <div class="section" id="v1-2-1">
@@ -526,9 +519,9 @@ space back and forth)&#8217;</li>
 <ul class="simple">
 <li><code class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></code> and
 <code class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></code> Cythonised to
-<a class="reference internal" href="cutils_module.html#cutils.spectrum_mean_energy" title="cutils.spectrum_mean_energy"><code class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></code></a> and
-<a class="reference internal" href="cutils_module.html#cutils.interf_mean_energy" title="cutils.interf_mean_energy"><code class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></code></a>.</li>
-<li><a class="reference internal" href="core_module.html#core.OptionFile" title="core.OptionFile"><code class="xref py py-class docutils literal"><span class="pre">OptionFile</span></code></a> enhanced to be used by
+<code class="xref py py-meth docutils literal"><span class="pre">spectrum_mean_energy()</span></code> and
+<code class="xref py py-meth docutils literal"><span class="pre">interf_mean_energy()</span></code>.</li>
+<li><code class="xref py py-class docutils literal"><span class="pre">OptionFile</span></code> enhanced to be used by
 <code class="xref py py-meth docutils literal"><span class="pre">orbs.orbs.Orbs.__init__()</span></code>.</li>
 </ul>
 <div class="section" id="orcs-integration">
@@ -538,9 +531,9 @@ space back and forth)&#8217;</li>
 <li>new general keyword in OptionFile: INCLUDE, used to include the
 parameters of another option file.</li>
 <li>Warning messages are not displayed anymore when using the silent
-option with <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a></li>
+option with <code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></li>
 <li>move <code class="xref py py-meth docutils literal"><span class="pre">orbs.orbs.Orbs._create_list_from_dir()</span></code> to
-<a class="reference internal" href="core_module.html#core.Tools._create_list_from_dir" title="core.Tools._create_list_from_dir"><code class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></code></a> to make this useful
+<code class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></code> to make this useful
 method accessible to ORCS.</li>
 <li>doc updated</li>
 </ul>
@@ -560,9 +553,9 @@ in orbs/scripts.</li>
 <ul class="simple">
 <li>add <code class="xref py py-meth docutils literal"><span class="pre">flambda2ABmag()</span></code></li>
 <li>change file globals.py for constants.py</li>
-<li>add <a class="reference internal" href="core_module.html#core.Tools._get_basic_spectrum_header" title="core.Tools._get_basic_spectrum_header"><code class="xref py py-meth docutils literal"><span class="pre">_get_basic_spectrum_header()</span></code></a> to return a
+<li>add <code class="xref py py-meth docutils literal"><span class="pre">_get_basic_spectrum_header()</span></code> to return a
 header for a 1D spectrum.</li>
-<li><a class="reference internal" href="core_module.html#core.Tools.write_fits" title="core.Tools.write_fits"><code class="xref py py-meth docutils literal"><span class="pre">write_fits()</span></code></a> updated to create ds9 readable 1D
+<li><code class="xref py py-meth docutils literal"><span class="pre">write_fits()</span></code> updated to create ds9 readable 1D
 FITS files.</li>
 <li><code class="xref py py-meth docutils literal"><span class="pre">fit_lines_in_vector()</span></code> accepts a tuple for the
 parameter cov_pos. This tuple gives the lines that are
@@ -608,28 +601,28 @@ the ORB installation folder.</p>
 <ul>
 <li><p class="first">if ORBS is in <strong>sitelle mode</strong> (if the configuration file points to
 config.sitelle.orb), SITELLE&#8217;s data frames are handled at the core
-level. <a class="reference internal" href="core_module.html#core.Tools.read_fits" title="core.Tools.read_fits"><code class="xref py py-meth docutils literal"><span class="pre">read_fits()</span></code></a> accepts two new options:
+level. <code class="xref py py-meth docutils literal"><span class="pre">read_fits()</span></code> accepts two new options:
 image_mode and chip_index. If image_mode is set to &#8216;sitelle&#8217; and the
 chip index is 1 or 2, then the read_fits function will return only
 of the 2 chips (depending on the chip index). <strong>Chip slicing</strong> is
 handled by
-<a class="reference internal" href="core_module.html#core.Tools._read_sitelle_chip" title="core.Tools._read_sitelle_chip"><code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code></a>. <a class="reference internal" href="core_module.html#core.Cube.__getitem__" title="core.Cube.__getitem__"><code class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></code></a>
+<code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code>. <code class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></code>
 has also been modified in the same way with the same new options. A
 parameter line can now be added to the very first line of the image
-list passed to the <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a>. This line must be
+list passed to the <code class="xref py py-class docutils literal"><span class="pre">Cube</span></code>. This line must be
 something like:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># sitelle 1</span>
 </pre></div>
 </div>
 <p>If the first keyword is sitelle, the second keyword is understood as
-the chip index to read. This way, <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a> understand
+the chip index to read. This way, <code class="xref py py-class docutils literal"><span class="pre">Cube</span></code> understand
 that the data is SITELLE&#8217;s data and what chip has to be read.</p>
 </li>
-<li><p class="first"><a class="reference internal" href="core_module.html#core.Tools._create_list_from_dir" title="core.Tools._create_list_from_dir"><code class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></code></a> now accepts the options
+<li><p class="first"><code class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></code> now accepts the options
 image_mode and chip_index and creates the parameter line at the very
 beginning of the output file list.</p>
 </li>
-<li><p class="first"><strong>overscan</strong> <a class="reference internal" href="core_module.html#core.Tools._read_sitelle_chip" title="core.Tools._read_sitelle_chip"><code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code></a> automatically
+<li><p class="first"><strong>overscan</strong> <code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code> automatically
 substract the bias level given by the overscan areas of the returned
 image. This default behaviour can be canceled in the future.</p>
 </li>
@@ -650,16 +643,16 @@ same values. The user must no modify the the values of BINCAM1 and
 BINCAM2.</p>
 </div>
 <ul>
-<li><p class="first">if this option is set <a class="reference internal" href="core_module.html#core.Tools._create_list_from_dir" title="core.Tools._create_list_from_dir"><code class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></code></a>
+<li><p class="first">if this option is set <code class="xref py py-meth docutils literal"><span class="pre">_create_list_from_dir()</span></code>
 just adds the following directive at the beginning of the image list
 file:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># prebinning 2</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first"><a class="reference internal" href="core_module.html#core.Tools.read_fits" title="core.Tools.read_fits"><code class="xref py py-meth docutils literal"><span class="pre">read_fits()</span></code></a> accepts the option
+<li><p class="first"><code class="xref py py-meth docutils literal"><span class="pre">read_fits()</span></code> accepts the option
 &#8216;binning&#8217;. <code class="xref py py-meth docutils literal"><span class="pre">_image_binning()</span></code> has been created to
-bin 2D data efficiently. <a class="reference internal" href="core_module.html#core.Cube.__getitem__" title="core.Cube.__getitem__"><code class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></code></a> has been
+bin 2D data efficiently. <code class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></code> has been
 modified to read and treat transparently the new prebinning
 directive that is added at the beginning of an image list file.</p>
 </li>
@@ -671,7 +664,7 @@ directive that is added at the beginning of an image list file.</p>
 <h3><a class="toc-backref" href="#id33">v1.2.4.1</a><a class="headerlink" href="#v1-2-4-1" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Enhanced frame
-registration. <a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> now takes
+registration. <code class="xref py py-meth docutils literal"><span class="pre">register()</span></code> now takes
 full advantage of the multi fit of stars and filters the best stars
 by SNR. A double fit is also done at the beginning to ensure that
 the positions pattern is the best possible.</li>
@@ -695,7 +688,7 @@ becarefull before removing them)</p>
 <div class="section" id="better-star-fit">
 <h4><a class="toc-backref" href="#id36">Better Star fit</a><a class="headerlink" href="#better-star-fit" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><a class="reference internal" href="cutils_module.html#cutils.multi_fit_stars" title="cutils.multi_fit_stars"><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code></a>: tilted background added to the model</li>
+<li><code class="xref py py-meth docutils literal"><span class="pre">multi_fit_stars()</span></code>: tilted background added to the model</li>
 <li>detected stars are selected not too far from the center of the
 frame</li>
 <li>star box coeff set to 10 instead of 7 to get a better sky statistic
@@ -715,13 +708,13 @@ the bias frame is thus not dramatic. But it is better not to give it.</p>
 <div class="section" id="id1">
 <h4><a class="toc-backref" href="#id38">Miscellaneous</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> optimization routine is
+<li><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code> optimization routine is
 based on a least square fit instead of a powell algorithm.</li>
-<li>transfered <a class="reference internal" href="cutils_module.html#cutils.part_value" title="cutils.part_value"><code class="xref py py-meth docutils literal"><span class="pre">part_value()</span></code></a> from OACS cutils.</li>
-<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.get_alignment_vectors" title="astrometry.Astrometry.get_alignment_vectors"><code class="xref py py-meth docutils literal"><span class="pre">get_alignment_vectors()</span></code></a> simplified
+<li>transfered <code class="xref py py-meth docutils literal"><span class="pre">part_value()</span></code> from OACS cutils.</li>
+<li><code class="xref py py-meth docutils literal"><span class="pre">get_alignment_vectors()</span></code> simplified
 because the multi fit mode is now robust enough to remove all which
 was written for the preceding individual fit mode.</li>
-<li><code class="xref py py-meth docutils literal"><span class="pre">indft()</span></code>, <a class="reference internal" href="cutils_module.html#cutils.indft" title="cutils.indft"><code class="xref py py-meth docutils literal"><span class="pre">indft()</span></code></a> added to compute
+<li><code class="xref py py-meth docutils literal"><span class="pre">indft()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">indft()</span></code> added to compute
 Inverse Non-uniform Discret Fourier Transform (INDFT). New option
 <strong>sampling_vector</strong> in <code class="xref py py-meth docutils literal"><span class="pre">transform_spectrum()</span></code> to give
 the possibility to compute an INDFT by giving a non-uniform sampling
@@ -750,11 +743,11 @@ files.</p>
 <div class="section" id="id2">
 <h4><a class="toc-backref" href="#id43">Miscellaneous</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li>All classes which inherit from <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> can be passed
+<li>All classes which inherit from <code class="xref py py-class docutils literal"><span class="pre">Tools</span></code> can be passed
 all Tools arguments even if the __init__ method has been
 reimplemented (a new cofiguration file path can thus be defined
 easily)</li>
-<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> enhanced to compute scale
+<li><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code> enhanced to compute scale
 only at the center of the frame. This function can now be used to
 compute the optical distorsion pattern of an image.</li>
 <li><code class="xref py py-meth docutils literal"><span class="pre">fit_star()</span></code>: &#8216;saturation&#8217; option added to avoid
@@ -773,7 +766,7 @@ list. It is now able to filter SITELLE files to get only the
 <div class="section" id="v1-3-2">
 <h3><a class="toc-backref" href="#id44">v1.3.2</a><a class="headerlink" href="#v1-3-2" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="core_module.html#core.Tools._read_sitelle_chip" title="core.Tools._read_sitelle_chip"><code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code></a> : bias is now computed on
+<li><code class="xref py py-meth docutils literal"><span class="pre">_read_sitelle_chip()</span></code> : bias is now computed on
 half of the overscan part, because the pixel on the very border of
 the overscan have a bad value.</li>
 <li>order 0: all functions in <code class="xref py py-mod docutils literal"><span class="pre">utils</span></code> which need the order
@@ -781,7 +774,7 @@ parameter have been modified to accept order 0 only when possible
 (e.g. <code class="xref py py-meth docutils literal"><span class="pre">transform_interferogram()</span></code> cannot give an
 output in nm at order 0). If the order 0 is not possible, those
 functions raise an Exception.</li>
-<li><a class="reference internal" href="cutils_module.html#cutils.map_me" title="cutils.map_me"><code class="xref py py-meth docutils literal"><span class="pre">map_me()</span></code></a> added to map the modulation efficiency on
+<li><code class="xref py py-meth docutils literal"><span class="pre">map_me()</span></code> added to map the modulation efficiency on
 a laser frame.</li>
 <li><code class="xref py py-meth docutils literal"><span class="pre">aperture_photometry()</span></code> has been made more robust
 to NaNs</li>
@@ -807,21 +800,21 @@ of keyword values.</li>
 than ten times faster. Two steps only are required: One brute force
 step (<code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.brute_force()</span></code>) based on fast
 photometry and a fine fit step to get all alignment parameters.</p>
-<p><a class="reference internal" href="astrometry_module.html#astrometry.Aligner" title="astrometry.Aligner"><code class="xref py py-class docutils literal"><span class="pre">astrometry.Aligner</span></code></a> has been created which manage the
+<p><code class="xref py py-class docutils literal"><span class="pre">astrometry.Aligner</span></code> has been created which manage the
 alignment procedure.</p>
 </div>
 <div class="section" id="sip-distorsion">
 <h4><a class="toc-backref" href="#id48">SIP/Distorsion</a><a class="headerlink" href="#sip-distorsion" title="Permalink to this headline">¶</a></h4>
 <p>Computation of the SIP (Simple Imaging Polynomial) distorsion
 correction has been implemented in
-<a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.register()</span></code></a>. All the geometrical
+<code class="xref py py-meth docutils literal"><span class="pre">astrometry.Astrometry.register()</span></code>. All the geometrical
 transformation functions in <code class="xref py py-mod docutils literal"><span class="pre">utils</span></code> and the multi star
 fitting procedure <code class="xref py py-meth docutils literal"><span class="pre">astrometry.fit_stars_in_frame()</span></code> have been
 updated.</p>
 </div>
 <div class="section" id="hdf5">
 <h4><a class="toc-backref" href="#id49">HDF5</a><a class="headerlink" href="#hdf5" title="Permalink to this headline">¶</a></h4>
-<p><a class="reference internal" href="astrometry_module.html#astrometry.StarsParams" title="astrometry.StarsParams"><code class="xref py py-class docutils literal"><span class="pre">astrometry.StarsParams</span></code></a> saves its data in HDF5 format to
+<p><code class="xref py py-class docutils literal"><span class="pre">astrometry.StarsParams</span></code> saves its data in HDF5 format to
 provide an easier and more robust way of accessing and viewing the
 parameters. The module h5py is now required to use ORB.</p>
 </div>
@@ -866,16 +859,16 @@ from ~10 hours to 6.5 hours on a 16 procs machine).</p>
 <div class="section" id="v1-4-0">
 <h3><a class="toc-backref" href="#id56">v1.4.0</a><a class="headerlink" href="#v1-4-0" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> created. It inherits of
-<a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a> but it is built over an HDF5 cube. An HDF5
+<li><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code> created. It inherits of
+<code class="xref py py-class docutils literal"><span class="pre">Cube</span></code> but it is built over an HDF5 cube. An HDF5
 cube is similar to a frame-divided cube but all the frames are
 merged in one HDF5 file. Only some specific methods (especially the
 __getitem__ special method) had to be rewritten.</li>
-<li><a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> created. The classes
-<a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> and <a class="reference internal" href="core_module.html#core.Cube" title="core.Cube"><code class="xref py py-class docutils literal"><span class="pre">Cube</span></code></a> have been built
-to read data but not to write it.  <a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> has
+<li><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code> created. The classes
+<code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code> and <code class="xref py py-class docutils literal"><span class="pre">Cube</span></code> have been built
+to read data but not to write it.  <code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code> has
 been designed to write an HDF5 cube containing the transformed data.</li>
-<li><a class="reference internal" href="core_module.html#core.Cube.export" title="core.Cube.export"><code class="xref py py-meth docutils literal"><span class="pre">export()</span></code></a> modified to export any cube (e.g. a
+<li><code class="xref py py-meth docutils literal"><span class="pre">export()</span></code> modified to export any cube (e.g. a
 frame divided FITS cube) in HDF5 format.</li>
 <li>script <strong>orb-dstack</strong> can also export a cube in hdf5 format.</li>
 </ul>
@@ -949,7 +942,7 @@ conditions (gravity vector, temperature and so on).</li>
 </div>
 <div class="section" id="point-source-detection">
 <h4><a class="toc-backref" href="#id64">Point source detection</a><a class="headerlink" href="#point-source-detection" title="Permalink to this headline">¶</a></h4>
-<p><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.detect_all_sources" title="astrometry.Astrometry.detect_all_sources"><code class="xref py py-meth docutils literal"><span class="pre">detect_all_sources()</span></code></a> detects all
+<p><code class="xref py py-meth docutils literal"><span class="pre">detect_all_sources()</span></code> detects all
 point sources in a cube (HII regions, distant galaxies, stars and
 filamentary knots can be detected). This method is used to shield the
 point sources during the cosmic ray detection and will be certainly
@@ -982,7 +975,7 @@ handled directly by ORCS.</p>
 </div>
 <div class="section" id="complex-data-cubes">
 <h4><a class="toc-backref" href="#id69">Complex data cubes</a><a class="headerlink" href="#complex-data-cubes" title="Permalink to this headline">¶</a></h4>
-<p><a class="reference internal" href="core_module.html#core.HDFCube" title="core.HDFCube"><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code></a> and <a class="reference internal" href="core_module.html#core.OutHDFCube" title="core.OutHDFCube"><code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code></a> now handles
+<p><code class="xref py py-class docutils literal"><span class="pre">HDFCube</span></code> and <code class="xref py py-class docutils literal"><span class="pre">OutHDFCube</span></code> now handles
 complex data sets. If a complex data cube is opened returned data will
 be complex. The user of the class must make sure that the complex data
 is not hardly cast to float (a warning is raised in this case).</p>
@@ -994,11 +987,11 @@ the calibration step.</p>
 </div>
 <div class="section" id="no-more-automatic-logging">
 <h4><a class="toc-backref" href="#id70">No more automatic logging</a><a class="headerlink" href="#no-more-automatic-logging" title="Permalink to this headline">¶</a></h4>
-<p>Automatic logging originally handled by <a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> is now
-handled by <a class="reference internal" href="core_module.html#core.Logger" title="core.Logger"><code class="xref py py-class docutils literal"><span class="pre">Logger</span></code></a> which must be initialised by the
+<p>Automatic logging originally handled by <code class="xref py py-class docutils literal"><span class="pre">Tools</span></code> is now
+handled by <code class="xref py py-class docutils literal"><span class="pre">Logger</span></code> which must be initialised by the
 main script. No more logfile name has to be passed to
-<a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> or its subclasses.</p>
-<p><a class="reference internal" href="core_module.html#core.Tools" title="core.Tools"><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code></a> which was used to ensure the use of the same
+<code class="xref py py-class docutils literal"><span class="pre">Tools</span></code> or its subclasses.</p>
+<p><code class="xref py py-class docutils literal"><span class="pre">Tools</span></code> which was used to ensure the use of the same
 logfile for all the launched processes has also been suppressed.</p>
 </div>
 <div class="section" id="calibration-laser-map-fit">
@@ -1037,10 +1030,10 @@ added to the spectrum window. Some bugs have also been corrected.</p>
 <code class="xref py py-meth docutils literal"><span class="pre">fit_stars_in_frame()</span></code> can now return
 photometrical data without background sustraction. This is used in
 source extraction (less noisy for faint sources).</li>
-<li>The implementation of <a class="reference internal" href="core_module.html#core.Cube.get_quadrant_dims" title="core.Cube.get_quadrant_dims"><code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code></a> has
+<li>The implementation of <code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code> has
 been moved to <code class="xref py py-meth docutils literal"><span class="pre">get_quadrant_dims()</span></code>.</li>
-<li><a class="reference internal" href="cutils_module.html#cutils.nanbin_image" title="cutils.nanbin_image"><code class="xref py py-meth docutils literal"><span class="pre">nanbin_image()</span></code></a> and
-<a class="reference internal" href="cutils_module.html#cutils.unbin_image" title="cutils.unbin_image"><code class="xref py py-meth docutils literal"><span class="pre">unbin_image()</span></code></a> created to bin and unbin images
+<li><code class="xref py py-meth docutils literal"><span class="pre">nanbin_image()</span></code> and
+<code class="xref py py-meth docutils literal"><span class="pre">unbin_image()</span></code> created to bin and unbin images
 during phase maps fitting. It permits to accelerate the process a
 lot without losing precision.</li>
 <li><code class="xref py py-meth docutils literal"><span class="pre">compute_line_fwhm()</span></code> now computes the line fwhm
@@ -1059,18 +1052,18 @@ this version).</li>
 <p>A lot of changes have been made. Only the most important are summarized.</p>
 <div class="section" id="architecture">
 <h4><a class="toc-backref" href="#id77">Architecture</a><a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h4>
-<p>The old orb/utils.py has been transformed into a real module:
-<a class="reference internal" href="utils_module.html#utils-module"><span class="std std-ref">Utils module</span></a>, utils function have been ordered by type:
-astrometry, fft, spectrum, vector, image, stats, parallel, web ...</p>
+<p>The old orb/utils.py has been transformed into a real module. utils
+function have been ordered by type: astrometry, fft, spectrum, vector,
+image, stats, parallel, web ...</p>
 <p>A Gaussian convoluted with a Sinc line can now be fitted using a
 function created by Simon Prunet, see: <code class="xref py py-meth docutils literal"><span class="pre">sincgauss1d()</span></code></p>
 </div>
 <div class="section" id="new-fit-classes">
 <h4><a class="toc-backref" href="#id78">New Fit classes</a><a class="headerlink" href="#new-fit-classes" title="Permalink to this headline">¶</a></h4>
 <p>The whole fit concept has been enhanced. A fitting module has been
-created (<code class="xref py py-mod docutils literal"><span class="pre">fit</span></code>, see <a class="reference internal" href="fit_module.html#fit-module"><span class="std std-ref">Fit module</span></a>) It is now governed by a Fit class
-(<a class="reference internal" href="fit_module.html#fit.FitVector" title="fit.FitVector"><code class="xref py py-class docutils literal"><span class="pre">fit.FitVector</span></code></a>) which can aggregates models based on a
-Template class (<a class="reference internal" href="fit_module.html#fit.Model" title="fit.Model"><code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code></a>).</p>
+created (<code class="xref py py-mod docutils literal"><span class="pre">fit</span></code>). It is now governed by a Fit class
+(<code class="xref py py-class docutils literal"><span class="pre">fit.FitVector</span></code>) which can aggregates models based on a
+Template class (<code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code>).</p>
 </div>
 <div class="section" id="compression">
 <h4><a class="toc-backref" href="#id79">Compression</a><a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h4>
@@ -1089,7 +1082,7 @@ ray detection now uses both cubes and is much more robust than before.</p>
 <div class="section" id="zernike-modes-fit">
 <h4><a class="toc-backref" href="#id82">Zernike Modes Fit</a><a class="headerlink" href="#zernike-modes-fit" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li>External module <code class="xref py py-mod docutils literal"><span class="pre">orb.ext.zern</span></code> added to fit Zernike
+<li>External module <a class="reference internal" href="orb.ext.html#module-orb.ext.zern" title="orb.ext.zern"><code class="xref py py-mod docutils literal"><span class="pre">orb.ext.zern</span></code></a> added to fit Zernike
 modes. This module has been created by Tim van Werkhoven
 (<a class="reference external" href="mailto:werkhoven&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">werkhoven<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a>).</li>
 </ul>
@@ -1097,7 +1090,7 @@ modes. This module has been created by Tim van Werkhoven
 <div class="section" id="new-module-utils-io">
 <h4><a class="toc-backref" href="#id83">New module utils.IO</a><a class="headerlink" href="#new-module-utils-io" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li>module <a class="reference internal" href="utils_module.html#module-orb.utils.io" title="orb.utils.io"><code class="xref py py-mod docutils literal"><span class="pre">orb.utils.io</span></code></a> created to put input/output functions
+<li>module <a class="reference internal" href="orb.utils.html#module-orb.utils.io" title="orb.utils.io"><code class="xref py py-mod docutils literal"><span class="pre">orb.utils.io</span></code></a> created to put input/output functions
 related to write/read FITS and HDF5 single files.</li>
 </ul>
 </div>
@@ -1109,17 +1102,17 @@ guess extended to cover a wider region by default. Initial guess on
 dx and dy can be very rough. All alignement are successful on
 SITELLE with the same set of parameters even with major optics
 change.</li>
-<li><a class="reference internal" href="cutils_module.html#cutils.get_nm_axis_step" title="cutils.get_nm_axis_step"><code class="xref py py-meth docutils literal"><span class="pre">get_nm_axis_step()</span></code></a>,
-<a class="reference internal" href="cutils_module.html#cutils.get_nm_axis_max" title="cutils.get_nm_axis_max"><code class="xref py py-meth docutils literal"><span class="pre">get_nm_axis_max()</span></code></a>,
-<a class="reference internal" href="cutils_module.html#cutils.get_nm_axis_min" title="cutils.get_nm_axis_min"><code class="xref py py-meth docutils literal"><span class="pre">get_nm_axis_min()</span></code></a>,
-<a class="reference internal" href="cutils_module.html#cutils.get_cm1_axis_step" title="cutils.get_cm1_axis_step"><code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_step()</span></code></a>,
-<a class="reference internal" href="cutils_module.html#cutils.get_cm1_axis_max" title="cutils.get_cm1_axis_max"><code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_max()</span></code></a>,
-<a class="reference internal" href="cutils_module.html#cutils.get_cm1_axis_min" title="cutils.get_cm1_axis_min"><code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_min()</span></code></a>, changed to take into account the
+<li><code class="xref py py-meth docutils literal"><span class="pre">get_nm_axis_step()</span></code>,
+<code class="xref py py-meth docutils literal"><span class="pre">get_nm_axis_max()</span></code>,
+<code class="xref py py-meth docutils literal"><span class="pre">get_nm_axis_min()</span></code>,
+<code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_step()</span></code>,
+<code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_max()</span></code>,
+<code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_min()</span></code>, changed to take into account the
 fact that the spectral axis created from
-<a class="reference internal" href="utils_module.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a> has 1 sample less than
+<a class="reference internal" href="orb.utils.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a> has 1 sample less than
 expected to keep the same number of sample at the input and the
 output.</li>
-<li><code class="xref py py-mod docutils literal"><span class="pre">orb.viewer</span></code> updated for the last matplotlib version (1.5.1).</li>
+<li><a class="reference internal" href="orb.html#module-orb.viewer" title="orb.viewer"><code class="xref py py-mod docutils literal"><span class="pre">orb.viewer</span></code></a> updated for the last matplotlib version (1.5.1).</li>
 </ul>
 </div>
 </div>
@@ -1156,7 +1149,7 @@ frame instead of the axis at 0 degrees (interferometer axis). This
 way the filter and standrd curve are well centered instead of beeing
 moved too much to the left and cut (which was resulting in an
 underestimation of a few percent on the std star theoretical flux).</li>
-<li><a class="reference internal" href="astrometry_module.html#astrometry.Astrometry.register" title="astrometry.Astrometry.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> : registration is now
+<li><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code> : registration is now
 only made by photometry optimization (brute force) and does not rely
 on fit because the distorsion are too big to give correct fit
 results. If it can be less precise (a precision better than 1 pixel
@@ -1204,7 +1197,7 @@ process too much.It could be used for archiving though.</p>
 <h4><a class="toc-backref" href="#id96">Miscellaneous</a><a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>smoothing_deg option in
-<a class="reference internal" href="utils_module.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a> has 1 sample less
+<a class="reference internal" href="orb.utils.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a> has 1 sample less
 than replaced by a more robust smoothing_coeff option. The smoohting
 degree is now defined as smoothing_coeff * interferogram_size. In a
 general way the smoothing degree (the number of samples smoothed at
@@ -1269,7 +1262,7 @@ estimation can be found via L-M algorithm. After a certain number of
 retries error is estimated via MCMC.</li>
 <li>flux is now computed with analytic error propagation for sinc,
 gaussian and sincgauss (see <code class="xref py py-class docutils literal"><span class="pre">orb.data</span></code> and
-<a class="reference internal" href="utils_module.html#orb.utils.spectrum.sincgauss1d_flux" title="orb.utils.spectrum.sincgauss1d_flux"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.spectrum.sincgauss1d_flux()</span></code></a>)</li>
+<a class="reference internal" href="orb.utils.html#orb.utils.spectrum.sincgauss1d_flux" title="orb.utils.spectrum.sincgauss1d_flux"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.spectrum.sincgauss1d_flux()</span></code></a>)</li>
 </ul>
 </div>
 <div class="section" id="id15">
@@ -1283,7 +1276,7 @@ complex data managing.</p>
 <h4><a class="toc-backref" href="#id104">Miscellaneous</a><a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>ds9 region file loading function now uses pyregion packages</li>
-<li><code class="xref py py-class docutils literal"><span class="pre">orb.core.Header</span></code> class added as an extension of
+<li><a class="reference internal" href="orb.html#orb.core.Header" title="orb.core.Header"><code class="xref py py-class docutils literal"><span class="pre">orb.core.Header</span></code></a> class added as an extension of
 <code class="xref py py-class docutils literal"><span class="pre">astropy.wcs.Header</span></code> to manage Headers. It is just an
 initial framework.</li>
 <li>scipy.optimize.curve_fit call in fit.py updated to follow the
@@ -1294,12 +1287,12 @@ changes in the new version of scipy (0.18.0).</li>
 <div class="section" id="v-2-2-0">
 <h3><a class="toc-backref" href="#id105">v.2.2.0</a><a class="headerlink" href="#v-2-2-0" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="utils_module.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a>: zeros_smoothing
+<li><a class="reference internal" href="orb.utils.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a>: zeros_smoothing
 deactivated and replaced by a ramp truncation function as
 recommendaed by Mertz (1967). A much better shape of the continnum
 is obtained.</li>
 <li>Phase optimization in 3d with
-<a class="reference internal" href="utils_module.html#orb.utils.fft.optimize_phase3d" title="orb.utils.fft.optimize_phase3d"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.optimize_phase3d()</span></code></a>.</li>
+<a class="reference internal" href="orb.utils.html#orb.utils.fft.optimize_phase3d" title="orb.utils.fft.optimize_phase3d"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.optimize_phase3d()</span></code></a>.</li>
 </ul>
 </div>
 </div>
@@ -1316,7 +1309,7 @@ is obtained.</li>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="constants_module.html" class="btn btn-neutral" title="Constants module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="orb.utils.html" class="btn btn-neutral" title="orb.utils package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1357,7 +1350,6 @@ is obtained.</li>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

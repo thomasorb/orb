@@ -1,0 +1,431 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>orb.ext package &mdash; Orb 3.0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/logo.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Orb 3.0.1 documentation" href="index.html"/>
+        <link rel="up" title="orb package" href="orb.html"/>
+        <link rel="next" title="orb.utils package" href="orb.utils.html"/>
+        <link rel="prev" title="orb package" href="orb.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Orb
+          
+
+          
+            
+            <img src="_static/logo_sidebar.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installing_orb.html">Installing Orb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installing_python.html">Installing Python</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="python_for_orb.html">Python for ORB users</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="orb.html">orb package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="orb.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">orb.ext package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-orb.ext.zern">orb.ext.zern module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-orb.ext">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="orb.utils.html">orb.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.astrometry">orb.astrometry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.cgvar">orb.cgvar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.constants">orb.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.core">orb.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.cutils">orb.cutils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.etc">orb.etc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.fit">orb.fit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.version">orb.version module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.viewer">orb.viewer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Orb</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="orb.html">orb package</a> &raquo;</li>
+        
+      <li>orb.ext package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/orb.ext.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="orb-ext-package">
+<h1>orb.ext package<a class="headerlink" href="#orb-ext-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-orb.ext.zern">
+<span id="orb-ext-zern-module"></span><h2>orb.ext.zern module<a class="headerlink" href="#module-orb.ext.zern" title="Permalink to this headline">¶</a></h2>
+<p>&#64;file zern.py
+&#64;brief Zernike basis function utilities
+&#64;package libtim.zern
+&#64;brief Zernike basis function utilities
+&#64;author Tim van Werkhoven (<a class="reference external" href="mailto:werkhoven&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">werkhoven<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a>)
+&#64;copyright Creative Commons Attribution-Share Alike license versions 3.0 or higher, see <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">http://creativecommons.org/licenses/by-sa/3.0/</a>
+&#64;date 20120403
+Construct and analyze Zernike basis functions</p>
+<dl class="function">
+<dt id="orb.ext.zern.calc_zern_basis">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">calc_zern_basis</code><span class="sig-paren">(</span><em>nmodes</em>, <em>rad</em>, <em>modestart=1</em>, <em>calc_covmat=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zern_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate a basis of <strong>nmodes</strong> Zernike modes with radius <strong>rad</strong>.
+((If <strong>mask</strong> is true, set everything outside of radius <strong>rad</strong> to zero (default). If this is not done, the set of Zernikes will be <strong>rad</strong> by <strong>rad</strong> square and are not orthogonal anymore.)) &#8211;&gt; Nothing is masked, do this manually using the &#8216;mask&#8217; entry in the returned dict.
+This output of this function can be used as cache for other functions.
+&#64;param [in] nmodes Number of modes to generate
+&#64;param [in] rad Radius of Zernike modes
+&#64;param [in] modestart First mode to calculate (Noll index, i.e. 1=piston)
+&#64;param [in] calc_covmat Return covariance matrix for Zernike modes, and its inverse
+&#64;return Dict with entries &#8216;modes&#8217; a list of Zernike modes, &#8216;modesmat&#8217; a matrix of (nmodes, npixels), &#8216;covmat&#8217; a covariance matrix for all these modes with &#8216;covmat_in&#8217; its inverse, &#8216;mask&#8217; is a binary mask to crop only the orthogonal part of the modes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.calc_zernike">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">calc_zernike</code><span class="sig-paren">(</span><em>zern_vec</em>, <em>rad</em>, <em>zern_data={}</em>, <em>mask=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zernike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct wavefront with Zernike amplitudes <strong>zern_vec</strong>.
+Given vector <strong>zern_vec</strong> with the amplitude of Zernike modes, return the reconstructed wavefront with radius <strong>rad</strong>.
+This function uses <strong>zern_data</strong> as cache. If this is not given, it will be generated. See calc_zern_basis() for details.
+If <strong>mask</strong> is True, set everything outside radius <strong>rad</strong> to zero, this is the default and will use orthogonal Zernikes. If this is False, the modes will not be cropped.
+&#64;param [in] zern_vec 1D vector of Zernike amplitudes
+&#64;param [in] rad Radius for Zernike modes to construct
+&#64;param [in] zern_data Zernike basis cache
+&#64;param [in] mask If True, set everything outside the Zernike aperture to zero, otherwise leave as is.
+&#64;see See calc_zern_basis() for details on <strong>zern_data</strong> cache and <strong>mask</strong></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.fit_zernike">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">fit_zernike</code><span class="sig-paren">(</span><em>wavefront</em>, <em>zern_data={}</em>, <em>nmodes=10</em>, <em>startmode=1</em>, <em>fitweight=None</em>, <em>center=(-0.5</em>, <em>-0.5)</em>, <em>rad=-0.5</em>, <em>rec_zern=True</em>, <em>err=None</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.fit_zernike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit <strong>nmodes</strong> Zernike modes to a <strong>wavefront</strong>.
+The <strong>wavefront</strong> will be fit to Zernike modes for a circle with radius <strong>rad</strong> with origin at <strong>center</strong>. <strong>weigh</strong> is a weighting mask used when fitting the modes.
+If <strong>center</strong> or <strong>rad</strong> are between 0 and -1, the values will be interpreted as fractions of the image shape.
+<strong>startmode</strong> indicates the Zernike mode (Noll index) to start fitting with, i.e. <strong>*startmode**=4 will skip piston, tip and tilt modes. Modes below this one will be set to zero, which means that if **startmode</strong> == <strong>nmodes</strong>, the returned vector will be all zeroes. This parameter is intended to ignore low order modes when fitting (piston, tip, tilt) as these can sometimes not be derived from data.
+If <strong>err</strong> is an empty list, it will be filled with measures for the fitting error:
+1. Mean squared difference
+2. Mean absolute difference
+3. Mean absolute difference squared
+This function uses <strong>zern_data</strong> as cache. If this is not given, it will be generated. See calc_zern_basis() for details.
+&#64;param [in] wavefront Input wavefront to fit
+&#64;param [in] zern_data Zernike basis cache
+&#64;param [in] nmodes Number of modes to fit
+&#64;param [in] startmode Start fitting at this mode (Noll index)
+&#64;param [in] fitweight Mask to use as weights when fitting
+&#64;param [in] center Center of Zernike modes to fit
+&#64;param [in] rad Radius of Zernike modes to fit
+&#64;param [in] rec_zern Reconstruct Zernike modes and calculate errors.
+&#64;param [out] err Fitting errors
+&#64;return Tuple of (wf_zern_vec, wf_zern_rec, fitdiff) where the first element is a vector of Zernike mode amplitudes, the second element is a full 2D Zernike reconstruction and the last element is the 2D difference between the input wavefront and the full reconstruction.
+&#64;see See calc_zern_basis() for details on <strong>zern_data</strong> cache</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.fix_noll_map">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">fix_noll_map</code><span class="sig-paren">(</span><em>max</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.fix_noll_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate old incorrect Noll coordinates to correct values.
+This function repairs data generated with noll_to_zern_broken().</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.mk_rad_mask">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">mk_rad_mask</code><span class="sig-paren">(</span><em>r0</em>, <em>r1=None</em>, <em>norm=True</em>, <em>center=None</em>, <em>dtype=&lt;type 'float'&gt;</em>, <em>getxy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.mk_rad_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a rectangular matrix of size (r0, r1) where the value of each 
+element is the Euclidean distance to <strong>center</strong>. If <strong>center</strong> is not 
+given, it is the middle of the matrix. If <strong>norm</strong> is True (default), 
+the distance is normalized to half the radius, i.e. values will range 
+from [-1, 1] for both axes.
+If only r0 is given, the matrix will be (r0, r0). If r1 is also given, 
+the matrix will be (r0, r1)
+To make a circular binary mask of (r0, r0), use</p>
+<blockquote>
+<div>mk_rad_mask(r0) &lt; 1</div></blockquote>
+<p>&#64;param [in] r0 The width (and height if r1==None) of the mask.
+&#64;param [in] r1 The height of the mask.
+&#64;param [in] norm Normalize the distance such that 2/(r0, r1) equals a distance of 1.
+&#64;param [in] getxy Return x, y-values instead of r
+&#64;param [in] dtype Datatype to use for radial coordinates
+&#64;param [in] center Set distance origin to <strong>center</strong> (defaults to the middle of the rectangle)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.noll_to_zern">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">noll_to_zern</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.noll_to_zern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert linear Noll index to tuple of Zernike indices.
+j is the linear Noll coordinate, n is the radial Zernike index and m is the azimuthal Zernike index.
+&#64;param [in] j Zernike mode Noll index
+&#64;return (n, m) tuple of Zernike indices
+&#64;see &lt;<a class="reference external" href="https://oeis.org/A176988">https://oeis.org/A176988</a>&gt;.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.noll_to_zern_broken">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">noll_to_zern_broken</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.noll_to_zern_broken" title="Permalink to this definition">¶</a></dt>
+<dd><p>Previous and incorrect Noll-to-Zernike conversion.
+Stored for reference purposes. Fixed around 1321970330.98158 or Tue Nov 22 13:59:10 2011 UTC. All data generated before this has invalid mapping.
+&#64;deprecated Incorrect mapping, use noll_to_zern instead</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.zern_normalisation">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">zern_normalisation</code><span class="sig-paren">(</span><em>nmodes=30</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zern_normalisation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate normalisation vector.
+This function calculates a <strong>nmodes</strong> element vector with normalisation constants for Zernike modes that have not already been normalised.
+&#64;param [in] nmodes Size of normalisation vector.
+&#64;see &lt;<a class="reference external" href="http://research.opt.indiana.edu/Library/VSIA/VSIA-2000_taskforce/TOPS4_2.html">http://research.opt.indiana.edu/Library/VSIA/VSIA-2000_taskforce/TOPS4_2.html</a>&gt; and &lt;<a class="reference external" href="http://research.opt.indiana.edu/Library/HVO/Handbook.html">http://research.opt.indiana.edu/Library/HVO/Handbook.html</a>&gt;.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.zernike">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">zernike</code><span class="sig-paren">(</span><em>m</em>, <em>n</em>, <em>rho</em>, <em>phi</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Zernike mode (m,n) on grid <strong>rho</strong> and <strong>phi</strong>.
+<strong>rho</strong> and <strong>phi</strong> should be radial and azimuthal coordinate grids of identical shape, respectively.
+&#64;param [in] m Radial Zernike index
+&#64;param [in] n Azimuthal Zernike index
+&#64;param [in] rho Radial coordinate grid
+&#64;param [in] phi Azimuthal coordinate grid
+&#64;param [in] norm Normalize modes to unit variance
+&#64;return Zernike mode (m,n) with identical shape as rho, phi
+&#64;see &lt;<a class="reference external" href="http://research.opt.indiana.edu/Library/VSIA/VSIA-2000_taskforce/TOPS4_2.html">http://research.opt.indiana.edu/Library/VSIA/VSIA-2000_taskforce/TOPS4_2.html</a>&gt; and &lt;<a class="reference external" href="http://research.opt.indiana.edu/Library/HVO/Handbook.html">http://research.opt.indiana.edu/Library/HVO/Handbook.html</a>&gt;.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.zernike_rad">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">zernike_rad</code><span class="sig-paren">(</span><em>m</em>, <em>n</em>, <em>rho</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernike_rad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make radial Zernike polynomial on coordinate grid <strong>rho</strong>.
+&#64;param [in] m Radial Zernike index
+&#64;param [in] n Azimuthal Zernike index
+&#64;param [in] rho Radial coordinate grid
+&#64;return Radial polynomial with identical shape as <strong>rho</strong></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.ext.zern.zernikel">
+<code class="descclassname">orb.ext.zern.</code><code class="descname">zernikel</code><span class="sig-paren">(</span><em>j</em>, <em>rho</em>, <em>phi</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernikel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-orb.ext">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-orb.ext" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="orb.utils.html" class="btn btn-neutral float-right" title="orb.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="orb.html" class="btn btn-neutral" title="orb package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Thomas Martin (thomas.martin.1@ulaval.ca).
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
