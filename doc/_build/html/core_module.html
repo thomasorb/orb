@@ -8,12 +8,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Core module &mdash; Orb 2.1.1-pre-July2016-mission documentation</title>
+  <title>Core module &mdash; Orb 3.0.1 documentation</title>
   
 
   
   
     <link rel="shortcut icon" href="_static/logo.ico"/>
+  
+  
   
 
   
@@ -34,7 +36,10 @@
   
 
   
-    <link rel="top" title="Orb 2.1.1-pre-July2016-mission documentation" href="index.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Orb 3.0.1 documentation" href="index.html"/>
         <link rel="next" title="Utils module" href="utils_module.html"/>
         <link rel="prev" title="Data analysis with ORB" href="data_analysis_with_orb.html"/> 
 
@@ -45,6 +50,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -67,7 +73,7 @@
             
             
               <div class="version">
-                2.1.1-pre-July2016-mission
+                3.0.1
               </div>
             
           
@@ -88,7 +94,10 @@
           
             
             
-                <ul>
+              
+            
+            
+              <ul>
 <li class="toctree-l1"><a class="reference internal" href="installing_orb.html">Installing Orb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installing_python.html">Installing Python</a></li>
 </ul>
@@ -137,8 +146,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">Orb</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Orb</a>
+        
       </nav>
 
 
@@ -147,23 +158,40 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Core module</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Core module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/core_module.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/core_module.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -269,20 +297,6 @@ last columns or rows can be ignored. This ensures that the
 binning surface is the same for every pixel in the binned
 array.</dd>
 </dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.Tools._clean_sip">
-<code class="descname">_clean_sip</code><span class="sig-paren">(</span><em>hdr</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._clean_sip" title="Permalink to this definition">¶</a></dt>
-<dd><p>Clean a hdr from all but the SIP keywords.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._clean_sip.params.hdr"></span><strong>hdr</strong><a class="paramlink headerlink reference internal" href="#core.Tools._clean_sip.params.hdr">¶</a> &#8211; The header to clean</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -756,8 +770,8 @@ located in orb/data/.</p>
 <code class="descname">_get_phase_file_path</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_phase_file_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the full path to the phase file given the name of
 the filter.</p>
-<p>The filter name must be filter_FILTER_NAME and the phase file
-must be located in orb/data/.</p>
+<p>The file name must be &#8216;phase_FILTER_NAME.orb&#8217; and it must be
+located in orb/data/.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -799,6 +813,24 @@ number of quadrant is 16)</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_quantum_efficiency_file_path.params.camera_number"></span><strong>camera_number</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_quantum_efficiency_file_path.params.camera_number">¶</a> &#8211; Number of the camera, can be 1 or 2.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Tools._get_sip_file_path">
+<code class="descname">_get_sip_file_path</code><span class="sig-paren">(</span><em>camera_number</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Tools._get_sip_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full path to the FITS file containing the SIP
+header given the camera number.</p>
+<p>The file name must be &#8216;sip.*.fits&#8217; and it must be
+located in orb/data/.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Tools._get_sip_file_path.params.camera_number"></span><strong>camera_number</strong><a class="paramlink headerlink reference internal" href="#core.Tools._get_sip_file_path.params.camera_number">¶</a> &#8211; Camera number (can be 1,2 or 0 for
+merged data)</td>
 </tr>
 </tbody>
 </table>
@@ -1389,7 +1421,7 @@ of the functionality of the method
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The output HDF5 file can contain mutiple data header
-units (HDU). Each HDU is in a spcific group named &#8216;hdu*&#8217;, *
+units (HDU). Each HDU is in a specific group named &#8216;hdu*&#8217;, *
 being the index of the HDU. The first HDU is named
 HDU0. Each HDU contains one data group (HDU*/data) which
 contains a numpy.ndarray and one header group
@@ -1413,7 +1445,7 @@ VALUE_2, COMMENT_2), ...]. Standard keywords like SIMPLE,
 BITPIX, NAXIS, EXTEND does not have to be passed (default
 None). It can also be a list of headers if a list of arrays
 has been passed to the option &#8216;data&#8217;.</li>
-<li><span class="target" id="core.Tools.write_hdf5.params.max_hdu_check"></span><strong>max_hdu_check</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.max_hdu_check">¶</a> &#8211; (Optional): When True, ff the input data
+<li><span class="target" id="core.Tools.write_hdf5.params.max_hdu_check"></span><strong>max_hdu_check</strong><a class="paramlink headerlink reference internal" href="#core.Tools.write_hdf5.params.max_hdu_check">¶</a> &#8211; (Optional): When True, if the input data
 is a list (interpreted as a list of data unit), check if
 it&#8217;s length is not too long to make sure that the input list
 is not a single data array that has not been converted to a
@@ -1605,7 +1637,7 @@ frame.</p>
 
 <dl class="method">
 <dt id="core.Cube.export">
-<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>header=None</em>, <em>overwrite=False</em>, <em>force_hdf5=False</em>, <em>force_fits=False</em>, <em>calibration_laser_map_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
+<code class="descname">export</code><span class="sig-paren">(</span><em>export_path</em>, <em>x_range=None</em>, <em>y_range=None</em>, <em>z_range=None</em>, <em>header=None</em>, <em>overwrite=False</em>, <em>force_hdf5=False</em>, <em>force_fits=False</em>, <em>calibration_laser_map_path=None</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.export" title="Permalink to this definition">¶</a></dt>
 <dd><p>Export cube as one FITS/HDF5 file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1631,6 +1663,9 @@ format. If False it will be in the format of the input files
 (default False).</li>
 <li><span class="target" id="core.Cube.export.params.calibration_laser_map_path"></span><strong>calibration_laser_map_path</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.calibration_laser_map_path">¶</a> &#8211; (Optional) Path to a
 calibration laser map to append (default None).</li>
+<li><span class="target" id="core.Cube.export.params.mask"></span><strong>mask</strong><a class="paramlink headerlink reference internal" href="#core.Cube.export.params.mask">¶</a> &#8211; (Optional) If a mask is given. Exported data is
+masked. A NaN in the mask flags for a masked pixel. Other
+values are not considered (default None).</li>
 </ul>
 </td>
 </tr>
@@ -1650,6 +1685,13 @@ calibration laser map to append (default None).</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Cube.get_calibration_laser_map">
+<code class="descname">get_calibration_laser_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.Cube.get_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Not implemented in Cube class but implemented in children
+classes.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2259,13 +2301,17 @@ exists, it is deleted (default False).</li>
 
 <dl class="method">
 <dt id="core.OutHDFCube.append_calibration_laser_map">
-<code class="descname">append_calibration_laser_map</code><span class="sig-paren">(</span><em>calib_map</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
+<code class="descname">append_calibration_laser_map</code><span class="sig-paren">(</span><em>calib_map</em>, <em>header=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.OutHDFCube.append_calibration_laser_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Append a calibration laser map to the HDF5 cube.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.OutHDFCube.append_calibration_laser_map.params.calib_map"></span><strong>calib_map</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_calibration_laser_map.params.calib_map">¶</a> &#8211; Calibration laser map to append.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="core.OutHDFCube.append_calibration_laser_map.params.calib_map"></span><strong>calib_map</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_calibration_laser_map.params.calib_map">¶</a> &#8211; Calibration laser map to append.</li>
+<li><span class="target" id="core.OutHDFCube.append_calibration_laser_map.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#core.OutHDFCube.append_calibration_laser_map.params.header">¶</a> &#8211; (Optional) Header to append (default None)</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -3349,7 +3395,7 @@ the star in ADU/s.</p>
 
 <dl class="method">
 <dt id="core.Standard.compute_star_flux_in_frame">
-<code class="descname">compute_star_flux_in_frame</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>filter_file_path</em>, <em>optics_file_path</em>, <em>camera_number</em>, <em>airmass=1.0</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.compute_star_flux_in_frame" title="Permalink to this definition">¶</a></dt>
+<code class="descname">compute_star_flux_in_frame</code><span class="sig-paren">(</span><em>step</em>, <em>order</em>, <em>filter_name</em>, <em>camera_number</em>, <em>airmass=1.0</em>, <em>corr=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Standard.compute_star_flux_in_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return flux in ADU/s in an image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3358,7 +3404,7 @@ the star in ADU/s.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.step">¶</a> &#8211; Step size in nm</li>
 <li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.order">¶</a> &#8211; Folding order</li>
-<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.filter_file_path">¶</a> &#8211; Path to the filter file</li>
+<li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.filter_name"></span><strong>filter_name</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.filter_name">¶</a> &#8211; Name fo the filter</li>
 <li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.optics_file_path"></span><strong>optics_file_path</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.optics_file_path">¶</a> &#8211; Path to the optics file</li>
 <li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.camera_number"></span><strong>camera_number</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.camera_number">¶</a> &#8211; Number of the camera</li>
 <li><span class="target" id="core.Standard.compute_star_flux_in_frame.params.airmass"></span><strong>airmass</strong><a class="paramlink headerlink reference internal" href="#core.Standard.compute_star_flux_in_frame.params.airmass">¶</a> &#8211; (Optional) Airmass (default 1)</li>
@@ -3424,6 +3470,20 @@ angle (default 1).</li>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="core.Header.bin_wcs">
+<code class="descname">bin_wcs</code><span class="sig-paren">(</span><em>binning</em><span class="sig-paren">)</span><a class="headerlink" href="#core.Header.bin_wcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bin WCS</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="core.Header.bin_wcs.params.binning"></span><strong>binning</strong><a class="paramlink headerlink reference internal" href="#core.Header.bin_wcs.params.binning">¶</a> &#8211; Binning</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -3431,15 +3491,18 @@ angle (default 1).</li>
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="utils_module.html" class="btn btn-neutral float-right" title="Utils module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="utils_module.html" class="btn btn-neutral float-right" title="Utils module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="data_analysis_with_orb.html" class="btn btn-neutral" title="Data analysis with ORB" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="data_analysis_with_orb.html" class="btn btn-neutral" title="Data analysis with ORB" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -3470,10 +3533,11 @@ angle (default 1).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.1.1-pre-July2016-mission',
+            VERSION:'3.0.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

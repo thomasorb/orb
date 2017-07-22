@@ -33,8 +33,6 @@ All the installation process can be done with pip and apt-get::
   pip install pyregion --upgrade
   pip install emcee --upgrade
   pip install dill --upgrade
-  pip install gvar -- upgrade
-  pip install lsqfit --upgrade
 
 Fast installation sequence for MAC users
 ========================================
