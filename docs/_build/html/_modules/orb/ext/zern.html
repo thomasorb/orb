@@ -1,0 +1,453 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>orb.ext.zern &#8212; orb  documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for orb.ext.zern</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">@file zern.py</span>
+<span class="sd">@brief Zernike basis function utilities</span>
+<span class="sd">@package libtim.zern</span>
+<span class="sd">@brief Zernike basis function utilities</span>
+<span class="sd">@author Tim van Werkhoven (werkhoven@strw.leidenuniv.nl)</span>
+<span class="sd">@copyright Creative Commons Attribution-Share Alike license versions 3.0 or higher, see http://creativecommons.org/licenses/by-sa/3.0/</span>
+<span class="sd">@date 20120403</span>
+<span class="sd">Construct and analyze Zernike basis functions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="k">import</span> <span class="n">factorial</span> <span class="k">as</span> <span class="n">fac</span>
+
+
+<div class="viewcode-block" id="mk_rad_mask"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.mk_rad_mask">[docs]</a><span class="k">def</span> <span class="nf">mk_rad_mask</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">,</span>
+		<span class="n">getxy</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Make a rectangular matrix of size (r0, r1) where the value of each </span>
+<span class="sd">	element is the Euclidean distance to **center**. If **center** is not </span>
+<span class="sd">	given, it is the middle of the matrix. If **norm** is True (default), </span>
+<span class="sd">	the distance is normalized to half the radius, i.e. values will range </span>
+<span class="sd">	from [-1, 1] for both axes.</span>
+<span class="sd">	If only r0 is given, the matrix will be (r0, r0). If r1 is also given, </span>
+<span class="sd">	the matrix will be (r0, r1)</span>
+<span class="sd">	To make a circular binary mask of (r0, r0), use</span>
+<span class="sd">		mk_rad_mask(r0) &lt; 1</span>
+<span class="sd">	@param [in] r0 The width (and height if r1==None) of the mask.</span>
+<span class="sd">	@param [in] r1 The height of the mask.</span>
+<span class="sd">	@param [in] norm Normalize the distance such that 2/(r0, r1) equals a distance of 1.</span>
+<span class="sd">	@param [in] getxy Return x, y-values instead of r</span>
+<span class="sd">	@param [in] dtype Datatype to use for radial coordinates</span>
+<span class="sd">	@param [in] center Set distance origin to **center** (defaults to the middle of the rectangle)</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">r1</span><span class="p">):</span>
+		<span class="n">r1</span> <span class="o">=</span> <span class="n">r0</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">r0</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">r1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;mk_rad_mask(): r0 &lt; 0 or r1 &lt; 0?&quot;</span><span class="p">)</span>
+	
+	<span class="k">if</span> <span class="p">(</span><span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">norm</span> <span class="ow">and</span> <span class="nb">sum</span><span class="p">(</span><span class="n">center</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">center</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;|center| should be &lt; 1 if norm is set&quot;</span><span class="p">)</span>	
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">norm</span><span class="p">):</span> <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span> <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">r0</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">r1</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+
+	<span class="c1"># N.B. These are calculated separately because we cannot calculate  </span>
+	<span class="c1"># 2.0/r0 first and multiply r0v with it depending on **norm**, this will </span>
+	<span class="c1"># yield different results due to rounding errors.</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">norm</span><span class="p">):</span>
+		<span class="n">r0v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">r0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+		<span class="n">r1v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">r0v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">r0</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">r0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+		<span class="n">r1v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r1</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+	
+	<span class="k">if</span> <span class="p">(</span><span class="n">getxy</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">r0v</span><span class="p">,</span> <span class="n">r1v</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="p">(</span><span class="n">r0v</span><span class="o">**</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">r1v</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span></div>
+            
+<div class="viewcode-block" id="zernike_rad"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.zernike_rad">[docs]</a><span class="k">def</span> <span class="nf">zernike_rad</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Make radial Zernike polynomial on coordinate grid **rho**.</span>
+<span class="sd">	@param [in] m Radial Zernike index</span>
+<span class="sd">	@param [in] n Azimuthal Zernike index</span>
+<span class="sd">	@param [in] rho Radial coordinate grid</span>
+<span class="sd">	@return Radial polynomial with identical shape as **rho**</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">rho</span><span class="o">*</span><span class="mf">0.0</span>
+
+	<span class="n">wf</span> <span class="o">=</span> <span class="n">rho</span><span class="o">*</span><span class="mf">0.0</span>
+	<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+		<span class="n">wf</span> <span class="o">+=</span> <span class="n">rho</span><span class="o">**</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span><span class="o">**</span><span class="n">k</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span> <span class="n">fac</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="n">m</span><span class="p">)</span><span class="o">/</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">k</span> <span class="p">)</span> <span class="o">*</span> <span class="n">fac</span><span class="p">(</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="p">)</span><span class="o">/</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">k</span> <span class="p">)</span> <span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">wf</span></div>
+
+<div class="viewcode-block" id="zernike"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.zernike">[docs]</a><span class="k">def</span> <span class="nf">zernike</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Calculate Zernike mode (m,n) on grid **rho** and **phi**.</span>
+<span class="sd">	**rho** and **phi** should be radial and azimuthal coordinate grids of identical shape, respectively.</span>
+<span class="sd">	@param [in] m Radial Zernike index</span>
+<span class="sd">	@param [in] n Azimuthal Zernike index</span>
+<span class="sd">	@param [in] rho Radial coordinate grid</span>
+<span class="sd">	@param [in] phi Azimuthal coordinate grid</span>
+<span class="sd">	@param [in] norm Normalize modes to unit variance</span>
+<span class="sd">	@return Zernike mode (m,n) with identical shape as rho, phi</span>
+<span class="sd">	@see &lt;http://research.opt.indiana.edu/Library/VSIA/VSIA-2000_taskforce/TOPS4_2.html&gt; and &lt;http://research.opt.indiana.edu/Library/HVO/Handbook.html&gt;.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">nc</span> <span class="o">=</span> <span class="mf">1.0</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">norm</span><span class="p">):</span>
+		<span class="n">nc</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">m</span><span class="o">==</span><span class="mi">0</span><span class="p">)))</span><span class="o">**</span><span class="mf">0.5</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span> <span class="k">return</span> <span class="n">nc</span><span class="o">*</span><span class="n">zernike_rad</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">phi</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span> <span class="k">return</span> <span class="n">nc</span><span class="o">*</span><span class="n">zernike_rad</span><span class="p">(</span><span class="o">-</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="o">-</span><span class="n">m</span> <span class="o">*</span> <span class="n">phi</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">nc</span><span class="o">*</span><span class="n">zernike_rad</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="noll_to_zern"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.noll_to_zern">[docs]</a><span class="k">def</span> <span class="nf">noll_to_zern</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Convert linear Noll index to tuple of Zernike indices.</span>
+<span class="sd">	j is the linear Noll coordinate, n is the radial Zernike index and m is the azimuthal Zernike index.</span>
+<span class="sd">	@param [in] j Zernike mode Noll index</span>
+<span class="sd">	@return (n, m) tuple of Zernike indices</span>
+<span class="sd">	@see &lt;https://oeis.org/A176988&gt;.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Noll indices start at 1, 0 is invalid.&quot;</span><span class="p">)</span>
+
+	<span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">j1</span> <span class="o">=</span> <span class="n">j</span><span class="o">-</span><span class="mi">1</span>
+	<span class="k">while</span> <span class="p">(</span><span class="n">j1</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">):</span>
+		<span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+		<span class="n">j1</span> <span class="o">-=</span> <span class="n">n</span>
+
+	<span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="n">j</span> <span class="o">*</span> <span class="p">((</span><span class="n">n</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">int</span><span class="p">((</span><span class="n">j1</span><span class="o">+</span><span class="p">((</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="p">))</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="zernikel"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.zernikel">[docs]</a><span class="k">def</span> <span class="nf">zernikel</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+	<span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">noll_to_zern</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">zernike</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">norm</span><span class="p">)</span></div>
+
+<span class="c1"># def zernikel(j, size=256, norm=True):</span>
+<span class="c1"># 	&quot;&quot;&quot;</span>
+<span class="c1"># 	Calculate Zernike mode with Noll-index j on a square grid of &lt;size&gt;^2</span>
+<span class="c1"># 	elements</span>
+<span class="c1"># 	&quot;&quot;&quot;</span>
+<span class="c1"># 	n, m = noll_to_zern(j)</span>
+<span class="c1">#</span>
+<span class="c1"># 	grid = (np.indices((size, size), dtype=np.float) - 0.5*size) / (0.5*size)</span>
+<span class="c1"># 	grid_rad = (grid[0]**2. + grid[1]**2.)**0.5</span>
+<span class="c1"># 	grid_ang = np.arctan2(grid[0], grid[1])</span>
+<span class="c1"># 	return zernike(m, n, grid_rad, grid_ang, norm)</span>
+
+<div class="viewcode-block" id="noll_to_zern_broken"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.noll_to_zern_broken">[docs]</a><span class="k">def</span> <span class="nf">noll_to_zern_broken</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Previous and incorrect Noll-to-Zernike conversion.</span>
+<span class="sd">	Stored for reference purposes. Fixed around 1321970330.98158 or Tue Nov 22 13:59:10 2011 UTC. All data generated before this has invalid mapping.</span>
+<span class="sd">	@deprecated Incorrect mapping, use noll_to_zern instead</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">raise</span> <span class="n">DeprecatedWarning</span><span class="p">(</span><span class="s2">&quot;Incorrect mapping, use noll_to_zern instead&quot;</span><span class="p">)</span>
+	<span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">j1</span> <span class="o">=</span> <span class="n">j</span>
+	<span class="k">while</span> <span class="p">(</span><span class="n">j1</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">):</span>
+		<span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+		<span class="n">j1</span> <span class="o">-=</span> <span class="n">n</span>
+	<span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">n</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">j1</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="fix_noll_map"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.fix_noll_map">[docs]</a><span class="k">def</span> <span class="nf">fix_noll_map</span><span class="p">(</span><span class="nb">max</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Translate old incorrect Noll coordinates to correct values.</span>
+<span class="sd">	This function repairs data generated with noll_to_zern_broken().</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="p">[(</span><span class="n">jold</span><span class="p">,</span> <span class="n">jnew</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">jold</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">max</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">jnew</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">)</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">noll_to_zern_broken</span><span class="p">(</span><span class="n">jold</span><span class="p">)</span> <span class="o">==</span> <span class="n">noll_to_zern</span><span class="p">(</span><span class="n">jnew</span><span class="p">))]</span></div>
+
+<div class="viewcode-block" id="zern_normalisation"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.zern_normalisation">[docs]</a><span class="k">def</span> <span class="nf">zern_normalisation</span><span class="p">(</span><span class="n">nmodes</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Calculate normalisation vector.</span>
+<span class="sd">	This function calculates a **nmodes** element vector with normalisation constants for Zernike modes that have not already been normalised.</span>
+<span class="sd">	@param [in] nmodes Size of normalisation vector.</span>
+<span class="sd">	@see &lt;http://research.opt.indiana.edu/Library/VSIA/VSIA-2000_taskforce/TOPS4_2.html&gt; and &lt;http://research.opt.indiana.edu/Library/HVO/Handbook.html&gt;.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">nolls</span> <span class="o">=</span> <span class="p">(</span><span class="n">noll_to_zern</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">nmodes</span><span class="p">))</span>
+	<span class="n">norms</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">m</span><span class="o">==</span><span class="mi">0</span><span class="p">)))</span><span class="o">**</span><span class="mf">0.5</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">m</span>  <span class="ow">in</span> <span class="n">nolls</span><span class="p">]</span>
+	<span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">(</span><span class="n">norms</span><span class="p">)</span></div>
+
+<span class="c1">### Higher level Zernike generating / fitting functions</span>
+
+<div class="viewcode-block" id="calc_zern_basis"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.calc_zern_basis">[docs]</a><span class="k">def</span> <span class="nf">calc_zern_basis</span><span class="p">(</span><span class="n">nmodes</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">modestart</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">calc_covmat</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Calculate a basis of **nmodes** Zernike modes with radius **rad**.</span>
+<span class="sd">	((If **mask** is true, set everything outside of radius **rad** to zero (default). If this is not done, the set of Zernikes will be **rad** by **rad** square and are not orthogonal anymore.)) --&gt; Nothing is masked, do this manually using the &#39;mask&#39; entry in the returned dict.</span>
+<span class="sd">	This output of this function can be used as cache for other functions.</span>
+<span class="sd">	@param [in] nmodes Number of modes to generate</span>
+<span class="sd">	@param [in] rad Radius of Zernike modes</span>
+<span class="sd">	@param [in] modestart First mode to calculate (Noll index, i.e. 1=piston)</span>
+<span class="sd">	@param [in] calc_covmat Return covariance matrix for Zernike modes, and its inverse</span>
+<span class="sd">	@return Dict with entries &#39;modes&#39; a list of Zernike modes, &#39;modesmat&#39; a matrix of (nmodes, npixels), &#39;covmat&#39; a covariance matrix for all these modes with &#39;covmat_in&#39; its inverse, &#39;mask&#39; is a binary mask to crop only the orthogonal part of the modes.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">nmodes</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="k">return</span> <span class="p">{</span><span class="s1">&#39;modes&#39;</span><span class="p">:[],</span> <span class="s1">&#39;modesmat&#39;</span><span class="p">:[],</span> <span class="s1">&#39;covmat&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;covmat_in&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">:[[</span><span class="mi">0</span><span class="p">]]}</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">rad</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;radius should be &gt; 0&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">modestart</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;**modestart** Noll index should be &gt; 0&quot;</span><span class="p">)</span>
+
+	<span class="c1"># Use vectors instead of a grid matrix</span>
+	<span class="n">rvec</span> <span class="o">=</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">rad</span><span class="p">)</span> <span class="o">-</span> <span class="n">rad</span><span class="p">)</span><span class="o">/</span><span class="n">rad</span><span class="p">)</span>
+	<span class="n">r0</span> <span class="o">=</span> <span class="n">rvec</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+	<span class="n">r1</span> <span class="o">=</span> <span class="n">rvec</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+	<span class="n">grid_rad</span> <span class="o">=</span> <span class="n">mk_rad_mask</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">rad</span><span class="p">)</span>
+	<span class="n">grid_ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r1</span><span class="p">)</span>
+
+	<span class="n">grid_mask</span> <span class="o">=</span> <span class="n">grid_rad</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+
+	<span class="c1"># Build list of Zernike modes, these are *not* masked/cropped</span>
+	<span class="n">zern_modes</span> <span class="o">=</span> <span class="p">[</span><span class="n">zernikel</span><span class="p">(</span><span class="n">zmode</span><span class="p">,</span> <span class="n">grid_rad</span><span class="p">,</span> <span class="n">grid_ang</span><span class="p">)</span> <span class="k">for</span> <span class="n">zmode</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">modestart</span><span class="p">,</span> <span class="n">nmodes</span><span class="o">+</span><span class="n">modestart</span><span class="p">)]</span>
+
+	<span class="c1"># Convert modes to (nmodes, npixels) matrix</span>
+	<span class="n">zern_modes_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">zern_modes</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nmodes</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+	<span class="n">covmat</span> <span class="o">=</span> <span class="n">covmat_in</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">calc_covmat</span><span class="p">):</span>
+		<span class="c1"># Calculate covariance matrix</span>
+		<span class="n">covmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">zerni</span> <span class="o">*</span> <span class="n">zernj</span> <span class="o">*</span> <span class="n">grid_mask</span><span class="p">)</span> <span class="k">for</span> <span class="n">zerni</span> <span class="ow">in</span> <span class="n">zern_modes</span><span class="p">]</span> <span class="k">for</span> <span class="n">zernj</span> <span class="ow">in</span> <span class="n">zern_modes</span><span class="p">])</span>
+		<span class="c1"># Invert covariance matrix using SVD</span>
+		<span class="n">covmat_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">covmat</span><span class="p">)</span>
+
+	<span class="c1"># Create and return dict</span>
+	<span class="k">return</span> <span class="p">{</span><span class="s1">&#39;modes&#39;</span><span class="p">:</span> <span class="n">zern_modes</span><span class="p">,</span> <span class="s1">&#39;modesmat&#39;</span><span class="p">:</span> <span class="n">zern_modes_mat</span><span class="p">,</span> <span class="s1">&#39;covmat&#39;</span><span class="p">:</span><span class="n">covmat</span><span class="p">,</span> <span class="s1">&#39;covmat_in&#39;</span><span class="p">:</span><span class="n">covmat_in</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">:</span> <span class="n">grid_mask</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="fit_zernike"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.fit_zernike">[docs]</a><span class="k">def</span> <span class="nf">fit_zernike</span><span class="p">(</span><span class="n">wavefront</span><span class="p">,</span> <span class="n">zern_data</span><span class="o">=</span><span class="p">{},</span> <span class="n">nmodes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">startmode</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fitweight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">rad</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">rec_zern</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">err</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Fit **nmodes** Zernike modes to a **wavefront**.</span>
+<span class="sd">	The **wavefront** will be fit to Zernike modes for a circle with radius **rad** with origin at **center**. **weigh** is a weighting mask used when fitting the modes.</span>
+<span class="sd">	If **center** or **rad** are between 0 and -1, the values will be interpreted as fractions of the image shape.</span>
+<span class="sd">	**startmode** indicates the Zernike mode (Noll index) to start fitting with, i.e. ***startmode**=4 will skip piston, tip and tilt modes. Modes below this one will be set to zero, which means that if **startmode** == **nmodes**, the returned vector will be all zeroes. This parameter is intended to ignore low order modes when fitting (piston, tip, tilt) as these can sometimes not be derived from data.</span>
+<span class="sd">	If **err** is an empty list, it will be filled with measures for the fitting error:</span>
+<span class="sd">	1. Mean squared difference</span>
+<span class="sd">	2. Mean absolute difference</span>
+<span class="sd">	3. Mean absolute difference squared</span>
+<span class="sd">	This function uses **zern_data** as cache. If this is not given, it will be generated. See calc_zern_basis() for details.</span>
+<span class="sd">	@param [in] wavefront Input wavefront to fit</span>
+<span class="sd">	@param [in] zern_data Zernike basis cache</span>
+<span class="sd">	@param [in] nmodes Number of modes to fit</span>
+<span class="sd">	@param [in] startmode Start fitting at this mode (Noll index)</span>
+<span class="sd">	@param [in] fitweight Mask to use as weights when fitting</span>
+<span class="sd">	@param [in] center Center of Zernike modes to fit</span>
+<span class="sd">	@param [in] rad Radius of Zernike modes to fit</span>
+<span class="sd">	@param [in] rec_zern Reconstruct Zernike modes and calculate errors.</span>
+<span class="sd">	@param [out] err Fitting errors</span>
+<span class="sd">	@return Tuple of (wf_zern_vec, wf_zern_rec, fitdiff) where the first element is a vector of Zernike mode amplitudes, the second element is a full 2D Zernike reconstruction and the last element is the 2D difference between the input wavefront and the full reconstruction.</span>
+<span class="sd">	@see See calc_zern_basis() for details on **zern_data** cache</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">rad</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="nb">min</span><span class="p">(</span><span class="n">center</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;illegal radius or center &lt; -1&quot;</span><span class="p">)</span>
+	<span class="k">elif</span> <span class="p">(</span><span class="n">rad</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="nb">max</span><span class="p">(</span><span class="n">wavefront</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;radius exceeds wavefront shape?&quot;</span><span class="p">)</span>
+	<span class="k">elif</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">center</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">wavefront</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">-</span><span class="n">rad</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;fitmask shape exceeds wavefront shape?&quot;</span><span class="p">)</span>
+	<span class="k">elif</span> <span class="p">(</span><span class="n">startmode</span>	<span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;startmode&lt;1 is not a valid Noll index&quot;</span><span class="p">)</span>
+
+	<span class="c1"># Convert rad and center if coordinates are fractional</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">rad</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="n">rad</span> <span class="o">=</span> <span class="o">-</span><span class="n">rad</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">wavefront</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">center</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+		<span class="n">center</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">center</span><span class="p">]</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">wavefront</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+	<span class="c1"># Make cropping slices to select only central part of the wavefront</span>
+	<span class="n">xslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">rad</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">rad</span><span class="p">))</span>
+	<span class="n">yslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">rad</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">rad</span><span class="p">))</span>
+
+	<span class="c1"># Compute Zernike basis if absent</span>
+	<span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">zern_data</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;modes&#39;</span><span class="p">)):</span>
+		<span class="n">tmp_zern</span> <span class="o">=</span> <span class="n">calc_zern_basis</span><span class="p">(</span><span class="n">nmodes</span><span class="p">,</span> <span class="n">rad</span><span class="p">)</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+	<span class="c1"># Compute Zernike basis if insufficient</span>
+	<span class="k">elif</span> <span class="p">(</span><span class="n">nmodes</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">])</span> <span class="ow">or</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">rad</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">rad</span><span class="p">)):</span>
+		<span class="n">tmp_zern</span> <span class="o">=</span> <span class="n">calc_zern_basis</span><span class="p">(</span><span class="n">nmodes</span><span class="p">,</span> <span class="n">rad</span><span class="p">)</span>
+		<span class="c1"># This data already exists, overwrite it with new data</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+
+	<span class="n">zern_basis</span> <span class="o">=</span> <span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">][:</span><span class="n">nmodes</span><span class="p">]</span>
+	<span class="n">zern_basismat</span> <span class="o">=</span> <span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">][:</span><span class="n">nmodes</span><span class="p">]</span>
+	<span class="n">grid_mask</span> <span class="o">=</span> <span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+
+	<span class="n">wf_zern_vec</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">grid_vec</span> <span class="o">=</span> <span class="n">grid_mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">fitweight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+		<span class="c1"># Weighed LSQ fit with data. Only fit inside grid_mask</span>
+
+		<span class="c1"># Multiply weight with binary mask, reshape to vector</span>
+		<span class="n">weight</span> <span class="o">=</span> <span class="p">((</span><span class="n">fitweight</span><span class="p">[</span><span class="n">yslice</span><span class="p">,</span>
+				     <span class="n">xslice</span><span class="p">])[</span><span class="n">grid_mask</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+		<span class="c1"># LSQ fit with weighed data</span>
+		<span class="n">wf_w</span> <span class="o">=</span> <span class="p">((</span><span class="n">wavefront</span><span class="p">[</span><span class="n">yslice</span><span class="p">,</span> <span class="n">xslice</span><span class="p">])[</span><span class="n">grid_mask</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">weight</span>
+		<span class="c1">#wf_zern_vec = np.dot(wf_w, np.linalg.pinv(zern_basismat[:, grid_vec] * weight)).ravel()</span>
+		<span class="c1"># This is 5x faster:</span>
+		<span class="n">wf_zern_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">((</span><span class="n">zern_basismat</span><span class="p">[:,</span> <span class="n">grid_vec</span><span class="p">]</span> <span class="o">*</span> <span class="n">weight</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">wf_w</span><span class="o">.</span><span class="n">ravel</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="c1"># LSQ fit with data. Only fit inside grid_mask</span>
+
+		<span class="c1"># Crop out central region of wavefront, then only select the orthogonal part of the Zernike modes (grid_mask)</span>
+		<span class="n">wf_w</span> <span class="o">=</span> <span class="p">((</span><span class="n">wavefront</span><span class="p">[</span><span class="n">yslice</span><span class="p">,</span> <span class="n">xslice</span><span class="p">])[</span><span class="n">grid_mask</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+		<span class="c1">#wf_zern_vec = np.dot(wf_w, np.linalg.pinv(zern_basismat[:, grid_vec])).ravel()</span>
+		<span class="c1"># This is 5x faster</span>
+		<span class="n">wf_zern_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">zern_basismat</span><span class="p">[:,</span> <span class="n">grid_vec</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">wf_w</span><span class="o">.</span><span class="n">ravel</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+	<span class="n">wf_zern_vec</span><span class="p">[:</span><span class="n">startmode</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+	<span class="c1"># Calculate full Zernike phase &amp; fitting error</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">rec_zern</span><span class="p">):</span>
+		<span class="n">wf_zern_rec</span> <span class="o">=</span> <span class="n">calc_zernike</span><span class="p">(</span><span class="n">wf_zern_vec</span><span class="p">,</span> <span class="n">zern_data</span><span class="o">=</span><span class="n">zern_data</span><span class="p">,</span> <span class="n">rad</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">wavefront</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+		<span class="n">fitdiff</span> <span class="o">=</span> <span class="p">(</span><span class="n">wf_zern_rec</span> <span class="o">-</span> <span class="n">wavefront</span><span class="p">[</span><span class="n">yslice</span><span class="p">,</span> <span class="n">xslice</span><span class="p">])</span>
+		<span class="n">fitdiff</span><span class="p">[</span><span class="n">grid_mask</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="n">fitdiff</span><span class="p">[</span><span class="n">grid_mask</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">wf_zern_rec</span> <span class="o">=</span> <span class="kc">None</span>
+		<span class="n">fitdiff</span> <span class="o">=</span> <span class="kc">None</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+		<span class="c1"># For calculating scalar fitting qualities, only use the area inside the mask</span>
+		<span class="n">fitresid</span> <span class="o">=</span> <span class="n">fitdiff</span><span class="p">[</span><span class="n">grid_mask</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+		<span class="n">err</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">fitresid</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+		<span class="n">err</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fitresid</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+		<span class="n">err</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fitresid</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="p">(</span><span class="n">wf_zern_vec</span><span class="p">,</span> <span class="n">wf_zern_rec</span><span class="p">,</span> <span class="n">fitdiff</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="calc_zernike"><a class="viewcode-back" href="../../../orb.ext.html#orb.ext.zern.calc_zernike">[docs]</a><span class="k">def</span> <span class="nf">calc_zernike</span><span class="p">(</span><span class="n">zern_vec</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">zern_data</span><span class="o">=</span><span class="p">{},</span> <span class="n">mask</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Construct wavefront with Zernike amplitudes **zern_vec**.</span>
+<span class="sd">	Given vector **zern_vec** with the amplitude of Zernike modes, return the reconstructed wavefront with radius **rad**.</span>
+<span class="sd">	This function uses **zern_data** as cache. If this is not given, it will be generated. See calc_zern_basis() for details.</span>
+<span class="sd">	If **mask** is True, set everything outside radius **rad** to zero, this is the default and will use orthogonal Zernikes. If this is False, the modes will not be cropped.</span>
+<span class="sd">	@param [in] zern_vec 1D vector of Zernike amplitudes</span>
+<span class="sd">	@param [in] rad Radius for Zernike modes to construct</span>
+<span class="sd">	@param [in] zern_data Zernike basis cache</span>
+<span class="sd">	@param [in] mask If True, set everything outside the Zernike aperture to zero, otherwise leave as is.</span>
+<span class="sd">	@see See calc_zern_basis() for details on **zern_data** cache and **mask**</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="c1"># Compute Zernike basis if absent</span>
+	<span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">zern_data</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;modes&#39;</span><span class="p">)):</span>
+		<span class="n">tmp_zern</span> <span class="o">=</span> <span class="n">calc_zern_basis</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">zern_vec</span><span class="p">),</span> <span class="n">rad</span><span class="p">)</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+	<span class="c1"># Compute Zernike basis if insufficient</span>
+	<span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">zern_vec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">])):</span>
+		<span class="n">tmp_zern</span> <span class="o">=</span> <span class="n">calc_zern_basis</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">zern_vec</span><span class="p">),</span> <span class="n">rad</span><span class="p">)</span>
+		<span class="c1"># This data already exists, overwrite it with new data</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;modesmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;covmat_in&#39;</span><span class="p">]</span>
+		<span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_zern</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+	<span class="n">zern_basis</span> <span class="o">=</span> <span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;modes&#39;</span><span class="p">]</span>
+
+	<span class="n">gridmask</span> <span class="o">=</span> <span class="mi">1</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+		<span class="n">gridmask</span> <span class="o">=</span> <span class="n">zern_data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+
+	<span class="c1"># Reconstruct the wavefront by summing modes</span>
+	<span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">zern_basis</span><span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">gridmask</span><span class="p">,</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">zern_vec</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

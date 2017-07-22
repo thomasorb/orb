@@ -1,0 +1,398 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>orb.utils.vector &#8212; orb  documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for orb.utils.vector</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="c1"># *-* coding: utf-8 *-*</span>
+<span class="c1"># Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1"># File: vector.py</span>
+
+<span class="c1">## Copyright (c) 2010-2016 Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1">## </span>
+<span class="c1">## This file is part of ORB</span>
+<span class="c1">##</span>
+<span class="c1">## ORB is free software: you can redistribute it and/or modify it</span>
+<span class="c1">## under the terms of the GNU General Public License as published by</span>
+<span class="c1">## the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1">## (at your option) any later version.</span>
+<span class="c1">##</span>
+<span class="c1">## ORB is distributed in the hope that it will be useful, but WITHOUT</span>
+<span class="c1">## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY</span>
+<span class="c1">## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public</span>
+<span class="c1">## License for more details.</span>
+<span class="c1">##</span>
+<span class="c1">## You should have received a copy of the GNU General Public License</span>
+<span class="c1">## along with ORB.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">signal</span>
+
+<span class="kn">import</span> <span class="nn">orb.utils.spectrum</span>
+<span class="kn">import</span> <span class="nn">orb.utils.stats</span>
+<span class="kn">import</span> <span class="nn">orb.cutils</span>
+
+<div class="viewcode-block" id="smooth"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.vector.smooth">[docs]</a><span class="k">def</span> <span class="nf">smooth</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">keep_sides</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Smooth a given vector.</span>
+
+<span class="sd">    :param a: Vector to smooth</span>
+<span class="sd">    </span>
+<span class="sd">    :param deg: (Optional) Smoothing degree (or kernel</span>
+<span class="sd">      radius) Must be an integer (default 2).</span>
+<span class="sd">    </span>
+<span class="sd">    :param kind: Kind of smoothing function. &#39;median&#39; or &#39;mean&#39; are</span>
+<span class="sd">      self-explanatory. &#39;gaussian&#39; uses a gaussian function for a</span>
+<span class="sd">      weighted average. &#39;gaussian_conv&#39; and &#39;cos_conv&#39; make use of</span>
+<span class="sd">      convolution with a gaussian kernel or a cosine</span>
+<span class="sd">      kernel. Convolution is much faster but less rigorous on the</span>
+<span class="sd">      edges of the vector (default &#39;gaussian&#39;).</span>
+
+<span class="sd">    :params keep_sides: If True, the vector is seen as keeping its</span>
+<span class="sd">      side values above its real boudaries (If False, the values</span>
+<span class="sd">      outside the vector are 0. and this creates an undesirable border</span>
+<span class="sd">      effect when convolving).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">cos_kernel</span><span class="p">(</span><span class="n">deg</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">((</span><span class="n">deg</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">deg</span><span class="p">))</span><span class="o">/</span><span class="n">deg</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+
+    <span class="n">deg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">keep_sides</span><span class="p">:</span>
+        <span class="n">a_large</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">deg</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">a_large</span><span class="p">[</span><span class="n">deg</span><span class="p">:</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">deg</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="n">a_large</span><span class="p">[:</span><span class="n">deg</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">a_large</span><span class="p">[</span><span class="o">-</span><span class="n">deg</span><span class="p">:]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">a_large</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian_conv&quot;</span><span class="p">):</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">gaussian1d</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">((</span><span class="n">deg</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="n">deg</span><span class="p">,</span>
+            <span class="n">deg</span><span class="o">/</span><span class="mf">4.</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.</span><span class="p">)))))</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span> <span class="s1">&#39;cos_conv&#39;</span><span class="p">):</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">cos_kernel</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian_conv&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s1">&#39;cos_conv&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian&quot;</span><span class="p">):</span>
+        <span class="n">kernel</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+        <span class="n">smoothed_a</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep_sides</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">smoothed_a</span><span class="p">[</span><span class="n">deg</span><span class="p">:</span><span class="o">-</span><span class="n">deg</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">smoothed_a</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">smoothed_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian&quot;</span><span class="p">):</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+            <span class="n">x_min</span> <span class="o">=</span> <span class="n">ii</span><span class="o">-</span><span class="n">deg</span>
+            <span class="k">if</span> <span class="n">x_min</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian&quot;</span><span class="p">):</span>
+                    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">kernel</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">x_min</span><span class="p">):])</span>
+                <span class="n">x_min</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">x_max</span> <span class="o">=</span> <span class="n">ii</span><span class="o">+</span><span class="n">deg</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">x_max</span> <span class="o">&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian&quot;</span><span class="p">):</span>
+                    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">kernel</span><span class="p">[:</span><span class="o">-</span><span class="p">(</span><span class="n">x_max</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+                <span class="n">x_max</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">box</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">x_min</span><span class="p">:</span><span class="n">x_max</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;median&quot;</span><span class="p">):</span>
+                <span class="n">smoothed_a</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">robust_median</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;mean&quot;</span><span class="p">):</span>
+                <span class="n">smoothed_a</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">robust_mean</span><span class="p">(</span><span class="n">box</span><span class="p">)</span> 
+            <span class="k">elif</span> <span class="p">(</span><span class="n">kind</span><span class="o">==</span><span class="s2">&quot;gaussian&quot;</span><span class="p">):</span>
+                <span class="n">smoothed_a</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">robust_mean</span><span class="p">(</span>
+                    <span class="n">box</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Kind parameter must be &#39;median&#39;, &#39;mean&#39;, &#39;gaussian&#39;, &#39;gaussian_conv&#39; or &#39;cos_conv&#39;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">keep_sides</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">smoothed_a</span><span class="p">[</span><span class="n">deg</span><span class="p">:</span><span class="o">-</span><span class="n">deg</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">smoothed_a</span></div>
+
+
+<div class="viewcode-block" id="correct_vector"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.vector.correct_vector">[docs]</a><span class="k">def</span> <span class="nf">correct_vector</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">bad_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                   <span class="n">polyfit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Correct a given vector for non valid values by interpolation or</span>
+<span class="sd">    polynomial fit.</span>
+
+<span class="sd">    :param vector: The vector to be corrected.</span>
+<span class="sd">    </span>
+<span class="sd">    :param bad_value: (Optional) Bad value to correct (default np.nan)</span>
+
+<span class="sd">    :param deg: (Optional) Spline degree or polyfit degree (default 3)</span>
+
+<span class="sd">    :param polyfit: (Optional) If True non valid values are guessed</span>
+<span class="sd">      using a polynomial fit to the data instead of an spline</span>
+<span class="sd">      interpolation (default False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+  
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+    <span class="n">vector</span> <span class="o">=</span> <span class="n">vector</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">bad_value</span><span class="p">):</span>
+        <span class="n">vector</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">vector</span> <span class="o">==</span> <span class="n">bad_value</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vector</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;The given vector has only bad values&quot;</span><span class="p">)</span>
+
+    <span class="c1"># vector used to fit is smoothed</span>
+    <span class="k">if</span> <span class="n">smoothing</span><span class="p">:</span>
+        <span class="n">smooth_vector</span> <span class="o">=</span> <span class="n">smooth</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">smooth_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+
+
+    <span class="c1"># create vectors containing only valid values for interpolation</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">smooth_vector</span><span class="o">*</span><span class="n">vector</span><span class="p">))]</span>
+    <span class="n">new_vector</span> <span class="o">=</span> <span class="n">smooth_vector</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">smooth_vector</span><span class="o">*</span><span class="n">vector</span><span class="p">))]</span>
+ 
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">polyfit</span><span class="p">:</span>
+        <span class="n">finterp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">new_vector</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">finterp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">new_vector</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">coeffs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vector</span><span class="p">))]</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vector</span><span class="p">))]</span>
+
+    <span class="c1"># borders around the corrected points are smoothed</span>
+    <span class="k">if</span> <span class="n">smoothing</span><span class="p">:</span>
+        <span class="n">zeros_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="n">zeros_vector</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vector</span><span class="p">))]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">zeros_vector</span> <span class="o">=</span> <span class="n">smooth</span><span class="p">(</span><span class="n">zeros_vector</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="mf">0.1</span><span class="p">),</span>
+                              <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cos_conv&#39;</span><span class="p">)</span>
+        <span class="n">zeros_vector</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vector</span><span class="p">))]</span> <span class="o">=</span> <span class="mf">1.</span>
+        
+        <span class="n">vector</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vector</span><span class="p">))]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">*</span><span class="n">zeros_vector</span> <span class="o">+</span> <span class="n">vector</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">zeros_vector</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="fft_filter"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.vector.fft_filter">[docs]</a><span class="k">def</span> <span class="nf">fft_filter</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">cutoff_coeff</span><span class="p">,</span> <span class="n">width_coeff</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">filter_type</span><span class="o">=</span><span class="s1">&#39;high_pass&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple lowpass or highpass FFT filter (high pass or low pass)</span>
+
+<span class="sd">    Filter shape is a gaussian.</span>
+<span class="sd">    </span>
+<span class="sd">    :param a: Vector to filter</span>
+
+<span class="sd">    :param cutoff_coeff: Coefficient defining the position of the cut</span>
+<span class="sd">      frequency (Cut frequency = cut_coeff * vector length)</span>
+
+<span class="sd">    :param width_coeff: (Optional) Coefficient defining the width of</span>
+<span class="sd">      the smoothed part of the filter (width = width_coeff * vector</span>
+<span class="sd">      length) (default 0.2)</span>
+
+<span class="sd">    :param filter_type: (Optional) Type of filter to use. Can be</span>
+<span class="sd">      &#39;high_pass&#39; or &#39;low_pass&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cutoff_coeff</span> <span class="o">&lt;</span> <span class="mf">0.</span> <span class="ow">or</span> <span class="n">cutoff_coeff</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;cutoff_coeff must be between 0. and 1.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">width_coeff</span> <span class="o">&lt;</span> <span class="mf">0.</span> <span class="ow">or</span> <span class="n">width_coeff</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;width_coeff must be between 0. and 1.&#39;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s1">&#39;low_pass&#39;</span><span class="p">:</span>
+        <span class="n">lowpass</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s1">&#39;high_pass&#39;</span><span class="p">:</span>
+        <span class="n">lowpass</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Bad filter type. Must be &#39;low_pass&#39; or &#39;high_pass&#39;&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">fft_filter</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">cutoff_coeff</span><span class="p">,</span> <span class="n">width_coeff</span><span class="p">,</span> <span class="n">lowpass</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="polyfit1d"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.vector.polyfit1d">[docs]</a><span class="k">def</span> <span class="nf">polyfit1d</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_coeffs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fit a polynomial to a 1D vector.</span>
+<span class="sd">    </span>
+<span class="sd">    :param a: Vector to fit</span>
+<span class="sd">    </span>
+<span class="sd">    :param deg: Fit degree</span>
+<span class="sd">    </span>
+<span class="sd">    :param return_coeffs: (Optional) If True return fit coefficients</span>
+<span class="sd">      as returned by numpy.polynomial.polynomial.polyfit() (default</span>
+<span class="sd">      False).</span>
+
+<span class="sd">    :param w: (Optional) If not None, weights to apply to the</span>
+<span class="sd">      fit. Must have the same shape as the vector to fit (default</span>
+<span class="sd">      None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">nonans</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">nonans_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">nonans</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">nonans</span> <span class="o">*=</span> <span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">nonans_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">nonans</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">nonans_ind</span><span class="p">]</span>
+        
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)[</span><span class="n">nonans_ind</span><span class="p">]</span>
+    
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">nonans_ind</span><span class="p">]</span>
+    
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">coeffs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">return_coeffs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fit</span><span class="p">,</span> <span class="n">coeffs</span></div>
+
+<div class="viewcode-block" id="interpolate_size"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.vector.interpolate_size">[docs]</a><span class="k">def</span> <span class="nf">interpolate_size</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">deg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Change size of a vector by interpolation</span>
+
+<span class="sd">    :param a: vector to interpolate</span>
+<span class="sd">    </span>
+<span class="sd">    :param size: New size of the vector</span>
+<span class="sd">    </span>
+<span class="sd">    :param deg: Interpolation degree</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="n">L</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="n">L</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+        <span class="n">f_real</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">a</span><span class="o">.</span><span class="n">real</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">real</span> <span class="o">=</span> <span class="n">f_real</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="n">L</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="n">L</span><span class="p">))</span>
+        <span class="n">f_imag</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">a</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">imag</span> <span class="o">=</span> <span class="n">f_imag</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="n">L</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="n">L</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+        
+<div class="viewcode-block" id="interpolate_axis"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.vector.interpolate_axis">[docs]</a><span class="k">def</span> <span class="nf">interpolate_axis</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">new_axis</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">old_axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interpolate a vector along a new axis.</span>
+
+<span class="sd">    :param a: vector to interpolate</span>
+<span class="sd">    </span>
+<span class="sd">    :param new_axis: Interpolation axis</span>
+<span class="sd">    </span>
+<span class="sd">    :param deg: Interpolation degree</span>
+<span class="sd">    </span>
+<span class="sd">    :param old_axis: (Optional) Original vector axis. If None,</span>
+<span class="sd">      a regular range axis is assumed (default None).</span>
+
+<span class="sd">    :param fill_value: (Optional) extrapolated points are filled with</span>
+<span class="sd">      this value (default np.nan)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">returned_vector</span><span class="o">=</span><span class="kc">False</span>
+    <span class="k">if</span> <span class="n">old_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">old_axis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">old_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">old_axis</span> <span class="o">=</span> <span class="n">old_axis</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">new_axis</span> <span class="o">=</span> <span class="n">new_axis</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">returned_vector</span><span class="o">=</span><span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nonnans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+            <span class="n">old_axis</span> <span class="o">=</span> <span class="n">old_axis</span><span class="p">[</span><span class="n">nonnans</span><span class="p">]</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">nonnans</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">old_axis</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">new_axis</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">new_axis</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+        <span class="n">f_real</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">old_axis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">real</span> <span class="o">=</span> <span class="n">f_real</span><span class="p">(</span><span class="n">new_axis</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+        <span class="n">f_imag</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">old_axis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="n">deg</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">imag</span> <span class="o">=</span> <span class="n">f_imag</span><span class="p">(</span><span class="n">new_axis</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+            
+    <span class="k">if</span> <span class="n">returned_vector</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">old_axis</span> <span class="o">=</span> <span class="n">old_axis</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">new_axis</span> <span class="o">=</span> <span class="n">new_axis</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># extrapolated parts are set to fil__value</span>
+    <span class="n">result</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">new_axis</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">old_axis</span><span class="p">))]</span> <span class="o">=</span> <span class="n">fill_value</span>
+    <span class="n">result</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">new_axis</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">old_axis</span><span class="p">))]</span> <span class="o">=</span> <span class="n">fill_value</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

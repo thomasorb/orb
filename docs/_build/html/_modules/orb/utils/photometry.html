@@ -1,0 +1,592 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>orb.utils.photometry &#8212; orb  documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for orb.utils.photometry</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="c1"># *-* coding: utf-8 *-*</span>
+<span class="c1"># Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1"># File: photometry.py</span>
+
+<span class="c1">## Copyright (c) 2010-2016 Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1">## </span>
+<span class="c1">## This file is part of ORB</span>
+<span class="c1">##</span>
+<span class="c1">## ORB is free software: you can redistribute it and/or modify it</span>
+<span class="c1">## under the terms of the GNU General Public License as published by</span>
+<span class="c1">## the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1">## (at your option) any later version.</span>
+<span class="c1">##</span>
+<span class="c1">## ORB is distributed in the hope that it will be useful, but WITHOUT</span>
+<span class="c1">## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY</span>
+<span class="c1">## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public</span>
+<span class="c1">## License for more details.</span>
+<span class="c1">##</span>
+<span class="c1">## You should have received a copy of the GNU General Public License</span>
+<span class="c1">## along with ORB.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">orb.constants</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span>
+<span class="kn">import</span> <span class="nn">scipy.optimize</span>
+<span class="kn">import</span> <span class="nn">orb.utils.spectrum</span>
+<span class="kn">from</span> <span class="nn">orb.utils.astrometry</span> <span class="k">import</span> <span class="n">Gaussian</span>
+ 
+<div class="viewcode-block" id="flambda2ABmag"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.flambda2ABmag">[docs]</a><span class="k">def</span> <span class="nf">flambda2ABmag</span><span class="p">(</span><span class="n">flambda</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return AB magnitude from flux in erg/cm2/s/A</span>
+
+<span class="sd">    :param flambda: Flux in erg/cm2/s/A. Can be an array.</span>
+
+<span class="sd">    :param lambda: Wavelength in A of the Flux. If flambda is an array</span>
+<span class="sd">      lambda must have the same shape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">2.99792458e18</span> <span class="c1"># Ang/s</span>
+    <span class="n">fnu</span> <span class="o">=</span> <span class="n">lam</span><span class="o">**</span><span class="mf">2.</span><span class="o">/</span><span class="n">c</span><span class="o">*</span><span class="n">flambda</span>
+    <span class="n">ABmag</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">fnu</span><span class="p">)</span> <span class="o">-</span> <span class="mf">48.60</span>
+    <span class="k">return</span> <span class="n">ABmag</span></div>
+
+<div class="viewcode-block" id="ABmag2fnu"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.ABmag2fnu">[docs]</a><span class="k">def</span> <span class="nf">ABmag2fnu</span><span class="p">(</span><span class="n">ABmag</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return flux in erg/cm2/s/Hz from AB magnitude (Oke, ApJS, 27,</span>
+<span class="sd">    21, 1974)</span>
+
+<span class="sd">    ABmag = -2.5 * log10(f_nu) - 48.60</span>
+<span class="sd">    f_nu = 10^(-0.4 * (ABmag + 48.60))</span>
+
+<span class="sd">    :param ABmag: A magnitude in the AB magnitude system</span>
+
+<span class="sd">    .. note:: Definition of the zero-point can change and be</span>
+<span class="sd">      e.g. 48.59 for Oke standard stars (Hamuy et al., PASP, 104, 533,</span>
+<span class="sd">      1992). This is the case for Spectrophotometric Standards given</span>
+<span class="sd">      on the ESO website (https://www.eso.org/sci/observing/tools/standards/spectra/okestandards.html). Here the HST definition is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="p">(</span><span class="n">ABmag</span> <span class="o">+</span> <span class="mf">48.60</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="fnu2flambda"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.fnu2flambda">[docs]</a><span class="k">def</span> <span class="nf">fnu2flambda</span><span class="p">(</span><span class="n">fnu</span><span class="p">,</span> <span class="n">nu</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a flux in erg/cm2/s/Hz to a flux in erg/cm2/s/A</span>
+
+<span class="sd">    :param fnu: Flux in erg/cm2/s/Hz</span>
+<span class="sd">    :param nu: frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">2.99792458e18</span> <span class="c1"># Ang/s</span>
+    <span class="k">return</span> <span class="n">fnu</span> <span class="o">*</span> <span class="n">nu</span><span class="o">**</span><span class="mf">2.</span> <span class="o">/</span> <span class="n">c</span></div>
+
+<div class="viewcode-block" id="lambda2nu"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.lambda2nu">[docs]</a><span class="k">def</span> <span class="nf">lambda2nu</span><span class="p">(</span><span class="n">lam</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert lambda in Ang to nu in Hz</span>
+
+<span class="sd">    :param lam: Wavelength in angstrom</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">2.99792458e18</span> <span class="c1"># Ang/s</span>
+    <span class="k">return</span> <span class="n">c</span> <span class="o">/</span> <span class="n">lam</span></div>
+
+<div class="viewcode-block" id="ABmag2flambda"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.ABmag2flambda">[docs]</a><span class="k">def</span> <span class="nf">ABmag2flambda</span><span class="p">(</span><span class="n">ABmag</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert AB magnitude to flux in erg/cm2/s/A</span>
+
+<span class="sd">    :param ABmag: A magnitude in the AB magnitude system</span>
+
+<span class="sd">    :param lam: Wavelength in angstrom</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">fnu2flambda</span><span class="p">(</span><span class="n">ABmag2fnu</span><span class="p">(</span><span class="n">ABmag</span><span class="p">),</span> <span class="n">lambda2nu</span><span class="p">(</span><span class="n">lam</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="read_atmospheric_extinction_file"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.read_atmospheric_extinction_file">[docs]</a><span class="k">def</span> <span class="nf">read_atmospheric_extinction_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read atmospheric extinction file</span>
+
+<span class="sd">    :param file_path: Path to the atmospheric extinction file.</span>
+
+<span class="sd">    :return: a tuple (axis [in nm], atmospheric extinction in</span>
+<span class="sd">      [mag/airmass])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">wav</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.</span><span class="p">)</span> <span class="c1"># ang -&gt; nm</span>
+                <span class="n">ext</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">wav</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_atmospheric_extinction"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.get_atmospheric_extinction">[docs]</a><span class="k">def</span> <span class="nf">get_atmospheric_extinction</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the atmospheric extinction curve in mag/airmass in the</span>
+<span class="sd">    range defined by the observation parameters along a reference nm</span>
+<span class="sd">    axis (on the interferometer optical axis).</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :param step: Step size in nm</span>
+
+<span class="sd">    :param order: Folding order</span>
+
+<span class="sd">    :param step_nb: Number of step along the nm axis.</span>
+<span class="sd">    </span>
+<span class="sd">    :param corr: (Optional) Correction coefficient related to the</span>
+<span class="sd">      incident angle (default 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">axis</span><span class="p">,</span> <span class="n">atm_ext</span> <span class="o">=</span> <span class="n">read_atmospheric_extinction_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">atm_extf</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">atm_ext</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">nm_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_nm_axis</span><span class="p">(</span>
+        <span class="n">step_nb</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="n">corr</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">atm_extf</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_atmospheric_transmission"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.get_atmospheric_transmission">[docs]</a><span class="k">def</span> <span class="nf">get_atmospheric_transmission</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">step_nb</span><span class="p">,</span> <span class="n">airmass</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">corr</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the atmospheric transmission curve at a given airmass</span>
+<span class="sd">    in the range defined by the observation parameters along a</span>
+<span class="sd">    reference nm axis (on the interferometer optical axis).</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :param step: Step size in nm</span>
+
+<span class="sd">    :param order: Folding order</span>
+
+<span class="sd">    :param step_nb: Number of step along the nm axis.</span>
+
+<span class="sd">    :param airmass: (Optional) Airmass (default 1)</span>
+
+<span class="sd">    :param corr: (Optional) Correction coefficient related to the</span>
+<span class="sd">      incident angle (default 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">atm_ext</span> <span class="o">=</span> <span class="n">get_atmospheric_extinction</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="n">corr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">atm_ext</span><span class="o">*</span><span class="n">airmass</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="read_quantum_efficiency_file"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.read_quantum_efficiency_file">[docs]</a><span class="k">def</span> <span class="nf">read_quantum_efficiency_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read quantum efficiency file</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :return: a tuple (axis [in nm], quantum efficiency (from 0 to 1))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+  
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">wav</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">qe</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">qe</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># percent to coeff</span>
+        
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">wav</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qe</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_quantum_efficiency"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.get_quantum_efficiency">[docs]</a><span class="k">def</span> <span class="nf">get_quantum_efficiency</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the quantum efficiency curve in the range defined by the</span>
+<span class="sd">    observation parameters along a reference nm axis (on the</span>
+<span class="sd">    interferometer optical axis).</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :param step: Step size in nm</span>
+
+<span class="sd">    :param order: Folding order</span>
+
+<span class="sd">    :param step_nb: Number of step along the nm axis.</span>
+
+<span class="sd">    :param corr: (Optional) Correction coefficient related to the</span>
+<span class="sd">      incident angle (default 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">axis</span><span class="p">,</span> <span class="n">qe</span> <span class="o">=</span> <span class="n">read_quantum_efficiency_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">qef</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">qe</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">nm_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_nm_axis</span><span class="p">(</span>
+        <span class="n">step_nb</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="n">corr</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qef</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="read_mirror_transmission_file"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.read_mirror_transmission_file">[docs]</a><span class="k">def</span> <span class="nf">read_mirror_transmission_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read mirror transmission file</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :return: a tuple (axis [in nm], Mirror transmission (from 0 to 1))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">wav</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">mir_trans</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">mir_trans</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">)</span> <span class="c1"># percent to coeff</span>
+        
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">wav</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mir_trans</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_mirror_transmission"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.get_mirror_transmission">[docs]</a><span class="k">def</span> <span class="nf">get_mirror_transmission</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the mirror transmission curve in mag/airmass in the</span>
+<span class="sd">    range defined by the observation parameters along a reference nm</span>
+<span class="sd">    axis (on the interferometer optical axis).</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :param step: Step size in nm</span>
+
+<span class="sd">    :param order: Folding order</span>
+
+<span class="sd">    :param step_nb: Number of step along the nm axis.</span>
+
+<span class="sd">    :param corr: (Optional) Correction coefficient related to the</span>
+<span class="sd">      incident angle (default 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">axis</span><span class="p">,</span> <span class="n">mir_trans</span> <span class="o">=</span> <span class="n">read_mirror_transmission_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">mir_transf</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">mir_trans</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">nm_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_nm_axis</span><span class="p">(</span>
+        <span class="n">step_nb</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="n">corr</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mir_transf</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="read_optics_file"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.read_optics_file">[docs]</a><span class="k">def</span> <span class="nf">read_optics_file</span><span class="p">(</span><span class="n">optics_file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a file containing the optics transmission function.</span>
+
+<span class="sd">    :param optics_file_path: Path to the optics file.</span>
+
+<span class="sd">    :returns: (wavelength, transmission coefficients)</span>
+<span class="sd">      </span>
+<span class="sd">    .. note:: The optics file used must have two colums separated by a</span>
+<span class="sd">      space character. The first column contains the wavelength axis</span>
+<span class="sd">      in nm. The second column contains the transmission</span>
+<span class="sd">      coefficients. Comments are preceded with a #.  </span>
+
+<span class="sd">        ## ORBS optics file </span>
+<span class="sd">        # Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="sd">        # Filter name : SpIOMM_R</span>
+<span class="sd">        # Wavelength in nm | Transmission percentage</span>
+<span class="sd">        1000 0.001201585284</span>
+<span class="sd">        999.7999878 0.009733387269</span>
+<span class="sd">        999.5999756 -0.0004460749624</span>
+<span class="sd">        999.4000244 0.01378122438</span>
+<span class="sd">        999.2000122 0.002538740868</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">optics_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">optics_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">optics_trans_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">optics_nm_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">optics_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;#&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="c1"># avoid comment lines</span>
+                <span class="n">optics_nm_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">optics_trans_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">optics_nm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">optics_nm_list</span><span class="p">)</span>
+    <span class="n">optics_trans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">optics_trans_list</span><span class="p">)</span>
+    <span class="c1"># sort coefficients the correct way</span>
+    <span class="k">if</span> <span class="n">optics_nm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">optics_nm</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">optics_nm</span> <span class="o">=</span> <span class="n">optics_nm</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">optics_trans</span> <span class="o">=</span> <span class="n">optics_trans</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+    <span class="k">return</span> <span class="n">optics_nm</span><span class="p">,</span> <span class="n">optics_trans</span></div>
+
+<div class="viewcode-block" id="get_optics_transmission"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.get_optics_transmission">[docs]</a><span class="k">def</span> <span class="nf">get_optics_transmission</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the optics transmission curve in mag/airmass in the</span>
+<span class="sd">    range defined by the observation parameters along a reference nm</span>
+<span class="sd">    axis (on the interferometer optical axis).</span>
+
+<span class="sd">    :param file_path: Path to the file</span>
+
+<span class="sd">    :param step: Step size in nm</span>
+
+<span class="sd">    :param order: Folding order</span>
+
+<span class="sd">    :param step_nb: Number of step along the nm axis.</span>
+
+<span class="sd">    :param corr: (Optional) Correction coefficient related to the</span>
+<span class="sd">      incident angle (default 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">axis</span><span class="p">,</span> <span class="n">optics_trans</span> <span class="o">=</span> <span class="n">read_optics_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">optics_transf</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">optics_trans</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">nm_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_nm_axis</span><span class="p">(</span>
+        <span class="n">step_nb</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="n">corr</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">optics_transf</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="compute_mean_star_flux"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_mean_star_flux">[docs]</a><span class="k">def</span> <span class="nf">compute_mean_star_flux</span><span class="p">(</span><span class="n">star_spectrum</span><span class="p">,</span> <span class="n">filter_transmission</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return mean star flux given a spectrum and the filter. Both</span>
+<span class="sd">    files must be given along the same wavelength/wavenumber axis.</span>
+
+<span class="sd">    :param star_spectrum: Spectrum of the star</span>
+<span class="sd">    :param filter_transmission: Filter transmission curve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">star_spectrum</span> <span class="o">*</span> <span class="n">filter_transmission</span><span class="p">)</span>
+            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">filter_transmission</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="compute_mean_photon_energy"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_mean_photon_energy">[docs]</a><span class="k">def</span> <span class="nf">compute_mean_photon_energy</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">,</span> <span class="n">filter_transmission</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return mean energy of the photons passing thourgh a given</span>
+<span class="sd">    filter.</span>
+<span class="sd">    </span>
+<span class="sd">    :param nm_axis: Filter transmission axis in nm.</span>
+<span class="sd">    :param filter_transmission: Filter transmission curve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ph_energy_spectrum</span> <span class="o">=</span> <span class="n">compute_photon_energy</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ph_energy_spectrum</span> <span class="o">*</span> <span class="n">filter_transmission</span><span class="p">)</span>
+            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">filter_transmission</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="compute_photon_energy"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_photon_energy">[docs]</a><span class="k">def</span> <span class="nf">compute_photon_energy</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the photon energy computed for all the wavelength along</span>
+<span class="sd">    a given wavelength axis.</span>
+
+<span class="sd">    :param nm_axis: Wavelength axis in nm</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">orb</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">HEISEN</span>
+            <span class="o">*</span> <span class="n">orb</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">LIGHT_VEL_KMS</span> <span class="o">*</span> <span class="mf">1e12</span>
+            <span class="o">/</span> <span class="n">nm_axis</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="compute_equivalent_bandwidth"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_equivalent_bandwidth">[docs]</a><span class="k">def</span> <span class="nf">compute_equivalent_bandwidth</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">,</span> <span class="n">filter_transmission</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the equivalent bandwidth of a given filter.</span>
+
+<span class="sd">    :param nm_axis: Filter transmission axis in nm.</span>
+<span class="sd">    :param filter_transmission: Filter transmission curve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span> <span class="o">*</span> <span class="n">filter_transmission</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                     <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">filter_transmission</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="compute_star_flux_in_frame"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_star_flux_in_frame">[docs]</a><span class="k">def</span> <span class="nf">compute_star_flux_in_frame</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">,</span> <span class="n">star_flux</span><span class="p">,</span> <span class="n">filter_trans</span><span class="p">,</span>
+                               <span class="n">optics_trans</span><span class="p">,</span> <span class="n">atm_trans</span><span class="p">,</span>
+                               <span class="n">mirror_trans</span><span class="p">,</span> <span class="n">qe</span><span class="p">,</span> <span class="n">mirror_surface</span><span class="p">,</span> <span class="n">ccd_gain</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the estimation of the flux of a star in counts/s in one image.</span>
+
+<span class="sd">    :param nm_axis: Wavelentgh axis in nm</span>
+<span class="sd">    :param star_flux: Star flux curve in ergs/cm2/s/A</span>
+<span class="sd">    :param filter_trans: Transmission curve of the filter</span>
+<span class="sd">    :param optics_trans: Transmission of the optics</span>
+<span class="sd">    :param atm_trans: Transmission of the atmosphere</span>
+<span class="sd">    :param qe: Quantum Efficiency curve of the detector</span>
+<span class="sd">    :param mirror_surface: Surface of the primary mirror in cm2</span>
+<span class="sd">    :param ccd_gain: Gain of the detector.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">flux</span> <span class="o">=</span> <span class="n">star_flux</span> <span class="c1"># erg/cm2/s/A</span>
+    <span class="n">flux</span> <span class="o">/=</span> <span class="n">compute_photon_energy</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span> <span class="c1"># photons/s/A</span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">atm_trans</span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">mirror_surface</span> <span class="c1"># photons/s/A</span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">mirror_trans</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># **2 because we have two mirrors </span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">optics_trans</span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">filter_trans</span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">qe</span> <span class="c1"># electrons/s/A</span>
+    <span class="n">flux</span> <span class="o">*=</span> <span class="n">ccd_gain</span> <span class="c1"># counts/s/A</span>
+    <span class="c1"># sum all counts by wavelength bins</span>
+    <span class="n">flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">nm_axis</span><span class="p">)</span> <span class="o">*</span> <span class="mf">10.</span> <span class="o">*</span> <span class="n">flux</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> 
+    <span class="n">flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="c1"># counts/s</span>
+    <span class="n">flux</span> <span class="o">/=</span> <span class="mi">2</span> <span class="c1"># photon flux divided by two at the beam splitter</span>
+    <span class="k">return</span> <span class="n">flux</span></div>
+
+<div class="viewcode-block" id="compute_star_central_pixel_value"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_star_central_pixel_value">[docs]</a><span class="k">def</span> <span class="nf">compute_star_central_pixel_value</span><span class="p">(</span><span class="n">seeing</span><span class="p">,</span> <span class="n">plate_scale</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the relative value of the pixel containing the greatest</span>
+<span class="sd">    proportion of the flux (central pixel) of Gaussian star.</span>
+
+<span class="sd">    :param seeing: Star FWHM in arcsec</span>
+<span class="sd">    :param plate_scale: Size of the pixels in arcsec.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">fwhm_pix</span> <span class="o">=</span> <span class="n">seeing</span> <span class="o">/</span> <span class="n">plate_scale</span>
+    <span class="n">star</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">fwhm_pix</span><span class="p">])</span><span class="o">.</span><span class="n">array2d</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">star</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">star</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">star</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="compute_optimal_texp"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_optimal_texp">[docs]</a><span class="k">def</span> <span class="nf">compute_optimal_texp</span><span class="p">(</span><span class="n">star_flux</span><span class="p">,</span> <span class="n">seeing</span><span class="p">,</span> <span class="n">plate_scale</span><span class="p">,</span>
+                         <span class="n">saturation</span><span class="o">=</span><span class="mi">30000</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the optimal exposure time given the total flux of the</span>
+<span class="sd">    star in ADU/s.</span>
+
+<span class="sd">    :param star_flux: Total star flux in ADU/s</span>
+<span class="sd">    :param seeing: Star FWHM in arcsec</span>
+<span class="sd">    :param plate_scale: Size of 1 pixel in arcsec.</span>
+<span class="sd">    :param saturation: (Optional) Saturation value (default 30000).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">print</span> <span class="s1">&#39;Optimal exposure time is computed for a saturation value of: </span><span class="si">{}</span><span class="s1"> counts&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">saturation</span><span class="p">)</span>
+    <span class="n">max_flux</span> <span class="o">=</span> <span class="n">compute_star_central_pixel_value</span><span class="p">(</span>
+        <span class="n">seeing</span><span class="p">,</span> <span class="n">plate_scale</span><span class="p">)</span> <span class="o">*</span> <span class="n">star_flux</span>
+
+    <span class="k">return</span> <span class="n">saturation</span><span class="o">/</span><span class="n">max_flux</span></div>
+    
+<div class="viewcode-block" id="fit_std_spectrum"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.fit_std_spectrum">[docs]</a><span class="k">def</span> <span class="nf">fit_std_spectrum</span><span class="p">(</span><span class="n">real_spectrum</span><span class="p">,</span> <span class="n">std_spectrum</span><span class="p">,</span> <span class="n">polydeg</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fit a real spectrum multiplied by a polynomial over a standard</span>
+<span class="sd">    spectrum.</span>
+
+<span class="sd">    Return the polynomial which can be used directly as a calibration</span>
+<span class="sd">    curve.</span>
+
+<span class="sd">    :param real_spectrum: Observed spectrum</span>
+<span class="sd">    :param std_spectrum: Standard spectrum</span>
+<span class="sd">    :param polydeg: Degree of the polynomial</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">real_spectrum</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">real_spectrum</span>
+                <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">diff</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">std_spectrum</span><span class="p">,</span> <span class="n">real_spectrum</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">real_spectrum</span><span class="p">)</span> <span class="o">-</span> <span class="n">std_spectrum</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">res</span><span class="p">)]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">polydeg</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">real_spectrum</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">std_spectrum</span> <span class="o">/</span> <span class="n">real_spectrum</span><span class="p">)</span>
+    
+    <span class="n">p</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">leastsq</span><span class="p">(</span>
+        <span class="n">diff</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">std_spectrum</span><span class="p">,</span>
+            <span class="n">real_spectrum</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="convert_cm1_flux2fluxdensity"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.convert_cm1_flux2fluxdensity">[docs]</a><span class="k">def</span> <span class="nf">convert_cm1_flux2fluxdensity</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">cm1_axis</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Convert a spectrum in X/s to X/s/A (X may be ADU or erg/cm^2)</span>
+
+<span class="sd">    :param a: spectrum</span>
+
+<span class="sd">    :param cm1_axis: Axis of the spectrum in cm-1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_cm1_axis_plus1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">cm1_axis</span><span class="p">,</span> <span class="n">cm1_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                 <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">cm1_axis</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">_channel_A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="mf">1e7</span><span class="o">/</span><span class="n">_cm1_axis_plus1</span><span class="p">))</span> <span class="o">*</span> <span class="mf">10.</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="n">_channel_A</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="compute_flux_calibration_vector"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.photometry.compute_flux_calibration_vector">[docs]</a><span class="k">def</span> <span class="nf">compute_flux_calibration_vector</span><span class="p">(</span><span class="n">re_spectrum</span><span class="p">,</span> <span class="n">th_spectrum</span><span class="p">,</span>
+                                    <span class="n">std_step</span><span class="p">,</span> <span class="n">std_order</span><span class="p">,</span> <span class="n">std_exp_time</span><span class="p">,</span>
+                                    <span class="n">std_corr</span><span class="p">,</span> <span class="n">filter_function</span><span class="p">,</span>
+                                    <span class="n">filter_min_pix</span><span class="p">,</span> <span class="n">filter_max_pix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the flux calibration vector from an observed spectrum</span>
+<span class="sd">    and the standard spectrum.</span>
+
+<span class="sd">    :param re_spectrum: Observed spectrum in wavenumber.</span>
+
+<span class="sd">    :param th_spectrum: standard spectrum (in erg/cm2/s/A) in wavenumber.</span>
+
+<span class="sd">    :param std_step: Standard step size (in nm)</span>
+
+<span class="sd">    :param std_order: Standard folding order</span>
+
+<span class="sd">    :param std_exp_time: Standard Exposition time</span>
+
+<span class="sd">    :param std_corr: Standard Correction coeff.</span>
+
+<span class="sd">    :param filter_function: Filter function</span>
+
+<span class="sd">    :param filter_min_pix: Filter min position in pixels</span>
+
+<span class="sd">    :param filter_max_pix: Filter max position in pixels</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">std_step_nb</span> <span class="o">=</span> <span class="n">re_spectrum</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">std_cm1_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_cm1_axis</span><span class="p">(</span>
+        <span class="n">std_step_nb</span><span class="p">,</span> <span class="n">std_step</span><span class="p">,</span> <span class="n">std_order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="n">std_corr</span><span class="p">)</span>
+
+    <span class="c1"># Real spectrum is converted to ADU/s</span>
+    <span class="c1"># We must divide by the total exposition time</span>
+    <span class="n">re_spectrum</span> <span class="o">/=</span> <span class="n">std_exp_time</span> <span class="o">*</span> <span class="n">std_step_nb</span> <span class="c1"># ADU -&gt; ADU/s</span>
+
+    <span class="c1"># Real spectrum is converted to ADU/A/s</span>
+    <span class="n">re_spectrum</span>  <span class="o">=</span> <span class="n">convert_cm1_flux2fluxdensity</span><span class="p">(</span>
+        <span class="n">re_spectrum</span><span class="p">,</span> <span class="n">std_cm1_axis</span><span class="p">)</span>
+
+    <span class="c1"># Remove portions outside the filter</span>
+    <span class="n">border</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.02</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">re_spectrum</span><span class="p">))</span>
+    <span class="n">re_spectrum</span><span class="p">[:</span><span class="n">filter_min_pix</span> <span class="o">+</span> <span class="n">border</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">re_spectrum</span><span class="p">[</span><span class="n">filter_max_pix</span> <span class="o">-</span> <span class="n">border</span><span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">th_spectrum</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">re_spectrum</span><span class="p">))]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="c1"># fit model * polynomial to adjust model and spectrum</span>
+    <span class="n">flux_calibf</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">photometry</span><span class="o">.</span><span class="n">fit_std_spectrum</span><span class="p">(</span>
+        <span class="n">re_spectrum</span><span class="p">,</span> <span class="n">th_spectrum</span><span class="p">)</span>
+
+
+    <span class="c1">## import pylab as pl</span>
+    <span class="c1">## pl.plot(std_cm1_axis, re_spectrum * flux_calibf)</span>
+    <span class="c1">## pl.plot(std_cm1_axis, th_spectrum)</span>
+    <span class="c1">## pl.show()</span>
+
+    <span class="nb">print</span> <span class="s1">&#39;Mean theoretical flux of the star: </span><span class="si">%e</span><span class="s1"> ergs/cm^2/A/s&#39;</span><span class="o">%</span><span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">robust_mean</span><span class="p">(</span><span class="n">th_spectrum</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s1">&#39;Mean flux of the star in the cube: </span><span class="si">%e</span><span class="s1"> ADU/A/s&#39;</span><span class="o">%</span><span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">robust_mean</span><span class="p">(</span><span class="n">re_spectrum</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s1">&#39;Mean Flambda calibration: </span><span class="si">%e</span><span class="s1"> ergs/cm^2/[ADU]&#39;</span><span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">flux_calibf</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">th_spectrum</span><span class="p">)])</span>
+
+    <span class="k">return</span> <span class="n">std_cm1_axis</span><span class="p">,</span> <span class="n">flux_calibf</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

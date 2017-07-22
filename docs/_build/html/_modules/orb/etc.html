@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>orb.etc &#8212; orb  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for orb.etc</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">orb.core</span> <span class="k">import</span> <span class="n">Tools</span>
+<span class="kn">import</span> <span class="nn">orb.utils.spectrum</span>
+
+<div class="viewcode-block" id="ETC"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC">[docs]</a><span class="k">class</span> <span class="nc">ETC</span><span class="p">(</span><span class="n">Tools</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spectrum_phys</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">filter_name</span><span class="p">,</span>
+                 <span class="n">add_sky</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">airmass</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize class</span>
+<span class="sd">        </span>
+<span class="sd">        :param kwargs: Kwargs are :meth:`core.Tools` properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Tools</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span> <span class="o">=</span> <span class="mi">500</span> <span class="c1"># any value is ok</span>
+        <span class="c1"># correction value at the center of the frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_config_parameter</span><span class="p">(</span><span class="s1">&#39;OFF_AXIS_ANGLE_CENTER&#39;</span><span class="p">)))</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">airmass</span> <span class="o">=</span> <span class="n">airmass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">filter_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_file</span> <span class="o">=</span> <span class="n">FilterFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter_name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cm1_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_cm1_axis</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nm_axis</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">create_nm_axis</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)</span>
+        
+        <span class="c1"># convert spectrum units from erg/cm2/s/A to counts/A</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_phys</span> <span class="o">=</span> <span class="n">spectrum_phys</span> <span class="c1"># erg/cm2/s/A</span>
+        
+        <span class="k">if</span> <span class="n">add_sky</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sky_spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sky_spectrum</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sky_spectrum</span> <span class="o">=</span> <span class="mf">0.</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_phys</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sky_spectrum</span> <span class="c1"># erg/cm2/s/A</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spectrum_phys</span><span class="p">)</span> <span class="c1"># counts/A/s</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interferogram</span> <span class="o">=</span> <span class="n">FFT</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spectrum_counts</span><span class="p">)</span> <span class="c1"># counts/s</span>
+        <span class="c1"># also apply modulation efficiency&#39;s effect to interferogram</span>
+
+<div class="viewcode-block" id="ETC.simulate_spectrum"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC.simulate_spectrum">[docs]</a>    <span class="k">def</span> <span class="nf">simulate_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exposition_time</span><span class="p">,</span> <span class="n">remove_sky</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="c1"># convert counts/s &gt; counts</span>
+        <span class="n">interferogram</span> <span class="o">*=</span> <span class="n">exposition_time</span>
+        
+        <span class="c1"># add noise</span>
+        <span class="n">interferogram_noise</span> <span class="o">=</span> <span class="n">interferogram</span> <span class="o">+</span> <span class="n">noise</span>
+        
+        <span class="c1"># FFT</span>
+        <span class="n">spectrum_sim_noise</span> <span class="o">=</span> <span class="n">FFT</span><span class="p">(</span><span class="n">interferogram_noise</span><span class="p">)</span>
+        <span class="n">spectrum_sim</span> <span class="o">=</span> <span class="n">FFT</span><span class="p">(</span><span class="n">interferogram</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">remove_sky</span><span class="p">:</span>
+            <span class="c1"># !!! sky spectrum used for subtraction should be obtained through simulation</span>
+            <span class="c1"># to obtain correct unit scale and line fwhm</span>
+            <span class="n">spectrum_sim</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sky_spectrum</span>
+            <span class="n">spectrum_sim_noise</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sky_spectrum</span>
+            
+        <span class="k">return</span> <span class="n">spectrum_sim</span><span class="p">,</span> <span class="n">spectrum_sim_noise</span> <span class="c1"># counts</span></div>
+
+
+<div class="viewcode-block" id="ETC.get_sky_spectrum"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC.get_sky_spectrum">[docs]</a>    <span class="k">def</span> <span class="nf">get_sky_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># mail @ lison pour avoir un spectre du ciel de Espadon</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="ETC.convert"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC.convert">[docs]</a>    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># convert from erg/cm2/s/A to counts/A/s</span>
+
+        <span class="c1"># wavenumber (or wavelength) dependant curves.</span>
+        <span class="c1"># given on the same wavenumber axis as the spectrum :</span>
+        <span class="c1"># quantum efficiency, filter transmission (or absorption),</span>
+        <span class="c1"># atmospheric extinction given in function of airmass</span>
+        <span class="c1"># and additionnal optics transmission</span>
+
+        <span class="n">spectrum_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spectrum_phys</span><span class="p">)</span>
+        <span class="n">spectrum_counts</span> <span class="o">/=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">photometry</span><span class="o">.</span><span class="n">compute_photon_energy</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nm_axis</span><span class="p">)</span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">photometry</span><span class="o">.</span><span class="n">get_atmospheric_transmission</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_atmospheric_extinction_file_path</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span>
+            <span class="n">airmass</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">airmass</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)</span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="n">get_config_parameter</span><span class="p">(</span><span class="s1">&#39;MIR_SURFACE&#39;</span><span class="p">)</span> <span class="c1"># photons/s/A</span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">photometry</span><span class="o">.</span><span class="n">get_mirror_transmission</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_mirror_transmission_file_path</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># **2 because we have two mirrors </span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">photometry</span><span class="o">.</span><span class="n">get_optics_transmission</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_optics_file_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter_name</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)</span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filterfile</span><span class="o">.</span><span class="n">get_filter_function</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span>
+            <span class="n">wavenumber</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># must be modified for SpIOMM to use camera 1 or camera 2</span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="n">orb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">photometry</span><span class="o">.</span><span class="n">get_quantum_efficiency</span><span class="p">(</span>
+            <span class="n">_get_quantum_efficiency_file_path</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_nb</span><span class="p">,</span> <span class="n">corr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_corr</span><span class="p">)</span> <span class="c1"># electrons/s/A</span>
+        <span class="n">spectrum_counts</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config_parameter</span><span class="p">(</span><span class="s2">&quot;CAM1_GAIN&quot;</span><span class="p">)</span> <span class="c1"># counts/s/A</span>
+    
+
+        <span class="c1"># eliminate cm2, split light between two ccds</span>
+        <span class="n">mirror_area</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_config_parameter</span><span class="p">(</span><span class="s1">&#39;MIR_SURFACE&#39;</span><span class="p">))</span>
+        <span class="n">spectrum</span> <span class="o">*=</span> <span class="n">mirror_area</span> <span class="o">*</span> <span class="mf">0.5</span>
+
+        <span class="k">return</span> <span class="n">spectrum</span></div>
+
+<div class="viewcode-block" id="ETC.get_snr"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC.get_snr">[docs]</a>    <span class="k">def</span> <span class="nf">get_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exposition_time</span><span class="p">):</span>
+
+        <span class="c1"># simulate 10000 times</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
+            <span class="n">ispectrum_sim</span><span class="p">,</span> <span class="n">ispectrum_sim_noise</span> <span class="o">=</span> <span class="n">simulate_spectrum</span><span class="p">(</span>
+                <span class="n">exposition_time</span><span class="p">)</span>
+            <span class="n">inoise</span> <span class="o">=</span> <span class="n">ispectrum_sim_noise</span> <span class="o">-</span> <span class="n">ispectrum_sim</span>
+            
+        <span class="c1"># get mean RMS </span>
+        <span class="n">mean_rms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">noise_list</span><span class="p">)</span>
+    
+        <span class="k">return</span> <span class="n">ispectrum_sim</span> <span class="o">/</span> <span class="n">mean_rms</span></div>
+
+
+<div class="viewcode-block" id="ETC.get_exposition_time"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC.get_exposition_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_exposition_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">wavenumber</span><span class="p">):</span>
+
+        <span class="c1"># wavenumber can be optimized by a fit on the emission line</span>
+        
+        <span class="k">while</span> <span class="n">snr</span> <span class="o">!=</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">snr</span> <span class="o">=</span> <span class="n">get_snr</span><span class="p">(</span><span class="n">exposition_time</span><span class="p">)[</span><span class="n">wavenumber</span><span class="p">]</span>
+            <span class="c1"># correct exposition time in function of obtained snr before looping again</span>
+            <span class="n">exposition_time</span> <span class="o">*=</span> <span class="p">(</span><span class="n">target</span> <span class="o">/</span> <span class="n">snr</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span></div>
+
+<div class="viewcode-block" id="ETC.effective_exposition_time"><a class="viewcode-back" href="../../orb.html#orb.etc.ETC.effective_exposition_time">[docs]</a>    <span class="k">def</span> <span class="nf">effective_exposition_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exposition_time</span><span class="p">,</span> <span class="n">percent</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="c1"># simulated interferogram is always symmetrical</span>
+        <span class="c1"># give the real exposure time for a non-symmetrical observation (reduced number of steps</span>
+        <span class="c1"># by a certain amount) to obtain the effective exposure time used in the simulation</span>
+        <span class="c1"># percent is the percentage of steps in the real interferogram compared to a symmetrical one</span>
+
+        <span class="k">if</span> <span class="n">reverse</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">exposition_time</span><span class="o">/</span><span class="n">percent</span> <span class="c1"># convert time obtained in simulation to real time</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">exposition_time</span><span class="o">*</span><span class="n">percent</span> <span class="c1"># convert real time to simulated time</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

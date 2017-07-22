@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>orb.utils.stats &#8212; orb  documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for orb.utils.stats</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="c1"># *-* coding: utf-8 *-*</span>
+<span class="c1"># Author: Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1"># File: stats.py</span>
+
+<span class="c1">## Copyright (c) 2010-2016 Thomas Martin &lt;thomas.martin.1@ulaval.ca&gt;</span>
+<span class="c1">## </span>
+<span class="c1">## This file is part of ORB</span>
+<span class="c1">##</span>
+<span class="c1">## ORB is free software: you can redistribute it and/or modify it</span>
+<span class="c1">## under the terms of the GNU General Public License as published by</span>
+<span class="c1">## the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1">## (at your option) any later version.</span>
+<span class="c1">##</span>
+<span class="c1">## ORB is distributed in the hope that it will be useful, but WITHOUT</span>
+<span class="c1">## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY</span>
+<span class="c1">## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public</span>
+<span class="c1">## License for more details.</span>
+<span class="c1">##</span>
+<span class="c1">## You should have received a copy of the GNU General Public License</span>
+<span class="c1">## along with ORB.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">orb.cutils</span>
+
+<div class="viewcode-block" id="robust_mean"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.stats.robust_mean">[docs]</a><span class="k">def</span> <span class="nf">robust_mean</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the mean of a distribution even with NaN values</span>
+
+<span class="sd">    This is based on bottleneck module. See:</span>
+<span class="sd">    https://pypi.python.org/pypi/Bottleneck</span>
+<span class="sd">    </span>
+<span class="sd">    :param a: A distribution of values</span>
+
+<span class="sd">    :param weights: Weights of each value of a (Must have the same</span>
+<span class="sd">      length as a). If None, weights are all considered equal to 1</span>
+<span class="sd">      (default None).</span>
+<span class="sd">      </span>
+<span class="sd">    :param warn: If True, warnings are raised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">robust_mean</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            
+        <span class="n">result</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">robust_average</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">real</span><span class="p">)</span> <span class="ow">and</span> <span class="n">warn</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Only NaN values found in the given array&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="robust_std"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.stats.robust_std">[docs]</a><span class="k">def</span> <span class="nf">robust_std</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the std of a distribution even with NaN values</span>
+<span class="sd">    </span>
+<span class="sd">    This is based on bottleneck module. See:</span>
+<span class="sd">    https://pypi.python.org/pypi/Bottleneck</span>
+<span class="sd">    </span>
+<span class="sd">    :param a: A distribution of values</span>
+
+<span class="sd">    :param warn: If True, warnings are raised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        
+    <span class="n">result</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">robust_std</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">real</span><span class="p">)</span> <span class="ow">and</span> <span class="n">warn</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Only NaN values found in the given array&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="robust_sum"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.stats.robust_sum">[docs]</a><span class="k">def</span> <span class="nf">robust_sum</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the sum of a distribution (skip NaN values)</span>
+
+<span class="sd">    This is based on bottleneck module. See:</span>
+<span class="sd">    https://pypi.python.org/pypi/Bottleneck</span>
+<span class="sd">    </span>
+<span class="sd">    :param a: A distribution of values</span>
+
+<span class="sd">    :param warn: If True, warnings are raised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        
+    <span class="n">result</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">robust_sum</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">real</span><span class="p">)</span> <span class="ow">and</span> <span class="n">warn</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Only NaN values found in the given array&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="robust_median"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.stats.robust_median">[docs]</a><span class="k">def</span> <span class="nf">robust_median</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the median of a distribution (skip NaN values).</span>
+
+<span class="sd">    This is based on bottleneck module. See:</span>
+<span class="sd">    https://pypi.python.org/pypi/Bottleneck</span>
+
+<span class="sd">    :param a: A distribution of values</span>
+
+<span class="sd">    :param warn: If True, warnings are raised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        
+    <span class="n">result</span> <span class="o">=</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">robust_median</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">real</span><span class="p">)</span> <span class="ow">and</span> <span class="n">warn</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Only NaN values found in the given array&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="sigmacut"><a class="viewcode-back" href="../../../orb.utils.html#orb.utils.stats.sigmacut">[docs]</a><span class="k">def</span> <span class="nf">sigmacut</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">3.</span><span class="p">,</span> <span class="n">min_values</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">central_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">return_index_list</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a distribution after a sigma cut rejection</span>
+<span class="sd">    of the too deviant values.</span>
+
+<span class="sd">    :param x: The distribution to cut</span>
+<span class="sd">    </span>
+<span class="sd">    :param sigma: (Optional) Number of sigma above which values are</span>
+<span class="sd">      considered as deviant (default 3.)</span>
+
+<span class="sd">    :param min_values: (Optional) Minimum number of values to return</span>
+<span class="sd">      (default 3)</span>
+
+<span class="sd">    :param central_value: (Optional) If not none, this value is used as</span>
+<span class="sd">      the central value of the cut. Else the median of the</span>
+<span class="sd">      distribution is used as the central value (default None)</span>
+
+<span class="sd">    :param warn: (Optional) If False no warning message is printed</span>
+<span class="sd">      (default False).</span>
+
+<span class="sd">    :param return_index_list: (Optional) If True the list of the non</span>
+<span class="sd">      rejected values is returned also (default False).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">central_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">central_value</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">use_central_value</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">use_central_value</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">min_values</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">warn</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;No sigma-cut done because the number of values (</span><span class="si">%d</span><span class="s2">) is too low&quot;</span><span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">x</span>
+        
+    <span class="k">return</span> <span class="n">orb</span><span class="o">.</span><span class="n">cutils</span><span class="o">.</span><span class="n">sigmacut</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">central_value</span><span class="p">,</span>
+        <span class="n">use_central_value</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">min_values</span><span class="p">,</span>
+        <span class="n">return_index_list</span><span class="o">=</span><span class="n">return_index_list</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
