@@ -1,14 +1,17 @@
-from distutils.core import setup
-from Cython.Build import cythonize
 from __future__ import print_function
-from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
+
+from Cython.Build import cythonize
+from setuptools import setup, Extension, find_packages
 import io
 import codecs
 import os
 import sys
 
 import orb
+import orb.version
+import numpy
+
+packages = find_packages(where=".")
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
@@ -24,44 +27,64 @@ def read(*filenames, **kwargs):
             buf.append(f.read())
     return sep.join(buf)
 
-long_description = read('README.txt', 'CHANGES.txt')
-long_description = 'Long description'
+long_description = ''#read('README.rst')
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
+extensions = [
+ Extension(
+     "orb.cgvar",
+     [
+         "orb/cgvar.pyx"
+     ],
+     include_dirs=[numpy.get_include()]
+ ),
+ Extension(
+     "orb.cutils",
+     [
+         "orb/cutils.pyx"
+     ],
+     include_dirs=[numpy.get_include()]
+ )
 
-    def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
+]
 
 setup(
     name='orb',
-    ext_modules=cythonize('orb/cgvar.pyx', 'orb/cutils.pyx'),
-    version=orb.__version__,
+    ext_modules=cythonize(extensions),
+    version=orb.version.__version__,
     url='https://github.com/thomasorb/orb',
-    license='GPL-3.0',
+    license='GPLv3+',
     author='Thomas Martin',
-    tests_require=['pytest'],
-    install_requires=requirements,
-    cmdclass={'test': PyTest},
     author_email='thomas.martin.1@ulaval.ca',
-    description='ORB',
+    maintainer='Thomas Martin',
+    maintainer_email='thomas.martin.1@ulaval.ca',
+    install_requires=requirements,
+    description='Kernel module for the reduction and analysis of SITELLE data',
     long_description=long_description,
-    packages=['orb'],
-    include_package_data=True,
+    packages=packages,
+    package_dir={"": "."},
+    #include_package_data=True,
+    package_data={
+        '':['COPYING', '*.rst', '*.txt'],
+        'orb':['data/*'],
+        'docs':['*']},
     platforms='any',
-    #test_suite='sandman.test.test_sandman',
+    scripts=[
+        'scripts/orb-dstack',
+        'scripts/orb-viewer',
+        'scripts/orb-bin-cube',
+        'scripts/orb-subtractv',
+        'scripts/orb-combine',
+        'scripts/orb-header',
+        'scripts/orb-viewer3d',
+        'scripts/orb-extract',
+        'scripts/orb-convert',
+        'scripts/orb-unstack',
+        'scripts/orb-reduce'],
     classifiers = [
-       'Programming Language :: Python',
+        'Programming Language :: Python',
+        'Programming Language :: Cython',
         'Development Status :: 4 - Beta',
         'Natural Language :: English',
-        'License :: OSI Approved :: GPL-3.0                ',
+        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Operating System :: OS Independent' ],
-    extras_require={
-        'testing': ['pytest'],
-    }
 )
