@@ -1,0 +1,67 @@
+#!/home/thomas/.virtualenvs/orb/bin/python 
+# *-* coding: utf-8 *-*
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca> 
+# File: orb-viewer
+
+## Copyright (c) 2010-2016 Thomas Martin <thomas.martin.1@ulaval.ca>
+## 
+## This file is part of ORB
+##
+## ORB is free software: you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## ORB is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys, os
+import gtk
+from argparse import ArgumentParser
+import argparse
+
+import orb
+from orb.viewer import BaseViewer
+
+###########################################
+### MAIN ##################################
+###########################################
+    
+def main(args):
+       
+    bv = BaseViewer(debug=args.debug)
+
+    root = bv.get_widget()
+    root.show_all()
+    bv.load_file(args.cube_path, chip_index=args.chip_index)
+    gtk.main()
+        
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(
+        version=('ORB-version {}'.format(
+            orb.core.__version__)),
+        description="Basic viewer for FITS/HDF5 cubes created with ORB modules (e.g. ORBS).")
+    
+    parser.add_argument('cube_path', help='Path to a FITS/HDF5 cube.')
+    
+    
+    parser.add_argument("--debug", dest="debug", default=False,
+                        action="store_true",
+                        help="Print warnings and errors on stdout.")
+
+    parser.add_argument("-i", dest="chip_index", default=1,
+                        type=int, choices = [1,2],
+                        help="In the case of a SITELLE image, the camera number must be choosen (can be 1 or 2, 1 by default)")
+    
+    args = parser.parse_args()
+
+    main(args)
+        
+

@@ -1,0 +1,76 @@
+## ORBS configuration file 
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File : config.orb
+
+## Observatory
+OBSERVATORY_NAME OMM # Observatory name
+TELESCOPE_NAME OMM # Telescope name
+INSTRUMENT_NAME SpIOMM # Instrument name
+OBS_LAT 45.455000 # Observatory latitude
+OBS_LON -71.153000 # Observatory longitude
+OBS_ALT 1100. # Observatory altitude
+
+## Instrumental parameters
+FIELD_OF_VIEW 12.4 # Size of the field of view of the camera 1 in
+		   # arc-minutes along the largest axis
+FIELD_OF_VIEW_2 14.2 # Size of the field of view of the camera 2 in
+	             # arc-minutes along the largest axis
+PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
+PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um
+BALANCED_CAM 2 # Number of the camera on the balanced port
+CAM1_DETECTOR_SIZE_X 1340 # Camera 1 detector size along X
+CAM1_DETECTOR_SIZE_Y 1300 # Camera 1 detector size along Y
+CAM2_DETECTOR_SIZE_X 2047 # Camera 2 detector size along X
+CAM2_DETECTOR_SIZE_Y 2047 # Camera 2 detector size along Y
+
+## Disalignment guess
+INIT_ANGLE 176. # Rough angle between images of the camera 1 and
+		# images of the camera 2 [in degree] (set it to
+		# 85. when cameras are orthogonal)
+INIT_DX -170. # Rough x axis disalignment [in pixel] (unbinned)
+INIT_DY -375. # Rough y axis disalignment [in pixel] (unbinned)
+
+## Calibration parameters
+CALIB_NM_LASER 632.816 # Wavelength of the calibration laser [in nm]
+CALIB_ORDER 30 # Folding order of the calibration cube
+CALIB_STEP_SIZE 9765 # Step size of the calibration cube [in nm]
+
+## Phase parameters
+PHASE_FIT_DEG 1 # Degree of the polynomial used to fit the phase
+
+## Processing parameters
+NCPUS 0 # Max number of CPU to use (0 : max available)
+BIG_DATA 0 # Some processes can be optimized for big data set (> 1000
+           # x 1000 x 500) but they will run slower for small data
+           # set.
+DIV_NB 2 # Number of "Quadrants" division along one axis of a cube
+	 # (the total number of quadrants is thus DIV_NB^2)
+OPTIM_DARK_CAM1 0 # Optimization routine for the dark of CAM 1 
+OPTIM_DARK_CAM2 1 # Optimization routine for the dark of CAM 2
+EXT_ILLUMINATION 1 # Compute external illumination
+
+## Astrometry parameters
+DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
+INIT_FWHM 2.5 # Rough estimate of the usual stars FWHM [in arcsecond]
+PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
+MOFFAT_BETA 2.1 # default beta parameter for the Moffat PSF
+DETECT_STACK 5 # Number of frames to combine for star detection
+ALIGNER_RANGE_COEFF 0.05 # Range coefficient for the aligner search
+
+## Detectors parameters
+SATURATION_THRESHOLD 65000
+
+# Calibrated activation energy of the dark frames.  Used to correct
+# for varying dark level of the camera 2 of SpIOMM. Used only if
+# OPTIM_DARK_CAM2 is not 0.
+DARK_ACTIVATION_ENERGY 0.761
+
+# Bias calibration parameters a, b of the function :
+# bias_level = aT + b [T in degrees C]. 
+# Used to correct for varying dark level of the camera 2 of
+# SpIOMM. Used only if OPTIM_DARK_CAM2 is not 0.
+BIAS_CALIB_PARAM_A 7.22859919
+BIAS_CALIB_PARAM_B 1417.34030164
+
+## WCS parameters
+WCS_ROTATION -93.0 # Initial rotation angle of the image [in degree]

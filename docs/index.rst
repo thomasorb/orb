@@ -29,28 +29,13 @@ Table of contents
 
 .. contents::
 
-Installation
-------------
-
-You'll maybe need to install Python_ or some modules before installing
-ORB. You'll find here some informations on how to install Python_ on
-Ubuntu.
+Getting started
+---------------
 
 .. toctree::
    :maxdepth: 2
 
-   installing_orb
-   installing_python
-
-
-Using ORB
----------
-
-.. toctree::
-   :maxdepth: 2
-
-   python_for_orb
-   data_analysis_with_orb
+   installation
 
 Documentation
 -------------
@@ -79,7 +64,3 @@ Indices and tables
 .. _Mégantic: http://omm.craq-astro.ca/
 .. _CFHT: http://www.cfht.hawaii.edu/
 .. _Python: http://www.python.org/
-.. _Scipy: http://www.scipy.org/
-.. _Numpy: http://numpy.scipy.org/
-.. _PyFITS: http://www.stsci.edu/resources/software_hardware/pyfits
-.. _Parallel: http://www.parallelpython.com/

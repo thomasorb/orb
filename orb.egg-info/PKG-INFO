@@ -1,0 +1,27 @@
+Metadata-Version: 1.1
+Name: orb
+Version: 3.0.1
+Summary: Kernel module for the reduction and analysis of SITELLE data
+Home-page: https://github.com/thomasorb/orb
+Author: Thomas Martin
+Author-email: thomas.martin.1@ulaval.ca
+License: GPLv3+
+Description: 
+        ORB
+        ===
+        
+        ORB is the kernel module for the whole suite of data reduction and
+        analysis tools for SITELLE: ORBS, ORCS, ...
+        
+        It provides basic access to the data cubes as long as the fitting
+        engine of ORCS and numerous utilitary functions for the analysis of
+        interferometric and spectral data, imaging data, astrometry,
+        photometry.
+        
+Platform: any
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Cython
+Classifier: Development Status :: 4 - Beta
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)
+Classifier: Operating System :: OS Independent

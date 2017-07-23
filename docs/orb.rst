@@ -68,22 +68,6 @@ orb.fit module
     :undoc-members:
     :show-inheritance:
 
-orb.version module
-------------------
-
-.. automodule:: orb.version
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-orb.viewer module
------------------
-
-.. automodule:: orb.viewer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

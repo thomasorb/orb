@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from Cython.Build import cythonize
 from setuptools import setup, Extension, find_packages
 import io
@@ -18,17 +16,9 @@ with open('requirements.txt') as f:
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-def read(*filenames, **kwargs):
-    encoding = kwargs.get('encoding', 'utf-8')
-    sep = kwargs.get('sep', '\n')
-    buf = []
-    for filename in filenames:
-        with io.open(filename, encoding=encoding) as f:
-            buf.append(f.read())
-    return sep.join(buf)
-
-long_description = ''#read('README.rst')
-
+with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
+    
 extensions = [
  Extension(
      "orb.cgvar",
@@ -62,24 +52,17 @@ setup(
     long_description=long_description,
     packages=packages,
     package_dir={"": "."},
-    #include_package_data=True,
+    include_package_data=True,
     package_data={
-        '':['COPYING', '*.rst', '*.txt'],
-        'orb':['data/*'],
-        'docs':['*']},
+        '':['COPYING', '*.rst', '*.txt', 'docs/*'],
+        'orb':['data/*']},
+    exclude_package_data={
+        '': ['*~', '*.so', '*.pyc', '*.py~', '*.pyx~']},
     platforms='any',
     scripts=[
-        'scripts/orb-dstack',
-        'scripts/orb-viewer',
-        'scripts/orb-bin-cube',
-        'scripts/orb-subtractv',
-        'scripts/orb-combine',
         'scripts/orb-header',
-        'scripts/orb-viewer3d',
         'scripts/orb-extract',
-        'scripts/orb-convert',
-        'scripts/orb-unstack',
-        'scripts/orb-reduce'],
+        'scripts/orb-convert'],
     classifiers = [
         'Programming Language :: Python',
         'Programming Language :: Cython',
