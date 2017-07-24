@@ -3,3 +3,6 @@
 *.pyx~
 *~
 *.so
+dist/
+build/
+orb_kernel.err-info/

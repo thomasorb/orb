@@ -42,8 +42,16 @@ You can install the required packages with::
   apt-get install libatlas-base-dev gfortran
   apt-get install libhdf5-dev libhdf5-8 hdf5-tools
   
-Then with pip the installation of the module can be done with::
+Some modules are also required to be installed before orb can be installed::
+  
+  pip install -r requirements.txt
 
+The actual requirements file is:
+
+.. literalinclude:: ../requirements.txt
+
+Finally you can install orb with::
+  
   pip install orb --upgrade
   
   

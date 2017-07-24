@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ORB installation &mdash; Orb 3.0.1 documentation</title>
+  <title>ORB installation &mdash; Orb 3.0.6 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.0.1 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.0.6 documentation" href="index.html"/>
         <link rel="next" title="orb package" href="orb.html"/>
         <link rel="prev" title="ORB Documentation" href="index.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                3.0.1
+                3.0.6
               </div>
             
           
@@ -229,7 +229,35 @@ Python 3 !</p>
 <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">libhdf5</span><span class="o">-</span><span class="n">dev</span> <span class="n">libhdf5</span><span class="o">-</span><span class="mi">8</span> <span class="n">hdf5</span><span class="o">-</span><span class="n">tools</span>
 </pre></div>
 </div>
-<p>Then with pip the installation of the module can be done with:</p>
+<p>Some modules are also required to be installed before orb can be installed:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>The actual requirements file is:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">astropy</span><span class="o">&gt;=</span><span class="mf">2.0</span>
+<span class="n">Bottleneck</span><span class="o">&gt;=</span><span class="mf">1.2</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">cycler</span><span class="o">&gt;=</span><span class="mf">0.10</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">Cython</span><span class="o">&gt;=</span><span class="mf">0.26</span>
+<span class="n">dill</span><span class="o">&gt;=</span><span class="mf">0.2</span><span class="o">.</span><span class="mf">7.1</span>
+<span class="n">functools32</span><span class="o">&gt;=</span><span class="mf">3.2</span><span class="o">.</span><span class="mf">3.</span><span class="n">post2</span>
+<span class="n">gvar</span><span class="o">&gt;=</span><span class="mf">8.3</span><span class="o">.</span><span class="mi">2</span>
+<span class="n">h5py</span><span class="o">&gt;=</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">lsqfit</span><span class="o">&gt;=</span><span class="mf">9.1</span><span class="o">.</span><span class="mi">3</span>
+<span class="n">matplotlib</span><span class="o">&gt;=</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">2</span>
+<span class="n">numpy</span><span class="o">&gt;=</span><span class="mf">1.13</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">pp</span><span class="o">&gt;=</span><span class="mf">1.6</span><span class="o">.</span><span class="mi">5</span>
+<span class="n">py</span><span class="o">&gt;=</span><span class="mf">1.4</span><span class="o">.</span><span class="mi">34</span>
+<span class="n">pyparsing</span><span class="o">&gt;=</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">pyregion</span><span class="o">&gt;=</span><span class="mf">1.2</span>
+<span class="n">pytest</span><span class="o">&gt;=</span><span class="mf">3.1</span><span class="o">.</span><span class="mi">3</span>
+<span class="n">python</span><span class="o">-</span><span class="n">dateutil</span><span class="o">&gt;=</span><span class="mf">2.6</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">pytz</span><span class="o">&gt;=</span><span class="mf">2017.2</span>
+<span class="n">scipy</span><span class="o">&gt;=</span><span class="mf">0.19</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">six</span><span class="o">&gt;=</span><span class="mf">1.10</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">subprocess32</span><span class="o">&gt;=</span><span class="mf">3.2</span><span class="o">.</span><span class="mi">7</span>
+</pre></div>
+</div>
+<p>Finally you can install orb with:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">orb</span> <span class="o">--</span><span class="n">upgrade</span>
 </pre></div>
 </div>
@@ -294,7 +322,7 @@ recompile it. You can do it with:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.0.1',
+            VERSION:'3.0.6',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -11,9 +11,6 @@ import numpy
 
 packages = find_packages(where=".")
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -38,7 +35,7 @@ extensions = [
 ]
 
 setup(
-    name='orb',
+    name='orb-kernel',
     ext_modules=cythonize(extensions),
     version=orb.version.__version__,
     url='https://github.com/thomasorb/orb',
@@ -47,17 +44,18 @@ setup(
     author_email='thomas.martin.1@ulaval.ca',
     maintainer='Thomas Martin',
     maintainer_email='thomas.martin.1@ulaval.ca',
-    install_requires=requirements,
+    setup_requires=['cython', 'numpy', 'gvar'],
     description='Kernel module for the reduction and analysis of SITELLE data',
     long_description=long_description,
     packages=packages,
     package_dir={"": "."},
     include_package_data=True,
     package_data={
-        '':['COPYING', '*.rst', '*.txt', 'docs/*'],
-        'orb':['data/*']},
+        '':['LICENSE.txt', '*.rst', '*.txt', 'docs/*', '*.pyx'],
+        'orb':['data/*', '*.pyx']},
     exclude_package_data={
-        '': ['*~', '*.so', '*.pyc', '*.py~', '*.pyx~']},
+        '': ['*~', '*.so', '*.pyc', '*.c', 'orb/cgvar.c'],
+        'orb':['*~', '*.so', '*.pyc', '*.c']},
     platforms='any',
     scripts=[
         'scripts/orb-header',

@@ -1,7 +1,13 @@
+recursive-include orb/ *.pyx
+
+
 #documentation
 recursive-include docs/_build/html *
 
 #Misc
 include LICENSE.txt
 include README.rst
+include requirements.txt
 
+recursive-exclude orb/ *.c
+recursive-exclude orb/ *.so
