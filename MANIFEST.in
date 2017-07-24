@@ -1,5 +1,7 @@
 recursive-include orb/ *.pyx
 
+# data
+recursive-include orb/data *
 
 #documentation
 recursive-include docs/_build/html *
