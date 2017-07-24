@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ORB installation &mdash; Orb 3.0.6 documentation</title>
+  <title>ORB installation &mdash; Orb 3.0.2 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.0.6 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.0.2 documentation" href="index.html"/>
         <link rel="next" title="orb package" href="orb.html"/>
         <link rel="prev" title="ORB Documentation" href="index.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                3.0.6
+                3.0.2
               </div>
             
           
@@ -102,9 +102,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#python">Python</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-for-ubuntu-debian-users">Installation for Ubuntu/Debian users</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#required-packages">Required packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#download-and-install-orb">Download and install ORB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#uninstall">Uninstall</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#compile-cutils">Compile Cutils</a></li>
 </ul>
 </li>
 </ul>
@@ -185,9 +186,10 @@
 <li><a class="reference internal" href="#python" id="id2">Python</a></li>
 <li><a class="reference internal" href="#installation-for-ubuntu-debian-users" id="id3">Installation for Ubuntu/Debian users</a><ul>
 <li><a class="reference internal" href="#required-packages" id="id4">Required packages</a></li>
+<li><a class="reference internal" href="#download-and-install-orb" id="id5">Download and install ORB</a></li>
+<li><a class="reference internal" href="#uninstall" id="id6">Uninstall</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#compile-cutils" id="id5">Compile Cutils</a></li>
 </ul>
 </li>
 </ul>
@@ -229,11 +231,27 @@ Python 3 !</p>
 <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">libhdf5</span><span class="o">-</span><span class="n">dev</span> <span class="n">libhdf5</span><span class="o">-</span><span class="mi">8</span> <span class="n">hdf5</span><span class="o">-</span><span class="n">tools</span>
 </pre></div>
 </div>
-<p>Some modules are also required to be installed before orb can be installed:</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For Debian Stretch the hdf5 library that must be used is: libhdf5-100</p>
+</div>
+</div>
+<div class="section" id="download-and-install-orb">
+<h3><a class="toc-backref" href="#id5">Download and install ORB</a><a class="headerlink" href="#download-and-install-orb" title="Permalink to this headline">¶</a></h3>
+<p>The archive and the installation instructions for <a class="reference external" href="https://github.com/thomasorb/orb">ORB</a> can be found on github:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">thomasorb</span><span class="o">/</span><span class="n">orb</span>
+</pre></div>
+</div>
+<p>Once the archive has been downloaded (from github just click on the
+green button <cite>clone or download</cite> and click on <cite>Download ZIP</cite>) you may
+extract it in a temporary folder. Then cd into the extracted folder
+and type the following to install all the required python modules via
+pip:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
 </pre></div>
 </div>
-<p>The actual requirements file is:</p>
+<p>The actual requirements file is (it can be found at the root of the
+archive):</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">astropy</span><span class="o">&gt;=</span><span class="mf">2.0</span>
 <span class="n">Bottleneck</span><span class="o">&gt;=</span><span class="mf">1.2</span><span class="o">.</span><span class="mi">1</span>
 <span class="n">cycler</span><span class="o">&gt;=</span><span class="mf">0.10</span><span class="o">.</span><span class="mi">0</span>
@@ -258,22 +276,20 @@ Python 3 !</p>
 </pre></div>
 </div>
 <p>Finally you can install orb with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">orb</span> <span class="o">--</span><span class="n">upgrade</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">build_ext</span>
+<span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="compile-cutils">
-<h2><a class="toc-backref" href="#id5">Compile Cutils</a><a class="headerlink" href="#compile-cutils" title="Permalink to this headline">¶</a></h2>
-<p>If you have an error with orb.cutils or orb.cgvar you might have to
-recompile it. You can do it with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">build_ext</span> <span class="o">--</span><span class="n">inplace</span>
+<div class="section" id="uninstall">
+<h3><a class="toc-backref" href="#id6">Uninstall</a><a class="headerlink" href="#uninstall" title="Permalink to this headline">¶</a></h3>
+<p>If you want to uninstall you must do it manually. A good way to do
+this is to add the option &#8211;record in the installation line and use
+the generated file to remove all the created files:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>python setup.py install --record uninstall.txt
+rm -rf `cat uninstall.txt`
 </pre></div>
 </div>
-<p>You might need to specify the path to numpy with the following command
-(the included path might change):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">build_ext</span> <span class="o">--</span><span class="n">inplace</span> <span class="o">-</span><span class="n">I</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="mi">7</span><span class="o">/</span><span class="n">sit</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">numpy</span><span class="o">/</span><span class="n">core</span><span class="o">/</span><span class="n">include</span><span class="o">/</span>
-</pre></div>
 </div>
 </div>
 </div>
@@ -322,7 +338,7 @@ recompile it. You can do it with:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.0.6',
+            VERSION:'3.0.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
