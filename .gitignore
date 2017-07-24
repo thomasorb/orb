@@ -5,4 +5,5 @@
 *.so
 dist/
 build/
-orb_kernel.err-info/
+orb_kernel.egg-info/
+.eggs/
