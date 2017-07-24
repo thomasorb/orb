@@ -42,6 +42,12 @@ import re
 import datetime
 
 ## MODULES IMPORTS
+# check if the compilation is up-to-date
+# recompile if necessary
+import pyximport; pyximport.install()
+import cutils
+import cgvar
+
 import numpy as np
 import bottleneck as bn
 import astropy.io.fits as pyfits

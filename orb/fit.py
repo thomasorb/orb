@@ -2031,7 +2031,7 @@ class Cm1InputParams(InputParams):
                 lines_cm1, self.axis_step)
 
         sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
-            SIGMA_SDEV, np.array(lines_cm1), self.axis_step))
+            SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
 
         sigma_cov_vel = gvar.gvar(sigma_cov_vel, gvar.mean(sigma_sdev_kms))
 
