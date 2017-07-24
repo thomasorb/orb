@@ -24,10 +24,6 @@ You can install the required packages with::
 Some modules are also required to be installed before orb can be installed::
   
   pip install -r requirements.txt
-
-The actual requirements file is:
-
-.. literalinclude:: ./requirements.txt
 		    
 Finally you can install orb with::
   
