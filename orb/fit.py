@@ -1679,9 +1679,9 @@ class Cm1LinesModel(LinesModel):
         elif 'fwhm' in idef:
             return gvar.gvar(np.squeeze(mean), max(mean, fwhm_sdev_cm1))
         elif 'sigma' in idef:
-            lines_cm1 = self.p_val[self._get_ikey('pos', iline)]
+            lines_cm1 = gvar.mean(self.p_val[self._get_ikey('pos', iline)])
             sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
-                SIGMA_SDEV, lines_cm1, self.axis_step))
+                SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
             return gvar.gvar(mean, max(mean, gvar.mean(sigma_sdev_kms)))
         else: raise Exception('not implemented for {}'.format(idef))
         
