@@ -3,6 +3,7 @@ Bottleneck>=1.2.1
 cycler>=0.10.0
 Cython>=0.26
 dill>=0.2.7.1
+emcee>=2.2.1
 functools32>=3.2.3.post2
 gvar>=8.3.2
 h5py>=2.7.0

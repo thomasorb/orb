@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ORB installation &mdash; Orb 3.0.2 documentation</title>
+  <title>ORB installation &mdash; Orb 3.0.4 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.0.2 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.0.4 documentation" href="index.html"/>
         <link rel="next" title="orb package" href="orb.html"/>
         <link rel="prev" title="ORB Documentation" href="index.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                3.0.2
+                3.0.4
               </div>
             
           
@@ -244,9 +244,10 @@ Python 3 !</p>
 </div>
 <p>Once the archive has been downloaded (from github just click on the
 green button <cite>clone or download</cite> and click on <cite>Download ZIP</cite>) you may
-extract it in a temporary folder. Then cd into the extracted folder
-and type the following to install all the required python modules via
-pip:</p>
+extract it in a temporary folder (try to avoid path containing
+non-ASCII characters, a good one may be <code class="docutils literal"><span class="pre">~/temp/</span></code>). Then cd into the
+extracted folder and type the following to install all the required
+python modules via pip:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
 </pre></div>
 </div>
@@ -257,6 +258,7 @@ archive):</p>
 <span class="n">cycler</span><span class="o">&gt;=</span><span class="mf">0.10</span><span class="o">.</span><span class="mi">0</span>
 <span class="n">Cython</span><span class="o">&gt;=</span><span class="mf">0.26</span>
 <span class="n">dill</span><span class="o">&gt;=</span><span class="mf">0.2</span><span class="o">.</span><span class="mf">7.1</span>
+<span class="n">emcee</span><span class="o">&gt;=</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">1</span>
 <span class="n">functools32</span><span class="o">&gt;=</span><span class="mf">3.2</span><span class="o">.</span><span class="mf">3.</span><span class="n">post2</span>
 <span class="n">gvar</span><span class="o">&gt;=</span><span class="mf">8.3</span><span class="o">.</span><span class="mi">2</span>
 <span class="n">h5py</span><span class="o">&gt;=</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">0</span>
@@ -338,7 +340,7 @@ rm -rf `cat uninstall.txt`
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.0.2',
+            VERSION:'3.0.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -53,9 +53,10 @@ The archive and the installation instructions for ORB_ can be found on github::
 
 Once the archive has been downloaded (from github just click on the
 green button `clone or download` and click on `Download ZIP`) you may
-extract it in a temporary folder. Then cd into the extracted folder
-and type the following to install all the required python modules via
-pip::
+extract it in a temporary folder (try to avoid path containing
+non-ASCII characters, a good one may be ``~/temp/``). Then cd into the
+extracted folder and type the following to install all the required
+python modules via pip::
   
   pip install -r requirements.txt
 
