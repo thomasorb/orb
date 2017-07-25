@@ -308,7 +308,7 @@ def compute_resolution(step_nb, step, order, corr):
     :param corr: Correction coefficient for the incident angle.
     """
     fwhm_cm1 = compute_line_fwhm(
-        step_nb, step, order, wavenumber=True)
+        step_nb, step, order, wavenumber=True, corr=corr)
     min_cm1 = orb.cutils.get_cm1_axis_min(step_nb, step, order, corr=corr)
     max_cm1 = orb.cutils.get_cm1_axis_max(step_nb, step, order, corr=corr)
     med_cm1 = (min_cm1 + max_cm1) / 2.
