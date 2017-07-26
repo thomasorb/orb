@@ -48,8 +48,11 @@ import utils.image
 import utils.stats
 import utils.vector
 import utils.web
-import cutils
 import utils.misc
+
+import pyximport; pyximport.install(
+    setup_args={"include_dirs":np.get_include()})
+import cutils
 
 ##################################################
 #### CLASS StarsParams ###########################

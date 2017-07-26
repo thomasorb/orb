@@ -27,10 +27,13 @@ import warnings
 import time
 
 import orb.constants
+import gvar
+
+import pyximport; pyximport.install(
+    setup_args={"include_dirs":np.get_include()})
 import orb.cutils
 import orb.cgvar
 
-import gvar
 
 def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.

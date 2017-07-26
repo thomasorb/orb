@@ -2421,6 +2421,7 @@ def mean2d(np.ndarray[np.float64_t, ndim=2] box):
                 if not isnan(box[ii,ij]):
                     val += box[ii,ij]
                     nb += 1
+    if nb == 0: return np.nan
     return val / <float> nb
                 
         

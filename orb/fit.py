@@ -41,15 +41,18 @@ import scipy.interpolate
 import time
 
 import emcee
+import gvar
+import lsqfit
 
 import utils.fft
-import cutils
 import constants
 import utils.spectrum
 import utils.fit
 
-import gvar
-import lsqfit
+import pyximport; pyximport.install(
+    setup_args={"include_dirs":np.get_include()})
+import cutils
+
 
 from core import Lines
 
