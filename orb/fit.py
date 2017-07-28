@@ -336,7 +336,7 @@ class FitVector(object):
         """
         if self.classic:
             all_p_free = self._all_p_arr2dict(all_p_free)
-            
+        
         return self.get_model(all_p_free, x=x)[
             np.min(self.signal_range):np.max(self.signal_range)]
 
@@ -381,7 +381,7 @@ class FitVector(object):
         
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
-
+        
         ### CLASSIC MODE ##################
         if self.classic:
             priors_arr = self._all_p_dict2arr(priors_dict)
@@ -744,7 +744,7 @@ class Model(object):
         for idef in self.p_fixed:
             if self.p_fixed[idef] is not None:
                 if gvar.sdev(self.p_fixed[idef]) != 0.:
-                    self.p_fixed[idef] = gvar.mean(self.p_fixed[idef]) 
+                    self.p_fixed[idef] = gvar.mean(self.p_fixed[idef])
         
     def free2val(self):
         """Read the array of parameters definition
@@ -770,7 +770,6 @@ class Model(object):
                 # covarying operation
                 self.p_val[idef] = self.p_cov[self.p_def[idef]][1](
                     self.p_fixed[idef], passed_cov[self.p_def[idef]])
-                    
                 
 class FilterModel(Model):
     """
@@ -1239,7 +1238,7 @@ class LinesModel(Model):
                                 
                     del priors[ip]
                     continue
-
+        
         return priors
     
         
@@ -1333,7 +1332,6 @@ class LinesModel(Model):
         if self._get_fmodel() in ['sincphased', 'sincgaussphased']:
             parse_param('alpha', self._get_alpha_cov_operation())    
 
-        
         # check cov values and def for log parameters sigma and fwhm
         for key_cov in self.p_cov:
             for key in self.same_param_keys:
@@ -1345,7 +1343,7 @@ class LinesModel(Model):
                     for ikey_def in keys_def:
                         self.p_val[ikey_def] = 0.
                     self.p_cov[key_cov] = (self.p_cov[key_cov][0] + vals[0], self.p_cov[key_cov][1])
-
+                
         
     def _get_amp_cov_operation(self):
         """Return covarying amplitude operation"""
@@ -1427,7 +1425,7 @@ class LinesModel(Model):
                     ## else: val_max = 0.
                     ## self.p_array[key] = val_max
                     self.p_array[key] = np.nanmax(gvar.mean(v))
-
+                    
         self._p_array2val()
         self.val2free()
 
@@ -1458,7 +1456,7 @@ class LinesModel(Model):
         else:
             iline = self._get_iline_from_key(
                 self.p_def.keys()[self.p_def.values().index(idef)])
-
+    
         if 'amp' in idef:
             return gvar.gvar(mean, 10 * mean)
         elif 'pos' in idef:
@@ -1497,10 +1495,8 @@ class LinesModel(Model):
 
         self.free2val()
         self._p_val2array()
-
         line_nb = self._get_line_nb()
         fmodel = self._get_fmodel()
-        
         mod = None
         models = list()
         for iline in range(line_nb):
@@ -1877,7 +1873,7 @@ class InputParams(object):
             'line_nb':np.size(lines),
             'amp_def':'free',
             'amp_guess':None,
-            'amp_cov':0.,
+            'amp_cov':gvar.gvar(1., 1.),
             'fwhm_def':'free',
             'fwhm_guess':fwhm_guess,
             'fwhm_cov':gvar.gvar(0., gvar.sdev(fwhm_guess)),
@@ -2043,7 +2039,7 @@ class Cm1InputParams(InputParams):
             'line_nb':np.size(lines),
             'amp_def':'free',
             'amp_guess':None,
-            'amp_cov':0.,
+            'amp_cov':gvar.gvar(1., 1.),
             'fwhm_def':'free',
             'fwhm_guess':fwhm_guess_cm1,
             'fwhm_cov':gvar.gvar(0., gvar.sdev(fwhm_guess_cm1)),
@@ -2301,7 +2297,7 @@ class OutputParams(Params):
             # compute fwhm in Angstroms to get flux
             # If calibrated, amplitude unit must be in erg/cm2/s/A, then
             # fwhm/width units must be in Angströms
-            if wavenumber:
+            if wavenumber:                
                 fwhm = utils.spectrum.fwhm_cm12nm(
                     line_params[:,3], line_params[:,2]) * 10.
             else:
@@ -2391,6 +2387,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                 if kwargs[key] is not None:
                     iparams[key] = kwargs[key]
 
+    
     fv = FitVector(spectrum,
                    rawip.models, rawip.params,
                    signal_range=rawip.signal_range,
@@ -2460,7 +2457,6 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
         if kwargs['signal_range'] is not None:
             ip.set_signal_range(min(kwargs['signal_range']),
                                 max(kwargs['signal_range']))
-
     return ip
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
@@ -2589,7 +2585,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                                filter_file_path=filter_file_path,
                                apodization=apodization,
                                **kwargs)
-    
+
     fit = _fit_lines_in_spectrum(spectrum, ip,
                                  fit_tol=fit_tol,
                                  compute_mcmc_error=compute_mcmc_error,
@@ -2671,7 +2667,6 @@ def fit_lines_in_vector( vector, lines, fwhm_guess, fit_tol=1e-10,
 
     if 'signal_range' in kwargs:
         if kwargs['signal_range'] is not None:
-            print kwargs['signal_range']
             ip.set_signal_range(min(kwargs['signal_range']),
                                 max(kwargs['signal_range']))
     

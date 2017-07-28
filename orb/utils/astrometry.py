@@ -2035,9 +2035,9 @@ def get_wcs_parameters(_wcs):
         deltay = - cd[0,1] / np.sin(np.deg2rad(rotation))
     except AttributeError: # no cd is present
         pc = np.copy(_wcs.wcs.get_pc())
-        rotation = np.rad2deg(np.arctan2(pc[0,1], pc[0,0]))
+        rotation = np.rad2deg(np.arctan2(-pc[0,1], -pc[0,0]))
         deltax, deltay = _wcs.wcs.cdelt
-        deltax = -deltax
+        deltax = deltax
 
     if deltax < 0.: raise Exception('deltax and deltay must be equal and > 0')
     if abs(rotation) > 90. : raise Exception('rotation angle must be < 90. There must be an error.')
