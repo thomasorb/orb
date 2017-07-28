@@ -125,17 +125,6 @@ class Tools(object):
 
     _silent = False # If True only error messages will be diplayed on screen
 
-    def __init__(self, instrument, **kwargs):
-
-        if instrument == 'spiomm':
-            kwargs['config_file_name'] = 'config.spiomm.orb'
-        elif instrument == 'sitelle':
-            kwargs['config_file_name'] = 'config.sitelle.orb'
-        else:
-            self._print_error("Instrument can only be 'sitelle' or 'spiomm'")
-        print 'ok'
-            
-        self.__init__(**kwargs)
 
     def __init__(self, data_prefix="./temp/data.", no_log=False,
                  tuning_parameters=dict(), ncpus=None,
