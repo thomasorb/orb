@@ -154,7 +154,6 @@ class FitVector(object):
             self.models[-1].make_guess(self.vector)
             self.priors_list.append(self.models[-1].get_priors(self.classic))
             self.priors_keys_list.append(self.priors_list[-1].keys())
-
         self.all_keys_index = None
 
         
@@ -1247,9 +1246,11 @@ class LinesModel(Model):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""
         
         def parse_param(key, cov_operation):
+
             key_guess = key + '_guess'
             key_def = key + '_def'
             key_cov = key + '_cov'
+
             ## parse guess
             p_guess = dict()
             if key_guess in self.p_dict:
@@ -1292,7 +1293,6 @@ class LinesModel(Model):
                 for iline in range(line_nb):
                     if p_def[self._get_ikey(key, iline)] not in  ['free', 'fixed']:
                         cov_symbol = str(key_def + str(p_def[self._get_ikey(key, iline)]))
-                        
                         # create singular symbol
                         p_def[self._get_ikey(key, iline)] = cov_symbol
                         
@@ -1304,12 +1304,11 @@ class LinesModel(Model):
                                 cov_value = p_cov
                             else:
                                 if cov_index < np.size(p_cov):
-                                    cov_value = p_cov[cov_index]
+                                    cov_value = np.squeeze(p_cov)[cov_index]
                                 else:
                                     raise Exception("{} must have the same size as the number of covarying parameters or it must be a float".format(key_cov))
                                 cov_index += 1
-
-                                
+                    
                             p_cov_dict[cov_symbol] = (
                                 np.squeeze(cov_value), cov_operation)
 
@@ -1333,7 +1332,6 @@ class LinesModel(Model):
         if self._get_fmodel() in ['sincphased', 'sincgaussphased']:
             parse_param('alpha', self._get_alpha_cov_operation())    
 
-        
         # check cov values and def for log parameters sigma and fwhm
         for key_cov in self.p_cov:
             for key in self.same_param_keys:
@@ -1449,6 +1447,7 @@ class LinesModel(Model):
     def _estimate_sdev(self, idef, mean):
         """Estimate standard deviation of a free parameter
         """
+        AMP_SDEV = 1000
         FWHM_SDEV = 10 # channels
         SIGMA_SDEV = 10 # channels
 
@@ -1460,7 +1459,7 @@ class LinesModel(Model):
                 self.p_def.keys()[self.p_def.values().index(idef)])
 
         if 'amp' in idef:
-            return gvar.gvar(mean, 10 * mean)
+            return gvar.gvar(mean, max(10 * mean, AMP_SDEV))
         elif 'pos' in idef:
             fwhm = gvar.mean(self.p_val[self._get_ikey('fwhm', iline)])
             return gvar.gvar(mean, fwhm)
@@ -1664,6 +1663,7 @@ class Cm1LinesModel(LinesModel):
         """
         FWHM_SDEV = 10 # channels
         SIGMA_SDEV = 10 # channels
+        AMP_SDEV = 1000
 
         fwhm_sdev_cm1 = self.axis_step * FWHM_SDEV
         
@@ -1675,7 +1675,7 @@ class Cm1LinesModel(LinesModel):
                 self.p_def.keys()[self.p_def.values().index(idef)])
 
         if 'amp' in idef:
-            return gvar.gvar(mean, mean * 10)
+            return gvar.gvar(mean,max(mean * 10, AMP_SDEV))
         elif 'pos' in idef:
             fwhm = gvar.mean(self.p_val[self._get_ikey('fwhm', iline)])
             return gvar.gvar(np.squeeze(mean), np.squeeze(fwhm_sdev_cm1))
@@ -1780,6 +1780,12 @@ class RawInputParams(object):
 class InputParams(object):
 
 
+    SHIFT_SDEV = 10 # channels
+    FWHM_SDEV = 10 # channels
+    SIGMA_COV_VEL = 1e-2 # covariant sigma in channels, must be > 0.
+    SIGMA_SDEV = 10 # channels
+
+    
     def __init__(self, step_nb):
         self.params = list()
         self.models = list()
@@ -1851,28 +1857,91 @@ class InputParams(object):
 
         self.append_model(ContinuumModel, 'add', params)
 
-    def add_lines_model(self, lines, fwhm_guess, **kwargs):
 
-        SIGMA_COV_VEL = 1e-2 # covariant sigma in channels, must be > 0.
-        SIGMA_SDEV = 10 # channels
-        FWHM_SDEV = 10 # channels
-        SHIFT_SDEV = 10 # channels
+    def _check_params(self, kwargs):
+        # check and update default params with user kwargs
+        params = Params()
+        params.update(kwargs)
 
-        lines = np.array(lines)
+        if 'fmodel' in params:
+            if params.fmodel in ['sincgauss', 'sincgaussphased']:
+                if 'fwhm_def' in params:
+                    if params.fwhm_def != 'fixed':
+                        warnings.warn('fmodel is a sincgauss and FWHM is not fixed')
+                else:
+                    params['fwhm_def'] = 'fixed'
+                    
+                if 'sigma_def' in params:
+                    sigma_cov_vel = self._get_sigma_cov_vel()
+
+                    if len(params.sigma_def) == 1:
+                        if params.sigma_def not in ['free', 'fixed']:
+                            if 'sigma_guess' in params:
+                                # sigma cov vel is adjusted to the initial guess + apodization
+                                sigma_cov_vel = np.sqrt(
+                                    gvar.gvar(sigma_cov_vel)**2.
+                                    + gvar.gvar(params.sigma_guess)**2.)
+                            params['sigma_guess'] = 0. # must be set to 0 if covarying    
+
+                            if 'sigma_cov' not in params:
+                                params['sigma_cov'] = sigma_cov_vel
+                    else:
+                        if 'sigma_guess' in params:
+                            # sigma cov vel is adjusted to the initial guess + apodization
+                            sigma_cov_vel = np.sqrt(
+                                gvar.gvar(sigma_cov_vel)**2.
+                                + gvar.gvar(params.sigma_guess)**2.)
+
+                        _sigma_guess = sigma_cov_vel
+                        if 'sigma_cov' not in params:
+                            _sigma_cov = list()
+                            _allcov = list()
+                            
+                        for ipar in range(len(params.sigma_def)):
+                            if params.sigma_def[ipar] not in ['free', 'fixed']:
+                                params['sigma_guess'][ipar] = 0. # must be set to 0 if covarying
+                                if params.sigma_def[ipar] not in _allcov:
+                                    _allcov.append(params.sigma_def[ipar])
+                                    _sigma_cov.append(sigma_cov_vel[ipar])
+                                    
+                        params['sigma_guess'] = list(_sigma_guess)
+                        if 'sigma_cov' not in params:
+                            params['sigma_cov'] = list(_sigma_cov)
+
+        if 'line_nb' in params:
+            del params.line_nb # this parameter cannot be changed
+
+        if 'pos_guess' in params:
+            raise Exception("Line position must be defined with the 'lines' parameter")
+
+        if 'pos_cov' in params:
+            if 'pos_def' in params:
+                if params.pos_def in ['free', 'fixed']:
+                    warnings.warn('pos_def must not be fixed or free if a velocity shift (pos_cov) is given')
+            else:
+                if np.size(params.pos_cov) != 1: raise Exception('The velocity shift (pos_cov) must be only one floating number if the covariance definition (pos_def) is not given')
+                params['pos_def'] = '1'
         
+       
+
+        return params
+    
+    def add_lines_model(self, lines, fwhm_guess, **kwargs):
+        
+        raise Exception('Must be checked. Too much change without check.')
+        lines = np.array(lines)
+
         if np.any(gvar.sdev(lines) == 0.):
-            lines_sdev = SHIFT_SDEV * self.axis_step
+            lines_sdev = self.SHIFT_SDEV * self.axis_step
             lines = gvar.gvar(lines, np.ones_like(lines) * lines_sdev)
 
-        # guess fwhm
-        fwhm_sdev = self.axis_step * FWHM_SDEV
+        
+        fwhm_sdev = self.axis_step * self.FWHM_SDEV
         fwhm_guess = gvar.gvar(gvar.mean(fwhm_guess), fwhm_sdev)
-
-
+        
         sigma_guess = gvar.gvar(
-            0., self.axis_step * FWHM_SDEV)
-
-
+            0., self.axis_step * self.FWHM_SDEV)
+        
         default_params = {
             'line_nb':np.size(lines),
             'amp_def':'free',
@@ -1893,46 +1962,12 @@ class InputParams(object):
             'alpha_cov':0.}
 
         # check and update default params with user kwargs
-        params = Params()
-        params.update(kwargs)
-        if 'fmodel' in params:
-            if params.fmodel in ['sincgauss', 'sincgaussphased']:
-                if 'fwhm_def' in params:
-                    if params.fwhm_def != 'fixed':
-                        warnings.warn('fmodel is a sincgauss and FWHM is not fixed')
-                else:
-                    params['fwhm_def'] = 'fixed'
-                    
-                if 'sigma_def' in params:
-                    if params.sigma_def not in ['free', 'fixed']:
-                        if 'sigma_guess' in params:
-                            # sigma cov vel is adjusted to the initial guess + apodization
-                            sigma_guess = np.sqrt(sigma_guess**2. + params.sigma_guess**2.)
-                        params['sigma_guess'] = 0. # must be set to 0 if covarying    
-
-                        if 'sigma_cov' not in params:
-                            params['sigma_cov'] = sigma_guess
-                    
+        params = self._check_params(kwargs)
+        
         if 'fwhm_guess' in params:
             raise Exception('This parameter must be defined with the non-keyword parameter fwhm_guess')
-
-        if 'line_nb' in params:
-            del params.line_nb # this parameter cannot be changed
-
-        if 'pos_guess' in params:
-            raise Exception("Line position must be defined with the 'lines' parameter")
-
-        if 'pos_cov' in params:
-            if 'pos_def' in params:
-                if params.pos_def in ['free', 'fixed']:
-                    warnings.warn('pos_def must not be fixed or free if a velocity shift (pos_cov) is given')
-            else:
-                if np.size(params.pos_cov) != 1: raise Exception('The velocity shift (pos_cov) must be only one floating number if the covariance definition (pos_def) is not given')
-                params['pos_def'] = '1'
         
-       
         default_params.update(params)
-
         all_params = Params()
         all_params.update(self.base_params)
         all_params.update(default_params)
@@ -1989,15 +2024,20 @@ class Cm1InputParams(InputParams):
         self.axis = np.arange(self.base_params.step_nb) * self.axis_step + self.axis_min
         
         self.set_signal_range(self.axis_min, self.axis_max)
+
+    def _get_sigma_cov_vel(self):
+        if self.base_params.apodization == 1.:
+            sigma_cov_vel = self.SIGMA_COV_VEL # km/s
+        else:
+            sigma_cov_vel = utils.fit.sigma2vel(
+                utils.fft.apod2sigma(self.base_params.apodization,
+                                     fwhm_guess_cm1) / self.axis_step,
+                lines_cm1, self.axis_step)
+        return sigma_cov_vel
+
         
     def add_lines_model(self, lines, **kwargs):
 
-        SIGMA_COV_VEL = 1e-2 # covariant sigma in km/s, must be > 0.
-        SIGMA_SDEV = 10 # channels
-        FWHM_SDEV = 10 # channels
-        SHIFT_SDEV = 10 # channels
-
-    
         # guess lines
         lines_cm1 = list()
         for iline in lines:
@@ -2006,9 +2046,9 @@ class Cm1InputParams(InputParams):
             lines_cm1.append(iline)
 
         lines_cm1 = np.array(lines_cm1)
-        
+
         if np.any(gvar.sdev(lines_cm1) == 0.):            
-            lines_cm1_sdev = SHIFT_SDEV * self.axis_step
+            lines_cm1_sdev = self.SHIFT_SDEV * self.axis_step
             lines_cm1 = gvar.gvar(lines_cm1, np.ones_like(lines_cm1) * lines_cm1_sdev)
 
         # guess fwhm
@@ -2020,24 +2060,17 @@ class Cm1InputParams(InputParams):
             corr=self.base_params.axis_corr,
             wavenumber=True)
 
-        fwhm_sdev_cm1 = self.axis_step * FWHM_SDEV
+        fwhm_sdev_cm1 = self.axis_step * self.FWHM_SDEV
         fwhm_guess_cm1 = gvar.gvar(fwhm_guess_cm1, fwhm_sdev_cm1)
 
 
         # guess sigma from apodization
-        if self.base_params.apodization == 1.:
-            sigma_cov_vel = SIGMA_COV_VEL # km/s
-        else:
-            sigma_cov_vel = utils.fit.sigma2vel(
-                utils.fft.apod2sigma(self.base_params.apodization,
-                                     fwhm_guess_cm1) / self.axis_step,
-                lines_cm1, self.axis_step)
+        sigma_cov_vel = self._get_sigma_cov_vel()
 
         sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
-            SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
+            self.SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
 
-        sigma_cov_vel = gvar.gvar(sigma_cov_vel, gvar.mean(sigma_sdev_kms))
-
+        sigma_guess = gvar.gvar(sigma_cov_vel, gvar.mean(sigma_sdev_kms))
 
         default_params = {
             'line_nb':np.size(lines),
@@ -2052,52 +2085,15 @@ class Cm1InputParams(InputParams):
             'pos_cov':gvar.gvar(0., np.nanmean(gvar.sdev(lines_cm1))),
             'fmodel':'gaussian',
             'sigma_def':'free',
-            'sigma_guess':sigma_cov_vel,
-            'sigma_cov':gvar.gvar(0., gvar.sdev(sigma_cov_vel)),
+            'sigma_guess':sigma_guess,
+            'sigma_cov':gvar.gvar(0., gvar.sdev(sigma_guess)),
             'alpha_def':'free',
             'alpha_guess':0.,
             'alpha_cov':0.}
 
-        # check and update default params with user kwargs
-        params = Params()
-        params.update(kwargs)
-        if 'fmodel' in params:
-            if params.fmodel in ['sincgauss', 'sincgaussphased']:
-                if 'fwhm_def' in params:
-                    if params.fwhm_def != 'fixed':
-                        warnings.warn('fmodel is a sincgauss and FWHM is not fixed')
-                else:
-                    params['fwhm_def'] = 'fixed'
-                    
-                if 'sigma_def' in params:
-                    if params.sigma_def not in ['free', 'fixed']:
-                        if 'sigma_guess' in params:
-                            # sigma cov vel is adjusted to the initial guess + apodization
-                            sigma_cov_vel = np.sqrt(sigma_cov_vel**2. + params.sigma_guess**2.)
-                        params['sigma_guess'] = 0. # must be set to 0 if covarying    
+        params = self._check_params(kwargs)
 
-                        if 'sigma_cov' not in params:
-                            params['sigma_cov'] = sigma_cov_vel
-                    
-                    
-
-        if 'line_nb' in params:
-            del params.line_nb # this parameter cannot be changed
-
-        if 'pos_guess' in params:
-            raise Exception("Line position must be defined with the 'lines' parameter")
-
-        if 'pos_cov' in params:
-            if 'pos_def' in params:
-                if params.pos_def in ['free', 'fixed']:
-                    warnings.warn('pos_def must not be fixed or free if a velocity shift (pos_cov) is given')
-            else:
-                if np.size(params.pos_cov) != 1: raise Exception('The velocity shift (pos_cov) must be only one floating number if the covariance definition (pos_def) is not given')
-                params['pos_def'] = '1'
-        
-       
         default_params.update(params)
-
 
         all_params = Params()
         all_params.update(self.base_params)
@@ -2671,7 +2667,6 @@ def fit_lines_in_vector( vector, lines, fwhm_guess, fit_tol=1e-10,
 
     if 'signal_range' in kwargs:
         if kwargs['signal_range'] is not None:
-            print kwargs['signal_range']
             ip.set_signal_range(min(kwargs['signal_range']),
                                 max(kwargs['signal_range']))
     

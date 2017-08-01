@@ -2038,6 +2038,10 @@ def get_wcs_parameters(_wcs):
         rotation = np.rad2deg(np.arctan2(pc[0,1], pc[0,0]))
         deltax, deltay = _wcs.wcs.cdelt
         deltax = -deltax
+        if deltax < 0.:
+            rotation = np.rad2deg(np.arctan2(-pc[0,1], -pc[0,0]))
+            deltax, deltay = _wcs.wcs.cdelt
+            deltax = deltax
 
     if deltax < 0.: raise Exception('deltax and deltay must be equal and > 0')
     if abs(rotation) > 90. : raise Exception('rotation angle must be < 90. There must be an error.')

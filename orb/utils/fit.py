@@ -33,6 +33,10 @@ def vel2sigma(vel, lines, axis_step):
     """
     sigma = lines * vel / orb.constants.LIGHT_VEL_KMS
     sigma /= axis_step # convert sigma cm-1->pix
+    if np.any(gvar.sdev(sigma) != 0.):
+        sigma = gvar.gvar(gvar.mean(sigma).astype(float), gvar.sdev(sigma).astype(float))
+    else:
+        sigma = gvar.mean(sigma).astype(float)
     return gvar.fabs(sigma)
 
 

@@ -1,0 +1,12 @@
+## ORBS configuration file 
+# Author: Thomas Martin <thomas.martin.1@ulaval.ca>
+# File : config.none.orb
+
+## Processing parameters
+NCPUS 0 # Max number of CPU to use (0 : max available)
+BIG_DATA 1 # Some processes can be optimized for big data set (> 1000
+           # x 1000 x 500) but they will run slower for small data
+           # set.
+DIV_NB 3 # Number of "Quadrants" division along one axis of a cube
+	 # (the total number of quadrants is thus DIV_NB^2)
+

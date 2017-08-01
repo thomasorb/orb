@@ -597,7 +597,11 @@ def fast_w2pix(w, axis_min, axis_step):
     
     :param axis_step: axis step size in wavelength/wavenumber
     """
-    return gvar.fabs(w - axis_min) / axis_step
+    w_ = (w - axis_min)
+    if np.any(gvar.sdev(w_) != 0.):
+        w_ = gvar.gvar(gvar.mean(w_), gvar.sdev(w_))
+    return gvar.fabs(w_) / axis_step
+        
 
 def fast_pix2w(pix, axis_min, axis_step):
     """Fast conversion of pixel to wavelength/wavenumber

@@ -1,10 +1,44 @@
-### OH Sky lines ######################################
-###
-### This file has been created from:
-###  - UVES data by Hanuschik, A&A, 407, 3 (2003)
-###
-### thomas.martin.1@ulaval.ca
-#######################################################
+#
+#   VizieR Astronomical Server vizier.u-strasbg.fr
+#    Date: 2017-07-31T14:27:25 [V1.99+ (14-Oct-2013)]
+#   In case of problem, please report to:	cds-question@unistra.fr
+#
+#
+#Coosys	J2000:	eq_FK5 J2000
+#INFO	votable-version=1.99+ (14-Oct-2013)	
+#INFO	-ref=VIZ597f3e2b5fe9	
+#INFO	-out.max=unlimited	
+#INFO	queryParameters=12	
+#-oc.form=dec
+#-out.max=unlimited
+#-out.add=_r
+#-out.add=_RAJ,_DEJ
+#-sort=_r
+#-nav=cat:J/A+A/407/1157&tab:{J/A+A/407/1157/table4}&tab:{J/A+A/407/1157/table5}&tab:{J/A+A/407/1157/table6}&tab:{J/A+A/407/1157/table7}&tab:{J/A+A/407/1157/table8}&tab:{J/A+A/407/1157/table9}&key:source=J/A+A/407/1157/table4&key:source=J/A+A/407/1157/table5&key:source=J/A+A/407/1157/table6&key:source=J/A+A/407/1157/table7&key:source=J/A+A/407/1157/table8&key:source=J/A+A/407/1157/table9&HTTPPRM:&&-ref=VIZ597f3e2b5fe9&-out.max=50&-out.form=HTML Table&-out.add=_r&-out.add=_RAJ,_DEJ&-sort=_r&-order=I&-oc.form=sexa&-meta.foot=1&-meta=1&-meta.ucd=2&-file=.&-meta=1&-usenav=1&-bmark=POST&
+#-source=J/A+A/407/1157/table4,J/A+A/407/1157/table5,J/A+A/407/1157/table6,J/A+A/407/1157/table7,J/A+A/407/1157/table8,J/A+A/407/1157/table9
+#-order=I
+#-out=Index
+#-out=lambda
+#-out=FWHM
+#-out=Flux
+#
+#INFO	CatalogsExamined=6	
+#  6 catalogues with potential matches were examined.
+#
+
+#RESOURCE=yCat_34071157
+#Name: J/A+A/407/1157
+#Title: UVES sky atlas (Hanuschik+, 2003)
+#Table	J_A_A_407_1157_table4:
+#Name: J/A+A/407/1157/table4
+#Title: Sky emission lines from 3140 to  3760 {AA}
+#Column	Index	(I4)	Index	[ucd=meta.id]
+#Column	lambda	(F10.4)	Central wavelength in Angstroem	[ucd=em.wl.central]
+#Column	FWHM	(F7.4)	Width of fitted gaussian in Angstroem	[ucd=spect.line.width]
+#Column	Flux	(F8.4)	Central flux in 10^-16^erg/s/cm2/{AA}	[ucd=phot.flux]
+Index	lambda	FWHM	Flux
+ 	0.1nm	0.1nm	10-18W/m2/nm
+----	----------	-------	--------
    1	 3142.6768	 0.0730	  1.5474
    2	 3143.3757	 0.0637	  1.0259
    3	 3143.6824	 0.1236	  1.0973
@@ -389,7 +423,18 @@
  382	 3759.0933	 0.0497	  0.1702
  383	 3759.2332	 0.0916	  0.2178
  384	 3759.5779	 0.0825	  0.2383
-  1	 3747.0691	 0.1069	  0.2447
+
+#Table	J_A_A_407_1157_table5:
+#Name: J/A+A/407/1157/table5
+#Title: Sky emission lines from 3740 to  4850 {AA}
+#Column	Index	(I4)	Index	[ucd=meta.id]
+#Column	lambda	(F10.4)	Central wavelength in Angstroem	[ucd=em.wl.central]
+#Column	FWHM	(F7.4)	Width of fitted gaussian in Angstroem	[ucd=spect.line.width]
+#Column	Flux	(F8.4)	Central flux in 10^-16^erg/s/cm2/{AA}	[ucd=phot.flux]
+Index	lambda	FWHM	Flux
+ 	0.1nm	0.1nm	10-18W/m2/nm
+----	----------	-------	--------
+   1	 3747.0691	 0.1069	  0.2447
    2	 3750.0967	 0.0885	  0.1707
    3	 3750.3438	 0.0873	  0.1330
    4	 3750.6519	 0.1617	  0.1968
@@ -954,7 +999,18 @@
  563	 4842.5112	 0.1783	  0.2649
  564	 4847.4321	 0.0799	  0.2278
  565	 4847.8984	 0.2003	  0.2100
-  1	 4861.3203	 0.1448	  0.3118
+
+#Table	J_A_A_407_1157_table6:
+#Name: J/A+A/407/1157/table6
+#Title: Sky emission lines from 4850 to  5770 {AA}
+#Column	Index	(I4)	Index	[ucd=meta.id]
+#Column	lambda	(F10.4)	Central wavelength in Angstroem	[ucd=em.wl.central]
+#Column	FWHM	(F7.4)	Width of fitted gaussian in Angstroem	[ucd=spect.line.width]
+#Column	Flux	(F8.4)	Central flux in 10^-16^erg/s/cm2/{AA}	[ucd=phot.flux]
+Index	lambda	FWHM	Flux
+ 	0.1nm	0.1nm	10-18W/m2/nm
+----	----------	-------	--------
+   1	 4861.3203	 0.1448	  0.3118
    2	 4882.6499	 0.2741	  0.1472
    3	 4883.0737	 0.1221	  0.1843
    4	 4905.0894	 0.1135	  0.2608
@@ -1042,7 +1098,18 @@
   86	 5669.6860	 0.1139	  0.1785
   87	 5696.4946	 0.1773	  0.1565
   88	 5696.8516	 0.1410	  0.1590
-  1	 5865.4673	 0.1448	  0.8422
+
+#Table	J_A_A_407_1157_table7:
+#Name: J/A+A/407/1157/table7
+#Title: Sky emission lines from 5830 to  6700 {AA}
+#Column	Index	(I4)	Index	[ucd=meta.id]
+#Column	lambda	(F10.4)	Central wavelength in Angstroem	[ucd=em.wl.central]
+#Column	FWHM	(F7.4)	Width of fitted gaussian in Angstroem	[ucd=spect.line.width]
+#Column	Flux	(F8.4)	Central flux in 10^-16^erg/s/cm2/{AA}	[ucd=phot.flux]
+Index	lambda	FWHM	Flux
+ 	0.1nm	0.1nm	10-18W/m2/nm
+----	----------	-------	--------
+   1	 5865.4673	 0.1448	  0.8422
    2	 5866.0039	 0.1585	  0.5305
    3	 5867.2676	 0.1355	  0.3166
    4	 5867.5522	 0.1428	  1.0304
@@ -1211,7 +1278,18 @@
  167	 6699.6548	 0.1841	  0.1290
  168	 6704.1064	 0.1642	  0.1711
  169	 6704.6763	 0.1656	  0.1460
-  1	 6704.1045	 0.1619	  0.1729
+
+#Table	J_A_A_407_1157_table8:
+#Name: J/A+A/407/1157/table8
+#Title: Sky emission lines from 6700 to  8540 {AA}
+#Column	Index	(I4)	Index	[ucd=meta.id]
+#Column	lambda	(F10.4)	Central wavelength in Angstroem	[ucd=em.wl.central]
+#Column	FWHM	(F7.4)	Width of fitted gaussian in Angstroem	[ucd=spect.line.width]
+#Column	Flux	(F8.4)	Central flux in 10^-16^erg/s/cm2/{AA}	[ucd=phot.flux]
+Index	lambda	FWHM	Flux
+ 	0.1nm	0.1nm	10-18W/m2/nm
+----	----------	-------	--------
+   1	 6704.1045	 0.1619	  0.1729
    2	 6704.7002	 0.1637	  0.1489
    3	 6707.9019	 0.1149	  0.1031
    4	 6710.1748	 0.1673	  0.1036
@@ -2225,7 +2303,18 @@
 1012	 8520.4307	 0.2036	  0.2401
 1013	 8520.7549	 0.1856	  0.2893
 1014	 8538.6904	 0.4083	  5.9527
-  1	 8614.5566	 0.1842	  0.0944
+
+#Table	J_A_A_407_1157_table9:
+#Name: J/A+A/407/1157/table9
+#Title: Sky emission lines from 8600 to 10430 {AA}
+#Column	Index	(I4)	Index	[ucd=meta.id]
+#Column	lambda	(F10.4)	Central wavelength in Angstroem	[ucd=em.wl.central]
+#Column	FWHM	(F7.4)	Width of fitted gaussian in Angstroem	[ucd=spect.line.width]
+#Column	Flux	(F8.4)	Central flux in 10^-16^erg/s/cm2/{AA}	[ucd=phot.flux]
+Index	lambda	FWHM	Flux
+ 	0.1nm	0.1nm	10-18W/m2/nm
+----	----------	-------	--------
+   1	 8614.5566	 0.1842	  0.0944
    2	 8615.5605	 0.1784	  0.2023
    3	 8617.1367	 0.1903	  0.1873
    4	 8618.3652	 0.2010	  0.3552
