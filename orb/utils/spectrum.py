@@ -419,6 +419,15 @@ def sinc1d_flux(a, fwhm):
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     return od.abs(a * width)
 
+def sinc21d_flux(a,fwhm):
+    """Compute flux of a 1D sinc2.
+    THIS IS BOGUS WITH CURRENT DEFINITION OF SINC2 MODEL
+    :param a: Amplitude
+    :param fwhm: FWHM
+    """
+    width = fwhm / orb.constants.FWHM_SINC_COEFF
+    return od.abs(a*fwhm)
+    
 def sincgauss1d_flux(a, fwhm, sigma):
     """Compute flux of a 1D sinc convoluted with a Gaussian of
     parameter sigma.

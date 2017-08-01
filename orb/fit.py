@@ -2086,6 +2086,9 @@ def _translate_fit_results(fit_results, fs, lines, fmodel,
     elif fmodel == 'sinc':
         flux = utils.spectrum.sinc1d_flux(
             line_params[:,1], fwhm)
+    elif fmodel == 'sinc2':
+        flux = utils.spectrum.sinc21d_flux(
+            line_params[:,1], fwhm)
     else:
         flux = None
 

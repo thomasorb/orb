@@ -563,7 +563,7 @@ def transform_interferogram(interf, nm_laser,
         else:
             return interf
 
-    if np.all(np.isnan(interf)): return None
+    if np.all(np.isnan(interf)): return interf*np.nan
 
     # discard interferograms with a bad phase vector
     if ext_phase is not None:
@@ -587,7 +587,7 @@ def transform_interferogram(interf, nm_laser,
     # low frequency noise
     if low_order_correction:
         interf[~np.isnan(interf)] -= orb.utils.vector.polyfit1d(
-            interf, 3)[nonans]
+            interf, 3)[~np.isnan(interf)]
         
     #####
     # 3 - ZPD shift to center the spectrum
