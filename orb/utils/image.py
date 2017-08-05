@@ -1160,7 +1160,7 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
 
     :return: A tuple: (Fitted map, residual map)
     """    
-    CROP_COEFF = 0.85 # proportion of the phase map to keep when
+    CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 
     # bad values are filtered and phase map is cropped to remove
@@ -1180,7 +1180,7 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     
     err_map[np.nonzero(np.isnan(phase_map))] = np.nan
     
-    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser)
+    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser, knb=5)
     print ' > Residual STD after cos theta fit: {}'.format(np.nanstd(res_map))
 
     return phase_map_fit, phase_map - phase_map_fit
@@ -1287,7 +1287,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                + 'Rotation angle: {} degrees {}\n'.format(
                    ang(params[_i+5]), str_fix(_i+5)))
 
-    CROP_COEFF = 0.75 # proportion of the phase map to keep when
+    CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 
     POLY_DEG = 2 # degree of the polyomial used to transform a
