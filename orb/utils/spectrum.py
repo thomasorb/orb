@@ -29,8 +29,6 @@ import time
 import orb.constants
 import gvar
 
-import pyximport; pyximport.install(
-    setup_args={"include_dirs":np.get_include()})
 import orb.cutils
 import orb.cgvar
 
@@ -384,7 +382,7 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     If sigma == 0 returns a pure sinc.
 
     :param x: 1D array of float64 giving the positions where the
-      sinc is evaluated
+    sinc is evaluated
     
     :param h: Height
     :param a: Amplitude
@@ -397,18 +395,25 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
             raise Exception('Only one value of sigma can be passed')
         else:
             sigma = sigma[0]
-            
-    if sigma / fwhm < 1e-5:
-        return sinc1d(x, h, a, dx, fwhm)
 
-    if sigma / fwhm > 1e3:
-        return gaussian1d(x, h, a, dx, sigma)
+    sigma = np.fabs(sigma)
+    fwhm = np.fabs(fwhm)
+
+    broadening_ratio = np.fabs(sigma / fwhm)
+    max_broadening_ratio = gvar.mean(broadening_ratio) + gvar.sdev(broadening_ratio)
+
+    
+    if broadening_ratio < 1e-2:
+        return sinc1d(x, h, a, dx, np.sqrt(sigma**2 + fwhm**2))
+
+    if max_broadening_ratio > 7:
+        return gaussian1d(x, h, a, dx, np.sqrt(sigma**2 + fwhm**2))
 
     if np.isclose(gvar.mean(sigma), 0.):
         return sinc1d(x, h, a, dx, fwhm)
 
     width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
-    width /= math.pi ###
+    width /= math.pi ###    
     
     a_ = sigma / math.sqrt(2) / width
     b_ = (x - dx) / math.sqrt(2) / sigma

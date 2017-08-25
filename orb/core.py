@@ -212,9 +212,6 @@ class Tools(object):
           implemented into the method itself with the method
           :py:meth:`core.Tools._get_tuning_parameter`.
 
-        :param config_file_name: (Optional) name of the config file to
-          use. Must be located in orb/data/.
-
         :param silent: If True only error messages will be diplayed on
           screen (default False).
         """
@@ -235,9 +232,8 @@ class Tools(object):
         # loading minimal config
         self.instrument = instrument
         self.set_config('DIV_NB', int)
-        self.config['QUAD_NB'] = self.config.DIV_NB**2L        
-        boolint = lambda(x): bool(int(x))
-        self.set_config('BIG_DATA', boolint)
+        self.config['QUAD_NB'] = self.config.DIV_NB**2L
+        self.set_config('BIG_DATA', bool)
         self.set_config('NCPUS', int)
         if ncpus is None:
             self.ncpus = int(self.config.NCPUS)
@@ -266,10 +262,10 @@ class Tools(object):
 
             self.set_config('BALANCED_CAM', int)
 
-            self.set_config('CAM1_DETECTOR_SIZE_X', float)
-            self.set_config('CAM1_DETECTOR_SIZE_Y', float)
-            self.set_config('CAM2_DETECTOR_SIZE_X', float)
-            self.set_config('CAM2_DETECTOR_SIZE_Y', float)
+            self.set_config('CAM1_DETECTOR_SIZE_X', int)
+            self.set_config('CAM1_DETECTOR_SIZE_Y', int)
+            self.set_config('CAM2_DETECTOR_SIZE_X', int)
+            self.set_config('CAM2_DETECTOR_SIZE_Y', int)
 
             self.set_config('CAM1_GAIN', float)
             self.set_config('CAM2_GAIN', float)
@@ -288,9 +284,9 @@ class Tools(object):
             self.set_config('CALIB_STEP_SIZE', float)
             self.set_config('PHASE_FIT_DEG', int)
 
-            self.set_config('OPTIM_DARK_CAM1', boolint) 
-            self.set_config('OPTIM_DARK_CAM2', boolint)
-            self.set_config('EXT_ILLUMINATION', boolint)
+            self.set_config('OPTIM_DARK_CAM1', bool) 
+            self.set_config('OPTIM_DARK_CAM2', bool)
+            self.set_config('EXT_ILLUMINATION', bool)
 
             self.set_config('DETECT_STAR_NB', int)
             self.set_config('INIT_FWHM', float)
@@ -415,7 +411,11 @@ class Tools(object):
     def set_config(self, key, cast):
         """Set configuration parameter (from the configuration file)
         """
-        self.config[key] = cast(self._get_config_parameter(key))
+        if cast is not bool:
+            self.config[key] = cast(self._get_config_parameter(key))
+        else:
+            self.config[key] = bool(int(self._get_config_parameter(key)))
+
 
     def _get_msg_class_hdr(self):
         """Return the header of the displayed messages."""
@@ -1799,7 +1799,7 @@ class Tools(object):
 
         """
         quad_nb = div_nb**2
-
+        
         if (quad_number < 0) or (quad_number > quad_nb - 1L):
             raise StandardError("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
             return None
@@ -2713,7 +2713,7 @@ class Cube(Tools):
         """
         if div_nb is None: 
             div_nb = self.config.DIV_NB
-        quad_number = div_nb**2
+
         if dimx is None: dimx = self.dimx
         if dimy is None: dimy = self.dimy
 
@@ -2728,7 +2728,8 @@ class Cube(Tools):
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
                force_hdf5=False, force_fits=False,
-               calibration_laser_map_path=None, mask=None):
+               calibration_laser_map_path=None, mask=None,
+               deep_frame_path=None):
         
         """Export cube as one FITS/HDF5 file.
 
@@ -2759,6 +2760,9 @@ class Cube(Tools):
 
         :param calibration_laser_map_path: (Optional) Path to a
           calibration laser map to append (default None).
+
+        :param deep_frame_path: (Optional) Path to a deep frame to
+          append (default None)
 
         :param mask: (Optional) If a mask is given. Exported data is
           masked. A NaN in the mask flags for a masked pixel. Other
@@ -2824,7 +2828,11 @@ class Cube(Tools):
             if calibration_laser_map is not None:
                 outcube.append_calibration_laser_map(calibration_laser_map,
                                                      header=calib_map_hdr)
-            
+
+            if deep_frame_path is not None:
+                deep_frame = self.read_fits(deep_frame_path)
+                outcube.append_deep_frame(deep_frame)
+
             if not self.is_quad_cube: # frames export
                 progress = ProgressBar(zmax-zmin)
                 for iframe in range(zmin, zmax):
@@ -3892,7 +3900,8 @@ class HDFCube(Cube):
 
         
         self.is_hdf5_cube = True
-
+        self.is_hdf5_frames = False
+        self.image_list = None
         self._prebinning = None
         if binning is not None:
             if int(binning) > 1:

@@ -316,7 +316,11 @@ class FitVector(object):
                     model = model_to_append
                 else:
                     model *= model_to_append
-            else: raise Exception('Bad model operation. Model operation must be in {}'.format(self.models_operations))
+            else: raise StandardError('Bad model operation. Model operation must be in {}'.format(self.models_operations))
+
+        if np.any(np.isnan(gvar.mean(model))):
+            raise StandardError('Nan in model')
+
         if return_models:
             return model, models
         else:
@@ -334,8 +338,8 @@ class FitVector(object):
         :param *all_p_free: Vector of free parameters.
         """
         if self.classic:
-            all_p_free = self._all_p_arr2dict(all_p_free)
-            
+            all_p_free = self._all_p_arr2dict(all_p_free)            
+
         return self.get_model(all_p_free, x=x)[
             np.min(self.signal_range):np.max(self.signal_range)]
 
@@ -423,9 +427,10 @@ class FitVector(object):
         else:
             if self.snr_guess is None:
                 raise Exception('No SNR guess. This fit must be made in classic mode')
-            
+
             fit = lsqfit.nonlinear_fit(**fit_args(self.snr_guess))
-            
+
+        ### fit results formatting ###
         if fit.error is None:
             fit_p = fit.p
             
@@ -485,7 +490,7 @@ class FitVector(object):
                 returned_data['fit_params_err_mcmc'] = self._compute_mcmc_error(
                     fit[0], cov_diag, sigma)
 
-
+            returned_data['logGBF'] = fit.logGBF
             returned_data['fit_time'] = time.time() - start_time
             
         else:
@@ -742,8 +747,7 @@ class Model(object):
         # remove sdev from p_fixed 
         for idef in self.p_fixed:
             if self.p_fixed[idef] is not None:
-                if gvar.sdev(self.p_fixed[idef]) != 0.:
-                    self.p_fixed[idef] = gvar.mean(self.p_fixed[idef]) 
+                self.p_fixed[idef] = gvar.mean(self.p_fixed[idef]) 
         
     def free2val(self):
         """Read the array of parameters definition
@@ -753,6 +757,7 @@ class Model(object):
         """
         if self.p_free is None or self.p_fixed is None or self.p_def is None or self.p_cov is None:
             raise Exception('class has not been well initialized, p_free, p_fixed, p_def and p_cov must be defined')
+
         passed_cov = dict()
 
         self.p_val = dict()
@@ -1555,8 +1560,9 @@ class LinesModel(Model):
                 mod = np.copy(line_mod)
             else:
                 mod += np.copy(line_mod)
-                
+
             models.append(line_mod)
+
         if return_models:
             return mod, models
         else:
@@ -1613,8 +1619,8 @@ class Cm1LinesModel(LinesModel):
         fwhm_pix = np.array(fwhm_cm1) / self.axis_step
         if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
             sigma_pix = utils.fit.vel2sigma(
-                np.array(sigma_kms), gvar.mean(lines_cm1), self.axis_step)
-
+                np.array(sigma_kms), lines_cm1, self.axis_step)
+                        
         self.p_array = dict(self.p_val)
         for iline in range(self._get_line_nb()):
             self.p_array[self._get_ikey('pos', iline)] = lines_pix[iline]
@@ -1891,18 +1897,24 @@ class InputParams(object):
                             sigma_cov_vel = np.sqrt(
                                 gvar.gvar(sigma_cov_vel)**2.
                                 + gvar.gvar(params.sigma_guess)**2.)
-
-                        _sigma_guess = sigma_cov_vel
+                        
+                        _sigma_guess = np.empty_like(params.sigma_def, dtype=float)
+                        if np.size(sigma_cov_vel) == 1:
+                            _sigma_guess.fill(gvar.mean(sigma_cov_vel))
+                        else:
+                            _sigma_guess = gvar.mean(sigma_cov_vel)
+                        
                         if 'sigma_cov' not in params:
                             _sigma_cov = list()
                             _allcov = list()
                             
                         for ipar in range(len(params.sigma_def)):
                             if params.sigma_def[ipar] not in ['free', 'fixed']:
-                                params['sigma_guess'][ipar] = 0. # must be set to 0 if covarying
-                                if params.sigma_def[ipar] not in _allcov:
-                                    _allcov.append(params.sigma_def[ipar])
-                                    _sigma_cov.append(sigma_cov_vel[ipar])
+                                _sigma_guess[ipar] = 0. # must be set to 0 if covarying
+                                if 'sigma_cov' not in params:
+                                    if params.sigma_def[ipar] not in _allcov:
+                                        _allcov.append(params.sigma_def[ipar])
+                                        _sigma_cov.append(sigma_cov_vel[ipar])
                                     
                         params['sigma_guess'] = list(_sigma_guess)
                         if 'sigma_cov' not in params:

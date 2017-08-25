@@ -1429,7 +1429,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                 star = star[:, :-(hsz + 1 - (y_max - int_posy))]
 
             if star.shape[0] > 1 and star.shape[1] > 1:
-                data = frame[x_min:x_max, y_min:y_max]
+                data = frame[<int> x_min:<int> x_max, <int> y_min:<int> y_max]
                 star = (star - data) #/ sigma(data, noise[istar], dcl)
                 if saturation > 0.:
                     star[np.nonzero(data >= saturation)] = np.nan

@@ -23,6 +23,10 @@
 
 cimport numpy as np
 cimport cython
+import numpy as np
+import scipy.special
+cimport gvar
+import gvar
 
 cdef extern from "math.h":
     double c_pow "pow" (double x,double y)
@@ -38,12 +42,6 @@ cdef extern from "math.h":
     double c_asin "asin" (double x)
     double c_acos "acos" (double x)
     double c_atan "atan" (double x)
-
-
-import numpy as np
-import scipy.special
-cimport gvar
-import gvar
 
 
 def sinc_dfdx(np.ndarray[np.float64_t, ndim=1] x):
@@ -170,20 +168,28 @@ def sincgauss1d(a, b):
     """sincgauss function"""
     cdef int i
 
+    assert (np.size(a)) == 1
+
     if not isinstance(a, gvar.GVar) and not isinstance(b[0], gvar.GVar):
         return sincgauss_real(a, b)
     
     cdef np.ndarray[object, ndim=1] ans = np.empty(b.shape[0], b.dtype)
-    cdef np.ndarray[np.float64_t, ndim=1] f = sincgauss_real(gvar.mean(a), gvar.mean(b))
+    cdef np.ndarray[np.float64_t, ndim=1] f = np.copy(sincgauss_real(gvar.mean(a), gvar.mean(b)))
     cdef np.ndarray[np.float64_t, ndim=1] dfda
     cdef np.ndarray[np.float64_t, ndim=1] dfdb
-    
+
     dfda, dfdb = sincgauss_real_dfdx(gvar.mean(a), gvar.mean(b))
+
+    if not isinstance(a, gvar.GVar):
+        for i in range(b.size):
+            ans.flat[i] = gvar.gvar_function(
+                b[i], f[i], dfdb[i])
         
-    for i in range(b.size):
-        if not isinstance(a, gvar.GVar):
-            a = gvar.gvar(a, 0)
-        ans[i] = gvar.gvar_function((a, b[i]), f[i], (dfda[i], dfdb[i]))
+    else:
+        for i in range(b.size):
+            ans.flat[i] = gvar.gvar_function(
+                (a, b[i]), f[i], (dfda[i], dfdb[i]))
+
     return ans
 
 
