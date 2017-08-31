@@ -50,12 +50,6 @@ from scipy import interpolate
 import h5py
 import dill
 
-## ORB IMPORTS
-## MODULES IMPORTS
-# check if the compilation is up-to-date
-# recompile if necessary
-import pyximport; pyximport.install(
-    setup_args={"include_dirs":np.get_include()})
 import cutils
 import cgvar
 
@@ -154,6 +148,15 @@ class ROParams(dict):
         if key in self:
             raise StandardError('Parameter already defined')
         dict.__setitem__(self, key, value)
+
+    def __getstate__(self):
+        """Used to pickle object"""
+        state = self.copy()
+        return state
+
+    def __setstate__(self, state):
+        """Used to unpickle object"""
+        self.update(state)
         
 ################################################
 #### CLASS NoInstrumentConfigParams ############
@@ -326,9 +329,6 @@ class Tools(object):
         ch.addFilter(LoggingFilter())
         root.addHandler(ch)
 
-        ## logging.basicConfig(level=logging.INFO,
-        ##                     format=self.get_logformat(),
-        ##                     datefmt=self.get_logdateformat())
         logging.captureWarnings(True)
 
         sys.excepthook = excepthook_with_log
@@ -339,8 +339,12 @@ class Tools(object):
         if not self.get_logging_state():
             self._reset_logging_state()
 
-    def start_file_logging(self):
-        """Start file logging"""
+    def start_file_logging(self, logfile_path=None):
+        """Start file logging
+
+        :param logfile_path: Path to the logfile. If none is provided
+          a default logfile path is used."""
+        self.logfile_path = logfile_path
         self.start_logging()
 
         if not self.get_file_logging_state():
@@ -348,7 +352,7 @@ class Tools(object):
             root.setLevel(logging.INFO)
 
             ch = logging.StreamHandler(
-                self._get_logfile_path())
+                open(self._get_logfile_path(), 'a'))
             ch.setLevel(logging.INFO)
             formatter = logging.Formatter(
                 self.get_logformat(),
@@ -363,20 +367,15 @@ class Tools(object):
         if _len == 0: return False
         elif _len < 3: return True
         else:
-            raise StandardError('Logging in strange state, more than two handlers.')
+            raise StandardError('Logging in strange state: {}'.format(logging.getLogger().handlers))
 
     def get_file_logging_state(self):
         """Return True if the file logging appears set"""
-    
         _len = len(logging.getLogger().handlers)
-        if _len < 1: return False
+        if _len < 2: return False
         elif _len == 2: return True
         else:
-            raise StandardError('Logging in strange state, more than two handlers.')
-
-        print logging.getLogger().handlers
-        if len(logging.getLogger().handlers) < 2: return False
-        else: return True
+            raise StandardError('File Logging in strange state: {}'.format(logging.getLogger().handlers))
         
         
     def get_logformat(self):
@@ -390,9 +389,11 @@ class Tools(object):
 
     def _get_logfile_path(self):
         """Return logfile name"""
-        today = datetime.datetime.today()
-        return 'orb.{:04d}{:02d}{:02d}.log'.format(
-            today.year, today.month, today.day)
+        if self.logfile_path is None:
+            today = datetime.datetime.today()
+            self.logfile_path = 'orb.{:04d}{:02d}{:02d}.log'.format(
+                today.year, today.month, today.day)
+        return self.logfile_path
 
     def get_param(self, key):
         """Get class parameter
@@ -717,7 +718,7 @@ class Tools(object):
                               + ', in %s\n'%traceback[i][3] +
                               traceback[i][4][0])
             
-        print '\r' + traceback_msg
+        logging.debug('\r' + traceback_msg)
 
         
     def _print_traceback(self, no_hdr=False):
@@ -734,7 +735,7 @@ class Tools(object):
             message = (self._get_date_str() + self._msg_class_hdr + 
                        sys._getframe(1).f_code.co_name + " > " + message)
             
-        print "\r" + message
+        logging.debug("\r" + message)
             
     def _update_fits_key(self, fits_name, key, value, comment):
         """Update one key of a FITS file. If the key doesn't exist

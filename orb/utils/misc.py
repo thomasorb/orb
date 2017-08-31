@@ -140,7 +140,7 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
 
     _regions = pyregion.open(reg_path)
     if not _regions.check_imagecoord():
-        if header is None: raise Exception('DS9 region file is in celestial coordinates. Please change it to image coordinates or pass a astropy.io.fits.Header instance to the function')
+        if header is None: raise Exception('DS9 region file is not in image coordinates. Please change it to image coordinates or pass a astropy.io.fits.Header instance to the function to transform the actual coordinates to image coordinates.')
         else:
             wcs = pywcs.WCS(header, naxis=2) 
             _regions = _regions.as_imagecoord(wcs)

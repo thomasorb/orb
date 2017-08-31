@@ -610,7 +610,7 @@ def transform_interferogram(interf, nm_laser,
         temp_vector[abs(zpd_shift_corr):abs(zpd_shift_corr) + dimz] = interf
         interf = np.copy(temp_vector)
         interf = np.roll(interf, zpd_shift_corr)            
-        if bad_frames_vector is not None:
+        if bad_frames_vector is not None or np.size(bad_frames_vector) > 0:
             warnings.warn('bad frames handling not implemented')
             if np.any(bad_frames_vector > 0):
                 temp_vector[

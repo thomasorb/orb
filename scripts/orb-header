@@ -41,7 +41,7 @@ def main(args):
                 'ignore', message='Overwriting existing file.*',
                 module='astropy.io.*')
 
-    to = Tools(no_log=True)
+    to = Tools()
 
 
     if os.path.isfile(args.fits_path):

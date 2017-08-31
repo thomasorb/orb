@@ -1364,6 +1364,16 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
         pixel_size=pixel_size*binning,
         binning=1, return_model_fit=True)
     
+    ## Output of fit_calibration_laser_map
+    ## 0: mirror_distance
+    ## 1: theta_cx
+    ## 2: theta_cy
+    ## 3: phi_x
+    ## 4: phi_y
+    ## 5: phi_r
+    ## 6: calib_laser_nm (unused)
+    ## 7: theta c (unused, control value, not a fit parameter)
+    
     print '> Phase map fit'
     ## 0: a0
     ## 1: a1
@@ -1372,11 +1382,11 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
     ## 4: theta_cy
     ## 5: phi_x
     ## 6: phi_y
-    ## 7: phi_r    
+    ## 7: phi_r
 
     # first fit of the linear parameters
     p_ind = np.array(list([0])*(POLY_DEG+1) + [1,1,1,1,1,1])
-    p_fix = calib_fit_params[:-1]
+    p_fix = calib_fit_params[:-2]
     fit = scipy.optimize.leastsq(diff_phase_map,
                                  [0., 0., 0.],
                                  args=(calib_laser_map_bin,

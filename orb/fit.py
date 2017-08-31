@@ -49,8 +49,6 @@ import constants
 import utils.spectrum
 import utils.fit
 
-import pyximport; pyximport.install(
-    setup_args={"include_dirs":np.get_include()})
 import cutils
 
 
@@ -402,7 +400,8 @@ class FitVector(object):
             last_diff = fit_classic[2]['fvec']
             fit.chi2 = np.sum(last_diff**2.)
             fit.dof = self.vector.shape[0] - np.size(fit_classic[0])
-
+            fit.logGBF = None
+            
             # compute uncertainties
             cov_x = fit_classic[1]
             if np.all(np.isfinite(cov_x)):
@@ -1900,7 +1899,7 @@ class InputParams(object):
                         
                         _sigma_guess = np.empty_like(params.sigma_def, dtype=float)
                         if np.size(sigma_cov_vel) == 1:
-                            _sigma_guess.fill(gvar.mean(sigma_cov_vel))
+                            _sigma_guess.fill(np.squeeze(gvar.mean(sigma_cov_vel)))
                         else:
                             _sigma_guess = gvar.mean(sigma_cov_vel)
                         
@@ -2045,7 +2044,7 @@ class Cm1InputParams(InputParams):
                 utils.fft.apod2sigma(self.base_params.apodization,
                                      fwhm_guess_cm1) / self.axis_step,
                 lines_cm1, self.axis_step)
-        return sigma_cov_vel
+        return np.atleast_1d(sigma_cov_vel)
 
         
     def add_lines_model(self, lines, **kwargs):
@@ -2081,6 +2080,7 @@ class Cm1InputParams(InputParams):
 
         sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
             self.SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
+        sigma_sdev_kms = np.atleast_1d(sigma_sdev_kms)
 
         sigma_guess = gvar.gvar(sigma_cov_vel, gvar.mean(sigma_sdev_kms))
 
@@ -2098,7 +2098,8 @@ class Cm1InputParams(InputParams):
             'fmodel':'gaussian',
             'sigma_def':'free',
             'sigma_guess':sigma_guess,
-            'sigma_cov':gvar.gvar(0., gvar.sdev(sigma_guess)),
+            'sigma_cov':gvar.gvar(np.zeros_like(sigma_guess).astype(float),
+                                  gvar.sdev(sigma_guess)),
             'alpha_def':'free',
             'alpha_guess':0.,
             'alpha_cov':0.}
