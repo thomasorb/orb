@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ORB Documentation &mdash; Orb 3.0.10 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/logo.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Orb 3.0.10 documentation" href="#"/>
+        <link rel="next" title="ORB installation" href="installation.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> Orb
+          
+
+          
+            
+            <img src="_static/logo_sidebar.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.10
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">ORB installation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="orb.html">orb package</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Orb</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>ORB Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="orb-documentation">
+<h1><a class="toc-backref" href="#id1">ORB Documentation</a><a class="headerlink" href="#orb-documentation" title="Permalink to this headline">¶</a></h1>
+<a class="reference internal image-reference" href="_images/logo.png"><img alt="_images/logo.png" class="align-center" src="_images/logo.png" style="width: 25%;" /></a>
+<div class="topic">
+<p class="topic-title first">Welcome to ORB documentation !</p>
+<p>ORB is the kernel module for the whole suite of data reduction and
+analysis tools for <a class="reference internal" href="#spiomm">SpIOMM</a> and <a class="reference internal" href="#sitelle">SITELLE</a>: ORBS, ORCS, OACS, ORUS and IRIS.</p>
+<p id="spiomm"><strong>SpIOMM</strong> (<em>Spectromètre Imageur de l&#8217;Observatoire du Mont Mégantic</em>) is an astronomical instrument operating at Mont <a class="reference external" href="http://omm.craq-astro.ca/">Mégantic</a> (Québec, CANADA) designed to obtain the visible spectra of all the objects in a 12 arc minutes field of view.</p>
+<p id="sitelle"><strong>SITELLE</strong> (Spectromètre-Imageur pour l’Étude en Long et en Large des raie d’Émissions) is a larger version of SpIOMM operating at the <a class="reference external" href="http://www.cfht.hawaii.edu/">CFHT</a> (Canada-France-Hawaii Telescope, Hawaii, USA).</p>
+</div>
+<div class="section" id="table-of-contents">
+<h2><a class="toc-backref" href="#id2">Table of contents</a><a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#orb-documentation" id="id1">ORB Documentation</a><ul>
+<li><a class="reference internal" href="#table-of-contents" id="id2">Table of contents</a></li>
+<li><a class="reference internal" href="#getting-started" id="id3">Getting started</a></li>
+<li><a class="reference internal" href="#documentation" id="id4">Documentation</a></li>
+<li><a class="reference internal" href="#changelog" id="id5">Changelog</a></li>
+<li><a class="reference internal" href="#indices-and-tables" id="id6">Indices and tables</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="getting-started">
+<h2><a class="toc-backref" href="#id3">Getting started</a><a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">ORB installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#python">Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installation-for-ubuntu-debian-users">Installation for Ubuntu/Debian users</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="documentation">
+<h2><a class="toc-backref" href="#id4">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="orb.html">orb package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="orb.ext.html">orb.ext package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="orb.ext.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.ext.html#module-orb.ext.zern">orb.ext.zern module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.ext.html#module-orb.ext">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="orb.utils.html">orb.utils package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.astrometry">orb.utils.astrometry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.debug">orb.utils.debug module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.fft">orb.utils.fft module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.filters">orb.utils.filters module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.fit">orb.utils.fit module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.image">orb.utils.image module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.io">orb.utils.io module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.misc">orb.utils.misc module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.parallel">orb.utils.parallel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.photometry">orb.utils.photometry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.pyneb">orb.utils.pyneb module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.sim">orb.utils.sim module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.spectrum">orb.utils.spectrum module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.stats">orb.utils.stats module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.vector">orb.utils.vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils.web">orb.utils.web module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="orb.utils.html#module-orb.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.astrometry">orb.astrometry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.cgvar">orb.cgvar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.constants">orb.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.core">orb.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.cutils">orb.cutils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.etc">orb.etc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb.fit">orb.fit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orb.html#module-orb">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="changelog">
+<h2><a class="toc-backref" href="#id5">Changelog</a><a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-0-creation-of-orb">v1.0 Creation of ORB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-1">v1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-2">v1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-3-start-of-cfht-integration">v1.3 Start of CFHT integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-4-the-hdf5-miracle">v1.4 The HDF5 miracle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-5-handing-sitelle-s-real-data-cubes">v1.5: Handing SITELLE&#8217;s real data cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-6-architectural-changes">v1.6: Architectural changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v-2-data-release-1">v.2. Data Release 1</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2><a class="toc-backref" href="#id6">Indices and tables</a><a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation.html" class="btn btn-neutral float-right" title="ORB installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Thomas Martin (thomas.martin.1@ulaval.ca).
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.10',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

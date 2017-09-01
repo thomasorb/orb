@@ -886,18 +886,20 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
 
     :return: (FWHM, FWHM_ERR) in pixels
     """
-    FIT_BOXSZ_COEFF = 4
+    FIT_BOXSZ_COEFF = 8
 
+    # note that the fwhm guess is divided by two because it is better
+    # to have a starting guess smaller than the real fwhm value
     fit_params = orb.cutils.multi_fit_stars(
         np.array(frame, dtype=float),
         np.array(star_list, dtype=float),
         int(np.nanmedian(fwhm_guess_pix*FIT_BOXSZ_COEFF)),
         height_guess=np.nanmedian(frame),
-        fwhm_guess=np.atleast_1d(fwhm_guess_pix),
+        fwhm_guess=np.atleast_1d(fwhm_guess_pix) / 2.,
         cov_height=False,
         cov_pos=True,
         cov_fwhm=True,
-        fix_height=True,
+        fix_height=False,
         fix_pos=True,
         fix_fwhm=False,
         enable_zoom=False,
@@ -952,7 +954,7 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
         temp_arr = np.empty(pos_list.shape[0], dtype=float)
         temp_arr.fill(fwhm_guess_pix)
         fwhm_guess_pix = temp_arr
-    
+
     results = list()
     pos_list = np.array(pos_list)
     aper_surf = None
@@ -1208,26 +1210,6 @@ def deg2dec(deg, string=False):
         return dec
     else:
         return "+%d:%d:%.2f" % (dec[0], dec[1], dec[2])
-
-
-## def sip_im2pix(im_coords, sip, tolerance=1e-8):
-##     """Transform perfect pixel positions to distorded pixels positions 
-
-##     :param im_coords: perfect pixel positions as an Nx2 array of floats.
-##     :param sip: pywcs.WCS() instance containing SIP parameters.
-##     :param tolerance: tolerance on the iterative method.
-##     """
-##     #return sip.foc2pix(im_coords, 0)   
-##     return orb.cutils.sip_im2pix(im_coords, sip, tolerance=1e-8)
-
-## def sip_pix2im(pix_coords, sip):
-##     """Transform distorded pixel positions to perfect pixels positions 
-
-##     :param pix_coords: distorded pixel positions as an Nx2 array of floats.
-##     :param sip: pywcs.WCS() instance containing SIP parameters.
-##     """
-##     #return sip.pix2foc(pix_coords, 0)   
-##     return orb.cutils.sip_pix2im(pix_coords, sip)
 
 def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
                                    sip_A=None, sip_B=None):
@@ -1968,10 +1950,6 @@ def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
 
     :param xy_bins: number of bins along X and Y
 
-    :param angle_range: (min angle, max angle)
-
-    :param angle_bins: number of bins in the angle range.
-
     .. warning:: This kind of registration is very sensitive to the
       angle between each list. It is better to use it on a range of
       angles (steps of 0.5 degree) to make sure the best correlation
@@ -2057,9 +2035,9 @@ def get_wcs_parameters(_wcs):
         deltay = - cd[0,1] / np.sin(np.deg2rad(rotation))
     except AttributeError: # no cd is present
         pc = np.copy(_wcs.wcs.get_pc())
-        rotation = np.rad2deg(np.arctan2(pc[0,1], pc[0,0]))
+        rotation = np.rad2deg(np.arctan2(-pc[0,1], -pc[0,0]))
         deltax, deltay = _wcs.wcs.cdelt
-        deltax = -deltax
+        deltax = deltax
 
     if deltax < 0.: raise Exception('deltax and deltay must be equal and > 0')
     if abs(rotation) > 90. : raise Exception('rotation angle must be < 90. There must be an error.')
@@ -2069,7 +2047,8 @@ def get_wcs_parameters(_wcs):
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
-                      rc, zoom_factor, box_size, verbose=True, init_wcs=None):
+                      rc, zoom_factor, box_size, verbose=True, init_wcs=None,
+                      raise_border_error=True):
     """Determine a precise alignment guess by brute force.
 
     :param star_list: List of star position. Must be given in pixels
@@ -2093,16 +2072,21 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
 
     :param init_wcs: (Optional) WCS instance (can contain an SIP distortion
       model, default None).
+
+    :param raise_border_error: (Optional) if True raise an exception
+      if the returned guess is on the border of the brute force grid
+      (defaut True).
     """
 
     def get_total_flux(guess_list, image, star_list,
-                       rc, zoom_factor, box_size, kernel, _wcs, _wcsp):
+                       rc, zoom_factor, box_size, kernel, _wcs_str, _wcsp):
         """Return the sum of the flux around a transformed list of
         star positions for a list of parameters.        
-        """        
+        """
+        _wcs = pywcs.WCS(_wcs_str)
         result = np.empty((guess_list.shape[0], 4))
         result.fill(np.nan)
-        if _wcsp is not None:
+        if _wcsp is not None and _wcs is not None:
             (target_x, target_y, deltax, deltay,
              target_ra, target_dec, rotation) = _wcsp
                 
@@ -2145,6 +2129,11 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     if init_wcs is not None and rc is not None:
         warnings.warn('rc must be set to None if a wcs is given. rc automatically set to None.')
         rc = None
+
+    if init_wcs is None and rc is None:
+        warnings.warn('rc automatically set.')
+        rc = (image.shape[0]/2., image.shape[1]/2.)
+
     if verbose:
         print 'Brute force range:'
         if len(x_range) > 1:
@@ -2197,18 +2186,20 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         wcs_params = get_wcs_parameters(init_wcs)
     else:
         wcs_params = None
-        
+
+    init_wcs_str = init_wcs.to_header_string(relax=True)
     # parallel processing of each guess list part
     jobs = [(ijob, job_server.submit(
         get_total_flux, 
         args=(pguess_lists[ijob], image,
               star_list, rc, zoom_factor,
-              box_size, kernel, init_wcs, wcs_params),
-        globals=globals(),
+              box_size, kernel, init_wcs_str, wcs_params),
         modules=("import numpy as np",
                  "import astropy.wcs as pywcs",
                  "import orb.cutils",
-                 "import warnings")))
+                 "import warnings",
+                 "from orb.utils.astrometry import *",
+                 "import astropy.io.fits as pyfits")))
             for ijob in range(ncpus)]
 
     for ijob, job in jobs:
@@ -2242,6 +2233,16 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     if verbose:
         print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
             dx, dy, dr)
+
+    if raise_border_error:
+        if (dx == np.min(x_range)
+            or dx == np.max(x_range)
+            or dy == np.min(y_range)
+            or dy == np.max(y_range)
+            or dr == np.min(r_range)
+            or dr == np.max(r_range)):
+            raise Exception('Brute force maximum found on grid border !')
+        
 
     return dx, dy, dr, np.squeeze(guess_matrix)
 

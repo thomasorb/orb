@@ -28,6 +28,7 @@ import warnings
 import scipy
 import scipy.special as ss
 from scipy import signal, interpolate, optimize
+import gvar
 
 import orb.utils.vector
 import orb.utils.spectrum
@@ -35,7 +36,6 @@ import orb.utils.stats
 import orb.utils.filters
 import orb.cutils
 import orb.constants
-import orb.fit
 
 def apodize(s, apodization_function=2.0):
     """Apodize a spectrum
@@ -299,11 +299,10 @@ def apod2width(apod):
     apodization level of 2 mean that the line fwhm will be 2 times
     wider).
     """
-    apod = float(apod)
     if apod < 1.: raise Exception(
         'Apodization level (broadening factor) must be > 1')
 
-    return apod - 1. + (ss.erf(math.pi / 2. * np.sqrt(apod - 1.))
+    return apod - 1. + (gvar.erf(math.pi / 2. * gvar.sqrt(apod - 1.))
                         * orb.constants.FWHM_SINC_COEFF)
 
 def apod2sigma(apod, fwhm):

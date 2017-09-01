@@ -2,3 +2,8 @@
 *.py~
 *.pyx~
 *~
+*.so
+dist/
+build/
+orb_kernel.egg-info/
+.eggs/

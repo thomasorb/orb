@@ -41,7 +41,6 @@ import inspect
 import re
 import datetime
 
-## MODULES IMPORTS
 import numpy as np
 import bottleneck as bn
 import astropy.io.fits as pyfits
@@ -51,6 +50,14 @@ import h5py
 import dill
 
 ## ORB IMPORTS
+## MODULES IMPORTS
+# check if the compilation is up-to-date
+# recompile if necessary
+import pyximport; pyximport.install(
+    setup_args={"include_dirs":np.get_include()})
+import cutils
+import cgvar
+
 import utils.spectrum, utils.parallel, utils.io, utils.filters
 import utils.photometry
 import constants
@@ -117,6 +124,7 @@ class Tools(object):
                                 # parameter and their new value.
 
     _silent = False # If True only error messages will be diplayed on screen
+
 
     def __init__(self, data_prefix="./temp/data.", no_log=False,
                  tuning_parameters=dict(), ncpus=None,
@@ -2636,7 +2644,8 @@ class Cube(Tools):
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
                force_hdf5=False, force_fits=False,
-               calibration_laser_map_path=None, mask=None):
+               calibration_laser_map_path=None, mask=None,
+               deep_frame_path=None):
         
         """Export cube as one FITS/HDF5 file.
 
@@ -2667,6 +2676,9 @@ class Cube(Tools):
 
         :param calibration_laser_map_path: (Optional) Path to a
           calibration laser map to append (default None).
+
+        :param deep_frame_path: (Optional) Path to a deep frame to
+          append (default None)
 
         :param mask: (Optional) If a mask is given. Exported data is
           masked. A NaN in the mask flags for a masked pixel. Other
@@ -2730,9 +2742,15 @@ class Cube(Tools):
                         calibration_laser_map, self.dimx, self.dimy)
 
             if calibration_laser_map is not None:
+                self._print_msg('Append calibration laser map')
                 outcube.append_calibration_laser_map(calibration_laser_map,
                                                      header=calib_map_hdr)
-            
+
+            if deep_frame_path is not None:
+                deep_frame = self.read_fits(deep_frame_path)
+                self._print_msg('Append deep frame')
+                outcube.append_deep_frame(deep_frame)
+                
             if not self.is_quad_cube: # frames export
                 progress = ProgressBar(zmax-zmin)
                 for iframe in range(zmin, zmax):
@@ -2751,6 +2769,7 @@ class Cube(Tools):
                         header=self.get_frame_header(iframe),
                         force_float32=True)
                 progress.end()
+                
             else: # quad export
                 
                 progress = ProgressBar(self.QUAD_NB)

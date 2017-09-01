@@ -27,6 +27,7 @@ import sys
 import orb.cutils                       
 import pyregion
 import astropy.io.fits as pyfits
+import astropy.wcs as pywcs
 import dill
 
 def aggregate_pixels(pixel_list, radius=1.42):
@@ -107,9 +108,8 @@ def get_axis_from_hdr(hdr, axis_index=1):
     return (np.arange(naxis, dtype=float) + 1. - crpix) * cdelt + crval
                         
 def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
-                                  integrate=True):
-    """Return the indices of the elements inside 'box', 'circle' and
-    'polygon' regions.
+                                  integrate=True, header=None):
+    """Return a mask from a ds9 region file.
 
     :param reg_path: Path to a ds9 region file
 
@@ -125,15 +125,26 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
       into one mask, else a list of region masks is returned (default
       True)
 
+    :param header: (Optional) Header containing the WCS transformation
+      if the region file is in celestial coordinates (default None).
+    
     .. note:: The returned array can be used like a list of
         indices returned by e.g. numpy.nonzero().
 
-    .. note:: Coordinates must be image coordinates (x,y) 
+    .. note:: Coordinates can be celestial or image coordinates
+      (x,y). if coordinates are celestial a header must be passed to
+      the function.
     """
     ### Warning: pyregion works in 'transposed' coordinates
     ### We will work here in python (y,x) convention
 
     _regions = pyregion.open(reg_path)
+    if not _regions.check_imagecoord():
+        if header is None: raise Exception('DS9 region file is in celestial coordinates. Please change it to image coordinates or pass a astropy.io.fits.Header instance to the function')
+        else:
+            wcs = pywcs.WCS(header, naxis=2) 
+            _regions = _regions.as_imagecoord(wcs)
+            
     shape = (np.max(y_range), np.max(x_range))
     mask = np.zeros(shape, dtype=float)
     hdu = pyfits.PrimaryHDU(mask)

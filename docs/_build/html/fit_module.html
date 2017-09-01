@@ -1,0 +1,1553 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Fit module &mdash; Orb 3.0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/logo.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Orb 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="Data module" href="data_module.html"/>
+        <link rel="prev" title="Viewer module" href="viewer_module.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Orb
+          
+
+          
+            
+            <img src="_static/logo_sidebar.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installing_orb.html">Installing Orb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installing_python.html">Installing Python</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="python_for_orb.html">Python for ORB users</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis_with_orb.html">Data analysis with ORB</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core_module.html">Core module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_module.html">Utils module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cutils_module.html">CUtils module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="astrometry_module.html">Astrometry module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer_module.html">Viewer module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Fit module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fit-classes">Fit classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fitvector-class">FitVector class</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#model-classes">Model classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#model-class">Model class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#filtermodel-class">FilterModel class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#continuummodel-class">ContinuumModel class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linesmodel-class">LinesModel class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cm1linesmodel-class">Cm1LinesModel class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nmlinesmodel-class">NmLinesModel class</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#utils-functions">Utils functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_module.html">Data module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="constants_module.html">Constants module</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Orb</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Fit module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/fit_module.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="fit-module">
+<span id="id1"></span><h1><a class="toc-backref" href="#id2">Fit module</a><a class="headerlink" href="#fit-module" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#fit-module" id="id2">Fit module</a><ul>
+<li><a class="reference internal" href="#fit-classes" id="id3">Fit classes</a><ul>
+<li><a class="reference internal" href="#fitvector-class" id="id4">FitVector class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#model-classes" id="id5">Model classes</a><ul>
+<li><a class="reference internal" href="#model-class" id="id6">Model class</a></li>
+<li><a class="reference internal" href="#filtermodel-class" id="id7">FilterModel class</a></li>
+<li><a class="reference internal" href="#continuummodel-class" id="id8">ContinuumModel class</a></li>
+<li><a class="reference internal" href="#linesmodel-class" id="id9">LinesModel class</a></li>
+<li><a class="reference internal" href="#cm1linesmodel-class" id="id10">Cm1LinesModel class</a></li>
+<li><a class="reference internal" href="#nmlinesmodel-class" id="id11">NmLinesModel class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#utils-functions" id="id12">Utils functions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#fit.fit_lines_in_spectrum" title="fit.fit_lines_in_spectrum"><code class="xref py py-obj docutils literal"><span class="pre">fit.fit_lines_in_spectrum</span></code></a></td>
+<td>Fit lines in spectrum</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#fit.fit_lines_in_vector" title="fit.fit_lines_in_vector"><code class="xref py py-obj docutils literal"><span class="pre">fit.fit_lines_in_vector</span></code></a></td>
+<td>Fit lines in a vector</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="fit-classes">
+<h2><a class="toc-backref" href="#id3">Fit classes</a><a class="headerlink" href="#fit-classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="fitvector-class">
+<h3><a class="toc-backref" href="#id4">FitVector class</a><a class="headerlink" href="#fitvector-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.FitVector">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">FitVector</code><span class="sig-paren">(</span><em>vector</em>, <em>models</em>, <em>params</em>, <em>snr_guess=None</em>, <em>fit_tol=1e-08</em>, <em>signal_range=None</em>, <em>classic=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>General fitting class for a 1d array of data based on
+Levenberg-Marquardt least square fit algorithm.</p>
+<p>Accept any combination of models (based on <a class="reference internal" href="#fit.Model" title="fit.Model"><code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code></a>)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This class is a wrapper around
+<code class="xref py py-meth docutils literal"><span class="pre">scipy.optimize.leastsq()</span></code>. Most of its purpose consists
+in passing an array of purely free parameters to
+<code class="xref py py-meth docutils literal"><span class="pre">scipy.optimize.leastsq()</span></code> and creating the objective
+function from free and fixed parameters by combining the
+different models.</p>
+</div>
+<dl class="method">
+<dt id="fit.FitVector.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>vector</em>, <em>models</em>, <em>params</em>, <em>snr_guess=None</em>, <em>fit_tol=1e-08</em>, <em>signal_range=None</em>, <em>classic=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Init class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.FitVector.params.vector"></span><strong>vector</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.vector">¶</a> &#8211; Vector to fit</li>
+<li><span class="target" id="fit.FitVector.params.models"></span><strong>models</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.models">¶</a> &#8211; list of models to combine. Must be a list of
+couples (models, model_operation). A model must be a class
+which derives from <code class="xref py py-class docutils literal"><span class="pre">orb.fit.Model</span></code>. Model
+operation mist be &#8216;add&#8217; if the model has to be added to the
+others or &#8216;mult&#8217; if it has to be multiplied with the
+others. Models are combined in the order of the
+list. e.g. [(Model1, &#8216;add&#8217;), (Model2, &#8216;mult&#8217;), ...].</li>
+<li><span class="target" id="fit.FitVector.params.params"></span><strong>params</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.params">¶</a> &#8211; list of parameters dictionaries for each
+model. Needed parameters are defined in each model.</li>
+<li><span class="target" id="fit.FitVector.params.snr_guess"></span><strong>snr_guess</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.snr_guess">¶</a> &#8211; (Optional) Guess on the SNR of the given
+vector of data (default None).</li>
+<li><span class="target" id="fit.FitVector.params.fit_tol"></span><strong>fit_tol</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.fit_tol">¶</a> &#8211; (Optional) Fit tolerance (default 1e-10)</li>
+<li><span class="target" id="fit.FitVector.params.signal_range"></span><strong>signal_range</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.signal_range">¶</a> &#8211; (Optional) couple (min, max) defining the
+range of values considered in the fitting process.</li>
+<li><span class="target" id="fit.FitVector.params.classic"></span><strong>classic</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.params.classic">¶</a> &#8211; (Optional) If True, fit is forced to be
+classic. i.e. It makes no use of the priors std (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.FitVector.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#fit.FitVector.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector._all_p_arr2dict">
+<code class="descname">_all_p_arr2dict</code><span class="sig-paren">(</span><em>p_arr</em>, <em>keep_gvar=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector._all_p_arr2dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of free parameters from a 1d array of
+free parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.FitVector._all_p_arr2dict.params.p_arr"></span><strong>p_arr</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._all_p_arr2dict.params.p_arr">¶</a> &#8211; Free parameters array</li>
+<li><span class="target" id="fit.FitVector._all_p_arr2dict.params.keep_gvar"></span><strong>keep_gvar</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._all_p_arr2dict.params.keep_gvar">¶</a> &#8211; (Optional) If True, gvar values of the
+parameters are kept. Else they are converted to float
+(default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector._all_p_dict2arr">
+<code class="descname">_all_p_dict2arr</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector._all_p_dict2arr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 1d array of free parameters from a dictionary of
+free parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.FitVector._all_p_dict2arr.params.p_dict"></span><strong>p_dict</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._all_p_dict2arr.params.p_dict">¶</a> &#8211; Free parameters dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector._all_p_dict2list">
+<code class="descname">_all_p_dict2list</code><span class="sig-paren">(</span><em>p_vect</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector._all_p_dict2list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform a dictionnary of free parameters as returned by
+the fit function into a list of free parameters (see
+<a class="reference internal" href="#fit.FitVector._all_p_list2dict" title="fit.FitVector._all_p_list2dict"><code class="xref py py-meth docutils literal"><span class="pre">fit.FitVector._all_p_list2dict()</span></code></a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.FitVector._all_p_dict2list.params.p_vect"></span><strong>p_vect</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._all_p_dict2list.params.p_vect">¶</a> &#8211; dictionnary of free parameters.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#fit.FitVector._all_p_list2dict" title="fit.FitVector._all_p_list2dict"><code class="xref py py-meth docutils literal"><span class="pre">fit.FitVector._all_p_list2dict()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector._all_p_list2dict">
+<code class="descname">_all_p_list2dict</code><span class="sig-paren">(</span><em>p_list</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector._all_p_list2dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Concatenate a list of free parameters into a dictionary
+ready to be passed to the fit function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.FitVector._all_p_list2dict.params.p_list"></span><strong>p_list</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._all_p_list2dict.params.p_list">¶</a> &#8211; List of free parameters. This list is a list of
+tuple of parameters. Each tuple defining the free parameters
+for each model, i.e. : ([free_params_model1],
+[free_params_model2], ...)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#fit.FitVector._all_p_dict2list" title="fit.FitVector._all_p_dict2list"><code class="xref py py-meth docutils literal"><span class="pre">fit.FitVector._all_p_dict2list()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector._get_model_onrange">
+<code class="descname">_get_model_onrange</code><span class="sig-paren">(</span><em>x</em>, <em>*all_p_free</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector._get_model_onrange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the part of the model contained in the signal
+range.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function has been defined only to be used with
+scipy.optimize.curve_fit.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.FitVector._get_model_onrange.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._get_model_onrange.params.x">¶</a> &#8211; x vector on which model is computed</li>
+<li><span class="target" id="fit.FitVector._get_model_onrange.params.*all_p_free"></span><strong>*all_p_free</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector._get_model_onrange.params.*all_p_free">¶</a> &#8211; Vector of free parameters.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector._get_vector_onrange">
+<code class="descname">_get_vector_onrange</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector._get_vector_onrange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the part of the vector contained in the signal
+range.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function has been defined only to be used with
+scipy.optimize.curve_fit.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>compute_mcmc_error=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit data vector.</p>
+<p>This is the central function of the class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.FitVector.fit.params.compute_mcmc_error"></span><strong>compute_mcmc_error</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.fit.params.compute_mcmc_error">¶</a> &#8211; (Optional) Compute Markov chain
+Monte-Carlo error on the fit parameters (Uncertainty
+estimates might be slighly better constrained but computing
+time can be orders of magnitude longer) (default False).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FitVector.get_model">
+<code class="descname">get_model</code><span class="sig-paren">(</span><em>all_p_free</em>, <em>return_models=False</em>, <em>x=None</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FitVector.get_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the combined model of the vector given a set of free
+parameters.</p>
+<p>This function is typically called to compute the objective
+function. It can also be called to obtain the final model
+based on fitted parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.FitVector.get_model.params.all_p_free"></span><strong>all_p_free</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.get_model.params.all_p_free">¶</a> &#8211; Vector of free parameters.</li>
+<li><span class="target" id="fit.FitVector.get_model.params.return_models"></span><strong>return_models</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.get_model.params.return_models">¶</a> &#8211; (Optional) If True return also
+individual models (default False)</li>
+<li><span class="target" id="fit.FitVector.get_model.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#fit.FitVector.get_model.params.x">¶</a> &#8211; (Optional) array of data points on which model is
+computed instead of a typical np.arange(step_nb) (default
+None).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="model-classes">
+<h2><a class="toc-backref" href="#id5">Model classes</a><a class="headerlink" href="#model-classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="model-class">
+<h3><a class="toc-backref" href="#id6">Model class</a><a class="headerlink" href="#model-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.Model">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">Model</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Template class for fit models. This class cannot be used directly.</p>
+<p>The main purpose of a Model class is to output a model given a set
+of parameters.</p>
+<p>Methods that must be implemented by real classes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="#fit.Model.parse_dict" title="fit.Model.parse_dict"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.parse_dict()</span></code></a></li>
+<li><a class="reference internal" href="#fit.Model.check_input" title="fit.Model.check_input"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.check_input()</span></code></a></li>
+<li><a class="reference internal" href="#fit.Model.make_guess" title="fit.Model.make_guess"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.make_guess()</span></code></a></li>
+<li><a class="reference internal" href="#fit.Model.get_model" title="fit.Model.get_model"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.get_model()</span></code></a></li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>A model is computed from a given set of parameters
+stored in <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a>. From this set some
+parameters are <strong>free</strong>, some are <strong>fixed</strong> and some are
+<strong>covarying</strong>, i.e. the value of a subset of parameters can be
+computed from 1 free parameter.</p>
+<p>Taking the definition of the parameters (free, fixed or
+covarying, stored in <a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>) into account,
+the reduced free parameter set is stored in
+<a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a>, the reduced set of fixed parameters
+is stored in <a class="reference internal" href="#fit.Model.p_fixed" title="fit.Model.p_fixed"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_fixed</span></code></a>, the set of covarying
+parameters is stored in <a class="reference internal" href="#fit.Model.p_cov" title="fit.Model.p_cov"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_cov</span></code></a> and when the
+model needs to be computed, the full set of model parameters
+(<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a>) is computed again from set.p_free`,
+<a class="reference internal" href="#fit.Model.p_fixed" title="fit.Model.p_fixed"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_fixed</span></code></a>, <a class="reference internal" href="#fit.Model.p_cov" title="fit.Model.p_cov"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_cov</span></code></a> and
+<a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>.</p>
+<p>A group of covarying parameters is defined by the same label. If
+<a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a> is:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s1">&#39;free&#39;</span><span class="p">,</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">,</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>It means that we have 3 free parameters, 2 fixed parameters and
+2 groups of covarying parameters. The first group contains 2
+parameters and the second group contains 3 parameters. In this
+case the real number of free parameters will be 3 + 2 (one free
+parameter for each group of covarying parameters) = 5 and the
+real number of fixed parameters will be 2 + 5 (one fixed
+parameter for each covarying parameters) = 7.</p>
+<p>A Model class works this way :</p>
+<ol class="last arabic simple">
+<li>Init: the dictionary defining the parameters (free, fixed,
+covarying) and their values is parsed with
+<a class="reference internal" href="#fit.Model.parse_dict" title="fit.Model.parse_dict"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.parse_dict()</span></code></a>: <a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>,
+<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> and <a class="reference internal" href="#fit.Model.p_cov" title="fit.Model.p_cov"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_cov</span></code></a> are
+created. Then <a class="reference internal" href="#fit.Model.val2free" title="fit.Model.val2free"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.val2free()</span></code></a> is called to
+create <a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a> and
+<a class="reference internal" href="#fit.Model.p_fixed" title="fit.Model.p_fixed"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_fixed</span></code></a>.</li>
+<li>the set of free parameters can then be changed with
+<a class="reference internal" href="#fit.Model.set_p_free" title="fit.Model.set_p_free"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.set_p_free()</span></code></a> before calling
+<a class="reference internal" href="#fit.Model.get_model" title="fit.Model.get_model"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.get_model()</span></code></a>. the updated values of
+<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> are computed before the model is created via
+<a class="reference internal" href="#fit.Model.free2val" title="fit.Model.free2val"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.free2val()</span></code></a>. A new set of free parameters
+can also be passed to <a class="reference internal" href="#fit.Model.get_model" title="fit.Model.get_model"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.get_model()</span></code></a>.</li>
+</ol>
+</div>
+<dl class="method">
+<dt id="fit.Model.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.Model.params.p_dict"></span><strong>p_dict</strong><a class="paramlink headerlink reference internal" href="#fit.Model.params.p_dict">¶</a> &#8211; Input dictionary defining the parameters of the
+model.</td>
+</tr>
+</tbody>
+</table>
+<p>parameters definition can be : &#8216;free&#8217;, &#8216;fixed&#8217; or covarying
+(in this case any string label can be used to define a group
+of covarying parameters)</p>
+<p>During init p_dict is parsed with
+<a class="reference internal" href="#fit.Model.parse_dict" title="fit.Model.parse_dict"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.parse_dict()</span></code></a>: <a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>,
+<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> and <a class="reference internal" href="#fit.Model.p_cov" title="fit.Model.p_cov"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_cov</span></code></a> are
+created. Then <a class="reference internal" href="#fit.Model.val2free" title="fit.Model.val2free"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.val2free()</span></code></a> is called to create
+<a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a> and <a class="reference internal" href="#fit.Model.p_fixed" title="fit.Model.p_fixed"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_fixed</span></code></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#fit.Model.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.accepted_keys">
+<code class="descname">accepted_keys</code><em class="property"> = ()</em><a class="headerlink" href="#fit.Model.accepted_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted keys of the input dictionary (see
+<a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.check_input">
+<code class="descname">check_input</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.check_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check input parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.free2val">
+<code class="descname">free2val</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.free2val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the array of parameters definition
+<a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a> and update the parameter values
+based on the new set of free parameters
+<a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.get_model">
+<code class="descname">get_model</code><span class="sig-paren">(</span><em>x</em>, <em>return_models=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.get_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a model M(x, p) for all passed x positions. p are
+the parameter values stored in <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.Model.get_model.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#fit.Model.get_model.params.x">¶</a> &#8211; Positions where the model M(x, p) is computed.</li>
+<li><span class="target" id="fit.Model.get_model.params.return_models"></span><strong>return_models</strong><a class="paramlink headerlink reference internal" href="#fit.Model.get_model.params.return_models">¶</a> &#8211; (Optional) If True return also
+individual models (default False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.get_p_free">
+<code class="descname">get_p_free</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.get_p_free" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the vector of free parameters <a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.get_p_val">
+<code class="descname">get_p_val</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.get_p_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.get_priors">
+<code class="descname">get_priors</code><span class="sig-paren">(</span><em>classic</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.get_priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return priors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.Model.get_priors.params.classic"></span><strong>classic</strong><a class="paramlink headerlink reference internal" href="#fit.Model.get_priors.params.classic">¶</a> &#8211; If True, return classic priors (e.g. no log distribution)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.make_guess">
+<code class="descname">make_guess</code><span class="sig-paren">(</span><em>v</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.make_guess" title="Permalink to this definition">¶</a></dt>
+<dd><p>If a parameter value at init is a NaN this value is guessed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.Model.make_guess.params.v"></span><strong>v</strong><a class="paramlink headerlink reference internal" href="#fit.Model.make_guess.params.v">¶</a> &#8211; Data vector from which the guess is made.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.p_cov">
+<code class="descname">p_cov</code><em class="property"> = None</em><a class="headerlink" href="#fit.Model.p_cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict that stores the groups of covarying parameters by label
+and their associated value and covarying operation (a pointer to a
+function), i.e.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{[</span><span class="s1">&#39;cov_label_1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">value1</span><span class="p">,</span> <span class="n">cov_operation1</span><span class="p">)],</span>
+ <span class="p">[</span><span class="s1">&#39;cov_label_2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">value2</span><span class="p">,</span> <span class="n">cov_operation2</span><span class="p">)],</span>
+ <span class="o">...</span><span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.p_def">
+<code class="descname">p_def</code><em class="property"> = None</em><a class="headerlink" href="#fit.Model.p_def" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definition the full set of parameters (fixed, free or
+covarying). This array as the same shape as <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.p_dict">
+<code class="descname">p_dict</code><em class="property"> = None</em><a class="headerlink" href="#fit.Model.p_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input dictionary defining the parameters. Contains the initial
+values of the parameters</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.p_fixed">
+<code class="descname">p_fixed</code><em class="property"> = None</em><a class="headerlink" href="#fit.Model.p_fixed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of fixed parameters. Each covarying parameter is stored
+as fixed. And one free parameter is added for each group of
+covarying parameters.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.p_free">
+<code class="descname">p_free</code><em class="property"> = None</em><a class="headerlink" href="#fit.Model.p_free" title="Permalink to this definition">¶</a></dt>
+<dd><p>Up to date value of the free parameters. Its size is always
+less or equal to the size of the full set of parameters used
+directly to compute the model. It reflects the real number of
+fitted parameters. For each group of covarying parameters one free
+parameter is added.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Model.p_val">
+<code class="descname">p_val</code><em class="property"> = None</em><a class="headerlink" href="#fit.Model.p_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Up to date values of the full set of parameters used by the model
+(initial guess before fit, fitted value after fit). This array as
+the same shape as <a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>. It does not reflect the real number
+of fitted parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.parse_dict">
+<code class="descname">parse_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.parse_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input dictionary to create <a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>, <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> and
+<a class="reference internal" href="#fit.Model.p_cov" title="fit.Model.p_cov"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_cov</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.set_p_free">
+<code class="descname">set_p_free</code><span class="sig-paren">(</span><em>p_free</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.set_p_free" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the vector of free parameters <a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.Model.set_p_free.params.p_free"></span><strong>p_free</strong><a class="paramlink headerlink reference internal" href="#fit.Model.set_p_free.params.p_free">¶</a> &#8211; New vector of free parameters</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.set_p_val">
+<code class="descname">set_p_val</code><span class="sig-paren">(</span><em>p_val</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.set_p_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a></p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This method is used to bypass all the initialized
+parameters and reuse an already initialized model with
+another full set of parameters. Note that you might want to
+call <a class="reference internal" href="#fit.Model.get_model" title="fit.Model.get_model"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.get_model()</span></code></a> directly after this
+method because any call to <a class="reference internal" href="#fit.Model.set_p_free" title="fit.Model.set_p_free"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.set_p_free()</span></code></a>
+or <a class="reference internal" href="#fit.Model.free2val" title="fit.Model.free2val"><code class="xref py py-meth docutils literal"><span class="pre">fit.Model.free2val()</span></code></a> will recompute
+<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> from the init values and the
+actual <a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a>.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.Model.set_p_val.params.p_val"></span><strong>p_val</strong><a class="paramlink headerlink reference internal" href="#fit.Model.set_p_val.params.p_val">¶</a> &#8211; New full set of parameters.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Model.val2free">
+<code class="descname">val2free</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Model.val2free" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recompute the set of free parameters
+<a class="reference internal" href="#fit.Model.p_free" title="fit.Model.p_free"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_free</span></code></a> with the updated values of
+<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="filtermodel-class">
+<h3><a class="toc-backref" href="#id7">FilterModel class</a><a class="headerlink" href="#filtermodel-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.FilterModel">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">FilterModel</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FilterModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fit.Model" title="fit.Model"><code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code></a></p>
+<p>Simple model of filter based on a real filter shape. The only
+possible free parameter is a wavelength/wavenumber shift.</p>
+<p>Input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;filter_function&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;shift_guess&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;shift_def&#39;</span><span class="p">:}</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filter_function</strong> &#8211; Transmission of the filter over the
+fitted spectral range (axis must be exactly the same).</li>
+<li><strong>shift_guess</strong> &#8211; Guess on the filter shift in pixels.</li>
+<li><strong>shift_def</strong> &#8211; Definition of the shift parameter, can be
+&#8216;free&#8217; or &#8216;fixed&#8217;</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This model must be multiplied with the other and used
+last.</p>
+</div>
+<dl class="attribute">
+<dt id="fit.FilterModel.accepted_keys">
+<code class="descname">accepted_keys</code><em class="property"> = ('filter_function', 'shift_guess', 'shift_def')</em><a class="headerlink" href="#fit.FilterModel.accepted_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted keys of the input dictionary (see
+<a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FilterModel.get_model">
+<code class="descname">get_model</code><span class="sig-paren">(</span><em>x</em>, <em>p_free=None</em>, <em>return_models=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.FilterModel.get_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return model M(x, p).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.FilterModel.get_model.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#fit.FilterModel.get_model.params.x">¶</a> &#8211; Positions where the model M(x, p) is computed.</li>
+<li><span class="target" id="fit.FilterModel.get_model.params.p_free"></span><strong>p_free</strong><a class="paramlink headerlink reference internal" href="#fit.FilterModel.get_model.params.p_free">¶</a> &#8211; (Optional) New values of the free parameters
+(default None).</li>
+<li><span class="target" id="fit.FilterModel.get_model.params.return_models"></span><strong>return_models</strong><a class="paramlink headerlink reference internal" href="#fit.FilterModel.get_model.params.return_models">¶</a> &#8211; (Optional) If True return also
+individual models (default False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.FilterModel.parse_dict">
+<code class="descname">parse_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.FilterModel.parse_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="continuummodel-class">
+<h3><a class="toc-backref" href="#id8">ContinuumModel class</a><a class="headerlink" href="#continuummodel-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.ContinuumModel">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">ContinuumModel</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.ContinuumModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fit.Model" title="fit.Model"><code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code></a></p>
+<p>Polynomial continuum model.</p>
+<p>Input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;poly_order&#39;</span><span class="p">:</span>
+ <span class="s1">&#39;poly_guess&#39;</span><span class="p">:}</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>poly_order</strong> &#8211; Order of the polynomial to fit (be careful
+with high order polynomials).</li>
+<li><strong>poly_guess</strong> &#8211; Initial guess on the coefficient values :
+must be a tuple of length poly_order + 1.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This model must be added to the others.</p>
+</div>
+<dl class="method">
+<dt id="fit.ContinuumModel._estimate_sdev">
+<code class="descname">_estimate_sdev</code><span class="sig-paren">(</span><em>idef</em>, <em>mean</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.ContinuumModel._estimate_sdev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate standard deviation of a free parameter is none is given</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.ContinuumModel._get_ikey">
+<code class="descname">_get_ikey</code><span class="sig-paren">(</span><em>ip</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.ContinuumModel._get_ikey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return key corresponding to a coefficient of order ip</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.ContinuumModel._get_ikey.params.ip"></span><strong>ip</strong><a class="paramlink headerlink reference internal" href="#fit.ContinuumModel._get_ikey.params.ip">¶</a> &#8211; order of the coefficient</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.ContinuumModel._get_order_from_key">
+<code class="descname">_get_order_from_key</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.ContinuumModel._get_order_from_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the line nb of a given key</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.ContinuumModel._get_order_from_key.params.key"></span><strong>key</strong><a class="paramlink headerlink reference internal" href="#fit.ContinuumModel._get_order_from_key.params.key">¶</a> &#8211; Key to get line number from.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.ContinuumModel.accepted_keys">
+<code class="descname">accepted_keys</code><em class="property"> = ('poly_order', 'poly_guess')</em><a class="headerlink" href="#fit.ContinuumModel.accepted_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted keys of the input dictionary (see
+<a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.ContinuumModel.get_model">
+<code class="descname">get_model</code><span class="sig-paren">(</span><em>x</em>, <em>p_free=None</em>, <em>return_models=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.ContinuumModel.get_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return model M(x, p).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.ContinuumModel.get_model.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#fit.ContinuumModel.get_model.params.x">¶</a> &#8211; Positions where the model M(x, p) is computed.</li>
+<li><span class="target" id="fit.ContinuumModel.get_model.params.p_free"></span><strong>p_free</strong><a class="paramlink headerlink reference internal" href="#fit.ContinuumModel.get_model.params.p_free">¶</a> &#8211; (Optional) New values of the free parameters
+(default None).</li>
+<li><span class="target" id="fit.ContinuumModel.get_model.params.return_models"></span><strong>return_models</strong><a class="paramlink headerlink reference internal" href="#fit.ContinuumModel.get_model.params.return_models">¶</a> &#8211; (Optional) If True return also
+individual models (default False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.ContinuumModel.parse_dict">
+<code class="descname">parse_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.ContinuumModel.parse_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="linesmodel-class">
+<h3><a class="toc-backref" href="#id9">LinesModel class</a><a class="headerlink" href="#linesmodel-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.LinesModel">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">LinesModel</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fit.Model" title="fit.Model"><code class="xref py py-class docutils literal"><span class="pre">fit.Model</span></code></a></p>
+<p>Emission/absorption lines model with a channel unity in pixels.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This class is best seen as a basic class implemented
+with more physical unities by <a class="reference internal" href="#fit.Cm1LinesModel" title="fit.Cm1LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.Cm1LinesModel</span></code></a> or
+<a class="reference internal" href="#fit.NmLinesModel" title="fit.NmLinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.NmLinesModel</span></code></a>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Each line is built on 3 (or more) parameters : amplitude,
+FWHM, position and sigma/alpha (the 4th and 5th parameters are used only for some models &#8211; see
+below for details on the different models).</p>
+<p class="last">Some lines can have one or more covarying parameters: FWHM can
+be the same for all the lines (this is True if lines are not
+resolved), lines issued from the same ion can have the same
+speed (e.g. [NII] doublet, [SII] doublet, [OIII] doublet), and
+some fixed transition ratios between lines can also be set
+(e.g. [NII]6584/[NII]6548 can be set to 2.89, when [NII]6548 is
+likely to be really noisy).</p>
+</div>
+<p>Input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;line_nb&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;fmodel&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;amp_def&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;pos_def&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;fwhm_def&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;sigma_def&#39;</span><span class="p">:,</span> <span class="c1"># only for sincgauss fmodel</span>
+ <span class="s1">&#39;alpha_def&#39;</span><span class="p">:,</span> <span class="c1"># only for sincphased fmode</span>
+ <span class="s1">&#39;amp_cov&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;pos_cov&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;fwhm_cov&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;sigma_cov&#39;</span><span class="p">:,</span> <span class="c1"># only for sincgauss fmodel</span>
+ <span class="s1">&#39;alpha_cov&#39;</span><span class="p">:,</span> <span class="c1"># only for sincphased fmodel</span>
+ <span class="s1">&#39;amp_guess&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;pos_guess&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;fwhm_guess&#39;</span><span class="p">:,</span>
+ <span class="s1">&#39;sigma_guess&#39;</span><span class="p">:,</span> <span class="c1"># only for sincgauss fmodel</span>
+ <span class="s1">&#39;alpha_guess&#39;</span><span class="p">:}</span> <span class="c1">#  only for sincphased fmodel</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>line_nb</strong> &#8211; Number of lines.</li>
+<li><strong>fmodel</strong> &#8211; Line shape, can be &#8216;gaussian&#8217;, &#8216;sinc&#8217;, &#8216;sinc2&#8217; or
+&#8216;sincgauss&#8217;.</li>
+<li><strong>amp_def</strong> &#8211; Definition of the amplitude parameter, can be
+&#8216;free&#8217;, &#8216;fixed&#8217; or set to a label that defines its covarying
+group.</li>
+<li><strong>pos_def</strong> &#8211; Definition of the position parameter in pixels,
+can be &#8216;free&#8217;, &#8216;fixed&#8217; or set to a label that defines its
+covarying group.</li>
+<li><strong>fwhm_def</strong> &#8211; Definition of the FWHM parameter in pixels, can
+be &#8216;free&#8217;, &#8216;fixed&#8217; or set to a label that defines its covarying
+group.</li>
+<li><strong>sigma_def</strong> &#8211; Definition of the sigma parameter in pixels,
+can be &#8216;free&#8217;, &#8216;fixed&#8217; or set to a label that defines its
+covarying group.</li>
+<li><strong>amp_cov</strong> &#8211; Guess on the covariant value of the amplitude
+(best set to 0 in general). There must be as many values as
+covarying amplitude groups or only one value if it is the same
+for all groups.</li>
+<li><strong>pos_cov</strong> &#8211; Guess on the covariant value of the velocity (in
+pixels). There must be as many values as covarying amplitude
+groups or only one value if it is the same
+for all groups.</li>
+<li><strong>fwhm_cov</strong> &#8211; Guess on the covariant value of the FWHM
+(best set to 0 in general). There must be as many values as
+covarying amplitude groups or only one value if it is the same
+for all groups.</li>
+<li><strong>sigma_cov</strong> &#8211; Guess on the covariant value of sigma (best
+set to 0 in general). There must be as many values as covarying
+amplitude groups or only one value if it is the same for all
+groups.</li>
+<li><strong>amp_guess</strong> &#8211; Initial guess on the amplitude value of the
+lines. Best set to a NaN in general (it can be automatically
+guessed with good robusteness). But if lines have a covarying
+amplitude the initial guess fixes their ratio.</li>
+<li><strong>pos_guess</strong> &#8211; Initial guess on the position of the lines:
+the PRECISE rest frame position must be given here, especially
+if lines share a covarying position, because their relative
+position will be fixed.</li>
+<li><strong>fwhm_guess</strong> &#8211; Initial guess on the FWHM of the lines. This
+guess must be the MOST PRECISE possible (to a few 10%), it is by
+far the most unstable parameter especially for sinc lines.</li>
+<li><strong>sigma_guess</strong> &#8211; Initial guess on the value of sigma. Best
+set to 0. in general</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example: A red spectrum containing [NII]6548, Halpha, [NII]6584,
+[SII]6716 and [SII]6731, with a mean velocity of 1500 km/s (which
+translates in a pixel shift of 5.5), with a fixed amplitude ratio
+netween [NII] lines, the same speed for lines issued from the same
+ions and a shared FWHM between everybody but Halpha would be
+defined this way:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;line_nb&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+ <span class="s1">&#39;amp_def&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;pos_def&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">),</span> 
+ <span class="s1">&#39;fwhm_def&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;amp_cov&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span>
+ <span class="s1">&#39;pos_cov&#39;</span><span class="p">:</span> <span class="mf">5.5</span><span class="p">,</span>
+ <span class="s1">&#39;fwhm_cov&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span>
+ <span class="s1">&#39;amp_guess&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">2.89</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="c1"># here the amplitude ratio between covarying [NII] lines is fixed.</span>
+ <span class="s1">&#39;pos_guess&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">80</span><span class="p">,</span><span class="mi">120</span><span class="p">,</span><span class="mi">140</span><span class="p">),</span> <span class="c1"># positions are given in pixel and are purely arbitrary in this example</span>
+ <span class="s1">&#39;fwhm_guess&#39;</span><span class="p">:</span> <span class="mf">2.43</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Line shapes (fmodel keyword):</p>
+<ul class="last simple">
+<li><strong>gaussian</strong>: A classical gaussian line shape. See <a class="reference internal" href="cutils_module.html#cutils.gaussian1d" title="cutils.gaussian1d"><code class="xref py py-meth docutils literal"><span class="pre">cutils.gaussian1d()</span></code></a>.</li>
+<li><strong>sinc</strong>: A pure sinc line shape, True interferometric line shape
+if lines are strongly unresolved and if the interferometer has
+no assymetry (generally good on SITELLE/SpIOMM low res cubes
+&#8211;i.e. less than 500 steps&#8211; if the line SNR is not too high
+&#8211;i.e. &lt; 50&#8211;). See <a class="reference internal" href="cutils_module.html#cutils.sinc1d" title="cutils.sinc1d"><code class="xref py py-meth docutils literal"><span class="pre">cutils.sinc1d()</span></code></a>.</li>
+<li><strong>sinc2</strong>: sinc2 = sqrt(sinc**2.). Can be used for spectra not
+corrected in phase (where the absolute value of the complex
+spectrum is taken).</li>
+<li><strong>sincgauss</strong>: Convolution of a Gaussian (of width <strong>sigma</strong>) and
+a sinc (FWHM). This line shape has a 4th parameter:
+sigma. This is much closer to the true line shape, but it
+takes much more time to compute because of the generally very
+small value of sigma. This can be used to fit resolved lines,
+like e.g. Halpha in absorption or active nucleus with broader
+emission. See <code class="xref py py-meth docutils literal"><span class="pre">cutils.sincgauss1d()</span></code>.</li>
+</ul>
+</div>
+<dl class="method">
+<dt id="fit.LinesModel._estimate_sdev">
+<code class="descname">_estimate_sdev</code><span class="sig-paren">(</span><em>idef</em>, <em>mean</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._estimate_sdev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate standard deviation of a free parameter</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_alpha_cov_operation">
+<code class="descname">_get_alpha_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_alpha_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying alpha operation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_amp_cov_operation">
+<code class="descname">_get_amp_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_amp_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying amplitude operation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_fmodel">
+<code class="descname">_get_fmodel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_fmodel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the line model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_fwhm_cov_operation">
+<code class="descname">_get_fwhm_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_fwhm_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying FWHM operation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_ikey">
+<code class="descname">_get_ikey</code><span class="sig-paren">(</span><em>key</em>, <em>iline</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_ikey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return key for a given line nb in
+<a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> and <a class="reference internal" href="#fit.Model.p_def" title="fit.Model.p_def"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_def</span></code></a>
+dictionnaries</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.LinesModel._get_ikey.params.key"></span><strong>key</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel._get_ikey.params.key">¶</a> &#8211; may be &#8216;amp&#8217;, &#8216;pos&#8217;, &#8216;fwhm&#8217;, &#8216;sigma&#8217;, &#8216;alpha&#8217;</li>
+<li><span class="target" id="fit.LinesModel._get_ikey.params.iline"></span><strong>iline</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel._get_ikey.params.iline">¶</a> &#8211; line number.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_iline_from_key">
+<code class="descname">_get_iline_from_key</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_iline_from_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the line nb of a given key</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.LinesModel._get_iline_from_key.params.key"></span><strong>key</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel._get_iline_from_key.params.key">¶</a> &#8211; Key to get line number from.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_line_nb">
+<code class="descname">_get_line_nb</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_line_nb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of lines</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_pos_cov_operation">
+<code class="descname">_get_pos_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_pos_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying position operation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._get_sigma_cov_operation">
+<code class="descname">_get_sigma_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._get_sigma_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying sigma operation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel._p_array2val">
+<code class="descname">_p_array2val</code><span class="sig-paren">(</span><em>p_array=None</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel._p_array2val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform <a class="reference internal" href="#fit.LinesModel.p_array" title="fit.LinesModel.p_array"><code class="xref py py-attr docutils literal"><span class="pre">fit.LinesModel.p_array</span></code></a> to <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.LinesModel.accepted_keys">
+<code class="descname">accepted_keys</code><em class="property"> = ('line_nb', 'fmodel', 'amp_def', 'pos_def', 'fwhm_def', 'sigma_def', 'alpha_def', 'amp_cov', 'pos_cov', 'fwhm_cov', 'sigma_cov', 'alpha_cov', 'amp_guess', 'pos_guess', 'fwhm_guess', 'sigma_guess', 'alpha_guess')</em><a class="headerlink" href="#fit.LinesModel.accepted_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted keys of the input dictionary (see
+<a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel.check_input">
+<code class="descname">check_input</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel.check_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check input parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel.get_model">
+<code class="descname">get_model</code><span class="sig-paren">(</span><em>x</em>, <em>p_free=None</em>, <em>return_models=False</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel.get_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return model M(x, p).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="fit.LinesModel.get_model.params.x"></span><strong>x</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel.get_model.params.x">¶</a> &#8211; Positions where the model M(x, p) is computed.</li>
+<li><span class="target" id="fit.LinesModel.get_model.params.p_free"></span><strong>p_free</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel.get_model.params.p_free">¶</a> &#8211; (Optional) New values of the free parameters
+(default None).</li>
+<li><span class="target" id="fit.LinesModel.get_model.params.return_models"></span><strong>return_models</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel.get_model.params.return_models">¶</a> &#8211; (Optional) If True return also
+individual models (default False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel.get_priors">
+<code class="descname">get_priors</code><span class="sig-paren">(</span><em>classic</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel.get_priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return priors. Replace gaussian distribution by lognormal
+distribution for some parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.LinesModel.get_priors.params.classic"></span><strong>classic</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel.get_priors.params.classic">¶</a> &#8211; If True, return classic priors (e.g. no log
+distribution)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.LinesModel.log_param_keys">
+<code class="descname">log_param_keys</code><em class="property"> = ['fwhm', 'sigma']</em><a class="headerlink" href="#fit.LinesModel.log_param_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameter keys that have a lognormal distribution</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel.make_guess">
+<code class="descname">make_guess</code><span class="sig-paren">(</span><em>v</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel.make_guess" title="Permalink to this definition">¶</a></dt>
+<dd><p>If a parameter value at init is a NaN this value is guessed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="fit.LinesModel.make_guess.params.v"></span><strong>v</strong><a class="paramlink headerlink reference internal" href="#fit.LinesModel.make_guess.params.v">¶</a> &#8211; Data vector from which the guess is made.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.LinesModel.p_array">
+<code class="descname">p_array</code><em class="property"> = None</em><a class="headerlink" href="#fit.LinesModel.p_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>equivalent of <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> but presented as an
+array with each row corresponding to a line which is easier to
+handle.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.LinesModel.param_keys">
+<code class="descname">param_keys</code><em class="property"> = ['amp', 'pos', 'fwhm', 'sigma', 'alpha']</em><a class="headerlink" href="#fit.LinesModel.param_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameter keys</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.LinesModel.parse_dict">
+<code class="descname">parse_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.LinesModel.parse_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.LinesModel.same_param_keys">
+<code class="descname">same_param_keys</code><em class="property"> = ['fwhm', 'sigma']</em><a class="headerlink" href="#fit.LinesModel.same_param_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameter keys which must be the same if covarying</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cm1linesmodel-class">
+<h3><a class="toc-backref" href="#id10">Cm1LinesModel class</a><a class="headerlink" href="#cm1linesmodel-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.Cm1LinesModel">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">Cm1LinesModel</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fit.LinesModel" title="fit.LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.LinesModel</span></code></a></p>
+<p>Emission/absorption lines model with a channel unity in cm-1.</p>
+<p>Reimplements <a class="reference internal" href="#fit.LinesModel" title="fit.LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.LinesModel</span></code></a> to use more physical units
+: channels are translated to cm-1 and velocity to km/s in input
+and output.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">For more information please refer to
+<a class="reference internal" href="#fit.LinesModel" title="fit.LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.LinesModel</span></code></a></p>
+</div>
+<dl class="method">
+<dt id="fit.Cm1LinesModel._estimate_sdev">
+<code class="descname">_estimate_sdev</code><span class="sig-paren">(</span><em>idef</em>, <em>mean</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel._estimate_sdev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate standard deviation of a free parameter</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Cm1LinesModel._get_pos_cov_operation">
+<code class="descname">_get_pos_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel._get_pos_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying position operation for an input velocity in km/s</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Cm1LinesModel._p_array2val">
+<code class="descname">_p_array2val</code><span class="sig-paren">(</span><em>p_array=None</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel._p_array2val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform <a class="reference internal" href="#fit.LinesModel.p_array" title="fit.LinesModel.p_array"><code class="xref py py-attr docutils literal"><span class="pre">fit.LinesModel.p_array</span></code></a> to <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Cm1LinesModel._p_val2array">
+<code class="descname">_p_val2array</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel._p_val2array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform <a class="reference internal" href="#fit.Model.p_val" title="fit.Model.p_val"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_val</span></code></a> to <a class="reference internal" href="#fit.LinesModel.p_array" title="fit.LinesModel.p_array"><code class="xref py py-attr docutils literal"><span class="pre">fit.LinesModel.p_array</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Cm1LinesModel._pix2w">
+<code class="descname">_pix2w</code><span class="sig-paren">(</span><em>pix</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel._pix2w" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate pixel to wavenumber</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Cm1LinesModel._w2pix">
+<code class="descname">_w2pix</code><span class="sig-paren">(</span><em>w</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel._w2pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate wavenumber to pixels</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fit.Cm1LinesModel.accepted_keys">
+<code class="descname">accepted_keys</code><em class="property"> = ['line_nb', 'fmodel', 'amp_def', 'pos_def', 'fwhm_def', 'sigma_def', 'alpha_def', 'amp_cov', 'pos_cov', 'fwhm_cov', 'sigma_cov', 'alpha_cov', 'amp_guess', 'pos_guess', 'fwhm_guess', 'sigma_guess', 'alpha_guess', 'step_nb', 'step', 'order', 'nm_laser', 'nm_laser_obs']</em><a class="headerlink" href="#fit.Cm1LinesModel.accepted_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted keys of the input dictionary (see
+<a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.Cm1LinesModel.parse_dict">
+<code class="descname">parse_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.Cm1LinesModel.parse_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="nmlinesmodel-class">
+<h3><a class="toc-backref" href="#id11">NmLinesModel class</a><a class="headerlink" href="#nmlinesmodel-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="fit.NmLinesModel">
+<em class="property">class </em><code class="descclassname">fit.</code><code class="descname">NmLinesModel</code><span class="sig-paren">(</span><em>p_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.NmLinesModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fit.Cm1LinesModel" title="fit.Cm1LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.Cm1LinesModel</span></code></a></p>
+<p>Emission/absorption lines model with a channel unity in nm.</p>
+<p>Reimplements <a class="reference internal" href="#fit.Cm1LinesModel" title="fit.Cm1LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.Cm1LinesModel</span></code></a> to use nm instead of
+cm-1. Channels are translated to cm-1 and velocity to km/s in
+input and output.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">For more information please refer to
+<a class="reference internal" href="#fit.Cm1LinesModel" title="fit.Cm1LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.Cm1LinesModel</span></code></a> and <a class="reference internal" href="#fit.LinesModel" title="fit.LinesModel"><code class="xref py py-class docutils literal"><span class="pre">fit.LinesModel</span></code></a></p>
+</div>
+<dl class="method">
+<dt id="fit.NmLinesModel._get_pos_cov_operation">
+<code class="descname">_get_pos_cov_operation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.NmLinesModel._get_pos_cov_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covarying position operation for an input velocity in km/s</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fit.NmLinesModel.parse_dict">
+<code class="descname">parse_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit.NmLinesModel.parse_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input dictionary <a class="reference internal" href="#fit.Model.p_dict" title="fit.Model.p_dict"><code class="xref py py-attr docutils literal"><span class="pre">fit.Model.p_dict</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="utils-functions">
+<h2><a class="toc-backref" href="#id12">Utils functions</a><a class="headerlink" href="#utils-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="fit.fit_lines_in_spectrum">
+<code class="descclassname">fit.</code><code class="descname">fit_lines_in_spectrum</code><span class="sig-paren">(</span><em>spectrum</em>, <em>lines</em>, <em>step</em>, <em>order</em>, <em>nm_laser</em>, <em>axis_corr</em>, <em>zpd_index</em>, <em>wavenumber=True</em>, <em>filter_file_path=None</em>, <em>apodization=1.0</em>, <em>fit_tol=1e-10</em>, <em>velocity_range=None</em>, <em>compute_mcmc_error=False</em>, <em>snr_guess=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.fit_lines_in_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit lines in spectrum</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If spectrum is in wavenumber (option wavenumber set
+to True) input and output unit will be in cm-1. If spectrum is
+in wavelength (option wavenumber set to False) input and output
+unit will be in nm.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.spectrum"></span><strong>spectrum</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.spectrum">¶</a> &#8211; Spectrum to fit</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.lines"></span><strong>lines</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.lines">¶</a> &#8211; Positions of the lines in nm/cm-1</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.step"></span><strong>step</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.step">¶</a> &#8211; Step size in nm</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.order"></span><strong>order</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.order">¶</a> &#8211; Folding order</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.nm_laser"></span><strong>nm_laser</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.nm_laser">¶</a> &#8211; Calibration laser wavelength in nm.</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.axis_corr"></span><strong>axis_corr</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.axis_corr">¶</a> &#8211; Calibration coefficient</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.zpd_index"></span><strong>zpd_index</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.zpd_index">¶</a> &#8211; Index of the ZPD in the interferogram.</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.apodization"></span><strong>apodization</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.apodization">¶</a> &#8211; (Optional) Apodization level. Permit to separate the
+broadening due to the apodization and the real line broadening
+(see &#8216;broadening&#8217; output parameter, default 1.).</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.fit_tol"></span><strong>fit_tol</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.fit_tol">¶</a> &#8211; (Optional) Tolerance on the fit value (default
+1e-10).</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.filter_file_path"></span><strong>filter_file_path</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.filter_file_path">¶</a> &#8211; (Optional) Filter file path (default
+None).</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.velocity_range"></span><strong>velocity_range</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.velocity_range">¶</a> &#8211; (Optional) Range of velocity to check
+around the shift_guess value. If not None, a brute force
+algorithm is used to find the best velocity value. If more than
+one shift_guess is given (e.g. if lines are have different
+velocities, the mean velocity will be used as an initial
+velocity guess). The quality of this guess depends strongly on
+the spectrum noise. Try avoid using it with low a SNR spectrum.</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.compute_mcmc_error"></span><strong>compute_mcmc_error</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.compute_mcmc_error">¶</a> &#8211; (Optional) If True, uncertainty
+estimates are computed from a Markov chain Monte-Carlo
+algorithm. If the estimates can be better constrained, the
+fitting time is orders of magnitude longer (default False).</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.snr_guess"></span><strong>snr_guess</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.snr_guess">¶</a> &#8211; (Optional) Guess on the SNR.</li>
+<li><span class="target" id="fit.fit_lines_in_spectrum.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_spectrum.params.kwargs">¶</a> &#8211; (Optional) Fitting parameters of
+<code class="xref py py-class docutils literal"><span class="pre">orb.fit.Cm1LinesInput</span></code> or
+<code class="xref py py-class docutils literal"><span class="pre">orb.fit.FitVector</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>a dictionary containing:</p>
+<ul class="simple">
+<li>all the fit parameters [key: &#8216;fit_params&#8217;]</li>
+<li>lines parameters [key: &#8216;lines_params&#8217;] Lines parameters are
+given as an array of shape (lines_nb, 4). The order of the 4
+parameters for each lines is [height at the center of the
+line, amplitude, position, fwhm]. Position and FWHM are given
+in nm/cm-1 depending on the input unit (i.e. nm if wavenumber
+is False and cm-1 if wavenumber is True)</li>
+<li>lines parameters errors [key: &#8216;lines_params_err&#8217;]</li>
+<li>velocity [key: &#8216;velocity&#8217;] Velocity of the lines in km/s</li>
+<li>velocity error [key: &#8216;velocity_err&#8217;] Error on the velocity of
+the lines in km/s</li>
+<li>residual [key: &#8216;residual&#8217;]</li>
+<li>chi-square [key: &#8216;chi_square&#8217;]</li>
+<li>reduced chi-square [key: &#8216;reduced_chi_square&#8217;]</li>
+<li>SNR [key: &#8216;snr&#8217;]</li>
+<li>continuum parameters [key: &#8216;cont_params&#8217;]</li>
+<li>fitted spectrum [key: &#8216;fitted_vector&#8217;]</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="fit.fit_lines_in_vector">
+<code class="descclassname">fit.</code><code class="descname">fit_lines_in_vector</code><span class="sig-paren">(</span><em>vector</em>, <em>lines</em>, <em>fwhm_guess</em>, <em>fit_tol=1e-10</em>, <em>compute_mcmc_error=False</em>, <em>snr_guess=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#fit.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit lines in a vector</p>
+<p>Use this function only if little is known about the vector. A
+vector resulting from an interferogram FFT is assumed :
+i.e. regular axis, symmetrical line shape.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">All position units are in channels</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="fit.fit_lines_in_vector.params.vector"></span><strong>vector</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_vector.params.vector">¶</a> &#8211; vector to fit</li>
+<li><span class="target" id="fit.fit_lines_in_vector.params.lines"></span><strong>lines</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_vector.params.lines">¶</a> &#8211; Positions of the lines in channels</li>
+<li><span class="target" id="fit.fit_lines_in_vector.params.fwhm_guess"></span><strong>fwhm_guess</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_vector.params.fwhm_guess">¶</a> &#8211; Initial guess on the lines FWHM (in channels).</li>
+<li><span class="target" id="fit.fit_lines_in_vector.params.fit_tol"></span><strong>fit_tol</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_vector.params.fit_tol">¶</a> &#8211; (Optional) Tolerance on the fit value (default
+1e-10).</li>
+<li><span class="target" id="fit.fit_lines_in_vector.params.compute_mcmc_error"></span><strong>compute_mcmc_error</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_vector.params.compute_mcmc_error">¶</a> &#8211; (Optional) If True, uncertainty
+estimates are computed from a Markov chain Monte-Carlo
+algorithm. If the estimates can be better constrained, the
+fitting time is orders of magnitude longer (default False).</li>
+<li><span class="target" id="fit.fit_lines_in_vector.params.kwargs"></span><strong>kwargs</strong><a class="paramlink headerlink reference internal" href="#fit.fit_lines_in_vector.params.kwargs">¶</a> &#8211; (Optional) Fitting parameters of
+<code class="xref py py-class docutils literal"><span class="pre">orb.fit.LinesInput</span></code> or
+<code class="xref py py-class docutils literal"><span class="pre">orb.fit.FitVector</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Snr_guess:</th><td class="field-body"><p class="first">(Optional) Guess on the SNR.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>a dictionary containing:</p>
+<ul class="simple">
+<li>all the fit parameters [key: &#8216;fit_params&#8217;]</li>
+<li>lines parameters [key: &#8216;lines_params&#8217;] Lines parameters are
+given as an array of shape (lines_nb, 4). The order of the 4
+parameters for each lines is [height at the center of the
+line, amplitude, position, fwhm]. Postion and FWHM are given
+in channels.</li>
+<li>lines parameters errors [key: &#8216;lines_params_err&#8217;]</li>
+<li>residual [key: &#8216;residual&#8217;]</li>
+<li>chi-square [key: &#8216;chi_square&#8217;]</li>
+<li>reduced chi-square [key: &#8216;reduced_chi_square&#8217;]</li>
+<li>SNR [key: &#8216;snr&#8217;]</li>
+<li>continuum parameters [key: &#8216;cont_params&#8217;]</li>
+<li>fitted spectrum [key: &#8216;fitted_vector&#8217;]</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="data_module.html" class="btn btn-neutral float-right" title="Data module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="viewer_module.html" class="btn btn-neutral" title="Viewer module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Thomas Martin (thomas.martin.1@ulaval.ca).
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

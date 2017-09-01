@@ -27,8 +27,13 @@ import warnings
 import time
 
 import orb.constants
+import gvar
+
+import pyximport; pyximport.install(
+    setup_args={"include_dirs":np.get_include()})
 import orb.cutils
-import orb.data as od
+import orb.cgvar
+
 
 def create_nm_axis(n, step, order, corr=1.):
     """Create a regular wavelength axis in nm.
@@ -204,17 +209,12 @@ def line_shift(velocity, line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    is_data = od.isdata(velocity) or od.isdata(line)
-    vel = (od.array(line, dtype=np.longdouble)
-           * od.array(velocity, dtype=np.longdouble)
-           / float(orb.constants.LIGHT_VEL_KMS))
-    beta = od.array(velocity, dtype=np.longdouble) / float(orb.constants.LIGHT_VEL_KMS)
-    gamma = od.sqrt((1. + beta) / (1. - beta))
+    beta = velocity / orb.constants.LIGHT_VEL_KMS
+    gamma = gvar.sqrt((1. + beta) / (1. - beta))
     if wavenumber: 
-        shift = od.array(line, dtype=np.longdouble) * (1. / gamma - 1.)
+        shift = line * (1. / gamma - 1.)
     else:
-        shift = od.array(line, dtype=np.longdouble) * (gamma - 1.)
-    if not is_data: shift = shift.dat
+        shift = line * (gamma - 1.)
     return shift
 
 def compute_line_fwhm(step_nb, step, order, apod_coeff=1., corr=1.,
@@ -298,6 +298,25 @@ def compute_step_nb(resolution, step, order):
             * resolution
             / (2 * mean_sigma * step * 1e-7))
 
+def compute_resolution(step_nb, step, order, corr):
+    """Return the theoretical resolution of a given scan
+
+    :param step_nb: Number of steps of the longest side of the
+      interferogram.
+    
+    :param step: Step size (in nm)
+    
+    :param order: Folding order
+
+    :param corr: Correction coefficient for the incident angle.
+    """
+    fwhm_cm1 = compute_line_fwhm(
+        step_nb, step, order, wavenumber=True, corr=corr)
+    min_cm1 = orb.cutils.get_cm1_axis_min(step_nb, step, order, corr=corr)
+    max_cm1 = orb.cutils.get_cm1_axis_max(step_nb, step, order, corr=corr)
+    med_cm1 = (min_cm1 + max_cm1) / 2.
+    return med_cm1 / fwhm_cm1
+
 def compute_radial_velocity(line, rest_line, wavenumber=False):
     """
     Return radial velocity in km.s-1
@@ -313,17 +332,6 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
-    if (not isinstance(line, np.ndarray)
-        and not isinstance(line, od.Data)):
-        line = np.array(line, dtype=np.longdouble)
-    if (not isinstance(rest_line, np.ndarray)
-        and not isinstance(line, od.Data)):
-        rest_line = np.array(rest_line, dtype=np.longdouble)
-    if line.dtype != np.longdouble:
-        line = line.astype(np.longdouble)
-    if rest_line.dtype != np.longdouble:
-        rest_line = rest_line.astype(np.longdouble)
-
     if wavenumber:
         ratio = (rest_line / line)**2.
     else:
@@ -341,21 +349,6 @@ def lorentzian1d(x, h, a, dx, fwhm):
     """
     return h + (a / (1. + ((x-dx)/(fwhm/2.))**2.))
 
-def sinc1d(x, h, a, dx, fwhm):
-    """Return a 1D sinc 
-    :param x: Array giving the positions where the function is evaluated
-    :param h: Height
-    :param a: Amplitude
-    :param dx: Position of the center
-    :param fwhm: FWHM
-    """
-    if not isinstance(x, np.ndarray):
-        x = np.array(x)
-    if x.dtype != float:
-        x = x.astype(float)
-    return orb.cutils.sinc1d(
-        x, float(h), float(a), float(dx), float(fwhm))
-
 def gaussian1d(x,h,a,dx,fwhm):
     """Return a 1D gaussian given a set of parameters.
 
@@ -367,10 +360,23 @@ def gaussian1d(x,h,a,dx,fwhm):
     """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
-    if x.dtype != float:
-        x = x.astype(float)
-    return orb.cutils.gaussian1d(
-        x, float(h), float(a), float(dx), float(fwhm))
+
+    w = fwhm / (2. * gvar.sqrt(2. * gvar.log(2.)))
+    return  h + a * gvar.exp(-(x - dx)**2. / (2. * w**2.))
+
+def sinc1d(x, h, a, dx, fwhm):
+    """Return a 1D sinc 
+    :param x: Array giving the positions where the function is evaluated
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM
+    """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
+        
+    X = ((x - dx) / (fwhm / 1.20671))
+    return h + a * orb.cgvar.sinc1d(X)
                         
 def sincgauss1d(x, h, a, dx, fwhm, sigma):
     """Return a 1D sinc convoluted with a gaussian of parameter sigma.
@@ -386,20 +392,147 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
     """
-    if sigma / fwhm < 1e-10:
+    if np.size(sigma) > 1:
+        if np.any(sigma != sigma[0]):
+            raise Exception('Only one value of sigma can be passed')
+        else:
+            sigma = sigma[0]
+            
+    if sigma / fwhm < 1e-5:
         return sinc1d(x, h, a, dx, fwhm)
 
-    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    if sigma / fwhm > 1e3:
+        return gaussian1d(x, h, a, dx, sigma)
+
+    if np.isclose(gvar.mean(sigma), 0.):
+        return sinc1d(x, h, a, dx, fwhm)
+
+    width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= math.pi ###
-    a_ = sigma / math.sqrt(2) / width
-    b_ = ((x - dx) / math.sqrt(2) / sigma).astype(float)
-
-    dawson1 = special.dawsn(1j*a_ + b_) * np.exp(2.*1j*a_*b_)
-    dawson2 = special.dawsn(1j*a_ - b_) * np.exp(-2.*1j*a_*b_)
-    dawson3 = special.dawsn(1j*a_)
     
-    return h + (a/2. * (dawson1 + dawson2)/dawson3).real
+    a_ = sigma / math.sqrt(2) / width
+    b_ = (x - dx) / math.sqrt(2) / sigma
 
+    return h + a * orb.cgvar.sincgauss1d(a_, b_)
+
+
+
+def sinc1d_complex(x, h, a, dx, fwhm):
+    """The "complex" version of the sinc (understood as the Fourier
+    Transform of a boxcar function from 0 to MPD).
+
+    This is the real sinc function when ones wants to fit both the real
+    part and the imaginary part of the spectrum.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    """
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi
+    width /= 2.###
+    X = (x-dx) / (2*width)
+
+    s1dc = h + a * (np.sin(X) - 1j * (np.cos(X) - 1)) / (X)
+    s1dc[X == 0] = h + a * (1 + 0j)
+    return s1dc
+
+
+def sinc1d_phased(x, h, a, dx, fwhm, alpha):
+    """The phased version of the sinc function when that can be used to
+    fit a spectrum with a non perfect correction of the order 0 of the
+    phase.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param alpha: Mixing coefficient (in radians).
+    """
+    _sinc = sinc1d_complex(x, h, a, dx, fwhm)
+    return _sinc.real * np.cos(alpha) + _sinc.imag * np.sin(alpha)
+
+def sincgauss1d_complex_erf(x, h, a, dx, fwhm, sigma):
+    """The "complex" version of the sincgauss (erf formulation).
+
+    This is the real sinc*gauss function when ones wants to fit both the real
+    part and the imaginary part of the spectrum.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian.
+    """
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi ###
+
+    a_ = sigma / np.sqrt(2) / width
+    b_ = ((x - dx) / np.sqrt(2) / sigma).astype(float)
+
+    erf1 = special.erf(a_ - 1j*b_)
+    erf2 = special.erf(1j*b_)
+    erf3 = special.erf(a_)
+    
+    return np.exp(-b_**2.) * (erf1 + erf2) / (erf3)
+
+
+def sincgauss1d_complex(x, h, a, dx, fwhm, sigma):
+    """The "complex" version of the sincgauss (dawson definition).
+
+    This is the real sinc*gauss function when ones wants to fit both the real
+    part and the imaginary part of the spectrum.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian.
+    """
+
+    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi ###
+   
+    a_ = sigma / np.sqrt(2) / width
+    b_ = ((x - dx) / np.sqrt(2) / sigma).astype(float)
+
+    dawson1 = special.dawsn(1j * a_ + b_) * np.exp(2j * a_* b_)
+    dawson2 = special.dawsn(b_) * np.exp(a_**2)
+    dawson3 = special.dawsn(1j * a_)
+
+    return (dawson1 - dawson2) / dawson3
+
+
+def sincgauss1d_phased(x, h, a, dx, fwhm, sigma, alpha):
+    """The phased version of the sinc*gauss function when that can be
+    used to fit a spectrum with a non perfect correction of the order
+    0 of the phase.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+    :param sigma: Sigma of the gaussian.
+    :param alpha: Mixing coefficient (in radians).
+    """
+    sc = sincgauss1d_complex(x, h, a, dx, fwhm, sigma)
+    return np.cos(alpha) * sc.real + np.sin(alpha) * sc.imag
 
 def gaussian1d_flux(a, fwhm):
     """Compute flux of a 1D Gaussian.
@@ -408,7 +541,7 @@ def gaussian1d_flux(a, fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_COEFF
-    return od.abs(a * math.sqrt(2*math.pi) * width)
+    return gvar.fabs(a * math.sqrt(2*math.pi) * width)
 
 def sinc1d_flux(a, fwhm):
     """Compute flux of a 1D sinc.
@@ -417,7 +550,7 @@ def sinc1d_flux(a, fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_SINC_COEFF
-    return od.abs(a * width)
+    return gvar.fabs(a * width)
 
 def sinc21d_flux(a,fwhm):
     """Compute flux of a 1D sinc2.
@@ -435,13 +568,35 @@ def sincgauss1d_flux(a, fwhm, sigma):
     :param a: Amplitude
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian
+    :param no_err: (Optional) No error is returned (default False)
     """
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     width /= math.pi
-    return od.abs((a * 1j * math.pi / math.sqrt(2.) * sigma
-                  * od.exp(sigma**2./2./width**2.)
-                  / (od.dawsn(1j * sigma / (math.sqrt(2) * width)))).real)
-   
+
+    def compute_flux(ia, isig, iwid):
+        idia = orb.cgvar.dawsni(isig / (math.sqrt(2) * iwid))
+        expa2 = gvar.exp(isig**2./2./iwid**2.)
+        if not np.isclose(gvar.mean(idia),0):
+            return ia * math.pi / math.sqrt(2.) * isig * expa2 / idia
+        else: return gvar.gvar(np.inf, np.inf)
+
+
+    try:
+        _A = sigma / (np.sqrt(2) * width)
+        dia = special.dawsn(1j*_A)
+        expa2 = np.exp(_A**2.)
+    
+        return (a * np.pi / np.sqrt(2.) * 1j * sigma * expa2 / dia).real
+    except TypeError: pass
+
+    if isinstance(a, np.ndarray):
+        result = np.empty_like(a)
+        for i in range(np.size(a)):
+            result.flat[i] = compute_flux(
+                a.flat[i], sigma.flat[i], width.flat[i])
+    else: result = compute_flux(a, sigma, width)
+    return result
+
 def fast_w2pix(w, axis_min, axis_step):
     """Fast conversion of wavelength/wavenumber to pixel
 
@@ -451,7 +606,7 @@ def fast_w2pix(w, axis_min, axis_step):
     
     :param axis_step: axis step size in wavelength/wavenumber
     """
-    return np.abs(w - axis_min) / axis_step
+    return gvar.fabs(w - axis_min) / axis_step
 
 def fast_pix2w(pix, axis_min, axis_step):
     """Fast conversion of pixel to wavelength/wavenumber
@@ -499,3 +654,19 @@ def phase_shift_cm1_axis(step_nb, step, order, nm_laser_obs, nm_laser):
     delta_cm1 = cm1_min_corr - cm1_min_base
     delta_x = - (delta_cm1 / cm1_axis_step)
     return delta_x
+
+def guess_snr(calib_spectrum, flambda, exp_time):
+    """Guess calibrated spectrum snr
+
+    :param calib_spectrum: Calibrated spectrum
+
+    :param flambda: Calibration FLAMBDA
+
+    :param exp_time: Exposure time by step
+    """
+    int_time = calib_spectrum.shape[0] * exp_time # total integration time in s
+    spec_counts = calib_spectrum / flambda * int_time
+    noise = np.sqrt(np.nansum(np.sqrt(spec_counts**2)))
+    signal = np.nanmax(spec_counts) - np.nanmedian(spec_counts)
+    return signal / noise
+                       
