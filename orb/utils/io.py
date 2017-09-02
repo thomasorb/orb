@@ -214,7 +214,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
                            after=5)
 
             # write FITS file
-            hdu.writeto(fits_path, overwrite=overwrite)
+            hdu.writeto(fits_path, clobber=overwrite)
 
             if mask is not None:
                 hdu_mask.header = hdu.header

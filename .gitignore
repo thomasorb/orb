@@ -3,7 +3,9 @@
 *.pyx~
 *~
 *.so
+*.o
 dist/
 build/
 orb_kernel.egg-info/
 .eggs/
+.idea/
