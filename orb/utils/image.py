@@ -1187,8 +1187,10 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
 
     :return: A tuple: (Fitted map, residual map)
     """
+
     # WARNING: CROP_COEFF must correspond to the CROP_COEFF used in
     # fit_sitelle_phase_map
+
     CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 
@@ -1209,7 +1211,7 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     
     err_map[np.nonzero(np.isnan(phase_map))] = np.nan
     
-    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser)
+    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser, knb=5)
     print ' > Residual STD after cos theta fit: {}'.format(np.nanstd(res_map))
 
     return phase_map_fit, phase_map - phase_map_fit
@@ -1221,7 +1223,8 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
                           calib_laser_nm, pixel_size=15., binning=4,
                           return_coeffs=False, wavefront_map=None):
 
-    """Fit a SITELLE phase map (order 0 map of the phase) using a
+    """
+    Fit a SITELLE phase map (order 0 map of the phase) using a
     model based on a simulated calibration laser map.
 
     A real calibration laser map is needed first to get an initial guess
@@ -1318,6 +1321,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
 
     # WARNING: CROP_COEFF must correspond to the CROP_COEFF used in
     # fit_highorder_phase_map
+
     CROP_COEFF = 0.98 # proportion of the phase map to keep when
                       # cropping
 

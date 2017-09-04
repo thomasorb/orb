@@ -673,11 +673,12 @@ class Astrometry(Tools):
         if self.deep_frame is not None:
             return np.copy(self.deep_frame)
 
-        if self.dimz > 1:
-            _cube = self.data[:,:,:]
+        ## if self.dimz > 1:
+        ##    _cube = self.data[:,:,:]
 
         # realignment of the frames if necessary
         if realign and self.dimz > 1:
+            _cube = self.data[:,:,:]
             _cube = utils.astrometry.realign_images(_cube)
                 
         # If we have 3D data we work on a combined image of the first
@@ -695,8 +696,9 @@ class Astrometry(Tools):
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
 
-            if _cube is None: dat = _cube
-            else: dat = self.data[
+            ## if _cube is None: dat = _cube
+            ## else:
+            dat = self.data[
                 :,:, int(self.DETECT_INDEX):
                 int(self.DETECT_INDEX+stack_nb)]
                 

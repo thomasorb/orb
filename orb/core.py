@@ -5151,6 +5151,6 @@ class PhaseFile(Tools):
         if return_spline:
             nonans = ~np.isnan(phase)
             return interpolate.UnivariateSpline(
-                cm1_axis[nonans], phase[nonans], k=3, s=0, ext=0)
+                cm1_axis[nonans], phase[nonans], k=3, s=0, ext=1)
         else: return phase
             
