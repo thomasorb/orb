@@ -33,14 +33,13 @@ __version__ = version.__version__
 ## BASIC IMPORTS
 import os
 import sys
+import warnings
 import time
 import math
 import traceback
 import inspect
 import re
 import datetime
-import logging
-import warnings
 
 import numpy as np
 import bottleneck as bn
@@ -63,124 +62,36 @@ import utils.spectrum, utils.parallel, utils.io, utils.filters
 import utils.photometry
 import constants
 
-
 #################################################
 #### CLASS TextColor ############################
 #################################################
 
 class TextColor:
-    """Define ANSI Escape sequences to display text with colors."""
-    DEFAULT = '\x1b[0m'
-    RED     = '\x1b[31m'
-    GREEN   = '\x1b[32m'
-    YELLOW  = '\x1b[33m'
-    CYAN    = '\x1b[36m'
-
-
-#################################################
-#### CLASS ColorStreamHandler ###################
-#################################################
-
-class ColorStreamHandler(logging.StreamHandler):
-    """Manage colored logging
-
-    copied from https://gist.github.com/mooware/a1ed40987b6cc9ab9c65
     """
+    Define ANSI Escape sequences to display text with colors.
     
-    CRITICAL = TextColor.RED
-    ERROR    = TextColor.RED
-    WARNING  = TextColor.YELLOW
-    INFO     = TextColor.DEFAULT
-    DEBUG    = TextColor.CYAN
-    DEFAULT  = TextColor.DEFAULT
-
-    @classmethod
-    def _get_color(cls, level):
-        if level >= logging.CRITICAL:  return cls.CRITICAL
-        elif level >= logging.ERROR:   return cls.ERROR
-        elif level >= logging.WARNING: return cls.WARNING
-        elif level >= logging.INFO:    return cls.INFO
-        elif level >= logging.DEBUG:   return cls.DEBUG
-        else:                          return cls.DEFAULT
-
-    def __init__(self, stream=None):
-        logging.StreamHandler.__init__(self, stream)
-
-    def format(self, record):
-        text = logging.StreamHandler.format(self, record)
-        color = self._get_color(record.levelno)
-        return color + text + self.DEFAULT
-
-
-class LoggingFilter(logging.Filter):
-    bad_names = ['pp']
-    def filter(self, record):
-        if record.levelname == 'INFO':
-            if record.module in self.bad_names: return False
-        return True
-        
-
-
-################################################
-#### CLASS ROParams ############################
-################################################
-class ROParams(dict):
-    """Special dictionary which elements can be accessed like
-    attributes.
-
-    Attributes are read-only and may be defined only once.
+    .. warning:: Note that colored text doesn't work on Windows, use
+       disable() function to disable coloured text.
     """
-    __getattr__ = dict.__getitem__
-    __delattr__ = dict.__delitem__
-    
-    def __setattr__(self, key, value):
-        """Special set attribute function. Always raise a read-only
-        error.
 
-        :param key: Attribute name.
+    BLUE = '\033[1;94m'
+    GREEN = '\033[1;92m'
+    PURPLE = '\033[1;95m'
+    WARNING = '\033[4;33m'
+    ERROR = '\033[4;91m'
+    END = '\033[0m'
 
-        :param value: Attribute value.
+    def disable(self):
+        """ Disable ANSI Escape sequences for windows portability
         """
-        raise StandardError('Parameter is read-only')
+        self.BLUE = ''
+        self.GREEN = ''
+        self.PURPLE = ''
+        self.WARNING = ''
+        self.ERROR = ''
+        self.END = ''
 
-    def __setitem__(self, key, value):
-        """Special set item function. Raise a read-only error when the
-        parameter already exists.
 
-        :param key: Item key.
-
-        :param value: Item value.
-        """
-        if key in self:
-            raise StandardError('Parameter already defined')
-        dict.__setitem__(self, key, value)
-
-    def __getstate__(self):
-        """Used to pickle object"""
-        state = self.copy()
-        return state
-
-    def __setstate__(self, state):
-        """Used to unpickle object"""
-        self.update(state)
-        
-################################################
-#### CLASS NoInstrumentConfigParams ############
-################################################
-class NoInstrumentConfigParams(ROParams):
-    """Special dictionary which elements can be accessed like
-    attributes.
-
-    Attributes are read-only and may be defined only once.
-    """
-    def __getitem__(self, key):
-        if key not in self:
-            raise AttributeError("Instrumental configuration not loaded. Set the option 'instrument' to a valid instrument name")
-        return ROParams.__getitem__(self, key)
-
-    __getattr__ = __getitem__
-
-     
 #################################################
 #### CLASS Tools ################################
 #################################################
@@ -192,21 +103,41 @@ class Tools(object):
     Manage configuration file, implement basic methods and manage the
     server for parallel processing.
     """
-    instruments = ['sitelle', 'spiomm']
+    config_file_name = 'config.orb' # Name of the config file
+    ncpus = 0 # number of CPUs to use for parallel processing
     
     _MASK_FRAME_TAIL = '_mask.fits' # Tail of a mask frame
     
-    def __init__(self, instrument=None, data_prefix="./temp/data.",
-                 tuning_parameters=dict(), ncpus=None, silent=False):
-        """Initialize Tools class.
+    _msg_class_hdr = "" # header of any message printed by this class
+                        # or its inheritance (see _get_msg_class_hdr()
+                        # function)
+                        
+    _data_path_hdr = "" # first part of the path of all the data files
+                        # created during the reduction process.
+                        
+    _data_prefix = "" # prefix used in the creation of _data_path_hdr
+                      # (see _get_data_path_hdr() function)
 
-        :param instrument: (Optional) Instrument configuration to
-          load. If None a minimal configuration file is loaded. Some
-          functions are not available in this case (default None).
+    _no_log = False # If True no logfile is created
+
+    _tuning_parameters = dict() # Dictionay containing the full names of the
+                                # parameter and their new value.
+
+    _silent = False # If True only error messages will be diplayed on screen
+
+
+    def __init__(self, data_prefix="./temp/data.", no_log=False,
+                 tuning_parameters=dict(), ncpus=None,
+                 config_file_name='config.orb', silent=False):
+        """Initialize Tools class.
 
         :param data_prefix: (Optional) Prefix used to determine the
           header of the name of each created file (default
           'temp_data')
+
+        :param no_log: (Optional) If True (and if sys.stdout has been
+          redirected to Logger) no log file is created (default
+          False).
 
         :param ncpus: (Optional) Number of CPUs to use for parallel
           processing. set to None gives the maximum number available
@@ -221,209 +152,30 @@ class Tools(object):
           implemented into the method itself with the method
           :py:meth:`core.Tools._get_tuning_parameter`.
 
+        :param config_file_name: (Optional) name of the config file to
+          use. Must be located in orb/data/.
+
         :param silent: If True only error messages will be diplayed on
           screen (default False).
         """
-        self.start_logging()
-        self.params = ROParams()
-        
-        if instrument is not None:
-            if instrument in self.instruments:
-                self.config = ROParams()
-                self.config_file_name = 'config.{}.orb'.format(instrument)
-            else:
-                raise ValueError(
-                    "instrument must be in {}".format(self.instruments))
-        else:
-            self.config_file_name = 'config.none.orb'
-            self.config = NoInstrumentConfigParams()
-        
-        # loading minimal config
-        self.instrument = instrument
-        self.set_config('DIV_NB', int)
-        self.config['QUAD_NB'] = self.config.DIV_NB**2L
-        self.set_config('BIG_DATA', bool)
-        self.set_config('NCPUS', int)
-        if ncpus is None:
-            self.ncpus = int(self.config.NCPUS)
-        else:
-            self.ncpus = int(ncpus)
-
-        if self.instrument is not None:
-            # load instrument configuration
-            self.set_config('OBSERVATORY_NAME', str)
-            self.set_config('TELESCOPE_NAME', str)
-            self.set_config('INSTRUMENT_NAME', str)
-
-            self.set_config('OBS_LAT', float)
-            self.set_config('OBS_LON', float)
-            self.set_config('OBS_ALT', float)
-            
-            self.set_config('ATM_EXTINCTION_FILE', str)
-            self.set_config('MIR_TRANSMISSION_FILE', str)
-            self.set_config('MIR_SURFACE', float)
-            
-            self.set_config('FIELD_OF_VIEW_1', float)
-            self.set_config('FIELD_OF_VIEW_2', float)
-            
-            self.set_config('PIX_SIZE_CAM1', float)
-            self.set_config('PIX_SIZE_CAM2', float)
-
-            self.set_config('BALANCED_CAM', int)
-
-            self.set_config('CAM1_DETECTOR_SIZE_X', int)
-            self.set_config('CAM1_DETECTOR_SIZE_Y', int)
-            self.set_config('CAM2_DETECTOR_SIZE_X', int)
-            self.set_config('CAM2_DETECTOR_SIZE_Y', int)
-
-            self.set_config('CAM1_GAIN', float)
-            self.set_config('CAM2_GAIN', float)
-            self.set_config('CAM1_QE_FILE', str)
-            self.set_config('CAM2_QE_FILE', str)
-        
-            self.set_config('OFF_AXIS_ANGLE_MIN', float)
-            self.set_config('OFF_AXIS_ANGLE_MAX', float)
-            self.set_config('OFF_AXIS_ANGLE_CENTER', float)
-
-            self.set_config('INIT_ANGLE', float)
-            self.set_config('INIT_DX', float)
-            self.set_config('INIT_DY', float)
-            self.set_config('CALIB_NM_LASER', float)
-            self.set_config('CALIB_ORDER', int)
-            self.set_config('CALIB_STEP_SIZE', float)
-            self.set_config('PHASE_FIT_DEG', int)
-
-            self.set_config('OPTIM_DARK_CAM1', bool) 
-            self.set_config('OPTIM_DARK_CAM2', bool)
-            self.set_config('EXT_ILLUMINATION', bool)
-
-            self.set_config('DETECT_STAR_NB', int)
-            self.set_config('INIT_FWHM', float)
-            self.set_config('PSF_PROFILE', str)
-            self.set_config('MOFFAT_BETA', float)
-            self.set_config('DETECT_STACK', int)
-            self.set_config('ALIGNER_RANGE_COEFF', float)
-            self.set_config('SATURATION_THRESHOLD', float)
-            self.set_config('WCS_ROTATION', float)
-
-
+        self.config_file_name = config_file_name
+        if (os.name == 'nt'):
+            TextColor.disable()
         self._data_prefix = data_prefix
         self._msg_class_hdr = self._get_msg_class_hdr()
         self._data_path_hdr = self._get_data_path_hdr()
+        self._no_log = no_log
         self._tuning_parameters = tuning_parameters
+        if ncpus is None:
+            self.ncpus = int(self._get_config_parameter("NCPUS"))
+        else:
+            self.ncpus = int(ncpus)
+            
         self._silent = silent
-
-    
-    def _reset_logging_state(self):
-        """Force a logging reset"""
-        def excepthook_with_log(exctype, value, tb):
-            logging.error(value, exc_info=(exctype, value, tb))
-
-        # clear old logging state
-        root = logging.getLogger()
-        [root.removeHandler(ihand) for ihand in root.handlers[:]]
-        [root.removeFilter(ihand) for ifilt in root.filters[:]]
-
-        # init logging
-        root.setLevel(logging.INFO)
-
-        ch = ColorStreamHandler()
-        ch.setLevel(logging.INFO)
-        formatter = logging.Formatter(
-            self.get_logformat(),
-            self.get_logdateformat())
-        ch.setFormatter(formatter)
-        ch.addFilter(LoggingFilter())
-        root.addHandler(ch)
-
-        logging.captureWarnings(True)
-
-        sys.excepthook = excepthook_with_log
-    
-
-    def start_logging(self):
-        """Reset logging only if logging is not set"""
-        if not self.get_logging_state():
-            self._reset_logging_state()
-
-    def start_file_logging(self, logfile_path=None):
-        """Start file logging
-
-        :param logfile_path: Path to the logfile. If none is provided
-          a default logfile path is used."""
-        self.logfile_path = logfile_path
-        self.start_logging()
-
-        if not self.get_file_logging_state():
-            root = logging.getLogger()
-            root.setLevel(logging.INFO)
-
-            ch = logging.StreamHandler(
-                open(self._get_logfile_path(), 'a'))
-            ch.setLevel(logging.INFO)
-            formatter = logging.Formatter(
-                self.get_logformat(),
-                self.get_logdateformat())
-            ch.setFormatter(formatter)
-            ch.addFilter(LoggingFilter())
-            root.addHandler(ch)
-
-    def get_logging_state(self):
-        """Return True if the logging is set"""
-        _len = len(logging.getLogger().handlers)
-        if _len == 0: return False
-        elif _len < 3: return True
-        else:
-            raise StandardError('Logging in strange state: {}'.format(logging.getLogger().handlers))
-
-    def get_file_logging_state(self):
-        """Return True if the file logging appears set"""
-        _len = len(logging.getLogger().handlers)
-        if _len < 2: return False
-        elif _len == 2: return True
-        else:
-            raise StandardError('File Logging in strange state: {}'.format(logging.getLogger().handlers))
-        
-        
-    def get_logformat(self):
-        """Return a string describing the logging format"""
-        
-        return '%(asctime)s|%(module)s:%(lineno)s:%(funcName)s|%(levelname)s> %(message)s'
-
-    def get_logdateformat(self):
-        """Return a string describing the logging date format"""
-        return '%y%m%d-%H:%M:%S'
-
-    def _get_logfile_path(self):
-        """Return logfile name"""
-        if self.logfile_path is None:
-            today = datetime.datetime.today()
-            self.logfile_path = 'orb.{:04d}{:02d}{:02d}.log'.format(
-                today.year, today.month, today.day)
-        return self.logfile_path
-
-    def get_param(self, key):
-        """Get class parameter
-
-        :param key: parameter key
-        """
-        return self.params[key]
-
-    def set_param(self, key, value):
-        """Set class parameter
-
-        :param key: parameter key
-        """
-        self.params[key] = value
-
-    def set_config(self, key, cast):
-        """Set configuration parameter (from the configuration file)
-        """
-        if cast is not bool:
-            self.config[key] = cast(self._get_config_parameter(key))
-        else:
-            self.config[key] = bool(int(self._get_config_parameter(key)))
-
+        warnings.showwarning = self._custom_warn
+        if self._no_log:
+            if isinstance(sys.stdout, Logger):
+                Logger.nolog = True
 
     def _get_msg_class_hdr(self):
         """Return the header of the displayed messages."""
@@ -453,12 +205,10 @@ class Tools(object):
 
         :param config_file_name: Name of the configuration file.
         """
-        if self.config_file_name is None:
-            raise StandardError('No instrument configuration given')
         config_file_path = self._get_orb_data_file_path(
             self.config_file_name)
         if not os.path.exists(config_file_path):
-             raise StandardError(
+             self._print_error(
                  "Configuration file %s does not exist !"%config_file_path)
         return config_file_path
 
@@ -474,7 +224,7 @@ class Tools(object):
         filter_file_path =  self._get_orb_data_file_path(
             "filter_" + filter_name + ".orb")
         if not os.path.exists(filter_file_path):
-             warnings.warn(
+             self._print_warning(
                  "Filter file %s does not exist !"%filter_file_path)
              return None
          
@@ -494,7 +244,7 @@ class Tools(object):
             "phase_" + filter_name + ".orb")
         
         if not os.path.exists(phase_file_path):
-             warnings.warn(
+             self._print_warning(
                  "Phase file %s does not exist !"%phase_file_path)
              return None
          
@@ -514,13 +264,13 @@ class Tools(object):
         if camera_number == 0: cam_name = 'merged'
         elif camera_number == 1: cam_name = 'cam1'
         elif camera_number == 2: cam_name = 'cam2'
-        else: raise StandardError('Bad camera number, must be 0, 1 or 2')
+        else: self._print_error('Bad camera number, must be 0, 1 or 2')
         
         sip_file_path =  self._get_orb_data_file_path(
             "sip." + cam_name + ".fits")
         
         if not os.path.exists(sip_file_path):
-             warnings.warn(
+             self._print_warning(
                  "SIP file %s does not exist !"%sip_file_path)
              return None
          
@@ -539,7 +289,7 @@ class Tools(object):
         optics_file_path =  self._get_orb_data_file_path(
             "optics_" + filter_name + ".orb")
         if not os.path.exists(optics_file_path):
-             warnings.warn(
+             self._print_warning(
                  "Optics file %s does not exist !"%optics_file_path)
              return None
          
@@ -554,7 +304,7 @@ class Tools(object):
         standard_table_path = self._get_orb_data_file_path(
             standard_table_name)
         if not os.path.exists(standard_table_path):
-             raise StandardError(
+             self._print_error(
                  "Standard table %s does not exist !"%standard_table_path)
         return standard_table_path
 
@@ -568,7 +318,7 @@ class Tools(object):
         """
         groups = ['MASSEY', 'MISC', 'CALSPEC', 'OKE', None]
         if group not in groups:
-            raise StandardError('Group must be in %s'%str(groups))
+            self._print_error('Group must be in %s'%str(groups))
         std_table = self.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
         std_list = list()
@@ -608,7 +358,7 @@ class Tools(object):
                     if os.path.exists(file_path):
                         return file_path, iline[1]
 
-        raise StandardError('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
+        self._print_error('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
 
     def _get_standard_radec(self, standard_name,
                             standard_table_name='std_table.orb',
@@ -649,21 +399,21 @@ class Tools(object):
                         else:
                             return ra, dec
                     else:
-                        raise StandardError('No RA DEC recorded for standard: {}'.format(
+                        self._print_error('No RA DEC recorded for standard: {}'.format(
                             standard_name))
                     
 
-        raise StandardError('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
+        self._print_error('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
 
 
     def _get_atmospheric_extinction_file_path(self):
         """Return the path to the atmospheric extinction file"""
-        file_name = self.config.ATM_EXTINCTION_FILE
+        file_name = self._get_config_parameter('ATM_EXTINCTION_FILE')
         return self._get_orb_data_file_path(file_name)
 
     def _get_mirror_transmission_file_path(self):
         """Return the path to the telescope mirror transmission file"""
-        file_name = self.config.MIR_TRANSMISSION_FILE
+        file_name = self._get_config_parameter('MIR_TRANSMISSION_FILE')
         return self._get_orb_data_file_path(file_name)
 
     def _get_quantum_efficiency_file_path(self, camera_number):
@@ -671,7 +421,7 @@ class Tools(object):
 
         :param camera_number: Number of the camera, can be 1 or 2.
         """
-        file_name = self.config(
+        file_name = self._get_config_parameter(
             'CAM{}_QE_FILE'.format(camera_number))
         return self._get_orb_data_file_path(file_name)
     
@@ -708,12 +458,30 @@ class Tools(object):
                 if line.split()[0] == param_key:
                     return line.split()[1]
         if not optional:
-            raise StandardError("Parameter key %s not found in file %s"%(
+            self._print_error("Parameter key %s not found in file %s"%(
                 param_key, self.config_file_name))
         else:
-            warnings.warn("Parameter key %s not found in file %s"%(
+            self._print_warning("Parameter key %s not found in file %s"%(
                 param_key, self.config_file_name))
             return None
+
+
+    def _print_error(self, message):
+        """Print an error message and raise an exception which will
+        stop the execution of the program.
+
+        Error messages are written in the log file.
+        
+        :param message: The message to be displayed.
+        """
+        error_msg = self._get_date_str() + self._msg_class_hdr + sys._getframe(1).f_code.co_name + " > Error: " + message
+        if isinstance(sys.stdout, Logger):
+            sys.stdout.write('\r' + error_msg + '\n', color=TextColor.ERROR)
+        else:
+            print "\r" + TextColor.ERROR + error_msg + TextColor.END
+            
+        raise StandardError(message)
+
 
     def _print_caller_traceback(self):
         """Print the traceback of the calling function."""
@@ -725,8 +493,70 @@ class Tools(object):
                               + ', in %s\n'%traceback[i][3] +
                               traceback[i][4][0])
             
-        logging.debug('\r' + traceback_msg)
+        print '\r' + traceback_msg
 
+    def _print_warning(self, message, traceback=False):
+        """Print a warning message. No exception is raised.
+        
+        Warning  messages are written in the log file.
+        
+        :param message: The message to be displayed.
+
+        :param traceback: (Optional) If True, print traceback (default
+          False)
+        """
+        if self._silent: return
+        if traceback:
+            self._print_caller_traceback()
+            
+        warning_msg = self._get_date_str() + self._msg_class_hdr + sys._getframe(1).f_code.co_name + " > Warning: " + message
+        
+        if isinstance(sys.stdout, Logger):
+            sys.stdout.write('\r' + warning_msg + '\n', color=TextColor.WARNING)
+        else:
+            print '\r' + TextColor.WARNING + warning_msg + TextColor.END
+        
+    def _custom_warn(self, message, category, filename, lineno,
+                     file=None, line=None):
+        """Redirect warnings thrown by external functions
+        (e.g. :py:mod:`orb.utils`) to :py:meth:`orb._print_warning`.
+
+        The parameters are the same parameters as the method
+        warnings.showwarning (see the python module warnings).
+        """
+        self._print_warning(warnings.formatwarning(
+            message, category, filename, lineno))
+
+    def _print_msg(self, message, color=False, no_hdr=False):
+        """Print a simple message.
+        
+        Simple messages are written in the log file.
+
+        :param message: The message to be displayed.
+        
+        :param color: (Optional) If True, the message is diplayed in
+          color. If 'alt', an alternative color is displayed.
+
+        :param no_hdr: (Optional) If True, The message is displayed
+          as it is, without any header.   
+        """
+        if self._silent: return
+        if not no_hdr:
+            message = (self._get_date_str() + self._msg_class_hdr + 
+                       sys._getframe(1).f_code.co_name + " > " + message)
+            
+        text_col = TextColor.BLUE
+        if color == 'alt':
+            color = True
+            text_col = TextColor.PURPLE
+            
+        if color:
+            if isinstance(sys.stdout, Logger):
+                sys.stdout.write('\r' + message + '\n', color=text_col)
+            else:
+                print '\r' + text_col + message + TextColor.END
+        else:
+            print message
         
     def _print_traceback(self, no_hdr=False):
         """Print a traceback
@@ -742,7 +572,7 @@ class Tools(object):
             message = (self._get_date_str() + self._msg_class_hdr + 
                        sys._getframe(1).f_code.co_name + " > " + message)
             
-        logging.debug("\r" + message)
+        print "\r" + message
             
     def _update_fits_key(self, fits_name, key, value, comment):
         """Update one key of a FITS file. If the key doesn't exist
@@ -767,7 +597,7 @@ class Tools(object):
         try:
             hdulist = pyfits.open(fits_name, mode='update')
         except:
-            raise StandardError(
+            self._print_error(
                 "The file '%s' could not be opened"%fits_name)
             return None
 
@@ -794,11 +624,14 @@ class Tools(object):
         hdr.append(('COMMENT','-------',''))
         hdr.append(('COMMENT','',''))
         hdr.append(('FILETYPE', file_type, 'Type of file'))
-        hdr.append(('OBSERVAT', self.config.OBSERVATORY_NAME, 
+        hdr.append(('OBSERVAT', self._get_config_parameter(
+                    "OBSERVATORY_NAME"), 
                     'Observatory name'))
-        hdr.append(('TELESCOP', self.config.TELESCOPE_NAME,
+        hdr.append(('TELESCOP', self._get_config_parameter(
+                    "TELESCOPE_NAME"),
                     'Telescope name'))  
-        hdr.append(('INSTRUME', self.config.INSTRUMENT_NAME,
+        hdr.append(('INSTRUME', self._get_config_parameter(
+                    "INSTRUMENT_NAME"),
                     'Instrument name'))
         return hdr
         
@@ -821,7 +654,8 @@ class Tools(object):
           file (config.orb by default).
         """
         hdr = list()
-        FIELD_OF_VIEW = self.config.FIELD_OF_VIEW_1
+        FIELD_OF_VIEW = float(self._get_config_parameter(
+            "FIELD_OF_VIEW_1"))
         x_delta = FIELD_OF_VIEW / dimx * (1/60.)
         y_delta = FIELD_OF_VIEW / dimy * (1/60.)
         hdr.append(('COMMENT','',''))
@@ -1033,10 +867,10 @@ class Tools(object):
         caller_name = (self.__class__.__name__ + '.'
                        + sys._getframe(1).f_code.co_name)
         full_parameter_name = caller_name + '.' + parameter_name
-        logging.info('looking for tuning parameter: {}'.format(
+        self._print_msg('looking for tuning parameter: {}'.format(
             full_parameter_name))
         if full_parameter_name in self._tuning_parameters:
-            warnings.warn(
+            self._print_warning(
                 'Tuning parameter {} changed to {} (default {})'.format(
                     full_parameter_name,
                     self._tuning_parameters[full_parameter_name],
@@ -1095,15 +929,15 @@ class Tools(object):
             # image list sort
             file_list = self.sort_image_list(file_list, image_mode)
             if file_list is None:
-                 raise StandardError('There is no *.fits file in {}'.format(
+                 self._print_error('There is no *.fits file in {}'.format(
                      dir_path))
             
             first_file = True
             file_nb = 0
             if check:
-                logging.info('Reading and checking {}'.format(dir_path))
+                self._print_msg('Reading and checking {}'.format(dir_path))
             else:
-                logging.info('Reading {}'.format(dir_path))
+                self._print_msg('Reading {}'.format(dir_path))
             for filename in file_list:
                 if (os.path.splitext(filename)[1] == ".fits"
                     and '_bias.fits' not in filename):
@@ -1130,15 +964,15 @@ class Tools(object):
                                 dims == 2
                                 or fits_hdu.header['NAXIS1'] == dimx
                                 or fits_hdu.header['NAXIS2'] == dimy):
-                                raise StandardError("All FITS files in the directory %s do not have the same shape. Please remove bad files."%str(dir_path))
+                                self._print_error("All FITS files in the directory %s do not have the same shape. Please remove bad files."%str(dir_path))
                             
                         list_file_str.append(str(file_path))
                         file_nb += 1
                             
                     else:
-                        raise StandardError(str(file_path) + " does not exists !")
+                        self._print_error(str(file_path) + " does not exists !")
             if file_nb > 0:
-                logging.info('{} Images found'.format(file_nb))
+                self._print_msg('{} Images found'.format(file_nb))
                 if list_file_path is not None:
                     with self.open_file(list_file_path) as list_file:
                         for iline in list_file_str:
@@ -1147,10 +981,11 @@ class Tools(object):
                 else:
                     return list_file_str
             else:
-                raise StandardError('No FITS file in the folder: %s'%dir_path)
+                self._print_error('No FITS file in the folder: %s'%dir_path)
         else:
-            raise StandardError(str(dir_path) + " does not exists !")
+            self._print_error(str(dir_path) + " does not exists !")
         
+
     def _get_hdu_data_index(self, hdul):
         """Return the index of the first header data unit (HDU) containing data.
 
@@ -1364,7 +1199,7 @@ class Tools(object):
           read mode and 'a' for append mode.
         """
         if mode not in ['w','r','a','rU']:
-            raise StandardError("mode option must be 'w', 'r', 'rU' or 'a'")
+            self._print_error("mode option must be 'w', 'r', 'rU' or 'a'")
             
         if mode in ['w','a']:
             # create folder if it does not exist
@@ -1407,7 +1242,7 @@ class Tools(object):
         try:
             file_keys = np.array(file_seq, dtype=int)
         except Exception, e:
-            raise StandardError('Malformed sequence of files: {}:\n{}'.format(
+            self._print_error('Malformed sequence of files: {}:\n{}'.format(
                 e, file_seq))
                              
             
@@ -1415,7 +1250,7 @@ class Tools(object):
         test = np.sum(file_keys == file_keys[0,:], axis=0)
         
         if np.min(test) > 1:
-            warnings.warn('Images list cannot be safely sorted. Two images at least have the same index')
+            self._print_warning('Images list cannot be safely sorted. Two images at least have the same index')
             column_index = np.nan
         else:
             column_index = np.argmin(test)
@@ -1443,7 +1278,7 @@ class Tools(object):
             file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
                 column_index]))
         else:
-            raise StandardError('Image list cannot be sorted.')
+            self._print_error('Image list cannot be sorted.')
             
         return file_list
 
@@ -1568,7 +1403,7 @@ class Tools(object):
             data = [data]
 
         if max_hdu_check and len(data) > MAX_HDUS:
-            raise StandardError('Data list length is > {}. As a list is interpreted has a list of data unit make sure to pass a numpy.ndarray instance instead of a list. '.format(MAX_HDUS))
+            self._print_error('Data list length is > {}. As a list is interpreted has a list of data unit make sure to pass a numpy.ndarray instance instead of a list. '.format(MAX_HDUS))
 
         # Check header format
         if header is not None:
@@ -1595,18 +1430,18 @@ class Tools(object):
                             header_seems_ok = True
                             
                     if not header_seems_ok:
-                        raise StandardError('Badly formated header')
+                        self._print_error('Badly formated header')
                             
                 elif not isinstance(header[0], pyfits.Header):
                     
-                    raise StandardError('Header must be a pyfits.Header instance or a list')
+                    self._print_error('Header must be a pyfits.Header instance or a list')
 
             else:
-                raise StandardError('Header must be a pyfits.Header instance or a list')
+                self._print_error('Header must be a pyfits.Header instance or a list')
             
 
             if len(header) != len(data):
-                raise StandardError('The number of headers must be the same as the number of data units.')
+                self._print_error('The number of headers must be the same as the number of data units.')
             
 
         # change path if file exists and must not be overwritten
@@ -1633,7 +1468,7 @@ class Tools(object):
                     try:
                         idata = np.array(idata, dtype=float)
                     except Exception, e:
-                        raise StandardError('Data to write must be convertible to a numpy array of numeric values: {}'.format(e))
+                        self._print_error('Data to write must be convertible to a numpy array of numeric values: {}'.format(e))
 
 
                 # convert data to float32
@@ -1661,7 +1496,7 @@ class Tools(object):
                     f[hdu_group_name + '/header'] = self._header_fits2hdf5(
                         iheader)
 
-        logging.info('Data written as {} in {:.2f} s'.format(
+        self._print_msg('Data written as {} in {:.2f} s'.format(
             new_file_path, time.time() - start_time))
         
         return new_file_path
@@ -1692,7 +1527,7 @@ class Tools(object):
                        np.int64, np.float64, long, np.float128]:
                 if t_str == repr(_t):
                     return _t(a)
-            raise StandardError('Bad type string {}'.format(t_str))
+            raise Exception('Bad type string {}'.format(t_str))
                     
         fits_header = pyfits.Header()
         for i in range(hdf5_header.shape[0]):
@@ -1807,9 +1642,9 @@ class Tools(object):
 
         """
         quad_nb = div_nb**2
-        
+
         if (quad_number < 0) or (quad_number > quad_nb - 1L):
-            raise StandardError("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
+            self._print_error("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
             return None
 
         index_x = quad_number % div_nb
@@ -1851,13 +1686,66 @@ class Cube(Tools):
       quadrant = Cube[25:50, 25:50, :] # Here you just load a small quadrant
       spectrum = Cube[84,58,:] # load spectrum at pixel [84,58]
     """
+    # Processing
+    ncpus = None # number of CPUs to use for parallel processing
+    DIV_NB = None # number of division of the frames in quadrants
+    QUAD_NB = None # number of quadrant = DIV_NB**2
+    BIG_DATA = None # If True some processes are parallelized
+
+    image_list_path = None
+    image_list = None
+    dimx = None
+    dimy = None
+    dimz = None
+    
+    star_list = None
+    z_median = None
+    z_mean = None
+    z_std = None
+    mean_image = None
+
+    overwrite = None
+
+    _data_prefix = None
+    _project_header = None
+    _calibration_laser_header = None
+    _wcs_header = None
+
+    _silent_load = False
+
+    _mask_exists = None
+    
+    _return_mask = False # When True, __get_item__ return mask data
+                         # instead of 'normal' data
+
+    # read directives
+    _image_mode = 'classic' # opening mode. can be sitelle, spiomm or classic
+    _chip_index = None # in sitelle mode, this gives the index of
+                       # the chip to read
+    _prebinning = None # prebinning directive
+
+    
+    _parallel_access_to_data = None # authorize parallel access to
+                                    # data (False for HDF5)
+
+    is_hdf5_frames = None # frames are hdf5 frames (i.e. the cube is
+                          # not an HDF5 cube but is made from hdf5
+                          # frames)
+    is_hdf5_cube = None # tell if the cube is an hdf5 cube
+                        # (i.e. created via OutHDFCube or
+                        # OutHDFQuadCube)
+    is_complex = None # tell if cube's data is complex.
+    dtype = None # data type
+    is_quad_cube = False # Basic cube is not quad cube (see class
+                         # HDFCube and OutHDFQuadCube)
+    
     def __init__(self, image_list_path, image_mode='classic',
-                 chip_index=1, binning=1, 
-                 project_header=list(),
+                 chip_index=1, binning=1, data_prefix="./temp/data.",
+                 config_file_name="config.orb", project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
-                 overwrite=False, silent_init=False,
-                 indexer=None, no_sort=False,
-                 **kwargs):
+                 overwrite=False, silent_init=False, no_log=False,
+                 tuning_parameters=dict(), indexer=None, no_sort=False,
+                 ncpus=None):
         
         """
         Initialize Cube class.
@@ -1887,6 +1775,13 @@ class Cube(Tools):
           this amount. i.e. 1000x1000xN raw frames with a prebinning
           of 2 will give a cube of 500x500xN (default 1).
     
+        :param config_file_name: (Optional) name of the config file to
+          use. Must be located in orb/data/ (default 'config.orb').
+
+        :param data_prefix: (Optional) Prefix used to determine the
+          header of the name of each created file (default
+          'temp_data').
+
         :param project_header: (Optional) header section describing
           the observation parameters that can be added to each output
           files (an empty list() by default).
@@ -1905,7 +1800,19 @@ class Cube(Tools):
 
         :param silent_init: (Optional) If True no message is displayed
           at initialization.
-          
+
+        :param no_log: (Optional) If True no log file is created
+          (default False).
+
+        :param tuning_parameters: (Optional) Some parameters of the
+          methods can be tuned externally using this dictionary. The
+          dictionary must contains the full parameter name
+          (class.method.parameter_name) and its value. For example :
+          {'InterferogramMerger.find_alignment.BOX_SIZE': 7}. Note
+          that only some parameters can be tuned. This possibility is
+          implemented into the method itself with the method
+          :py:meth:`core.Tools._get_tuning_parameter`.
+
         :param indexer: (Optional) Must be a :py:class:`core.Indexer`
           instance. If not None created files can be indexed by this
           instance.
@@ -1913,40 +1820,41 @@ class Cube(Tools):
         :param no_sort: (Optional) If True, no sort of the file list
           is done. Files list is taken as is (default False).
 
-        :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
+        :param ncpus: (Optional) Number of CPUs to use for parallel
+          processing. set to None gives the maximum number available
+          (default None).
         """
-        Tools.__init__(self, **kwargs)
-        
-        self.star_list = None
-        self.z_median = None
-        self.z_mean = None
-        self.z_std = None
-        self.mean_image = None
-        self._silent_load = False
-
-        self._return_mask = False # When True, __get_item__ return mask data
-                                  # instead of 'normal' data
-
-        # read directives
-        self.is_hdf5_frames = None # frames are hdf5 frames (i.e. the cube is
-                                   # not an HDF5 cube but is made from
-                                   # hdf5 frames)
-        self.is_hdf5_cube = None # tell if the cube is an hdf5 cube
-                                 # (i.e. created via OutHDFCube or
-                                 # OutHDFQuadCube)
-        self.is_quad_cube = False # Basic cube is not quad cube (see
-                                  # class HDFCube and OutHDFQuadCube)
-
-
         self.is_complex = False
         self.dtype = float
         self.overwrite = overwrite
+        self._no_log = no_log
+        if self._no_log:
+            if isinstance(sys.stdout, Logger):
+                Logger.nolog = True
                 
         self.indexer = indexer
+        
+        # read config file to get parameters
+        self.config_file_name=config_file_name
+        self.DIV_NB = int(self._get_config_parameter(
+            "DIV_NB"))
+        self.BIG_DATA = bool(int(self._get_config_parameter(
+            "BIG_DATA")))
+        if ncpus is None:
+            self.ncpus = int(self._get_config_parameter(
+                "NCPUS"))
+        else:
+            self.ncpus = int(ncpus)
+ 
+        self._data_prefix = data_prefix
         self._project_header = project_header
         self._wcs_header = wcs_header
         self._calibration_laser_header = calibration_laser_header
+        self._msg_class_hdr = self._get_msg_class_hdr()
+        self._data_path_hdr = self._get_data_path_hdr()
+        self._tuning_parameters = tuning_parameters
         
+        self.QUAD_NB = self.DIV_NB**2L
         self.image_list_path = image_list_path
 
         self._image_mode = image_mode
@@ -1960,7 +1868,7 @@ class Cube(Tools):
             image_list_file = self.open_file(self.image_list_path, "r")
             image_name_list = image_list_file.readlines()
             if len(image_name_list) == 0:
-                raise StandardError('No image path in the given image list')
+                self._print_error('No image path in the given image list')
             is_first_image = True
             
             for image_name in image_name_list:
@@ -1991,11 +1899,11 @@ class Cube(Tools):
                         elif os.path.splitext(image_name)[1] == '.fits':
                             self.is_hdf5_frames = False
                         else:
-                            raise StandardError("Unrecognized extension of file {}. File extension must be '*.fits' or '*.hdf5' depending on its format.".format(image_name))
+                            self._print_error("Unrecognized extension of file {}. File extension must be '*.fits' or '*.hdf5' depending on its format.".format(image_name))
 
                         if self.is_hdf5_frames :
-                            if self._image_mode != 'classic': warnings.warn("Image mode changed to 'classic' because 'spiomm' and 'sitelle' modes are not supported in hdf5 format.")
-                            if self._prebinning != 1: warnings.warn("Prebinning is not supported for images in hdf5 format")
+                            if self._image_mode != 'classic': self._print_warning("Image mode changed to 'classic' because 'spiomm' and 'sitelle' modes are not supported in hdf5 format.")
+                            if self._prebinning != 1: self._print_warning("Prebinning is not supported for images in hdf5 format")
                             self._image_mode = 'classic'
                             self._prebinning = 1
         
@@ -2018,8 +1926,8 @@ class Cube(Tools):
                                     
                                     if len(shape) == 2:
                                         self.dimx, self.dimy = shape
-                                    else: raise StandardError('Image shape must have 2 dimensions: {}'.format(shape))
-                                else: raise StandardError('Bad formatted hdf5 file. Use Tools.write_hdf5 to get a correct hdf5 file for ORB.')
+                                    else: self._print_error('Image shape must have 2 dimensions: {}'.format(shape))
+                                else: self._print_error('Bad formatted hdf5 file. Use Tools.write_hdf5 to get a correct hdf5 file for ORB.')
                             
                         is_first_image = False
                         # check if masked frame exists
@@ -2045,11 +1953,11 @@ class Cube(Tools):
             
             if (self.dimx) and (self.dimy) and (self.dimz):
                 if not silent_init:
-                    logging.info("Data shape : (" + str(self.dimx) 
+                    self._print_msg("Data shape : (" + str(self.dimx) 
                                     + ", " + str(self.dimy) + ", " 
                                     + str(self.dimz) + ")")
             else:
-                raise StandardError("Incorrect data shape : (" 
+                self._print_error("Incorrect data shape : (" 
                                   + str(self.dimx) + ", " + str(self.dimy) 
                                   + ", " +str(self.dimz) + ")")
 
@@ -2062,7 +1970,7 @@ class Cube(Tools):
         """
         # check return mask possibility
         if self._return_mask and not self._mask_exists:
-            raise StandardError("No mask found with data, cannot return mask")
+            self._print_error("No mask found with data, cannot return mask")
         
         # produce default values for slices
         x_slice = self._get_default_slice(key[0], self.dimx)
@@ -2137,10 +2045,10 @@ class Cube(Tools):
                     if (_slice.start >= 0) and (_slice.start <= _max):
                         slice_min = int(_slice.start)
                     else:
-                        raise StandardError(
+                        self._print_error(
                             "Index error: list index out of range")
                 else:
-                    raise StandardError("Type error: list indices of slice must be integers")
+                    self._print_error("Type error: list indices of slice must be integers")
             else: slice_min = 0
 
             if _slice.stop is not None:
@@ -2153,18 +2061,18 @@ class Cube(Tools):
                         and slice_stop > slice_min):
                         slice_max = int(slice_stop)
                     else:
-                        raise StandardError(
+                        self._print_error(
                             "Index error: list index out of range")
 
                 else:
-                    raise StandardError("Type error: list indices of slice must be integers")
+                    self._print_error("Type error: list indices of slice must be integers")
             else: slice_max = _max
 
         elif isinstance(_slice, int) or isinstance(_slice, long):
             slice_min = _slice
             slice_max = slice_min + 1
         else:
-            raise StandardError("Type error: list indices must be integers or slices")
+            self._print_error("Type error: list indices must be integers or slices")
         return slice(slice_min, slice_max, 1)
 
     def _get_frame_section(self, x_slice, y_slice, frame_index):
@@ -2202,7 +2110,7 @@ class Cube(Tools):
                         os.path.split(self.image_list[frame_index])[1])[0]
                      + '.{}.bin{}.fits'.format(self._image_mode, self._prebinning)))
             else:
-                raise StandardError(
+                raise Exception(
                     'prebinned data is not handled for hdf5 cubes')
 
             if os.path.exists(stored_file_path):
@@ -2452,7 +2360,7 @@ class Cube(Tools):
         data = np.array(resized_frame)
         dimx = data.shape[0]
         dimy = data.shape[1]
-        logging.info("Data resized to shape : (" + str(dimx) +  ", " + str(dimy) + ")")
+        self._print_msg("Data resized to shape : (" + str(dimx) +  ", " + str(dimy) + ")")
         return resized_frame
 
     def get_resized_data(self, size_x, size_y):
@@ -2486,7 +2394,7 @@ class Cube(Tools):
         dimx = data.shape[0]
         dimy = data.shape[1]
         dimz = data.shape[2]
-        logging.info("Data resized to shape : (" + str(dimx) +  ", " + str(dimy) + ", " + str(dimz) + ")")
+        self._print_msg("Data resized to shape : (" + str(dimx) +  ", " + str(dimy) + ", " + str(dimz) + ")")
         return data
 
     def get_interf_energy_map(self):
@@ -2625,7 +2533,7 @@ class Cube(Tools):
             return bn.nanmean(frame, axis=None)
         elif stat_key == 'STD':
             return bn.nanstd(frame, axis=None)
-        else: raise StandardError('stat_key must be set to MEDIAN, MEAN or STD')
+        else: self._print_error('stat_key must be set to MEDIAN, MEAN or STD')
         
 
     def get_zstat(self, nozero=False, stat='mean', center=False):
@@ -2667,7 +2575,7 @@ class Cube(Tools):
             if self.z_std is None: stat_key = 'STD'
             else: return self.z_std
             
-        else: raise StandardError(
+        else: self._print_error(
             "Bad stat option. Must be 'mean', 'median' or 'std'")
         
         stat_vector = np.empty(self.dimz, dtype=self.dtype)
@@ -2720,8 +2628,8 @@ class Cube(Tools):
           than the axis dimension of the managed data cube
         """
         if div_nb is None: 
-            div_nb = self.config.DIV_NB
-
+            div_nb = self.DIV_NB
+        quad_nb = div_nb**2
         if dimx is None: dimx = self.dimx
         if dimy is None: dimy = self.dimy
 
@@ -2777,7 +2685,7 @@ class Cube(Tools):
           values are not considered (default None).
         """
         if force_fits and force_hdf5:
-            raise StandardError('force_fits and force_hdf5 cannot be both set to True')
+            self._print_error('force_fits and force_hdf5 cannot be both set to True')
         
         if x_range is None:
             xmin = 0
@@ -2802,7 +2710,7 @@ class Cube(Tools):
             
         if ((self.is_hdf5_frames or force_hdf5 or self.is_hdf5_cube)
             and not force_fits): # HDF5 export
-            logging.info('Exporting cube to an HDF5 cube: {}'.format(
+            self._print_msg('Exporting cube to an HDF5 cube: {}'.format(
                 export_path))
             if not self.is_quad_cube:
                 outcube = OutHDFCube(
@@ -2814,7 +2722,7 @@ class Cube(Tools):
                 outcube = OutHDFQuadCube(
                     export_path,
                     (xmax - xmin, ymax - ymin, zmax - zmin),
-                    self.config.QUAD_NB,
+                    self.QUAD_NB,
                     overwrite=overwrite,
                     reset=True)
 
@@ -2864,8 +2772,8 @@ class Cube(Tools):
                 
             else: # quad export
                 
-                progress = ProgressBar(self.config.QUAD_NB)
-                for iquad in range(self.config.QUAD_NB):
+                progress = ProgressBar(self.QUAD_NB)
+                for iquad in range(self.QUAD_NB):
                     progress.update(
                         iquad, info='exporting quad {}'.format(
                             iquad))
@@ -2893,7 +2801,7 @@ class Cube(Tools):
             del outcube
                 
         else: # FITS export
-            logging.info('Exporting cube to a FITS cube: {}'.format(
+            self._print_msg('Exporting cube to a FITS cube: {}'.format(
                 export_path))
 
             if not self.is_hdf5_cube:
@@ -2936,7 +2844,7 @@ class Cube(Tools):
 ##################################################
 
 
-class ProgressBar(object):
+class ProgressBar:
     """Display a simple progress bar in the terminal
 
     :param max_index: Index representing a 100% completed task.
@@ -2944,7 +2852,15 @@ class ProgressBar(object):
 
     REFRESH_COUNT = 3L # number of steps used to calculate a remaining time
     MAX_CARAC = 78 # Maximum number of characters in a line
-    BAR_LENGTH = 10. # Length of the bar
+
+    _start_time = None
+    _max_index = None
+    _bar_length = 10.
+    _max_index = None
+    _count = 0
+    _time_table = []
+    _index_table = []
+    _silent = False
 
     def __init__(self, max_index, silent=False):
         """Initialize ProgressBar class
@@ -2960,12 +2876,15 @@ class ProgressBar(object):
         self._time_table = np.zeros((self.REFRESH_COUNT), np.float)
         self._index_table = np.zeros((self.REFRESH_COUNT), np.float)
         self._silent = silent
-        self._count = 0
+        self.count = 0
         
     def _erase_line(self):
         """Erase the progress bar"""
         if not self._silent:
-            sys.stdout.write("\r" + " " * self.MAX_CARAC)
+            if isinstance(sys.stdout, Logger):
+                sys.stdout.write("\r" + " " * self.MAX_CARAC, nolog=True)
+            else:
+                sys.stdout.write("\r" + " " * self.MAX_CARAC)
             sys.stdout.flush()
 
     def _time_str_convert(self, sec):
@@ -3006,7 +2925,7 @@ class ProgressBar(object):
           made (default True).
         """
         if (self._max_index > 0):
-            color = TextColor.CYAN
+            color = TextColor.BLUE
             self._count += 1
             for _icount in range(self.REFRESH_COUNT - 1L):
                 self._time_table[_icount] = self._time_table[_icount + 1L]
@@ -3021,10 +2940,10 @@ class ProgressBar(object):
                                * (self._max_index - index) / index_by_step)
             else:
                 time_to_end = 0.
-            pos = (float(index) / self._max_index) * self.BAR_LENGTH
+            pos = (float(index) / self._max_index) * self._bar_length
             line = ("\r [" + "="*int(math.floor(pos)) + 
-                    " "*int(self.BAR_LENGTH - math.floor(pos)) + 
-                    "] [%d%%] [" %(pos*100./self.BAR_LENGTH) + 
+                    " "*int(self._bar_length - math.floor(pos)) + 
+                    "] [%d%%] [" %(pos*100./self._bar_length) + 
                     str(info) +"]")
             if remains:
                 line += (" [remains: " + 
@@ -3040,7 +2959,10 @@ class ProgressBar(object):
             rem_len = len(line) - self.MAX_CARAC + 1
             line = line[:-rem_len]
         if not self._silent:
-            sys.stdout.write(line)
+            if isinstance(sys.stdout, Logger):
+                sys.stdout.write(line, color=color, nolog=nolog)
+            else:
+                sys.stdout.write(line)
             sys.stdout.flush()
 
     def end(self, silent=False):
@@ -3059,7 +2981,10 @@ class ProgressBar(object):
                             time.time() - self._start_time),
                         remains=False, nolog=False)
             if not self._silent:
-                sys.stdout.write("\n")
+                if isinstance(sys.stdout, Logger):
+                    sys.stdout.write('\n', nolog=False)
+                else:
+                    sys.stdout.write("\n")
         else:
             self._erase_line()
             self.update(self._max_index, info="completed in " +
@@ -3101,7 +3026,7 @@ class Indexer(Tools):
         if file_key in self.index:
             return self.index[file_key]
         else:
-            warnings.warn("File key '%s' does not exist"%file_key)
+            self._print_warning("File key '%s' does not exist"%file_key)
             return None
             
     def __setitem__(self, file_key, file_path):
@@ -3136,7 +3061,7 @@ class Indexer(Tools):
         elif index == 2:
             return 'cam2'
         else:
-            raise StandardError(
+            self._print_error(
                 'Group index must be in %s'%(str(self.file_group_indexes)))
 
     def get_path(self, file_key, file_group=None, err=False):
@@ -3159,15 +3084,15 @@ class Indexer(Tools):
         elif (file_group in self.file_group_indexes):
             file_key = self._index2group(file_group) + '.' + file_key
         elif file_group is not None:
-            raise StandardError('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
+            self._print_error('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
 
         if file_key in self.index:
             return self[file_key]
         else:
             if err:
-                raise StandardError("File key '%s' does not exist"%file_key)
+                self._print_error("File key '%s' does not exist"%file_key)
             else:
-                warnings.warn("File key '%s' does not exist"%file_key)
+                self._print_warning("File key '%s' does not exist"%file_key)
 
     def set_file_group(self, file_group):
         """Set the group of the next files to be recorded. All given
@@ -3183,7 +3108,7 @@ class Indexer(Tools):
         if (file_group in self.file_groups) or (file_group is None):
             self.file_group = file_group
             
-        else: raise StandardError(
+        else: self._print_error(
             'Bad file group name. Must be in %s'%str(self.file_groups))
 
     def load_index(self):
@@ -3288,7 +3213,7 @@ class Lines(Tools):
     def __init__(self, **kwargs):
         """Lines class constructor.
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
 
@@ -3315,9 +3240,9 @@ class Lines(Tools):
             for line in f:
                 if '#' not in line and len(line) > 2:
                     line = line.split()
-                    self.air_sky_lines_nm[line[1]] = (float(line[1]) / 10., float(line[3]))
-        except Exception, e:
-            raise StandardError('Error during parsing of {}: {}'.format(sky_lines_file_path, e))
+                    self.air_sky_lines_nm[line[1]] = (float(line[0]) / 10., float(line[2]))
+        except:
+            self._print_error('Error during parsing of '%sky_lines_file_path)
         finally:
             f.close()
 
@@ -3500,7 +3425,7 @@ class Lines(Tools):
 #### CLASS OptionFile ###########################
 #################################################
         
-class OptionFile(object):
+class OptionFile(Tools):
     """Manage an option file.
 
     An option file is a file containing keywords and values and
@@ -3528,27 +3453,37 @@ class OptionFile(object):
       of the file and can be used to give a description of the file.
     """
 
+    input_file_path = None
+    option_file = None # the option file object
+    options = None # the core list containing the parsed file
+    lines = None # a core.Lines instance
+
     # special keywords that can be used mulitple times without being
     # overriden.
     protected_keys = ['REG', 'TUNE'] 
 
-    def __init__(self, option_file_path, protected_keys=[]):
+    header_line = None
+    
+    def __init__(self, option_file_path, protected_keys=[], **kwargs):
         """Initialize class
 
         :param option_file_path: Path to the option file
 
         :param protected_keys: (Optional) Add other protected keys to
           the basic ones (default []).
-        """        
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        Tools.__init__(self, **kwargs)
+        
         # append new protected keys
         for key in protected_keys:
             self.protected_keys.append(key) 
         
-        self.option_file = open(option_file_path, 'r')
+        self.option_file = self.open_file(option_file_path, 'r')
         self.input_file_path = str(option_file_path)
         self.options = dict()
-        self.lines = Lines()
-        self.header_line = None
+        self.lines = Lines(config_file_name=self.config_file_name)
         for line in self.option_file:
             if len(line) > 2:
                 if line[0:2] == '##':
@@ -3651,7 +3586,7 @@ class OptionFile(object):
                             and delta_nm is not None):
                             lines_nm += self.lines.get_sky_lines(
                                 nm_min, nm_max, delta_nm)
-                        else: raise StandardError('Keyword SKY used but nm_min, nm_max or delta_nm parameter not set')
+                        else: self._print_error('Keyword SKY used but nm_min, nm_max or delta_nm parameter not set')
                             
                     else:
                         lines_nm.append(self.lines.get_line_nm(iline))
@@ -3671,7 +3606,7 @@ class OptionFile(object):
             if len(filter_edges) == 2:
                 return np.array(filter_edges).astype(float)
             else:
-                raise StandardError(
+                self._print_error(
                     'Bad filter edges definition: check option file')
         else:
             return None
@@ -3689,7 +3624,7 @@ class OptionFile(object):
                     [ifringe.split(',') for ifringe in fringes],
                     dtype=float)
             except ValueError:
-                raise StandardError("Fringes badly defined. Use no whitespace, each fringe must be separated by a ':'. Fringes parameters must be given in the order [frequency, amplitude] separated by a ',' (e.g. 150.0,0.04:167.45,0.095 gives 2 fringes of parameters [150.0, 0.04] and [167.45, 0.095]).")
+                self._print_error("Fringes badly defined. Use no whitespace, each fringe must be separated by a ':'. Fringes parameters must be given in the order [frequency, amplitude] separated by a ',' (e.g. 150.0,0.04:167.45,0.095 gives 2 fringes of parameters [150.0, 0.04] and [167.45, 0.095]).")
         return None
 
     def get_bad_frames(self):
@@ -3713,7 +3648,7 @@ class OptionFile(object):
                     bad_frames_list.append(int(ibad))   
             return np.array(bad_frames_list)
         except ValueError:
-            raise StandardError("Bad frames badly defined. Use no whitespace, bad frames must be comma separated. the sign ':' can be used to define a range of bad frames, commas and ':' can be mixed. Frame index must be integer.")
+            self._print_error("Bad frames badly defined. Use no whitespace, bad frames must be comma separated. the sign ':' can be used to define a range of bad frames, commas and ':' can be mixed. Frame index must be integer.")
 
     def get_tuning_parameters(self):
         """Return the list of tuning parameters.
@@ -3752,7 +3687,7 @@ class ParamsFile(Tools):
           data in the file are read and new data is appended (default
           True).
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
         
@@ -3770,7 +3705,7 @@ class ParamsFile(Tools):
                             line_dict[self._keys[ikey]] = iline[ikey]
                         self._params_list.append(line_dict)
                     else:
-                        raise StandardError(
+                        self._print_error(
                             'Wrong file format: {:s}'.format(file_path))
             self.f.close()
             self.f = self.open_file(file_path, 'a')
@@ -3811,7 +3746,7 @@ class ParamsFile(Tools):
             if keys == self._keys:
                 self._params_list.append(params)
             else:
-                raise StandardError('parameters of the new entry are not the same as the old entries')
+                self._print_error('parameters of the new entry are not the same as the old entries')
         
         for ikey in self._keys:
             self.f.write(' {}'.format(self._params_list[-1][ikey]))
@@ -3847,7 +3782,19 @@ class HDFCube(Cube):
       dataset *frame00000/data*)
 
     * A **mask** dataset can be added to each frame.
-    """        
+    """
+
+    _hdf5f = None # Instance of h5py.File
+    _silent_load = False
+    is_complex = None
+    _prebinning = None
+    quad_nb = None # number of quads (set to None if HDFCube is not a
+                   # cube split in quads but a cube split in frames)
+    is_quad_cube = None # set to True if cube is split in quad. set to
+                        # False if split in frames.
+    
+    """Set to True if data is complex"""
+    
     def __init__(self, cube_path, project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=False, indexer=None, silent_init=False,
@@ -3884,40 +3831,29 @@ class HDFCube(Cube):
 
         :param silent_init: (Optional) If True Init is silent (default False).
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
-        """ 
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+ 
         Tools.__init__(self, **kwargs)
-        self.star_list = None
-        self.z_median = None
-        self.z_mean = None
-        self.z_std = None
-        self.mean_image = None
-        self._silent_load = False
-        self._return_mask = False # When True, __get_item__ return mask data
-                                  # instead of 'normal' data
-
-        self._hdf5f = None # Instance of h5py.File
-        self.quad_nb = None # number of quads (set to None if HDFCube
-                            # is not a cube split in quads but a cube
-                            # split in frames)
-        self.is_quad_cube = None # set to True if cube is split in quad. set to
-                                 # False if split in frames.
-
         self.overwrite = overwrite
         self.indexer = indexer
         self._project_header = project_header
         self._wcs_header = wcs_header
         self._calibration_laser_header = calibration_laser_header
 
-        
         self.is_hdf5_cube = True
-        self.is_hdf5_frames = False
-        self.image_list = None
+
         self._prebinning = None
         if binning is not None:
             if int(binning) > 1:
                 self._prebinning = int(binning)
             
+        self.DIV_NB = int(self._get_config_parameter(
+            "DIV_NB"))
+        self.QUAD_NB = self.DIV_NB**2L
+        self.BIG_DATA = bool(int(self._get_config_parameter(
+            "BIG_DATA")))
+        
         self._parallel_access_to_data = False
 
         if cube_path is None or cube_path == '': return
@@ -3930,6 +3866,8 @@ class HDFCube(Cube):
             if 'image_list' in f:
                 self.image_list = f['image_list'][:]
             
+            
+
             # check if cube is quad or frames based
             self.quad_nb = self._get_attribute('quad_nb', optional=True)
             if self.quad_nb is not None:
@@ -3943,7 +3881,7 @@ class HDFCube(Cube):
                     [igrp for igrp in f
                      if 'quad' == igrp[:4]])
                 if quad_nb != self.quad_nb:
-                    raise StandardError("Corrupted HDF5 cube: 'quad_nb' attribute ([]) does not correspond to the real number of quads ({})".format(self.quad_nb, quad_nb))
+                    self._print_error("Corrupted HDF5 cube: 'quad_nb' attribute ([]) does not correspond to the real number of quads ({})".format(self.quad_nb, quad_nb))
 
                 if self._get_hdf5_quad_path(0) in f:
                     # test whether data is complex
@@ -3955,7 +3893,7 @@ class HDFCube(Cube):
                         self.dtype = float
                 
                 else:
-                    raise StandardError('{} is missing. A valid HDF5 cube must contain at least one quadrant'.format(
+                    self._print_error('{} is missing. A valid HDF5 cube must contain at least one quadrant'.format(
                         self._get_hdf5_quad_path(0)))
                     
 
@@ -3965,13 +3903,13 @@ class HDFCube(Cube):
                      if 'frame' == igrp[:5]])
 
                 if frame_nb != self.dimz:
-                    raise StandardError("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
+                    self._print_error("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
                 
             
                 if self._get_hdf5_frame_path(0) in f:                
                     if ((self.dimx, self.dimy)
                         != f[self._get_hdf5_data_path(0)].shape):
-                        raise StandardError('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
+                        self._print_error('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
 
                     if self._get_hdf5_data_path(0, mask=True) in f:
                         self._mask_exists = True
@@ -3986,7 +3924,7 @@ class HDFCube(Cube):
                         self.is_complex = False
                         self.dtype = float
                 else:
-                    raise StandardError('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
+                    self._print_error('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
                         self._get_hdf5_frame_path(0)))
                 
 
@@ -3997,11 +3935,11 @@ class HDFCube(Cube):
 
         if (self.dimx) and (self.dimy) and (self.dimz):
             if not silent_init:
-                logging.info("Data shape : (" + str(self.dimx) 
+                self._print_msg("Data shape : (" + str(self.dimx) 
                                 + ", " + str(self.dimy) + ", " 
                                 + str(self.dimz) + ")")
         else:
-            raise StandardError("Incorrect data shape : (" 
+            self._print_error("Incorrect data shape : (" 
                             + str(self.dimx) + ", " + str(self.dimy) 
                               + ", " +str(self.dimz) + ")")
 
@@ -4022,7 +3960,7 @@ class HDFCube(Cube):
             return False
         # check return mask possibility
         if self._return_mask and not self._mask_exists:
-            raise StandardError("No mask found with data, cannot return mask")
+            self._print_error("No mask found with data, cannot return mask")
         
         # produce default values for slices
         x_slice = self._get_default_slice(key[0], self.dimx)
@@ -4114,7 +4052,7 @@ class HDFCube(Cube):
                 return f.attrs[attr]
             else:
                 if not optional:
-                    raise StandardError('Attribute {} is missing. The HDF5 cube seems badly formatted. Try to create it again with the last version of ORB.'.format(attr))
+                    self._print_error('Attribute {} is missing. The HDF5 cube seems badly formatted. Try to create it again with the last version of ORB.'.format(attr))
                 else:
                     return None
 
@@ -4178,7 +4116,7 @@ class HDFCube(Cube):
             if 'calib_map' in f:
                 return f['calib_map'][:]
             else:
-                warnings.warn('No calibration laser map stored')
+                self._print_warning('No calibration laser map stored')
                 return None
 
            
@@ -4243,7 +4181,8 @@ class OutHDFCube(Tools):
     .. note:: This class has been created because
       :py:class:`orb.core.HDFCube` must not be able to change its
       underlying dataset (the HDF5 cube is always read-only).
-    """    
+    """
+    
     def __init__(self, export_path, shape, overwrite=False,
                  reset=False, **kwargs):
         """Init OutHDFCube class.
@@ -4258,7 +4197,7 @@ class OutHDFCube(Tools):
         :param reset: (Optional) If True and if the file already
           exists, it is deleted (default False).
         
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
         
@@ -4275,10 +4214,10 @@ class OutHDFCube(Tools):
                                    os.path.splitext(export_path)[1])
                 index += 1
         if self.export_path != export_path:
-            warnings.warn('Cube path changed to {} to avoid overwritting an already existing file'.format(self.export_path))
+            self._print_warning('Cube path changed to {} to avoid overwritting an already existing file'.format(self.export_path))
 
         if len(shape) == 3: self.shape = shape
-        else: raise StandardError('An HDF5 cube shape must be a tuple (dimx, dimy, dimz)')
+        else: self._print_error('An HDF5 cube shape must be a tuple (dimx, dimy, dimz)')
 
         try:
             self.f = self.open_hdf5(self.export_path, 'a')
@@ -4287,10 +4226,10 @@ class OutHDFCube(Tools):
                 os.remove(self.export_path)
                 self.f = self.open_hdf5(self.export_path, 'a')
             else:
-                raise StandardError(
+                self._print_error(
                     'IOError while opening HDF5 cube: {}'.format(e))
                 
-        logging.info('Opening OutHDFCube {} ({},{},{})'.format(
+        self._print_msg('Opening OutHDFCube {} ({},{},{})'.format(
             self.export_path, *self.shape))
         
         # add attributes
@@ -4367,7 +4306,7 @@ class OutHDFCube(Tools):
                     if dat.shape == self.imshape:
                         frame = dat
                     else:
-                        raise StandardError(
+                        self._print_error(
                             "Bad data shape {}. Must be {}".format(
                                 dat.shape, self.imshape))
                 dat = frame
@@ -4394,11 +4333,11 @@ class OutHDFCube(Tools):
             return dat
 
         if force_float32 and force_complex64:
-            raise StandardError('force_float32 and force_complex64 cannot be both set to True')
+            self._print_error('force_float32 and force_complex64 cannot be both set to True')
 
             
         if data is None and header is None and mask is None:
-            warnings.warn('Nothing to write in the frame {}').format(
+            self._print_warning('Nothing to write in the frame {}').format(
                 index)
             return
         
@@ -4465,7 +4404,7 @@ class OutHDFCube(Tools):
         if image_list is not None:
             self.f['image_list'] = np.array(image_list)
         else:
-            warnings.warn('empty image list')
+            self._print_warning('empty image list')
         
 
     def append_deep_frame(self, deep_frame):
@@ -4527,6 +4466,7 @@ class OutHDFCube(Tools):
 
 
 
+
 ##################################################
 #### CLASS OutHDFQuadCube ########################
 ##################################################           
@@ -4553,7 +4493,7 @@ class OutHDFQuadCube(OutHDFCube):
         :param reset: (Optional) If True and if the file already
           exists, it is deleted (default False).
         
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         OutHDFCube.__init__(self, export_path, shape, overwrite=overwrite,
                             reset=reset, **kwargs)
@@ -4593,11 +4533,11 @@ class OutHDFQuadCube(OutHDFCube):
         """
         
         if force_float32 and force_complex64:
-            raise StandardError('force_float32 and force_complex64 cannot be both set to True')
+            self._print_error('force_float32 and force_complex64 cannot be both set to True')
 
             
         if data is None and header is None:
-            warnings.warn('Nothing to write in the frame {}').format(
+            self._print_warning('Nothing to write in the frame {}').format(
                 index)
             return
         
@@ -4634,6 +4574,73 @@ class OutHDFQuadCube(OutHDFCube):
         
         
 
+
+##################################################
+#### CLASS Logger ################################
+##################################################           
+
+class Logger(object):
+    """Logger class."""
+
+    noprint = None
+    nolog = None
+    stdout = None
+    stderr = None
+    file = None
+    
+    def __init__(self, name, mode='a', noprint=False, nolog=False):
+        """Init Logger class.
+
+        :param name: Name of the logfile.
+
+        :param mode: (Optional) File mode (same as file mode for the classic
+          open() function) (default 'a').
+
+        :param noprint: (Optional) If True nothing is printed on the terminal (or
+          more generally on the regular stdout) (default False).
+
+        :param nolog: (Optional) If True nothing is logged in the
+          logfile (default False).
+        """
+        self.file = open(name, mode)
+        self.stdout = sys.stdout
+        self.stderr = sys.stderr
+        sys.stdout = self
+        sys.stderr = self
+        self.noprint = noprint
+        self.nolog = nolog
+        
+        
+    def __del__(self):
+        """Class destructor."""
+        sys.stdout = self.stdout
+        self.file.close()
+        
+    def write(self, msg, color=None, nolog=False):
+        """Write in the logfile and on the terminal (stdout)
+
+        :param msg: Message to write.
+
+        :param color: (Optional) Output will be colored. Must be a
+          :py:class:`~orb.core.TextColor` attribute (default None).
+
+        :param nolog: (Optional) If True nothing is printed in the log
+          (default False).
+        """
+        msg_color = str(msg)
+        if color is not None:
+            msg_color = color + msg + TextColor.END
+
+        if not nolog and not self.nolog:
+            self.file.write(msg)
+        if not self.noprint:
+            self.stdout.write(msg_color)
+        self.flush()
+
+    def flush(self):
+        """Flush stdout and logfile."""
+        self.stdout.flush()
+        self.file.flush()
         
 ##################################################
 #### CLASS Waves #################################
@@ -4656,7 +4663,7 @@ class Waves(object):
         wavelengths.
         """
         if len(np.array(nm).shape) > 1:
-            raise StandardError('nm must be an array of dimension 1')
+            raise Exception('nm must be an array of dimension 1')
 
         if not isinstance(nm, list):
             if np.size(nm) == 1:
@@ -4680,7 +4687,7 @@ class Waves(object):
         if np.size(velocity) == 1:
             self.velocity = float(velocity)
         elif np.array(velocity).shape != self.nm.shape:
-            raise StandardError('Velocity array shape must be the same as nm shape')
+            raise Exception('Velocity array shape must be the same as nm shape')
         else:
             self.velocity = np.array(velocity).astype(np.longdouble)
 
@@ -4720,7 +4727,7 @@ class Standard(Tools):
 
         :param std_name: Name of the standard.
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
              
@@ -4733,7 +4740,7 @@ class Standard(Tools):
         elif std_type == 'OKE':
             self.ang, self.flux = self._read_oke_dat(std_file_path)
         else:
-            raise StandardError(
+            self._print_error(
                 "Bad type of standard file. Must be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'")
        
 
@@ -4837,7 +4844,7 @@ class Standard(Tools):
         hdr = hdu[1].header
         data = hdu[1].data
 
-        logging.info('Calspec file flux unit: %s'%hdr['TUNIT2'])
+        self._print_msg('Calspec file flux unit: %s'%hdr['TUNIT2'])
         
         # wavelength is in A
         spec_ang = np.array([data[ik][0] for ik in range(len(data))])
@@ -4861,11 +4868,11 @@ class Standard(Tools):
         :param corr: (Optional) Correction coefficient related to the
            incident angle (default 1).
         """
-
+        
         STEP_NB = 1000
         camera_number = int(camera_number)
         if camera_number not in (1,2):
-            raise StandardError('Camera number must be 1 or 2')
+            self._print_error('Camera number must be 1 or 2')
         
         (filter_trans,
          filter_min, filter_max) = FilterFile(filter_name).get_filter_function(
@@ -4893,8 +4900,8 @@ class Standard(Tools):
             nm_axis, std_spectrum,
             filter_trans, optics_trans, atm_trans,
             mirror_trans, qe_cam,
-            self.config.MIR_SURFACE,
-            self.config['CAM{}_GAIN'.format(camera_number)])
+            float(self._get_config_parameter('MIR_SURFACE')),
+            float(self._get_config_parameter('CAM{}_GAIN'.format(camera_number))))
         return star_flux
         
 
@@ -4924,9 +4931,13 @@ class Standard(Tools):
             step, order, filter_name,
             camera_number, airmass=airmass)
         
-        dimx = self.config['CAM{}_DETECTOR_SIZE_X'.format(camera_number)]
-        dimy = self.config['CAM{}_DETECTOR_SIZE_Y'.format(camera_number)]
-        fov = self.config['FIELD_OF_VIEW_{}'.format(camera_number)]
+        dimx = float(self._get_config_parameter(
+            'CAM{}_DETECTOR_SIZE_X'.format(camera_number)))
+        dimy = float(self._get_config_parameter(
+            'CAM{}_DETECTOR_SIZE_Y'.format(camera_number)))
+        fov = float(self._get_config_parameter(
+            'FIELD_OF_VIEW_{}'.format(camera_number)))
+
         plate_scale = fov / max(dimx, dimy) * 60 # arcsec
         return utils.photometry.compute_optimal_texp(
             star_flux, seeing,
@@ -4971,7 +4982,7 @@ class FilterFile(Tools):
 
         :param filter_name: Name of the filter.
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
         self.basic_path = self._get_filter_file_path(filter_name)
@@ -5036,14 +5047,14 @@ class PhaseFile(Tools):
 
         :param filter_name: Name of the filter.
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
         self.basic_path = self._get_phase_file_path(filter_name)
         self.improved_path = os.path.splitext(self.basic_path)[0] + '.hdf5'
 
         if not os.path.exists(self.improved_path):
-            warnings.warn('Improved phase file {} does not exist !'.format(self.improved_path))
+            self._print_warning('Improved phase file {} does not exist !'.format(self.improved_path))
             self.basic_phase = utils.fft.read_phase_file(
                 self.basic_path, return_spline=True)
         else:
@@ -5052,23 +5063,23 @@ class PhaseFile(Tools):
             with self.open_hdf5(self.improved_path, 'r') as inf:
                 if 'angles' in inf:
                     self.angles = inf['angles'][:]
-                else: raise StandardError('Badly formatted phase file: angles is missing')
+                else: self._print_error('Badly formatted phase file: angles is missing')
                 if 'phases' in inf:
                     self.phases = inf['phases'][:]
-                else: raise StandardError('Badly formatted phase file: phases is missing')
+                else: self._print_error('Badly formatted phase file: phases is missing')
                 if 'phases_err_min' in inf:
                     self.phases_err_min = inf['phases_err_min'][:]
-                else: raise StandardError('Badly formatted phase file: phases_err_min is missing')
+                else: self._print_error('Badly formatted phase file: phases_err_min is missing')
                 if 'phases_err_max' in inf:
                     self.phases_err_max = inf['phases_err_max'][:]
-                else: raise StandardError('Badly formatted phase file: phases_err_max is missing')
+                else: self._print_error('Badly formatted phase file: phases_err_max is missing')
 
                 if 'step' in inf.attrs:
                     self.step = inf.attrs['step']
-                else: raise StandardError('Badly formatted phase file: step attribute is missing')
+                else: self._print_error('Badly formatted phase file: step attribute is missing')
                 if 'order' in inf.attrs:
                     self.order = inf.attrs['order']
-                else: raise StandardError('Badly formatted phase file: order attribute is missing')
+                else: self._print_error('Badly formatted phase file: order attribute is missing')
 
             
 
@@ -5105,7 +5116,7 @@ class PhaseFile(Tools):
             outf.create_dataset('phases', data=np.array(phases))
             outf.create_dataset('phases_err_min', data=np.array(phases_err_min))
             outf.create_dataset('phases_err_max', data=np.array(phases_err_max))
-        logging.info('Improved phase file {} written'.format(path))
+        self._print_msg('Improved phase file {} written'.format(path))
         
 
     def get_improved_phase(self, calib_laser_nm, return_spline=True):
@@ -5136,7 +5147,7 @@ class PhaseFile(Tools):
         cm1_axis = utils.spectrum.create_cm1_axis(
             phase.shape[0], self.step, self.order,
             corr=calib_laser_nm/float(
-                self.config.CALIB_NM_LASER))
+                self._get_config_parameter('CALIB_NM_LASER')))
         if return_spline:
             nonans = ~np.isnan(phase)
             return interpolate.UnivariateSpline(

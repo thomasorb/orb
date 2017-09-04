@@ -50,12 +50,6 @@ from scipy import interpolate
 import h5py
 import dill
 
-## ORB IMPORTS
-## MODULES IMPORTS
-# check if the compilation is up-to-date
-# recompile if necessary
-## import pyximport; pyximport.install(
-##     setup_args={"include_dirs":np.get_include()})
 import cutils
 import cgvar
 
@@ -312,7 +306,6 @@ class Tools(object):
         self._data_path_hdr = self._get_data_path_hdr()
         self._tuning_parameters = tuning_parameters
         self._silent = silent
-
     
     def _reset_logging_state(self):
         """Force a logging reset"""
@@ -2834,15 +2827,13 @@ class Cube(Tools):
                         calibration_laser_map, self.dimx, self.dimy)
 
             if calibration_laser_map is not None:
-                self._print_msg('Append calibration laser map')
                 outcube.append_calibration_laser_map(calibration_laser_map,
                                                      header=calib_map_hdr)
 
             if deep_frame_path is not None:
                 deep_frame = self.read_fits(deep_frame_path)
-                self._print_msg('Append deep frame')
                 outcube.append_deep_frame(deep_frame)
-                
+
             if not self.is_quad_cube: # frames export
                 progress = ProgressBar(zmax-zmin)
                 for iframe in range(zmin, zmax):
@@ -2861,7 +2852,6 @@ class Cube(Tools):
                         header=self.get_frame_header(iframe),
                         force_float32=True)
                 progress.end()
-                
             else: # quad export
                 
                 progress = ProgressBar(self.config.QUAD_NB)
@@ -5140,6 +5130,6 @@ class PhaseFile(Tools):
         if return_spline:
             nonans = ~np.isnan(phase)
             return interpolate.UnivariateSpline(
-                cm1_axis[nonans], phase[nonans], k=3, s=0, ext=1)
+                cm1_axis[nonans], phase[nonans], k=3, s=0, ext=0)
         else: return phase
             

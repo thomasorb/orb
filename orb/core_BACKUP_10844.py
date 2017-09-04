@@ -50,12 +50,15 @@ from scipy import interpolate
 import h5py
 import dill
 
+<<<<<<< HEAD
+=======
 ## ORB IMPORTS
 ## MODULES IMPORTS
 # check if the compilation is up-to-date
 # recompile if necessary
 ## import pyximport; pyximport.install(
 ##     setup_args={"include_dirs":np.get_include()})
+>>>>>>> master
 import cutils
 import cgvar
 
@@ -196,8 +199,32 @@ class Tools(object):
     
     _MASK_FRAME_TAIL = '_mask.fits' # Tail of a mask frame
     
+<<<<<<< HEAD
     def __init__(self, instrument=None, data_prefix="./temp/data.",
                  tuning_parameters=dict(), ncpus=None, silent=False):
+=======
+    _msg_class_hdr = "" # header of any message printed by this class
+                        # or its inheritance (see _get_msg_class_hdr()
+                        # function)
+                        
+    _data_path_hdr = "" # first part of the path of all the data files
+                        # created during the reduction process.
+                        
+    _data_prefix = "" # prefix used in the creation of _data_path_hdr
+                      # (see _get_data_path_hdr() function)
+
+    _no_log = False # If True no logfile is created
+
+    _tuning_parameters = dict() # Dictionay containing the full names of the
+                                # parameter and their new value.
+
+    _silent = False # If True only error messages will be diplayed on screen
+
+
+    def __init__(self, data_prefix="./temp/data.", no_log=False,
+                 tuning_parameters=dict(), ncpus=None,
+                 config_file_name='config.orb', silent=False):
+>>>>>>> master
         """Initialize Tools class.
 
         :param instrument: (Optional) Instrument configuration to
@@ -312,7 +339,6 @@ class Tools(object):
         self._data_path_hdr = self._get_data_path_hdr()
         self._tuning_parameters = tuning_parameters
         self._silent = silent
-
     
     def _reset_logging_state(self):
         """Force a logging reset"""
@@ -2840,9 +2866,14 @@ class Cube(Tools):
 
             if deep_frame_path is not None:
                 deep_frame = self.read_fits(deep_frame_path)
+<<<<<<< HEAD
+                outcube.append_deep_frame(deep_frame)
+
+=======
                 self._print_msg('Append deep frame')
                 outcube.append_deep_frame(deep_frame)
                 
+>>>>>>> master
             if not self.is_quad_cube: # frames export
                 progress = ProgressBar(zmax-zmin)
                 for iframe in range(zmin, zmax):
