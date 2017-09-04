@@ -2083,7 +2083,10 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         """Return the sum of the flux around a transformed list of
         star positions for a list of parameters.        
         """
-        _wcs = pywcs.WCS(_wcs_str)
+        if _wcs_str is None:
+            _wcs = None
+        else:
+            _wcs = pywcs.WCS(_wcs_str)
         result = np.empty((guess_list.shape[0], 4))
         result.fill(np.nan)
         if _wcsp is not None and _wcs is not None:
@@ -2184,10 +2187,11 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
 
     if init_wcs is not None:
         wcs_params = get_wcs_parameters(init_wcs)
+        init_wcs_str = init_wcs.to_header_string(relax=True)
     else:
         wcs_params = None
+        init_wcs_str = None
 
-    init_wcs_str = init_wcs.to_header_string(relax=True)
     # parallel processing of each guess list part
     jobs = [(ijob, job_server.submit(
         get_total_flux, 
