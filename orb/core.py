@@ -53,8 +53,8 @@ import dill
 ## MODULES IMPORTS
 # check if the compilation is up-to-date
 # recompile if necessary
-import pyximport; pyximport.install(
-    setup_args={"include_dirs":np.get_include()})
+## import pyximport; pyximport.install(
+##     setup_args={"include_dirs":np.get_include()})
 import cutils
 import cgvar
 

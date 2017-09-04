@@ -1383,7 +1383,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         cdef np.ndarray[np.float64_t, ndim=2] data = np.zeros_like(
             star, dtype=float)
         cdef np.ndarray[np.float64_t, ndim=2] res
-        cdef double dx, dy, x_min, x_max, y_min, y_max
+        cdef double dx, dy
+        cdef int x_min, x_max, y_min, y_max
         cdef int hsz
 
         if not transpose:
@@ -1551,7 +1552,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         box_size, dtype=float)
     cdef np.ndarray[np.float64_t, ndim=1] test_y = np.zeros(
         box_size, dtype=float)
-    cdef double x_min, x_max, y_min, y_max, rcx, rcy
+    cdef int x_min, x_max, y_min, y_max
+    cdef double rcx, rcy
     cdef np.ndarray[np.float64_t, ndim=1] noise_guess = np.zeros(
         (star_nb), dtype=float)
     cdef np.ndarray[np.float64_t, ndim=2] cov_matrix, box
@@ -1650,8 +1652,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         # define 'sky pixels'
         S_sky = surface_value(
             box.shape[0], box.shape[1],
-            stars_p[istar,2] + cov_p[1] - x_min,
-            stars_p[istar,3] + cov_p[2] - y_min,
+            stars_p[istar,2] + cov_p[1] - <double> x_min,
+            stars_p[istar,3] + cov_p[2] - <double> y_min,
             FWHM_SKY_COEFF * np.nanmedian(
                 fwhm_guess),
             np.max([box.shape[0], box.shape[1]]), SUB_DIV)
