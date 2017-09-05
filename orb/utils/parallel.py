@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import pp
 
@@ -44,7 +45,7 @@ def init_pp_server(ncpus=0, silent=False):
 
     ncpus = job_server.get_ncpus()
     if not silent:
-        print "Init of the parallel processing server with %d threads"%ncpus
+        logging.info("Init of the parallel processing server with %d threads"%ncpus)
     return job_server, ncpus
 
 def close_pp_server(js):

@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import time
 import sys
 import numpy as np
@@ -395,7 +396,7 @@ def compute_phase_coeffs_vector(phase_maps,
         res_map > orb.utils.stats.robust_median(best_res_distrib))] = 0
 
 
-    print "Number of well fitted phase vectors used to compute phase coefficients: %d"%len(np.nonzero(res_map_mask)[0])
+    logging.info("Number of well fitted phase vectors used to compute phase coefficients: %d"%len(np.nonzero(res_map_mask)[0]))
 
     phase_coeffs = list()
     order = 1
@@ -411,7 +412,7 @@ def compute_phase_coeffs_vector(phase_maps,
                                and (coeff > median_coeff - 2.* std_coeff))]
 
         phase_coeffs.append(np.mean(clean_phase_map))
-        print "Computed phase coefficient: %f (std: %f)"%(np.mean(clean_phase_map), np.std(clean_phase_map))
+        logging.info("Computed phase coefficient: %f (std: %f)"%(np.mean(clean_phase_map), np.std(clean_phase_map)))
         
         if np.std(clean_phase_map) >= abs(np.mean(clean_phase_map)):
             warnings.warn("Phase map standard deviation (%f) is greater than its mean value (%f) : the returned coefficient is not well determined and phase correction might be uncorrect"%(np.std(clean_phase_map), np.mean(clean_phase_map)))
@@ -1260,15 +1261,15 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
         p_fixed = list()
         steps = list()
         
-        print 'Brute force exploration space:'
+        logging.info('Brute force exploration space:')
         
         for i in range(len(guess_min)):
             slices.append(slice(guess_min[i], guess_max[i], gridsz*1j))
             p_fixed.append(np.nan)
             axes.append(np.linspace(guess_min[i], guess_max[i], gridsz))
             steps.append(axes[i][1] - axes[i][0])
-            print ' a{}: {} to {} [{}]'.format(
-                i, guess_min[i], guess_max[i], np.diff(axes[i])[0])
+            logging.info(' a{}: {} to {} [{}]'.format(
+                i, guess_min[i], guess_max[i], np.diff(axes[i])[0]))
 
         start_brute_time = time.time()
         brute = optimize.brute(
@@ -1277,10 +1278,10 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
                   r_interf_cube_fft, r_calib_map, nm_laser,
                   r_Z, r_high_order_cube, r_w3d, True, r_pm0, _r_pm1),
             full_output=True, finish=None)
-        print 'Brute force exploration time: {} s'.format(
-            time.time() - start_brute_time)
-        print 'Brute force guess: {} [min value: {:.4e}]'.format(
-            brute[0], brute[1])
+        logging.info('Brute force exploration time: {} s'.format(
+            time.time() - start_brute_time))
+        logging.info('Brute force guess: {} [min value: {:.4e}]'.format(
+            brute[0], brute[1]))
 
         ## brute_gridv = brute[3]
         ## best_index = np.unravel_index(np.argmin(brute_gridv),
@@ -1324,8 +1325,8 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
 
         new_zpd_pos = np.nanargmax(zpd_check_list) + min(zpd_check_range)
         new_zpd_shift = dimz/2 - new_zpd_pos
-        print 'Init ZPD shift: {}, real ZPD shift: {}'.format(
-            zpd_shift, new_zpd_shift)
+        logging.info('Init ZPD shift: {}, real ZPD shift: {}'.format(
+            zpd_shift, new_zpd_shift))
     else:
         new_zpd_shift = int(zpd_shift)
     
@@ -1438,7 +1439,7 @@ def optimize_phase3d(interf_cube, step, order, zpd_shift,
         # order 1 is corrected for the new zpd shift
         best_coeffs[-1] += (new_zpd_shift - zpd_shift) * math.pi / dimz
     
-        print 'Order 1 fitted value corrected for ZPD init shift ({} steps): {}'.format(new_zpd_shift - zpd_shift, best_coeffs[-1])
+        logging.info('Order 1 fitted value corrected for ZPD init shift ({} steps): {}'.format(new_zpd_shift - zpd_shift, best_coeffs[-1]))
         
     return best_coeffs
     

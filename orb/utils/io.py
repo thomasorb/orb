@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import numpy as np
 import time
@@ -214,7 +215,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
                            after=5)
 
             # write FITS file
-            hdu.writeto(fits_path, clobber=overwrite)
+            hdu.writeto(fits_path, overwrite=overwrite)
 
             if mask is not None:
                 hdu_mask.header = hdu.header
@@ -222,11 +223,11 @@ def write_fits(fits_path, fits_data, fits_header=None,
                 if mask_path is None:
                     mask_path = os.path.splitext(fits_path)[0] + '_mask.fits'
                     
-                hdu_mask.writeto(mask_path, clobber=overwrite)
+                hdu_mask.writeto(mask_path, overwrite=overwrite)
 
             if not (silent):
-                print "Data written as {} in {:.2f} s ".format(
-                    fits_path, time.time() - start_time)
+                logging.info("Data written as {} in {:.2f} s ".format(
+                    fits_path, time.time() - start_time))
 
             return fits_path
         else :

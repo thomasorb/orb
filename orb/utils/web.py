@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import urllib2
 from xml.dom import minidom
 import StringIO
@@ -45,7 +46,7 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
     :returns: [RA, DEC]
     """
     if verbose:
-        print "asking data from CDS server for : " + object_name
+        logging.info("asking data from CDS server for : " + object_name)
 
     keys = list()
     for ikey in object_name.split():
@@ -88,11 +89,11 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
         
     
     if verbose:
-        print "RA: {}".format(ra)
-        print "DEC: {}".format(dec)
+        logging.info("RA: {}".format(ra))
+        logging.info("DEC: {}".format(dec))
         if pm:
-            print "PM RA: {}".format(pm_ra)
-            print "PM DEC: {}".format(pm_dec)
+            logging.info("PM RA: {}".format(pm_ra))
+            logging.info("PM DEC: {}".format(pm_dec))
         
 
     if not degree:
@@ -149,8 +150,8 @@ def query_vizier(radius, target_ra, target_dec,
 
     params_number = len(out.split(','))
 
-    print "Sending query to VizieR server (catalog: {})".format(catalog)
-    print "Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec)
+    logging.info("Sending query to VizieR server (catalog: {})".format(catalog))
+    logging.info("Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec))
 
     URL = (orb.constants.VIZIER_URL + "asu-tsv/?-source=" + catalog
            + "&-c.ra=%f"%target_ra + '&-c.dec=%f'%target_dec
@@ -203,7 +204,7 @@ def query_vizier(radius, target_ra, target_dec,
     # sorting list to get the brightest stars first
     star_list = np.array(sorted(star_list, key=lambda istar: istar[2]))
 
-    print "%d stars recorded in the given field"%len(star_list)
-    print "Magnitude min: {}, max:{}".format(
-        np.min(star_list[:,2]), np.max(star_list[:,2]))
+    logging.info("%d stars recorded in the given field"%len(star_list))
+    logging.info("Magnitude min: {}, max:{}".format(
+        np.min(star_list[:,2]), np.max(star_list[:,2])))
     return star_list[:max_stars,:]

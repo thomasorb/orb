@@ -1833,7 +1833,7 @@ def part_value(np.ndarray[np.float64_t, ndim=1] distrib, double coeff):
     k = max(1, (min(<int> (coeff * np.size(cleaned_distrib)),
                     np.size(cleaned_distrib) - 1)))
     
-    return bn.partsort(cleaned_distrib, k)[k]
+    return bn.partition(cleaned_distrib, k)[k]
 
 def indft(np.ndarray[np.float64_t, ndim=1] a,
           np.ndarray[np.float64_t, ndim=1] x):

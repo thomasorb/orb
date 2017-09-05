@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from scipy import optimize, interpolate, signal
 import math
 import bottleneck as bn
@@ -590,32 +591,32 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
             box_size = min(star_box.shape)
             if not fix_fwhm:
                 if fit_params['fwhm_pix'] < fwhm_min:
-                    if check_reject: print 'FWHM < fwhm_min'
+                    if check_reject: logging.info('FWHM < fwhm_min')
                     return []
                 if fit_params['fwhm_pix'] > box_size:
-                    if check_reject: print 'FWHM > box_size'
+                    if check_reject: logging.info('FWHM > box_size')
                     return []
             if not fix_pos:
                 if abs(fit_params['x'] - guess_params[2]) > box_size/2.:
-                    if check_reject: print 'DX > box_size / 2'
+                    if check_reject: logging.info('DX > box_size / 2')
                     return []
                 if abs(fit_params['y'] - guess_params[3]) > box_size/2.:
-                    if check_reject: print 'DY > box_size / 2'
+                    if check_reject: logging.info('DY > box_size / 2')
                     return []
             if not fix_amp:
                 if fit_params['amplitude'] < 0.:
-                    if check_reject: print 'AMP < 0'
+                    if check_reject: logging.info('AMP < 0')
                     return []
             if not fix_amp and not fix_height:
                 if ((fit_params['amplitude'] + fit_params['height']
                      - np.min(star_box))
                     < ((np.max(star_box) - np.min(star_box)) * 0.5)):
-                    if check_reject: print 'AMP + HEI < 0.5 * max'
+                    if check_reject: logging.info('AMP + HEI < 0.5 * max')
                     return []
                 if ((fit_params['height'] + fit_params['amplitude']
                      - np.min(star_box))
                     < (np.median(star_box) - np.min(star_box))):
-                    if check_reject: print 'AMP + HEI < median'
+                    if check_reject: logging.info('AMP + HEI < median')
                     return []
         
         # reduced chi-square
@@ -944,8 +945,8 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
         else:
             fwhm_err = np.nan
         if not silent:
-            print 'Detected FWHM: {} [+/- {}] pixels'.format(
-                np.nanmedian(fwhm_guess_pix), np.nanmedian(fwhm_err))
+            logging.info('Detected FWHM: {} [+/- {}] pixels'.format(
+                np.nanmedian(fwhm_guess_pix), np.nanmedian(fwhm_err)))
     else:
         fwhm_err = np.empty(pos_list.shape[0], dtype=float)
         fwhm_err.fill(np.nan)
@@ -1020,7 +1021,7 @@ def load_star_list(star_list_path, silent=False):
 
     star_list = np.array(star_list, dtype=float)
     if not silent:
-        print "Star list of " + str(star_list.shape[0]) + " stars loaded"
+        logging.info("Star list of " + str(star_list.shape[0]) + " stars loaded")
     return star_list
 
 def radial_profile(a, xc, yc, rmax):
@@ -1759,7 +1760,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
         
     ## Print number of fitted stars
     if not silent:
-        print "%d/%d stars fitted" %(len(fitted_stars_params), star_list.shape[0])
+        logging.info("%d/%d stars fitted" %(len(fitted_stars_params), star_list.shape[0]))
 
     return fit_results
 
@@ -1911,7 +1912,7 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
                         full_output=True, xtol=1e-6, disp=False)
 
     if fit[-1] <= 4:
-        print 'Optimized average radius for direct transformation (in pixel) {}'.format(fit[1])
+        logging.info('Optimized average radius for direct transformation (in pixel) {}'.format(fit[1]))
         init_sip = p2sip(fit[0], init_sip, True)
 
     else:
@@ -1924,7 +1925,7 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
                         full_output=True, xtol=1e-6, disp=False)
 
     if fit[-1] <= 4:
-        print 'Optimized average radius for reverse transformation (in pixel) {}'.format(fit[1])
+        logging.info('Optimized average radius for reverse transformation (in pixel) {}'.format(fit[1]))
         new_wcs = p2sip(fit[0], init_sip, False)
         new_wcs.wcs.cd = np.dot(np.diag(new_wcs.wcs.get_cdelt()),
                                 new_wcs.wcs.get_pc())
@@ -2142,16 +2143,16 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         rc = (image.shape[0]/2., image.shape[1]/2.)
 
     if verbose:
-        print 'Brute force range:'
+        logging.info('Brute force range:')
         if len(x_range) > 1:
-            print 'X = {:.2f}:{:.2f}:{:.2f}'.format(
-                np.min(x_range), np.max(x_range), x_range[1] - x_range[0])
+            logging.info('X = {:.2f}:{:.2f}:{:.2f}'.format(
+                np.min(x_range), np.max(x_range), x_range[1] - x_range[0]))
         if len(y_range) > 1:
-            print 'Y = {:.2f}:{:.2f}:{:.2f}'.format(
-                np.min(y_range), np.max(y_range), y_range[1] - y_range[0])
+            logging.info('Y = {:.2f}:{:.2f}:{:.2f}'.format(
+                np.min(y_range), np.max(y_range), y_range[1] - y_range[0]))
         if len(r_range) > 1:
-            print 'R = {:.2f}:{:.2f}:{:.2f}'.format(
-                np.min(r_range), np.max(r_range), r_range[1] - r_range[0])
+            logging.info('R = {:.2f}:{:.2f}:{:.2f}'.format(
+                np.min(r_range), np.max(r_range), r_range[1] - r_range[0]))
 
 
     guess_list = list()
@@ -2202,7 +2203,8 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         args=(pguess_lists[ijob], image,
               star_list, rc, zoom_factor,
               box_size, kernel, init_wcs_str, wcs_params),
-        modules=("import numpy as np",
+        modules=("import logging",
+                 "import numpy as np",
                  "import astropy.wcs as pywcs",
                  "import orb.cutils",
                  "import warnings",
@@ -2239,8 +2241,8 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     dr = total_flux_list[index1d, 3]
 
     if verbose:
-        print 'Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
-            dx, dy, dr)
+        logging.info('Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
+            dx, dy, dr))
 
     if raise_border_error:
         if (dx == np.min(x_range)
@@ -2397,7 +2399,7 @@ def realign_images(_cube):
         dx = -np.nanmean(orb.utils.stats.sigmacut(neix, sigma=2.))
         dy = -np.nanmean(orb.utils.stats.sigmacut(neiy, sigma=2.))
 
-        print 'dx: {}, dy: {}'.format(dx, dy)
+        logging.info('dx: {}, dy: {}'.format(dx, dy))
         _cube[:,:,ik] = orb.utils.image.transform_frame(
             im2, 0, im2.shape[0], 0, im2.shape[1], [dx, dy, 0, 0, 0],
             (im2.shape[0]/2., im2.shape[1]/2.), 1., 1)

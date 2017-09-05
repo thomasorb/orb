@@ -75,6 +75,9 @@ class TextColor:
     GREEN   = '\x1b[32m'
     YELLOW  = '\x1b[33m'
     CYAN    = '\x1b[36m'
+    OKGREEN = '\033[92m'
+    KORED = '\033[91m'
+    END = DEFAULT
 
 
 #################################################
@@ -121,6 +124,118 @@ class LoggingFilter(logging.Filter):
         
 
 
+#################################################
+#### CLASS Logger ###############################
+#################################################
+
+class Logger(object):
+    def __init__(self, debug=False):
+        self.debug = bool(debug)
+        self.start_logging()
+
+    def _reset_logging_state(self):
+        """Force a logging reset"""
+        def excepthook_with_log(exctype, value, tb):
+            logging.error(value, exc_info=(exctype, value, tb))
+
+        # clear old logging state
+        self.root = self.getLogger()
+        [self.root.removeHandler(ihand) for ihand in self.root.handlers[:]]
+        [self.root.removeFilter(ihand) for ifilt in self.root.filters[:]]
+
+        # init logging
+        self.root.setLevel(logging.INFO)
+
+        ch = ColorStreamHandler()
+        ch.setLevel(logging.INFO)
+        if self.debug:
+            formatter = logging.Formatter(
+                self.get_logformat(),
+                self.get_logdateformat())
+        else:
+            formatter = logging.Formatter(
+                self.get_simplelogformat(),
+                self.get_logdateformat())
+        ch.setFormatter(formatter)
+        ch.addFilter(LoggingFilter())
+        self.root.addHandler(ch)
+
+        logging.captureWarnings(True)
+
+        sys.excepthook = excepthook_with_log
+
+    def getLogger(self):
+        return logging.getLogger()
+    
+    def start_logging(self):
+        """Reset logging only if logging is not set"""
+        if not self.get_logging_state():
+            self._reset_logging_state()
+
+    def start_file_logging(self, logfile_path=None):
+        """Start file logging
+
+        :param logfile_path: Path to the logfile. If none is provided
+          a default logfile path is used."""
+        self.logfile_path = logfile_path
+        self.start_logging()
+
+        if not self.get_file_logging_state():
+            self.root = self.getLogger()
+            self.root.setLevel(logging.INFO)
+
+            ch = logging.StreamHandler(
+                open(self._get_logfile_path(), 'a'))
+            ch.setLevel(logging.INFO)
+            formatter = logging.Formatter(
+                self.get_logformat(),
+                self.get_logdateformat())
+            ch.setFormatter(formatter)
+            ch.addFilter(LoggingFilter())
+            self.root.addHandler(ch)
+
+    def get_logging_state(self):
+        """Return True if the logging is set"""
+        _len = len(self.getLogger().handlers)
+        if _len == 0: return False
+        elif _len < 3: return True
+        else:
+            raise StandardError('Logging in strange state: {}'.format(self.getLogger().handlers))
+
+    def get_file_logging_state(self):
+        """Return True if the file logging appears set"""
+        _len = len(self.getLogger().handlers)
+        if _len < 2: return False
+        elif _len == 2: return True
+        else:
+            raise StandardError('File Logging in strange state: {}'.format(self.getLogger().handlers))
+        
+        
+    def get_logformat(self):
+        """Return a string describing the logging format"""
+        
+        return '%(asctime)s|%(module)s:%(lineno)s:%(funcName)s|%(levelname)s> %(message)s'
+
+    def get_simplelogformat(self):
+        """Return a string describing the simple logging format"""
+        
+        return '%(levelname)s> %(message)s'
+
+
+    def get_logdateformat(self):
+        """Return a string describing the logging date format"""
+        return '%y%m%d-%H:%M:%S'
+
+    def _get_logfile_path(self):
+        """Return logfile name"""
+        if self.logfile_path is None:
+            today = datetime.datetime.today()
+            self.logfile_path = 'orb.{:04d}{:02d}{:02d}.log'.format(
+                today.year, today.month, today.day)
+        return self.logfile_path
+
+
+    
 ################################################
 #### CLASS ROParams ############################
 ################################################
@@ -163,6 +278,11 @@ class ROParams(dict):
     def __setstate__(self, state):
         """Used to unpickle object"""
         self.update(state)
+
+    def reset(self, key, value):
+        """Force config parameter reset"""
+        dict.__setitem__(self, key, value)
+
         
 ################################################
 #### CLASS NoInstrumentConfigParams ############
@@ -179,6 +299,9 @@ class NoInstrumentConfigParams(ROParams):
         return ROParams.__getitem__(self, key)
 
     __getattr__ = __getitem__
+
+
+
 
      
 #################################################
@@ -224,7 +347,6 @@ class Tools(object):
         :param silent: If True only error messages will be diplayed on
           screen (default False).
         """
-        self.start_logging()
         self.params = ROParams()
         
         if instrument is not None:
@@ -311,96 +433,7 @@ class Tools(object):
         self._msg_class_hdr = self._get_msg_class_hdr()
         self._data_path_hdr = self._get_data_path_hdr()
         self._tuning_parameters = tuning_parameters
-        self._silent = silent
-
-    
-    def _reset_logging_state(self):
-        """Force a logging reset"""
-        def excepthook_with_log(exctype, value, tb):
-            logging.error(value, exc_info=(exctype, value, tb))
-
-        # clear old logging state
-        root = logging.getLogger()
-        [root.removeHandler(ihand) for ihand in root.handlers[:]]
-        [root.removeFilter(ihand) for ifilt in root.filters[:]]
-
-        # init logging
-        root.setLevel(logging.INFO)
-
-        ch = ColorStreamHandler()
-        ch.setLevel(logging.INFO)
-        formatter = logging.Formatter(
-            self.get_logformat(),
-            self.get_logdateformat())
-        ch.setFormatter(formatter)
-        ch.addFilter(LoggingFilter())
-        root.addHandler(ch)
-
-        logging.captureWarnings(True)
-
-        sys.excepthook = excepthook_with_log
-    
-
-    def start_logging(self):
-        """Reset logging only if logging is not set"""
-        if not self.get_logging_state():
-            self._reset_logging_state()
-
-    def start_file_logging(self, logfile_path=None):
-        """Start file logging
-
-        :param logfile_path: Path to the logfile. If none is provided
-          a default logfile path is used."""
-        self.logfile_path = logfile_path
-        self.start_logging()
-
-        if not self.get_file_logging_state():
-            root = logging.getLogger()
-            root.setLevel(logging.INFO)
-
-            ch = logging.StreamHandler(
-                open(self._get_logfile_path(), 'a'))
-            ch.setLevel(logging.INFO)
-            formatter = logging.Formatter(
-                self.get_logformat(),
-                self.get_logdateformat())
-            ch.setFormatter(formatter)
-            ch.addFilter(LoggingFilter())
-            root.addHandler(ch)
-
-    def get_logging_state(self):
-        """Return True if the logging is set"""
-        _len = len(logging.getLogger().handlers)
-        if _len == 0: return False
-        elif _len < 3: return True
-        else:
-            raise StandardError('Logging in strange state: {}'.format(logging.getLogger().handlers))
-
-    def get_file_logging_state(self):
-        """Return True if the file logging appears set"""
-        _len = len(logging.getLogger().handlers)
-        if _len < 2: return False
-        elif _len == 2: return True
-        else:
-            raise StandardError('File Logging in strange state: {}'.format(logging.getLogger().handlers))
-        
-        
-    def get_logformat(self):
-        """Return a string describing the logging format"""
-        
-        return '%(asctime)s|%(module)s:%(lineno)s:%(funcName)s|%(levelname)s> %(message)s'
-
-    def get_logdateformat(self):
-        """Return a string describing the logging date format"""
-        return '%y%m%d-%H:%M:%S'
-
-    def _get_logfile_path(self):
-        """Return logfile name"""
-        if self.logfile_path is None:
-            today = datetime.datetime.today()
-            self.logfile_path = 'orb.{:04d}{:02d}{:02d}.log'.format(
-                today.year, today.month, today.day)
-        return self.logfile_path
+        self._silent = silent    
 
     def get_param(self, key):
         """Get class parameter
@@ -2095,7 +2128,8 @@ class Cube(Tools):
                 jobs = [(ijob, job_server.submit(
                     self._get_frame_section,
                     args=(x_slice, y_slice, ik+ijob),
-                    modules=("numpy as np",)))
+                    modules=("import logging",
+                             "numpy as np",)))
                         for ijob in range(ncpus)]
 
                 for ijob, job in jobs:
@@ -2682,7 +2716,8 @@ class Cube(Tools):
                 self._get_frame_stat, 
                 args=(ik + ijob, nozero, stat_key, center,
                       xmin, xmax, ymin, ymax),
-                modules=("import numpy as np",
+                modules=("import logging",
+                         "import numpy as np",
                          "import bottleneck as bn")))
                     for ijob in range(ncpus)]
 
@@ -2834,13 +2869,13 @@ class Cube(Tools):
                         calibration_laser_map, self.dimx, self.dimy)
 
             if calibration_laser_map is not None:
-                self._print_msg('Append calibration laser map')
+                logging.info('Append calibration laser map')
                 outcube.append_calibration_laser_map(calibration_laser_map,
                                                      header=calib_map_hdr)
 
             if deep_frame_path is not None:
                 deep_frame = self.read_fits(deep_frame_path)
-                self._print_msg('Append deep frame')
+                logging.info('Append deep frame')
                 outcube.append_deep_frame(deep_frame)
                 
             if not self.is_quad_cube: # frames export

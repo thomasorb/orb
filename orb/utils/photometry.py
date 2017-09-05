@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import math
 import numpy as np
 import warnings
@@ -390,7 +391,7 @@ def compute_optimal_texp(star_flux, seeing, plate_scale,
     :param saturation: (Optional) Saturation value (default 30000).
     """
 
-    print 'Optimal exposure time is computed for a saturation value of: {} counts'.format(saturation)
+    logging.info('Optimal exposure time is computed for a saturation value of: {} counts'.format(saturation))
     max_flux = compute_star_central_pixel_value(
         seeing, plate_scale) * star_flux
 
@@ -499,8 +500,8 @@ def compute_flux_calibration_vector(re_spectrum, th_spectrum,
     ## pl.plot(std_cm1_axis, th_spectrum)
     ## pl.show()
 
-    print 'Mean theoretical flux of the star: %e ergs/cm^2/A/s'%orb.utils.stats.robust_mean(th_spectrum)
-    print 'Mean flux of the star in the cube: %e ADU/A/s'%orb.utils.stats.robust_mean(re_spectrum)
-    print 'Mean Flambda calibration: %e ergs/cm^2/[ADU]'%np.nanmean(flux_calibf[~np.isnan(th_spectrum)])
+    logging.info('Mean theoretical flux of the star: %e ergs/cm^2/A/s'%orb.utils.stats.robust_mean(th_spectrum))
+    logging.info('Mean flux of the star in the cube: %e ADU/A/s'%orb.utils.stats.robust_mean(re_spectrum))
+    logging.info('Mean Flambda calibration: %e ergs/cm^2/[ADU]'%np.nanmean(flux_calibf[~np.isnan(th_spectrum)]))
 
     return std_cm1_axis, flux_calibf

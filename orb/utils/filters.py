@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import numpy as np
 import warnings
 from scipy import interpolate
@@ -317,7 +318,7 @@ def get_filter_function(filter_file_path, step, order, n,
         warnings.warn("Filter edges (%f -- %f nm) determined automatically using a threshold of %f %% transmission coefficient"%(f_axis(filter_min), f_axis(filter_max), filter_threshold*100.))
     else:
         if not silent:
-            print "Filter edges read from filter file: %f -- %f"%(filter_min, filter_max)
+            logging.info("Filter edges read from filter file: %f -- %f"%(filter_min, filter_max))
 
         # filter edges converted to index of the filter vector
         filter_min = int(fpix_axis(filter_min))

@@ -1136,7 +1136,8 @@ class Astrometry(Tools):
                       precise_guess,
                       aper_coeff, blur, no_fit, estimate_local_noise,
                       multi_fit, enable_zoom, enable_rotation, saturation),
-                modules=("import orb.utils.stats",
+                modules=("import logging",
+                         "import orb.utils.stats",
                          "import orb.utils.image",
                          "import numpy as np",
                          "import math",
@@ -1553,7 +1554,8 @@ class Astrometry(Tools):
                       self.profile_name, self.fwhm_pix,
                       self.default_beta, self.fit_tol, MIN_FWHM_COEFF,
                       saturation_threshold, self.profile),
-                modules=("import numpy as np",
+                modules=("import logging",
+                         "import numpy as np",
                          "from orb.utils.astrometry import fit_star")))
                     for ijob in range(ncpus)]
 
@@ -2487,10 +2489,8 @@ class Aligner(Tools):
         self.zoom_factor = ((float(self.pix_size2) * float(self.bin2)) / 
                             (float(self.pix_size1) * float(self.bin1)))
         
-        self.astro1 = Astrometry(self.image1, fwhm_arc, fov1,
-                                 profile_name='gaussian')
-        self.astro2 = Astrometry(self.image2, fwhm_arc, fov2,
-                                 profile_name='gaussian')
+        self.astro1 = Astrometry(self.image1, profile_name='gaussian', instrument=self.instrument)
+        self.astro2 = Astrometry(self.image2, profile_name='gaussian', instrument=self.instrument)
 
         self.dx = init_dx
         self.dy = init_dy

@@ -20,6 +20,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import numpy as np
 import math
 import warnings
@@ -89,7 +90,7 @@ def aggregate_pixels(pixel_list, radius=1.42):
                 sources.append(new_source)
         sys.stdout.flush()
     print ' '*20
-    print '{} sources detected'.format(len(sources))
+    logging.info('{} sources detected'.format(len(sources)))
     return sources
 
 
