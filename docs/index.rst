@@ -64,3 +64,6 @@ Indices and tables
 .. _Mégantic: http://omm.craq-astro.ca/
 .. _CFHT: http://www.cfht.hawaii.edu/
 .. _Python: http://www.python.org/
+.. _ORB: https://github.com/thomasorb/orb
+.. _ORCS: https://github.com/thomasorb/orcs
+.. _SITELLE: http://www.cfht.hawaii.edu/Instruments/Sitelle

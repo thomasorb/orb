@@ -3,7 +3,7 @@ ORB
 ===
 
 ORB is the kernel module for the whole suite of data reduction and
-analysis tools for SITELLE: ORBS, ORCS, ...
+analysis tools for SITELLE_: ORBS_, ORCS_, ...
 
 It provides basic access to the data cubes as long as the fitting
 engine of ORCS and numerous utilitary functions for the analysis of
@@ -11,10 +11,12 @@ interferometric and spectral data, imaging data, astrometry,
 photometry.
 
 
-.. note:: Instructions are generally given for Ubuntu. It should work
-	  also for any Debian based operating system. All the
-	  installation can be used with pip or setup.py. Its mostly
-	  the same for Mac (see below).
+Documentation
+=============
+
+You can find the up-to-date documentation here:
+
+http://celeste.phy.ulaval.ca/orb-doc/index.html
 
 
 Python
@@ -38,6 +40,11 @@ release as a tar ball file then build it from sources.
 	  
 Installation for Ubuntu/Debian users
 ====================================
+
+.. note:: Instructions are generally given for Ubuntu. It should work
+	  also for any Debian based operating system. All the
+	  installation can be used with pip or setup.py. Its mostly
+	  the same for Mac (see below).
 
 .. note:: For Ubuntu users just add sudo in front of all commands
 
@@ -92,3 +99,8 @@ the generated file to remove all the created files::
   rm -rf `cat uninstall.txt`
   
 .. _ORB: https://github.com/thomasorb/orb
+.. _CFHT: http://www.cfht.hawaii.edu/
+.. _Python: http://www.python.org/
+.. _SITELLE: http://www.cfht.hawaii.edu/Instruments/Sitelle
+.. _ORBS: https://github.com/thomasorb/orbs
+.. _ORCS: https://github.com/thomasorb/orcs
