@@ -58,6 +58,9 @@ non-ASCII characters, a good one may be ``~/temp/``). Then cd into the
 extracted folder and type the following to install all the required
 python modules via pip::
   
+  pip install cython
+  pip install numpy
+  pip install gvar
   pip install -r requirements.txt
 
 The actual requirements file is (it can be found at the root of the

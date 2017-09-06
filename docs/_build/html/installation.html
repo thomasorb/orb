@@ -248,33 +248,37 @@ extract it in a temporary folder (try to avoid path containing
 non-ASCII characters, a good one may be <code class="docutils literal"><span class="pre">~/temp/</span></code>). Then cd into the
 extracted folder and type the following to install all the required
 python modules via pip:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">cython</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">numpy</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">gvar</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
 </pre></div>
 </div>
 <p>The actual requirements file is (it can be found at the root of the
 archive):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">astropy</span><span class="o">&gt;=</span><span class="mf">2.0</span>
-<span class="n">Bottleneck</span><span class="o">&gt;=</span><span class="mf">1.2</span><span class="o">.</span><span class="mi">1</span>
-<span class="n">cycler</span><span class="o">&gt;=</span><span class="mf">0.10</span><span class="o">.</span><span class="mi">0</span>
-<span class="n">Cython</span><span class="o">&gt;=</span><span class="mf">0.26</span>
-<span class="n">dill</span><span class="o">&gt;=</span><span class="mf">0.2</span><span class="o">.</span><span class="mf">7.1</span>
-<span class="n">emcee</span><span class="o">&gt;=</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">1</span>
-<span class="n">functools32</span><span class="o">&gt;=</span><span class="mf">3.2</span><span class="o">.</span><span class="mf">3.</span><span class="n">post2</span>
-<span class="n">gvar</span><span class="o">&gt;=</span><span class="mf">8.3</span><span class="o">.</span><span class="mi">2</span>
-<span class="n">h5py</span><span class="o">&gt;=</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">0</span>
-<span class="n">lsqfit</span><span class="o">&gt;=</span><span class="mf">9.1</span><span class="o">.</span><span class="mi">3</span>
-<span class="n">matplotlib</span><span class="o">&gt;=</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">2</span>
-<span class="n">numpy</span><span class="o">&gt;=</span><span class="mf">1.13</span><span class="o">.</span><span class="mi">1</span>
-<span class="n">pp</span><span class="o">&gt;=</span><span class="mf">1.6</span><span class="o">.</span><span class="mi">5</span>
-<span class="n">py</span><span class="o">&gt;=</span><span class="mf">1.4</span><span class="o">.</span><span class="mi">34</span>
-<span class="n">pyparsing</span><span class="o">&gt;=</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">0</span>
-<span class="n">pyregion</span><span class="o">&gt;=</span><span class="mf">1.2</span>
-<span class="n">pytest</span><span class="o">&gt;=</span><span class="mf">3.1</span><span class="o">.</span><span class="mi">3</span>
-<span class="n">python</span><span class="o">-</span><span class="n">dateutil</span><span class="o">&gt;=</span><span class="mf">2.6</span><span class="o">.</span><span class="mi">1</span>
-<span class="n">pytz</span><span class="o">&gt;=</span><span class="mf">2017.2</span>
-<span class="n">scipy</span><span class="o">&gt;=</span><span class="mf">0.19</span><span class="o">.</span><span class="mi">1</span>
-<span class="n">six</span><span class="o">&gt;=</span><span class="mf">1.10</span><span class="o">.</span><span class="mi">0</span>
-<span class="n">subprocess32</span><span class="o">&gt;=</span><span class="mf">3.2</span><span class="o">.</span><span class="mi">7</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">astropy</span><span class="o">==</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">Bottleneck</span><span class="o">==</span><span class="mf">1.2</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">cycler</span><span class="o">==</span><span class="mf">0.10</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">Cython</span><span class="o">==</span><span class="mf">0.26</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">dill</span><span class="o">==</span><span class="mf">0.2</span><span class="o">.</span><span class="mf">7.1</span>
+<span class="n">emcee</span><span class="o">==</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">functools32</span><span class="o">==</span><span class="mf">3.2</span><span class="o">.</span><span class="mf">3.</span><span class="n">post2</span>
+<span class="n">gvar</span><span class="o">==</span><span class="mf">8.3</span><span class="o">.</span><span class="mi">3</span>
+<span class="n">h5py</span><span class="o">==</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">lsqfit</span><span class="o">==</span><span class="mf">9.1</span><span class="o">.</span><span class="mi">3</span>
+<span class="n">matplotlib</span><span class="o">==</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">2</span>
+<span class="n">numpy</span><span class="o">==</span><span class="mf">1.13</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">orb</span><span class="o">-</span><span class="n">kernel</span><span class="o">==</span><span class="mf">3.1</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">pp</span><span class="o">==</span><span class="mf">1.6</span><span class="o">.</span><span class="mi">5</span>
+<span class="n">py</span><span class="o">==</span><span class="mf">1.4</span><span class="o">.</span><span class="mi">34</span>
+<span class="n">pyparsing</span><span class="o">==</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">pyregion</span><span class="o">==</span><span class="mf">1.2</span>
+<span class="n">pytest</span><span class="o">==</span><span class="mf">3.2</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">python</span><span class="o">-</span><span class="n">dateutil</span><span class="o">==</span><span class="mf">2.6</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">pytz</span><span class="o">==</span><span class="mf">2017.2</span>
+<span class="n">scipy</span><span class="o">==</span><span class="mf">0.19</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">six</span><span class="o">==</span><span class="mf">1.10</span><span class="o">.</span><span class="mi">0</span>
+<span class="n">subprocess32</span><span class="o">==</span><span class="mf">3.2</span><span class="o">.</span><span class="mi">7</span>
 </pre></div>
 </div>
 <p>Finally you can install orb with:</p>
@@ -318,7 +322,7 @@ rm -rf `cat uninstall.txt`
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Thomas Martin (thomas.martin.1@ulaval.ca).
+        &copy; Copyright 2017, Thomas Martin (thomas.martin.1@ulaval.ca).
 
     </p>
   </div>

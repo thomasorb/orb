@@ -49,7 +49,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Orb'
-copyright = u'2015, Thomas Martin (thomas.martin.1@ulaval.ca)'
+copyright = u'2017, Thomas Martin (thomas.martin.1@ulaval.ca)'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
