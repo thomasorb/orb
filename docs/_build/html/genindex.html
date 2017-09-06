@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 3.0.10 documentation</title>
+  <title>Index &mdash; Orb 3.1.0 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
         <link rel="index" title="Index"
               href="#"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.0.10 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 3.1.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                3.0.10
+                3.1.0
               </div>
             
           
@@ -258,6 +258,8 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.sinc1d_flux.params.a">(orb.utils.spectrum.sinc1d_flux parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.spectrum.sinc1d_phased.params.a">(orb.utils.spectrum.sinc1d_phased parameter)</a>
+</li>
+        <li><a href="orb.utils.html#orb.utils.spectrum.sinc21d_flux.params.a">(orb.utils.spectrum.sinc21d_flux parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d.params.a">(orb.utils.spectrum.sincgauss1d parameter)</a>
 </li>
@@ -526,6 +528,8 @@
         <li><a href="orb.utils.html#orb.utils.misc.correct_bad_frames_vector.params.bad_frames_vector">(orb.utils.misc.correct_bad_frames_vector parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.LoggingFilter.bad_names">bad_names (orb.core.LoggingFilter attribute)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.image.correct_map2d.params.bad_value">bad_value (orb.utils.image.correct_map2d parameter)</a>
 
       <ul>
@@ -533,6 +537,8 @@
 </li>
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.fft.transform_interferogram.params.balanced">balanced (orb.utils.fft.transform_interferogram parameter)</a>
+</li>
+      <li><a href="orb.html#orb.core.ProgressBar.BAR_LENGTH">BAR_LENGTH (orb.core.ProgressBar attribute)</a>
 </li>
       <li><a href="orb.html#orb.cutils.moffat_array2d.params.beta">beta (orb.cutils.moffat_array2d parameter)</a>
 
@@ -546,12 +552,6 @@
 </li>
       <li><a href="orb.html#orb.cutils.filter_background.params.big_box_coeff">big_box_coeff (orb.cutils.filter_background parameter)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.BIG_DATA">BIG_DATA (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.Cube.BIG_DATA">(orb.core.Cube attribute)</a>
-</li>
-      </ul></li>
       <li><a href="orb.html#orb.astrometry.Aligner.bin1">bin1 (orb.astrometry.Aligner attribute)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Aligner.bin2">bin2 (orb.astrometry.Aligner attribute)</a>
@@ -584,8 +584,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.astrometry.sky_background_level.params.bins">bins (orb.utils.astrometry.sky_background_level parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.TextColor.BLUE">BLUE (orb.core.TextColor attribute)</a>
-</li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_stars_in_cube.params.blur">blur (orb.astrometry.Astrometry.fit_stars_in_cube parameter)</a>
 
       <ul>
@@ -600,11 +598,9 @@
         <li><a href="orb.html#orb.cutils.median2d.params.box">(orb.cutils.median2d parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.box_size">box_size (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.cutils.check_cosmic_rays_neighbourhood.params.box_size">box_size (orb.cutils.check_cosmic_rays_neighbourhood parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.cutils.check_cosmic_rays_neighbourhood.params.box_size">(orb.cutils.check_cosmic_rays_neighbourhood parameter)</a>
-</li>
         <li><a href="orb.html#orb.cutils.detect_cosmic_rays.params.box_size">(orb.cutils.detect_cosmic_rays parameter)</a>
 </li>
         <li><a href="orb.html#orb.cutils.filter_background.params.box_size">(orb.cutils.filter_background parameter)</a>
@@ -620,8 +616,6 @@
         <li><a href="orb.utils.html#orb.utils.image.get_box_coords.params.box_size">(orb.utils.image.get_box_coords parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.box_size_coeff">box_size_coeff (orb.astrometry.Astrometry attribute)</a>
-</li>
       <li><a href="orb.html#orb.astrometry.Aligner.compute_alignment_parameters.params.brute_force">brute_force (orb.astrometry.Aligner.compute_alignment_parameters parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.brute_force_guess">brute_force_guess() (in module orb.utils.astrometry)</a>
@@ -810,7 +804,7 @@
         <li><a href="orb.utils.html#orb.utils.fft.gaussian_window.params.coeff">(orb.utils.fft.gaussian_window parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Logger.write.params.color">color (orb.core.Logger.write parameter)</a>
+      <li><a href="orb.html#orb.core.ColorStreamHandler">ColorStreamHandler (class in orb.core)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.create_master_frame.params.combine">combine (orb.utils.image.create_master_frame parameter)</a>
 
@@ -894,8 +888,6 @@
 </li>
       <li><a href="orb.html#orb.cutils.im2rgba.params.computed_pixels">computed_pixels (orb.cutils.im2rgba parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.Tools.config_file_name">config_file_name (orb.core.Tools attribute)</a>
-</li>
       <li><a href="orb.html#orb.fit.ContinuumModel">ContinuumModel (class in orb.fit)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.StarsParams.convert">convert() (orb.astrometry.StarsParams method)</a>
@@ -976,8 +968,6 @@
 </li>
       <li><a href="orb.html#orb.cutils.check_cosmic_rays_neighbourhood.params.cr_map">cr_map (orb.cutils.check_cosmic_rays_neighbourhood parameter)</a>
 </li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.create_balmer_table">create_balmer_table() (in module orb.utils.pyneb)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.spectrum.create_cm1_axis">create_cm1_axis() (in module orb.utils.spectrum)</a>
 </li>
       <li><a href="orb.html#orb.fit.create_cm1_lines_model">create_cm1_lines_model() (in module orb.fit)</a>
@@ -995,6 +985,8 @@
       <li><a href="orb.html#orb.cutils.create_transform_maps">create_transform_maps() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs">create_wcs() (in module orb.utils.astrometry)</a>
+</li>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.CRITICAL">CRITICAL (orb.core.ColorStreamHandler attribute)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_sip.params.crpix">crpix (orb.astrometry.Astrometry.fit_sip parameter)</a>
 
@@ -1028,6 +1020,8 @@
         <li><a href="orb.utils.html#orb.utils.vector.fft_filter.params.cutoff_coeff">(orb.utils.vector.fft_filter parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.TextColor.CYAN">CYAN (orb.core.TextColor attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1046,19 +1040,11 @@
         <li><a href="orb.html#orb.cutils.transform_B_to_A.params.da">(orb.cutils.transform_B_to_A parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.dark_current_level">dark_current_level (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.dark_current_level">dark_current_level (orb.utils.astrometry.fit_stars_in_frame parameter)</a>
+</li>
+      <li><a href="orb.html#orb.core.OutHDFCube.write_frame.params.data">data (orb.core.OutHDFCube.write_frame parameter)</a>
 
       <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.dark_current_level">(orb.utils.astrometry.fit_stars_in_frame parameter)</a>
-</li>
-      </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.data">data (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.astrometry.StarsParams.data">(orb.astrometry.StarsParams attribute)</a>
-</li>
-        <li><a href="orb.html#orb.core.OutHDFCube.write_frame.params.data">(orb.core.OutHDFCube.write_frame parameter)</a>
-</li>
         <li><a href="orb.html#orb.core.OutHDFQuadCube.write_quad.params.data">(orb.core.OutHDFQuadCube.write_quad parameter)</a>
 </li>
         <li><a href="orb.html#orb.core.Tools.write_hdf5.params.data">(orb.core.Tools.write_hdf5 parameter)</a>
@@ -1098,20 +1084,24 @@
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_star.params.dcl">(orb.utils.astrometry.fit_star parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.DEBUG">DEBUG (orb.core.ColorStreamHandler attribute)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.astrometry.dec2deg.params.dec">dec (orb.utils.astrometry.dec2deg parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.dec2deg">dec2deg() (in module orb.utils.astrometry)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.compute_radec_pm.params.dec_deg">dec_deg (orb.utils.astrometry.compute_radec_pm parameter)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.deep_frame">deep_frame (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.core.OutHDFCube.append_deep_frame.params.deep_frame">deep_frame (orb.core.OutHDFCube.append_deep_frame parameter)</a>
+</li>
+      <li><a href="orb.html#orb.core.Cube.export.params.deep_frame_path">deep_frame_path (orb.core.Cube.export parameter)</a>
+</li>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.DEFAULT">DEFAULT (orb.core.ColorStreamHandler attribute)</a>
 
       <ul>
-        <li><a href="orb.html#orb.core.OutHDFCube.append_deep_frame.params.deep_frame">(orb.core.OutHDFCube.append_deep_frame parameter)</a>
+        <li><a href="orb.html#orb.core.TextColor.DEFAULT">(orb.core.TextColor attribute)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.default_beta">default_beta (orb.astrometry.Astrometry attribute)</a>
-</li>
       <li><a href="orb.html#orb.cutils.fast_gaussian_kernel.params.deg">deg (orb.cutils.fast_gaussian_kernel parameter)</a>
 
       <ul>
@@ -1162,10 +1152,6 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.deltax">deltax (orb.utils.astrometry.create_wcs parameter)</a>, <a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.deltax">[1]</a>
 </li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_Balmer_ratio.params.dem">dem (orb.utils.pyneb.get_Balmer_ratio parameter)</a>
-</li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_cHbeta.params.den">den (orb.utils.pyneb.get_cHbeta parameter)</a>
-</li>
       <li><a href="orb.html#orb.astrometry.Astrometry.detect_all_sources">detect_all_sources() (orb.astrometry.Astrometry method)</a>
 </li>
       <li><a href="orb.html#orb.cutils.check_cosmic_rays_neighbourhood.params.detect_coeff">detect_coeff (orb.cutils.check_cosmic_rays_neighbourhood parameter)</a>
@@ -1182,16 +1168,14 @@
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.DETECT_INDEX">DETECT_INDEX (orb.astrometry.Astrometry attribute)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.detect_stack">detect_stack (orb.astrometry.Astrometry attribute)</a>
-</li>
       <li><a href="orb.html#orb.astrometry.Astrometry.detect_stars">detect_stars() (orb.astrometry.Astrometry method)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.detect_stars_from_catalogue">detect_stars_from_catalogue() (orb.astrometry.Astrometry method)</a>
 </li>
-      <li><a href="orb.utils.html#orb.utils.image.compute_binning.params.detector_shape">detector_shape (orb.utils.image.compute_binning parameter)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="orb.utils.html#orb.utils.image.compute_binning.params.detector_shape">detector_shape (orb.utils.image.compute_binning parameter)</a>
+</li>
       <li><a href="orb.html#orb.cutils.dft">dft() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.load_dill.params.dill_path">dill_path (orb.utils.misc.load_dill parameter)</a>
@@ -1200,11 +1184,9 @@
         <li><a href="orb.utils.html#orb.utils.misc.save_dill.params.dill_path">(orb.utils.misc.save_dill parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Cube.dimx">dimx (orb.core.Cube attribute)</a>
+      <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.dimx">dimx (orb.core.Cube.get_quadrant_dims parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.dimx">(orb.core.Cube.get_quadrant_dims parameter)</a>
-</li>
         <li><a href="orb.html#orb.cutils.surface_value.params.dimx">(orb.cutils.surface_value parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_sip.params.dimx">(orb.utils.astrometry.fit_sip parameter)</a>
@@ -1218,11 +1200,9 @@
         <li><a href="orb.utils.html#orb.utils.image.interpolate_map.params.dimx">(orb.utils.image.interpolate_map parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Cube.dimy">dimy (orb.core.Cube attribute)</a>
+      <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.dimy">dimy (orb.core.Cube.get_quadrant_dims parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.dimy">(orb.core.Cube.get_quadrant_dims parameter)</a>
-</li>
         <li><a href="orb.html#orb.cutils.surface_value.params.dimy">(orb.cutils.surface_value parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_sip.params.dimy">(orb.utils.astrometry.fit_sip parameter)</a>
@@ -1236,17 +1216,9 @@
         <li><a href="orb.utils.html#orb.utils.image.interpolate_map.params.dimy">(orb.utils.image.interpolate_map parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Cube.dimz">dimz (orb.core.Cube attribute)</a>
-
-      <ul>
-        <li><a href="orb.utils.html#orb.utils.misc.correct_bad_frames_vector.params.dimz">(orb.utils.misc.correct_bad_frames_vector parameter)</a>
-</li>
-      </ul></li>
-      <li><a href="orb.html#orb.core.TextColor.disable">disable() (orb.core.TextColor method)</a>
+      <li><a href="orb.utils.html#orb.utils.misc.correct_bad_frames_vector.params.dimz">dimz (orb.utils.misc.correct_bad_frames_vector parameter)</a>
 </li>
       <li><a href="orb.html#orb.cutils.part_value.params.distrib">distrib (orb.cutils.part_value parameter)</a>
-</li>
-      <li><a href="orb.html#orb.core.Cube.DIV_NB">DIV_NB (orb.core.Cube attribute)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.div_nb">div_nb (orb.core.Cube.get_quadrant_dims parameter)</a>
 </li>
@@ -1262,11 +1234,9 @@
       </ul></li>
       <li><a href="orb.html#orb.cutils.transform_A_to_B.params.dr_err">dr_err (orb.cutils.transform_A_to_B parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.Cube.dtype">dtype (orb.core.Cube attribute)</a>
+      <li><a href="orb.html#orb.core.Tools.read_fits.params.dtype">dtype (orb.core.Tools.read_fits parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.core.Tools.read_fits.params.dtype">(orb.core.Tools.read_fits parameter)</a>
-</li>
         <li><a href="orb.html#orb.core.Tools.read_hdf5.params.dtype">(orb.core.Tools.read_hdf5 parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.io.read_fits.params.dtype">(orb.utils.io.read_fits parameter)</a>
@@ -1382,6 +1352,8 @@
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_sip.params.err">(orb.utils.astrometry.fit_sip parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.fit_highorder_phase_map.params.err_map">err_map (orb.utils.image.fit_highorder_phase_map parameter)</a>
 
       <ul>
@@ -1390,9 +1362,7 @@
         <li><a href="orb.utils.html#orb.utils.image.fit_map_cos.params.err_map">(orb.utils.image.fit_map_cos parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="orb.html#orb.core.TextColor.ERROR">ERROR (orb.core.TextColor attribute)</a>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.ERROR">ERROR (orb.core.ColorStreamHandler attribute)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_stars_in_cube.params.estimate_local_noise">estimate_local_noise (orb.astrometry.Astrometry.fit_stars_in_cube parameter)</a>
 
@@ -1411,8 +1381,6 @@
       <li><a href="orb.html#orb.core.Cube.export">export() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.export.params.export_path">export_path (orb.core.Cube.export parameter)</a>
-</li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_cHbeta.params.ext_law">ext_law (orb.utils.pyneb.get_cHbeta parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.transform_interferogram.params.ext_phase">ext_phase (orb.utils.fft.transform_interferogram parameter)</a>
 
@@ -1456,8 +1424,6 @@
         <li><a href="orb.utils.html#orb.utils.vector.fft_filter">(in module orb.utils.vector)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Logger.file">file (orb.core.Logger attribute)</a>
-</li>
       <li><a href="orb.html#orb.core.Indexer.file_group">file_group (orb.core.Indexer attribute)</a>
 
       <ul>
@@ -1508,6 +1474,8 @@
         <li><a href="orb.utils.html#orb.utils.vector.interpolate_axis.params.fill_value">(orb.utils.vector.interpolate_axis parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.LoggingFilter.filter">filter() (orb.core.LoggingFilter method)</a>
+</li>
       <li><a href="orb.html#orb.cutils.filter_background">filter_background() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.fit.fit_lines_in_spectrum.params.filter_file_path">filter_file_path (orb.fit.fit_lines_in_spectrum parameter)</a>
@@ -1594,8 +1562,6 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.fit_phase_map02calib_map">fit_phase_map02calib_map() (in module orb.utils.image)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.fit_results">fit_results (orb.astrometry.Astrometry attribute)</a>
-</li>
       <li><a href="orb.html#orb.astrometry.StarsParams.load_stars_params.params.fit_results_path">fit_results_path (orb.astrometry.StarsParams.load_stars_params parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.fit_sip">fit_sip() (in module orb.utils.astrometry)</a>
@@ -1618,11 +1584,9 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.photometry.fit_std_spectrum">fit_std_spectrum() (in module orb.utils.photometry)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.fit_tol">fit_tol (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.cutils.multi_fit_stars.params.fit_tol">fit_tol (orb.cutils.multi_fit_stars parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.cutils.multi_fit_stars.params.fit_tol">(orb.cutils.multi_fit_stars parameter)</a>
-</li>
         <li><a href="orb.html#orb.fit.FitVector.fit_tol">(orb.fit.FitVector attribute)</a>
 </li>
         <li><a href="orb.html#orb.fit.fit_lines_in_spectrum.params.fit_tol">(orb.fit.fit_lines_in_spectrum parameter)</a>
@@ -1730,8 +1694,6 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.photometry.flambda2ABmag">flambda2ABmag() (in module orb.utils.photometry)</a>
 </li>
-      <li><a href="orb.html#orb.core.Logger.flush">flush() (orb.core.Logger method)</a>
-</li>
       <li><a href="orb.html#orb.core.Standard.flux">flux (orb.core.Standard attribute)</a>
 
       <ul>
@@ -1778,7 +1740,7 @@
       </ul></li>
       <li><a href="orb.html#orb.core.Cube.export.params.force_hdf5">force_hdf5 (orb.core.Cube.export parameter)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.fov">fov (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.format">format() (orb.core.ColorStreamHandler method)</a>
 </li>
       <li><a href="orb.html#orb.cutils.check_cosmic_rays_neighbourhood.params.frame">frame (orb.cutils.check_cosmic_rays_neighbourhood parameter)</a>
 
@@ -1800,12 +1762,6 @@
         <li><a href="orb.utils.html#orb.utils.image.shift_frame.params.frame">(orb.utils.image.shift_frame parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.frame">(orb.utils.image.transform_frame parameter)</a>
-</li>
-      </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.frame_nb">frame_nb (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.astrometry.StarsParams.frame_nb">(orb.astrometry.StarsParams attribute)</a>
 </li>
       </ul></li>
       <li><a href="orb.html#orb.cutils.master_combine.params.frames">frames (orb.cutils.master_combine parameter)</a>
@@ -1847,6 +1803,8 @@
 </li>
         <li><a href="orb.utils.html#orb.utils.spectrum.sinc1d_phased.params.fwhm">(orb.utils.spectrum.sinc1d_phased parameter)</a>
 </li>
+        <li><a href="orb.utils.html#orb.utils.spectrum.sinc21d_flux.params.fwhm">(orb.utils.spectrum.sinc21d_flux parameter)</a>
+</li>
         <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d.params.fwhm">(orb.utils.spectrum.sincgauss1d parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_complex.params.fwhm">(orb.utils.spectrum.sincgauss1d_complex parameter)</a>
@@ -1863,8 +1821,6 @@
       <li><a href="orb.html#orb.astrometry.Aligner.compute_alignment_parameters.params.fwhm_arc">fwhm_arc (orb.astrometry.Aligner.compute_alignment_parameters parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.astrometry.Astrometry.fwhm_arc">(orb.astrometry.Astrometry attribute)</a>
-</li>
         <li><a href="orb.html#orb.astrometry.Astrometry.reset_fwhm_arc.params.fwhm_arc">(orb.astrometry.Astrometry.reset_fwhm_arc parameter)</a>
 </li>
         <li><a href="orb.html#orb.astrometry.Astrometry.reset_fwhm_pix.params.fwhm_arc">(orb.astrometry.Astrometry.reset_fwhm_pix parameter)</a>
@@ -1902,14 +1858,14 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.fwhm_nm2cm1">fwhm_nm2cm1() (in module orb.utils.spectrum)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.fwhm_pix">fwhm_pix (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.fit_star.params.fwhm_pix">fwhm_pix (orb.utils.astrometry.fit_star parameter)</a>
 
       <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.fit_star.params.fwhm_pix">(orb.utils.astrometry.fit_star parameter)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.fwhm_pix">(orb.utils.astrometry.fit_stars_in_frame parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.fit.InputParams.FWHM_SDEV">FWHM_SDEV (orb.fit.InputParams attribute)</a>
+</li>
       <li><a href="orb.html#orb.constants.FWHM_SINC_COEFF">FWHM_SINC_COEFF (in module orb.constants)</a>
 </li>
   </ul></td>
@@ -1948,8 +1904,6 @@
 </li>
       <li><a href="orb.html#orb.core.OptionFile.get_bad_frames">get_bad_frames() (orb.core.OptionFile method)</a>
 </li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_Balmer_ratio">get_Balmer_ratio() (in module orb.utils.pyneb)</a>
-</li>
       <li><a href="orb.html#orb.cutils.get_box_coords">get_box_coords() (in module orb.cutils)</a>
 
       <ul>
@@ -1962,8 +1916,6 @@
         <li><a href="orb.html#orb.core.HDFCube.get_calibration_laser_map">(orb.core.HDFCube method)</a>
 </li>
       </ul></li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_cHbeta">get_cHbeta() (in module orb.utils.pyneb)</a>
-</li>
       <li><a href="orb.html#orb.core.Waves.get_cm1">get_cm1() (orb.core.Waves method)</a>
 </li>
       <li><a href="orb.html#orb.cutils.get_cm1_axis_max">get_cm1_axis_max() (in module orb.cutils)</a>
@@ -1991,6 +1943,8 @@
       <li><a href="orb.html#orb.core.Cube.get_data_frame">get_data_frame() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.html#orb.etc.ETC.get_exposition_time">get_exposition_time() (orb.etc.ETC method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.get_file_logging_state">get_file_logging_state() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.filters.get_filter_bandpass.params.get_filter_bandpass">get_filter_bandpass (orb.utils.filters.get_filter_bandpass parameter)</a>
 </li>
@@ -2041,6 +1995,12 @@
       <li><a href="orb.html#orb.core.Lines.get_line_nm">get_line_nm() (orb.core.Lines method)</a>
 </li>
       <li><a href="orb.html#orb.core.OptionFile.get_lines">get_lines() (orb.core.OptionFile method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.get_logdateformat">get_logdateformat() (orb.core.Logger method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.get_logformat">get_logformat() (orb.core.Logger method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.get_logging_state">get_logging_state() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file">get_mask_from_ds9_region_file() (in module orb.utils.misc)</a>
 </li>
@@ -2106,6 +2066,8 @@
         <li><a href="orb.html#orb.fit.LinesModel.get_p_val_as_array">(orb.fit.LinesModel method)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.Tools.get_param">get_param() (orb.core.Tools method)</a>
+</li>
       <li><a href="orb.html#orb.core.Indexer.get_path">get_path() (orb.core.Indexer method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.filters.get_phase_fit_order">get_phase_fit_order() (in module orb.utils.filters)</a>
@@ -2131,6 +2093,8 @@
       <li><a href="orb.html#orb.core.Cube.get_resized_data">get_resized_data() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.get_resized_frame">get_resized_frame() (orb.core.Cube method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.get_simplelogformat">get_simplelogformat() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.io.get_sitelle_slice">get_sitelle_slice() (in module orb.utils.io)</a>
 </li>
@@ -2163,6 +2127,8 @@
       <li><a href="orb.html#orb.core.Cube.get_zstat">get_zstat() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.get_zstd">get_zstd() (orb.core.Cube method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.getLogger">getLogger() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.html#orb.core.TextColor.GREEN">GREEN (orb.core.TextColor attribute)</a>
 </li>
@@ -2212,11 +2178,7 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_phased.params.h">(orb.utils.spectrum.sincgauss1d_phased parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_cHbeta.params.ha">ha (orb.utils.pyneb.get_cHbeta parameter)</a>
-</li>
       <li><a href="orb.html#orb.fit.InputParams.has_model">has_model() (orb.fit.InputParams method)</a>
-</li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_cHbeta.params.hb">hb (orb.utils.pyneb.get_cHbeta parameter)</a>
 </li>
       <li><a href="orb.html#orb.core.HDFCube">HDFCube (class in orb.core)</a>
 </li>
@@ -2258,8 +2220,6 @@
         <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file.params.header">(orb.utils.misc.get_mask_from_ds9_region_file parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.OptionFile.header_line">header_line (orb.core.OptionFile attribute)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.astrometry.fit_star.params.height">height (orb.utils.astrometry.fit_star parameter)</a>
 
       <ul>
@@ -2340,13 +2300,7 @@
 </li>
       <li><a href="orb.html#orb.astrometry.Aligner.image2">image2 (orb.astrometry.Aligner attribute)</a>
 </li>
-      <li><a href="orb.html#orb.core.Cube.image_list">image_list (orb.core.Cube attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.OutHDFCube.append_image_list.params.image_list">(orb.core.OutHDFCube.append_image_list parameter)</a>
-</li>
-      </ul></li>
-      <li><a href="orb.html#orb.core.Cube.image_list_path">image_list_path (orb.core.Cube attribute)</a>
+      <li><a href="orb.html#orb.core.OutHDFCube.append_image_list.params.image_list">image_list (orb.core.OutHDFCube.append_image_list parameter)</a>
 </li>
       <li><a href="orb.html#orb.core.Tools.read_fits.params.image_mode">image_mode (orb.core.Tools.read_fits parameter)</a>
 
@@ -2404,6 +2358,8 @@
         <li><a href="orb.utils.html#orb.utils.fft.indft">(in module orb.utils.fft)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.INFO">INFO (orb.core.ColorStreamHandler attribute)</a>
+</li>
       <li><a href="orb.html#orb.core.ProgressBar.update.params.info">info (orb.core.ProgressBar.update parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.bf_laser_aligner.params.init_angle">init_angle (orb.utils.image.bf_laser_aligner parameter)</a>
@@ -2422,8 +2378,6 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.astrometry.brute_force_guess.params.init_wcs">init_wcs (orb.utils.astrometry.brute_force_guess parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.OptionFile.input_file_path">input_file_path (orb.core.OptionFile attribute)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.astrometry.Gaussian.input_params">input_params (orb.utils.astrometry.Gaussian attribute)</a>
 
       <ul>
@@ -2431,6 +2385,8 @@
 </li>
       </ul></li>
       <li><a href="orb.html#orb.fit.InputParams">InputParams (class in orb.fit)</a>
+</li>
+      <li><a href="orb.html#orb.core.Tools.instruments">instruments (orb.core.Tools attribute)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file.params.integrate">integrate (orb.utils.misc.get_mask_from_ds9_region_file parameter)</a>
 </li>
@@ -2462,22 +2418,6 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.raw_fft.params.inverse">inverse (orb.utils.fft.raw_fft parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.Cube.is_complex">is_complex (orb.core.Cube attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.HDFCube.is_complex">(orb.core.HDFCube attribute)</a>
-</li>
-      </ul></li>
-      <li><a href="orb.html#orb.core.Cube.is_hdf5_cube">is_hdf5_cube (orb.core.Cube attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Cube.is_hdf5_frames">is_hdf5_frames (orb.core.Cube attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Cube.is_quad_cube">is_quad_cube (orb.core.Cube attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.HDFCube.is_quad_cube">(orb.core.HDFCube attribute)</a>
-</li>
-      </ul></li>
       <li><a href="orb.html#orb.core.Cube.is_same_2D_size">is_same_2D_size() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.is_same_3D_size">is_same_3D_size() (orb.core.Cube method)</a>
@@ -2513,14 +2453,20 @@
       <li><a href="orb.html#orb.constants.K_BOLTZMANN">K_BOLTZMANN (in module orb.constants)</a>
 </li>
       <li><a href="orb.html#orb.core.OptionFile.get.params.key">key (orb.core.OptionFile.get parameter)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.core.Tools.get_param.params.key">(orb.core.Tools.get_param parameter)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.StarsParams.keys">keys (orb.astrometry.StarsParams attribute)</a>
+        <li><a href="orb.html#orb.core.Tools.set_param.params.key">(orb.core.Tools.set_param parameter)</a>
 </li>
+      </ul></li>
       <li><a href="orb.utils.html#orb.utils.vector.smooth.params.kind">kind (orb.utils.vector.smooth parameter)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.fit_map_cos.params.knb">knb (orb.utils.image.fit_map_cos parameter)</a>
+</li>
+      <li><a href="orb.html#orb.core.TextColor.KORED">KORED (orb.core.TextColor attribute)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_stars_in_frame.params.kwargs">kwargs (orb.astrometry.Astrometry.fit_stars_in_frame parameter)</a>
 
@@ -2575,8 +2521,6 @@
       <li><a href="orb.html#orb.core.Lines.get_line_name.params.lines">lines (orb.core.Lines.get_line_name parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.core.OptionFile.lines">(orb.core.OptionFile attribute)</a>
-</li>
         <li><a href="orb.html#orb.fit.check_fit.params.lines">(orb.fit.check_fit parameter)</a>
 </li>
         <li><a href="orb.html#orb.fit.create_cm1_lines_model.params.lines">(orb.fit.create_cm1_lines_model parameter)</a>
@@ -2628,7 +2572,11 @@
       </ul></li>
       <li><a href="orb.html#orb.fit.LinesModel.log_param_keys">log_param_keys (orb.fit.LinesModel attribute)</a>
 </li>
+      <li><a href="orb.html#orb.core.Logger.start_file_logging.params.logfile_path">logfile_path (orb.core.Logger.start_file_logging parameter)</a>
+</li>
       <li><a href="orb.html#orb.core.Logger">Logger (class in orb.core)</a>
+</li>
+      <li><a href="orb.html#orb.core.LoggingFilter">LoggingFilter (class in orb.core)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.lorentzian1d">lorentzian1d() (in module orb.utils.spectrum)</a>
 </li>
@@ -2696,8 +2644,6 @@
       </ul></li>
       <li><a href="orb.html#orb.cutils.master_combine">master_combine() (in module orb.cutils)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.master_frame">master_frame (orb.astrometry.Astrometry attribute)</a>
-</li>
       <li><a href="orb.html#orb.core.ProgressBar.MAX_CARAC">MAX_CARAC (orb.core.ProgressBar attribute)</a>
 </li>
       <li><a href="orb.html#orb.fit.FitVector.max_fev">max_fev (orb.fit.FitVector attribute)</a>
@@ -2718,8 +2664,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="orb.html#orb.core.Cube.mean_image">mean_image (orb.core.Cube attribute)</a>
-</li>
       <li><a href="orb.html#orb.cutils.meansigcut2d">meansigcut2d() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.cutils.median2d">median2d() (in module orb.cutils)</a>
@@ -2779,8 +2723,6 @@
       <li><a href="orb.html#orb.cutils.moffat_array2d">moffat_array2d() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.cutils.im2rgba.params.mpl_colorbar">mpl_colorbar (orb.cutils.im2rgba parameter)</a>
-</li>
-      <li><a href="orb.html#orb.core.Logger.write.params.msg">msg (orb.core.Logger.write parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.multi_aperture_photometry">multi_aperture_photometry() (in module orb.utils.astrometry)</a>
 </li>
@@ -2852,14 +2794,8 @@
         <li><a href="orb.utils.html#orb.utils.image.nanbin_image">(in module orb.utils.image)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Cube.ncpus">ncpus (orb.core.Cube attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.Tools.ncpus">(orb.core.Tools attribute)</a>
+      <li><a href="orb.utils.html#orb.utils.parallel.init_pp_server.params.ncpus">ncpus (orb.utils.parallel.init_pp_server parameter)</a>
 </li>
-        <li><a href="orb.utils.html#orb.utils.parallel.init_pp_server.params.ncpus">(orb.utils.parallel.init_pp_server parameter)</a>
-</li>
-      </ul></li>
       <li><a href="orb.utils.html#orb.utils.fft.ndft">ndft() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.vector.interpolate_axis.params.new_axis">new_axis (orb.utils.vector.interpolate_axis parameter)</a>
@@ -2972,19 +2908,13 @@
         <li><a href="orb.html#orb.astrometry.Astrometry.detect_stars_from_catalogue.params.no_save">(orb.astrometry.Astrometry.detect_stars_from_catalogue parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.NoInstrumentConfigParams">NoInstrumentConfigParams (class in orb.core)</a>
+</li>
       <li><a href="orb.ext.html#orb.ext.zern.noll_to_zern">noll_to_zern() (in module orb.ext.zern)</a>
 </li>
       <li><a href="orb.ext.html#orb.ext.zern.noll_to_zern_broken">noll_to_zern_broken() (in module orb.ext.zern)</a>
 </li>
-      <li><a href="orb.html#orb.core.Logger.nolog">nolog (orb.core.Logger attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.Logger.write.params.nolog">(orb.core.Logger.write parameter)</a>
-</li>
-        <li><a href="orb.html#orb.core.ProgressBar.update.params.nolog">(orb.core.ProgressBar.update parameter)</a>
-</li>
-      </ul></li>
-      <li><a href="orb.html#orb.core.Logger.noprint">noprint (orb.core.Logger attribute)</a>
+      <li><a href="orb.html#orb.core.ProgressBar.update.params.nolog">nolog (orb.core.ProgressBar.update parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.norton_beer_window">norton_beer_window() (in module orb.utils.fft)</a>
 </li>
@@ -3001,11 +2931,7 @@
 </li>
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.photometry.fnu2flambda.params.nu">nu (orb.utils.photometry.fnu2flambda parameter)</a>
-
-      <ul>
-        <li><a href="orb.utils.html#orb.utils.pyneb.get_Balmer_ratio.params.nu">(orb.utils.pyneb.get_Balmer_ratio parameter)</a>
 </li>
-      </ul></li>
       <li><a href="orb.html#orb.cutils.create_transform_maps.params.nx">nx (orb.cutils.create_transform_maps parameter)</a>
 
       <ul>
@@ -3060,6 +2986,8 @@
 </li>
       <li><a href="orb.html#orb.fit.check_fit_cm1.params.oder">oder (orb.fit.check_fit_cm1 parameter)</a>
 </li>
+      <li><a href="orb.html#orb.core.TextColor.OKGREEN">OKGREEN (orb.core.TextColor attribute)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.vector.interpolate_axis.params.old_axis">old_axis (orb.utils.vector.interpolate_axis parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.on_ellipse">on_ellipse() (in module orb.utils.image)</a>
@@ -3080,11 +3008,7 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.optimize_phase3d">optimize_phase3d() (in module orb.utils.fft)</a>
 </li>
-      <li><a href="orb.html#orb.core.OptionFile.option_file">option_file (orb.core.OptionFile attribute)</a>
-</li>
       <li><a href="orb.html#orb.core.OptionFile">OptionFile (class in orb.core)</a>
-</li>
-      <li><a href="orb.html#orb.core.OptionFile.options">options (orb.core.OptionFile attribute)</a>
 </li>
       <li><a href="orb.html#module-orb">orb (module)</a>
 </li>
@@ -3106,8 +3030,6 @@
 </li>
       <li><a href="orb.html#module-orb.fit">orb.fit (module)</a>
 </li>
-      <li><a href="orb.utils.html#module-orb.utils">orb.utils (module)</a>
-</li>
       <li><a href="orb.utils.html#module-orb.utils.astrometry">orb.utils.astrometry (module)</a>
 </li>
       <li><a href="orb.utils.html#module-orb.utils.debug">orb.utils.debug (module)</a>
@@ -3128,8 +3050,6 @@
 </li>
       <li><a href="orb.utils.html#module-orb.utils.photometry">orb.utils.photometry (module)</a>
 </li>
-      <li><a href="orb.utils.html#module-orb.utils.pyneb">orb.utils.pyneb (module)</a>
-</li>
       <li><a href="orb.utils.html#module-orb.utils.sim">orb.utils.sim (module)</a>
 </li>
       <li><a href="orb.utils.html#module-orb.utils.spectrum">orb.utils.spectrum (module)</a>
@@ -3140,8 +3060,6 @@
 </li>
       <li><a href="orb.utils.html#module-orb.utils.web">orb.utils.web (module)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.PhaseFile.write_improved_phase_file.params.order">order (orb.core.PhaseFile.write_improved_phase_file parameter)</a>
 
       <ul>
@@ -3208,17 +3126,17 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.phase_shift_cm1_axis.params.order">(orb.utils.spectrum.phase_shift_cm1_axis parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.OutHDFCube">OutHDFCube (class in orb.core)</a>
 </li>
       <li><a href="orb.html#orb.core.OutHDFQuadCube">OutHDFQuadCube (class in orb.core)</a>
 </li>
       <li><a href="orb.html#orb.fit.OutputParams">OutputParams (class in orb.fit)</a>
 </li>
-      <li><a href="orb.html#orb.core.Cube.overwrite">overwrite (orb.core.Cube attribute)</a>
+      <li><a href="orb.html#orb.core.Cube.export.params.overwrite">overwrite (orb.core.Cube.export parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.core.Cube.export.params.overwrite">(orb.core.Cube.export parameter)</a>
-</li>
         <li><a href="orb.html#orb.core.Tools.save_sip.params.overwrite">(orb.core.Tools.save_sip parameter)</a>
 </li>
         <li><a href="orb.html#orb.core.Tools.write_fits.params.overwrite">(orb.core.Tools.write_fits parameter)</a>
@@ -3464,13 +3382,9 @@
 </li>
       <li><a href="orb.html#orb.fit.FitVector.priors_list">priors_list (orb.fit.FitVector attribute)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.profile">profile (orb.astrometry.Astrometry attribute)</a>
-</li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.profile_name">profile_name (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.astrometry.Astrometry.reset_profile_name.params.profile_name">profile_name (orb.astrometry.Astrometry.reset_profile_name parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.astrometry.Astrometry.reset_profile_name.params.profile_name">(orb.astrometry.Astrometry.reset_profile_name parameter)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_star.params.profile_name">(orb.utils.astrometry.fit_star parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.profile_name">(orb.utils.astrometry.fit_stars_in_frame parameter)</a>
@@ -3484,8 +3398,6 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.PSF">PSF (class in orb.utils.astrometry)</a>
 </li>
-      <li><a href="orb.html#orb.core.TextColor.PURPLE">PURPLE (orb.core.TextColor attribute)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -3494,14 +3406,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.photometry.compute_star_flux_in_frame.params.qe">qe (orb.utils.photometry.compute_star_flux_in_frame parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.Cube.QUAD_NB">QUAD_NB (orb.core.Cube attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.HDFCube.quad_nb">quad_nb (orb.core.HDFCube attribute)</a>
+      <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.quad_number">quad_number (orb.core.Cube.get_quadrant_dims parameter)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="orb.html#orb.core.Cube.get_quadrant_dims.params.quad_number">quad_number (orb.core.Cube.get_quadrant_dims parameter)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.web.query_sesame">query_sesame() (in module orb.utils.web)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.web.query_vizier">query_vizier() (in module orb.utils.web)</a>
@@ -3584,12 +3492,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.io.read_spiomm_data">read_spiomm_data() (in module orb.utils.io)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.readout_noise">readout_noise (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.readout_noise">(orb.utils.astrometry.fit_stars_in_frame parameter)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.readout_noise">readout_noise (orb.utils.astrometry.fit_stars_in_frame parameter)</a>
 </li>
-      </ul></li>
       <li><a href="orb.utils.html#orb.utils.fft.real">real() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.photometry.fit_std_spectrum.params.real_spectrum">real_spectrum (orb.utils.photometry.fit_std_spectrum parameter)</a>
@@ -3626,7 +3530,7 @@
         <li><a href="orb.utils.html#orb.utils.io.write_fits.params.record_stats">(orb.utils.io.write_fits parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.reduced_chi_square_limit">reduced_chi_square_limit (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.core.TextColor.RED">RED (orb.core.TextColor attribute)</a>
 </li>
       <li><a href="orb.html#orb.core.ProgressBar.REFRESH_COUNT">REFRESH_COUNT (orb.core.ProgressBar attribute)</a>
 </li>
@@ -3654,6 +3558,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.compute_phase_coeffs_vector.params.res_map">res_map (orb.utils.fft.compute_phase_coeffs_vector parameter)</a>
 </li>
+      <li><a href="orb.html#orb.core.ROParams.reset">reset() (orb.core.ROParams method)</a>
+</li>
       <li><a href="orb.html#orb.astrometry.Astrometry.reset_box_size">reset_box_size() (orb.astrometry.Astrometry method)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.StarsParams.reset_data">reset_data() (orb.astrometry.StarsParams method)</a>
@@ -3666,10 +3572,10 @@
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.reset_scale">reset_scale() (orb.astrometry.Astrometry method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.astrometry.Astrometry.reset_star_list">reset_star_list() (orb.astrometry.Astrometry method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.fit.check_fit_cm1.params.resolution">resolution (orb.fit.check_fit_cm1 parameter)</a>
 
       <ul>
@@ -3812,6 +3718,8 @@
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_star.params.ron">(orb.utils.astrometry.fit_star parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.ROParams">ROParams (class in orb.core)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.rotation">rotation (orb.utils.astrometry.create_wcs parameter)</a>
 </li>
       <li><a href="orb.html#orb.core.Lines.get_line_nm.params.round_ang">round_ang (orb.core.Lines.get_line_nm parameter)</a>
@@ -3882,11 +3790,9 @@
 </li>
       <li><a href="orb.html#orb.astrometry.StarsParams.save_stars_params">save_stars_params() (orb.astrometry.StarsParams method)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.scale">scale (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.astrometry.Astrometry.reset_scale.params.scale">scale (orb.astrometry.Astrometry.reset_scale parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.astrometry.Astrometry.reset_scale.params.scale">(orb.astrometry.Astrometry.reset_scale parameter)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_sip.params.scale">(orb.utils.astrometry.fit_sip parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_stars_in_frame.params.scale">(orb.utils.astrometry.fit_stars_in_frame parameter)</a>
@@ -3910,6 +3816,8 @@
       </ul></li>
       <li><a href="orb.html#orb.constants.SESAME_URL">SESAME_URL (in module orb.constants)</a>
 </li>
+      <li><a href="orb.html#orb.core.Tools.set_config">set_config() (orb.core.Tools method)</a>
+</li>
       <li><a href="orb.html#orb.astrometry.Astrometry.set_deep_frame">set_deep_frame() (orb.astrometry.Astrometry method)</a>
 </li>
       <li><a href="orb.html#orb.core.Indexer.set_file_group">set_file_group() (orb.core.Indexer method)</a>
@@ -3917,6 +3825,8 @@
       <li><a href="orb.html#orb.fit.Model.set_p_free">set_p_free() (orb.fit.Model method)</a>
 </li>
       <li><a href="orb.html#orb.fit.Model.set_p_val">set_p_val() (orb.fit.Model method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Tools.set_param">set_param() (orb.core.Tools method)</a>
 </li>
       <li><a href="orb.html#orb.fit.Cm1InputParams.set_signal_range">set_signal_range() (orb.fit.Cm1InputParams method)</a>
 
@@ -3927,6 +3837,8 @@
       <li><a href="orb.html#orb.core.Waves.set_velocity">set_velocity() (orb.core.Waves method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.shift_frame">shift_frame() (in module orb.utils.image)</a>
+</li>
+      <li><a href="orb.html#orb.fit.InputParams.SHIFT_SDEV">SHIFT_SDEV (orb.fit.InputParams attribute)</a>
 </li>
       <li><a href="orb.html#orb.cutils.master_combine.params.sigma">sigma (orb.cutils.master_combine parameter)</a>
 
@@ -3968,7 +3880,11 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.fit.sigma2vel">sigma2vel() (in module orb.utils.fit)</a>
 </li>
+      <li><a href="orb.html#orb.fit.InputParams.SIGMA_COV_VEL">SIGMA_COV_VEL (orb.fit.InputParams attribute)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.image.check_frames.params.sigma_reject">sigma_reject (orb.utils.image.check_frames parameter)</a>
+</li>
+      <li><a href="orb.html#orb.fit.InputParams.SIGMA_SDEV">SIGMA_SDEV (orb.fit.InputParams attribute)</a>
 </li>
       <li><a href="orb.html#orb.cutils.sigmaclip">sigmaclip() (in module orb.cutils)</a>
 </li>
@@ -4032,6 +3948,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.sinc1d_phased">sinc1d_phased() (in module orb.utils.spectrum)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.spectrum.sinc21d_flux">sinc21d_flux() (in module orb.utils.spectrum)</a>
+</li>
       <li><a href="orb.html#orb.cgvar.sinc_dfdx">sinc_dfdx() (in module orb.cgvar)</a>
 </li>
       <li><a href="orb.html#orb.cgvar.sincgauss1d">sincgauss1d() (in module orb.cgvar)</a>
@@ -4084,6 +4002,8 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.sip_B">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.sip_im2pix">sip_im2pix() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_sip.params.sip_order">sip_order (orb.astrometry.Astrometry.fit_sip parameter)</a>
@@ -4094,8 +4014,6 @@
       </ul></li>
       <li><a href="orb.html#orb.cutils.sip_pix2im">sip_pix2im() (in module orb.cutils)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.vector.interpolate_size.params.size">size (orb.utils.vector.interpolate_size parameter)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.get_resized_data.params.size_x">size_x (orb.core.Cube.get_resized_data parameter)</a>
@@ -4166,13 +4084,9 @@
         <li><a href="orb.utils.html#orb.utils.photometry.compute_star_flux_in_frame.params.star_flux">(orb.utils.photometry.compute_star_flux_in_frame parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.star_list">star_list (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.astrometry.Astrometry.reset_star_list.params.star_list">star_list (orb.astrometry.Astrometry.reset_star_list parameter)</a>
 
       <ul>
-        <li><a href="orb.html#orb.astrometry.Astrometry.reset_star_list.params.star_list">(orb.astrometry.Astrometry.reset_star_list parameter)</a>
-</li>
-        <li><a href="orb.html#orb.core.Cube.star_list">(orb.core.Cube attribute)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.astrometry.brute_force_guess.params.star_list">(orb.utils.astrometry.brute_force_guess parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.astrometry.detect_fwhm_in_frame.params.star_list">(orb.utils.astrometry.detect_fwhm_in_frame parameter)</a>
@@ -4210,15 +4124,13 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.pix2world.params.star_list_pix">star_list_pix (orb.utils.astrometry.pix2world parameter)</a>
 </li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.star_nb">star_nb (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.astrometry.StarsParams.star_nb">(orb.astrometry.StarsParams attribute)</a>
-</li>
-      </ul></li>
       <li><a href="orb.utils.html#orb.utils.photometry.compute_mean_star_flux.params.star_spectrum">star_spectrum (orb.utils.photometry.compute_mean_star_flux parameter)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.StarsParams">StarsParams (class in orb.astrometry)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.start_file_logging">start_file_logging() (orb.core.Logger method)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.start_logging">start_logging() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.get_zstat.params.stat">stat (orb.core.Cube.get_zstat parameter)</a>
 </li>
@@ -4233,10 +4145,6 @@
       <li><a href="orb.utils.html#orb.utils.photometry.fit_std_spectrum.params.std_spectrum">std_spectrum (orb.utils.photometry.fit_std_spectrum parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.photometry.compute_flux_calibration_vector.params.std_step">std_step (orb.utils.photometry.compute_flux_calibration_vector parameter)</a>
-</li>
-      <li><a href="orb.html#orb.core.Logger.stderr">stderr (orb.core.Logger attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Logger.stdout">stdout (orb.core.Logger attribute)</a>
 </li>
       <li><a href="orb.html#orb.core.PhaseFile.write_improved_phase_file.params.step">step (orb.core.PhaseFile.write_improved_phase_file parameter)</a>
 
@@ -4356,42 +4264,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.spectrum.thermal_broadening_kms.params.T">T (orb.utils.spectrum.thermal_broadening_kms parameter)</a>
 </li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_Balmer_ratio.params.table_path">table_path (orb.utils.pyneb.get_Balmer_ratio parameter)</a>
-</li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.target_dec">target_dec (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_dec">target_dec (orb.utils.astrometry.create_wcs parameter)</a>
 
       <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_dec">(orb.utils.astrometry.create_wcs parameter)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.web.query_vizier.params.target_dec">(orb.utils.web.query_vizier parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.target_ra">target_ra (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_ra">target_ra (orb.utils.astrometry.create_wcs parameter)</a>
 
       <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_ra">(orb.utils.astrometry.create_wcs parameter)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.web.query_vizier.params.target_ra">(orb.utils.web.query_vizier parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.target_x">target_x (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_x">(orb.utils.astrometry.create_wcs parameter)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_x">target_x (orb.utils.astrometry.create_wcs parameter)</a>
 </li>
-      </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.target_y">target_y (orb.astrometry.Astrometry attribute)</a>
-
-      <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_y">(orb.utils.astrometry.create_wcs parameter)</a>
+      <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.target_y">target_y (orb.utils.astrometry.create_wcs parameter)</a>
 </li>
-      </ul></li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_Balmer_ratio.params.tem">tem (orb.utils.pyneb.get_Balmer_ratio parameter)</a>
-
-      <ul>
-        <li><a href="orb.utils.html#orb.utils.pyneb.get_cHbeta.params.tem">(orb.utils.pyneb.get_cHbeta parameter)</a>
-</li>
-      </ul></li>
       <li><a href="orb.html#orb.core.TextColor">TextColor (class in orb.core)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.photometry.compute_flux_calibration_vector.params.th_spectrum">th_spectrum (orb.utils.photometry.compute_flux_calibration_vector parameter)</a>
@@ -4410,14 +4298,14 @@
         <li><a href="orb.utils.html#orb.utils.image.on_ellipse.params.theta">(orb.utils.image.on_ellipse parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.simulate_calibration_laser_map.params.theta_cx">theta_cx (orb.utils.image.simulate_calibration_laser_map parameter)</a>
 
       <ul>
         <li><a href="orb.utils.html#orb.utils.image.simulate_theta_map.params.theta_cx">(orb.utils.image.simulate_theta_map parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.simulate_calibration_laser_map.params.theta_cy">theta_cy (orb.utils.image.simulate_calibration_laser_map parameter)</a>
 
       <ul>
@@ -4449,8 +4337,6 @@
       <li><a href="orb.html#orb.fit.OutputParams.translate">translate() (orb.fit.OutputParams method)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.detect_stars.params.try_catalogue">try_catalogue (orb.astrometry.Astrometry.detect_stars parameter)</a>
-</li>
-      <li><a href="orb.utils.html#orb.utils.pyneb.get_Balmer_ratio.params.try_fast">try_fast (orb.utils.pyneb.get_Balmer_ratio parameter)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -4580,7 +4466,7 @@
         <li><a href="orb.utils.html#orb.utils.stats.sigmacut.params.warn">(orb.utils.stats.sigmacut parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.TextColor.WARNING">WARNING (orb.core.TextColor attribute)</a>
+      <li><a href="orb.html#orb.core.ColorStreamHandler.WARNING">WARNING (orb.core.ColorStreamHandler attribute)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.transform_interferogram.params.wave_calibration">wave_calibration (orb.utils.fft.transform_interferogram parameter)</a>
 </li>
@@ -4604,20 +4490,16 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.line_shift.params.wavenumber">(orb.utils.spectrum.line_shift parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Waves">Waves (class in orb.core)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="orb.html#orb.astrometry.Astrometry.wcs">wcs (orb.astrometry.Astrometry attribute)</a>
+      <li><a href="orb.html#orb.core.Waves">Waves (class in orb.core)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.wcs">wcs (orb.utils.astrometry.create_wcs parameter)</a>
 
       <ul>
-        <li><a href="orb.utils.html#orb.utils.astrometry.create_wcs.params.wcs">(orb.utils.astrometry.create_wcs parameter)</a>
-</li>
         <li><a href="orb.utils.html#orb.utils.astrometry.get_wcs_parameters.params.wcs">(orb.utils.astrometry.get_wcs_parameters parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.astrometry.Astrometry.wcs_rotation">wcs_rotation (orb.astrometry.Astrometry attribute)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.fft.optimize_phase.params.weights">weights (orb.utils.fft.optimize_phase parameter)</a>
 
       <ul>
@@ -4651,8 +4533,6 @@
       <li><a href="orb.utils.html#orb.utils.spectrum.thermal_broadening_kms.params.wl">wl (orb.utils.spectrum.thermal_broadening_kms parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.world2pix">world2pix() (in module orb.utils.astrometry)</a>
-</li>
-      <li><a href="orb.html#orb.core.Logger.write">write() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.io.write_fits">write_fits() (in module orb.utils.io)</a>
 
@@ -4866,14 +4746,14 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.y_max">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.get_data.params.y_min">y_min (orb.core.Cube.get_data parameter)</a>
 
       <ul>
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.y_min">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.export.params.y_range">y_range (orb.core.Cube.export parameter)</a>
 
       <ul>
@@ -4888,6 +4768,8 @@
         <li><a href="orb.utils.html#orb.utils.astrometry.radial_profile.params.yc">(orb.utils.astrometry.radial_profile parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.TextColor.YELLOW">YELLOW (orb.core.TextColor attribute)</a>
+</li>
       <li><a href="orb.html#orb.cutils.im2rgba.params.ymax">ymax (orb.cutils.im2rgba parameter)</a>
 </li>
       <li><a href="orb.html#orb.cutils.im2rgba.params.ymin">ymin (orb.cutils.im2rgba parameter)</a>
@@ -4910,15 +4792,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.get_data.params.z_max">z_max (orb.core.Cube.get_data parameter)</a>
 </li>
-      <li><a href="orb.html#orb.core.Cube.z_mean">z_mean (orb.core.Cube attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Cube.z_median">z_median (orb.core.Cube attribute)</a>
-</li>
       <li><a href="orb.html#orb.core.Cube.get_data.params.z_min">z_min (orb.core.Cube.get_data parameter)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.export.params.z_range">z_range (orb.core.Cube.export parameter)</a>
-</li>
-      <li><a href="orb.html#orb.core.Cube.z_std">z_std (orb.core.Cube attribute)</a>
 </li>
       <li><a href="orb.ext.html#orb.ext.zern.zern_normalisation">zern_normalisation() (in module orb.ext.zern)</a>
 </li>
@@ -4940,10 +4816,10 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.zoom_factor">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.sim.fft.params.zp_coeff">zp_coeff (orb.utils.sim.fft parameter)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.fit.fit_lines_in_spectrum.params.zpd_index">zpd_index (orb.fit.fit_lines_in_spectrum parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.optimize_phase.params.zpd_shift">zpd_shift (orb.utils.fft.optimize_phase parameter)</a>
@@ -5015,7 +4891,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.0.10',
+            VERSION:'3.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

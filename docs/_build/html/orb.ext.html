@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>orb.ext package &mdash; Orb 3.0.10 documentation</title>
+  <title>orb.ext package &mdash; Orb 3.1.0 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.0.10 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.1.0 documentation" href="index.html"/>
         <link rel="up" title="orb package" href="orb.html"/>
         <link rel="next" title="orb.utils package" href="orb.utils.html"/>
         <link rel="prev" title="orb package" href="orb.html"/> 
@@ -74,7 +74,7 @@
             
             
               <div class="version">
-                3.0.10
+                3.1.0
               </div>
             
           
@@ -211,13 +211,13 @@ Construct and analyze Zernike basis functions</p>
 <dt id="orb.ext.zern.calc_zern_basis">
 <code class="descclassname">orb.ext.zern.</code><code class="descname">calc_zern_basis</code><span class="sig-paren">(</span><em>nmodes</em>, <em>rad</em>, <em>modestart=1</em>, <em>calc_covmat=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zern_basis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate a basis of <strong>nmodes</strong> Zernike modes with radius <strong>rad</strong>.
-((If <strong>mask</strong> is true, set everything outside of radius <strong>rad</strong> to zero (default). If this is not done, the set of Zernikes will be <strong>rad</strong> by <strong>rad</strong> square and are not orthogonal anymore.)) &#8211;&gt; Nothing is masked, do this manually using the &#8216;mask&#8217; entry in the returned dict.
+((If <strong>mask</strong> is true, set everything outside of radius <strong>rad</strong> to zero (default). If this is not done, the set of Zernikes will be <strong>rad</strong> by <strong>rad</strong> square and are not orthogonal anymore.)) –&gt; Nothing is masked, do this manually using the ‘mask’ entry in the returned dict.
 This output of this function can be used as cache for other functions.
 &#64;param [in] nmodes Number of modes to generate
 &#64;param [in] rad Radius of Zernike modes
 &#64;param [in] modestart First mode to calculate (Noll index, i.e. 1=piston)
 &#64;param [in] calc_covmat Return covariance matrix for Zernike modes, and its inverse
-&#64;return Dict with entries &#8216;modes&#8217; a list of Zernike modes, &#8216;modesmat&#8217; a matrix of (nmodes, npixels), &#8216;covmat&#8217; a covariance matrix for all these modes with &#8216;covmat_in&#8217; its inverse, &#8216;mask&#8217; is a binary mask to crop only the orthogonal part of the modes.</p>
+&#64;return Dict with entries ‘modes’ a list of Zernike modes, ‘modesmat’ a matrix of (nmodes, npixels), ‘covmat’ a covariance matrix for all these modes with ‘covmat_in’ its inverse, ‘mask’ is a binary mask to crop only the orthogonal part of the modes.</p>
 </dd></dl>
 
 <dl class="function">
@@ -393,7 +393,7 @@ This function calculates a <strong>nmodes</strong> element vector with normalisa
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.0.10',
+            VERSION:'3.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

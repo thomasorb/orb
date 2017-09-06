@@ -85,13 +85,6 @@ orb.utils.photometry module
     :undoc-members:
     :show-inheritance:
 
-orb.utils.pyneb module
-----------------------
-
-.. automodule:: orb.utils.pyneb
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 orb.utils.sim module
 --------------------
@@ -134,10 +127,3 @@ orb.utils.web module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: orb.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
