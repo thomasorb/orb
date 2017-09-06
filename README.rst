@@ -11,6 +11,36 @@ interferometric and spectral data, imaging data, astrometry,
 photometry.
 
 
+.. note:: Instructions are generally given for Ubuntu. It should work
+	  also for any Debian based operating system. All the
+	  installation can be used with pip or setup.py. Its mostly
+	  the same for Mac (see below).
+
+
+Python
+======
+
+First of all you must have Python 2.7 installed.
+
+If you already have Python you can check the version with the
+following command::
+
+  python --version
+
+If the version you have is not the good one you can go on this `page
+<http://www.python.org/download/releases/>`_, download the last 2.7.x
+release as a tar ball file then build it from sources.
+
+.. warning:: Orbs has been written for Python 2. You must not use
+     Python 3 !
+
+
+	  
+Installation for Ubuntu/Debian users
+====================================
+
+.. note:: For Ubuntu users just add sudo in front of all commands
+
 Required packages
 -----------------
 
@@ -36,6 +66,9 @@ non-ASCII characters, a good one may be ``~/temp/``). Then cd into the
 extracted folder and type the following to install all the required
 python modules via pip::
   
+  pip install cython
+  pip install numpy
+  pip install gvar
   pip install -r requirements.txt
 
 The actual requirements file is (it can be found at the root of the
