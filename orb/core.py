@@ -131,6 +131,10 @@ class LoggingFilter(logging.Filter):
 class Logger(object):
     def __init__(self, debug=False):
         self.debug = bool(debug)
+        if self.debug:
+            self.level = logging.DEBUG
+        else:
+            self.level = logging.INFO
         self.start_logging()
 
     def _reset_logging_state(self):
@@ -144,10 +148,11 @@ class Logger(object):
         [self.root.removeFilter(ihand) for ifilt in self.root.filters[:]]
 
         # init logging
-        self.root.setLevel(logging.INFO)
-
+        self.root.setLevel(self.level)
+            
         ch = ColorStreamHandler()
-        ch.setLevel(logging.INFO)
+        ch.setLevel(self.level)
+            
         if self.debug:
             formatter = logging.Formatter(
                 self.get_logformat(),
@@ -182,11 +187,11 @@ class Logger(object):
 
         if not self.get_file_logging_state():
             self.root = self.getLogger()
-            self.root.setLevel(logging.INFO)
+            self.root.setLevel(self.level)
 
             ch = logging.StreamHandler(
                 open(self._get_logfile_path(), 'a'))
-            ch.setLevel(logging.INFO)
+            ch.setLevel(self.level)
             formatter = logging.Formatter(
                 self.get_logformat(),
                 self.get_logdateformat())

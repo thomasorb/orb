@@ -337,6 +337,24 @@ def compute_radial_velocity(line, rest_line, wavenumber=False):
         ratio = (line / rest_line)**2.
     return orb.constants.LIGHT_VEL_KMS * (ratio - 1) / (ratio + 1)
     
+def theta2corr(theta):
+    """Convert the incident angle to a correction coefficient.
+    
+    :param theta: Incident angle in degrees
+    """
+    return 1./np.cos(np.deg2rad(theta))
+    
+
+def corr2theta(corr):
+    """Convert the correction coefficient to an incident angle.
+    
+    :param corr: Correction coefficient
+    """
+    if np.all(corr >= 1):
+        return np.rad2deg(np.arccos(1./corr))
+    else:
+        raise ValueError("the correction coeff must be between >= 1")
+
 
 def lorentzian1d(x, h, a, dx, fwhm):
     """Return a 1D lorentzian
@@ -679,4 +697,3 @@ def guess_snr(calib_spectrum, flambda, exp_time):
     noise = np.sqrt(np.nansum(np.sqrt(spec_counts**2)))
     signal = np.nanmax(spec_counts) - np.nanmedian(spec_counts)
     return signal / noise
-                       

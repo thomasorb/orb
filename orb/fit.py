@@ -50,7 +50,7 @@ import utils.spectrum
 import utils.fit
 
 import cutils
-
+import logging
 
 from core import Lines
 
@@ -479,8 +479,8 @@ class FitVector(object):
             
             ## compute error on parameters
             # compute reduced chi square
-            returned_data['reduced_chi_square'] = fit.chi2 / fit.dof
-            returned_data['chi_square'] = fit.chi2
+            returned_data['rchi2'] = fit.chi2 / fit.dof
+            returned_data['chi2'] = fit.chi2
             #returned_data['residual'] = self.vector - returned_data['fitted-vector-gvar']
 
             # compute MCMC uncertainty estimates
@@ -1503,6 +1503,7 @@ class LinesModel(Model):
         fmodel = self._get_fmodel()
         mod = None
         models = list()
+                            
         for iline in range(line_nb):
             
             if fmodel == 'sinc':
@@ -1860,7 +1861,7 @@ class InputParams(object):
         self.append_model(ContinuumModel, 'add', params)
 
 
-    def _check_params(self, kwargs):
+    def _check_params(self, kwargs, fwhm_guess, lines):
         # check and update default params with user kwargs
         params = Params()
         params.update(kwargs)
@@ -1874,7 +1875,7 @@ class InputParams(object):
                     params['fwhm_def'] = 'fixed'
                     
                 if 'sigma_def' in params:
-                    sigma_cov_vel = self._get_sigma_cov_vel()
+                    sigma_cov_vel = self._get_sigma_cov_vel(fwhm_guess, lines)
 
                     if len(params.sigma_def) == 1:
                         if params.sigma_def not in ['free', 'fixed']:
@@ -1970,7 +1971,7 @@ class InputParams(object):
             'alpha_cov':0.}
 
         # check and update default params with user kwargs
-        params = self._check_params(kwargs)
+        params = self._check_params(kwargs, fwhm_guess, lines)
         
         if 'fwhm_guess' in params:
             raise Exception('This parameter must be defined with the non-keyword parameter fwhm_guess')
@@ -1999,7 +2000,18 @@ class Cm1InputParams(InputParams):
     and :py:meth:`orb.fit.fit_lines_in_spectrum`.
     """
     def __init__(self, step, order, step_nb, nm_laser,
-                 axis_corr, apodization, zpd_index, filter_file_path):
+                 theta_proj, theta_orig, apodization, zpd_index,
+                 filter_file_path):
+
+        """
+
+        .. note:: A distinction is made between the incident angle of
+          projection and the real incident angle because the incident
+          angle of projection is use to define the projection axis and
+          thus the channel of a given wavenumber while the original
+          angle is used to define the theoretical fwhm (which is not
+          modified during the projection).
+        """
         
         self.params = list()
         self.models = list()
@@ -2010,10 +2022,15 @@ class Cm1InputParams(InputParams):
         self.base_params['order'] = int(order)
         self.base_params['nm_laser'] = float(nm_laser)
         self.base_params['apodization'] = float(apodization)
-        self.base_params['axis_corr'] = float(axis_corr)
+        self.base_params['theta_proj'] = float(theta_proj)
+        self.base_params['theta_orig'] = float(theta_orig)
         self.base_params['zpd_index'] = int(zpd_index)
+
+        self.base_params['axis_corr_proj'] = utils.spectrum.theta2corr(theta_proj)
+        self.base_params['axis_corr_orig'] = utils.spectrum.theta2corr(theta_orig)
+
         self.base_params['nm_laser_obs'] = (self.base_params.nm_laser
-                                            * self.base_params.axis_corr)
+                                            * self.base_params.axis_corr_proj)
         
         self.base_params['filter_file_path'] = str(filter_file_path)
 
@@ -2023,17 +2040,17 @@ class Cm1InputParams(InputParams):
         self.axis_min = cutils.get_cm1_axis_min(self.base_params.step_nb,
                                                 self.base_params.step,
                                                 self.base_params.order,
-                                                corr=self.base_params.axis_corr)
+                                                corr=self.base_params.axis_corr_proj)
         self.axis_step = cutils.get_cm1_axis_step(self.base_params.step_nb,
                                                    self.base_params.step,
-                                                   corr=self.base_params.axis_corr)
+                                                   corr=self.base_params.axis_corr_proj)
         self.axis_max = self.axis_min + (self.base_params.step_nb - 1) * self.axis_step
 
         self.axis = np.arange(self.base_params.step_nb) * self.axis_step + self.axis_min
         
         self.set_signal_range(self.axis_min, self.axis_max)
 
-    def _get_sigma_cov_vel(self):
+    def _get_sigma_cov_vel(self, fwhm_guess_cm1, lines_cm1):
         if self.base_params.apodization == 1.:
             sigma_cov_vel = self.SIGMA_COV_VEL # km/s
         else:
@@ -2065,7 +2082,7 @@ class Cm1InputParams(InputParams):
             self.base_params.step,
             self.base_params.order,
             apod_coeff=self.base_params.apodization,
-            corr=self.base_params.axis_corr,
+            corr=self.base_params.axis_corr_orig,
             wavenumber=True)
 
         fwhm_sdev_cm1 = self.axis_step * self.FWHM_SDEV
@@ -2073,7 +2090,7 @@ class Cm1InputParams(InputParams):
 
 
         # guess sigma from apodization
-        sigma_cov_vel = self._get_sigma_cov_vel()
+        sigma_cov_vel = self._get_sigma_cov_vel(fwhm_guess_cm1, lines_cm1)
 
         sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
             self.SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
@@ -2101,7 +2118,7 @@ class Cm1InputParams(InputParams):
             'alpha_guess':0.,
             'alpha_cov':0.}
 
-        params = self._check_params(kwargs)
+        params = self._check_params(kwargs, fwhm_guess_cm1, lines_cm1)
 
         default_params.update(params)
 
@@ -2128,7 +2145,7 @@ class Cm1InputParams(InputParams):
             self.base_params.filter_file_path, return_spline=True)
         nm_axis_ireg = utils.spectrum.create_nm_axis_ireg(
             self.base_params.step_nb, self.base_params.step, self.base_params.order,
-            corr=self.base_params.axis_corr)
+            corr=self.base_params.axis_corr_proj)
         filter_function = filter_spline_nm(nm_axis_ireg.astype(float)) / 100.
         
 
@@ -2397,7 +2414,8 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                 if kwargs[key] is not None:
                     iparams[key] = kwargs[key]
 
-    
+    logging.debug('fwhm guess: {}'.format(
+        gvar.mean(rawip.params[0]['fwhm_guess'])))
     fv = FitVector(spectrum,
                    rawip.models, rawip.params,
                    signal_range=rawip.signal_range,
@@ -2413,8 +2431,9 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
     else: return []
 
 def _prepare_input_params(step_nb, lines, step, order, nm_laser,
-                          axis_corr, zpd_index, wavenumber=True,
+                          theta_proj, zpd_index, wavenumber=True,
                           filter_file_path=None,
+                          theta_orig=None,
                           apodization=1., 
                           **kwargs):    
     """Fit lines in spectrum
@@ -2434,7 +2453,11 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
 
     :param nm_laser: Calibration laser wavelength in nm.
 
-    :param axis_corr: Calibration coefficient
+    :param theta_proj: Projected incident angle of the spectrum in
+      degrees. If the spectrum is not calibrated in wavenumber this
+      angle is the incident angle of the spectrum. If the spectrum is
+      wavenumber calibrated then theta_orig must be set to the real
+      incident angle of the spectrum.
 
     :param zpd_index: Index of the ZPD in the interferogram.
     
@@ -2445,6 +2468,12 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
     :param filter_file_path: (Optional) Filter file path (default
       None).
 
+   :param theta_orig: (Optional) Real incident angle (in degrees) of
+     the spectrum. Must be set if the spectrum has been calibrated
+     i.e. prjetected on a new wavenumber axis (If None, the spectrum
+     is considered to be uncalibrated and the original theta is set
+     equal to the projected theta theta_proj) (default None).
+
     :param kwargs: (Optional) Fitting parameters of
       :py:class:`orb.fit.Cm1LinesInput` or
       :py:class:`orb.fit.FitVector`.
@@ -2453,9 +2482,12 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
         inputparams = Cm1InputParams
     else:
         raise Exception('NmInputParams not implemented yet')
-            
+
+    if theta_orig is None: theta_orig = theta_proj
+
+    logging.debug("theta_orig {}, theta_proj: {}".format(theta_orig, theta_proj))
     ip = inputparams(step, order, step_nb,
-                     nm_laser, axis_corr, apodization,
+                     nm_laser, theta_proj, theta_orig, apodization,
                      zpd_index, filter_file_path)
 
     ip.add_lines_model(lines, **kwargs)
@@ -2549,15 +2581,17 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
       * residual [key: 'residual']
       
-      * chi-square [key: 'chi_square']
+      * chi-square [key: 'chi2']
 
-      * reduced chi-square [key: 'reduced_chi_square']
+      * reduced chi-square [key: 'rchi2']
 
       * SNR [key: 'snr']
 
       * continuum parameters [key: 'cont_params']
 
       * fitted spectrum [key: 'fitted_vector']
+
+      * log(Gaussian Bayes Factor) [key: 'logGBF']
    
     """
     all_args = dict(locals()) # used in case fit is retried (must stay
@@ -2660,15 +2694,17 @@ def fit_lines_in_vector( vector, lines, fwhm_guess, fit_tol=1e-10,
 
       * residual [key: 'residual']
       
-      * chi-square [key: 'chi_square']
+      * chi-square [key: 'chi2']
 
-      * reduced chi-square [key: 'reduced_chi_square']
+      * reduced chi-square [key: 'rchi2']
 
       * SNR [key: 'snr']
 
       * continuum parameters [key: 'cont_params']
 
       * fitted spectrum [key: 'fitted_vector']
+
+      * log(Gaussian Bayes Factor) [key: 'logGBF']
    
     """
     ip = InputParams(vector.shape[0])
