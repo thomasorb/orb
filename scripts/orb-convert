@@ -35,7 +35,8 @@ import orb
 def main(args):
 
     DIV_NB = 2
-    cube = HDFCube(args.input_cube_path, no_log=True)
+    #cube = HDFCube(args.input_cube_path, no_log=True)
+    cube = HDFCube(args.input_cube_path)
 
     if not args.split:
         export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'

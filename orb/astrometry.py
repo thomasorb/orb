@@ -636,12 +636,11 @@ class Astrometry(Tools):
         if self.deep_frame is not None:
             return np.copy(self.deep_frame)
 
-        ## if self.dimz > 1:
-        ##    _cube = self.data[:,:,:]
+        if self.dimz > 1 and (use_deep_frame or realign):
+            _cube = self.data[:,:,:]
 
         # realignment of the frames if necessary
         if realign and self.dimz > 1:
-            _cube = self.data[:,:,:]
             _cube = utils.astrometry.realign_images(_cube)
                 
         # If we have 3D data we work on a combined image of the first
@@ -872,7 +871,7 @@ class Astrometry(Tools):
         kwargs['fwhm_pix'] = self.fwhm_pix
         kwargs['beta'] = self.default_beta
         kwargs['fit_tol'] = self.fit_tol
-        kwargs['readout_noise'] = self.readout_noise,
+        kwargs['readout_noise'] = self.readout_noise
         kwargs['dark_current_level'] = self.dark_current_level
 
         fit_results = StarsParams(star_nb=len(self.star_list), frame_nb=1)
