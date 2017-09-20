@@ -704,8 +704,8 @@ class Tools(object):
 
         :param camera_number: Number of the camera, can be 1 or 2.
         """
-        file_name = self.config(
-            'CAM{}_QE_FILE'.format(camera_number))
+        file_name = self.config[
+            'CAM{}_QE_FILE'.format(camera_number)]
         return self._get_orb_data_file_path(file_name)
     
   
