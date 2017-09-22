@@ -48,7 +48,7 @@ import utils.fft
 import constants
 import utils.spectrum
 import utils.fit
-import utils.stats
+
 import cutils
 import logging
 
@@ -118,12 +118,9 @@ class FitVector(object):
             raise Exception('there must be exactly one parameter dictionary by model')
 
         self.vector = gvar.mean(np.copy(vector))
-        self.sigma = gvar.sdev(np.copy(vector))
-        if np.all(self.sigma == 0.): self.sigma.fill(1.)
         self.fit_tol = fit_tol
         self.normalization_coeff = np.nanmax(self.vector) - np.nanmedian(self.vector)
         self.vector /= self.normalization_coeff
-        self.sigma /= self.normalization_coeff
 
         self.classic = bool(classic)
         if not self.classic:
@@ -153,10 +150,10 @@ class FitVector(object):
                 self.models_operations))
             # guess nan values for each model
             self.models[-1].make_guess(self.vector)
-
             self.priors_list.append(self.models[-1].get_priors(self.classic))
             self.priors_keys_list.append(self.priors_list[-1].keys())
         self.all_keys_index = None
+
         
         if signal_range is not None:
             if (np.nanmin(signal_range) >= 0 and
@@ -287,58 +284,40 @@ class FitVector(object):
         """
         if isinstance(all_p_free, tuple):
             all_p_free = all_p_free[0]
-
-        # check nans
-        for ikey in all_p_free:
-            if np.isnan(gvar.sdev(all_p_free[ikey])):
-                warnings.warn('nan in passed parameters: {}'.format(all_p_free))
-    
         step_nb = self.vector.shape[0]
         if x is None:
             x = np.arange(step_nb, dtype=float)
        
+        model = None
         if return_models:
             models = dict()
         else:
             models = list()
         all_p_list = self._all_p_dict2list(all_p_free)
-        
-        # all multiplicative models must be multiplied together before
-        # beging applied to the the additive models using the
-        # dedicated class option (because multiplication by a filter
-        # function cannot be applied straighforward to a line model)
-        mult_model = np.ones_like(self.vector, dtype=float)
         for i in range(len(self.models)):
-            if self.models_operation[i] == 'mult':
-                model_list = self.models[i].get_model(
-                    x, all_p_list[i], return_models=return_models)
-                if return_models:
-                    model_to_append, models_to_append = model_list
-                    models[self.models[i].__class__.__name__] = models_to_append
-                else:
-                    model_to_append = model_list
-                mult_model *= model_to_append
-            if self.models_operation[i] not in ['mult', 'add']:
-                raise StandardError('Bad model operation. Model operation must be in {}'.format(self.models_operations))
+            model_list = self.models[i].get_model(
+                x, all_p_list[i], return_models=return_models)
+            if return_models:
+                model_to_append, models_to_append = model_list
+                models[self.models[i].__class__.__name__] = models_to_append
+                
+            else:
+                model_to_append = model_list
 
-        model = None
-        for i in range(len(self.models)):
             if self.models_operation[i] == 'add':
-                model_list = self.models[i].get_model(
-                    x, all_p_list[i], return_models=return_models, multf=mult_model)
-                if return_models:
-                    model_to_append, models_to_append = model_list
-                    models[self.models[i].__class__.__name__] = models_to_append
-                else:
-                    model_to_append = model_list
-                    
                 if model is None:
                     model = model_to_append
                 else:
                     model += model_to_append
-    
+            elif self.models_operation[i] == 'mult':
+                if model is None:
+                    model = model_to_append
+                else:
+                    model *= model_to_append
+            else: raise StandardError('Bad model operation. Model operation must be in {}'.format(self.models_operations))
+
         if np.any(np.isnan(gvar.mean(model))):
-            warnings.warn('Nan in model')
+            raise StandardError('Nan in model')
 
         if return_models:
             return model, models
@@ -358,6 +337,7 @@ class FitVector(object):
         """
         if self.classic:
             all_p_free = self._all_p_arr2dict(all_p_free)
+        
         return self.get_model(all_p_free, x=x)[
             np.min(self.signal_range):np.max(self.signal_range)]
 
@@ -370,17 +350,6 @@ class FitVector(object):
         """
         return self.vector[
             np.min(self.signal_range):np.max(self.signal_range)]
-
-    def _get_sigma_onrange(self):
-        """Return the part of the uncertainty on the vector contained
-        in the signal range.
-
-        .. note:: This function has been defined only to be used with
-          scipy.optimize.curve_fit.
-        """
-        return self.sigma[
-            np.min(self.signal_range):np.max(self.signal_range)]
-
 
 
     def fit(self, compute_mcmc_error=False):
@@ -416,56 +385,42 @@ class FitVector(object):
         
         ### CLASSIC MODE ##################
         if self.classic:
-            
             priors_arr = self._all_p_dict2arr(priors_dict)
 
-            try:
-                fit_classic = scipy.optimize.curve_fit(
-                    self._get_model_onrange,
-                    np.arange(self.vector.shape[0]),
-                    self._get_vector_onrange(),
-                    #sigma=self._get_sigma_onrange(),
-                    p0=priors_arr,
-                    method='lm',
-                    full_output=True)
-            except RuntimeError:
-                fit_classic = list([0])
-                
+            fit_classic = scipy.optimize.curve_fit(
+                self._get_model_onrange,
+                np.arange(self.vector.shape[0]),
+                self._get_vector_onrange(),
+                p0=priors_arr,
+                method='lm',
+                full_output=True)
+
             fit = type('fit', (), {})
+
+            last_diff = fit_classic[2]['fvec']
+            fit.chi2 = np.sum(last_diff**2.)
+            fit.dof = self.vector.shape[0] - np.size(fit_classic[0])
+            fit.logGBF = None
+            
+            # compute uncertainties
+            cov_x = fit_classic[1]
+            if np.all(np.isfinite(cov_x)):
+                p_err = np.sqrt(np.diag(cov_x))
+            else:
+                p_err = np.empty_like(fit_classic[0])
+                p_err.fill(np.nan)
+                
+            fit.p = self._all_p_arr2dict(gvar.gvar(fit_classic[0], p_err),
+                                         keep_gvar=True)
             
             if 0 < fit_classic[-1] < 5:
                 fit.stopping_criterion = fit_classic[-1]
                 fit.error = None
-                
-                # compute uncertainties
-                cov_x = fit_classic[1]
-                if np.all(np.isfinite(cov_x)):
-                    p_err = np.sqrt(np.diag(cov_x))
-                else:
-                    p_err = np.empty_like(fit_classic[0])
-                    p_err.fill(np.nan)
-
-                fit.p = self._all_p_arr2dict(gvar.gvar(fit_classic[0], p_err),
-                                             keep_gvar=True)
-
-
-                last_diff = fit_classic[2]['fvec']
-
-                fitted_vector = self.get_model(self._all_p_arr2dict(gvar.gvar(fit_classic[0])))
-                residual = (self.vector - fitted_vector)[
-                    np.min(self.signal_range):np.max(self.signal_range)]
-
-                res_ratio = residual/self._get_sigma_onrange()
-                res_ratio[np.isinf(res_ratio)] = np.nan
-                fit.chi2 = np.nansum(res_ratio**2)
-                fit.dof = self._get_vector_onrange().shape[0] - np.size(fit_classic[0])
-                fit.logGBF = np.nan
-                fit.fitter_results = fit_classic[2]
-
             else:
                 fit.stopping_criterion = 0
                 fit.error = True
 
+            fit.fitter_results = fit_classic[2]
 
         ### LSQFIT MODE ##################
         else:
@@ -473,11 +428,7 @@ class FitVector(object):
                 raise Exception('No SNR guess. This fit must be made in classic mode')
 
             fit = lsqfit.nonlinear_fit(**fit_args(self.snr_guess))
-            
-            fitted_vector = gvar.mean(self.get_model(fit.p))
-            residual = (self.vector - fitted_vector)[
-                np.min(self.signal_range):np.max(self.signal_range)]
-            
+
         ### fit results formatting ###
         if fit.error is None:
             fit_p = fit.p
@@ -529,17 +480,8 @@ class FitVector(object):
             ## compute error on parameters
             # compute reduced chi square
             returned_data['rchi2'] = fit.chi2 / fit.dof
-            returned_data['rchi2_err'] = np.sqrt(2./self._get_vector_onrange().shape[0])
-            returned_data['rchi2_gvar'] = gvar.gvar(returned_data['rchi2'],
-                                                    returned_data['rchi2_err'])
-            
-            
             returned_data['chi2'] = fit.chi2
-            returned_data['residual'] = residual
-            # kolmogorov smirnov test: if p_value < 0.05 residual is not normal
-            returned_data['ks_pvalue'] = scipy.stats.kstest(
-                residual / np.std(utils.stats.sigmacut(residual)), 'norm')[1]
-
+            #returned_data['residual'] = self.vector - returned_data['fitted-vector-gvar']
 
             # compute MCMC uncertainty estimates
             if compute_mcmc_error:
@@ -698,18 +640,18 @@ class Model(object):
     def parse_dict(self):
         """Parse input dictionary to create :py:attr:`fit.Model.p_def`, :py:attr:`fit.Model.p_val` and
         :py:attr:`fit.Model.p_cov`"""
-        raise NotImplementedError()
+        raise Exception('Not implemented')
 
     def check_input(self):
         """Check input parameters"""
-        raise NotImplementedError()
+        raise Exception('Not implemented')
 
     def make_guess(self, v):
         """If a parameter value at init is a NaN this value is guessed.
 
         :param v: Data vector from which the guess is made.
         """
-        raise NotImplementedError()
+        raise Exception('Not implemented')
 
     def get_model(self, x, return_models=False):
         """Compute a model M(x, p) for all passed x positions. p are
@@ -719,8 +661,9 @@ class Model(object):
 
         :param return_models: (Optional) If True return also
           individual models (default False)
+
         """
-        raise NotImplementedError()
+        raise Exception('Not implemented')
 
     def get_p_free(self):
         """Return the vector of free parameters :py:attr:`fit.Model.p_free`"""
@@ -985,7 +928,7 @@ class ContinuumModel(Model):
         self.p_cov = dict() # no covarying parameters
 
         for ip in range(self.poly_order + 1):
-            self.p_val[self._get_ikey(ip)] = None
+            self.p_val[self._get_ikey(ip)] = 0.                
             self.p_def[self._get_ikey(ip)] = 'free'
 
         if 'poly_guess' in self.p_dict:
@@ -1003,7 +946,6 @@ class ContinuumModel(Model):
             if self.p_val[key] is None:
                 order = self._get_order_from_key(key)
                 self.p_val[key] = np.nanmedian(v)**(1./(order+1))
-        self.val2free()
 
 
     def _estimate_sdev(self, idef, mean):
@@ -1016,16 +958,13 @@ class ContinuumModel(Model):
             return gvar.gvar(mean, mean*10.)
 
 
-    def get_model(self, x, p_free=None, return_models=False, multf=None):
+    def get_model(self, x, p_free=None, return_models=False):
         """Return model M(x, p).
 
         :param x: Positions where the model M(x, p) is computed.
 
         :param p_free: (Optional) New values of the free parameters
           (default None).
-
-        :param multf: 1d vector with the same length as x vector which
-          represent the function by which the model must be multiplied.
           
         :param return_models: (Optional) If True return also
           individual models (default False)
@@ -1036,22 +975,6 @@ class ContinuumModel(Model):
         self.free2val()
         coeffs = [self.p_val[self._get_ikey(ip)] for ip in range(self.poly_order + 1)]
         mod = np.polyval(coeffs, x)
-
-        if multf is not None:
-            if isinstance(multf[0], gvar.GVar):
-                multfsp_mean = scipy.interpolate.UnivariateSpline(
-                    x, gvar.mean(multf), k=1, s=0, ext=2)
-                multfsp_sdev = scipy.interpolate.UnivariateSpline(
-                    x, gvar.sdev(multf), k=1, s=0, ext=2)
-                mod *= gvar.gvar(multfsp_mean(x), multfsp_sdev(x))
-            else:
-                multfsp = scipy.interpolate.UnivariateSpline(
-                    x, multf, k=1, s=0, ext=2)
-                mod *= multfsp(x)
-
-        if np.any(np.isnan(gvar.mean(mod))):
-            warnings.warn('Nan in model')
-
         if return_models:
             return mod, (mod)
         else:
@@ -1547,7 +1470,7 @@ class LinesModel(Model):
             return gvar.gvar(mean, max(mean, FWHM_SDEV))
         elif 'sigma' in idef:            
             return gvar.gvar(mean, max(mean, SIGMA_SDEV))
-        else: raise NotImplementedError('not implemented for {}'.format(idef))
+        else: raise Exception('not implemented for {}'.format(idef))
         
     def _p_val2array(self):
         self.p_array = dict(self.p_val)
@@ -1560,16 +1483,13 @@ class LinesModel(Model):
             self.p_val = dict(p_array)
 
 
-    def get_model(self, x, p_free=None, return_models=False, multf=None):
+    def get_model(self, x, p_free=None, return_models=False):
         """Return model M(x, p).
 
         :param x: Positions where the model M(x, p) is computed.
 
         :param p_free: (Optional) New values of the free parameters
           (default None).
-          
-        :param multf: 1d vector with the same length as x vector which
-          represent the function by which the model must be multiplied.
           
         :param return_models: (Optional) If True return also
           individual models (default False)
@@ -1583,32 +1503,8 @@ class LinesModel(Model):
         fmodel = self._get_fmodel()
         mod = None
         models = list()
-        
-        if multf is not None:
-            if isinstance(multf[0], gvar.GVar):
-                multfsp_mean = scipy.interpolate.UnivariateSpline(
-                    x, gvar.mean(multf), k=1, s=0, ext=2)
-                multfsp_sdev = scipy.interpolate.UnivariateSpline(
-                    x, gvar.sdev(multf), k=1, s=0, ext=2)
-            else:
-                multfsp = scipy.interpolate.UnivariateSpline(
-                    x, multf, k=1, s=0, ext=2)
-            
-        
+                            
         for iline in range(line_nb):
-            if multf is not None:
-                try:
-                    mult_amp = gvar.gvar(
-                        multfsp_mean(gvar.mean(self.p_array[self._get_ikey('pos', iline)])),
-                        multfsp_sdev(gvar.mean(self.p_array[self._get_ikey('pos', iline)])))
-                except UnboundLocalError:
-                    mult_amp = multfsp(gvar.mean(self.p_array[self._get_ikey('pos', iline)]))
-            else:
-                mult_amp = 1.
-
-            if np.any(np.isnan(gvar.mean(mult_amp))): raise StandardError('Nan in mult_amp')
-
-            
             
             if fmodel == 'sinc':
                 line_mod = utils.spectrum.sinc1d(
@@ -1626,16 +1522,15 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('sigma', iline)])
 
             elif fmodel == 'sincphased':
-                raise NotImplementedError()
+                raise Exception('not implemented')
                 line_mod = utils.spectrum.sinc1d_phased(
-                    x, 0.,
-                    self.p_array[self._get_ikey('amp', iline)],
+                    x, 0., self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
                     self.p_array[self._get_ikey('fwhm', iline)],
                     self.p_array[self._get_ikey('alpha', iline)])
 
             elif fmodel == 'sincgaussphased':
-                raise NotImplementedError()
+                raise Exception('not implemented')
                 line_mod = utils.spectrum.sincgauss1d_phased(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
@@ -1645,7 +1540,7 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('alpha', iline)])
 
             elif fmodel == 'sinc2':
-                raise NotImplementedError()
+                raise Exception('Not implemented')
                 ## line_mod =  np.sqrt(utils.spectrum.sinc1d(
                 ##     x, 0., p_array[iline, 0],
                 ##     p_array[iline, 1], p_array[iline, 2])**2.)
@@ -1658,9 +1553,6 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('fwhm', iline)])
             else:
                 raise ValueError("fmodel must be set to 'sinc', 'gaussian', 'sincgauss', 'sincphased', 'sincgaussphased' or 'sinc2'")
-
-            line_mod *= mult_amp
-            
             if mod is None:
                 mod = np.copy(line_mod)
             else:
@@ -1797,7 +1689,7 @@ class Cm1LinesModel(LinesModel):
             sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
                 SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
             return gvar.gvar(mean, max(mean, gvar.mean(sigma_sdev_kms)))
-        else: raise NotImplementedError('not implemented for {}'.format(idef))
+        else: raise Exception('not implemented for {}'.format(idef))
         
 
 
@@ -2300,10 +2192,6 @@ class Cm1InputParams(InputParams):
     def convert(self):
         raw = InputParams.convert(self)
         raw.signal_range_cm1 = self.signal_range_cm1
-        raw.axis_min = self.axis_min
-        raw.axis_max = self.axis_max
-        raw.axis_step = self.axis_step        
-        raw.baseclass = self.__class__.__name__
         return raw
 
 
@@ -2320,13 +2208,13 @@ class OutputParams(Params):
         for iparams in inputparams.params:
             all_inputparams.update(iparams)
         all_inputparams.update(inputparams.base_params)
-
-        if isinstance(inputparams, Cm1InputParams) or inputparams.baseclass == 'Cm1InputParams':
+        
+        if isinstance(inputparams, Cm1InputParams):
             wavenumber = True
-        elif isinstance(inputparams, InputParams)  or inputparams.baseclass == 'InputParams':
+        elif isinstance(inputparams, InputParams):
             wavenumber = None
         else:
-            raise NotImplementedError()
+            raise Exception('Not implemented yet')
 
         if not isinstance(fitvector, FitVector):
             raise Exception('fitvector must be an instance of FitVector')
@@ -2519,8 +2407,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
     """
     if isinstance(ip, InputParams):
         rawip = ip.convert()
-    else: rawip = ip
-    
+
     for iparams in rawip.params:
         for key in iparams:
             if key in kwargs:
@@ -2594,7 +2481,7 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
     if wavenumber:
         inputparams = Cm1InputParams
     else:
-        raise NotImplementedError()
+        raise Exception('NmInputParams not implemented yet')
 
     if theta_orig is None: theta_orig = theta_proj
 
@@ -2712,7 +2599,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                               # ;)
 
     if velocity_range is not None:
-        raise NotImplementedError()
+        raise Exception('Velocity range not implemented yet')
 
     # brute force over the velocity range to find the best lines position
     ## if velocity_range is not None:

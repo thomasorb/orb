@@ -288,12 +288,7 @@ class ROParams(dict):
         """Force config parameter reset"""
         dict.__setitem__(self, key, value)
 
-    def convert(self):
-        """Convert to a nice pickable object"""
-        conv = dict()
-        conv.update(self)
-        return conv
-    
+        
 ################################################
 #### CLASS NoInstrumentConfigParams ############
 ################################################
