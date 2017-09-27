@@ -456,7 +456,7 @@ def sinc1d_complex(x, h, a, dx, fwhm):
     :param dx: Position of the center
     :param fwhm: FWHM of the sinc
     """
-    width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi
     width /= 2.###
     X = (x-dx) / (2*width)
@@ -480,6 +480,8 @@ def sinc1d_phased(x, h, a, dx, fwhm, alpha):
     :param fwhm: FWHM of the sinc
     :param alpha: Mixing coefficient (in radians).
     """
+    if np.all(np.isclose(alpha, 0)):
+        return sinc1d(x, h, a, dx, fwhm)
     _sinc = sinc1d_complex(x, h, a, dx, fwhm)
     return _sinc.real * np.cos(alpha) + _sinc.imag * np.sin(alpha)
 
@@ -529,7 +531,7 @@ def sincgauss1d_complex(x, h, a, dx, fwhm, sigma):
 
     width = abs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi ###
-   
+
     a_ = sigma / np.sqrt(2) / width
     b_ = ((x - dx) / np.sqrt(2) / sigma).astype(float)
 
@@ -555,6 +557,13 @@ def sincgauss1d_phased(x, h, a, dx, fwhm, sigma, alpha):
     :param sigma: Sigma of the gaussian.
     :param alpha: Mixing coefficient (in radians).
     """
+    if np.all(np.isclose(alpha, 0)):
+        return sincgauss1d(x, h, a, dx, fwhm, sigma)
+
+    if np.all(np.isclose(sigma, 0)):
+        return sinc1d_phased(x, h, a, dx, fwhm, alpha)
+
+
     sc = sincgauss1d_complex(x, h, a, dx, fwhm, sigma)
     return np.cos(alpha) * sc.real + np.sin(alpha) * sc.imag
 

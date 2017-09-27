@@ -331,7 +331,9 @@ class FitVector(object):
                     models[self.models[i].__class__.__name__] = models_to_append
                 else:
                     model_to_append = model_list
-                    
+
+                if self.classic: model_to_append = gvar.mean(model_to_append)
+                
                 if model is None:
                     model = model_to_append
                 else:
@@ -418,7 +420,6 @@ class FitVector(object):
         if self.classic:
             
             priors_arr = self._all_p_dict2arr(priors_dict)
-
             try:
                 fit_classic = scipy.optimize.curve_fit(
                     self._get_model_onrange,
@@ -1609,7 +1610,6 @@ class LinesModel(Model):
             if np.any(np.isnan(gvar.mean(mult_amp))): raise StandardError('Nan in mult_amp')
 
             
-            
             if fmodel == 'sinc':
                 line_mod = utils.spectrum.sinc1d(
                     x, 0.,
@@ -1626,23 +1626,30 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('sigma', iline)])
 
             elif fmodel == 'sincphased':
-                raise NotImplementedError()
+                for key in self.p_array:
+                    if isinstance(self.p_array[key], gvar.GVar):
+                        warnings.warn('sincphased model not implemented for Gaussian variables. GVars will be cast to float. Passed parameters: {}'.format(self.p_array))
+                        
+
                 line_mod = utils.spectrum.sinc1d_phased(
                     x, 0.,
-                    self.p_array[self._get_ikey('amp', iline)],
-                    self.p_array[self._get_ikey('pos', iline)],
-                    self.p_array[self._get_ikey('fwhm', iline)],
-                    self.p_array[self._get_ikey('alpha', iline)])
+                    gvar.mean(self.p_array[self._get_ikey('amp', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('pos', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('fwhm', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('alpha', iline)]))
 
             elif fmodel == 'sincgaussphased':
-                raise NotImplementedError()
+                for key in self.p_array:
+                    if isinstance(self.p_array[key], gvar.GVar):
+                        warnings.warn('sincgaussphased model not implemented for Gaussian variables. GVars will be cast to float. Passed parameters: {}'.format(self.p_array))
+
                 line_mod = utils.spectrum.sincgauss1d_phased(
                     x, 0.,
-                    self.p_array[self._get_ikey('amp', iline)],
-                    self.p_array[self._get_ikey('pos', iline)],
-                    self.p_array[self._get_ikey('fwhm', iline)],
-                    self.p_array[self._get_ikey('sigma', iline)],
-                    self.p_array[self._get_ikey('alpha', iline)])
+                    gvar.mean(self.p_array[self._get_ikey('amp', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('pos', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('fwhm', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('sigma', iline)]),
+                    gvar.mean(self.p_array[self._get_ikey('alpha', iline)]))
 
             elif fmodel == 'sinc2':
                 raise NotImplementedError()
@@ -1797,6 +1804,8 @@ class Cm1LinesModel(LinesModel):
             sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
                 SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
             return gvar.gvar(mean, max(mean, gvar.mean(sigma_sdev_kms)))
+        elif 'alpha' in idef:
+            return gvar.gvar(np.squeeze(mean), max(mean, 2*np.pi))
         else: raise NotImplementedError('not implemented for {}'.format(idef))
         
 
@@ -2342,7 +2351,7 @@ class OutputParams(Params):
         line_nb = np.size(all_inputparams.pos_guess)
         line_params = fitvector.models[0].get_p_val_as_array(self['fit_params'][0])
 
-        if all_inputparams.fmodel == 'sincgauss':
+        if all_inputparams.fmodel in ['sincgauss', 'sincphased', 'sincgaussphased']:
             line_params[:,3] = np.abs(line_params[:,3])
         else:
             nan_col = np.empty(line_nb, dtype=float)
@@ -2405,6 +2414,8 @@ class OutputParams(Params):
 
 
         ## compute errors
+        print line_params
+        print line_params_err
         line_params = gvar.gvar(gvar.mean(line_params),
                                 gvar.mean(line_params_err))
 
@@ -2615,7 +2626,7 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
     return ip
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
-                          axis_corr, zpd_index, wavenumber=True,
+                          theta, zpd_index, wavenumber=True,
                           filter_file_path=None,
                           apodization=1.,
                           fit_tol=1e-10,
@@ -2641,8 +2652,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
     :param nm_laser: Calibration laser wavelength in nm.
 
-    :param axis_corr: Calibration coefficient
-
+    :param theta_proj: Projected incident angle of the spectrum in
+      degrees.
+      
     :param zpd_index: Index of the ZPD in the interferogram.
     
     :param apodization: (Optional) Apodization level. Permit to separate the
@@ -2736,9 +2748,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     ##                 np.round(ilines_pix), dtype=int)]))
     ##         shift_guess = bf_range[np.nanargmax(bf_flux)]
                               
-
     ip = _prepare_input_params(spectrum.shape[0], lines, step, order, nm_laser,
-                               axis_corr, zpd_index, wavenumber=wavenumber,
+                               theta, zpd_index, wavenumber=wavenumber,
                                filter_file_path=filter_file_path,
                                apodization=apodization,
                                **kwargs)
@@ -2761,7 +2772,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     
 
 
-def fit_lines_in_vector( vector, lines, fwhm_guess, fit_tol=1e-10,
+def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
     compute_mcmc_error=False, snr_guess=None, **kwargs):
     
     """Fit lines in a vector
@@ -3105,21 +3116,22 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
          'line_nb':np.size(lines_cm1),
          'amp_def':'free',
          'fwhm_def':'1',
-         'pos_guess':lines_cm1,
-         'pos_cov':vel,
+         'pos_guess':gvar.mean(lines_cm1),
+         'pos_cov':gvar.mean(vel),
          'pos_def':'1',
          'fmodel':fmodel,
-         'fwhm_guess':fwhm_guess,
+         'fwhm_guess':gvar.mean(fwhm_guess),
          'sigma_def':'1',
-         'sigma_guess':sigma,
+         'sigma_guess':gvar.mean(sigma),
          'sigma_cov':0., # never more than 0.
          'alpha_def':'1',
-         'alpha_guess':alpha,
+         'alpha_guess':gvar.mean(alpha),
          'alpha_cov':0.}) # never more than 0.})
 
     p_free = dict(lines_model.p_free)
     for iline in range(np.size(lines_cm1)):
         p_free[lines_model._get_ikey('amp', iline)] = amp[iline]
+        
     lines_model.set_p_free(p_free)
     spectrum = lines_model.get_model(np.arange(step_nb))
     
@@ -3157,16 +3169,16 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
         {'line_nb':np.size(lines),
          'amp_def':'free',
          'fwhm_def':'1',
-         'pos_guess':lines,
-         'pos_cov':line_shift,
+         'pos_guess':gvar.mean(lines),
+         'pos_cov':gvar.mean(line_shift),
          'pos_def':'1',
          'fmodel':fmodel,
-         'fwhm_guess':fwhm,
+         'fwhm_guess':gvar.mean(fwhm),
          'sigma_def':'1',
-         'sigma_guess':sigma,
+         'sigma_guess':gvar.mean(sigma),
          'sigma_cov':0., # never more than 0.
          'alpha_def':'1',
-         'alpha_guess':alpha,
+         'alpha_guess':gvar.mean(alpha),
          'alpha_cov':0.}) # never more than 0.
     p_free = dict(lines_model.p_free)
     for iline in range(np.size(lines)):
@@ -3226,33 +3238,32 @@ def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
         spectrum += np.random.standard_normal(
             spectrum.shape[0]) * np.nanmax(amp)/snr
 
-    cos_theta =  np.cos(np.deg2rad(theta))
     step_nb = spectrum.shape[0]
-    corr = 1. / cos_theta
-    fwhm_guess = utils.spectrum.compute_line_fwhm(
-        step_nb, step, order, corr, wavenumber=True) 
 
-    cm1_axis = utils.spectrum.create_cm1_axis(step_nb, step, order, corr=corr)
+    cm1_axis = utils.spectrum.create_cm1_axis(step_nb, step, order)
     cm1_axis_step = cm1_axis[1] - cm1_axis[0]
     fwhm_sdev_cm1 = cm1_axis_step * FWHM_SDEV
     sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
         SIGMA_SDEV, lines_cm1, cm1_axis_step))
     lines_cm1_sdev = SHIFT_SDEV * cm1_axis_step
 
-    if np.any(gvar.sdev(fwhm_guess) == 0.):
-        fwhm_guess = gvar.gvar(fwhm_guess, np.ones_like(fwhm_guess) * fwhm_sdev_cm1)
-    if gvar.sdev(sigma) == 0.:
-        sigma = gvar.gvar(sigma, np.ones_like(sigma) * sigma_sdev_kms)
+    ## if np.any(gvar.sdev(fwhm_guess) == 0.):
+    ##     fwhm_guess = gvar.gvar(fwhm_guess, np.ones_like(fwhm_guess) * fwhm_sdev_cm1)
+    ## if gvar.sdev(sigma) == 0.:
+    ##     sigma = gvar.gvar(sigma, np.ones_like(sigma) * sigma_sdev_kms)
     if np.any(gvar.sdev(lines_cm1) == 0.):
         lines_cm1 = gvar.gvar(lines_cm1, np.ones_like(lines_cm1) * lines_cm1_sdev)
 
     fit = fit_lines_in_spectrum(
-        spectrum, lines_cm1, step, order, 543.5, 1./cos_theta,
+        spectrum, lines_cm1, step, order, 543.5, theta,
         0, wavenumber=True, 
         fmodel=fmodel, pos_cov=vel, pos_def='1',
-        fwhm_guess=fwhm_guess, fwhm_def='fixed',
-        sigma_def='1', sigma_cov=sigma,
-        alpha_def='1', alpha_cov=alpha, snr_guess=snr)
+        fwhm_def='fixed',
+        sigma_def='1',
+        sigma_cov=sigma,
+        alpha_def='1',
+        alpha_cov=alpha,
+        snr_guess=None)
 
     return fit, gvar.mean(spectrum)
 
