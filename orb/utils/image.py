@@ -561,7 +561,7 @@ def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=15):
     
     def model(p, costheta, thetas):
         spl = interpolate.UnivariateSpline(thetas, np.array(p),
-                                           k=1, s=0, ext=0)
+                                           k=3, s=0, ext=0)
         return spl(costheta)
         
     def diff(p, data, costheta, err, thetas):
@@ -1173,7 +1173,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         return params, new_calib_laser_map
 
 
-def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
+def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser, knb=10):
     """Robust fit phase maps of order > 1
 
     Uses a theta dependant fit model base on a spline. See
@@ -1213,7 +1213,7 @@ def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser):
     
     err_map[np.nonzero(np.isnan(phase_map))] = np.nan
     
-    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser, knb=5)
+    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser, knb=knb)
     logging.info(' > Residual STD after cos theta fit: {}'.format(np.nanstd(res_map)))
 
     return phase_map_fit, phase_map - phase_map_fit
