@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 3.1.0 documentation</title>
+  <title>Index &mdash; Orb 3.1.2 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
         <link rel="index" title="Index"
               href="#"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.1.0 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 3.1.2 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                3.1.0
+                3.1.2
               </div>
             
           
@@ -482,8 +482,6 @@
 </li>
       <li><a href="orb.html#orb.cutils.meansigcut2d.params.axis">axis (orb.cutils.meansigcut2d parameter)</a>
 </li>
-      <li><a href="orb.html#orb.fit.fit_lines_in_spectrum.params.axis_corr">axis_corr (orb.fit.fit_lines_in_spectrum parameter)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.misc.get_axis_from_hdr.params.axis_index">axis_index (orb.utils.misc.get_axis_from_hdr parameter)</a>
 </li>
       <li><a href="orb.html#orb.cutils.fast_pix2w.params.axis_min">axis_min (orb.cutils.fast_pix2w parameter)</a>
@@ -834,10 +832,10 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.compute_line_fwhm">compute_line_fwhm() (in module orb.utils.spectrum)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.spectrum.compute_line_fwhm_pix">compute_line_fwhm_pix() (in module orb.utils.spectrum)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.fit.check_fit.params.compute_mcmc_error">compute_mcmc_error (orb.fit.check_fit parameter)</a>
 
       <ul>
@@ -893,6 +891,8 @@
       <li><a href="orb.html#orb.astrometry.StarsParams.convert">convert() (orb.astrometry.StarsParams method)</a>
 
       <ul>
+        <li><a href="orb.html#orb.core.ROParams.convert">(orb.core.ROParams method)</a>
+</li>
         <li><a href="orb.html#orb.etc.ETC.convert">(orb.etc.ETC method)</a>
 </li>
         <li><a href="orb.html#orb.fit.Cm1InputParams.convert">(orb.fit.Cm1InputParams method)</a>
@@ -937,6 +937,8 @@
 </li>
         <li><a href="orb.utils.html#orb.utils.spectrum.compute_resolution.params.corr">(orb.utils.spectrum.compute_resolution parameter)</a>
 </li>
+        <li><a href="orb.utils.html#orb.utils.spectrum.corr2theta.params.corr">(orb.utils.spectrum.corr2theta parameter)</a>
+</li>
         <li><a href="orb.utils.html#orb.utils.spectrum.create_cm1_axis.params.corr">(orb.utils.spectrum.create_cm1_axis parameter)</a>
 </li>
         <li><a href="orb.utils.html#orb.utils.spectrum.create_nm_axis.params.corr">(orb.utils.spectrum.create_nm_axis parameter)</a>
@@ -944,6 +946,8 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.create_nm_axis_ireg.params.corr">(orb.utils.spectrum.create_nm_axis_ireg parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.utils.html#orb.utils.spectrum.corr2theta">corr2theta() (in module orb.utils.spectrum)</a>
+</li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_stars_in_cube.params.correct_alignment">correct_alignment (orb.astrometry.Astrometry.fit_stars_in_cube parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.correct_bad_frames_vector">correct_bad_frames_vector() (in module orb.utils.misc)</a>
@@ -1728,6 +1732,12 @@
 
       <ul>
         <li><a href="orb.html#orb.core.OutHDFQuadCube.write_quad.params.force_complex64">(orb.core.OutHDFQuadCube.write_quad parameter)</a>
+</li>
+      </ul></li>
+      <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d.params.force_erf">force_erf (orb.utils.spectrum.sincgauss1d parameter)</a>
+
+      <ul>
+        <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_complex.params.force_erf">(orb.utils.spectrum.sincgauss1d_complex parameter)</a>
 </li>
       </ul></li>
       <li><a href="orb.html#orb.core.Cube.export.params.force_fits">force_fits (orb.core.Cube.export parameter)</a>
@@ -2662,10 +2672,10 @@
 </li>
       <li><a href="orb.html#orb.cutils.mean2d">mean2d() (in module orb.cutils)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.meansigcut2d">meansigcut2d() (in module orb.cutils)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.median2d">median2d() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.core.Tools.read_fits.params.memmap">memmap (orb.core.Tools.read_fits parameter)</a>
@@ -2724,6 +2734,12 @@
 </li>
       <li><a href="orb.html#orb.cutils.im2rgba.params.mpl_colorbar">mpl_colorbar (orb.cutils.im2rgba parameter)</a>
 </li>
+      <li><a href="orb.html#orb.fit.ContinuumModel.get_model.params.multf">multf (orb.fit.ContinuumModel.get_model parameter)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fit.LinesModel.get_model.params.multf">(orb.fit.LinesModel.get_model parameter)</a>
+</li>
+      </ul></li>
       <li><a href="orb.utils.html#orb.utils.astrometry.multi_aperture_photometry">multi_aperture_photometry() (in module orb.utils.astrometry)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_stars_in_cube.params.multi_fit">multi_fit (orb.astrometry.Astrometry.fit_stars_in_cube parameter)</a>
@@ -3676,6 +3692,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.aperture_photometry.params.return_surfaces">return_surfaces (orb.utils.astrometry.aperture_photometry parameter)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.spectrum.sinc1d_complex.params.return_tuple">return_tuple (orb.utils.spectrum.sinc1d_complex parameter)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.fft.find_zpd.params.return_zpd_shift">return_zpd_shift (orb.utils.fft.find_zpd parameter)</a>
 </li>
       <li><a href="orb.html#orb.cutils.surface_value.params.rmax">rmax (orb.cutils.surface_value parameter)</a>
@@ -3958,8 +3976,12 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d">(in module orb.utils.spectrum)</a>
 </li>
       </ul></li>
-      <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_complex">sincgauss1d_complex() (in module orb.utils.spectrum)</a>
+      <li><a href="orb.html#orb.cgvar.sincgauss1d_complex">sincgauss1d_complex() (in module orb.cgvar)</a>
+
+      <ul>
+        <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_complex">(in module orb.utils.spectrum)</a>
 </li>
+      </ul></li>
       <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_complex_erf">sincgauss1d_complex_erf() (in module orb.utils.spectrum)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_flux">sincgauss1d_flux() (in module orb.utils.spectrum)</a>
@@ -3969,6 +3991,16 @@
       <li><a href="orb.html#orb.cgvar.sincgauss_real">sincgauss_real() (in module orb.cgvar)</a>
 </li>
       <li><a href="orb.html#orb.cgvar.sincgauss_real_dfdx">sincgauss_real_dfdx() (in module orb.cgvar)</a>
+</li>
+      <li><a href="orb.html#orb.cgvar.sincgauss_real_erf">sincgauss_real_erf() (in module orb.cgvar)</a>
+</li>
+      <li><a href="orb.html#orb.cgvar.sincgausscomplex_real">sincgausscomplex_real() (in module orb.cgvar)</a>
+</li>
+      <li><a href="orb.html#orb.cgvar.sincgausscomplex_real_dfdx">sincgausscomplex_real_dfdx() (in module orb.cgvar)</a>
+</li>
+      <li><a href="orb.html#orb.cgvar.sincgausscomplex_real_dfdx_erf">sincgausscomplex_real_dfdx_erf() (in module orb.cgvar)</a>
+</li>
+      <li><a href="orb.html#orb.cgvar.sincgausscomplex_real_erf">sincgausscomplex_real_erf() (in module orb.cgvar)</a>
 </li>
       <li><a href="orb.html#orb.cutils.multi_fit_stars.params.sip">sip (orb.cutils.multi_fit_stars parameter)</a>
 
@@ -3994,6 +4026,8 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.sip_A">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.create_transform_maps.params.sip_B">sip_B (orb.cutils.create_transform_maps parameter)</a>
 
       <ul>
@@ -4002,8 +4036,6 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.sip_B">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.sip_im2pix">sip_im2pix() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_sip.params.sip_order">sip_order (orb.astrometry.Astrometry.fit_sip parameter)</a>
@@ -4297,15 +4329,19 @@
 </li>
         <li><a href="orb.utils.html#orb.utils.image.on_ellipse.params.theta">(orb.utils.image.on_ellipse parameter)</a>
 </li>
+        <li><a href="orb.utils.html#orb.utils.spectrum.theta2corr.params.theta">(orb.utils.spectrum.theta2corr parameter)</a>
+</li>
       </ul></li>
+      <li><a href="orb.utils.html#orb.utils.spectrum.theta2corr">theta2corr() (in module orb.utils.spectrum)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.simulate_calibration_laser_map.params.theta_cx">theta_cx (orb.utils.image.simulate_calibration_laser_map parameter)</a>
 
       <ul>
         <li><a href="orb.utils.html#orb.utils.image.simulate_theta_map.params.theta_cx">(orb.utils.image.simulate_theta_map parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.simulate_calibration_laser_map.params.theta_cy">theta_cy (orb.utils.image.simulate_calibration_laser_map parameter)</a>
 
       <ul>
@@ -4315,6 +4351,8 @@
       <li><a href="orb.utils.html#orb.utils.misc.compute_obs_params.params.theta_max">theta_max (orb.utils.misc.compute_obs_params parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.compute_obs_params.params.theta_min">theta_min (orb.utils.misc.compute_obs_params parameter)</a>
+</li>
+      <li><a href="orb.html#orb.fit.fit_lines_in_spectrum.params.theta_proj">theta_proj (orb.fit.fit_lines_in_spectrum parameter)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.tilt_calibration_laser_map">tilt_calibration_laser_map() (in module orb.utils.image)</a>
 </li>
@@ -4891,7 +4929,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.1.0',
+            VERSION:'3.1.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

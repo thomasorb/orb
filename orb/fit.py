@@ -153,7 +153,6 @@ class FitVector(object):
                 self.models_operations))
             # guess nan values for each model
             self.models[-1].make_guess(self.vector)
-
             self.priors_list.append(self.models[-1].get_priors(self.classic))
             self.priors_keys_list.append(self.priors_list[-1].keys())
         self.all_keys_index = None
@@ -415,7 +414,6 @@ class FitVector(object):
         
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
-        
         ### CLASSIC MODE ##################
         if self.classic:
             
@@ -777,7 +775,6 @@ class Model(object):
         """Recompute the set of free parameters
         :py:attr:`fit.Model.p_free` with the updated values of
         :py:attr:`fit.Model.p_val`"""
-        
         if self.p_val is None or self.p_def is None or self.p_cov is None:
             raise Exception('class has not been well initialized: p_val, p_def and p_cov must be defined')
         self.p_free = dict()
@@ -793,7 +790,6 @@ class Model(object):
                     self.p_free[self.p_def[idef]]= self.p_cov[self.p_def[idef]][0]
                 self.p_fixed[idef] = self.p_val[idef]
                 passed_cov += list([self.p_def[idef]])
-                
         # check if p_free has a sdev
         for idef in self.p_free:
             if self.p_free[idef] is not None:
@@ -801,7 +797,7 @@ class Model(object):
                     self.p_free[idef] = self._estimate_sdev(
                         idef, gvar.mean(self.p_free[idef]))
 
-        # remove sdev from p_fixed 
+        # remove sdev from p_fixed
         for idef in self.p_fixed:
             if self.p_fixed[idef] is not None:
                 self.p_fixed[idef] = gvar.mean(self.p_fixed[idef]) 
@@ -826,7 +822,7 @@ class Model(object):
                 self.p_val[idef] = self.p_fixed[idef]
             else: # covarying parameter
                 if self.p_def[idef] not in passed_cov:
-                    # if not already taken into account                    
+                    # if not already taken into account
                     passed_cov[self.p_def[idef]] = self.p_free[self.p_def[idef]]
                 # covarying operation
                 self.p_val[idef] = self.p_cov[self.p_def[idef]][1](
@@ -1319,7 +1315,6 @@ class LinesModel(Model):
                                 
                     del priors[ip]
                     continue
-        
         return priors
     
         
@@ -1392,6 +1387,7 @@ class LinesModel(Model):
                     
                             p_cov_dict[cov_symbol] = (
                                 np.squeeze(cov_value), cov_operation)
+                            
 
             else:
                 for iline in range(line_nb):
@@ -1491,22 +1487,8 @@ class LinesModel(Model):
         for key in self.p_array.keys():
             if self.p_array[key] is None:
                 if 'amp' in key:
-                    ## iline = self._get_iline_from_key(key)
-
-                    ## pos = gvar.mean(self.p_array[self._get_ikey('pos', iline)])
-                    ## fwhm = gvar.mean(self.p_array[self._get_ikey('fwhm', iline)])
-                    
-                    ## pos_min = pos - fwhm * FWHM_COEFF
-                    ## pos_max = pos + fwhm * FWHM_COEFF + 1
-                    ## if pos_min < 0: pos_min = 0
-                    ## if pos_max >= np.size(v): pos_max = np.size(v) - 1
-                    ## if pos_min < pos_max:
-                    ##     val_max = np.nanmax(gvar.mean(v)[
-                    ##         int(pos_min):int(pos_max)])
-                    ## else: val_max = 0.
-                    ## self.p_array[key] = val_max
                     self.p_array[key] = np.nanmax(gvar.mean(v))
-                    
+          
         self._p_array2val()
         self.val2free()
 
@@ -1626,30 +1608,21 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('sigma', iline)])
 
             elif fmodel == 'sincphased':
-                for key in self.p_array:
-                    if isinstance(self.p_array[key], gvar.GVar):
-                        warnings.warn('sincphased model not implemented for Gaussian variables. GVars will be cast to float. Passed parameters: {}'.format(self.p_array))
-                        
-
                 line_mod = utils.spectrum.sinc1d_phased(
                     x, 0.,
-                    gvar.mean(self.p_array[self._get_ikey('amp', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('pos', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('fwhm', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('alpha', iline)]))
+                    self.p_array[self._get_ikey('amp', iline)],
+                    self.p_array[self._get_ikey('pos', iline)],
+                    self.p_array[self._get_ikey('fwhm', iline)],
+                    self.p_array[self._get_ikey('alpha', iline)])
 
             elif fmodel == 'sincgaussphased':
-                for key in self.p_array:
-                    if isinstance(self.p_array[key], gvar.GVar):
-                        warnings.warn('sincgaussphased model not implemented for Gaussian variables. GVars will be cast to float. Passed parameters: {}'.format(self.p_array))
-
                 line_mod = utils.spectrum.sincgauss1d_phased(
                     x, 0.,
-                    gvar.mean(self.p_array[self._get_ikey('amp', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('pos', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('fwhm', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('sigma', iline)]),
-                    gvar.mean(self.p_array[self._get_ikey('alpha', iline)]))
+                    self.p_array[self._get_ikey('amp', iline)],
+                    self.p_array[self._get_ikey('pos', iline)],
+                    self.p_array[self._get_ikey('fwhm', iline)],
+                    self.p_array[self._get_ikey('sigma', iline)],
+                    self.p_array[self._get_ikey('alpha', iline)])
 
             elif fmodel == 'sinc2':
                 raise NotImplementedError()
@@ -2072,7 +2045,7 @@ class InputParams(object):
             'line_nb':np.size(lines),
             'amp_def':'free',
             'amp_guess':None,
-            'amp_cov':0.,
+            'amp_cov':1.,
             'fwhm_def':'free',
             'fwhm_guess':fwhm_guess,
             'fwhm_cov':gvar.gvar(0., gvar.sdev(fwhm_guess)),
@@ -2219,7 +2192,7 @@ class Cm1InputParams(InputParams):
             'line_nb':np.size(lines),
             'amp_def':'free',
             'amp_guess':None,
-            'amp_cov':gvar.gvar(1., 1.),
+            'amp_cov':1., # never put a gvar here or the amplitude sdev is forced to a given value
             'fwhm_def':'free',
             'fwhm_guess':fwhm_guess_cm1,
             'fwhm_cov':gvar.gvar(0., gvar.sdev(fwhm_guess_cm1)),
@@ -2383,7 +2356,7 @@ class OutputParams(Params):
         line_params_err = fitvector.models[0].get_p_val_as_array(
             self[fit_params_err_key][0])
 
-        if all_inputparams.fmodel not in ['sincgauss', 'sincgaussphased']:
+        if all_inputparams.fmodel not in ['sincgauss', 'sincgaussphased', 'sincphased']:
             line_params_err = np.append(line_params_err.T, nan_col)
             line_params_err = line_params_err.reshape(
                 line_params_err.shape[0]/line_nb, line_nb).T
@@ -2414,8 +2387,6 @@ class OutputParams(Params):
 
 
         ## compute errors
-        print line_params
-        print line_params_err
         line_params = gvar.gvar(gvar.mean(line_params),
                                 gvar.mean(line_params_err))
 
@@ -3263,7 +3234,7 @@ def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
         sigma_cov=sigma,
         alpha_def='1',
         alpha_cov=alpha,
-        snr_guess=None)
+        snr_guess=snr)
 
     return fit, gvar.mean(spectrum)
 
