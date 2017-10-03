@@ -2031,22 +2031,23 @@ def get_wcs_parameters(_wcs):
     target_ra, target_dec = _wcs.wcs.crval
     try:
         cd = np.copy(_wcs.wcs.cd)
+        warnings.warn('CD_ij based WCS is not recommended. Please prefer a PC_ij representation.')
         rotation = np.rad2deg(np.arctan2(-cd[0,1], -cd[0,0]))
         deltax = - cd[0,0] / np.cos(np.deg2rad(rotation))
         deltay = - cd[0,1] / np.sin(np.deg2rad(rotation))
+        
     except AttributeError: # no cd is present
         pc = np.copy(_wcs.wcs.get_pc())
-        rotation = np.rad2deg(np.arctan2(-pc[0,1], -pc[0,0]))
         deltax, deltay = _wcs.wcs.cdelt
-        deltax = -deltax
-        if deltax < 0.:
-            rotation = np.rad2deg(np.arctan2(-pc[0,1], -pc[0,0]))
-            deltax, deltay = _wcs.wcs.cdelt
-            deltax = deltax
+        rotation = np.rad2deg(np.arctan2(-pc[0,1]/deltax, -pc[0,0]/deltax))
+        if np.rad2deg(np.arctan2(-pc[1,0]/deltay, pc[1,1]/deltay)) != rotation:
+            raise RuntimeError('Malformed PC_ij matrix ?')
+        deltax = abs(deltax)
+        deltay = abs(deltay)
 
-    if deltax < 0.: raise Exception('deltax and deltay must be equal and > 0')
-    if abs(rotation) > 90. : raise Exception('rotation angle must be < 90. There must be an error.')
-    if not np.allclose(deltax, deltay): raise Exception('deltax must be equal to deltay')
+    if deltax < 0.: raise StandardError('deltax and deltay must be equal and > 0')
+    if abs(rotation) > 90. : raise StandardError('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
+    if not np.allclose(deltax, deltay): raise StandardError('deltax must be equal to deltay')
     deltay = float(deltax)
     
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation

@@ -27,6 +27,7 @@ import numpy as np
 import scipy.special
 cimport gvar
 import gvar
+import warnings
 
 cdef extern from "math.h":
     double c_pow "pow" (double x,double y)
@@ -88,47 +89,6 @@ def dawsni(gvar.GVar im):
     return gvar.gvar_function(im, f, dfdx)
     
 
-
-## def dawsn_dfdx(double re, double im):
-##     """Derivative of the Dawson function for complex input
-
-##     :param re: real part
-##     :param im: imaginary part
-##     """
-##     cdef double x
-##     return 1. - 2. * x * scipy.special.dawsn(x)
-
-## def dawsn(re, im):
-##     """Dawson function for complex input
-
-##     :param re: real part
-##     :param im: imaginary part
-##     """
-##     cdef int i
-##     cdef float xi, f, dfdx
-    
-##     if isinstance(x, gvar.GVar):
-##         f = scipy.special.dawsn(re.mean + 1j * im.mean)
-##         dfdx = dawsn_dfdx(x.mean)
-##         return gvar.gvar_function(x, f, dfdx)
-##     else:
-##         x = np.asarray(x)
-##         ans = np.empty(x.shape, x.dtype)
-##         for i in range(x.size):
-##             try:
-##                 ans.flat[i] = scipy.special.dawsn(x.flat[i])
-##             except TypeError:
-##                 xi = x.flat[i]
-##                 f = scipy.special.dawsn(xi.mean)
-##                 dfdx = dawsn_dfdx(xi.mean)
-##                 ans.flat[i] = gvar.gvar_function(xi, f, dfdx)
-##         return ans
-
-
-## def exp(x):
-##     if np.iscomplexobj()
-
-
 def sincgauss_real(double a,
                    np.ndarray[np.float64_t, ndim=1] b):
     """Sincgauss function of a and b which returns a real vector.
@@ -143,8 +103,25 @@ def sincgauss_real(double a,
     
     return ((dawson1 + dawson2)/dawson3).real
 
+
+def sincgauss_real_erf(double a,
+                       np.ndarray[np.float64_t, ndim=1] b):
+    """Sincgauss function (erf formulation) of a and b which returns a
+    real vector.
+    """
+    cdef np.ndarray[np.complex128_t, ndim=1] erf1
+    cdef np.ndarray[np.complex128_t, ndim=1] erf2
+    cdef complex erf3
+
+    erf1 = scipy.special.erf(a - 1j * b)
+    erf2 = scipy.special.erf(a + 1j * b)
+    erf3 = scipy.special.erf(a)
+
+    return (np.exp(-b**2.) * (erf1 + erf2) / (2 * erf3)).real
+
 def sincgauss_real_dfdx(double a,
-                        np.ndarray[np.float64_t, ndim=1] b):
+                        np.ndarray[np.float64_t, ndim=1] b,
+                        erf=False, f_ab=None):
     """Partial derivatives wrt. a and b of the sincgauss function.
 
     Returns real derivatives.
@@ -157,28 +134,42 @@ def sincgauss_real_dfdx(double a,
 
     dia = scipy.special.dawsn(1j * a)
 
+    if erf: sgr = sincgauss_real_erf
+    else: sgr = sincgauss_real
+
+    if f_ab is None:
+        SGR_AB = sgr(a, b)
+    else:
+        SGR_AB = f_ab
+        
     cos1 = 1j * np.cos(2. * a * b)
-    dfda = (cos1 - 1j * sincgauss_real(a, b)) / dia
+    dfda = (cos1 - 1j * SGR_AB) / dia
     
     sin1 = 1j * np.sin(2. * a * b) / dia
-    dfdb = sin1 - 2. * b * sincgauss_real(a, b)
+    dfdb = sin1 - 2. * b * SGR_AB
     return (dfda.real, dfdb.real)
 
-def sincgauss1d(a, b):
+
+def sincgauss1d(a, b, erf=False):
     """sincgauss function"""
     cdef int i
 
     assert (np.size(a)) == 1
 
+    if erf: sgr = sincgauss_real_erf
+    else: sgr = sincgauss_real
+
     if not isinstance(a, gvar.GVar) and not isinstance(b[0], gvar.GVar):
-        return sincgauss_real(a, b)
+        return sgr(a, b)
     
     cdef np.ndarray[object, ndim=1] ans = np.empty(b.shape[0], b.dtype)
-    cdef np.ndarray[np.float64_t, ndim=1] f = np.copy(sincgauss_real(gvar.mean(a), gvar.mean(b)))
+    cdef np.ndarray[np.float64_t, ndim=1] f = np.copy(sgr(gvar.mean(a), gvar.mean(b)))
+
     cdef np.ndarray[np.float64_t, ndim=1] dfda
     cdef np.ndarray[np.float64_t, ndim=1] dfdb
 
-    dfda, dfdb = sincgauss_real_dfdx(gvar.mean(a), gvar.mean(b))
+        
+    dfda, dfdb = sincgauss_real_dfdx(gvar.mean(a), gvar.mean(b), erf=erf, f_ab=f)
 
     if not isinstance(a, gvar.GVar):
         for i in range(b.size):
@@ -193,46 +184,168 @@ def sincgauss1d(a, b):
     return ans
 
 
-## def sincgauss_real_dfdb(a_, b_):
-##     """Partial derivative wrt. b of the sincgauss function of a and b. Returns
-##     a real derivative"""
-##     a_ = np.array(a_, dtype=float)
-##     b_ = np.array(b_, dtype=float)
-    
-##     cdef sin1 = a_ * 1j * np.sin(2.*a_*b_) / scipy.special.dawsn(1j*a_)
-    
-##     cdef dfdb = sin1 - 2 * b_ * sincgauss_real(a_, b_)
-##     return dfdb.real
 
-## def sincgauss_real_dfdx(a_, b_):
-##     """Derivatives wrt. a and b of the sincgauss function. Returns a
-##     tuple of partial derivatives along a and b.
-##     """
-##     return (sincgauss_real_dfda(a_, b_), sincgauss_real_dfdb(a_, b_))
+#########################################
+####### PHASED VERSIONS #################
+#########################################
 
-## def sincgauss1d(ab):
-##     """Sincgauss function for a tuple of parameters (a, b). Returns a
-##     real vector"""
-##     cdef int i
+def sincgausscomplex_real(double a,
+                          np.ndarray[np.float64_t, ndim=1] b):
+    """Sincgausscomplex function of a and b which returns two real
+    vectors instead of a complex vector.
+    """
+    cdef np.ndarray[np.complex128_t, ndim=1] dawson1
+    cdef np.ndarray[np.float64_t, ndim=1] dawson2
+    cdef complex dawson3
     
-##     if isinstance(ab[0], gvar.GVar) and isinstance(ab[1], gvar.GVar):
-##         if ab[0].sdev == 0. and ab[1].sdev == 0.:
-##             return sincgauss_real(ab[0].mean, ab[1].mean)
-##         f = sincgauss_real(gvar.mean(ab[0]), gvar.mean(ab[1]))
-##         dfdx = sincgauss_real_dfdx(gvar.mean(ab[0]), gvar.mean(ab[1]))
-##         return gvar.gvar_function(ab, f, dfdx)
-##     else:
-##         a = ab[0]
-##         b = np.asarray(ab[1])
+    dawson1 = scipy.special.dawsn(1j * a + b) * np.exp(2.* 1j * a * b)
+    dawson2 = scipy.special.dawsn(b) * np.exp(a ** 2.)
+    dawson3 = scipy.special.dawsn(1j * a)
 
-##         ans = np.empty_like(b)
-##         for i in range(b.size):
-##             try:
-##                 ans.flat[i] = sincgauss_real(a, b.flat[i])
-##             except TypeError:
-##                 bi = b.flat[i]
-##                 f = sincgauss_real(a.mean, bi.mean)
-##                 dfdx = sincgauss_real_dfdx(a.mean, bi.mean)
-##                 ans.flat[i] = gvar.gvar_function((a, bi), f, dfdx)
-                
-##         return ans
+    sgc = (dawson1 - dawson2) / dawson3
+    return (sgc.real, sgc.imag)
+
+def sincgausscomplex_real_erf(double a,
+                              np.ndarray[np.float64_t, ndim=1] b):
+    """Sincgausscomplex function (erf formulation) of a and b which returns two real
+    vectors instead of a complex vector.
+    """
+    cdef np.ndarray[np.complex128_t, ndim=1] erf1
+    cdef np.ndarray[np.complex128_t, ndim=1] erf2
+    cdef complex erf3
+    warnings.simplefilter("ignore")
+    erf1 = scipy.special.erf(a - 1j * b)
+    erf2 = scipy.special.erf(1j * b)
+    erf3 = scipy.special.erf(a)
+    sgc = np.exp(-(b**2)) * ((erf1 + erf2)/erf3)
+    sgc[np.isnan(sgc)] = 0.
+    warnings.simplefilter("default")
+    
+    return (sgc.real, sgc.imag)
+
+
+def sincgausscomplex_real_dfdx(double a,
+                               np.ndarray[np.float64_t, ndim=1] b):
+    """Partial derivatives wrt. a and b of the sincgauss function.
+
+    Returns real derivatives.
+    """
+    cdef np.ndarray[np.complex128_t, ndim=1] cos1
+    cdef np.ndarray[np.complex128_t, ndim=1] sin1
+    cdef complex dia
+    cdef np.ndarray[np.complex128_t, ndim=1] dfda
+    cdef np.ndarray[np.complex128_t, ndim=1] dfdb
+
+    dia = scipy.special.dawsn(1j * a)
+    diab = scipy.special.dawsn(1j * a + b)
+    db = scipy.special.dawsn(b)
+    exp2iab = np.exp(2.* 1j * a * b)
+    expa2 = np.exp(a ** 2.)
+    
+    dfda = 1j * (exp2iab * (dia - diab) + db * expa2) / (dia ** 2.)
+    dfdb = ((1 - 2 * b * diab) * exp2iab - (1 - 2 * b * db) * expa2) / dia
+    return dfda.real, dfda.imag, dfdb.real, dfdb.imag
+
+def sincgausscomplex_real_dfdx_erf(double a,
+                                   np.ndarray[np.float64_t, ndim=1] b):
+    """Partial derivatives (erf formulation) wrt. a and b of the
+    sincgauss function.
+
+    Returns real derivatives.
+    """
+    cdef np.ndarray[np.complex128_t, ndim=1] cos1
+    cdef np.ndarray[np.complex128_t, ndim=1] sin1
+    cdef complex dia
+    cdef np.ndarray[np.complex128_t, ndim=1] dfda
+    cdef np.ndarray[np.complex128_t, ndim=1] dfdb
+    warnings.simplefilter("ignore")
+    erfa = scipy.special.erf(-a)
+    exp2iab = np.exp(2.* 1j * a * b)
+    expmb2 = np.exp(-(b**2.))
+    erf2 = scipy.special.erf(1j * b - a)
+    erf3 = scipy.special.erf(1j * b)
+    expma2 = np.exp(-(a**2.))
+    beta = -1j * np.sqrt(np.pi) / 2.
+    
+    dfda =  - 2. / np.sqrt(np.pi) * expma2 * (exp2iab * erfa + expmb2 * (-erf2 + erf3)) /  (erfa**2.)
+    dfdb = ((np.exp(2j * a * b - a**2) - 1)/beta + 2 * b * expmb2 * (- erf2 + erf3)) / erfa
+
+    dfda[np.isnan(dfda.real)] = 0.
+    dfda[np.isnan(dfda.imag)] = 0.
+    dfdb[np.isnan(dfdb.real)] = 0.
+    dfdb[np.isnan(dfdb.imag)] = 0.
+    warnings.simplefilter("default")
+    return dfda.real, dfda.imag, dfdb.real, dfdb.imag
+
+
+def sincgauss1d_complex(a, b, erf=False):
+    """The "complex" version of the sincgauss (dawson definition).
+
+    This is the real sinc*gauss function when ones wants to fit both the real
+    part and the imaginary part of the spectrum."""
+
+    cdef int i
+
+    assert (np.size(a)) == 1
+
+    if not erf:
+        sgc = sincgausscomplex_real
+        sgc_dfdx = sincgausscomplex_real_dfdx
+    else:
+        sgc = sincgausscomplex_real_erf
+        sgc_dfdx = sincgausscomplex_real_dfdx_erf
+    
+
+    if not isinstance(a, gvar.GVar) and not isinstance(b[0], gvar.GVar):
+        return sgc(a, b)
+    
+    cdef np.ndarray[object, ndim=1] ans_re = np.empty(b.shape[0], b.dtype)
+    cdef np.ndarray[object, ndim=1] ans_im = np.empty(b.shape[0], b.dtype)
+    
+    cdef np.ndarray[np.float64_t, ndim=1] f_re
+    cdef np.ndarray[np.float64_t, ndim=1] f_im
+    cdef np.ndarray[np.float64_t, ndim=1] dfda_re
+    cdef np.ndarray[np.float64_t, ndim=1] dfdb_re
+    cdef np.ndarray[np.float64_t, ndim=1] dfda_im
+    cdef np.ndarray[np.float64_t, ndim=1] dfdb_im
+
+
+    f_re, f_im = np.copy(sgc(gvar.mean(a), gvar.mean(b)))
+    
+    dfda_re, dfda_im, dfdb_re, dfdb_im = sgc_dfdx(gvar.mean(a), gvar.mean(b))
+
+    print np.any(np.isnan(gvar.mean(a)))
+    print np.any(np.isnan(gvar.mean(b)))
+
+    print np.any(np.isnan(f_re))
+    print np.any(np.isnan(f_im))
+    print np.any(np.isnan(dfda_re))
+    print np.any(np.isnan(dfda_im))
+    print np.any(np.isnan(dfdb_re))
+    print np.any(np.isnan(dfdb_im))
+
+
+    # real part
+    if not isinstance(a, gvar.GVar):
+        for i in range(b.size):
+            ans_re.flat[i] = gvar.gvar_function(
+                b[i], f_re[i], dfdb_re[i])
+        
+    else:
+        for i in range(b.size):
+            ans_re.flat[i] = gvar.gvar_function(
+                (a, b[i]), f_re[i], (dfda_re[i], dfdb_re[i]))
+
+    # imag part
+    if not isinstance(a, gvar.GVar):
+        for i in range(b.size):
+            ans_im.flat[i] = gvar.gvar_function(
+                b[i], f_im[i], dfdb_im[i])
+        
+    else:
+        for i in range(b.size):
+            ans_im.flat[i] = gvar.gvar_function(
+                (a, b[i]), f_im[i], (dfda_im[i], dfdb_im[i]))
+
+
+    return ans_re, ans_im
