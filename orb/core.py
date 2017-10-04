@@ -131,6 +131,10 @@ class LoggingFilter(logging.Filter):
 class Logger(object):
     def __init__(self, debug=False):
         self.debug = bool(debug)
+        if self.debug:
+            self.level = logging.DEBUG
+        else:
+            self.level = logging.INFO
         self.start_logging()
 
     def _reset_logging_state(self):
@@ -144,10 +148,11 @@ class Logger(object):
         [self.root.removeFilter(ihand) for ifilt in self.root.filters[:]]
 
         # init logging
-        self.root.setLevel(logging.INFO)
-
+        self.root.setLevel(self.level)
+            
         ch = ColorStreamHandler()
-        ch.setLevel(logging.INFO)
+        ch.setLevel(self.level)
+            
         if self.debug:
             formatter = logging.Formatter(
                 self.get_logformat(),
@@ -182,11 +187,11 @@ class Logger(object):
 
         if not self.get_file_logging_state():
             self.root = self.getLogger()
-            self.root.setLevel(logging.INFO)
+            self.root.setLevel(self.level)
 
             ch = logging.StreamHandler(
                 open(self._get_logfile_path(), 'a'))
-            ch.setLevel(logging.INFO)
+            ch.setLevel(self.level)
             formatter = logging.Formatter(
                 self.get_logformat(),
                 self.get_logdateformat())
@@ -219,7 +224,7 @@ class Logger(object):
     def get_simplelogformat(self):
         """Return a string describing the simple logging format"""
         
-        return '%(levelname)s> %(message)s'
+        return '%(levelname)s| %(message)s'
 
 
     def get_logdateformat(self):
@@ -283,7 +288,12 @@ class ROParams(dict):
         """Force config parameter reset"""
         dict.__setitem__(self, key, value)
 
-        
+    def convert(self):
+        """Convert to a nice pickable object"""
+        conv = dict()
+        conv.update(self)
+        return conv
+    
 ################################################
 #### CLASS NoInstrumentConfigParams ############
 ################################################
@@ -1888,7 +1898,7 @@ class Cube(Tools):
                  chip_index=1, binning=1, 
                  project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
-                 overwrite=False, silent_init=False,
+                 overwrite=True, silent_init=False,
                  indexer=None, no_sort=False,
                  **kwargs):
         
@@ -1934,7 +1944,7 @@ class Cube(Tools):
           spectral cube (an empty list() by default).
 
         :param overwrite: (Optional) If True existing FITS files will
-          be overwritten (default False).
+          be overwritten (default True).
 
         :param silent_init: (Optional) If True no message is displayed
           at initialization.
@@ -1973,7 +1983,12 @@ class Cube(Tools):
 
         self.is_complex = False
         self.dtype = float
-        self.overwrite = overwrite
+        
+        if overwrite in [True, False]:
+            self.overwrite = bool(overwrite)
+        else:
+            raise ValueError('overwrite must be True or False')
+        
                 
         self.indexer = indexer
         self._project_header = project_header
@@ -3885,7 +3900,7 @@ class HDFCube(Cube):
     """        
     def __init__(self, cube_path, project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
-                 overwrite=False, indexer=None, silent_init=False,
+                 overwrite=True, indexer=None, silent_init=False,
                  binning=None, **kwargs):
         
         """
@@ -3907,7 +3922,7 @@ class HDFCube(Cube):
           spectral cube (an empty list() by default).
 
         :param overwrite: (Optional) If True existing FITS files will
-          be overwritten (default False).
+          be overwritten (default True).
 
         :param indexer: (Optional) Must be a :py:class:`core.Indexer`
           instance. If not None created files can be indexed by this
@@ -3938,7 +3953,11 @@ class HDFCube(Cube):
         self.is_quad_cube = None # set to True if cube is split in quad. set to
                                  # False if split in frames.
 
-        self.overwrite = overwrite
+        if overwrite in [True, False]:
+            self.overwrite = bool(overwrite)
+        else:
+            raise ValueError('overwrite must be True or False')
+        
         self.indexer = indexer
         self._project_header = project_header
         self._wcs_header = wcs_header
@@ -4288,7 +4307,7 @@ class OutHDFCube(Tools):
         :param shape: Data shape. Must be a 3-Tuple (dimx, dimy, dimz)
 
         :param overwrite: (Optional) If True data will be overwritten
-          but existing data will not be removed (default False).
+          but existing data will not be removed (default True).
 
         :param reset: (Optional) If True and if the file already
           exists, it is deleted (default False).

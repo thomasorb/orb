@@ -22,7 +22,8 @@ ORB Documentation
 
    .. _SITELLE: 
 
-   **SITELLE** (Spectromètre-Imageur pour l’Étude en Long et en Large des raie d’Émissions) is a larger version of SpIOMM operating at the CFHT_ (Canada-France-Hawaii Telescope, Hawaii, USA).
+   **SITELLE** (Spectromètre-Imageur pour l’Étude en Long et en Large des raie d’Émissions) is a larger version of SpIOMM operating at the CFHT_ (Canada-France-Hawaii Telescope, Hawaii, USA). See http://www.cfht.hawaii.edu/Instruments/Sitelle
+
 
 Table of contents
 -----------------
@@ -66,4 +67,3 @@ Indices and tables
 .. _Python: http://www.python.org/
 .. _ORB: https://github.com/thomasorb/orb
 .. _ORCS: https://github.com/thomasorb/orcs
-.. _SITELLE: http://www.cfht.hawaii.edu/Instruments/Sitelle

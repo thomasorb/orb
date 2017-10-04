@@ -75,3 +75,4 @@ def close_pp_server(js):
         except OSError:
             # PID does not exist
             pass
+        except IOError: pass
