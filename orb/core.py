@@ -3023,6 +3023,7 @@ class ProgressBar(object):
         
         :param sec: Number of seconds to convert
         """
+        if sec is None: return 'unknown'
         if (sec < 1):
             return '{:.3f} s'.format(sec)
         elif (sec < 5):
@@ -3066,11 +3067,13 @@ class ProgressBar(object):
             if (self._count > self.REFRESH_COUNT):
                 index_by_step = ((self._index_table[-1] - self._index_table[0])
                                  /float(self.REFRESH_COUNT - 1))
-                time_to_end = (((self._time_table[-1] - self._time_table[0])
-                                /float(self.REFRESH_COUNT - 1))
-                               * (self._max_index - index) / index_by_step)
+                if index_by_step > 0:
+                    time_to_end = (((self._time_table[-1] - self._time_table[0])
+                                    /float(self.REFRESH_COUNT - 1))
+                                   * (self._max_index - index) / index_by_step)
+                else: time_to_end = None
             else:
-                time_to_end = 0.
+                time_to_end = None
             pos = (float(index) / self._max_index) * self.BAR_LENGTH
             line = ("\r [" + "="*int(math.floor(pos)) + 
                     " "*int(self.BAR_LENGTH - math.floor(pos)) + 
