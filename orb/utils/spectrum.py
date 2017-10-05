@@ -451,7 +451,7 @@ def sinc1d_phased(x, h, a, dx, fwhm, alpha):
     _sinc_re, _sinc_im = sinc1d_complex(x, h, a, dx, fwhm, return_tuple=True)
     return _sinc_re * np.cos(alpha) + _sinc_im * np.sin(alpha)
 
-def sincgauss1d(x, h, a, dx, fwhm, sigma, force_erf=False):
+def sincgauss1d(x, h, a, dx, fwhm, sigma):
     """Return a 1D sinc convoluted with a gaussian of parameter sigma.
 
     If sigma == 0 returns a pure sinc.
@@ -464,10 +464,6 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma, force_erf=False):
     :param dx: Position of the center
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
-
-    :param force_erf: (Optional) If True, erf computation is forced
-      instead of dawson computation. Useful for test but beware of
-      NaNs (default False).
     """
     if np.size(sigma) > 1:
         if np.any(sigma != sigma[0]):
@@ -487,19 +483,16 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma, force_erf=False):
     if np.isclose(gvar.mean(sigma), 0.):
         return sinc1d(x, h, a, dx, fwhm)
 
+    if max_broadening_ratio > 7:
+	return gaussian1d(x, h, a, dx, np.sqrt(sigma**2 + fwhm**2))
+    
     width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi ###    
     
     a_ = sigma / math.sqrt(2) / width
     b_ = (x - dx) / math.sqrt(2) / sigma
 
-    if max_broadening_ratio > 7 or force_erf:
-        erf = True
-    else:
-        erf = False
-
-    return h + a * orb.cgvar.sincgauss1d(a_, b_, erf=erf)
-
+    return h + a * orb.cgvar.sincgauss1d(a_, b_, erf=False)
 
 def sincgauss1d_complex_erf(x, h, a, dx, fwhm, sigma):
     """The "complex" version of the sincgauss (erf formulation).

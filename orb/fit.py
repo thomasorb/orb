@@ -414,6 +414,7 @@ class FitVector(object):
         
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
+
         ### CLASSIC MODE ##################
         if self.classic:
             
@@ -1488,10 +1489,10 @@ class LinesModel(Model):
             if self.p_array[key] is None:
                 if 'amp' in key:
                     self.p_array[key] = np.nanmax(gvar.mean(v))
-          
+
         self._p_array2val()
         self.val2free()
-
+        
 
     def _get_line_nb(self):
         """Return the number of lines"""
@@ -3097,7 +3098,7 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
          'sigma_cov':0., # never more than 0.
          'alpha_def':'1',
          'alpha_guess':gvar.mean(alpha),
-         'alpha_cov':0.}) # never more than 0.})
+         'alpha_cov':0.}) # never more than 0.
 
     p_free = dict(lines_model.p_free)
     for iline in range(np.size(lines_cm1)):
