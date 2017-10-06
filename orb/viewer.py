@@ -1840,7 +1840,7 @@ class FitPlugin(object):
         if self.fit_lines is not None:
             fit_lines = (np.array(self.fit_lines)
                          + np.array(utils.spectrum.line_shift(
-                             self.fit_lines_velocity, self.fit_lines,
+                             self.fit_lines_velocity, np.array(self.fit_lines),
                              wavenumber=self.wavenumber)))
             if self.wavenumber:
                 return fit_lines / (1. + self.fit_lines_redshift)
