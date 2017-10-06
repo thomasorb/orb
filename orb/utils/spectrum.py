@@ -392,7 +392,7 @@ def sinc1d(x, h, a, dx, fwhm):
     if not isinstance(x, np.ndarray):
         x = np.array(x)
         
-    X = ((x - dx) / (fwhm / 1.20671))
+    X = ((x - dx) / (fwhm / orb.constants.FWHM_SINC_COEFF))
     return h + a * orb.cgvar.sinc1d(X)
 
 def sinc1d_complex(x, h, a, dx, fwhm, return_tuple=False):
@@ -478,13 +478,13 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     max_broadening_ratio = gvar.mean(broadening_ratio) + gvar.sdev(broadening_ratio)
     
     if broadening_ratio < 1e-2:
-        return sinc1d(x, h, a, dx, np.sqrt(sigma**2 + fwhm**2))
+        return sinc1d(x, h, a, dx, fwhm)
 
     if np.isclose(gvar.mean(sigma), 0.):
         return sinc1d(x, h, a, dx, fwhm)
 
     if max_broadening_ratio > 7:
-	return gaussian1d(x, h, a, dx, np.sqrt(sigma**2 + fwhm**2))
+	return gaussian1d(x, h, a, dx, sigma * (2. * gvar.sqrt(2. * gvar.log(2.))))
     
     width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi ###    
@@ -591,6 +591,10 @@ def sincgauss1d_phased(x, h, a, dx, fwhm, sigma, alpha, force_erf=False):
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
     :param alpha: Mixing coefficient (in radians).
+
+    :param force_erf: If True, force erf computation (warning, erf
+      computation is generally bad and it must be used for checking
+      purpose only)
     """
     if np.all(np.isclose(gvar.mean(alpha), 0)):
         return sincgauss1d(x, h, a, dx, fwhm, sigma)
