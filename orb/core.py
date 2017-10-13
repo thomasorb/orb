@@ -5180,6 +5180,8 @@ class PhaseFile(Tools):
         if self.basic_phase is not None: return self.basic_phase
         
         argmax = np.nanargmax(self.angles > calib_laser_nm)
+        if (argmax==self.phases.shape[0]):
+            argmax = argmax-1
         calib_max = self.angles[argmax]
         calib_min = self.angles[argmax - 1]
         ratio = (calib_laser_nm - calib_min) / (calib_max - calib_min)
