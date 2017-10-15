@@ -2040,8 +2040,9 @@ def get_wcs_parameters(_wcs):
         pc = np.copy(_wcs.wcs.get_pc())
         deltax, deltay = _wcs.wcs.cdelt
         rotation = np.rad2deg(np.arctan2(-pc[0,1]/deltax, -pc[0,0]/deltax))
-        if np.rad2deg(np.arctan2(-pc[1,0]/deltay, pc[1,1]/deltay)) != rotation:
-            raise RuntimeError('Malformed PC_ij matrix ?')
+        check_angle = np.rad2deg(np.arctan2(-pc[1,0]/deltay, pc[1,1]/deltay))
+        if not np.isclose(check_angle, rotation):
+            raise RuntimeError('Malformed PC_ij matrix ? ({} not close to {})'.format(check_angle, rotation))
         deltax = abs(deltax)
         deltay = abs(deltay)
 
