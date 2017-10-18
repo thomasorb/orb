@@ -23,6 +23,7 @@
 import logging
 import os
 import pp
+import getpass
 
 def init_pp_server(ncpus=0, silent=False):
     """Initialize a server for parallel processing.
@@ -36,6 +37,30 @@ def init_pp_server(ncpus=0, silent=False):
     .. note:: Please refer to http://www.parallelpython.com/ for
       sources and information on Parallel Python software
     """
+    WL_PATH = '/etc/orb-kernels-wl' # user white list
+    NCPUS_PATH = '/etc/orb-kernels-ncpus' # ncpus limit
+
+    # check if a hard configuration exists
+    max_cpus = None
+    if os.path.exists(NCPUS_PATH):
+        with open(NCPUS_PATH, 'r') as f:
+            for line in f:
+                try:
+                    max_cpus = int(line)
+                except: pass
+
+    in_wl = False
+    if os.path.exists(WL_PATH):
+        with open(WL_PATH, 'r') as f:
+            for line in f:
+                if getpass.getuser() in line:
+                    in_wl = True
+                    break
+
+    if ncpus == 0 and not in_wl and max_cpus is not None:
+        ncpus = max_cpus
+        logging.debug('max cpus limited to {} because of machine hard limit configuration'.format(max_cpus))
+
     ppservers = ()
 
     if ncpus == 0:
