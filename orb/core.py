@@ -1269,7 +1269,7 @@ class Tools(object):
                   return_header=False, return_hdu_only=False,
                   return_mask=False, silent=False, delete_after=False,
                   data_index=0, image_mode='classic', chip_index=None,
-                  binning=None, fix_header=True, memmap=False, dtype=float):
+                  binning=None, fix_header=True, dtype=float):
         """Read a FITS data file and returns its data.
     
         :param fits_path: Path to the file, can be either
@@ -1318,10 +1318,6 @@ class Tools(object):
           fixed to avoid errors due to header inconsistencies
           (e.g. WCS errors) (default True).
 
-        :param memmap: (Optional) If True, use the memory mapping
-          option of pyfits. This is useful to avoid loading a full cube
-          in memory when opening a large data cube (default False).
-
         :param dtype: (Optional) Data is converted to
           the given dtype (e.g. np.float32, default float).
         
@@ -1336,7 +1332,7 @@ class Tools(object):
             return_header=return_header, return_hdu_only=return_hdu_only,
             return_mask=return_mask, silent=silent, delete_after=delete_after,
             data_index=data_index, image_mode=image_mode, chip_index=chip_index,
-            binning=binning, fix_header=fix_header, memmap=memmap, dtype=dtype,
+            binning=binning, fix_header=fix_header, dtype=dtype,
             mask_path=self._get_mask_path(fits_path))
 
     def _bin_image(self, a, binning):
