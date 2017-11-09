@@ -40,7 +40,6 @@ import scipy.optimize
 import scipy.interpolate
 import time
 
-import emcee
 import gvar
 import lsqfit
 

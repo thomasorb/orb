@@ -28,6 +28,43 @@ import warnings
 import orb.cutils
 import orb.utils.fft
 import orb.utils.vector
+import orb.utils.spectrum
+import orb.constants
+
+def step_interf(sigma_min, sigma_max, step_nb, symm=False):
+    """Simulate a step interferogram
+
+    ZPD is on the first sample of the returned interferogram.
+
+    :param sigma_ax: max frequency of the step (must be < step_nb/2)
+
+    :param step_nb: Length of the interferogram
+
+    :param symm: (Optional) If True, returned spectrum is symmetric,
+      it has two times more steps - 1. Zpd position is equal to
+      step_nb - 0.5.
+   
+    .. note:: results are much better with a symmetric interferogram
+      but ZPD is not on the first sample and the spectrum must thus be
+      phase corrected.
+    """
+    if sigma_max > step_nb / 2.: raise ValueError('sigma_max must be < step_nb/2')
+    if sigma_min >= sigma_max: raise ValueError('sigma_min must be < sigma_max')
+    if not 0 <= sigma_min < sigma_max: raise ValueError('sigma_min must be < sigma_max and > 0')
+
+    x = np.arange(step_nb, dtype=float)
+    x = x / (step_nb - 1.)
+    
+    fwhm = 1. / (float(sigma_max - sigma_min)) * orb.constants.FWHM_SINC_COEFF
+    interf = orb.utils.spectrum.sinc1d(x, 0, 1, 0, fwhm)
+    interf *= np.cos(2 * np.pi * x * (sigma_min + (sigma_max - sigma_min)/2.))
+
+    if symm:
+        return np.hstack((interf[::-1][:-1], interf))
+        
+    else:
+        return interf
+
 
 def line_interf(sigma, step_nb, phi=0):
     """
@@ -41,7 +78,7 @@ def line_interf(sigma, step_nb, phi=0):
 
     :param phi: (Optional) Phase of the line (in radians) (default 0).
     """
-    if sigma > step_nb / 2.: raise Exception('Sigma must be < step_nb/2')
+    if sigma > step_nb / 2.: raise ValueError('Sigma must be < step_nb/2')
     x = np.arange(step_nb, dtype=float) / (step_nb-1)
     a = np.cos(x*sigma*2.*math.pi + phi) / 2. + 0.5
     return a

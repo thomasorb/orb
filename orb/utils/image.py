@@ -1552,7 +1552,7 @@ def unwrap_phase_map0(phase_map):
     """
     Phase is defined modulo pi/2. The Unwrapping is a
     reconstruction of the phase so that the distance between two
-    neighboor pixels is always less than pi/4. Then the real
+    neighbour pixels is always less than pi/4. Then the real
     phase pattern can be recovered and fitted easily.
     
     The idea is the same as with np.unwrap() but in 2D, on a
