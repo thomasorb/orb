@@ -61,12 +61,11 @@ def step_interf(sigma_min, sigma_max, step_nb, symm=False):
 
     if symm:
         return np.hstack((interf[::-1][:-1], interf))
-        
     else:
         return interf
 
 
-def line_interf(sigma, step_nb, phi=0):
+def line_interf(sigma, step_nb, phi=0, symm=False):
     """
     Simulate a simple line interferogram (a cosine)
 
@@ -77,11 +76,18 @@ def line_interf(sigma, step_nb, phi=0):
     :param step_nb: Length of the interferogram
 
     :param phi: (Optional) Phase of the line (in radians) (default 0).
+
+    :param symm: (Optional) If True, returned spectrum is symmetric,
+      it has two times more steps - 1. Zpd position is equal to
+      step_nb - 0.5.
     """
     if sigma > step_nb / 2.: raise ValueError('Sigma must be < step_nb/2')
     x = np.arange(step_nb, dtype=float) / (step_nb-1)
     a = np.cos(x*sigma*2.*math.pi + phi) / 2. + 0.5
-    return a
+    if symm:
+        return np.hstack((a[::-1][:-1], a))
+    else:
+        return a
 
 def fft(interf, zp_coeff=10, apod=None, phase=None):
     """

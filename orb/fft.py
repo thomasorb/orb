@@ -273,7 +273,6 @@ class Interferogram(Vector1d):
             
         return spec
 
-
 class Spectrum(Vector1d):
     """Spectrum class
     """
@@ -309,7 +308,12 @@ class Spectrum(Vector1d):
                    
     def get_phase(self):
         """return phase"""
-        return np.unwrap(np.angle(self.data))
+        nans = np.isnan(self.data)
+        _data = np.copy(self.data)
+        _data[nans] = 0
+        _phase = np.unwrap(np.angle(_data))
+        _phase[nans] = np.nan
+        return _phase
 
     def get_amplitude(self):
         """return amplitude"""
@@ -336,7 +340,7 @@ class Spectrum(Vector1d):
             phase = utils.vector.interpolate_size(phase, self.dimz, 1)
             
         self.data *= np.exp(1j * phase)
-
+        
 
     def resample(self, axis):
         """Resample spectrum over the given axis
@@ -344,10 +348,12 @@ class Spectrum(Vector1d):
         :return: A new Spectrum instance
 
         .. warning:: Resampling is done via a DFT which is much slower
-          than a FFT. But it gives perfect results with respect ot
+          than a FFT. But it gives perfect results with respect to
           interpolation.
         """
-        interf = np.fft.ifft(self.data)
+        raise NotImplementedError('Not implemented yet')
+        ### should be done in the interferogram class instead (much easier to implement) ###
+        interf = self.transform().data
         real_axis_step = float(self.axis[1] - self.axis[0])
         samples = (axis - self.axis[0]) / real_axis_step
         ok_samples = (0 <= samples) * (samples < self.step_nb)
@@ -372,7 +378,7 @@ class Spectrum(Vector1d):
     def interpolate(self, axis, quality=10):
         """Resample spectrum by interpolation over the given axis
 
-        :param quality: an interger from 2 to infinity which gives the
+        :param quality: an integer from 2 to infinity which gives the
           zero padding factor before interpolation. The more zero
           padding, the better will be the interpolation, but the
           slower too.
@@ -380,19 +386,25 @@ class Spectrum(Vector1d):
         :return: A new Spectrum instance
 
         .. warning:: Though much faster than pure resampling, this can
-          conduct to some errors.
+          be less precise.
         """
         quality = int(quality)
-        if quality <= 1: raise ValueError('quality must be an interger > 2')
-        
-        interf = np.fft.ifft(self.data)
-        zp_spec = np.fft.fft(interf, n=int(interf.size * quality))
-        zp_axis = np.arange(zp_spec.size) * (self.axis[1] - self.axis[0]) / float(quality)
-        f = scipy.interpolate.interp1d(zp_axis, zp_spec, bounds_error=False)
-        real_axis_step = float(self.axis[1] - self.axis[0])
-        samples = (axis - self.axis[0]) / real_axis_step
+        if quality < 2: raise ValueError('quality must be an interger > 2')
+                
+        interf_complex = np.fft.ifft(self.data)
+        zp_interf = np.zeros(self.step_nb * quality, dtype=complex)
+        center = interf_complex.shape[0] / 2
+        zp_interf[:center] = interf_complex[:center]
+        zp_interf[
+            -center-int(interf_complex.shape[0]&1):] = interf_complex[
+            -center-int(interf_complex.shape[0]&1):]
 
-        return Spectrum(f(samples), axis, params=self.params)
+        zp_spec = np.fft.fft(zp_interf)
+        zp_axis = (np.arange(zp_spec.size)
+                   * (self.axis[1] - self.axis[0])  / float(quality)
+                   + self.axis[0])
+        f = scipy.interpolate.interp1d(zp_axis, zp_spec, bounds_error=False)
+        return Spectrum(f(axis), axis, params=self.params)
 
     def reverse(self):
         """Reverse data. Do not reverse the axis.
@@ -425,6 +437,7 @@ class Spectrum(Vector1d):
 
         weights = np.ones(self.step_nb, dtype=float) * 1e-35
         weights[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1] = 1.
+        print self.axis(cm1_min), self.axis(cm1_max)
         
         # polynomial fit
         def model(x, *p):

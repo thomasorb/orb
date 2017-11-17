@@ -1918,16 +1918,10 @@ def complex_dft(np.ndarray[np.complex128_t, ndim=1] a,
     cdef int m, n
     
     f = np.zeros(M, dtype=complex)
-    ## cdef np.ndarray[np.float64_t, ndim=1] freal = np.zeros(M, dtype=float)
-    ## cdef np.ndarray[np.float64_t, ndim=1] fimag = np.zeros(M, dtype=float)
     for m in xrange(M):
         for n in xrange(N):
             angle = -2j * M_PI * x[m] * <float>n / <float>N
             f[m] += a[n] * np.exp(angle)
-            ## freal[m] += a[n] * cos(angle)
-    ##         fimag[m] += a[n] * sin(angle)
-    ## f.real = freal
-    ## f.imag = fimag
     return f
           
 def map_me(np.ndarray[np.float64_t, ndim=2] frame):
