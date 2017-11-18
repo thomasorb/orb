@@ -40,7 +40,6 @@ import scipy.optimize
 import scipy.interpolate
 import time
 
-import emcee
 import gvar
 import lsqfit
 
@@ -1937,6 +1936,7 @@ class InputParams(object):
         raw.base_params = dict(self.base_params)
         for _iparams in raw.params:
             raw.allparams.update(_iparams)
+        raw.baseclass = self.__class__.__name__
         return raw
    
     def add_continuum_model(self, poly_order, cont_guess=None):
@@ -2028,7 +2028,6 @@ class InputParams(object):
     
     def add_lines_model(self, lines, fwhm_guess, **kwargs):
         
-        raise Exception('Must be checked. Too much change without check.')
         lines = np.array(lines)
 
         if np.any(gvar.sdev(lines) == 0.):
@@ -2822,7 +2821,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
 
     if fit != []:
         fit = OutputParams(fit)
-        return fit.translate(ip, fv)
+        return fit.translate(ip.convert(), fv)
 
     return []
 
@@ -3241,8 +3240,7 @@ def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
 
 
 def check_fit(lines, amp, fwhm, step_nb, snr,
-              line_shift=0, sigma=0, alpha=0, fmodel='sincgauss',
-              compute_mcmc_error=False):
+              line_shift=0, sigma=0, alpha=0, fmodel='sincgauss'):
     """Create a model and fit it.
 
     This is a good way to check the quality and the internal coherency
@@ -3269,10 +3267,6 @@ def check_fit(lines, amp, fwhm, step_nb, snr,
 
     :param fmodel: (Optional) Lines model. Can be 'gaussian', 'sinc',
       'sincgauss', 'sincphased', 'sincgaussphased' (default sincgauss).
-
-    :param compute_mcmc_error: (Optional) If True error is estimated
-      with the distribution obtained via a Monte-Carlo Markov Chain
-      algorithm (default False).
     """
     SIGMA_SDEV = 10
     FWHM_SDEV = 10
@@ -3299,7 +3293,6 @@ def check_fit(lines, amp, fwhm, step_nb, snr,
         pos_def='1',
         pos_cov=line_shift,
         sigma_guess=sigma,
-        compute_mcmc_error=compute_mcmc_error,
         alpha_guess=alpha, snr_guess=snr)
 
     return fit, gvar.mean(spectrum)
