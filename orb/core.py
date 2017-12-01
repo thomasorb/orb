@@ -48,7 +48,6 @@ import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
 import h5py
-import dill
 
 ## ORB IMPORTS
 ## MODULES IMPORTS
@@ -57,11 +56,9 @@ import dill
 ## import pyximport; pyximport.install(
 ##     setup_args={"include_dirs":np.get_include()})
 import cutils
-import cgvar
 
 import utils.spectrum, utils.parallel, utils.io, utils.filters
 import utils.photometry
-import constants
 
 
 #################################################
@@ -264,15 +261,15 @@ class ROParams(dict):
         raise StandardError('Parameter is read-only')
 
     def __setitem__(self, key, value):
-        """Special set item function. Raise a read-only error when the
-        parameter already exists.
-
+        """Special set item function. Raises a warning when parameter
+        already exists.
+    
         :param key: Item key.
 
         :param value: Item value.
         """
         if key in self:
-            raise StandardError('Parameter already defined')
+            warnings.warn('Parameter already defined')
         dict.__setitem__(self, key, value)
 
     def __getstate__(self):
@@ -1866,116 +1863,13 @@ class Tools(object):
         return x_min, x_max, y_min, y_max
 
 
-#################################################
-#### CLASS OCube ################################
-#################################################
-class OCube(object):
-    """Provide additional cube methods when observation parameters are known.
-
-    These methods can be 'loaded' into a Cube class with dynamic inheritance:
-
-    self.__class__.__bases__ += (Ocube, )
-    self.load_params('option_file_path.opt')
-
-    Methods load must be immediately followed with parameters loading
-    from an option file.
-
-    .. warning:: This class cannot be used alone.
-    """
-
-    def load_params(self, params):
-        """Load observation parameters
-
-        :params: Path to an option file.
-        """
-        def set_param(pkey, okey, cast):
-            if okey in ofile.options:
-                self.set_param(pkey, ofile.get(okey, cast=cast))
-            else:
-                raise Exception('Malformed option file. {} not set.'.format(okey))
-                
-    
-        # parse optionfile
-        if isinstance(params, str):
-            if os.path.exists(params):
-                ofile = OptionFile(params)
-                for iopt in ofile.options:
-                    print iopt, ofile[iopt]
-                set_param('step', 'SPESTEP', float)
-                set_param('order', 'SPEORDR', int)
-                set_param('filter_name', 'FILTER', str)
-                self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
-                nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
-                self.set_param('filter_nm_min', nm_min)
-                self.set_param('filter_nm_max', nm_max)
-                self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
-                self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
-                
-                set_param('exposure_time', 'SPEEXPT', float)
-                set_param('step_nb', 'SPESTNB', int)
-                set_param('calibration_laser_map_path', 'CALIBMAP', str)
-                
-                
-            else:
-                raise IOError('file {} does not exist'.format(params))
-        else: raise TypeError('params type ({}) not handled'.format(type(params)))
-
-        self.params_defined = True
-
-    def validate(self):
-        """Check if this class is valid"""
-        if self.instrument not in ['sitelle', 'spiomm']: raise StandardError("class not valid: set instrument to 'sitelle' or 'spiomm' at init")
-        try: self.params_defined
-        except AttributeError: raise StandardError("class not valid: set params at init")
-        if not self.params_defined: raise StandardError("class not valid: set params at init")
-
-    def get_uncalibrated_filter_bandpass(self):
-        """Return filter bandpass as two 2d matrices (min, max) in pixels"""
-        self.validate()
-        filterfile = FilterFile(self.get_param('filter_file_path'))
-        filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(filterfile.get_filter_bandpass())[::-1]
-        
-        cm1_axis_step_map = cutils.get_cm1_axis_step(
-            self.dimz, self.params.step) * self.get_calibration_coeff_map()
-
-        cm1_axis_min_map = (self.params.order / (2 * self.params.step)
-                            * self.get_calibration_coeff_map() * 1e7)
-        if int(self.params.order) & 1:
-            cm1_axis_min_map += cm1_axis_step_map
-        filter_min_pix_map = (filter_min_cm1 - cm1_axis_min_map) / cm1_axis_step_map
-        filter_max_pix_map = (filter_max_cm1 - cm1_axis_min_map) / cm1_axis_step_map
-        
-        return filter_min_pix_map, filter_max_pix_map
-    
-    def get_calibration_laser_map(self):
-        """Return calibration laser map"""
-        self.validate()
-        try:
-            return self.calibration_laser_map
-        except AttributeError:
-            self.calibration_laser_map = self.read_fits(self.params.calibration_laser_map_path)
-        if (self.calibration_laser_map.shape[0] != self.dimx):
-            self.calibration_laser_map = utils.image.interpolate_map(
-                self.calibration_laser_map, self.dimx, self.dimy)
-        if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
-            raise StandardError('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
-        return self.calibration_laser_map
-        
-    def get_calibration_coeff_map(self):
-        """Return calibration laser map"""
-        self.validate()
-        try:
-            return self.calibration_coeff_map
-        except AttributeError:
-            self.calibration_coeff_map = self.get_calibration_laser_map() / self.config.CALIB_NM_LASER 
-        return self.calibration_coeff_map
             
 ##################################################
 #### CLASS Cube ##################################
 ##################################################
 class Cube(Tools):
     """3d numpy data cube handling. Base class for all Cube classes"""
-    def __init__(self, data, params=None,
+    def __init__(self, data,
                  project_header=list(),
                  wcs_header=list(), calibration_laser_header=list(),
                  overwrite=True, 
@@ -2066,12 +1960,6 @@ class Cube(Tools):
         self.dimz = self._data.shape[2]
         self.shape = (self.dimx, self.dimy, self.dimz)
 
-        # handle observation parameters and dynamically append OCube
-        # methods
-        if params is not None:
-            self.__class__.__bases__ += (OCube, )
-            self.load_params(params)
-        
     def __getitem__(self, key):
         """Getitem special method"""
         return self._data.__getitem__(key)
@@ -2185,6 +2073,30 @@ class Cube(Tools):
         """Return the expected size of the cube if saved on disk in Mo.
         """
         return self.dimx * self.dimy * self.dimz * 4 / 1e6 # 4 octets in float32
+
+    def get_binned_cube(self, binning):
+        """Return the binned version of the cube
+        """
+        binning = int(binning)
+        if binning < 2:
+            raise ValueError('Bad binning value')
+        logging.info('Binning interferogram cube')
+        image0_bin = utils.image.nanbin_image(
+            self.get_data_frame(0), binning)
+
+        cube_bin = np.empty((image0_bin.shape[0],
+                             image0_bin.shape[1],
+                             self.dimz), dtype=float)
+        cube_bin.fill(np.nan)
+        cube_bin[:,:,0] = image0_bin
+        progress = ProgressBar(self.dimz-1)
+        for ik in range(1, self.dimz):
+            progress.update(ik, info='Binning cube')
+            cube_bin[:,:,ik] = utils.image.nanbin_image(
+                self.get_data_frame(ik), binning)
+        progress.end()
+        return cube_bin
+
 
     def get_resized_frame(self, index, size_x, size_y, degree=3):
         """Return a resized frame using spline interpolation.
@@ -2486,10 +2398,10 @@ class Cube(Tools):
         return Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
 
-    ## def get_calibration_laser_map(self):
-    ##     """Not implemented in Cube class but implemented in child
-    ##     classes."""
-    ##     return None
+    def get_calibration_laser_map(self):
+        """Not implemented in Cube class but implemented in child
+        classes."""
+        return None
        
     def export(self, export_path, x_range=None, y_range=None,
                z_range=None, header=None, overwrite=False,
@@ -2688,6 +2600,122 @@ class Cube(Tools):
             self.write_fits(export_path, data, overwrite=overwrite,
                             fits_header=header)
 
+#################################################
+#### CLASS OCube ################################
+#################################################
+class OCube(Cube):
+    """Provide additional cube methods when observation parameters are known.
+
+    .. warning:: This class cannot be used alone.
+    """
+    def __init__(self, data, params, **kwargs):
+        """
+        Initialize Cube class.
+
+        :param data: Can be a path to a FITS file containing a data
+          cube or a 3d numpy.ndarray. Can be None if data init is
+          handled differently (e.g. if this class is inherited)
+
+        :param params: Path to an option file.
+        """
+        Cube.__init__(self, data, params, **kwargs)
+        self.load_params(params)
+        
+    
+    def load_params(self, params):
+        """Load observation parameters
+
+        :params: Path to an option file.
+        """
+        def set_param(pkey, okey, cast):
+            if okey in ofile.options:
+                self.set_param(pkey, ofile.get(okey, cast=cast))
+            else:
+                raise Exception('Malformed option file. {} not set.'.format(okey))
+                
+    
+        # parse optionfile
+        if isinstance(params, str):
+            if os.path.exists(params):
+                ofile = OptionFile(params)
+                for iopt in ofile.options:
+                    print iopt, ofile[iopt]
+                set_param('step', 'SPESTEP', float)
+                set_param('order', 'SPEORDR', int)
+                set_param('filter_name', 'FILTER', str)
+                self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
+                nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
+                self.set_param('filter_nm_min', nm_min)
+                self.set_param('filter_nm_max', nm_max)
+                self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
+                self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
+                
+                set_param('exposure_time', 'SPEEXPT', float)
+                set_param('step_nb', 'SPESTNB', int)
+                set_param('calibration_laser_map_path', 'CALIBMAP', str)
+                
+                
+            else:
+                raise IOError('file {} does not exist'.format(params))
+        else: raise TypeError('params type ({}) not handled'.format(type(params)))
+
+        self.params_defined = True
+
+    def validate(self):
+        """Check if this class is valid"""
+        if self.instrument not in ['sitelle', 'spiomm']: raise StandardError("class not valid: set instrument to 'sitelle' or 'spiomm' at init")
+        try: self.params_defined
+        except AttributeError: raise StandardError("class not valid: set params at init")
+        if not self.params_defined: raise StandardError("class not valid: set params at init")
+
+    def get_uncalibrated_filter_bandpass(self):
+        """Return filter bandpass as two 2d matrices (min, max) in pixels"""
+        self.validate()
+        filterfile = FilterFile(self.get_param('filter_file_path'))
+        filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(filterfile.get_filter_bandpass())[::-1]
+        
+        cm1_axis_step_map = cutils.get_cm1_axis_step(
+            self.dimz, self.params.step) * self.get_calibration_coeff_map()
+
+        cm1_axis_min_map = (self.params.order / (2 * self.params.step)
+                            * self.get_calibration_coeff_map() * 1e7)
+        if int(self.params.order) & 1:
+            cm1_axis_min_map += cm1_axis_step_map
+        filter_min_pix_map = (filter_min_cm1 - cm1_axis_min_map) / cm1_axis_step_map
+        filter_max_pix_map = (filter_max_cm1 - cm1_axis_min_map) / cm1_axis_step_map
+        
+        return filter_min_pix_map, filter_max_pix_map
+    
+    def get_calibration_laser_map(self):
+        """Return calibration laser map"""
+        self.validate()
+        try:
+            return self.calibration_laser_map
+        except AttributeError:
+            self.calibration_laser_map = self.read_fits(self.params.calibration_laser_map_path)
+        if (self.calibration_laser_map.shape[0] != self.dimx):
+            self.calibration_laser_map = utils.image.interpolate_map(
+                self.calibration_laser_map, self.dimx, self.dimy)
+        if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
+            raise StandardError('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
+        return self.calibration_laser_map
+        
+    def get_calibration_coeff_map(self):
+        """Return calibration laser map"""
+        self.validate()
+        try:
+            return self.calibration_coeff_map
+        except AttributeError:
+            self.calibration_coeff_map = self.get_calibration_laser_map() / self.config.CALIB_NM_LASER 
+        return self.calibration_coeff_map
+
+    def get_theta_map(self):
+        """Return the incident angle map from the calibration laser map"""
+        self.validate()
+        try:
+            return self.theta_map
+        except AttributeError:
+            self.theta_map = utils.spectrum.corr2theta(self.get_calibration_coeff_map())
 
 ##################################################
 #### CLASS ProgressBar ###########################

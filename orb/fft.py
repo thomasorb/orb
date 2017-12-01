@@ -410,26 +410,42 @@ class Spectrum(Vector1d):
         """Reverse data. Do not reverse the axis.
         """
         self.data = self.data[::-1]
-        
-    def polyfit_phase(self, return_coeffs=True):
-        """Polynomial fit of the phase
-    
-        :param return_coeffs: If True return (fit coefficients, error
-          on coefficients) else return a Vector1d instance
-          representing the fitted phase.    
-        """
-        self.assert_params()
-    
-        RANGE_BORDER_COEFF = 0.1
 
+
+    def get_filter_bandpass_cm1(self):
+        """Return filter bandpass in cm-1"""
         if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
             nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
             warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
             cm1_min, cm1_max = utils.spectrum.nm2cm1((nm_max, nm_min))
-        
-        else:
-            cm1_min = self.params.filter_cm1_min
-            cm1_max = self.params.filter_cm1_max
+            self.params['filter_cm1_min'] = cm1_min
+            self.params['filter_cm1_max'] = cm1_max
+            
+        return self.params.filter_cm1_min, self.params.filter_cm1_max
+
+    def get_filter_bandpass_pix(self):
+        """Return filter bandpass in channels"""
+        return self.axis(self.get_filter_bandpass_cm1()[0]), self.axis(self.get_filter_bandpass_cm1()[1])
+    
+    def polyfit_phase(self, return_coeffs=True, deg=1):
+        """Polynomial fit of the phase
+    
+        :param return_coeffs: If True return (fit coefficients, error
+          on coefficients) else return a Vector1d instance
+          representing the fitted phase.
+
+        :param deg: (Optional) Degree of the fitting polynomial. Must be > 0.
+          (default 1).
+
+        """
+        self.assert_params()
+
+        deg = int(deg)
+        if deg < 1: raise ValueError('deg must be > 0')
+    
+        RANGE_BORDER_COEFF = 0.1
+
+        cm1_min, cm1_max = self.get_filter_bandpass_cm1()
         
         cm1_border = np.abs(cm1_max - cm1_min) * RANGE_BORDER_COEFF
         cm1_min += cm1_border
@@ -437,7 +453,6 @@ class Spectrum(Vector1d):
 
         weights = np.ones(self.step_nb, dtype=float) * 1e-35
         weights[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1] = 1.
-        print self.axis(cm1_min), self.axis(cm1_max)
         
         # polynomial fit
         def model(x, *p):
@@ -447,13 +462,21 @@ class Spectrum(Vector1d):
         phase = self.get_phase()
         phase[np.isnan(phase)] = 0.
         ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1]
+
+        guesses = list()
+        guess0 = np.nanmean(ok_phase)
+        guess1 = np.nanmean(np.diff(ok_phase))
+        guesses.append(guess0)
+        guesses.append(guess1)
         
+        if deg > 1:
+            for i in range(deg - 1):
+                guesses.append(0)
         try:
-            guess0 = np.nanmean(ok_phase)
-            guess1 = np.nanmean(np.diff(ok_phase))
+            
             pfit, pcov = scipy.optimize.curve_fit(
                 model, x, phase,
-                [guess0, guess1],
+                guesses,
                 1./weights)
             perr = np.sqrt(np.diag(pcov))
         except Exception, e:
