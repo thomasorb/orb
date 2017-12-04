@@ -1860,6 +1860,7 @@ class Params(dict):
     def __setattr__(self, key, value):
         raise Exception('Parameter is read-only')
 
+
 ################################################
 ##### CLASS RawInputParams #####################
 ################################################
@@ -2468,6 +2469,14 @@ class OutputParams(Params):
         return self
 
         
+    def convert(self):
+        """Convert class to a raw pickable format
+        """
+        raw = dict()
+        for ipar in self.keys():
+            raw[ipar] = self[ipar]
+        return raw
+
         
 
 ################################################

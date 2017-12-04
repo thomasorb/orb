@@ -318,31 +318,32 @@ def apod2sigma(apod, fwhm):
 
     return broadening * fwhm
 
-def gaussian_window(coeff, n):
+def gaussian_window(coeff, x):
     """Return a Gaussian apodization function for a given broadening
     factor.
 
     :param coeff: FWHM relative to the sinc function. Must be a float > 1.
-       
-    :param n: Number of points.
+
+    :param x: Must be an axis defnined between -1 and 1 inclusively.
+      x = np.linspace(-1., 1., n) for a symmetrical window.
     """
     coeff = float(coeff)
-    x = np.linspace(-1., 1., n)
+    #x = np.linspace(-1., 1., n)
     w = apod2width(coeff)
     return np.exp(-x**2 * w**2)
 
-def learner95_window(n):
+def learner95_window(x):
     """Return the apodization function described in Learner et al.,
     J. Opt. Soc. Am. A, 12, (1995).
 
     This function is closely related to the minimum four-term
     Blackman-Harris window.
-
-    Returned window is symmetrical.
     
-    :param n: Number of points.
+    :param x: Must be an axis defnined between -1 and 1 inclusively.
+      x = np.linspace(-1., 1., n) for a symmetrical window.
     """
-    x = np.linspace(-1., 1., n)
+    #
+        
     return (0.355766
             + 0.487395 * np.cos(math.pi*x)
             + 0.144234 * np.cos(2.*math.pi*x)
@@ -528,6 +529,8 @@ def transform_interferogram(interf, nm_laser,
     .. note:: Only NANs or INFs are interpreted as bad values
     
     """
+    raise StandardError('Deprecated. Please use fft module instead.')
+
     interf = np.copy(interf)
     interf_orig = np.copy(interf)
         
@@ -962,8 +965,8 @@ def transform_spectrum(spectrum, nm_laser, calibration_nm_laser,
 def ndft(a, xk, vj):
     """Non-uniform Discret Fourier Tranform
 
-    Compute the spectrum from an interferogram. Noth axis can be
-    irregularly sampled.
+    Compute the spectrum from an interferogram. Note that the axis can
+    be irregularly sampled.
 
     If the spectral axis (output axis) is irregular the result is
     exact. But there is no magic: if the input axis (interferogram
@@ -1059,7 +1062,7 @@ def variable_me(n, params):
      return me
 
 
-def optimize_phase(interf, step, order, zpd_shift,
+def optimize_phase(interf, step, order, zpd_index,
                    calib, nm_laser,
                    guess=[0.0001, 0.0001], return_coeffs=False,
                    fixed_params=[0, 0], weights=None,
@@ -1073,7 +1076,7 @@ def optimize_phase(interf, step, order, zpd_shift,
     
     :param order: Alisasing order
     
-    :param zpd_shift: ZPD shift
+    :param zpd_index: ZPD index
 
     :param calib: Calibration laser observed wavelength
 
@@ -1103,15 +1106,15 @@ def optimize_phase(interf, step, order, zpd_shift,
         p[np.nonzero(findex==0)] = vp
         p[np.nonzero(findex)] = fp
         ext_phase = np.polynomial.polynomial.polyval(
-            np.arange(np.size(interf)), p)
+            np.arange(np.size(interf_fft.data)), p)
         if high_phase is not None:
             ext_phase += high_phase
         # phase correction
-        a_fft = np.zeros_like(interf_fft)
+        a_fft = np.zeros_like(interf_fft.data)
         ## a_fft.real = (interf_fft.real * np.cos(ext_phase)
         ##               + interf_fft.imag * np.sin(ext_phase))
-        a_fft.imag = (interf_fft.imag * np.cos(ext_phase)
-                      - interf_fft.real * np.sin(ext_phase))
+        a_fft.imag = (interf_fft.get_imag() * np.cos(ext_phase)
+                      - interf_fft.get_real() * np.sin(ext_phase))
         return a_fft.imag * weights
 
     guess = np.array(guess, dtype=float)
@@ -1122,16 +1125,26 @@ def optimize_phase(interf, step, order, zpd_shift,
     if weights is None:
         weights = np.ones(interf.shape[0], dtype=float)
     
-    interf_fft = transform_interferogram(
-        interf, 1., 1., step, order, '2.0', zpd_shift,
-        wavenumber=True,
-        ext_phase=np.zeros_like(interf),
-        phase_correction=True,
-        return_complex=True)
+    ## interf_fft = transform_interferogram(
+    ##     interf, 1., 1., step, order, '2.0', zpd_shift,
+    ##     wavenumber=True,
+    ##     ext_phase=np.zeros_like(interf),
+    ##     phase_correction=True,
+    ##     return_complex=True)
+
+    interf = orb.fft.Interferogram(interf)
+    interf.subtract_mean()
+    interf.apodize('2.0', zpd_index)
+    interf_fft = interf.transform()
+    try:
+        interf_fft.zpd_shift(zpd_index)
+    except AttributeError:
+        return None
+    
 
     if high_order_phase is not None:
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
-            interf.shape[0], step, order,
+            interf.data.shape[0], step, order,
             corr=calib/nm_laser).astype(np.float64)
         try: # if high_order_phase is a PhaseFile instance
             high_order_phase = high_order_phase.get_improved_phase(calib)
@@ -1152,10 +1165,10 @@ def optimize_phase(interf, step, order, zpd_shift,
         p[np.nonzero(fixed_params==0)] = optim[0]
         p[np.nonzero(fixed_params)] = guess[np.nonzero(fixed_params)]
         res = (np.sqrt(np.nanmean(optim[2]['fvec']**2.))
-               /interf_mean_energy(interf))
+               /interf_mean_energy(interf.data))
         if not return_coeffs:
             optim_phase = np.polynomial.polynomial.polyval(
-                np.arange(np.size(interf)), p)
+                np.arange(np.size(interf.data)), p)
             if high_phase is not None:
                 return optim_phase + high_phase
             else:
@@ -1617,3 +1630,8 @@ def read_phase_file(file_path, return_spline=False):
     else:
         return interpolate.UnivariateSpline(
             cm1_axis, phase, k=3, s=0, ext=0)
+
+
+
+
+

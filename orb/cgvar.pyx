@@ -314,17 +314,6 @@ def sincgauss1d_complex(a, b, erf=False):
     
     dfda_re, dfda_im, dfdb_re, dfdb_im = sgc_dfdx(gvar.mean(a), gvar.mean(b))
 
-    print np.any(np.isnan(gvar.mean(a)))
-    print np.any(np.isnan(gvar.mean(b)))
-
-    print np.any(np.isnan(f_re))
-    print np.any(np.isnan(f_im))
-    print np.any(np.isnan(dfda_re))
-    print np.any(np.isnan(dfda_im))
-    print np.any(np.isnan(dfdb_re))
-    print np.any(np.isnan(dfdb_im))
-
-
     # real part
     if not isinstance(a, gvar.GVar):
         for i in range(b.size):

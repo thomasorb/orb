@@ -1897,6 +1897,32 @@ def dft(np.ndarray[np.float64_t, ndim=1] a,
     f.imag = fimag
     return f
 
+
+def complex_dft(np.ndarray[np.complex128_t, ndim=1] a,
+                np.ndarray[np.float64_t, ndim=1] x):
+    """Discret Fourier Transform.
+
+    Compute an irregularly sampled spectrum from a complex regularly
+    sampled interferogram.
+
+    :param a: complex regularly sampled interferogram.
+    
+    :param x: positions of the spectrum samples. If x =
+      range(size(a)), this function is equivalent to an fft. Note that
+      the fft is of course much faster to compute. This vector may
+      have any length.
+    """
+    cdef int N = a.shape[0]
+    cdef int M = x.shape[0]
+    cdef complex angle = 0.
+    cdef int m, n
+    
+    f = np.zeros(M, dtype=complex)
+    for m in xrange(M):
+        for n in xrange(N):
+            angle = -2j * M_PI * x[m] * <float>n / <float>N
+            f[m] += a[n] * np.exp(angle)
+    return f
           
 def map_me(np.ndarray[np.float64_t, ndim=2] frame):
     """Create a map of the modulation efficiency from a laser frame.
