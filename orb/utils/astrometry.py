@@ -2277,6 +2277,10 @@ def world2pix(hdr, dimx, dimy, star_list_deg, dxmap, dymap):
 
     :param dymap: Distortion error map along Y axis returned by
       orb.astrometry.Astrometry.register().
+
+    .. note:: it is much more effficient to pass a list of coordinates
+      than run the function for each couple of coordinates you want to
+      transform.
     """
     dxspl = interpolate.RectBivariateSpline(
         np.linspace(0, dimx, dxmap.shape[0]),
@@ -2324,6 +2328,10 @@ def pix2world(hdr, dimx, dimy, star_list_pix, dxmap, dymap):
 
     :param dymap: Distortion error map along Y axis returned by
       orb.astrometry.Astrometry.register().
+
+    .. note:: it is much more effficient to pass a list of coordinates
+      than run the function for each couple of coordinates you want to
+      transform.
     """
     dxspl = interpolate.RectBivariateSpline(
         np.linspace(0, dimx, dxmap.shape[0]),
@@ -2336,7 +2344,6 @@ def pix2world(hdr, dimx, dimy, star_list_pix, dxmap, dymap):
         dymap, kx=3, ky=3)
 
     wcs = pywcs.WCS(hdr, relax=True)
-    
     dx = dxspl.ev(star_list_pix[:,0],
                   star_list_pix[:,1])
     dy = dyspl.ev(star_list_pix[:,0],
