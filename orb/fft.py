@@ -21,134 +21,7 @@ import core
 import cutils
 import scipy
 
-class Vector1d(object):
-    """Basic 1d vector management class.
-
-    Useful for checking purpose.
-    """
-    needed_params = ()
-    optional_params = ()
-    
-    def __init__(self, vector, params=None, **kwargs):
-        """Init method.
-
-        :param vector: A 1d numpy.ndarray vector.
-
-        :param params: (Optional) A dict containing additional
-          parameters giving access to more methods. The needed params
-          are stored in self.needed_params (default None).
-
-        :param kwargs: (Optional) Keyword arguments, can be used to
-          supply observation parameters not included in the params
-          dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.    
-        """
-        if isinstance(vector, self.__class__):
-            vector = np.copy(vector.data)
-
-        # checking
-        if not isinstance(vector, np.ndarray):
-            raise TypeError('input vector is a {} but must be a numpy.ndarray'.format(type(vector)))
-        if vector.ndim != 1:
-            vector = np.squeeze(vector)
-            if vector.ndim != 1:
-                raise TypeError('input vector has {} dims but must have only one dimension'.format(vector.ndim))
-        if len(np.nonzero(vector)[0]) == 0:
-            self.allzero = True
-        else:
-            self.allzero = False
-
-        if np.all(np.isnan(vector)):
-            self.allnan = True
-        else:
-            self.allnan = False
-
-        if np.any(np.isnan(vector)):
-            self.anynan = True
-        else:
-            self.anynan = False
-
-
-        self.data = np.copy(vector)
-        self.data_orig = np.copy(vector)
-        self.step_nb = self.data.shape[0]
-
-        # load parameters
-        self.params = None        
-
-        if params is not None:
-            if not isinstance(params, dict):
-                raise TypeError('params must be a dict')
-            self.params = core.ROParams()
-            for iparam in self.needed_params:
-                try:
-                    self.params[iparam] = kwargs[iparam]
-                except KeyError: 
-                    try:
-                        self.params[iparam] = params[iparam]
-                    except KeyError:
-                        raise KeyError('param {} needed in params dict'.format(iparam))
-            for iparam in self.optional_params:
-                try:
-                    self.params[iparam] = kwargs[iparam]
-                except KeyError: 
-                    try:
-                        self.params[iparam] = params[iparam]
-                    except KeyError: pass
-
-        # check keyword arguments validity
-        for iparam in kwargs:
-            if iparam not in self.needed_params and iparam not in self.optional_params:
-                raise KeyError('supplied keyword argument {} not understood'.format(iparam))
-
-    def has_params(self):
-        """Check the presence of observation parameters"""
-        if self.params is None:
-            return False
-        else: return True
-
-    def assert_params(self):
-        """Assert the presence of observation parameters"""
-        if self.params is None: raise StandardError('Parameters not supplied, please give: {} at init'.format(self.needed_params))
-
-    def __getitem__(self, key):
-        """Getitem special method"""
-        return self.data.__getitem__(key)
-    
-
-
-class Axis(Vector1d):
-    """Axis class"""
-
-    def __init__(self, axis):
-        """Init class with an axis vector
-
-        :param axis: Regularly samples and naturally ordered axis.
-        """
-        Vector1d.__init__(self, axis)
-
-        # check that axis is regularly sampled
-        diff = np.diff(self.data)
-        if np.any(~np.isclose(diff - diff[0], 0.)):
-            raise StandardError('axis must be regularly sampled')
-        if self[0] > self[-1]:
-            raise StandardError('axis must be naturally ordered')
-
-        self.axis_step = diff[0]
-
-    def __call__(self, pos):
-        """return the position in channels from an input in axis unit
-
-        :param pos: Postion in the axis in the axis unit
-
-        :return: Position in index
-        """
-        pos_index = (pos - self[0]) / float(self.axis_step)
-        if pos_index < 0 or pos_index >= self.step_nb:
-            warnings.warn('requested position is off axis')
-        return pos_index
-
-class Interferogram(Vector1d):
+class Interferogram(core.Vector1d):
     """Interferogram class.
     """
     needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path'
@@ -169,7 +42,7 @@ class Interferogram(Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        Vector1d.__init__(self, interf, params=params, **kwargs)
+        core.Vector1d.__init__(self, interf, params=params, **kwargs)
                       
     def subtract_mean(self):
         """substraction of the mean of the interferogram where the
@@ -215,18 +88,18 @@ class Interferogram(Vector1d):
     def transform(self):
         """zero padded fft.
           
-        :return: A Spectrum instance (or a Vector1d instance if
+        :return: A Spectrum instance (or a core.Vector1d instance if
           interferogram is full of zeros or nans)
 
         .. note:: no phase correction is made here.
         """
         if self.anynan:
             logging.debug('Nan detected in interferogram')
-            return Vector1d(np.zeros(
+            return core.Vector1d(np.zeros(
                 self.step_nb, dtype=self.data.dtype) * np.nan)
         if self.allzero:
             logging.debug('interferogram is filled with zeros')
-            return Vector1d(np.zeros(
+            return core.Vector1d(np.zeros(
                 self.step_nb, dtype=self.data.dtype))
         
         # zero padding
@@ -251,14 +124,14 @@ class Interferogram(Vector1d):
                             
         # create axis
         if self.has_params():
-            axis = Axis(utils.spectrum.create_cm1_axis(
+            axis = core.Axis(utils.spectrum.create_cm1_axis(
                 self.step_nb, self.params.step, self.params.order,
                 corr=self.params.calib_coeff))
 
         else:
             axis_step = (self.step_nb - 1) / 2. / self.step_nb
             axis_max = (self.step_nb - 1) * axis_step
-            axis = Axis(np.linspace(0, axis_max, self.step_nb))
+            axis = core.Axis(np.linspace(0, axis_max, self.step_nb))
 
         spec = Spectrum(interf_fft, axis, params=self.params)
 
@@ -273,7 +146,7 @@ class Interferogram(Vector1d):
             
         return spec
 
-class Spectrum(Vector1d):
+class Spectrum(core.Vector1d):
     """Spectrum class
     """
 
@@ -295,9 +168,9 @@ class Spectrum(Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        Vector1d.__init__(self, spectrum, params=params, **kwargs)
+        core.Vector1d.__init__(self, spectrum, params=params, **kwargs)
 
-        self.axis = Axis(axis)
+        self.axis = core.Axis(axis)
 
         if self.axis.step_nb != self.step_nb:
             raise ValueError('axis must have the same size as spectrum')
@@ -334,7 +207,7 @@ class Spectrum(Vector1d):
         
     def correct_phase(self, phase):
         """Correct spectrum phase"""
-        phase = Vector1d(phase).data
+        phase = core.Vector1d(phase).data
         if phase.shape[0] != self.step_nb:
             warnings.warn('phase does not have the same size as spectrum. It will be interpolated.')
             phase = utils.vector.interpolate_size(phase, self.dimz, 1)
@@ -431,7 +304,7 @@ class Spectrum(Vector1d):
         """Polynomial fit of the phase
     
         :param return_coeffs: If True return (fit coefficients, error
-          on coefficients) else return a Vector1d instance
+          on coefficients) else return a core.Vector1d instance
           representing the fitted phase.
 
         :param deg: (Optional) Degree of the fitting polynomial. Must be > 0.
@@ -486,5 +359,5 @@ class Spectrum(Vector1d):
         if return_coeffs:
             return pfit, perr
         else:
-            return Vector1d(model(np.arange(self.step_nb), *pfit))
+            return core.Vector1d(model(np.arange(self.step_nb), *pfit))
         

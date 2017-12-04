@@ -5358,3 +5358,129 @@ class PhaseFile(Tools):
 
 
 
+class Vector1d(object):
+    """Basic 1d vector management class.
+
+    Useful for checking purpose.
+    """
+    needed_params = ()
+    optional_params = ()
+    
+    def __init__(self, vector, params=None, **kwargs):
+        """Init method.
+
+        :param vector: A 1d numpy.ndarray vector.
+
+        :param params: (Optional) A dict containing additional
+          parameters giving access to more methods. The needed params
+          are stored in self.needed_params (default None).
+
+        :param kwargs: (Optional) Keyword arguments, can be used to
+          supply observation parameters not included in the params
+          dict. These parameters take precedence over the parameters
+          supplied in the params dictionnary.    
+        """
+        if isinstance(vector, self.__class__):
+            vector = np.copy(vector.data)
+
+        # checking
+        if not isinstance(vector, np.ndarray):
+            raise TypeError('input vector is a {} but must be a numpy.ndarray'.format(type(vector)))
+        if vector.ndim != 1:
+            vector = np.squeeze(vector)
+            if vector.ndim != 1:
+                raise TypeError('input vector has {} dims but must have only one dimension'.format(vector.ndim))
+        if len(np.nonzero(vector)[0]) == 0:
+            self.allzero = True
+        else:
+            self.allzero = False
+
+        if np.all(np.isnan(vector)):
+            self.allnan = True
+        else:
+            self.allnan = False
+
+        if np.any(np.isnan(vector)):
+            self.anynan = True
+        else:
+            self.anynan = False
+
+
+        self.data = np.copy(vector)
+        self.data_orig = np.copy(vector)
+        self.step_nb = self.data.shape[0]
+
+        # load parameters
+        self.params = None        
+
+        if params is not None:
+            if not isinstance(params, dict):
+                raise TypeError('params must be a dict')
+            self.params = core.ROParams()
+            for iparam in self.needed_params:
+                try:
+                    self.params[iparam] = kwargs[iparam]
+                except KeyError: 
+                    try:
+                        self.params[iparam] = params[iparam]
+                    except KeyError:
+                        raise KeyError('param {} needed in params dict'.format(iparam))
+            for iparam in self.optional_params:
+                try:
+                    self.params[iparam] = kwargs[iparam]
+                except KeyError: 
+                    try:
+                        self.params[iparam] = params[iparam]
+                    except KeyError: pass
+
+        # check keyword arguments validity
+        for iparam in kwargs:
+            if iparam not in self.needed_params and iparam not in self.optional_params:
+                raise KeyError('supplied keyword argument {} not understood'.format(iparam))
+
+    def has_params(self):
+        """Check the presence of observation parameters"""
+        if self.params is None:
+            return False
+        else: return True
+
+    def assert_params(self):
+        """Assert the presence of observation parameters"""
+        if self.params is None: raise StandardError('Parameters not supplied, please give: {} at init'.format(self.needed_params))
+
+    def __getitem__(self, key):
+        """Getitem special method"""
+        return self.data.__getitem__(key)
+    
+
+
+class Axis(Vector1d):
+    """Axis class"""
+
+    def __init__(self, axis):
+        """Init class with an axis vector
+
+        :param axis: Regularly sampled and naturally ordered axis.
+        """
+        Vector1d.__init__(self, axis)
+
+        # check that axis is regularly sampled
+        diff = np.diff(self.data)
+        if np.any(~np.isclose(diff - diff[0], 0.)):
+            raise StandardError('axis must be regularly sampled')
+        if self[0] > self[-1]:
+            raise StandardError('axis must be naturally ordered')
+
+        self.axis_step = diff[0]
+
+    def __call__(self, pos):
+        """return the position in channels from an input in axis unit
+
+        :param pos: Postion in the axis in the axis unit
+
+        :return: Position in index
+        """
+        pos_index = (pos - self[0]) / float(self.axis_step)
+        if pos_index < 0 or pos_index >= self.step_nb:
+            warnings.warn('requested position is off axis')
+        return pos_index
