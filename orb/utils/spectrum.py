@@ -592,6 +592,10 @@ def sincgauss1d_phased(x, h, a, dx, fwhm, sigma, alpha):
     :param fwhm: FWHM of the sinc
     :param sigma: Sigma of the gaussian.
     :param alpha: Mixing coefficient (in radians).
+
+    :param force_erf: If True, force erf computation (warning, erf
+      computation is generally bad and it must be used for checking
+      purpose only)
     """
     if np.all(np.isclose(gvar.mean(alpha), 0)):
         return sincgauss1d(x, h, a, dx, fwhm, sigma)

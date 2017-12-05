@@ -2671,9 +2671,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       * all the fit parameters [key: 'fit_params']
     
       * lines parameters [key: 'lines_params'] Lines parameters are
-        given as an array of shape (lines_nb, 4). The order of the 4
+        given as an array of shape (lines_nb, 5). The order of the 5
         parameters for each lines is [height at the center of the
-        line, amplitude, position, fwhm]. Position and FWHM are given
+        line, amplitude, position, fwhm, sigma]. Position and FWHM are given
         in nm/cm-1 depending on the input unit (i.e. nm if wavenumber
         is False and cm-1 if wavenumber is True)
       
@@ -2789,9 +2789,9 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
       * all the fit parameters [key: 'fit_params']
     
       * lines parameters [key: 'lines_params'] Lines parameters are
-        given as an array of shape (lines_nb, 4). The order of the 4
+        given as an array of shape (lines_nb, 5). The order of the 5
         parameters for each lines is [height at the center of the
-        line, amplitude, position, fwhm]. Postion and FWHM are given
+        line, amplitude, position, fwhm, sigma]. Postion and FWHM are given
         in channels.
       
       * lines parameters errors [key: 'lines_params_err']
