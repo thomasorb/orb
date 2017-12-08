@@ -235,9 +235,9 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
         np.array([filter_min_cm1, filter_max_cm1]),
         cm1_axis_min, cm1_axis_step)
 
-    #if int(order) & 1:
-    #    filter_range = n - filter_range
-    #    filter_range = filter_range[::-1]
+    if int(order) & 1:
+        filter_range = n - filter_range
+        filter_range = filter_range[::-1]
     
     filter_range[filter_range < 0] = 0
     filter_range[filter_range > n] = (n - 1)
