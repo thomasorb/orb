@@ -79,7 +79,8 @@ class FitVector(object):
     fit_tol = None
     
     def __init__(self, vector, models, params, snr_guess=None,
-                 fit_tol=1e-8, signal_range=None, classic=False):
+                 fit_tol=1e-8, signal_range=None, classic=False,
+                 max_iter=None):
         """
         Init class.
 
@@ -115,6 +116,13 @@ class FitVector(object):
 
         if len(models) != len(params):
             raise Exception('there must be exactly one parameter dictionary by model')
+
+        if max_iter is not None:
+            max_iter = int(np.clip(max_iter, 0, 1e6))
+            logging.warning('max iteration changed to {}'.format(max_iter))
+        else:
+            max_iter = 1000
+        self.max_iter = max_iter
 
         self.vector = gvar.mean(np.copy(vector))
         self.sigma = gvar.sdev(np.copy(vector))
@@ -406,7 +414,8 @@ class FitVector(object):
                 prior=priors_dict,
                 fcn=self._get_model_onrange,
                 debug=True, extend=True,
-                tol=self.fit_tol)
+                tol=self.fit_tol,
+                maxit=self.max_iter)
 
 
         MCMC_RANDOM_COEFF = 1e-2
@@ -426,7 +435,8 @@ class FitVector(object):
                     #sigma=self._get_sigma_onrange(),
                     p0=priors_arr,
                     method='lm',
-                    full_output=True)
+                    full_output=True,
+                    maxfev=self.max_iter)
             except RuntimeError:
                 fit_classic = list([0])
                 
@@ -2486,7 +2496,8 @@ class OutputParams(Params):
 
 def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                            compute_mcmc_error=False,
-                           snr_guess=None, **kwargs):
+                           snr_guess=None, max_iter=None,
+                           **kwargs):
     """raw function for spectrum fitting. Need the InputParams
     class to be defined before call.
 
@@ -2503,7 +2514,9 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
 
-    :param snr_guess: (Optional) Guess on the SNR.
+    :param snr_guess: (Optional) Guess on the SNR (default None).
+
+    :param max_iter: (Optional) Maximum number of iterations (default None)
 
     :param kwargs: (Optional) Model parameters that must be changed in
       the InputParams instance.
@@ -2524,7 +2537,8 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                    rawip.models, rawip.params,
                    signal_range=rawip.signal_range,
                    fit_tol=fit_tol,
-                   snr_guess=snr_guess)
+                   snr_guess=snr_guess,
+                   max_iter=max_iter)
 
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
@@ -2613,6 +2627,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           velocity_range=None,
                           compute_mcmc_error=False,
                           snr_guess=None,
+                          max_iter=None,
                           **kwargs):
     
     """Fit lines in spectrum
@@ -2660,7 +2675,9 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
 
-    :param snr_guess: (Optional) Guess on the SNR.
+    :param snr_guess: (Optional) Guess on the SNR (default None).
+
+    :param max_iter: (Optional) Maximum number of iterations (default None)
 
     :param kwargs: (Optional) Fitting parameters of
       :py:class:`orb.fit.Cm1LinesInput` or
@@ -2737,7 +2754,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     fit = _fit_lines_in_spectrum(spectrum, ip,
                                  fit_tol=fit_tol,
                                  compute_mcmc_error=compute_mcmc_error,
-                                 snr_guess=snr_guess)
+                                 snr_guess=snr_guess,
+                                 max_iter=max_iter)
 
 
     if fit != []:
@@ -2753,7 +2771,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
 
 def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
-    compute_mcmc_error=False, snr_guess=None, **kwargs):
+    compute_mcmc_error=False, snr_guess=None, max_iter=None, **kwargs):
     
     """Fit lines in a vector
 
@@ -2777,7 +2795,10 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
 
-    :snr_guess: (Optional) Guess on the SNR.
+    :snr_guess: (Optional) Guess on the SNR (default None).
+
+    :param max_iter: (Optional) Maximum number of iterations (default None)
+
 
     :param kwargs: (Optional) Fitting parameters of
       :py:class:`orb.fit.LinesInput` or
@@ -2824,7 +2845,8 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
                    ip.models, ip.params,
                    signal_range=ip.signal_range,
                    fit_tol=fit_tol,
-                   snr_guess=snr_guess)
+                   snr_guess=snr_guess,
+                   max_iter=max_iter)
     
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
