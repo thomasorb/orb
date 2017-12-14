@@ -1926,6 +1926,13 @@ class InputParams(object):
     def check_signal_range(self):
         pass
 
+    def clean_kwargs(self, kwargs, params):
+        # remove used params from kwargs
+        for key in params.keys():
+            if key in kwargs:
+                kwargs.pop(key)
+        return kwargs
+
     def convert(self):
         """Convert class to a raw pickable format
         """
@@ -1940,11 +1947,13 @@ class InputParams(object):
         raw.baseclass = self.__class__.__name__
         return raw
    
-    def add_continuum_model(self, poly_order, cont_guess=None):
+    def add_continuum_model(self, **kwargs):
         params = Params()
-        params['poly_order'] = int(poly_order)
-        params['poly_guess'] = cont_guess
+        params['poly_order'] = 0
+        params['poly_guess'] = None
 
+        params.update(kwargs)
+        
         # remove bad keys in case
         for key in params.keys():
             if key not in ContinuumModel.accepted_keys:
@@ -1952,6 +1961,7 @@ class InputParams(object):
 
         self.append_model(ContinuumModel, 'add', params)
 
+        return self.clean_kwargs(kwargs, params)
 
     def _check_params(self, kwargs, fwhm_guess, lines):
         # check and update default params with user kwargs
@@ -2075,12 +2085,15 @@ class InputParams(object):
         # remove bad keys in case
         for key in all_params.keys():
             if key not in LinesModel.accepted_keys:
+                logging.debug('key removed: {}'.format(key))
                 del all_params[key]
 
         self.append_model(LinesModel, 'add', all_params)
         
         # continuum model is automatically added
-        self.add_continuum_model(0)
+        kwargs = self.add_continuum_model(**kwargs)
+
+        return self.clean_kwargs(kwargs, all_params)
 
 
 ################################################
@@ -2220,12 +2233,15 @@ class Cm1InputParams(InputParams):
         # remove bad keys in case
         for key in all_params.keys():
             if key not in Cm1LinesModel.accepted_keys:
+                logging.debug('key removed: {}'.format(key))
                 del all_params[key]
 
         self.append_model(Cm1LinesModel, 'add', all_params)
-        
+
         # continuum model is automatically added
-        self.add_continuum_model(0)
+        kwargs = self.add_continuum_model(**kwargs)
+
+        return self.clean_kwargs(kwargs, all_params)
 
     def add_filter_model(self, **kwargs):
 
@@ -2263,7 +2279,8 @@ class Cm1InputParams(InputParams):
                 del all_params[key]
 
         self.append_model(FilterModel, 'mult', all_params)
-        
+
+        self.clean_kwargs(kwargs, all_params)
         
     def check_signal_range(self):
         if self.has_model(FilterModel):
@@ -2517,6 +2534,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
             if key in kwargs:
                 if kwargs[key] is not None:
                     iparams[key] = kwargs[key]
+                    logging.debug('last minute changed parameter {}: {}'.format(key, iparams[key]))
 
     logging.debug('fwhm guess: {}'.format(
         gvar.mean(rawip.params[0]['fwhm_guess'])))
@@ -2594,8 +2612,7 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
                      nm_laser, theta_proj, theta_orig, apodization,
                      zpd_index, filter_file_path)
 
-    ip.add_lines_model(lines, **kwargs)
-
+    kwargs = ip.add_lines_model(lines, **kwargs)
     if filter_file_path is not None:
         ip.add_filter_model(**kwargs)
         
@@ -2603,6 +2620,9 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
         if kwargs['signal_range'] is not None:
             ip.set_signal_range(min(kwargs['signal_range']),
                                 max(kwargs['signal_range']))
+        kwargs.pop('signal_range')
+    if len(kwargs) > 0:
+        raise ValueError('some kwargs are unknown: {}. Please remove them.'.format(kwargs.keys()))
     return ip
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
@@ -2706,27 +2726,6 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     if velocity_range is not None:
         raise NotImplementedError()
 
-    # brute force over the velocity range to find the best lines position
-    ## if velocity_range is not None:
-    ##     raise Exception('Must be reimplemented')
-    ##     # velocity step of one channel
-    ##     bf_step_kms = axis_step / lines[0] * constants.LIGHT_VEL_KMS
-    ##     bf_flux = list()
-    ##     mean_shift_guess = np.nanmean(shift_guess)
-    ##     bf_range = np.arange(mean_shift_guess - velocity_range,
-    ##                          mean_shift_guess + velocity_range,
-    ##                          bf_step_kms)
-    ##     if np.size(bf_range) > 1:
-    ##         # get the total flux in the lines channels for each velocity
-    ##         for ivel in bf_range:
-    ##             ilines_wav = utils.spectrum.line_shift(
-    ##                 ivel, lines, wavenumber=wavenumber)
-    ##             ilines_pix = utils.spectrum.fast_w2pix(
-    ##                 np.array(lines + ilines_wav, dtype=float),
-    ##                 axis_min, axis_step)
-    ##             bf_flux.append(np.nansum(spectrum[np.array(
-    ##                 np.round(ilines_pix), dtype=int)]))
-    ##         shift_guess = bf_range[np.nanargmax(bf_flux)]
                               
     ip = _prepare_input_params(spectrum.shape[0], lines, step, order, nm_laser,
                                theta, zpd_index, wavenumber=wavenumber,
