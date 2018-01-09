@@ -28,6 +28,7 @@ from scipy import interpolate, signal
 import orb.utils.spectrum
 import orb.utils.stats
 import orb.cutils
+import orb.utils.validate
 
 def smooth(a, deg=2, kind='gaussian', keep_sides=True):
     """Smooth a given vector.
@@ -311,3 +312,33 @@ def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=np.nan):
     result[np.nonzero(new_axis > np.max(old_axis))] = fill_value
     result[np.nonzero(new_axis < np.min(old_axis))] = fill_value
     return result
+
+
+def robust_unwrap(vec, dis):
+    """Unwrap a vector with a given discontinuity
+
+    Robust to nans.
+
+    :param vec: 1d Vector to unwrap.
+
+    :param dis: discontinuity (eg. np.pi)
+    """
+    orb.utils.validate.is_1darray(vec)
+    orb.utils.validate.has_dtype(vec, float)
+
+    last = None
+    for i in range(vec.size):
+        if not np.isnan(vec[i]):
+            if last is not None:
+                vec[i] = last + np.fmod(vec[i] - last, dis)
+                if np.abs(vec[i] - dis - last) < np.abs(vec[i] - last):
+                    vec[i] -= dis
+                last = float(vec[i])
+            else:
+                last = np.fmod(vec[i], dis)
+                if np.abs(last - dis) < np.abs(last):
+                    last -= dis
+                
+                vec[i] = last
+                print last
+    return vec
