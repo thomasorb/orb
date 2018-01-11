@@ -21,6 +21,14 @@ orb.utils.debug module
     :undoc-members:
     :show-inheritance:
 
+orb.utils.err module
+--------------------
+
+.. automodule:: orb.utils.err
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 orb.utils.fft module
 --------------------
 
@@ -106,6 +114,15 @@ orb.utils.stats module
 ----------------------
 
 .. automodule:: orb.utils.stats
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+orb.utils.validate module
+-------------------------
+
+.. automodule:: orb.utils.validate
     :members:
     :undoc-members:
     :show-inheritance:

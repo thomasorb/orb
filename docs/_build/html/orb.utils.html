@@ -109,6 +109,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.astrometry">orb.utils.astrometry module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.debug">orb.utils.debug module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.err">orb.utils.err module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.fft">orb.utils.fft module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.filters">orb.utils.filters module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.fit">orb.utils.fit module</a></li>
@@ -120,6 +121,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.sim">orb.utils.sim module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.spectrum">orb.utils.spectrum module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.stats">orb.utils.stats module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.validate">orb.utils.validate module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.vector">orb.utils.vector module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.web">orb.utils.web module</a></li>
 </ul>
@@ -1283,6 +1285,33 @@ transform.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">This is a useful debugging function that has been taken from: <a class="reference external" href="http://stackoverflow.com/questions/2023608/check-what-files-are-open-in-python">http://stackoverflow.com/questions/2023608/check-what-files-are-open-in-python</a></p>
 </div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-orb.utils.err">
+<span id="orb-utils-err-module"></span><h2>orb.utils.err module<a class="headerlink" href="#module-orb.utils.err" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="orb.utils.err.FitError">
+<em class="property">exception </em><code class="descclassname">orb.utils.err.</code><code class="descname">FitError</code><a class="headerlink" href="#orb.utils.err.FitError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="orb.utils.err.FitInitError">
+<em class="property">exception </em><code class="descclassname">orb.utils.err.</code><code class="descname">FitInitError</code><a class="headerlink" href="#orb.utils.err.FitInitError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="orb.utils.err.ORBError">
+<em class="property">exception </em><code class="descclassname">orb.utils.err.</code><code class="descname">ORBError</code><a class="headerlink" href="#orb.utils.err.ORBError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.RuntimeError</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="orb.utils.err.ValidationError">
+<em class="property">exception </em><code class="descclassname">orb.utils.err.</code><code class="descname">ValidationError</code><a class="headerlink" href="#orb.utils.err.ValidationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
 </dd></dl>
 
 </div>
@@ -5077,6 +5106,128 @@ distribution is used as the central value (default None)</li>
 (default False).</li>
 <li><span class="target" id="orb.utils.stats.sigmacut.params.return_index_list"></span><strong>return_index_list</strong><a class="paramlink headerlink reference internal" href="#orb.utils.stats.sigmacut.params.return_index_list">¶</a> – (Optional) If True the list of the non
 rejected values is returned also (default False).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-orb.utils.validate">
+<span id="orb-utils-validate-module"></span><h2>orb.utils.validate module<a class="headerlink" href="#module-orb.utils.validate" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="orb.utils.validate.has_dtype">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">has_dtype</code><span class="sig-paren">(</span><em>obj</em>, <em>dtype</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.has_dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is a numpy.ndarray of the correct type
+:param _sphinx_paramlinks_orb.utils.validate.has_dtype.obj: object to validate
+:param _sphinx_paramlinks_orb.utils.validate.has_dtype.dtype: array dtype
+:param _sphinx_paramlinks_orb.utils.validate.has_dtype.raise_exception: If True raise an exception else raise a warning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.has_len">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">has_len</code><span class="sig-paren">(</span><em>obj</em>, <em>length</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.has_len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is 1d and if its length is correct
+:param _sphinx_paramlinks_orb.utils.validate.has_len.obj: Object to check
+:param _sphinx_paramlinks_orb.utils.validate.has_len.raise_exception: If True raise an exception else raise a warning.
+:param _sphinx_paramlinks_orb.utils.validate.has_len.length: length of the object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.have_same_shape">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">have_same_shape</code><span class="sig-paren">(</span><em>objs</em>, <em>raise_exception=True</em>, <em>object_name='arrays'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.have_same_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if all numpy.ndarrays have the same shape
+:param _sphinx_paramlinks_orb.utils.validate.have_same_shape.obj: list of objects to validate
+:param _sphinx_paramlinks_orb.utils.validate.have_same_shape.raise_exception: If True raise an exception else raise a warning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.index">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">index</code><span class="sig-paren">(</span><em>a</em>, <em>a_min</em>, <em>a_max</em>, <em>clip=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a valid index (clipped between a_min and a_max - 1) or raise
+an exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.validate.index.params.a"></span><strong>a</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.index.params.a">¶</a> – index. Can be a list or an array of indexes.</li>
+<li><span class="target" id="orb.utils.validate.index.params.a_min"></span><strong>a_min</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.index.params.a_min">¶</a> – Min index.</li>
+<li><span class="target" id="orb.utils.validate.index.params.a_max"></span><strong>a_max</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.index.params.a_max">¶</a> – Max index (max possible index will be considered as
+a_max -1)</li>
+<li><span class="target" id="orb.utils.validate.index.params.clip"></span><strong>clip</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.index.params.clip">¶</a> – (Optional) If True return an index inside the
+boundaries, else: raise an exception (default True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.is_1darray">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">is_1darray</code><span class="sig-paren">(</span><em>obj</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.is_1darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is a 1d numpy.ndarray
+:param _sphinx_paramlinks_orb.utils.validate.is_1darray.obj: object to validate
+:param _sphinx_paramlinks_orb.utils.validate.is_1darray.raise_exception: If True raise an exception else raise a warning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.is_2darray">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">is_2darray</code><span class="sig-paren">(</span><em>obj</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.is_2darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is a 2d numpy.ndarray
+:param _sphinx_paramlinks_orb.utils.validate.is_2darray.obj: object to validate
+:param _sphinx_paramlinks_orb.utils.validate.is_2darray.raise_exception: If True raise an exception else raise a warning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.is_3darray">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">is_3darray</code><span class="sig-paren">(</span><em>obj</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.is_3darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is a 3d numpy.ndarray
+:param _sphinx_paramlinks_orb.utils.validate.is_3darray.obj: object to validate
+:param _sphinx_paramlinks_orb.utils.validate.is_3darray.raise_exception: If True raise an exception else raise a warning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.is_iterable">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">is_iterable</code><span class="sig-paren">(</span><em>obj</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.is_iterable" title="Permalink to this definition">¶</a></dt>
+<dd><p>check if object is a tuple or a list or a 1darray</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.validate.is_iterable.params.obj"></span><strong>obj</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.is_iterable.params.obj">¶</a> – Object to check</li>
+<li><span class="target" id="orb.utils.validate.is_iterable.params.raise_exception"></span><strong>raise_exception</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.is_iterable.params.raise_exception">¶</a> – If True raise an exception else raise a warning.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.is_ndarray">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">is_ndarray</code><span class="sig-paren">(</span><em>obj</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.is_ndarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is a numpy.ndarray
+:param _sphinx_paramlinks_orb.utils.validate.is_ndarray.obj: object to validate
+:param _sphinx_paramlinks_orb.utils.validate.is_ndarray.raise_exception: If True raise an exception else raise a warning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.validate.is_xdarray">
+<code class="descclassname">orb.utils.validate.</code><code class="descname">is_xdarray</code><span class="sig-paren">(</span><em>obj</em>, <em>ndim</em>, <em>raise_exception=True</em>, <em>object_name='object'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.validate.is_xdarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if object is a numpy.ndarray with the correct number of
+dimensions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><span class="target" id="orb.utils.validate.is_xdarray.params.obj"></span><strong>obj</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.is_xdarray.params.obj">¶</a> – object to validate</li>
+<li><span class="target" id="orb.utils.validate.is_xdarray.params.ndim"></span><strong>ndim</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.is_xdarray.params.ndim">¶</a> – number of dimensions</li>
+<li><span class="target" id="orb.utils.validate.is_xdarray.params.raise_exception"></span><strong>raise_exception</strong><a class="paramlink headerlink reference internal" href="#orb.utils.validate.is_xdarray.params.raise_exception">¶</a> – If True raise an exception else raise a warning.</li>
 </ul>
 </td>
 </tr>
