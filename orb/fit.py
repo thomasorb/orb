@@ -1346,7 +1346,7 @@ class LinesModel(Model):
                         value = self.p_dict[key_guess][0]
                         
                     elif np.size(self.p_dict[key_guess]) != line_nb:
-                        raise Exception("{} must have the same size as the number of lines or it must be a float".format(key_guess))
+                        raise TypeError("{} must have the same size as the number of lines or it must be a float".format(key_guess))
                     else:
                         value = self.p_dict[key_guess][iline]
                     p_guess[self._get_ikey(key, iline)] = value
@@ -1369,7 +1369,7 @@ class LinesModel(Model):
                         value = str(self.p_dict[key_def])
                         
                     elif np.size(self.p_dict[key_def]) != line_nb:
-                        raise Exception("{} must have the same size as the number of lines or it must be a float".format(key_def))
+                        raise TypeError("{} must have the same size as the number of lines or it must be a float".format(key_def))
                     else:
                         value = self.p_dict[key_def][iline]
                     p_def[self._get_ikey(key, iline)] = value
@@ -1397,6 +1397,12 @@ class LinesModel(Model):
                     
                             p_cov_dict[cov_symbol] = (
                                 np.squeeze(cov_value), cov_operation)
+                        else:
+                            raise ValueError("{}_cov must not be set if {}_def is set to 'free' or 'fixed'".format(key, key))
+                            
+                    elif np.size(p_cov) == 0: raise ValueError("{}_cov must not be set if {}_def is set to 'free' or 'fixed'".format(key, key))
+                    
+                            
                             
 
             else:
@@ -1426,7 +1432,7 @@ class LinesModel(Model):
                     keys_def = [key_def for key_def in self.p_def if self.p_def[key_def] == key_cov]
                     vals = [self.p_val[ikey_def] for ikey_def in keys_def]
                     vals = np.array(vals)
-                    if np.any(vals - vals[0] != 0.): raise Exception('{} parameter must be the same for all the lines of the one covarying group'.format(key))
+                    if np.any(vals - vals[0] != 0.): raise Exception('{} parameter must be the same for all the lines of the same covarying group'.format(key))
                     for ikey_def in keys_def:
                         self.p_val[ikey_def] = 0.
                     self.p_cov[key_cov] = (self.p_cov[key_cov][0] + vals[0], self.p_cov[key_cov][1])
@@ -1981,15 +1987,17 @@ class InputParams(object):
         if 'fmodel' in params:
             if params.fmodel in ['sincgauss', 'sincgaussphased']:
                 if 'fwhm_def' in params:
+                    
                     if params.fwhm_def != 'fixed':
                         warnings.warn('fmodel is a sincgauss and FWHM is not fixed')
                 else:
-                    params['fwhm_def'] = 'fixed'
-                    
+                    params['fwhm_def'] = 'fixed'                    
                 if 'sigma_def' in params:
                     sigma_cov_vel = self._get_sigma_cov_vel(fwhm_guess, lines)
 
-                    if len(params.sigma_def) == 1:
+                    params['sigma_def'] = np.array(params.sigma_def, dtype=str)
+                    
+                    if params.sigma_def.size == 1:
                         if params.sigma_def not in ['free', 'fixed']:
                             if 'sigma_guess' in params:
                                 # sigma cov vel is adjusted to the initial guess + apodization
@@ -2000,6 +2008,7 @@ class InputParams(object):
 
                             if 'sigma_cov' not in params:
                                 params['sigma_cov'] = sigma_cov_vel
+                            
                     else:
                         if 'sigma_guess' in params:
                             # sigma cov vel is adjusted to the initial guess + apodization
