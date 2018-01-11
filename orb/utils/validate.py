@@ -25,12 +25,12 @@ import numpy as np
 import warnings
 import orb.utils.err
 
-def is_ndarray(obj, raise_exception=True):
+def is_ndarray(obj, raise_exception=True, object_name='object'):
     """Check if object is a numpy.ndarray
     :param obj: object to validate
     :param raise_exception: If True raise an exception else raise a warning.
     """
-    err_msg = 'object is not a numpy.ndarray'
+    err_msg = '{} is not a numpy.ndarray'.format(object_name)
     if not isinstance(obj, np.ndarray):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg)
@@ -39,15 +39,15 @@ def is_ndarray(obj, raise_exception=True):
             return False
     return True
 
-def has_dtype(obj, dtype, raise_exception=True):
+def has_dtype(obj, dtype, raise_exception=True, object_name='object'):
     """Check if object is a numpy.ndarray of the correct type
     :param obj: object to validate
     :param dtype: array dtype
     :param raise_exception: If True raise an exception else raise a warning.
     """
     def err_msg(obj_type):
-        return 'object has type {} but should have type {}'.format(
-            obj_type, dtype)
+        return '{} has type {} but should have type {}'.format(
+            object_name, obj_type, dtype)
 
     is_ndarray(obj)
     if obj.dtype != dtype:
@@ -58,7 +58,7 @@ def has_dtype(obj, dtype, raise_exception=True):
             return False
     return True
 
-def is_xdarray(obj, ndim, raise_exception=True):
+def is_xdarray(obj, ndim, raise_exception=True, object_name='object'):
     """Check if object is a numpy.ndarray with the correct number of
     dimensions
 
@@ -69,8 +69,10 @@ def is_xdarray(obj, ndim, raise_exception=True):
     ndim = int(ndim)
     if ndim < 0: raise orb.utils.err.ValidationError('ndim must be positive')
     
-    err_msg = 'object is not a {}d array'.format(ndim)
-    is_ndarray(obj, raise_exception=raise_exception)
+    err_msg = '{} is not a {}d array'.format(object_name, ndim)
+
+    if not is_ndarray(obj, raise_exception=raise_exception):
+        return False
 
     if obj.ndim == ndim:
         return True
@@ -80,33 +82,33 @@ def is_xdarray(obj, ndim, raise_exception=True):
         warnings.warn(err_msg)
         return False
     
-def is_1darray(obj, raise_exception=True):
+def is_1darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 1d numpy.ndarray
     :param obj: object to validate
     :param raise_exception: If True raise an exception else raise a warning.
     """
     return is_xdarray(obj, 1, raise_exception=raise_exception)
 
-def is_2darray(obj, raise_exception=True):
+def is_2darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 2d numpy.ndarray
     :param obj: object to validate
     :param raise_exception: If True raise an exception else raise a warning.
     """
-    return is_xdarray(obj, 2, raise_exception=raise_exception)
+    return is_xdarray(obj, 2, raise_exception=raise_exception, object_name=object_name)
 
-def is_3darray(obj, raise_exception=True):
+def is_3darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 3d numpy.ndarray
     :param obj: object to validate
     :param raise_exception: If True raise an exception else raise a warning.
     """
-    return is_xdarray(obj, 3, raise_exception=raise_exception)
+    return is_xdarray(obj, 3, raise_exception=raise_exception, object_name=object_name)
 
-def have_same_shape(objs, raise_exception=True):
+def have_same_shape(objs, raise_exception=True, object_name='arrays'):
     """Check if all numpy.ndarrays have the same shape
     :param obj: list of objects to validate
     :param raise_exception: If True raise an exception else raise a warning.
     """
-    err_msg = 'all arrays do not have the same shape'
+    err_msg = 'all {} do not have the same shape'.format(object_name)
     if isinstance(objs, list) or isinstance(objs, tuple):
         shape = None
         for iobj in objs:
@@ -122,7 +124,7 @@ def have_same_shape(objs, raise_exception=True):
                             return False
             else: break
     else:
-        raise orb.utils.err.ValidationError('objs must be a list of objects')
+        raise orb.utils.err.ValidationError('objs must be a list')
 
     return True
 
@@ -150,27 +152,28 @@ def index(a, a_min, a_max, clip=True):
     else: return a
 
 
-def is_iterable(obj, raise_exception=True):
-    """check if object is a tuple or a list
+def is_iterable(obj, raise_exception=True, object_name='object'):
+    """check if object is a tuple or a list or a 1darray
 
     :param obj: Object to check
     :param raise_exception: If True raise an exception else raise a warning.
     """
-    err_msg = 'coeffs must be a tuple or a list'
+    err_msg = '{} must be a tuple or a list'.format(object_name)
     if not isinstance(obj, list) and not isinstance(obj, tuple):
-        if raise_exception: raise orb.utils.err.ValidationError(err_msg)
-        else:
-            warnings.warn(err_msg)
-            return False
+        if not is_1darray(obj, raise_exception=False, object_name=object_name):            
+            if raise_exception: raise orb.utils.err.ValidationError(err_msg)
+            else:
+                warnings.warn(err_msg)
+                return False
     return True
 
-def has_len(obj, length, raise_exception=True):
+def has_len(obj, length, raise_exception=True, object_name='object'):
     """Check if object is 1d and if its length is correct
     :param obj: Object to check
     :param raise_exception: If True raise an exception else raise a warning.
     :param length: length of the object
     """
-    err_msg = 'object must have length: {}'.format(length)
+    err_msg = '{} must have length: {}'.format(object_name, length)
     length = int(length)
     if length < 0: raise orb.utils.err.ValidationError('length must be a positive int')
 
@@ -181,7 +184,8 @@ def has_len(obj, length, raise_exception=True):
         try:
             is_1darray(obj, raise_exception=True)
         except orb.utils.err.ValidationError:
-            raise orb.utils.err.ValidationError('Object is not a tuple, a list or a 1d array')
+            raise orb.utils.err.ValidationError(
+                '{} is not a tuple, a list or a 1d array'.format(object_name))
     
     if np.array(obj).size != length:
         if raise_exception:

@@ -22,6 +22,8 @@
 
 class ORBError(RuntimeError): pass
 
+class FitInitError(ORBError) : pass
+
 class FitError(ORBError): pass
 
 class ValidationError(ORBError): pass
