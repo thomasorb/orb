@@ -151,7 +151,7 @@ def index(a, a_min, a_max, clip=True):
         else: return np.clip(a, a_min, a_max)
     else: return a
 
-
+    
 def is_iterable(obj, raise_exception=True, object_name='object'):
     """check if object is a tuple or a list or a 1darray
 

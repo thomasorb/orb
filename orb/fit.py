@@ -39,6 +39,7 @@ import copy
 import scipy.optimize
 import scipy.interpolate
 import time
+import logging
 
 import gvar
 import lsqfit
@@ -51,7 +52,6 @@ import utils.stats
 import utils.validate
 import utils.err
 import cutils
-import logging
 
 from core import Lines
 
@@ -425,6 +425,7 @@ class FitVector(object):
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
 
+                        
         ### CLASSIC MODE ##################
         if self.classic:
             
@@ -439,8 +440,9 @@ class FitVector(object):
                     method='lm',
                     full_output=True,
                     maxfev=self.max_iter)
-            except RuntimeError:
-                fit_classic = list([0])
+            except RuntimeError, e:
+                logging.debug('RuntimeError during fit: {}'.format(e))
+                fit_classic = list(['Runtime error during fit: {}'.format(e), 0])
                 
             fit = type('fit', (), {})
             
@@ -474,6 +476,7 @@ class FitVector(object):
                 fit.fitter_results = fit_classic[2]
 
             else:
+                logging.debug('bad classic fit ({}): {}'.format(fit_classic[-1], fit_classic[-2]))
                 fit.stopping_criterion = 0
                 fit.error = True
 
@@ -499,6 +502,7 @@ class FitVector(object):
                     fit_p[key] = fit_p[key] * self.normalization_coeff
                     
             if fit.stopping_criterion == 0:
+                logging.debug('Dit not converge: stopping criterion == 0')
                 warnings.warn('Did not converge')
                 return []
 
@@ -562,6 +566,7 @@ class FitVector(object):
             returned_data['fit_time'] = time.time() - start_time
             
         else:
+            logging.debug('bad fit')
             return []
 
         return returned_data
@@ -1928,7 +1933,7 @@ class InputParams(object):
         
     def append_model(self, model, operation, params):
         if self.has_model(model):
-            raise Exception('{} already added'.format(model))
+            raise utils.err.FitInputError('{} already added'.format(model))
         self.models.append([model, operation])
         self.params.append(params)
         self.check_signal_range()
@@ -1937,7 +1942,7 @@ class InputParams(object):
     def set_signal_range(self, rmin, rmax):    
         if (not (self.axis_min <= rmin < rmax)
             or not (rmin < rmax <= self.axis_max)):
-            raise Exception('Check rmin and rmax values. Must be between {} and {}'.format(
+            raise utils.err.FitInputError('Check rmin and rmax values. Must be between {} and {}'.format(
                 self.axis_min, self.axis_max))
         
         signal_range_pix = utils.spectrum.fast_w2pix(
@@ -2000,8 +2005,21 @@ class InputParams(object):
         params.update(kwargs)
 
         if not 'fmodel' in params:
-            raise ValueError('fmodel must be set')
-        
+            raise utils.err.FitInputError('fmodel must be set')
+
+        # check single valued params
+        for iparam in params:
+            if '_def' in iparam or '_guess' in iparam or '_cov' in iparam:
+                ival = np.atleast_1d(params[iparam])
+                if ival.size == 1:
+                    if not '_cov' in iparam:
+                        params[iparam] = list(ival) * np.size(lines)
+                    else:
+                        params[iparam] = list(ival)
+                    logging.debug('changed single-valued parameter {}: {}'.format(
+                        iparam, params[iparam]))
+                
+        # check sigma value        
         if params.fmodel in ['sincgauss', 'sincgaussphased']:
             if 'fwhm_def' in params:
                 if np.any(np.array(params.fwhm_def, dtype=str) != 'fixed'):
@@ -2056,17 +2074,18 @@ class InputParams(object):
 
 
         if 'line_nb' in params:
+            logging.warning('line_nb was set by user')
             del params.line_nb # this parameter cannot be changed
 
         if 'pos_guess' in params:
-            raise Exception("Line position must be defined with the 'lines' parameter")
+            raise utils.err.FitInputError("Line position must be defined with the 'lines' parameter")
 
         if 'pos_cov' in params:
             if 'pos_def' in params:
                 if params.pos_def in ['free', 'fixed']:
                     warnings.warn('pos_def must not be fixed or free if a velocity shift (pos_cov) is given')
             else:
-                if np.size(params.pos_cov) != 1: raise Exception('The velocity shift (pos_cov) must be only one floating number if the covariance definition (pos_def) is not given')
+                if np.size(params.pos_cov) != 1: raise utils.err.FitInputError('The velocity shift (pos_cov) must be only one floating number if the covariance definition (pos_def) is not given')
                 params['pos_def'] = '1'
         
        
@@ -2103,7 +2122,7 @@ class InputParams(object):
         params = self._check_lines_params(kwargs, fwhm_guess, lines)
         
         if 'fwhm_guess' in params:
-            raise Exception('This parameter must be defined with the non-keyword parameter fwhm_guess')
+            raise utils.err.FitInputError('This parameter must be defined with the non-keyword parameter fwhm_guess')
         
         default_params.update(params)
         all_params = Params()
@@ -2265,7 +2284,7 @@ class Cm1InputParams(InputParams):
     def add_filter_model(self, **kwargs):
 
         if self.base_params.filter_file_path is None:
-            raise Exception('filter_file_path is None')
+            raise utils.err.FitInputError('filter_file_path is None')
         
         filter_spline_nm = utils.filters.read_filter_file(
             self.base_params.filter_file_path, return_spline=True)
@@ -2284,7 +2303,7 @@ class Cm1InputParams(InputParams):
         params.update(kwargs)
 
         if 'filter_function' in params:
-            raise Exception('filter function must be defined via the filter file path at the init of the class')
+            raise utils.err.FitInputError('filter function must be defined via the filter file path at the init of the class')
 
         default_params.update(params)
 
