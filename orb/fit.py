@@ -121,7 +121,7 @@ class FitVector(object):
 
         if max_iter is not None:
             max_iter = int(np.clip(max_iter, 0, 1e6))
-            logging.warning('max iteration changed to {}'.format(max_iter))
+            logging.debug('max iteration changed to {}'.format(max_iter))
         else:
             max_iter = 1000
         self.max_iter = max_iter
@@ -2080,16 +2080,6 @@ class InputParams(object):
         if 'pos_guess' in params:
             raise utils.err.FitInputError("Line position must be defined with the 'lines' parameter")
 
-        if 'pos_cov' in params:
-            if 'pos_def' in params:
-                if params.pos_def in ['free', 'fixed']:
-                    warnings.warn('pos_def must not be fixed or free if a velocity shift (pos_cov) is given')
-            else:
-                if np.size(params.pos_cov) != 1: raise utils.err.FitInputError('The velocity shift (pos_cov) must be only one floating number if the covariance definition (pos_def) is not given')
-                params['pos_def'] = '1'
-        
-       
-
         return params
     
     def add_lines_model(self, lines, fwhm_guess, **kwargs):
@@ -2261,7 +2251,7 @@ class Cm1InputParams(InputParams):
             'fmodel':'sinc'}
 
         params = self._check_lines_params(kwargs, fwhm_guess_cm1, lines_cm1)
-    
+        
         default_params.update(params)
 
         all_params = Params()
