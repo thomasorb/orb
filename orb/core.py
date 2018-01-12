@@ -235,10 +235,11 @@ class Logger(object):
         self.start_logging()
 
         # start tcp listener
-        try:
-            self.listen()
-        except Exception, e:
-            warnings.warn('Exception occured during logging server init (maybe it is already initialized): {}'.format(e))
+        if self.debug:
+            try:
+                self.listen()
+            except Exception, e:
+                warnings.warn('Exception occured during logging server init (maybe it is already initialized): {}'.format(e))
 
 
     def _reset_logging_state(self, logfilter=None):

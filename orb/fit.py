@@ -817,7 +817,7 @@ class Model(object):
         # check if p_free has a sdev
         for idef in self.p_free:
             if self.p_free[idef] is not None:
-                if gvar.sdev(self.p_free[idef]) == 0.:
+                if gvar.sdev(self.p_free[idef]) == 0.: 
                     self.p_free[idef] = self._estimate_sdev(
                         idef, gvar.mean(self.p_free[idef]))
 
