@@ -3121,26 +3121,41 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     fwhm_guess = utils.spectrum.compute_line_fwhm(
         step_nb, step, order, nm_laser_obs / nm_laser, wavenumber=True)
 
-    lines_model = Cm1LinesModel(    
-        {'step_nb':step_nb,
-         'step':step,
-         'order':order,
-         'nm_laser':nm_laser,
-         'nm_laser_obs':nm_laser_obs,
-         'line_nb':np.size(lines_cm1),
-         'amp_def':'free',
-         'fwhm_def':'1',
-         'pos_guess':gvar.mean(lines_cm1),
-         'pos_cov':gvar.mean(vel),
-         'pos_def':'1',
-         'fmodel':fmodel,
-         'fwhm_guess':gvar.mean(fwhm_guess),
-         'sigma_def':'1',
-         'sigma_guess':gvar.mean(sigma),
-         'sigma_cov':0., # never more than 0.
-         'alpha_def':'1',
-         'alpha_guess':gvar.mean(alpha),
-         'alpha_cov':0.}) # never more than 0.
+
+    model_params = {
+        'step_nb':step_nb,
+        'step':step,
+        'order':order,
+        'nm_laser':nm_laser,
+        'nm_laser_obs':nm_laser_obs,
+        'line_nb':np.size(lines_cm1),
+        'fwhm_def':['1'] * np.size(lines_cm1),
+        'fwhm_guess':[gvar.mean(fwhm_guess)] * np.size(lines_cm1),
+        'pos_guess':gvar.mean(lines_cm1),
+        'pos_cov':[gvar.mean(vel)],
+        'pos_def':['1'] * np.size(lines_cm1),
+        'fmodel':fmodel,
+        'amp_def':['free'] * np.size(lines_cm1)
+    }
+    
+    if fmodel in ['sincgauss', 'sincgaussphased']:
+        sigma_params = {
+            'sigma_def':['1'] * np.size(lines_cm1),
+            'sigma_guess':[gvar.mean(sigma)] * np.size(lines_cm1),
+            'sigma_cov':[0.]}
+        
+        model_params.update(sigma_params)
+
+    if fmodel in ['sincgaussphased',]:
+        alpha_params = {
+            'alpha_def':['1'] * np.size(lines_cm1),
+            'alpha_guess':[gvar.mean(alpha)] * np.size(lines_cm1),
+            'alpha_cov':[0.]}
+        
+        model_params.update(alpha_params)
+    
+        
+    lines_model = Cm1LinesModel(model_params) # never more than 0.
 
     p_free = dict(lines_model.p_free)
     for iline in range(np.size(lines_cm1)):
