@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-# File: err.py
+# File: log.py
 
 ## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
@@ -20,12 +20,13 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
-class ORBError(RuntimeError): pass
 
-class FitInputError(ORBError): pass
+import logging
 
-class FitInitError(ORBError) : pass
-
-class FitError(ORBError): pass
-
-class ValidationError(ORBError): pass
+def setup_socket_logging():
+    
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(logging.DEBUG)
+    socketHandler = logging.handlers.SocketHandler(
+        'localhost',logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+    rootLogger.addHandler(socketHandler)
