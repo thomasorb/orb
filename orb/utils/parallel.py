@@ -24,6 +24,7 @@ import logging
 import os
 import pp
 import getpass
+import multiprocessing
 
 def init_pp_server(ncpus=0, silent=False):
     """Initialize a server for parallel processing.
@@ -83,6 +84,7 @@ def close_pp_server(js):
     .. note:: Please refer to http://www.parallelpython.com/ for
         sources and information on Parallel Python software.
     """
+    logging.debug(get_stats_str(js))
     # First shut down the normal way
     js.destroy()
     # access job server methods for shutting down cleanly
@@ -101,3 +103,50 @@ def close_pp_server(js):
             # PID does not exist
             pass
         except IOError: pass
+
+
+def get_stats_str(js):
+    """Return job server statistics as a string"""
+    _stats = js.get_stats()['local']
+    return 'ncpus: {},  njobs: {}, rworker: {}, time: {}'.format(
+        _stats.ncpus, _stats.njobs, _stats.rworker, _stats.time)
+    
+        
+def timed_process(func, timeout, args=list()):
+    """Run a timed process which terminates after timeout seconds if it
+    does not return before.
+
+    :param func: Timed func which will be terminated after timeout
+      seconds. must be func(*args, returned_dict). The
+      results of the function must be put in returned_dict.
+
+    :param timeout: Timeout in s.
+
+    :param args: arguments of the function
+
+    :return: returned_dict
+
+    .. note:: from https://stackoverflow.com/questions/492519/timeout-on-a-function-call
+
+    """
+    if not isinstance(args, list): raise TypeError('args must be a list')
+
+    returned_dict = multiprocessing.Manager().dict()
+    args.append(returned_dict)
+    
+    p = multiprocessing.Process(
+        target=func,
+        args=args)
+    
+    p.start()
+    p.join(timeout)
+    if p.is_alive():
+        logging.debug("process reached timeout")
+
+        # Terminate
+        p.terminate()
+        p.join()
+        
+    return returned_dict
+                
+                
