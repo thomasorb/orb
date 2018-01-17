@@ -529,7 +529,7 @@ def transform_interferogram(interf, nm_laser,
     .. note:: Only NANs or INFs are interpreted as bad values
     
     """
-    raise StandardError('Deprecated. Please use fft module instead.')
+    warnings.warn('Deprecated. Please use fft module instead.')
 
     interf = np.copy(interf)
     interf_orig = np.copy(interf)
@@ -869,6 +869,8 @@ def transform_spectrum(spectrum, nm_laser, calibration_nm_laser,
     
     .. note:: Interferogram can be complex
     """
+    warnings.warn('Deprecated. Please use fft module instead !!!!!')
+
     if not isinstance(zpd_shift, int):
         warnings.warn("ZPD shift must be an integer and will be converted")
         zpd_shift = int(zpd_shift)
