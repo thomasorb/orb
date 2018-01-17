@@ -200,7 +200,7 @@ class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
                 if rd:
                     self.handle_request()
                 abort = self.abort
-                time.sleep(0.01)
+                time.sleep(0.001)
                 
         except Exception:
             pass
