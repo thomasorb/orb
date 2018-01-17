@@ -212,7 +212,7 @@ class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
 class Logger(object):
     
     logfilters = {
-        'default': ExtInfoLoggingFilter(),
+        'default': ExtDebugLoggingFilter(),
         'extinfo': ExtInfoLoggingFilter(),
         'extdebug': ExtDebugLoggingFilter(),
         'none': NoLoggingFilter()}

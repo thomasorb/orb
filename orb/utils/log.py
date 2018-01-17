@@ -22,9 +22,11 @@
 
 
 import logging
-
-def setup_socket_logging():
+import logging.handlers
     
+def setup_socket_logging():
+    import logging
+    import logging.handlers
     rootLogger = logging.getLogger()
     rootLogger.setLevel(logging.DEBUG)
     socketHandler = logging.handlers.SocketHandler(
