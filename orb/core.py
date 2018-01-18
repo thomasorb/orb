@@ -42,6 +42,14 @@ import datetime
 import logging
 import warnings
 
+import threading
+import SocketServer
+import logging.handlers
+import struct
+import pickle
+import select
+import socket
+
 import numpy as np
 import bottleneck as bn
 import astropy.io.fits as pyfits
@@ -111,33 +119,139 @@ class ColorStreamHandler(logging.StreamHandler):
         color = self._get_color(record.levelno)
         return color + text + self.DEFAULT
 
+#################################################
+#### CLASS LoggingFilter ########################
+#################################################
+class NoLoggingFilter(logging.Filter):
+    def filter(self, record):
+        return True
 
-class LoggingFilter(logging.Filter):
+class ExtInfoLoggingFilter(logging.Filter):
     bad_names = ['pp']
     def filter(self, record):
-        if record.levelname == 'INFO':
+        if record.levelname in ['INFO']:
             if record.module in self.bad_names: return False
         return True
-        
+
+class ExtDebugLoggingFilter(logging.Filter):
+    bad_names = ['pp']
+    def filter(self, record):
+        if record.levelname in ['INFO', 'DEBUG']:
+            if record.module in self.bad_names: return False
+        return True
+
+class LogRecordStreamHandler(SocketServer.StreamRequestHandler):
+    """Handler for a streaming logging request.
+
+    This basically logs the record using whatever logging policy is
+    configured locally.
+    """
+    def handle(self):
+        """
+        Handle multiple requests - each expected to be a 4-byte length,
+        followed by the LogRecord in pickle format. Logs the record
+        according to whatever policy is configured locally.
+        """
+        #while True:
+        chunk = self.connection.recv(4)
+        if len(chunk) < 4: return
+        slen = struct.unpack('>L', chunk)[0]
+        chunk = self.connection.recv(slen)
+        while len(chunk) < slen:
+            chunk = chunk + self.connection.recv(slen - len(chunk))
+        obj = self.unPickle(chunk)
+        record = logging.makeLogRecord(obj)
+        self.handleLogRecord(record)
+
+    def unPickle(self, data):
+        return pickle.loads(data)
+
+    def handleLogRecord(self, record):
+        # if a name is specified, we use the named logger rather than the one
+        # implied by the record.
+        logger = logging.getLogger()
+        # N.B. EVERY record gets logged. This is because Logger.handle
+        # is normally called AFTER logger-level filtering. If you want
+        # to do filtering, do it at the client end to save wasting
+        # cycles and network bandwidth!
+        logger.handle(record)
+    
+class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
+    """
+    Simple TCP socket-based logging receiver suitable for testing.
+    """
+    def __init__(self, host='localhost',
+                 port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 handler=LogRecordStreamHandler):
+        SocketServer.ThreadingTCPServer.__init__(self, (host, port), handler)
+        self.abort = False
+        self.timeout = True
+
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
+
+    def serve_until_stopped(self):
+        abort = False
+        try:
+            while not abort:
+                rd, wr, ex = select.select([self.socket.fileno()],
+                                           [], [], self.timeout)
+                if rd:
+                    self.handle_request()
+                abort = self.abort
+                time.sleep(0.001)
+                
+        except Exception:
+            pass
 
 
 #################################################
 #### CLASS Logger ###############################
 #################################################
-
 class Logger(object):
-    def __init__(self, debug=False):
+    
+    logfilters = {
+        'default': ExtDebugLoggingFilter(),
+        'extinfo': ExtInfoLoggingFilter(),
+        'extdebug': ExtDebugLoggingFilter(),
+        'none': NoLoggingFilter()}
+
+    
+    def __init__(self, debug=False, logfilter='default'):
+        """Init
+
+        :param logfilter: If set to None, no logfilter will be applied
+          (default 'default')
+
+        """
+        self.logfilter = self.get_logfilter(logfilter)
         self.debug = bool(debug)
+        
         if self.debug:
             self.level = logging.DEBUG
         else:
             self.level = logging.INFO
         self.start_logging()
 
-    def _reset_logging_state(self):
-        """Force a logging reset"""
+        # start tcp listener
+        if self.debug:
+            try:
+                self.listen()
+            except Exception, e:
+                warnings.warn('Exception occured during logging server init (maybe it is already initialized): {}'.format(e))
+
+
+    def _reset_logging_state(self, logfilter=None):
+        """Force a logging reset
+
+        :param logfilter: If set to None, default logfilter set at
+          init will be applied (default None)
+        """
         def excepthook_with_log(exctype, value, tb):
-            logging.error(value, exc_info=(exctype, value, tb))
+            try:
+                logging.error(value, exc_info=(exctype, value, tb))
+            except Exception: pass
 
         # clear old logging state
         self.root = self.getLogger()
@@ -159,7 +273,7 @@ class Logger(object):
                 self.get_simplelogformat(),
                 self.get_logdateformat())
         ch.setFormatter(formatter)
-        ch.addFilter(LoggingFilter())
+        ch.addFilter(self.get_logfilter(logfilter))
         self.root.addHandler(ch)
 
         logging.captureWarnings(True)
@@ -168,13 +282,28 @@ class Logger(object):
 
     def getLogger(self):
         return logging.getLogger()
-    
-    def start_logging(self):
-        """Reset logging only if logging is not set"""
-        if not self.get_logging_state():
-            self._reset_logging_state()
 
-    def start_file_logging(self, logfile_path=None):
+    def get_logfilter(self, logfilter):
+        if logfilter is None:
+            if hasattr(self, 'logfilter'):
+                return self.logfilter
+            else: return self.logfilters['none']
+            
+        elif logfilter not in self.logfilters:
+            raise ValueError('logfilter must be in {}'.format(self.logfilters.keys()))
+        return self.logfilters[logfilter]
+    
+    def start_logging(self, logfilter=None):
+        """Reset logging only if logging is not set
+
+        :param logfilter: If set to None, default logfilter set at
+          init will be applied (default None)
+        """
+        if not self.get_logging_state():
+            self._reset_logging_state(logfilter=logfilter)
+
+    def start_file_logging(self, logfile_path=None,
+                           logfilter=None):
         """Start file logging
 
         :param logfile_path: Path to the logfile. If none is provided
@@ -193,7 +322,7 @@ class Logger(object):
                 self.get_logformat(),
                 self.get_logdateformat())
             ch.setFormatter(formatter)
-            ch.addFilter(LoggingFilter())
+            ch.addFilter(self.get_logfilter(logfilter))
             self.root.addHandler(ch)
 
     def get_logging_state(self):
@@ -235,6 +364,21 @@ class Logger(object):
             self.logfile_path = 'orb.{:04d}{:02d}{:02d}.log'.format(
                 today.year, today.month, today.day)
         return self.logfile_path
+    
+    def listen(self):
+        """Listen and handle logging sent on TCP socket"""
+        # start socket listener
+        logging.debug('logging listener started')
+        listener = LogRecordSocketReceiver()
+
+        thread = threading.Thread(
+            target=listener.serve_until_stopped, args=())
+        thread.daemon = True # Daemonize thread
+        try:
+            thread.start() # Start the execution
+        except Exception, e:
+            warnings.warn('Error during listener execution')
+
 
 
     

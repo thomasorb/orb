@@ -20,16 +20,12 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 import numpy as np
 import math
-from scipy import interpolate, optimize, special
-import warnings
-import time
-
-import orb.constants
+from scipy import interpolate, special
 import gvar
 
+import orb.constants
 import orb.cutils
 import orb.cgvar
 

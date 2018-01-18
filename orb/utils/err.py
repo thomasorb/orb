@@ -22,6 +22,8 @@
 
 class ORBError(RuntimeError): pass
 
+class FitInputError(ORBError): pass
+
 class FitInitError(ORBError) : pass
 
 class FitError(ORBError): pass
