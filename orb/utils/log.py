@@ -21,8 +21,6 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging
-import logging.handlers
     
 def setup_socket_logging():
     import logging
