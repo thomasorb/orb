@@ -4,6 +4,10 @@
 *~
 *.so
 *.o
+*.c
+orb/*.o
+orb/*.c
+orb/*.so
 dist/
 build/
 orb_kernel.egg-info/
