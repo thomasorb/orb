@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>orb.utils package &mdash; Orb 3.2 documentation</title>
+  <title>orb.utils package &mdash; Orb 3.3 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.2 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.3 documentation" href="index.html"/>
         <link rel="up" title="orb package" href="orb.html"/>
         <link rel="next" title="Changelog" href="changelog.html"/>
         <link rel="prev" title="orb.ext package" href="orb.ext.html"/> 
@@ -74,7 +74,7 @@
             
             
               <div class="version">
-                3.2
+                3.3
               </div>
             
           
@@ -108,13 +108,13 @@
 <li class="toctree-l3 current"><a class="current reference internal" href="#">orb.utils package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.astrometry">orb.utils.astrometry module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.debug">orb.utils.debug module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.err">orb.utils.err module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.fft">orb.utils.fft module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.filters">orb.utils.filters module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.fit">orb.utils.fit module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.image">orb.utils.image module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.io">orb.utils.io module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.log">orb.utils.log module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.misc">orb.utils.misc module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.parallel">orb.utils.parallel module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-orb.utils.photometry">orb.utils.photometry module</a></li>
@@ -1271,23 +1271,6 @@ transform.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-orb.utils.debug">
-<span id="orb-utils-debug-module"></span><h2>orb.utils.debug module<a class="headerlink" href="#module-orb.utils.debug" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="orb.utils.debug.get_open_fds">
-<code class="descclassname">orb.utils.debug.</code><code class="descname">get_open_fds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.debug.get_open_fds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of open file descriptors</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Only works on UNIX-like OS</p>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">This is a useful debugging function that has been taken from: <a class="reference external" href="http://stackoverflow.com/questions/2023608/check-what-files-are-open-in-python">http://stackoverflow.com/questions/2023608/check-what-files-are-open-in-python</a></p>
-</div>
-</dd></dl>
-
-</div>
 <div class="section" id="module-orb.utils.err">
 <span id="orb-utils-err-module"></span><h2>orb.utils.err module<a class="headerlink" href="#module-orb.utils.err" title="Permalink to this headline">¶</a></h2>
 <dl class="exception">
@@ -1299,6 +1282,12 @@ transform.</p>
 <dl class="exception">
 <dt id="orb.utils.err.FitInitError">
 <em class="property">exception </em><code class="descclassname">orb.utils.err.</code><code class="descname">FitInitError</code><a class="headerlink" href="#orb.utils.err.FitInitError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="orb.utils.err.FitInputError">
+<em class="property">exception </em><code class="descclassname">orb.utils.err.</code><code class="descname">FitInputError</code><a class="headerlink" href="#orb.utils.err.FitInputError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
 </dd></dl>
 
@@ -3420,6 +3409,14 @@ files.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-orb.utils.log">
+<span id="orb-utils-log-module"></span><h2>orb.utils.log module<a class="headerlink" href="#module-orb.utils.log" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="orb.utils.log.setup_socket_logging">
+<code class="descclassname">orb.utils.log.</code><code class="descname">setup_socket_logging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.log.setup_socket_logging" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 <div class="section" id="module-orb.utils.misc">
 <span id="orb-utils-misc-module"></span><h2>orb.utils.misc module<a class="headerlink" href="#module-orb.utils.misc" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -3609,6 +3606,12 @@ sources and information on Parallel Python software.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="orb.utils.parallel.get_stats_str">
+<code class="descclassname">orb.utils.parallel.</code><code class="descname">get_stats_str</code><span class="sig-paren">(</span><em>js</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.get_stats_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return job server statistics as a string</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="orb.utils.parallel.init_pp_server">
 <code class="descclassname">orb.utils.parallel.</code><code class="descname">init_pp_server</code><span class="sig-paren">(</span><em>ncpus=0</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.init_pp_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a server for parallel processing.</p>
@@ -3630,6 +3633,35 @@ available cpus (default 0)</li>
 <p class="first admonition-title">Note</p>
 <p class="last">Please refer to <a class="reference external" href="http://www.parallelpython.com/">http://www.parallelpython.com/</a> for
 sources and information on Parallel Python software</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.parallel.timed_process">
+<code class="descclassname">orb.utils.parallel.</code><code class="descname">timed_process</code><span class="sig-paren">(</span><em>func</em>, <em>timeout</em>, <em>args=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.timed_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a timed process which terminates after timeout seconds if it
+does not return before.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="orb.utils.parallel.timed_process.params.func"></span><strong>func</strong><a class="paramlink headerlink reference internal" href="#orb.utils.parallel.timed_process.params.func">¶</a> – Timed func which will be terminated after timeout
+seconds. must be func(<a href="#id3"><span class="problematic" id="id4">*</span></a>args, returned_dict). The
+results of the function must be put in returned_dict.</li>
+<li><span class="target" id="orb.utils.parallel.timed_process.params.timeout"></span><strong>timeout</strong><a class="paramlink headerlink reference internal" href="#orb.utils.parallel.timed_process.params.timeout">¶</a> – Timeout in s.</li>
+<li><span class="target" id="orb.utils.parallel.timed_process.params.args"></span><strong>args</strong><a class="paramlink headerlink reference internal" href="#orb.utils.parallel.timed_process.params.args">¶</a> – arguments of the function</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">returned_dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">from <a class="reference external" href="https://stackoverflow.com/questions/492519/timeout-on-a-function-call">https://stackoverflow.com/questions/492519/timeout-on-a-function-call</a></p>
 </div>
 </dd></dl>
 
@@ -5491,7 +5523,7 @@ columns. Else only ra, dec and Mag are returned (default False).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.2',
+            VERSION:'3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

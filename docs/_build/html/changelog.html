@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; Orb 3.2 documentation</title>
+  <title>Changelog &mdash; Orb 3.3 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.2 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.3 documentation" href="index.html"/>
         <link rel="prev" title="orb.utils package" href="orb.utils.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                3.2
+                3.3
               </div>
             
           
@@ -1085,7 +1085,7 @@ modes. This module has been created by Tim van Werkhoven
 <div class="section" id="new-module-utils-io">
 <h4><a class="toc-backref" href="#id83">New module utils.IO</a><a class="headerlink" href="#new-module-utils-io" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li>module <a class="reference internal" href="orb.utils.html#module-orb.utils.io" title="orb.utils.io"><code class="xref py py-mod docutils literal"><span class="pre">orb.utils.io</span></code></a> created to put input/output functions
+<li>module <code class="xref py py-mod docutils literal"><span class="pre">orb.utils.io</span></code> created to put input/output functions
 related to write/read FITS and HDF5 single files.</li>
 </ul>
 </div>
@@ -1104,7 +1104,7 @@ change.</li>
 <code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_max()</span></code>,
 <code class="xref py py-meth docutils literal"><span class="pre">get_cm1_axis_min()</span></code>, changed to take into account the
 fact that the spectral axis created from
-<a class="reference internal" href="orb.utils.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a> has 1 sample less than
+<code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code> has 1 sample less than
 expected to keep the same number of sample at the input and the
 output.</li>
 <li><code class="xref py py-mod docutils literal"><span class="pre">orb.viewer</span></code> updated for the last matplotlib version (1.5.1).</li>
@@ -1192,7 +1192,7 @@ process too much.It could be used for archiving though.</p>
 <h4><a class="toc-backref" href="#id96">Miscellaneous</a><a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>smoothing_deg option in
-<a class="reference internal" href="orb.utils.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a> has 1 sample less
+<code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code> has 1 sample less
 than replaced by a more robust smoothing_coeff option. The smoohting
 degree is now defined as smoothing_coeff * interferogram_size. In a
 general way the smoothing degree (the number of samples smoothed at
@@ -1257,7 +1257,7 @@ estimation can be found via L-M algorithm. After a certain number of
 retries error is estimated via MCMC.</li>
 <li>flux is now computed with analytic error propagation for sinc,
 gaussian and sincgauss (see <code class="xref py py-class docutils literal"><span class="pre">orb.data</span></code> and
-<a class="reference internal" href="orb.utils.html#orb.utils.spectrum.sincgauss1d_flux" title="orb.utils.spectrum.sincgauss1d_flux"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.spectrum.sincgauss1d_flux()</span></code></a>)</li>
+<code class="xref py py-meth docutils literal"><span class="pre">orb.utils.spectrum.sincgauss1d_flux()</span></code>)</li>
 </ul>
 </div>
 <div class="section" id="id15">
@@ -1271,7 +1271,7 @@ complex data managing.</p>
 <h4><a class="toc-backref" href="#id104">Miscellaneous</a><a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>ds9 region file loading function now uses pyregion packages</li>
-<li><a class="reference internal" href="orb.html#orb.core.Header" title="orb.core.Header"><code class="xref py py-class docutils literal"><span class="pre">orb.core.Header</span></code></a> class added as an extension of
+<li><code class="xref py py-class docutils literal"><span class="pre">orb.core.Header</span></code> class added as an extension of
 <code class="xref py py-class docutils literal"><span class="pre">astropy.wcs.Header</span></code> to manage Headers. It is just an
 initial framework.</li>
 <li>scipy.optimize.curve_fit call in fit.py updated to follow the
@@ -1282,12 +1282,12 @@ changes in the new version of scipy (0.18.0).</li>
 <div class="section" id="v-2-2-0">
 <h3><a class="toc-backref" href="#id105">v.2.2.0</a><a class="headerlink" href="#v-2-2-0" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="orb.utils.html#orb.utils.fft.transform_interferogram" title="orb.utils.fft.transform_interferogram"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code></a>: zeros_smoothing
+<li><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.transform_interferogram()</span></code>: zeros_smoothing
 deactivated and replaced by a ramp truncation function as
 recommendaed by Mertz (1967). A much better shape of the continnum
 is obtained.</li>
 <li>Phase optimization in 3d with
-<a class="reference internal" href="orb.utils.html#orb.utils.fft.optimize_phase3d" title="orb.utils.fft.optimize_phase3d"><code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.optimize_phase3d()</span></code></a>.</li>
+<code class="xref py py-meth docutils literal"><span class="pre">orb.utils.fft.optimize_phase3d()</span></code>.</li>
 </ul>
 </div>
 </div>
@@ -1335,7 +1335,7 @@ is obtained.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.2',
+            VERSION:'3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

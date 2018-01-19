@@ -13,14 +13,6 @@ orb.utils.astrometry module
     :undoc-members:
     :show-inheritance:
 
-orb.utils.debug module
-----------------------
-
-.. automodule:: orb.utils.debug
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 orb.utils.err module
 --------------------
 
@@ -69,6 +61,15 @@ orb.utils.io module
     :undoc-members:
     :show-inheritance:
 
+orb.utils.log module
+--------------------
+
+.. automodule:: orb.utils.log
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+       
 orb.utils.misc module
 ---------------------
 

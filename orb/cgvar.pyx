@@ -21,9 +21,12 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 
-cimport numpy as np
 cimport cython
+import cython
+
+cimport numpy as np
 import numpy as np
+
 import scipy.special
 cimport gvar
 import gvar

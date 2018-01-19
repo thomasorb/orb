@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 3.2 documentation</title>
+  <title>Index &mdash; Orb 3.3 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
         <link rel="index" title="Index"
               href="#"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.2 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 3.3 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                3.2
+                3.3
               </div>
             
           
@@ -462,6 +462,8 @@
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.arc2pix">arc2pix() (orb.astrometry.Astrometry method)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.parallel.timed_process.params.args">args (orb.utils.parallel.timed_process parameter)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.astrometry.Gaussian.array2d">array2d() (orb.utils.astrometry.Gaussian method)</a>
 
       <ul>
@@ -540,8 +542,12 @@
         <li><a href="orb.utils.html#orb.utils.misc.correct_bad_frames_vector.params.bad_frames_vector">(orb.utils.misc.correct_bad_frames_vector parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.LoggingFilter.bad_names">bad_names (orb.core.LoggingFilter attribute)</a>
+      <li><a href="orb.html#orb.core.ExtDebugLoggingFilter.bad_names">bad_names (orb.core.ExtDebugLoggingFilter attribute)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.core.ExtInfoLoggingFilter.bad_names">(orb.core.ExtInfoLoggingFilter attribute)</a>
 </li>
+      </ul></li>
       <li><a href="orb.utils.html#orb.utils.image.correct_map2d.params.bad_value">bad_value (orb.utils.image.correct_map2d parameter)</a>
 
       <ul>
@@ -1380,8 +1386,6 @@
         <li><a href="orb.utils.html#orb.utils.astrometry.fit_sip.params.err">(orb.utils.astrometry.fit_sip parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.fit_highorder_phase_map.params.err_map">err_map (orb.utils.image.fit_highorder_phase_map parameter)</a>
 
       <ul>
@@ -1390,6 +1394,8 @@
         <li><a href="orb.utils.html#orb.utils.image.fit_map_cos.params.err_map">(orb.utils.image.fit_map_cos parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.ColorStreamHandler.ERROR">ERROR (orb.core.ColorStreamHandler attribute)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_stars_in_cube.params.estimate_local_noise">estimate_local_noise (orb.astrometry.Astrometry.fit_stars_in_cube parameter)</a>
@@ -1416,6 +1422,10 @@
         <li><a href="orb.utils.html#orb.utils.fft.transform_spectrum.params.ext_phase">(orb.utils.fft.transform_spectrum parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.ExtDebugLoggingFilter">ExtDebugLoggingFilter (class in orb.core)</a>
+</li>
+      <li><a href="orb.html#orb.core.ExtInfoLoggingFilter">ExtInfoLoggingFilter (class in orb.core)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.image.extract_elliptical_profile">extract_elliptical_profile() (in module orb.utils.image)</a>
 </li>
   </ul></td>
@@ -1504,8 +1514,14 @@
         <li><a href="orb.utils.html#orb.utils.vector.interpolate_axis.params.fill_value">(orb.utils.vector.interpolate_axis parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.LoggingFilter.filter">filter() (orb.core.LoggingFilter method)</a>
+      <li><a href="orb.html#orb.core.ExtDebugLoggingFilter.filter">filter() (orb.core.ExtDebugLoggingFilter method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.core.ExtInfoLoggingFilter.filter">(orb.core.ExtInfoLoggingFilter method)</a>
 </li>
+        <li><a href="orb.html#orb.core.NoLoggingFilter.filter">(orb.core.NoLoggingFilter method)</a>
+</li>
+      </ul></li>
       <li><a href="orb.html#orb.cutils.filter_background">filter_background() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.fit.fit_lines_in_spectrum.params.filter_file_path">filter_file_path (orb.fit.fit_lines_in_spectrum parameter)</a>
@@ -1633,6 +1649,8 @@
       <li><a href="orb.utils.html#orb.utils.err.FitError">FitError</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.err.FitInitError">FitInitError</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.err.FitInputError">FitInputError</a>
 </li>
       <li><a href="orb.html#orb.constants.FITS_CARD_MAX_STR_LENGTH">FITS_CARD_MAX_STR_LENGTH (in module orb.constants)</a>
 </li>
@@ -1811,6 +1829,8 @@
       <li><a href="orb.html#orb.fit.Model.free2val">free2val() (orb.fit.Model method)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.register.params.full_deep_frame">full_deep_frame (orb.astrometry.Astrometry.register parameter)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.parallel.timed_process.params.func">func (orb.utils.parallel.timed_process parameter)</a>
 </li>
       <li><a href="orb.html#orb.cutils.gaussian_array2d.params.fwhm">fwhm (orb.cutils.gaussian_array2d parameter)</a>
 
@@ -2042,20 +2062,22 @@
 </li>
       <li><a href="orb.html#orb.core.Logger.get_logdateformat">get_logdateformat() (orb.core.Logger method)</a>
 </li>
+      <li><a href="orb.html#orb.core.Logger.get_logfilter">get_logfilter() (orb.core.Logger method)</a>
+</li>
       <li><a href="orb.html#orb.core.Logger.get_logformat">get_logformat() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.html#orb.core.Logger.get_logging_state">get_logging_state() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file">get_mask_from_ds9_region_file() (in module orb.utils.misc)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.get_mean_image">get_mean_image() (orb.core.Cube method)</a>
 
       <ul>
         <li><a href="orb.html#orb.core.HDFCube.get_mean_image">(orb.core.HDFCube method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.get_median_image">get_median_image() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.photometry.get_mirror_transmission">get_mirror_transmission() (in module orb.utils.photometry)</a>
@@ -2096,8 +2118,6 @@
         <li><a href="orb.html#orb.core.FilterFile.get_observation_params">(orb.core.FilterFile method)</a>
 </li>
       </ul></li>
-      <li><a href="orb.utils.html#orb.utils.debug.get_open_fds">get_open_fds() (in module orb.utils.debug)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.photometry.get_optics_transmission">get_optics_transmission() (in module orb.utils.photometry)</a>
 </li>
       <li><a href="orb.html#orb.fit.Model.get_p_free">get_p_free() (orb.fit.Model method)</a>
@@ -2159,6 +2179,8 @@
 </li>
       </ul></li>
       <li><a href="orb.html#orb.astrometry.StarsParams.get_star_list">get_star_list() (orb.astrometry.StarsParams method)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.parallel.get_stats_str">get_stats_str() (in module orb.utils.parallel)</a>
 </li>
       <li><a href="orb.html#orb.core.OCube.get_theta_map">get_theta_map() (orb.core.OCube method)</a>
 </li>
@@ -2228,6 +2250,10 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.sincgauss1d_phased.params.h">(orb.utils.spectrum.sincgauss1d_phased parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.LogRecordStreamHandler.handle">handle() (orb.core.LogRecordStreamHandler method)</a>
+</li>
+      <li><a href="orb.html#orb.core.LogRecordStreamHandler.handleLogRecord">handleLogRecord() (orb.core.LogRecordStreamHandler method)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.validate.has_dtype">has_dtype() (in module orb.utils.validate)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.validate.has_len">has_len() (in module orb.utils.validate)</a>
@@ -2610,10 +2636,10 @@
         <li><a href="orb.utils.html#orb.utils.fit.vel2sigma.params.lines">(orb.utils.fit.vel2sigma parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.fit.check_fit_cm1.params.lines_cm1">lines_cm1 (orb.fit.check_fit_cm1 parameter)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Lines.get_line_cm1.params.lines_name">lines_name (orb.core.Lines.get_line_cm1 parameter)</a>
 
       <ul>
@@ -2621,6 +2647,8 @@
 </li>
       </ul></li>
       <li><a href="orb.html#orb.fit.LinesModel">LinesModel (class in orb.fit)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.listen">listen() (orb.core.Logger method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.load_dill">load_dill() (in module orb.utils.misc)</a>
 </li>
@@ -2650,9 +2678,15 @@
 </li>
       <li><a href="orb.html#orb.core.Logger.start_file_logging.params.logfile_path">logfile_path (orb.core.Logger.start_file_logging parameter)</a>
 </li>
+      <li><a href="orb.html#orb.core.Logger.start_logging.params.logfilter">logfilter (orb.core.Logger.start_logging parameter)</a>
+</li>
+      <li><a href="orb.html#orb.core.Logger.logfilters">logfilters (orb.core.Logger attribute)</a>
+</li>
       <li><a href="orb.html#orb.core.Logger">Logger (class in orb.core)</a>
 </li>
-      <li><a href="orb.html#orb.core.LoggingFilter">LoggingFilter (class in orb.core)</a>
+      <li><a href="orb.html#orb.core.LogRecordSocketReceiver">LogRecordSocketReceiver (class in orb.core)</a>
+</li>
+      <li><a href="orb.html#orb.core.LogRecordStreamHandler">LogRecordStreamHandler (class in orb.core)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.lorentzian1d">lorentzian1d() (in module orb.utils.spectrum)</a>
 </li>
@@ -2998,6 +3032,8 @@
 </li>
       <li><a href="orb.html#orb.core.ProgressBar.update.params.nolog">nolog (orb.core.ProgressBar.update parameter)</a>
 </li>
+      <li><a href="orb.html#orb.core.NoLoggingFilter">NoLoggingFilter (class in orb.core)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.fft.norton_beer_window">norton_beer_window() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.html#orb.core.Cube.get_zmean.params.nozero">nozero (orb.core.Cube.get_zmean parameter)</a>
@@ -3138,8 +3174,6 @@
 </li>
       <li><a href="orb.utils.html#module-orb.utils.astrometry">orb.utils.astrometry (module)</a>
 </li>
-      <li><a href="orb.utils.html#module-orb.utils.debug">orb.utils.debug (module)</a>
-</li>
       <li><a href="orb.utils.html#module-orb.utils.err">orb.utils.err (module)</a>
 </li>
       <li><a href="orb.utils.html#module-orb.utils.fft">orb.utils.fft (module)</a>
@@ -3151,6 +3185,8 @@
       <li><a href="orb.utils.html#module-orb.utils.image">orb.utils.image (module)</a>
 </li>
       <li><a href="orb.utils.html#module-orb.utils.io">orb.utils.io (module)</a>
+</li>
+      <li><a href="orb.utils.html#module-orb.utils.log">orb.utils.log (module)</a>
 </li>
       <li><a href="orb.utils.html#module-orb.utils.misc">orb.utils.misc (module)</a>
 </li>
@@ -3946,6 +3982,10 @@
         <li><a href="orb.utils.html#orb.utils.photometry.compute_star_central_pixel_value.params.seeing">(orb.utils.photometry.compute_star_central_pixel_value parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.LogRecordSocketReceiver.serve_until_stopped">serve_until_stopped() (orb.core.LogRecordSocketReceiver method)</a>
+</li>
+      <li><a href="orb.html#orb.core.LogRecordSocketReceiver.server_bind">server_bind() (orb.core.LogRecordSocketReceiver method)</a>
+</li>
       <li><a href="orb.html#orb.constants.SESAME_URL">SESAME_URL (in module orb.constants)</a>
 </li>
       <li><a href="orb.html#orb.core.Tools.set_config">set_config() (orb.core.Tools method)</a>
@@ -3967,6 +4007,8 @@
 </li>
       </ul></li>
       <li><a href="orb.html#orb.core.Waves.set_velocity">set_velocity() (orb.core.Waves method)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.log.setup_socket_logging">setup_socket_logging() (in module orb.utils.log)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.shift_frame">shift_frame() (in module orb.utils.image)</a>
 </li>
@@ -4140,6 +4182,8 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.sip_A">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.create_transform_maps.params.sip_B">sip_B (orb.cutils.create_transform_maps parameter)</a>
 
       <ul>
@@ -4148,8 +4192,6 @@
         <li><a href="orb.utils.html#orb.utils.image.transform_frame.params.sip_B">(orb.utils.image.transform_frame parameter)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.sip_im2pix">sip_im2pix() (in module orb.cutils)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.fit_sip.params.sip_order">sip_order (orb.astrometry.Astrometry.fit_sip parameter)</a>
@@ -4480,6 +4522,10 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.tilt_calibration_laser_map">tilt_calibration_laser_map() (in module orb.utils.image)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.parallel.timed_process">timed_process() (in module orb.utils.parallel)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.parallel.timed_process.params.timeout">timeout (orb.utils.parallel.timed_process parameter)</a>
+</li>
       <li><a href="orb.html#orb.cutils.sip_im2pix.params.tolerance">tolerance (orb.cutils.sip_im2pix parameter)</a>
 </li>
       <li><a href="orb.html#orb.core.Tools">Tools (class in orb.core)</a>
@@ -4509,6 +4555,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.unbin_image">unbin_image() (in module orb.cutils)</a>
+</li>
+      <li><a href="orb.html#orb.core.LogRecordStreamHandler.unPickle">unPickle() (orb.core.LogRecordStreamHandler method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.unwrap_phase_map0">unwrap_phase_map0() (in module orb.utils.image)</a>
 </li>
@@ -5071,7 +5119,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.2',
+            VERSION:'3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

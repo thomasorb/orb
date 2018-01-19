@@ -81,8 +81,6 @@ python modules via pip::
 The actual requirements file is (it can be found at the root of the
 archive):
 
-.. literalinclude:: ../requirements.txt
-
 Finally you can install orb with::
   
   python setup.py build_ext

@@ -36,8 +36,11 @@ CUtils is a set of C functions coded in Cython_ to improve their speed.
 
 """
 cimport cython
-import numpy as np
+import cython
+
 cimport numpy as np
+import numpy as np
+
 import time
 import scipy.ndimage.filters
 import scipy.optimize
