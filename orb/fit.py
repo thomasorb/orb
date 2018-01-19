@@ -1897,12 +1897,6 @@ class Params(dict):
     def __setattr__(self, key, value):
         raise Exception('Parameter is read-only')
 
-
-################################################
-##### CLASS RawInputParams #####################
-################################################
-class RawInputParams(object):
-    pass
     
 
 ################################################
@@ -1915,7 +1909,11 @@ class InputParams(object):
     FWHM_SDEV = 10 # channels
     SIGMA_SDEV = 10 # channels
 
-    
+
+    # simulate the use of this class as a dict converted class
+    def __getitem__(self, key): return getattr(self, key)
+    def __setitem__(self, key, value): return setattr(self, key, value)    
+       
     def __init__(self, step_nb):
         self.params = list()
         self.models = list()
@@ -1972,15 +1970,15 @@ class InputParams(object):
     def convert(self):
         """Convert class to a raw pickable format
         """
-        raw = RawInputParams()
-        raw.models = list(self.models)
-        raw.params = [dict(_iparams) for _iparams in self.params]
-        raw.allparams = dict()
-        raw.signal_range = list(self.signal_range)
-        raw.base_params = dict(self.base_params)
-        for _iparams in raw.params:
-            raw.allparams.update(_iparams)
-        raw.baseclass = self.__class__.__name__
+        raw = dict()
+        raw['models'] = list(self.models)
+        raw['params'] = [dict(_iparams) for _iparams in self.params]
+        raw['allparams'] = dict()
+        raw['signal_range'] = list(self.signal_range)
+        raw['base_params'] = dict(self.base_params)
+        for _iparams in raw['params']:
+            raw['allparams'].update(_iparams)
+        raw['baseclass'] = self.__class__.__name__
         return raw
    
     def add_continuum_model(self, **kwargs):
@@ -2327,11 +2325,11 @@ class Cm1InputParams(InputParams):
 
     def convert(self):
         raw = InputParams.convert(self)
-        raw.signal_range_cm1 = self.signal_range_cm1
-        raw.axis_min = self.axis_min
-        raw.axis_max = self.axis_max
-        raw.axis_step = self.axis_step        
-        raw.baseclass = self.__class__.__name__
+        raw['signal_range_cm1'] = self.signal_range_cm1
+        raw['axis_min'] = self.axis_min
+        raw['axis_max'] = self.axis_max
+        raw['axis_step'] = self.axis_step        
+        raw['baseclass'] = self.__class__.__name__
         return raw
 
 
@@ -2345,13 +2343,13 @@ class OutputParams(Params):
     def translate(self, inputparams, fitvector):
 
         all_inputparams = Params()
-        for iparams in inputparams.params:
+        for iparams in inputparams['params']:
             all_inputparams.update(iparams)
-        all_inputparams.update(inputparams.base_params)
+        all_inputparams.update(inputparams['base_params'])
 
-        if isinstance(inputparams, Cm1InputParams) or inputparams.baseclass == 'Cm1InputParams':
+        if isinstance(inputparams, Cm1InputParams) or inputparams['baseclass'] == 'Cm1InputParams':
             wavenumber = True
-        elif isinstance(inputparams, InputParams)  or inputparams.baseclass == 'InputParams':
+        elif isinstance(inputparams, InputParams)  or inputparams['baseclass'] == 'InputParams':
             wavenumber = None
         else:
             raise NotImplementedError()
@@ -2367,10 +2365,10 @@ class OutputParams(Params):
         ## create a formated version of the parameters:
         ## [N_LINES, (H, A, DX, FWHM, SIGMA, ALPHA)]
 
-        line_nb = np.size(all_inputparams.pos_guess)
+        line_nb = np.size(all_inputparams['pos_guess'])
         line_params = fitvector.models[0].get_p_val_as_array(self['fit_params'][0])
 
-        if all_inputparams.fmodel in ['sincgauss', 'sincphased', 'sincgaussphased']:
+        if all_inputparams['fmodel'] in ['sincgauss', 'sincphased', 'sincgaussphased']:
             line_params[:,3] = np.abs(line_params[:,3])
         else:
             nan_col = np.empty(line_nb, dtype=float)
@@ -2387,8 +2385,8 @@ class OutputParams(Params):
         else:
             pos_pix = utils.spectrum.fast_w2pix(
                 line_params[:,1],
-                inputparams.axis_min,
-                inputparams.axis_step)
+                inputparams['axis_min'],
+                inputparams['axis_step'])
 
         cont_model = fitvector.models[1]
         cont_model.set_p_val(self['fit_params'][1])
@@ -2451,8 +2449,8 @@ class OutputParams(Params):
             sigma_total_kms = line_params[:,4]
             sigma_apod_kms = utils.fit.sigma2vel(
                 utils.fft.apod2sigma(
-                    all_inputparams.apodization, line_params[:,3]) / inputparams.axis_step,
-                pos_wave, inputparams.axis_step)
+                    all_inputparams.apodization, line_params[:,3]) / inputparams['axis_step'],
+                pos_wave, inputparams['axis_step'])
 
             broadening = (gvar.fabs(sigma_total_kms**2
                                     - sigma_apod_kms**2))**0.5
@@ -2474,7 +2472,7 @@ class OutputParams(Params):
             sigma = utils.spectrum.fwhm_cm12nm(
                 utils.fit.vel2sigma(
                     line_params[:,4], line_params[:,2],
-                    inputparams.axis_step) * inputparams.axis_step,
+                    inputparams['axis_step']) * inputparams['axis_step'],
                 line_params[:,2]) * 10.
         else:
             fwhm = line_params[:,3]
@@ -2560,7 +2558,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
         rawip = ip.convert()
     else: rawip = ip
 
-    for iparams in rawip.params:
+    for iparams in rawip['params']:
         for key in iparams:
             if key in kwargs:
                 if kwargs[key] is not None:
@@ -2568,10 +2566,11 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                     logging.debug('last minute changed parameter {}: {}'.format(key, iparams[key]))
 
     logging.debug('fwhm guess: {}'.format(
-        gvar.mean(rawip.params[0]['fwhm_guess'])))
+        gvar.mean(rawip['params'][0]['fwhm_guess'])))
+
     fv = FitVector(spectrum,
-                   rawip.models, rawip.params,
-                   signal_range=rawip.signal_range,
+                   rawip['models'], rawip['params'],
+                   signal_range=rawip['signal_range'],
                    fit_tol=fit_tol,
                    snr_guess=snr_guess,
                    max_iter=max_iter)
@@ -2845,6 +2844,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
       * log(Gaussian Bayes Factor) [key: 'logGBF']
    
     """
+    raise NotImplementedError('must be checked')
     ip = InputParams(vector.shape[0])
 
     ip.add_lines_model(lines, fwhm_guess, **kwargs)
