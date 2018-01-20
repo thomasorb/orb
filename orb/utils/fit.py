@@ -25,6 +25,8 @@ import numpy as np
 import math
 import orb.constants
 import gvar
+import orb.utils.validate
+import copy
 
 def vel2sigma(vel, lines, axis_step):
     """Convert a velocity in km/s to a broadening in channels.
@@ -47,3 +49,63 @@ def sigma2vel(sigma, lines, axis_step):
     # convert sigma cm-1-> km/s
     vel = orb.constants.LIGHT_VEL_KMS * vel / lines
     return gvar.fabs(vel)
+
+
+def gvardict2pickdict(gvardict):
+    """Convert a dictionary containing gvars into a nice pickable
+    dictionary with couples of _mean / _sdev keys.
+
+    Use the pickdict2gvardict to rerturn to the original dictionary.
+    """
+    if not isinstance(gvardict, dict):
+        raise TypeError('gvardict must be a dict instance')
+    idict = dict()    
+    for ikey in gvardict:
+        try:
+            _mean = gvar.mean(gvardict[ikey])
+            _sdev = gvar.sdev(gvardict[ikey])
+            if not np.all(_sdev == 0.):
+                idict[ikey + '_mean'] = _mean
+                idict[ikey + '_sdev'] = _sdev
+            else: raise TypeError
+        except TypeError:
+            idict[ikey] = gvardict[ikey]
+        except AttributeError:
+            idict[ikey] = gvardict[ikey]
+    return idict
+
+def pickdict2gvardict(pickdict):
+    """Invert gvardict2pickdict."""
+    if not isinstance(pickdict, dict):
+        raise TypeError('pickdict must be a dict instance')
+    pickdict = copy.copy(pickdict)
+    idict = dict()
+    _all_keys = pickdict.keys()
+    for ikey in _all_keys:
+        if ikey in pickdict:
+            if '_mean' in ikey:
+                prefix = ikey[:-len('_mean')]
+                if prefix + '_sdev' in pickdict:
+                    idict[prefix] = gvar.gvar(pickdict[ikey], pickdict[prefix + '_sdev'])
+                    del pickdict[ikey]
+                    del pickdict[prefix + '_sdev']
+                else:
+                    idict[ikey] = pickdict[ikey]
+            else:
+                idict[ikey] = pickdict[ikey]
+    return idict
+
+def paramslist2pick(paramslist):
+    orb.utils.validate.is_iterable(paramslist, object_name='paramslist')
+    pick = list()
+    for idict in paramslist:
+        pick.append(gvardict2pickdict(idict))
+    return pick
+
+def pick2paramslist(picklist):
+    orb.utils.validate.is_iterable(picklist, object_name='picklist')
+    paramslist = list()
+    for idict in picklist:
+        paramslist.append(pickdict2gvardict(idict))
+    return paramslist
+

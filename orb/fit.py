@@ -153,6 +153,8 @@ class FitVector(object):
         self.models_operation = list()
         self.priors_list = list()
         self.priors_keys_list = list()
+        params = utils.fit.pick2paramslist(params)
+        
         for i in range(len(models)):
             # init each model
             self.models.append(models[i][0](params[i]))
@@ -1940,8 +1942,7 @@ class InputParams(object):
     def set_signal_range(self, rmin, rmax):    
         if (not (self.axis_min <= rmin < rmax)
             or not (rmin < rmax <= self.axis_max)):
-            raise utils.err.FitInputError('Check rmin and rmax values. Must be between {} and {}'.format(
-                self.axis_min, self.axis_max))
+            raise utils.err.FitInputError('Check rmin and rmax values. Must be between {} and {}'.format(self.axis_min, self.axis_max))
         
         signal_range_pix = utils.spectrum.fast_w2pix(
             np.array([rmin, rmax], dtype=float),
@@ -1968,14 +1969,21 @@ class InputParams(object):
         return kwargs
 
     def convert(self):
-        """Convert class to a raw pickable format
+        """Convert class to a pickable dict object
         """
         raw = dict()
         raw['models'] = list(self.models)
-        raw['params'] = [dict(_iparams) for _iparams in self.params]
-        raw['allparams'] = dict()
+        
+        _params = list()
+        # here we convert all gvars convertible arrays or values to a
+        # _mean / _sdev couple to avoid pickling gvars. These couples
+        # must then be merged again as gvars in FitVector.__init__()
+        raw['params'] = utils.fit.paramslist2pick(self.params)
+        
         raw['signal_range'] = list(self.signal_range)
         raw['base_params'] = dict(self.base_params)
+        
+        raw['allparams'] = dict()
         for _iparams in raw['params']:
             raw['allparams'].update(_iparams)
         raw['baseclass'] = self.__class__.__name__
@@ -2341,11 +2349,17 @@ class OutputParams(Params):
 
 
     def translate(self, inputparams, fitvector):
-
+        if isinstance(inputparams, InputParams):
+            inputparams = inputparams.convert()
+            
+        inputparams['params'] = utils.fit.pick2paramslist(inputparams['params'])
+        
         all_inputparams = Params()
+
         for iparams in inputparams['params']:
             all_inputparams.update(iparams)
         all_inputparams.update(inputparams['base_params'])
+
 
         if isinstance(inputparams, Cm1InputParams) or inputparams['baseclass'] == 'Cm1InputParams':
             wavenumber = True
@@ -2558,6 +2572,8 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
         rawip = ip.convert()
     else: rawip = ip
 
+    rawip['params'] = utils.fit.pick2paramslist(rawip['params'])
+
     for iparams in rawip['params']:
         for key in iparams:
             if key in kwargs:
@@ -2568,6 +2584,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
     logging.debug('fwhm guess: {}'.format(
         gvar.mean(rawip['params'][0]['fwhm_guess'])))
 
+    rawip['params'] = utils.fit.paramslist2pick(rawip['params'])
     fv = FitVector(spectrum,
                    rawip['models'], rawip['params'],
                    signal_range=rawip['signal_range'],
@@ -2576,6 +2593,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                    max_iter=max_iter)
 
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
+
 
     if fit != []:
         fit = OutputParams(fit)
