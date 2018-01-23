@@ -4978,7 +4978,6 @@ class OutHDFQuadCube(OutHDFCube):
 ##################################################
 #### CLASS Waves #################################
 ##################################################           
-
 class Waves(object):
     """Wave class that keep the best conversions possible from nm to cm1."""
 
@@ -5501,7 +5500,9 @@ class PhaseFile(Tools):
             
 
 
-
+#################################################
+#### CLASS Vector1d #############################
+#################################################
 class Vector1d(object):
     """Basic 1d vector management class.
 
@@ -5597,7 +5598,9 @@ class Vector1d(object):
         return self.data.__getitem__(key)
     
 
-
+#################################################
+#### CLASS Axis #################################
+#################################################
 class Axis(Vector1d):
     """Axis class"""
 
