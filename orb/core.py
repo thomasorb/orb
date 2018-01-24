@@ -3143,28 +3143,32 @@ class Indexer(Tools):
 #### CLASS Lines ################################
 #################################################
 class Lines(Tools):
-    """
-    This class manages emission lines names and wavelengths.
+    """This class manages emission lines names and wavelengths.
     
-    Spectral lines rest wavelength::
+    Spectral lines rest wavelength (excerpt, all recorded lines are in
+    self.air_lines_nm)::
     
-      ============ ======== =======
-        Em. Line    Vaccum    Air
-      ============ ======== =======
-      [OII]3726    372.709  372.603
-      [OII]3729    372.988  372.882
-      Hepsilon     397.119  397.007
-      Hdelta       410.292  410.176
-      Hgamma       434.169  434.047
-      [OIII]4363   436.444  436.321
-      Hbeta        486.269  486.133
-      [OIII]4959   496.030  495.892
-      [OIII]5007   500.824  500.684
-      [NII]6548    654.984  654.803
-      Halpha       656.461  656.280
-      [NII]6583    658.523  658.341
-      [SII]6716    671.832  671.647
-      [SII]6731    673.271  673.085
+      ============ =======
+        Em. Line     Air
+      ============ =======
+      [OII]3726    372.603
+      [OII]3729    372.882
+      Hepsilon     397.007
+      Hdelta       410.176
+      Hgamma       434.047
+      [OIII]4363   436.321
+      Hbeta        486.133
+      [OIII]4959   495.892
+      [OIII]5007   500.684
+      [NII]6548    654.803
+      Halpha       656.279
+      [NII]6583    658.341
+      [SII]6716    671.647
+      [SII]6731    673.085
+
+    Values were taken from NIST:
+    https://www.nist.gov/PhysRefData/ASD/lines_form.html
+
     """
     sky_lines_file_name = 'sky_lines.orb'
     """Name of the sky lines data file."""
@@ -3172,38 +3176,23 @@ class Lines(Tools):
     air_sky_lines_nm = None
     """Air sky lines wavelength"""
 
-
-    vac_lines_nm = {'[OII]3726':372.709,
-                    '[OII]3729':372.988,
-                    'Hepsilon':397.119,
-                    'Hdelta':410.292,
-                    'Hgamma':434.169,
-                    '[OIII]4363':436.444,
-                    'Hbeta':486.269,
-                    '[OIII]4959':496.030,
-                    '[OIII]5007':500.824,
-                    '[NII]6548':654.984,
-                    'Halpha':656.461,
-                    '[NII]6583':658.523,
-                    '[SII]6716':671.832,
-                    '[SII]6731':673.271}
-    """Vacuum emission lines wavelength"""
     
     air_lines_nm = {'[OII]3726':372.603,
                     '[OII]3729':372.882,
                     '[NeIII]3869':386.875,
-                    'Hepsilon':397.007,
-                    'Hdelta':410.176,
-                    'Hgamma':434.047,
+                    'Hepsilon':397.0075,
+                    
+                    'Hdelta':410.1734,
+                    'Hgamma':434.0472,
                     '[OIII]4363':436.321,
-                    'Hbeta':486.133,
+                    'Hbeta':486.135,
                     '[OIII]4959':495.891,
                     '[OIII]5007':500.684,
                     'HeI5876':587.567,
                     '[OI]6300':630.030,
                     '[SIII]6312':631.21,
                     '[NII]6548':654.803,
-                    'Halpha':656.280,
+                    'Halpha':656.279,
                     '[NII]6583':658.341,
                     'HeI6678':667.815,
                     '[SII]6716':671.647,
@@ -3215,7 +3204,6 @@ class Lines(Tools):
                     '[ArIII]7751':775.112}
     """Air emission lines wavelength"""
 
-    vac_lines_name = None
     air_lines_name = None
     
     def __init__(self, **kwargs):
@@ -3229,10 +3217,6 @@ class Lines(Tools):
         self.air_lines_name = dict()
         for ikey in self.air_lines_nm.iterkeys():
             self.air_lines_name[str(self.air_lines_nm[ikey])] = ikey
-
-        self.vac_lines_name = dict()
-        for ikey in self.vac_lines_nm.iterkeys():
-            self.vac_lines_name[str(self.vac_lines_nm[ikey])] = ikey
             
         self._read_sky_file()
         
@@ -3350,26 +3334,19 @@ class Lines(Tools):
             return lines_nm, lines_name
         
 
-    def get_line_nm(self, lines_name, air=True, round_ang=False):
+    def get_line_nm(self, lines_name, round_ang=False):
         """Return the wavelength of a line or a list of lines
 
         :param lines_name: List of line names
-
-        :param air: (Optional) If True, air rest wavelength are
-          returned. If False, vacuum rest wavelength are
-          returned (default True).
 
         :param round_ang: (Optional) If True return the rounded
           wavelength of the line in angstrom (default False)
         """
         if isinstance(lines_name, str):
             lines_name = [lines_name]
-        if air:
-            lines_nm = [self.air_lines_nm[line_name]
-                        for line_name in lines_name]
-        else:
-            lines_nm = [self.vac_lines_nm[line_name]
-                        for line_name in lines_name]
+
+        lines_nm = [self.air_lines_nm[line_name]
+                    for line_name in lines_name]
 
         if len(lines_nm) == 1:
             lines_nm = lines_nm[0]
@@ -3379,45 +3356,30 @@ class Lines(Tools):
         else:
             return lines_nm
 
-    def get_line_cm1(self, lines_name, air=True, round_ang=False):
+    def get_line_cm1(self, lines_name, round_ang=False):
         """Return the wavenumber of a line or a list of lines
 
         :param lines_name: List of line names
-
-        :param air: (Optional) If True, air rest wavenumber are
-          returned. If False, vacuum rest wavenumber are
-          returned (default True).
         """
         return utils.spectrum.nm2cm1(
-            self.get_line_nm(lines_name, air=air))
+            self.get_line_nm(lines_name))
 
-    def get_line_name(self, lines, air=True):
+    def get_line_name(self, lines):
         """Return the name of a line or a list of lines given their
         wavelength.
 
         :param lines: List of lines wavelength
-
-        :param air: (Optional) If True, rest wavelength is considered
-          to be in air. If False it is considered to be in
-          vacuum (default True).
         """
         if isinstance(lines, (float, int, np.float128)):
             lines = [lines]
 
         names = list()
-        if air:
-            for iline in lines:
-                if str(iline) in self.air_lines_name:
-                    names.append(self.air_lines_name[str(iline)])
-                else:
-                    names.append('None')
+        for iline in lines:
+            if str(iline) in self.air_lines_name:
+                names.append(self.air_lines_name[str(iline)])
+            else:
+                names.append('None')
 
-        else:
-            for iline in lines:
-                if str(iline) in self.vac_lines_name:
-                    names.append(self.vac_lines_name[str(iline)])
-                else:
-                    names.append('None')
 
         if len(names) == 1: return names[0]
         else: return names
