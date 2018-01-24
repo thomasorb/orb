@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
@@ -71,7 +72,7 @@ def is_xdarray(obj, ndim, raise_exception=True, object_name='object'):
     
     err_msg = '{} is not a {}d array'.format(object_name, ndim)
 
-    if not is_ndarray(obj, raise_exception=raise_exception):
+    if not is_ndarray(obj, raise_exception=raise_exception, object_name=object_name):
         return False
 
     if obj.ndim == ndim:
@@ -87,7 +88,7 @@ def is_1darray(obj, raise_exception=True, object_name='object'):
     :param obj: object to validate
     :param raise_exception: If True raise an exception else raise a warning.
     """
-    return is_xdarray(obj, 1, raise_exception=raise_exception)
+    return is_xdarray(obj, 1, raise_exception=raise_exception, object_name=object_name)
 
 def is_2darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 2d numpy.ndarray
