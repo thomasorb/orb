@@ -540,7 +540,7 @@ def fit_map_theta(data_map, err_map, theta_map):
 
     :param data_map: Data map to fit
     :param err_map: Uncertainty on the data map
-    :param theta_map: Theta map
+    :param theta_map: Theta map (in degree)
     """
     orb.utils.validate.is_2darray(data_map)
     orb.utils.validate.have_same_shape((data_map, err_map, theta_map))
@@ -577,7 +577,14 @@ def fit_map_theta(data_map, err_map, theta_map):
     w = 1. / np.array(sdevs)
     w /= np.nanmax(w)
     model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=None)
-    model_err = interpolate.UnivariateSpline(okthetas, sdevs, ext=0, k=3, s=None)
+    model_err = interpolate.UnivariateSpline(okthetas, sdevs, w=w, ext=0, k=3, s=None)
+
+    # import pylab as pl
+    # pl.plot(okthetas, means)
+    # pl.plot(okthetas, model(okthetas))
+    # #pl.plot(okthetas, means)
+    # pl.show()
+    
 
     err = (model(theta_map) - data_map)[np.nonzero(pixmap)]
     logging.info('modeling error: {} (uncertainty on data: {})'.format(
