@@ -3166,8 +3166,8 @@ class Lines(Tools):
       [SII]6716    671.647
       [SII]6731    673.085
 
-    Values were taken from NIST:
-    https://www.nist.gov/PhysRefData/ASD/lines_form.html
+    .. note: Values were taken from NIST: https://www.nist.gov/PhysRefData/ASD/lines_form.html and https://physics.nist.gov/cgi-bin/ASD/lines1.pl?spectra=H%20I&limits_type=0&unit=1&submit=Retrieve%20Data&de=0&format=0&line_out=0&en_unit=0&output=0&bibrefs=1&page_size=15&show_obs_wl=1&show_calc_wl=1&unc_out=1&order_out=0&show_av=2&tsb_value=0&A_out=0&intens_out=on&allowed_out=1&forbid_out=1&conf_out=on&term_out=on&enrg_out=on&J_out=on&level_id=001001.001.000059
+      Ritz wavelength was used when more precise than observed wavelength
 
     """
     sky_lines_file_name = 'sky_lines.orb'
@@ -3177,31 +3177,51 @@ class Lines(Tools):
     """Air sky lines wavelength"""
 
     
-    air_lines_nm = {'[OII]3726':372.603,
-                    '[OII]3729':372.882,
-                    '[NeIII]3869':386.875,
-                    'Hepsilon':397.0075,
-                    
-                    'Hdelta':410.1734,
-                    'Hgamma':434.0472,
-                    '[OIII]4363':436.321,
-                    'Hbeta':486.135,
-                    '[OIII]4959':495.891,
-                    '[OIII]5007':500.684,
-                    'HeI5876':587.567,
-                    '[OI]6300':630.030,
-                    '[SIII]6312':631.21,
-                    '[NII]6548':654.803,
-                    'Halpha':656.279,
-                    '[NII]6583':658.341,
-                    'HeI6678':667.815,
-                    '[SII]6716':671.647,
-                    '[SII]6731':673.085,
-                    'HeI7065':706.528,
-                    '[ArIII]7136':713.578,
-                    '[OII]7120':731.965,
-                    '[OII]7130':733.016,
-                    '[ArIII]7751':775.112}
+    air_lines_nm = {
+        'H15': 371.19774,
+        'H14': 372.19449,
+        'H13': 373.43746,
+        'H12': 375.01584,
+        'H11': 377.06368,
+        'H10': 379.79044,
+        'H9': 383.53909,
+        'H8': 388.90557,
+        'Hepsilon':397.00788,
+        'Hdelta':410.17415,
+        'Hgamma':434.0471,
+        'Hbeta':486.1333,
+        'Halpha':656.2819,
+        '[OII]3726':372.7319, 
+        '[OII]3729':372.9221, 
+        '[NeIII]3869':386.876, 
+        '[OIII]4363':436.3209,
+        '[OIII]4959':495.8911,
+        '[OIII]5007':500.6843,
+        'HeI5876':587.567, 
+        '[OI]6300':630.0304, 
+        '[SIII]6312':631.206, 
+        '[NII]6548':654.805,
+        '[NII]6583':658.345, 
+        'HeI6678':667.815170,
+        '[SII]6716':671.6440,
+        '[SII]6731':673.0816, 
+        'HeI7065':706.521530,
+        '[ArIII]7136':713.579,
+        '[OII]7320':731.992, 
+        '[OII]7330':733.019, 
+        '[ArIII]7751':775.111
+    }
+
+    other_names = {
+        'Halpha': ['H3'],
+        'Hbeta': ['H4'],
+        'Hgamma': ['H5'],
+        'Hdelta': ['H6'],
+        'Hepsilon': ['H7'],
+        '[OII]3726': ['[OII]3727'],
+        '[NII]6583': ['[NII]6584'],
+        '[SII]6716': ['[SII]6717'],
+    }
     """Air emission lines wavelength"""
 
     air_lines_name = None
@@ -3217,6 +3237,12 @@ class Lines(Tools):
         self.air_lines_name = dict()
         for ikey in self.air_lines_nm.iterkeys():
             self.air_lines_name[str(self.air_lines_nm[ikey])] = ikey
+
+        for ikey in self.other_names:
+            if ikey in self.air_lines_nm:
+                for iname in self.other_names[ikey]:
+                    self.air_lines_nm[iname] = float(self.air_lines_nm[ikey])
+            else: raise ValueError('Bad key in self.other_names: {}'.format(ikey))
             
         self._read_sky_file()
         
