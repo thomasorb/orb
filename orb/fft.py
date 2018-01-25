@@ -185,6 +185,20 @@ class Interferogram(core.Vector1d):
             
         return spec
 
+    def get_spectrum(self):
+        """Classical spectrum computation method. Returns a Spectrum instance."""
+        new_interf = self.copy()
+        new_interf.subtract_mean()
+        return new_interf.transform()
+
+    def get_phase(self):
+        """Classical phase computation method. Returns a Phase instance."""
+        new_interf = self.copy()
+        new_interf = new_interf.symmetric()
+        new_interf.subtract_mean()
+        new_spectrum = new_interf.transform()
+        return new_spectrum.get_phase().cleaned()
+
 class Cm1Vector1d(core.Vector1d):
     """General 1d vector class for data projected on a cm-1 axis
     (e.g. complex spectrum, phase)
@@ -213,6 +227,13 @@ class Cm1Vector1d(core.Vector1d):
 
         if self.axis.step_nb != self.step_nb:
             raise ValueError('axis must have the same size as spectrum')
+
+    def copy(self):
+        """Return a copy of the instance"""
+        return self.__class__(
+            np.copy(self.data),
+            np.copy(self.axis.data),
+            params=self.params.convert())
 
     def reverse(self):
         """Reverse data. Do not reverse the axis.
@@ -245,14 +266,21 @@ class Phase(Cm1Vector1d):
         zmin, zmax = np.array(self.get_filter_bandpass_pix()).astype(int)
         data = np.empty_like(self.data)
         data.fill(np.nan)
-        ph = utils.vector.robust_unwrap(np.fmod(self.data[zmin:zmax], 2*np.pi), 2*np.pi)
+        ph = utils.vector.robust_unwrap(self.data[zmin:zmax], 2*np.pi)
         if np.any(np.isnan(ph)):
             ph.fill(np.nan)
         else:
-            # set the first sample at the smallest positive modulo pi value
+            # set the first sample at the smallest positive modulo pi
+            # value (order 0 is modulo pi)
             new_orig = np.fmod(ph[0], np.pi)
             while new_orig < 0:
                 new_orig += np.pi
+            if np.abs(new_orig) > np.abs(new_orig - np.pi):
+                new_orig -= np.pi
+            elif np.abs(new_orig) > np.abs(new_orig + np.pi):
+                new_orig += np.pi
+                
+                
             ph -= ph[0]
             ph += new_orig
             
@@ -419,7 +447,8 @@ class Spectrum(Cm1Vector1d):
     def zpd_shift(self, shift):
         """correct spectrum phase from shifted zpd"""
         self.correct_phase(
-            np.arange(self.step_nb, dtype=float) * shift * np.pi / (self.step_nb - 1))
+            np.arange(self.step_nb, dtype=float)
+            * shift * np.pi / (self.step_nb)) # not (self.step_nb - 1) !
         
     def correct_phase(self, phase):
         """Correct spectrum phase"""

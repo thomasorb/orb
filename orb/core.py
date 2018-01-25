@@ -414,7 +414,11 @@ class ROParams(dict):
         :param value: Item value.
         """
         if key in self:
-            warnings.warn('Parameter already defined')
+            warnings.warn('Parameter {} already defined')
+            if self[key] == value:
+                warnings.warn('Value unchanged')
+            else:
+                warnings.warn('Old value={} / new_value={}'.format(self[key], value))
         dict.__setitem__(self, key, value)
 
     def __getstate__(self):
