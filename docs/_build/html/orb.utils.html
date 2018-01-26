@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>orb.utils package &mdash; Orb 3.3 documentation</title>
+  <title>orb.utils package &mdash; Orb 3.4 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.3 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.4 documentation" href="index.html"/>
         <link rel="up" title="orb package" href="orb.html"/>
         <link rel="next" title="Changelog" href="changelog.html"/>
         <link rel="prev" title="orb.ext package" href="orb.ext.html"/> 
@@ -74,7 +74,7 @@
             
             
               <div class="version">
-                3.3
+                3.4
               </div>
             
           
@@ -2362,6 +2362,30 @@ be specified using the keywords : FILTER_MIN and FILTER_MAX:</p>
 </div>
 <div class="section" id="module-orb.utils.fit">
 <span id="orb-utils-fit-module"></span><h2>orb.utils.fit module<a class="headerlink" href="#module-orb.utils.fit" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="orb.utils.fit.gvardict2pickdict">
+<code class="descclassname">orb.utils.fit.</code><code class="descname">gvardict2pickdict</code><span class="sig-paren">(</span><em>gvardict</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.gvardict2pickdict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a dictionary containing gvars into a nice pickable
+dictionary with couples of _mean / _sdev keys.</p>
+<p>Use the pickdict2gvardict to rerturn to the original dictionary.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.fit.paramslist2pick">
+<code class="descclassname">orb.utils.fit.</code><code class="descname">paramslist2pick</code><span class="sig-paren">(</span><em>paramslist</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.paramslist2pick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.fit.pick2paramslist">
+<code class="descclassname">orb.utils.fit.</code><code class="descname">pick2paramslist</code><span class="sig-paren">(</span><em>picklist</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.pick2paramslist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="orb.utils.fit.pickdict2gvardict">
+<code class="descclassname">orb.utils.fit.</code><code class="descname">pickdict2gvardict</code><span class="sig-paren">(</span><em>pickdict</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.pickdict2gvardict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invert gvardict2pickdict.</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="orb.utils.fit.sigma2vel">
 <code class="descclassname">orb.utils.fit.</code><code class="descname">sigma2vel</code><span class="sig-paren">(</span><em>sigma</em>, <em>lines</em>, <em>axis_step</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.sigma2vel" title="Permalink to this definition">¶</a></dt>
@@ -5523,7 +5547,7 @@ columns. Else only ra, dec and Mag are returned (default False).</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.3',
+            VERSION:'3.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

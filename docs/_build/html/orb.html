@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>orb package &mdash; Orb 3.3 documentation</title>
+  <title>orb package &mdash; Orb 3.4 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.3 documentation" href="index.html"/>
+    <link rel="top" title="Orb 3.4 documentation" href="index.html"/>
         <link rel="next" title="orb.ext package" href="orb.ext.html"/>
         <link rel="prev" title="ORB installation" href="installation.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                3.3
+                3.4
               </div>
             
           
@@ -2067,24 +2067,25 @@ set to None.</td>
 <em class="property">class </em><code class="descclassname">orb.core.</code><code class="descname">Lines</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#orb.core.Tools" title="orb.core.Tools"><code class="xref py py-class docutils literal"><span class="pre">orb.core.Tools</span></code></a></p>
 <p>This class manages emission lines names and wavelengths.</p>
-<p>Spectral lines rest wavelength:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">============</span> <span class="o">========</span> <span class="o">=======</span>
-  <span class="n">Em</span><span class="o">.</span> <span class="n">Line</span>    <span class="n">Vaccum</span>    <span class="n">Air</span>
-<span class="o">============</span> <span class="o">========</span> <span class="o">=======</span>
-<span class="p">[</span><span class="n">OII</span><span class="p">]</span><span class="mi">3726</span>    <span class="mf">372.709</span>  <span class="mf">372.603</span>
-<span class="p">[</span><span class="n">OII</span><span class="p">]</span><span class="mi">3729</span>    <span class="mf">372.988</span>  <span class="mf">372.882</span>
-<span class="n">Hepsilon</span>     <span class="mf">397.119</span>  <span class="mf">397.007</span>
-<span class="n">Hdelta</span>       <span class="mf">410.292</span>  <span class="mf">410.176</span>
-<span class="n">Hgamma</span>       <span class="mf">434.169</span>  <span class="mf">434.047</span>
-<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">4363</span>   <span class="mf">436.444</span>  <span class="mf">436.321</span>
-<span class="n">Hbeta</span>        <span class="mf">486.269</span>  <span class="mf">486.133</span>
-<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">4959</span>   <span class="mf">496.030</span>  <span class="mf">495.892</span>
-<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">5007</span>   <span class="mf">500.824</span>  <span class="mf">500.684</span>
-<span class="p">[</span><span class="n">NII</span><span class="p">]</span><span class="mi">6548</span>    <span class="mf">654.984</span>  <span class="mf">654.803</span>
-<span class="n">Halpha</span>       <span class="mf">656.461</span>  <span class="mf">656.280</span>
-<span class="p">[</span><span class="n">NII</span><span class="p">]</span><span class="mi">6583</span>    <span class="mf">658.523</span>  <span class="mf">658.341</span>
-<span class="p">[</span><span class="n">SII</span><span class="p">]</span><span class="mi">6716</span>    <span class="mf">671.832</span>  <span class="mf">671.647</span>
-<span class="p">[</span><span class="n">SII</span><span class="p">]</span><span class="mi">6731</span>    <span class="mf">673.271</span>  <span class="mf">673.085</span>
+<p>Spectral lines rest wavelength (excerpt, all recorded lines are in
+self.air_lines_nm):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">============</span> <span class="o">=======</span>
+  <span class="n">Em</span><span class="o">.</span> <span class="n">Line</span>     <span class="n">Air</span>
+<span class="o">============</span> <span class="o">=======</span>
+<span class="p">[</span><span class="n">OII</span><span class="p">]</span><span class="mi">3726</span>    <span class="mf">372.603</span>
+<span class="p">[</span><span class="n">OII</span><span class="p">]</span><span class="mi">3729</span>    <span class="mf">372.882</span>
+<span class="n">Hepsilon</span>     <span class="mf">397.007</span>
+<span class="n">Hdelta</span>       <span class="mf">410.176</span>
+<span class="n">Hgamma</span>       <span class="mf">434.047</span>
+<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">4363</span>   <span class="mf">436.321</span>
+<span class="n">Hbeta</span>        <span class="mf">486.133</span>
+<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">4959</span>   <span class="mf">495.892</span>
+<span class="p">[</span><span class="n">OIII</span><span class="p">]</span><span class="mi">5007</span>   <span class="mf">500.684</span>
+<span class="p">[</span><span class="n">NII</span><span class="p">]</span><span class="mi">6548</span>    <span class="mf">654.803</span>
+<span class="n">Halpha</span>       <span class="mf">656.279</span>
+<span class="p">[</span><span class="n">NII</span><span class="p">]</span><span class="mi">6583</span>    <span class="mf">658.341</span>
+<span class="p">[</span><span class="n">SII</span><span class="p">]</span><span class="mi">6716</span>    <span class="mf">671.647</span>
+<span class="p">[</span><span class="n">SII</span><span class="p">]</span><span class="mi">6731</span>    <span class="mf">673.085</span>
 </pre></div>
 </div>
 <dl class="attribute">
@@ -2094,9 +2095,8 @@ set to None.</td>
 
 <dl class="attribute">
 <dt id="orb.core.Lines.air_lines_nm">
-<code class="descname">air_lines_nm</code><em class="property"> = {'Halpha': 656.28, 'Hbeta': 486.133, 'Hdelta': 410.176, 'HeI5876': 587.567, 'HeI6678': 667.815, 'HeI7065': 706.528, 'Hepsilon': 397.007, 'Hgamma': 434.047, '[ArIII]7136': 713.578, '[ArIII]7751': 775.112, '[NII]6548': 654.803, '[NII]6583': 658.341, '[NeIII]3869': 386.875, '[OIII]4363': 436.321, '[OIII]4959': 495.891, '[OIII]5007': 500.684, '[OII]3726': 372.603, '[OII]3729': 372.882, '[OII]7120': 731.965, '[OII]7130': 733.016, '[OI]6300': 630.03, '[SIII]6312': 631.21, '[SII]6716': 671.647, '[SII]6731': 673.085}</em><a class="headerlink" href="#orb.core.Lines.air_lines_nm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Air emission lines wavelength</p>
-</dd></dl>
+<code class="descname">air_lines_nm</code><em class="property"> = {'H10': 379.79044, 'H11': 377.06368, 'H12': 375.01584, 'H13': 373.43746, 'H14': 372.19449, 'H15': 371.19774, 'H8': 388.90557, 'H9': 383.53909, 'Halpha': 656.2819, 'Hbeta': 486.1333, 'Hdelta': 410.17415, 'HeI5876': 587.567, 'HeI6678': 667.81517, 'HeI7065': 706.52153, 'Hepsilon': 397.00788, 'Hgamma': 434.0471, '[ArIII]7136': 713.579, '[ArIII]7751': 775.111, '[NII]6548': 654.805, '[NII]6583': 658.345, '[NeIII]3869': 386.876, '[OIII]4363': 436.3209, '[OIII]4959': 495.8911, '[OIII]5007': 500.6843, '[OII]3726': 372.7319, '[OII]3729': 372.9221, '[OII]7320': 731.992, '[OII]7330': 733.019, '[OI]6300': 630.0304, '[SIII]6312': 631.206, '[SII]6716': 671.644, '[SII]6731': 673.0816}</em><a class="headerlink" href="#orb.core.Lines.air_lines_nm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="orb.core.Lines.air_sky_lines_nm">
@@ -2106,19 +2106,13 @@ set to None.</td>
 
 <dl class="method">
 <dt id="orb.core.Lines.get_line_cm1">
-<code class="descname">get_line_cm1</code><span class="sig-paren">(</span><em>lines_name</em>, <em>air=True</em>, <em>round_ang=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.get_line_cm1" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_line_cm1</code><span class="sig-paren">(</span><em>lines_name</em>, <em>round_ang=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.get_line_cm1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the wavenumber of a line or a list of lines</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.core.Lines.get_line_cm1.params.lines_name"></span><strong>lines_name</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_cm1.params.lines_name">¶</a> – List of line names</li>
-<li><span class="target" id="orb.core.Lines.get_line_cm1.params.air"></span><strong>air</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_cm1.params.air">¶</a> – (Optional) If True, air rest wavenumber are
-returned. If False, vacuum rest wavenumber are
-returned (default True).</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.core.Lines.get_line_cm1.params.lines_name"></span><strong>lines_name</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_cm1.params.lines_name">¶</a> – List of line names</td>
 </tr>
 </tbody>
 </table>
@@ -2126,20 +2120,14 @@ returned (default True).</li>
 
 <dl class="method">
 <dt id="orb.core.Lines.get_line_name">
-<code class="descname">get_line_name</code><span class="sig-paren">(</span><em>lines</em>, <em>air=True</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.get_line_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_line_name</code><span class="sig-paren">(</span><em>lines</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.get_line_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the name of a line or a list of lines given their
 wavelength.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><span class="target" id="orb.core.Lines.get_line_name.params.lines"></span><strong>lines</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_name.params.lines">¶</a> – List of lines wavelength</li>
-<li><span class="target" id="orb.core.Lines.get_line_name.params.air"></span><strong>air</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_name.params.air">¶</a> – (Optional) If True, rest wavelength is considered
-to be in air. If False it is considered to be in
-vacuum (default True).</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><span class="target" id="orb.core.Lines.get_line_name.params.lines"></span><strong>lines</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_name.params.lines">¶</a> – List of lines wavelength</td>
 </tr>
 </tbody>
 </table>
@@ -2147,7 +2135,7 @@ vacuum (default True).</li>
 
 <dl class="method">
 <dt id="orb.core.Lines.get_line_nm">
-<code class="descname">get_line_nm</code><span class="sig-paren">(</span><em>lines_name</em>, <em>air=True</em>, <em>round_ang=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.get_line_nm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_line_nm</code><span class="sig-paren">(</span><em>lines_name</em>, <em>round_ang=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.get_line_nm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the wavelength of a line or a list of lines</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2155,9 +2143,6 @@ vacuum (default True).</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><span class="target" id="orb.core.Lines.get_line_nm.params.lines_name"></span><strong>lines_name</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_nm.params.lines_name">¶</a> – List of line names</li>
-<li><span class="target" id="orb.core.Lines.get_line_nm.params.air"></span><strong>air</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_nm.params.air">¶</a> – (Optional) If True, air rest wavelength are
-returned. If False, vacuum rest wavelength are
-returned (default True).</li>
 <li><span class="target" id="orb.core.Lines.get_line_nm.params.round_ang"></span><strong>round_ang</strong><a class="paramlink headerlink reference internal" href="#orb.core.Lines.get_line_nm.params.round_ang">¶</a> – (Optional) If True return the rounded
 wavelength of the line in angstrom (default False)</li>
 </ul>
@@ -2191,6 +2176,12 @@ retrieve. If 0 all lines are given (default 0).</li>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="orb.core.Lines.other_names">
+<code class="descname">other_names</code><em class="property"> = {'Halpha': ['H3'], 'Hbeta': ['H4'], 'Hdelta': ['H6'], 'Hepsilon': ['H7'], 'Hgamma': ['H5'], '[NII]6583': ['[NII]6584'], '[OII]3726': ['[OII]3727'], '[SII]6716': ['[SII]6717']}</em><a class="headerlink" href="#orb.core.Lines.other_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Air emission lines wavelength</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="orb.core.Lines.round_nm2ang">
 <code class="descname">round_nm2ang</code><span class="sig-paren">(</span><em>nm</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Lines.round_nm2ang" title="Permalink to this definition">¶</a></dt>
@@ -2209,17 +2200,6 @@ retrieve. If 0 all lines are given (default 0).</li>
 <dt id="orb.core.Lines.sky_lines_file_name">
 <code class="descname">sky_lines_file_name</code><em class="property"> = 'sky_lines.orb'</em><a class="headerlink" href="#orb.core.Lines.sky_lines_file_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the sky lines data file.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="orb.core.Lines.vac_lines_name">
-<code class="descname">vac_lines_name</code><em class="property"> = None</em><a class="headerlink" href="#orb.core.Lines.vac_lines_name" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="orb.core.Lines.vac_lines_nm">
-<code class="descname">vac_lines_nm</code><em class="property"> = {'Halpha': 656.461, 'Hbeta': 486.269, 'Hdelta': 410.292, 'Hepsilon': 397.119, 'Hgamma': 434.169, '[NII]6548': 654.984, '[NII]6583': 658.523, '[OIII]4363': 436.444, '[OIII]4959': 496.03, '[OIII]5007': 500.824, '[OII]3726': 372.709, '[OII]3729': 372.988, '[SII]6716': 671.832, '[SII]6731': 673.271}</em><a class="headerlink" href="#orb.core.Lines.vac_lines_nm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Vacuum emission lines wavelength</p>
 </dd></dl>
 
 </dd></dl>
@@ -2320,7 +2300,7 @@ according to whatever policy is configured locally.</p>
 
 <dl class="attribute">
 <dt id="orb.core.Logger.logfilters">
-<code class="descname">logfilters</code><em class="property"> = {'default': &lt;orb.core.ExtDebugLoggingFilter object at 0x7f038dfa4fd0&gt;, 'extdebug': &lt;orb.core.ExtDebugLoggingFilter object at 0x7f038dfc10d0&gt;, 'extinfo': &lt;orb.core.ExtInfoLoggingFilter object at 0x7f038dfc1090&gt;, 'none': &lt;orb.core.NoLoggingFilter object at 0x7f038dfc1110&gt;}</em><a class="headerlink" href="#orb.core.Logger.logfilters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">logfilters</code><em class="property"> = {'default': &lt;orb.core.ExtDebugLoggingFilter object at 0x7fd414aa65d0&gt;, 'extdebug': &lt;orb.core.ExtDebugLoggingFilter object at 0x7fd414aa6690&gt;, 'extinfo': &lt;orb.core.ExtInfoLoggingFilter object at 0x7fd414aa6650&gt;, 'none': &lt;orb.core.NoLoggingFilter object at 0x7fd414aa66d0&gt;}</em><a class="headerlink" href="#orb.core.Logger.logfilters" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -5074,7 +5054,7 @@ None).</li>
 <dl class="method">
 <dt id="orb.fit.InputParams.convert">
 <code class="descname">convert</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.InputParams.convert" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert class to a raw pickable format</p>
+<dd><p>Convert class to a pickable dict object</p>
 </dd></dl>
 
 <dl class="method">
@@ -5632,12 +5612,6 @@ input and output.</p>
 elements can be accessed like attributes.</p>
 </dd></dl>
 
-<dl class="class">
-<dt id="orb.fit.RawInputParams">
-<em class="property">class </em><code class="descclassname">orb.fit.</code><code class="descname">RawInputParams</code><a class="headerlink" href="#orb.fit.RawInputParams" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-</dd></dl>
-
 <dl class="function">
 <dt id="orb.fit.check_fit">
 <code class="descclassname">orb.fit.</code><code class="descname">check_fit</code><span class="sig-paren">(</span><em>lines</em>, <em>amp</em>, <em>fwhm</em>, <em>step_nb</em>, <em>snr</em>, <em>line_shift=0</em>, <em>sigma=0</em>, <em>alpha=0</em>, <em>fmodel='sincgauss'</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.check_fit" title="Permalink to this definition">¶</a></dt>
@@ -5943,7 +5917,7 @@ in channels.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.3',
+            VERSION:'3.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

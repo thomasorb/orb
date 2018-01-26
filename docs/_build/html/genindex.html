@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Orb 3.3 documentation</title>
+  <title>Index &mdash; Orb 3.4 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
         <link rel="index" title="Index"
               href="#"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Orb 3.3 documentation" href="index.html"/> 
+    <link rel="top" title="Orb 3.4 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                3.3
+                3.4
               </div>
             
           
@@ -336,14 +336,6 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.misc.aggregate_pixels">aggregate_pixels() (in module orb.utils.misc)</a>
 </li>
-      <li><a href="orb.html#orb.core.Lines.get_line_cm1.params.air">air (orb.core.Lines.get_line_cm1 parameter)</a>
-
-      <ul>
-        <li><a href="orb.html#orb.core.Lines.get_line_name.params.air">(orb.core.Lines.get_line_name parameter)</a>
-</li>
-        <li><a href="orb.html#orb.core.Lines.get_line_nm.params.air">(orb.core.Lines.get_line_nm parameter)</a>
-</li>
-      </ul></li>
       <li><a href="orb.html#orb.core.Lines.air_lines_name">air_lines_name (orb.core.Lines attribute)</a>
 </li>
       <li><a href="orb.html#orb.core.Lines.air_lines_nm">air_lines_nm (orb.core.Lines attribute)</a>
@@ -2070,14 +2062,14 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file">get_mask_from_ds9_region_file() (in module orb.utils.misc)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.get_mean_image">get_mean_image() (orb.core.Cube method)</a>
 
       <ul>
         <li><a href="orb.html#orb.core.HDFCube.get_mean_image">(orb.core.HDFCube method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.core.Cube.get_median_image">get_median_image() (orb.core.Cube method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.photometry.get_mirror_transmission">get_mirror_transmission() (in module orb.utils.photometry)</a>
@@ -2213,6 +2205,8 @@
       <li><a href="orb.utils.html#orb.utils.astrometry.guess">guess() (in module orb.utils.astrometry)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.guess_snr">guess_snr() (in module orb.utils.spectrum)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.fit.gvardict2pickdict">gvardict2pickdict() (in module orb.utils.fit)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -3276,6 +3270,8 @@
         <li><a href="orb.utils.html#orb.utils.spectrum.phase_shift_cm1_axis.params.order">(orb.utils.spectrum.phase_shift_cm1_axis parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.core.Lines.other_names">other_names (orb.core.Lines attribute)</a>
+</li>
       <li><a href="orb.html#orb.core.OutHDFCube">OutHDFCube (class in orb.core)</a>
 </li>
       <li><a href="orb.html#orb.core.OutHDFQuadCube">OutHDFQuadCube (class in orb.core)</a>
@@ -3360,6 +3356,8 @@
 </li>
       <li><a href="orb.html#orb.core.ParamsFile">ParamsFile (class in orb.core)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.fit.paramslist2pick">paramslist2pick() (in module orb.utils.fit)</a>
+</li>
       <li><a href="orb.html#orb.fit.Cm1LinesModel.parse_dict">parse_dict() (orb.fit.Cm1LinesModel method)</a>
 
       <ul>
@@ -3436,6 +3434,10 @@
         <li><a href="orb.utils.html#orb.utils.image.tilt_calibration_laser_map.params.phi_y">(orb.utils.image.tilt_calibration_laser_map parameter)</a>
 </li>
       </ul></li>
+      <li><a href="orb.utils.html#orb.utils.fit.pick2paramslist">pick2paramslist() (in module orb.utils.fit)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.fit.pickdict2gvardict">pickdict2gvardict() (in module orb.utils.fit)</a>
+</li>
       <li><a href="orb.html#orb.cutils.fast_pix2w.params.pix">pix (orb.cutils.fast_pix2w parameter)</a>
 
       <ul>
@@ -3618,8 +3620,6 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.raw_fft">raw_fft() (in module orb.utils.fft)</a>
 </li>
-      <li><a href="orb.html#orb.fit.RawInputParams">RawInputParams (class in orb.fit)</a>
-</li>
       <li><a href="orb.html#orb.astrometry.Aligner.rc">rc (orb.astrometry.Aligner attribute)</a>
 
       <ul>
@@ -3732,10 +3732,10 @@
 </li>
       <li><a href="orb.html#orb.astrometry.StarsParams.reset_data">reset_data() (orb.astrometry.StarsParams method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.astrometry.Astrometry.reset_fwhm_arc">reset_fwhm_arc() (orb.astrometry.Astrometry method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.astrometry.Astrometry.reset_fwhm_pix">reset_fwhm_pix() (orb.astrometry.Astrometry method)</a>
 </li>
       <li><a href="orb.html#orb.astrometry.Astrometry.reset_profile_name">reset_profile_name() (orb.astrometry.Astrometry method)</a>
@@ -4586,10 +4586,6 @@
         <li><a href="orb.html#orb.fit.Model.make_guess.params.v">(orb.fit.Model.make_guess parameter)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Lines.vac_lines_name">vac_lines_name (orb.core.Lines attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Lines.vac_lines_nm">vac_lines_nm (orb.core.Lines attribute)</a>
-</li>
       <li><a href="orb.html#orb.fit.Model.val2free">val2free() (orb.fit.Model method)</a>
 </li>
       <li><a href="orb.html#orb.core.OCube.validate">validate() (orb.core.OCube method)</a>
@@ -4612,8 +4608,6 @@
       </ul></li>
       <li><a href="orb.html#orb.core.Vector1d">Vector1d (class in orb.core)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.fit.check_fit_cm1.params.vel">vel (orb.fit.check_fit_cm1 parameter)</a>
 
       <ul>
@@ -4622,6 +4616,8 @@
         <li><a href="orb.utils.html#orb.utils.fit.vel2sigma.params.vel">(orb.utils.fit.vel2sigma parameter)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.fit.vel2sigma">vel2sigma() (in module orb.utils.fit)</a>
 </li>
       <li><a href="orb.html#orb.core.Waves.set_velocity.params.velocity">velocity (orb.core.Waves.set_velocity parameter)</a>
@@ -5119,7 +5115,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'3.3',
+            VERSION:'3.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
