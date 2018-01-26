@@ -43,10 +43,8 @@ class Interferogram(core.Vector1d):
 
         :param vector: A 1d numpy.ndarray interferogram.
 
-        :param params: (Optional) A dict containing additional
-          parameters giving access to more methods. The needed params
-          are 'step', 'order', 'zpd_index', 'calib_coeff' (default
-          None).
+        :param params: (Optional) A dict containing observation
+          parameters (default None).
 
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
@@ -211,10 +209,8 @@ class Cm1Vector1d(core.Vector1d):
 
         :param vector: A 1d numpy.ndarray vector.
         
-        :param params: (Optional) A dict containing additional
-          parameters giving access to more methods. The needed params
-          are 'step', 'order', 'zpd_index', 'calib_coeff' (default
-          None).
+        :param params: (Optional) A dict containing observation
+          parameters (default None).
 
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
@@ -255,6 +251,17 @@ class Cm1Vector1d(core.Vector1d):
         """Return filter bandpass in channels"""
         return (self.axis(self.get_filter_bandpass_cm1()[0]),
                 self.axis(self.get_filter_bandpass_cm1()[1]))
+
+    def project(self, new_axis):
+        """Project vector on a new axis
+
+        :param new_axis: Axis. Must be an orb.core.Axis instance.
+        """
+        if not isinstance(new_axis, core.Axis):
+            raise NotImplementedError('axis must be an orb.core.Axis instance')
+        f = scipy.interpolate.interp1d(self.axis.data, self.data, bounds_error=False)
+        return self.__class__(
+            f(new_axis.data), new_axis.data, params=self.params)
     
 class Phase(Cm1Vector1d):
     """Phase class
@@ -368,11 +375,6 @@ class Phase(Cm1Vector1d):
             return res * w
         
         try:            
-            # pfit, pcov = scipy.optimize.curve_fit(
-            #     model, self.axis.data.astype(float), phase,
-            #     guesses,
-            #     1./weights)
-            # perr = np.sqrt(np.diag(pcov))
             _fit = scipy.optimize.leastsq(
                 diff, guesses,
                 args=(
@@ -448,16 +450,24 @@ class Spectrum(Cm1Vector1d):
         """correct spectrum phase from shifted zpd"""
         self.correct_phase(
             np.arange(self.step_nb, dtype=float)
-            * shift * np.pi / (self.step_nb)) # not (self.step_nb - 1) !
+            * -1. * shift * np.pi / self.step_nb)
         
     def correct_phase(self, phase):
-        """Correct spectrum phase"""
-        phase = core.Vector1d(phase).data
+        """Correct spectrum phase
+
+        :param phase: can be a 1d array or a Phase instance.
+        """
+        if isinstance(phase, Phase):
+            phase = phase.project(self.axis).data
+        else:
+            utils.validate.is_1darray(phase, object_name='phase')
+            phase = core.Vector1d(phase).data
+            
         if phase.shape[0] != self.step_nb:
             warnings.warn('phase does not have the same size as spectrum. It will be interpolated.')
-            phase = utils.vector.interpolate_size(phase, self.dimz, 1)
+            phase = utils.vector.interpolate_size(phase, self.step_nb, 1)
             
-        self.data *= np.exp(1j * phase)
+        self.data *= np.exp(-1j * phase)
         
     def resample(self, axis):
         """Resample spectrum over the given axis
@@ -535,12 +545,11 @@ class InterferogramCube(core.OCube):
     observation parameters are known.
     """
 
-    def get_interferogram(self, x, y, zpd_index):
+    def get_interferogram(self, x, y):
         """Return an orb.fft.Interferogram instance
         
         :param x: x position
         :param y: y position
-        :param zpd_index: position of the ZPD of the interferogram
         """
         self.validate()
         x = self.validate_x_index(x, clip=False)
@@ -548,9 +557,9 @@ class InterferogramCube(core.OCube):
         
         calib_coeff = self.get_calibration_coeff_map()[x, y]
         return Interferogram(self[x, y, :], self.params,
-                             zpd_index=zpd_index, calib_coeff=calib_coeff)
+                             zpd_index=self.params.zpd_index, calib_coeff=calib_coeff)
 
-    def get_mean_interferogram(self, xmin, xmax, ymin, ymax, zpd_index):
+    def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
         """Return mean interferogram in a box [xmin:xmax, ymin:ymax, :]
         along z axis
         
@@ -558,7 +567,6 @@ class InterferogramCube(core.OCube):
         :param xmax: max boundary along x axis
         :param ymin: min boundary along y axis
         :param ymax: max boundary along y axis
-        :param zpd_index: position of the ZPD of the interferogram
         """
         self.validate()
         xmin, xmax = np.sort(self.validate_x_index([xmin, xmax], clip=False))
@@ -569,5 +577,5 @@ class InterferogramCube(core.OCube):
         
         calib_coeff = np.nanmean(self.get_calibration_coeff_map()[xmin:xmax, ymin:ymax])
         interf = np.nanmean(np.nanmean(self[xmin:xmax, ymin:ymax, :], axis=0), axis=0)
-        return Interferogram(interf, self.params, zpd_index=zpd_index,
+        return Interferogram(interf, self.params, zpd_index=self.params.zpd_index,
                              calib_coeff=calib_coeff)

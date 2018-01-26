@@ -2685,7 +2685,7 @@ class OCube(Cube):
                      'step_nb', 'calibration_laser_map_path', 'zpd_index')
 
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
-                       'dark_time', 'flat_time')
+                       'dark_time', 'flat_time', 'camera_index')
     
     def __init__(self, data, params, **kwargs):
         """
@@ -2696,15 +2696,30 @@ class OCube(Cube):
           handled differently (e.g. if this class is inherited)
 
         :param params: Path to an option file or dict instance.
+
+        :param kwargs: Cube kwargs + other parameters not supplied in
+          params (else overwrite parameters set in params)
         """
+        kwargs_params = dict()
+        for ikey in kwargs.keys():
+            if ikey in (self.needed_params + self.optional_params):
+                kwargs_params[ikey] = kwargs.pop(ikey)
         Cube.__init__(self, data, **kwargs)
         self.needed_params = tuple(self.params.keys() + list(self.needed_params))
-        self.load_params(params)
-    
-    def load_params(self, params):
+        self.load_params(params, **kwargs_params)
+        if data is not None:
+            # else it should be computed in the init of the child
+            # class when data parameters are known (e.g. self.dimx,
+            # self.dimy etc.)
+            self.compute_data_parameters()
+            
+    def load_params(self, params, **kwargs):
         """Load observation parameters
 
-        :params: Path to an option file.
+        :params: Path to an option file or a dict
+
+        :param kwargs: other parameters not supplied in params (else
+          overwrite parameters set in params)
         """
         def set_param(pkey, okey, cast):
             if okey in ofile.options:
@@ -2736,6 +2751,13 @@ class OCube(Cube):
                 
         else: raise TypeError('params type ({}) not handled'.format(type(params)))
 
+        # parse additional parameters
+        for iparam in kwargs:
+            if iparam in (self.needed_params + self.optional_params):
+                self.set_param(iparam, kwargs[iparam])
+            else: raise ValueError('parameter {} supplied as a keyword argument but not used. Please remove it'.format(iparam))
+            
+
         # validate needed params
         for iparam in self.needed_params:
             if iparam not in self.params:
@@ -2744,15 +2766,15 @@ class OCube(Cube):
         for iparam in self.params:
             if iparam not in (self.needed_params + self.optional_params):
                 raise ValueError('parameter {} defined but not used'.format(iparam))
-            
+
+        # compute additional parameters
         self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
         nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
         self.set_param('filter_nm_min', nm_min)
         self.set_param('filter_nm_max', nm_max)
         self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
         self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
-
-
+        
         self.params_defined = True
 
     def validate(self):
@@ -2761,6 +2783,22 @@ class OCube(Cube):
         try: self.params_defined
         except AttributeError: raise StandardError("class not valid: set params at init")
         if not self.params_defined: raise StandardError("class not valid: set params at init")
+
+    def compute_data_parameters(self):
+        """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
+        if 'camera_index' in self.params:
+            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera_index)],
+                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera_index)]]
+            binning = utils.image.compute_binning(
+                (self.dimx, self.dimy), detector_shape)
+                            
+            if binning[0] != binning[1]:
+                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
+            self.set_param('binning', binning[0])
+            
+            logging.debug('Computed binning of camera {}: {}x{}'.format(
+                self.params.camera_index, self.params.binning, self.params.binning))
+
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
@@ -2822,14 +2860,35 @@ class OCube(Cube):
                 corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
         return Axis(self.base_axis)
 
+    def get_axis(self, x, y):
+        """Return the spectral axis at x, y
+        """
+        self.validate()
+        utils.validate.index(x, 0, self.dimx, clip=False)
+        utils.validate.index(y, 0, self.dimy, clip=False)
+        
+        axis = utils.spectrum.create_cm1_axis(
+            self.dimz, self.params.step, self.params.order,
+            corr=self.get_calibration_coeff_map()[x, y])
+        return Axis(np.copy(axis))
+
     def add_params_to_hdf_file(self, hdffile):
         """Write parameters as attributes to an hdf5 file"""
         self.validate()
         for iparam in self.params:
             hdffile.attrs[iparam] = self.params[iparam]
 
-    def get_astrometry(self, profile_name=None, sip=None):
-        """Return astrometry.Astrometry instance"""
+    def get_astrometry(self, data=None, profile_name=None, **kwargs):
+        """Return an astrometry.Astrometry instance.
+
+        :param data: (Optional) data to pass. If None, the cube itself
+          is passed.
+
+        :param profile_name: (Optional) PSF profile. Can be gaussian or
+          moffat. default is read in config file (PSF_PROFILE).
+
+        :param kwargs: orb.astrometry.Astrometry kwargs.
+        """
         self.validate()
         from astrometry import Astrometry # cannot be imported at the
                                           # beginning of the file
@@ -2847,17 +2906,25 @@ class OCube(Cube):
             target_radec = None
             target_xy = None
 
+        if data is None:
+            data = self
+        else:
+            utils.validate.is_2darray(data, object_name='data')
+            if data.shape != (self.dimx, self.dimy): raise TypeError('data must be a 2d array of shape {} {}'.format(self.dimx, self.dimy))
+
+        if 'data_prefix' not in kwargs:
+            kwargs['data_prefix'] = self._data_prefix
+            
         return Astrometry(
-            self, profile_name=profile_name,
+            data, profile_name=profile_name,
             moffat_beta=self.config.MOFFAT_BETA,
-            data_prefix=self._data_prefix,
             tuning_parameters=self._tuning_parameters,
             instrument=self.params.instrument,
             ncpus=self.ncpus,
             target_radec=target_radec,
             target_xy=target_xy,
             wcs_rotation=self.config.INIT_ANGLE,
-            sip=sip)
+            **kwargs)
         
 ##################################################
 #### CLASS ProgressBar ###########################
@@ -3756,7 +3823,7 @@ class ParamsFile(Tools):
 #### CLASS FDCube ###############################
 #################################################
 
-class FDCube(Cube):
+class FDCube(OCube):
     """
     Generate and manage a **virtual frame-divided cube**.
 
@@ -3776,7 +3843,7 @@ class FDCube(Cube):
     """
 
     def __init__(self, image_list_path, image_mode='classic',
-                 chip_index=1, binning=1, no_sort=False, silent_init=False,
+                 chip_index=1, binning=1, params=None, no_sort=False, silent_init=False,
                  **kwargs):
         """Init frame-divided cube class
 
@@ -3805,6 +3872,9 @@ class FDCube(Cube):
           this amount. i.e. 1000x1000xN raw frames with a prebinning
           of 2 will give a cube of 500x500xN (default 1).
 
+        :param params: Path to an option file or dictionary
+          containting observation parameters.
+
         :param no_sort: (Optional) If True, no sort of the file list
           is done. Files list is taken as is (default False).
 
@@ -3814,7 +3884,10 @@ class FDCube(Cube):
 
         :param kwargs: (Optional) :py:class:`~orb.core.Cube` kwargs.
         """
-        Cube.__init__(self, None, **kwargs)
+        if params is None:
+            Cube.__init__(self, None, **kwargs)
+        else:
+            OCube.__init__(self, None, params, **kwargs)
 
         self.image_list_path = image_list_path
 
@@ -3876,10 +3949,7 @@ class FDCube(Cube):
                                 binning=self._prebinning)
                             self.dimx = image_data.shape[0]
                             self.dimy = image_data.shape[1]
-                            
-                            hdul = self.read_fits(
-                                image_name, return_hdu_only=True)
-                            
+                                                        
                         else:
                             with self.open_hdf5(image_name, 'r') as f:
                                 if 'hdu0/data' in f:
@@ -3921,7 +3991,9 @@ class FDCube(Cube):
                 raise StandardError("Incorrect data shape : (" 
                                   + str(self.dimx) + ", " + str(self.dimy) 
                                   + ", " +str(self.dimz) + ")")
-
+            
+            if params is not None:
+                self.compute_data_parameters()
 
     def __getitem__(self, key):
         """Implement the evaluation of self[key].
@@ -4308,6 +4380,9 @@ class HDFCube(OCube):
 
         self.shape = (self.dimx, self.dimy, self.dimz)
 
+        if params is not None:
+            self.compute_data_parameters()
+
         
     def __getitem__(self, key):
         """Implement the evaluation of self[key].
@@ -4479,8 +4554,11 @@ class HDFCube(OCube):
             if 'calib_map' in f:
                 return f['calib_map'][:]
             else:
-                warnings.warn('No calibration laser map stored')
-                return None
+                if isinstance(self, OCube):
+                    return OCube.get_calibration_laser_map(self)
+                else:
+                    warnings.warn('No calibration laser map stored')
+                    return None
 
            
     def get_mean_image(self, recompute=False):
@@ -5368,6 +5446,7 @@ class Vector1d(object):
         """
         if isinstance(vector, self.__class__):
             vector = np.copy(vector.data)
+        else: vector = np.copy(vector)
 
         # checking
         if not isinstance(vector, np.ndarray):
