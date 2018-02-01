@@ -2532,6 +2532,7 @@ class OutputParams(Params):
         raw = dict()
         for ipar in self.keys():
             raw[ipar] = self[ipar]
+        raw = utils.fit.gvardict2pickdict(raw)
         return raw
 
         
