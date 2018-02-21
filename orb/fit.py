@@ -2203,8 +2203,8 @@ class Cm1InputParams(InputParams):
         else:
             sigma_cov_vel = utils.fit.sigma2vel(
                 utils.fft.apod2sigma(self.base_params.apodization,
-                                     fwhm_guess_cm1) / self.axis_step,
-                lines_cm1, self.axis_step)
+                                     fwhm_guess_cm1.mean) / self.axis_step,
+                gvar.mean(lines_cm1), self.axis_step)
         return np.atleast_1d(sigma_cov_vel).astype(float)
 
         
