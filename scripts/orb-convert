@@ -37,10 +37,17 @@ def main(args):
     DIV_NB = 2
     cube = HDFCube(args.input_cube_path)
 
+    if args.zrange is not None:
+        tmp=args.zrange.split(',')
+    	zrange = (int(tmp[0]),int(tmp[1]))
+    else:
+        zrange=None
+
     if not args.split:
         export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
         cube.export(export_path, force_fits=True, overwrite=True,
-                    header=cube.get_cube_header())
+                    header=cube.get_cube_header(),
+                    z_range=zrange)
     else:
         for iquad in range(DIV_NB**2):
             print 'Exporting quadrant {}'.format(iquad)
@@ -53,13 +60,17 @@ def main(args):
                 export_path, force_fits=True, overwrite=True,
                 header=cube.get_cube_header(),
                 x_range=(xmin,xmax),
-                y_range=(ymin,ymax))
+                y_range=(ymin,ymax),
+                z_range=args.zrange)
                 
                 
                 
             
 
 if __name__ == "__main__":
+
+    #import pydevd
+    #pydevd.settrace('localhost', port=8888, stdoutToServer=True, stderrToServer=True)
 
     parser = ArgumentParser(version=('ORB-version {}'.format(
         orb.core.__version__)),
@@ -71,6 +82,9 @@ if __name__ == "__main__":
                         default=False,
                         help='Split output cube into 4 quadrants')
 
+    parser.add_argument("-z", dest="zrange", default=None,
+                        action="store",
+                        help="frame range to export: zmin,zmax, default None, i.e. full cube export")
  
     args = parser.parse_args()
 
