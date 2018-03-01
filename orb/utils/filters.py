@@ -235,9 +235,9 @@ def get_filter_edges_pix(filter_file_path, correction_factor, step, order,
         np.array([filter_min_cm1, filter_max_cm1]),
         cm1_axis_min, cm1_axis_step)
 
-    if int(order) & 1:
-        filter_range = n - filter_range
-        filter_range = filter_range[::-1]
+    ## if int(order) & 1: ## Supposed to be already reversed at this stage
+    ##    filter_range = n - filter_range
+    ##    filter_range = filter_range[::-1]
     
     filter_range[filter_range < 0] = 0
     filter_range[filter_range > n] = (n - 1)
@@ -293,8 +293,12 @@ def get_filter_function(filter_file_path, step, order, n,
 
     f_axis = interpolate.UnivariateSpline(np.arange(n),
                                           spectrum_axis)
-    fpix_axis = interpolate.UnivariateSpline(spectrum_axis[::-1],
-                                             np.arange(n)[::-1])
+    if (not wavenumber):
+        fpix_axis = interpolate.UnivariateSpline(spectrum_axis,
+                                                 np.arange(n))
+    else:
+        fpix_axis = interpolate.UnivariateSpline(spectrum_axis[::-1],
+                                                 np.arange(n)[::-1])
 
     # Interpolation of the filter function
     interpol_f = interpolate.UnivariateSpline(filter_nm, filter_trans, 
