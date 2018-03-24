@@ -143,9 +143,14 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
     if not _regions.check_imagecoord():
         if header is None: raise Exception('DS9 region file is not in image coordinates. Please change it to image coordinates or pass a astropy.io.fits.Header instance to the function to transform the actual coordinates to image coordinates.')
         else:
-            wcs = pywcs.WCS(header, naxis=2) 
-            _regions = _regions.as_imagecoord(wcs.to_header())
-            
+            wcs = pywcs.WCS(header, naxis=2, relax=True)
+            #_regions = _regions.as_imagecoord(wcs.to_header())
+            # WCS does not export NAXIS1, NAXIS2 anymore...
+            h = wcs.to_header(relax=True)
+            h.set('NAXIS1',header['NAXIS1'])
+            h.set('NAXIS2',header['NAXIS2'])
+            _regions = _regions.as_imagecoord(h)
+
     shape = (np.max(y_range), np.max(x_range))
     mask = np.zeros(shape, dtype=float)
     hdu = pyfits.PrimaryHDU(mask)
