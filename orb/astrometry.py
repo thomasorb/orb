@@ -633,36 +633,38 @@ class Astrometry(Tools):
           cross-correlation algorithm (default False). Much better if
           used on a small number of frames.
         """
-        if self.deep_frame is not None:
+        # shortcut
+        if use_deep_frame and self.deep_frame is not None:
             return np.copy(self.deep_frame)
 
-        if self.dimz > 1 and (use_deep_frame or realign):
-            _cube = self.data[:,:,:]
-
-        # realignment of the frames if necessary
-        if realign and self.dimz > 1:
-            _cube = utils.astrometry.realign_images(_cube)
-                
         # If we have 3D data we work on a combined image of the first
         # frames
         if self.dimz > 1:
+            _cube = None
+            
+            if realign: # realign first and then get the median or
+                        # stack frames
+                _cube = self.data[:,:,:]
+                _cube = utils.astrometry.realign_images(_cube)
+            
             if use_deep_frame:
                 if _cube is None:
                     self.deep_frame = self.data.get_median_image().astype(float)
                 else:
                     self.deep_frame = np.nanmedian(_cube, axis=2)
-                return self.deep_frame
+                return np.copy(self.deep_frame)
             
             
             stack_nb = self.detect_stack
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
 
-            ## if _cube is None: dat = _cube
-            ## else:
-            dat = self.data[
-                :,:, int(self.DETECT_INDEX):
-                int(self.DETECT_INDEX+stack_nb)]
+            if _cube is None:
+                dat = _cube # use the realigned frames
+            else:
+                dat = self.data[
+                    :,:, int(self.DETECT_INDEX):
+                    int(self.DETECT_INDEX+stack_nb)]
                 
             if not self.config.BIG_DATA:
                 im = utils.image.create_master_frame(dat)
@@ -672,6 +674,7 @@ class Astrometry(Tools):
         # else we just return the only frame we have
         else:
             im = np.copy(self.data)
+            
         return im.astype(float)
 
     def reset_profile_name(self, profile_name):

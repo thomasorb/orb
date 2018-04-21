@@ -241,7 +241,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
               return_header=False, return_hdu_only=False,
               return_mask=False, silent=False, delete_after=False,
               data_index=0, image_mode='classic', chip_index=None,
-              binning=None, fix_header=True, memmap=False, dtype=float,
+              binning=None, fix_header=True, dtype=float,
               mask_path=None):
     """Read a FITS data file and returns its data.
 
@@ -291,10 +291,6 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
       fixed to avoid errors due to header inconsistencies
       (e.g. WCS errors) (default True).
 
-    :param memmap: (Optional) If True, use the memory mapping
-      option of pyfits. This is useful to avoid loading a full cube
-      in memory when opening a large data cube (default False).
-
     :param dtype: (Optional) Data is converted to
       the given dtype (e.g. np.float32, default float).
 
@@ -313,7 +309,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
         fits_path = mask_path
 
     try:
-        hdulist = pyfits.open(fits_path, memmap=memmap)
+        hdulist = pyfits.open(fits_path)
         fits_header = hdulist[data_index].header
     except Exception, e:
         if not no_error:

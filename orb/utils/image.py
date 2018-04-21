@@ -919,12 +919,26 @@ def simulate_calibration_laser_map(nx, ny, pixel_size,
         theta_cx, theta_cy, phi_x, phi_y, phi_r)))
 
 def nanbin_image(im, binning):
-    """Mean image binning robust to NaNs.
+    """Mean image (or cube) binning robust to NaNs.
 
-    :param im: Image to bin
+    :param im: Image or cube to bin
     :param binning: Binning factor (must be an integer)
-    """     
-    return orb.cutils.nanbin_image(im.astype(np.float64), int(binning))
+
+    .. note:: adapted from https://stackoverflow.com/questions/6163334/binning-data-in-python-with-scipy-numpy.
+    """
+    if not isinstance(im, np.ndarray): raise ValueError('Image must be a numpy.ndarray')
+    if not im.ndim in [2, 3]: raise ValueError('Array dimensions must be 2 or 3')
+    s0 = int(im.shape[0]//binning)
+    s1 = int(im.shape[1]//binning)
+    im_view = np.copy(im[:s0 * binning, :s1 * binning, ...])
+    if im_view.size > 0:
+        im_view = im_view.reshape(int(im.shape[0]//binning), binning,
+                                  int(im.shape[1]//binning), binning,
+                                  -1)
+        return np.squeeze(np.nanmean(np.nanmean(im_view, axis=3), axis=1))
+    else:
+        return np.nanmean(im).reshape((1,1))
+    #return orb.cutils.nanbin_image(im.astype(np.float64), int(binning))
 
 
 def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
@@ -1538,7 +1552,7 @@ def unwrap_phase_map0(phase_map):
     """
     Phase is defined modulo pi/2. The Unwrapping is a
     reconstruction of the phase so that the distance between two
-    neighboor pixels is always less than pi/4. Then the real
+    neighbour pixels is always less than pi/4. Then the real
     phase pattern can be recovered and fitted easily.
     
     The idea is the same as with np.unwrap() but in 2D, on a

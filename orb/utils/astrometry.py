@@ -2040,14 +2040,17 @@ def get_wcs_parameters(_wcs):
         pc = np.copy(_wcs.wcs.get_pc())
         deltax, deltay = _wcs.wcs.cdelt
         rotation = np.rad2deg(np.arctan2(-pc[0,1]/deltax, -pc[0,0]/deltax))
-        if np.rad2deg(np.arctan2(-pc[1,0]/deltay, pc[1,1]/deltay)) != rotation:
-            raise RuntimeError('Malformed PC_ij matrix ?')
+        if np.isclose(np.abs(rotation), 180): rotation = 0.
+
+        check_angle = np.rad2deg(np.arctan2(-pc[1,0]/deltay, pc[1,1]/deltay))
+        if not np.isclose(check_angle, rotation):
+            raise RuntimeError('Malformed PC_ij matrix ? ({} not close to {})'.format(check_angle, rotation))
         deltax = abs(deltax)
         deltay = abs(deltay)
 
     if deltax < 0.: raise StandardError('deltax and deltay must be equal and > 0')
     if abs(rotation) > 90. : raise StandardError('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
-    if not np.allclose(deltax, deltay): raise StandardError('deltax must be equal to deltay')
+    if not np.allclose(deltax, deltay): raise StandardError('deltax ({}) must be equal to deltay ({})'.format(deltax, deltay))
     deltay = float(deltax)
     
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
@@ -2275,6 +2278,10 @@ def world2pix(hdr, dimx, dimy, star_list_deg, dxmap, dymap):
 
     :param dymap: Distortion error map along Y axis returned by
       orb.astrometry.Astrometry.register().
+
+    .. note:: it is much more effficient to pass a list of coordinates
+      than run the function for each couple of coordinates you want to
+      transform.
     """
     dxspl = interpolate.RectBivariateSpline(
         np.linspace(0, dimx, dxmap.shape[0]),
@@ -2322,6 +2329,10 @@ def pix2world(hdr, dimx, dimy, star_list_pix, dxmap, dymap):
 
     :param dymap: Distortion error map along Y axis returned by
       orb.astrometry.Astrometry.register().
+
+    .. note:: it is much more effficient to pass a list of coordinates
+      than run the function for each couple of coordinates you want to
+      transform.
     """
     dxspl = interpolate.RectBivariateSpline(
         np.linspace(0, dimx, dxmap.shape[0]),
@@ -2334,7 +2345,6 @@ def pix2world(hdr, dimx, dimy, star_list_pix, dxmap, dymap):
         dymap, kx=3, ky=3)
 
     wcs = pywcs.WCS(hdr, relax=True)
-    
     dx = dxspl.ev(star_list_pix[:,0],
                   star_list_pix[:,1])
     dy = dyspl.ev(star_list_pix[:,0],

@@ -21,9 +21,12 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 
-cimport numpy as np
 cimport cython
+import cython
+
+cimport numpy as np
 import numpy as np
+
 import scipy.special
 cimport gvar
 import gvar
@@ -313,17 +316,6 @@ def sincgauss1d_complex(a, b, erf=False):
     f_re, f_im = np.copy(sgc(gvar.mean(a), gvar.mean(b)))
     
     dfda_re, dfda_im, dfdb_re, dfdb_im = sgc_dfdx(gvar.mean(a), gvar.mean(b))
-
-    print np.any(np.isnan(gvar.mean(a)))
-    print np.any(np.isnan(gvar.mean(b)))
-
-    print np.any(np.isnan(f_re))
-    print np.any(np.isnan(f_im))
-    print np.any(np.isnan(dfda_re))
-    print np.any(np.isnan(dfda_im))
-    print np.any(np.isnan(dfdb_re))
-    print np.any(np.isnan(dfdb_im))
-
 
     # real part
     if not isinstance(a, gvar.GVar):

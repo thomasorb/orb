@@ -189,6 +189,9 @@ def get_filter_bandpass(filter_file_path):
     if filter_file_path is not None:
         (filter_nm, filter_trans,
          filter_min, filter_max) = read_filter_file(filter_file_path)
+    else:
+        warnings.warn('filter_file_path is None')
+        return None
 
     return filter_min, filter_max
 

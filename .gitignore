@@ -5,6 +5,9 @@
 *.so
 *.o
 *.c
+orb/*.so
+orb/*.o
+orb/*.c
 dist/
 build/
 orb_kernel.egg-info/
