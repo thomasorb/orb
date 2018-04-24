@@ -885,8 +885,7 @@ class Tools(object):
 
         :param camera_number: Number of the camera, can be 1 or 2.
         """
-        file_name = self.config(
-            'CAM{}_QE_FILE'.format(camera_number))
+        file_name = self.config['CAM{}_QE_FILE'.format(camera_number)]
         return self._get_orb_data_file_path(file_name)
     
   
@@ -2543,13 +2542,16 @@ class Cube(Tools):
             outcube.append_header(header)
 
             if calibration_laser_map_path is None:
-                calibration_laser_map = self.get_calibration_laser_map()
-                calib_map_hdr = None
+                try:
+                    calibration_laser_map = self.get_calibration_laser_map()
+                    calib_map_hdr = None
+                except StandardError:
+                    calibration_laser_map = None
             else:
                 calibration_laser_map, calib_map_hdr = self.read_fits(
                     calibration_laser_map_path, return_header=True)
                 if (calibration_laser_map.shape[0] != self.dimx):
-                    calibration_laser_map = orb.utils.image.interpolate_map(
+                    calibration_laser_map = utils.image.interpolate_map(
                         calibration_laser_map, self.dimx, self.dimy)
 
             if calibration_laser_map is not None:
@@ -2685,7 +2687,10 @@ class OCube(Cube):
                      'step_nb', 'calibration_laser_map_path', 'zpd_index')
 
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
-                       'dark_time', 'flat_time', 'camera_index')
+                       'dark_time', 'flat_time', 'camera_index', 'wcs_rotation')
+
+    computed_params = ('filter_nm_min', 'filter_nm_max', 'filter_file_path',
+                       'filter_cm1_min', 'filter_cm1_max')
     
     def __init__(self, data, params, **kwargs):
         """
@@ -2784,6 +2789,17 @@ class OCube(Cube):
         except AttributeError: raise StandardError("class not valid: set params at init")
         if not self.params_defined: raise StandardError("class not valid: set params at init")
 
+        # validate needed params
+        for iparam in self.needed_params:
+            if iparam not in self.params:
+                raise ValueError('parameter {} must be defined in params'.format(iparam))
+
+        # validate optional parameters
+        for iparam in self.params:
+            if iparam not in (self.needed_params + self.optional_params + self.computed_params):
+                raise ValueError('parameter {} defined but not used'.format(iparam))
+
+
     def compute_data_parameters(self):
         """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
         if 'camera_index' in self.params:
@@ -2817,6 +2833,7 @@ class OCube(Cube):
         filter_max_pix_map = (filter_max_cm1 - cm1_axis_min_map) / cm1_axis_step_map
         
         return filter_min_pix_map, filter_max_pix_map
+
     
     def get_calibration_laser_map(self):
         """Return calibration laser map"""
@@ -2895,15 +2912,20 @@ class OCube(Cube):
 
         if profile_name is None:
             profile_name = self.config.PSF_PROFILE
-        
-        if ('target_ra' in self.params
-            and 'target_dec' in self.params
-            and 'target_x' in self.params
-            and 'target_y' in self.params):
+
+        if ('target_ra' in self.params and 'target_dec' in self.params):
+            if not isinstance(self.params.target_ra, float):
+                raise TypeError('target_ra must be a float')
+            if not isinstance(self.params.target_dec, float):
+                raise TypeError('target_dec must be a float')
+
             target_radec = (self.params.target_ra, self.params.target_dec)
-            target_xy = (self.params.target_x, self.params.target_y)
         else:
             target_radec = None
+            
+        if ('target_x' in self.params and 'target_y' in self.params):
+            target_xy = (self.params.target_x, self.params.target_y)               
+        else:
             target_xy = None
 
         if data is None:
@@ -2914,7 +2936,14 @@ class OCube(Cube):
 
         if 'data_prefix' not in kwargs:
             kwargs['data_prefix'] = self._data_prefix
-            
+
+        if 'wcs_rotation' in self.params:
+            wcs_rotation = self.params.wcs_rotation
+        else:
+            wcs_rotation=self.config.INIT_ANGLE
+
+        self.validate()
+        
         return Astrometry(
             data, profile_name=profile_name,
             moffat_beta=self.config.MOFFAT_BETA,
@@ -2923,7 +2952,7 @@ class OCube(Cube):
             ncpus=self.ncpus,
             target_radec=target_radec,
             target_xy=target_xy,
-            wcs_rotation=self.config.INIT_ANGLE,
+            wcs_rotation=wcs_rotation,
             **kwargs)
         
 ##################################################
@@ -5128,7 +5157,7 @@ class Standard(Tools):
 
         :param order: Folding order
         
-        :param step: Step size in um
+        :param step: Step size in nm
         
         :param n: Number of steps
         
@@ -5240,7 +5269,7 @@ class Standard(Tools):
         :param corr: (Optional) Correction coefficient related to the
            incident angle (default 1).
         """
-
+    
         STEP_NB = 1000
         camera_number = int(camera_number)
         if camera_number not in (1,2):
@@ -5370,12 +5399,12 @@ class FilterFile(Tools):
         if not os.path.exists(self.basic_path):
             raise ValueError('filter_name is not a valid filter name and is not a valid filter file path')
 
-    def read_filter_file(self):
+    def read_filter_file(self, return_spline=False):
         """Wrapper around
         :py:meth:`orb.utils.filters.read_filter_file`
         """
         return utils.filters.read_filter_file(
-            self.basic_path)
+            self.basic_path, return_spline=return_spline)
 
     def get_filter_function(self, step, order, step_nb,
                             wavenumber=False, silent=False, corr=1.):

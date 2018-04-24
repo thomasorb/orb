@@ -447,8 +447,7 @@ def convert_cm1_flux2fluxdensity(a, cm1_axis):
 
 def compute_flux_calibration_vector(re_spectrum, th_spectrum,
                                     std_step, std_order, std_exp_time,
-                                    std_corr, filter_function,
-                                    filter_min_pix, filter_max_pix):
+                                    std_corr, filter_min_pix, filter_max_pix):
     """Compute the flux calibration vector from an observed spectrum
     and the standard spectrum.
 
@@ -463,8 +462,6 @@ def compute_flux_calibration_vector(re_spectrum, th_spectrum,
     :param std_exp_time: Standard Exposition time
 
     :param std_corr: Standard Correction coeff.
-
-    :param filter_function: Filter function
 
     :param filter_min_pix: Filter min position in pixels
 

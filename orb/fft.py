@@ -480,26 +480,26 @@ class Spectrum(Cm1Vector1d):
         """
         raise NotImplementedError('Not implemented yet')
         ### should be done in the interferogram class instead (much easier to implement) ###
-        interf = self.transform().data
-        real_axis_step = float(self.axis[1] - self.axis[0])
-        samples = (axis - self.axis[0]) / real_axis_step
-        ok_samples = (0 <= samples) * (samples < self.step_nb)
-        if not np.all(ok_samples):
-            logging.debug('at least some samples are not in the axis range {}-{}'.format(
-                self.axis[0], self.axis[-1]))
-            dft_samples = samples[np.nonzero(ok_samples)]
-        else:
-            dft_samples = samples
+        ## interf = self.transform().data
+        ## real_axis_step = float(self.axis[1] - self.axis[0])
+        ## samples = (axis - self.axis[0]) / real_axis_step
+        ## ok_samples = (0 <= samples) * (samples < self.step_nb)
+        ## if not np.all(ok_samples):
+        ##     logging.debug('at least some samples are not in the axis range {}-{}'.format(
+        ##         self.axis[0], self.axis[-1]))
+        ##     dft_samples = samples[np.nonzero(ok_samples)]
+        ## else:
+        ##     dft_samples = samples
             
-        dft_spec = cutils.complex_dft(interf, dft_samples.astype(float))
-        if not np.all(ok_samples):
-            spec = np.empty_like(axis, dtype=complex)
-            spec.fill(np.nan)
-            spec[np.nonzero(ok_samples)] = dft_spec
-        else:
-            spec = dft_spec
+        ## dft_spec = cutils.complex_dft(interf, dft_samples.astype(float))
+        ## if not np.all(ok_samples):
+        ##     spec = np.empty_like(axis, dtype=complex)
+        ##     spec.fill(np.nan)
+        ##     spec[np.nonzero(ok_samples)] = dft_spec
+        ## else:
+        ##     spec = dft_spec
             
-        return Spectrum(spec, axis, params=self.params)
+        ## return Spectrum(spec, axis, params=self.params)
 
 
     def interpolate(self, axis, quality=10):
