@@ -1865,10 +1865,15 @@ class Tools(object):
         :param hdf5_header: Header of the HDF5 file
         """
         def cast(a, t_str):
-            for _t in [int, float, bool, str, unicode,
+            for _t in [int, float, str, unicode,
                        np.int64, np.float64, long, np.float128]:
                 if t_str == repr(_t):
                     return _t(a)
+            if t_str == repr(bool): # Special case for boolean entries
+                if a == 'False':
+                    return False
+                else:
+                    return True
             raise StandardError('Bad type string {}'.format(t_str))
                     
         fits_header = pyfits.Header()
