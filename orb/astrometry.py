@@ -636,7 +636,7 @@ class Astrometry(Tools):
         # shortcut
         if use_deep_frame and self.deep_frame is not None:
             return np.copy(self.deep_frame)
-                        
+
         # If we have 3D data we work on a combined image of the first
         # frames
         if self.dimz > 1:
@@ -874,7 +874,7 @@ class Astrometry(Tools):
         kwargs['fwhm_pix'] = self.fwhm_pix
         kwargs['beta'] = self.default_beta
         kwargs['fit_tol'] = self.fit_tol
-        kwargs['readout_noise'] = self.readout_noise,
+        kwargs['readout_noise'] = self.readout_noise
         kwargs['dark_current_level'] = self.dark_current_level
 
         fit_results = StarsParams(star_nb=len(self.star_list), frame_nb=1)
@@ -1662,7 +1662,7 @@ class Astrometry(Tools):
         if fit_cube:
             self.fit_stars_in_cube(correct_alignment=True,
                                    no_aperture_photometry=True,
-                                   hpfilter=HPFILTER, multi_fit=True,
+                                   hpfilter=HPFILTER, multi_fit=False,
                                    fix_height=False, save=False)
       
         if self.star_nb < 4: 

@@ -601,7 +601,10 @@ def transform_interferogram(interf, nm_laser,
         phase_shift = int(round(order1 / np.pi))
         ext_phase_corr = (ext_phase - np.arange(ext_phase.shape[0])
                           * phase_shift * np.pi / ext_phase.shape[0])
-        zpd_shift_corr = int(zpd_shift) + phase_shift
+        if (int(order) & 1): # Beware that for odd orders, we get negative frequencies folding, thus phase is conjugated
+            zpd_shift_corr = int(zpd_shift) - phase_shift
+        else:
+            zpd_shift_corr = int(zpd_shift) + phase_shift
     else:
         ext_phase_corr = None
         zpd_shift_corr = int(zpd_shift)
@@ -732,6 +735,11 @@ def transform_interferogram(interf, nm_laser,
             interf_fft.shape[0], step, order, corr=correction_coeff)
         
     #####
+    # Reverse spectrum if order is odd
+    # This needs to be done *prior* to phase correction (phase vector is already reversed)
+    if int(order) & 1:
+        interf_fft = interf_fft[::-1]
+
     # 9 - Phase correction
     if phase_correction:
         if ext_phase_corr is None:
@@ -765,8 +773,8 @@ def transform_interferogram(interf, nm_laser,
     # Irregular wavelength axis creation
     
     # Spectrum is returned if folding order is even
-    if int(order) & 1:
-        spectrum_corr = spectrum_corr[::-1]
+    # if int(order) & 1:
+    #    spectrum_corr = spectrum_corr[::-1]
 
     # Interpolation (order 5) of the spectrum from its irregular axis
     # to the regular one
