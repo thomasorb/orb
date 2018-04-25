@@ -2690,7 +2690,7 @@ class OCube(Cube):
                        'dark_time', 'flat_time', 'camera_index', 'wcs_rotation')
 
     computed_params = ('filter_nm_min', 'filter_nm_max', 'filter_file_path',
-                       'filter_cm1_min', 'filter_cm1_max')
+                       'filter_cm1_min', 'filter_cm1_max', 'binning')
     
     def __init__(self, data, params, **kwargs):
         """
