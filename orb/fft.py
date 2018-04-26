@@ -29,7 +29,6 @@ import utils.fft
 import utils.vector
 import utils.err
 import core
-import cutils
 import scipy
 
 class Interferogram(core.Vector1d):
@@ -114,13 +113,40 @@ class Interferogram(core.Vector1d):
 
         self.data *= window
 
+
+    def is_right_sided(self):
+        """Check if interferogram is right sided (left side wrt zpd
+        shorter than right side)
+        """
+        return (self.params.zpd_index < self.step_nb / 2) # right sided
+        
+
     def symmetric(self):
         """Return an interferogram which is symmetric around the zpd"""
-        if self.params.zpd_index < self.step_nb / 2:
+        if self.is_right_sided():
             return self[:self.params.zpd_index * 2 - 1]
         else:
             shortlen = self.step_nb - self.params.zpd_index
             return self[max(self.params.zpd_index - shortlen, 0):]
+
+    def multiply_by_mertz_ramp(self):
+        """Multiply by Mertz (1976) ramp function to avoid counting
+        symmetric samples twice and reduce emission lines contrast wrt
+        the background.   
+        """
+        # create ramp
+        zeros_vector = np.zeros(self.step_nb, dtype=self.data.dtype)
+        if self.is_right_sided():
+            sym_len = self.params.zpd_index * 2
+            zeros_vector[:sym_len] = np.linspace(0,2,sym_len)
+            zeros_vector[sym_len:] = 2.
+        else:
+            sym_len = (self.step_nb - self.params.zpd_index) * 2
+            zeros_vector[-sym_len:] = np.linspace(0,2,sym_len)
+            zeros_vector[:-sym_len] = 2.
+        
+        self.data *= zeros_vector
+
         
     def transform(self):
         """zero padded fft.
@@ -187,6 +213,7 @@ class Interferogram(core.Vector1d):
         """Classical spectrum computation method. Returns a Spectrum instance."""
         new_interf = self.copy()
         new_interf.subtract_mean()
+        new_interf.multiply_by_mertz_ramp()
         return new_interf.transform()
 
     def get_phase(self):
