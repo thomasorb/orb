@@ -659,7 +659,7 @@ class Astrometry(Tools):
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
 
-            if _cube is None:
+            if _cube is not None:
                 dat = _cube # use the realigned frames
             else:
                 dat = self.data[
