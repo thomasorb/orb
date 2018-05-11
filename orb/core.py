@@ -504,7 +504,7 @@ class Tools(object):
           screen (default False).
         """
         self.params = ROParams()
-        
+
         if instrument is not None:
             if instrument in self.instruments:
                 self.config = ROParams()
@@ -597,6 +597,7 @@ class Tools(object):
         self._silent = silent
         if self.instrument is not None:
             self.set_param('instrument', self.instrument)
+
         if config is not None:
             self.update_config(config)
 
@@ -1913,7 +1914,7 @@ class Cube(Tools):
         :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
         """
         Tools.__init__(self, **kwargs)
-        
+
         self.star_list = None
         self.z_median = None
         self.z_mean = None
@@ -2731,7 +2732,7 @@ class OCube(Cube):
                 self.set_param(pkey, ofile.get(okey, cast=cast))
             else:
                 raise Exception('Malformed option file. {} not set.'.format(okey))
-                
+
         # parse optionfile
         if isinstance(params, str):
             if os.path.exists(params):
@@ -2770,8 +2771,9 @@ class OCube(Cube):
 
         for iparam in self.params:
             if iparam not in (self.needed_params + self.optional_params):
-                raise ValueError('parameter {} defined but not used'.format(iparam))
+                warnings.warn('parameter {} defined but not used'.format(iparam))
 
+        
         # compute additional parameters
         self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
         nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
@@ -2779,6 +2781,7 @@ class OCube(Cube):
         self.set_param('filter_nm_max', nm_max)
         self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
         self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
+
         
         self.params_defined = True
 
@@ -2797,7 +2800,7 @@ class OCube(Cube):
         # validate optional parameters
         for iparam in self.params:
             if iparam not in (self.needed_params + self.optional_params + self.computed_params):
-                raise ValueError('parameter {} defined but not used'.format(iparam))
+                warnings.warn('parameter {} defined but not used'.format(iparam))
 
 
     def compute_data_parameters(self):
@@ -4303,7 +4306,7 @@ class HDFCube(OCube):
             Cube.__init__(self, None, **kwargs)
         else:
             OCube.__init__(self, None, params, **kwargs)
-
+            
         self._hdf5f = None # Instance of h5py.File
         self.quad_nb = None # number of quads (set to None if HDFCube
                             # is not a cube split in quads but a cube
@@ -5444,7 +5447,6 @@ class FilterFile(Tools):
         """Wrapper around
         :py:meth:`orb.utils.filters.get_filter_bandpass`
         """
-        print self.basic_path
         return utils.filters.get_filter_bandpass(
             self.basic_path)
 

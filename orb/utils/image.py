@@ -594,67 +594,6 @@ def fit_map_theta(data_map, err_map, theta_map):
 
     return okthetas, model, model_err
 
-# def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=15,
-#                 return_spline=False):
-#     """Fit a map with a theta dependant value. The function f(theta)
-#     is a spline with a given number of knots.
-
-#     :param data_map: Data map
-
-#     :param err_map: Error map
-
-#     :param calib_map: Calibration laser map
-
-#     :param nm_laser: Calibration laser wavelength in nm
-
-#     :param knb: (Optional) Number of knots for the spline (default
-#       10).
-
-#     :param return_spline: (Optional) If True a spline is returned
-#       instead of the modeled map (default False).
-#     """
-    
-#     costheta = nm_laser / calib_map
-#     err_map = np.abs(err_map)
-#     min_threshold = np.nanpercentile(err_map, 30.) # avoid "too good"
-#                                                    # points
-#     err_map[err_map <=  min_threshold] = min_threshold
-#     err_map /= np.nanpercentile(err_map, 99.9)
-#     err_map[err_map >= 1] = 1.
-    
-#     def model(p, thetas):
-#         return interpolate.UnivariateSpline(thetas, np.array(p),
-#                                            k=1, s=0, ext=0)
-        
-#     def diff(p, data, costheta, err, thetas):
-#         res = (model(p, thetas)(costheta) - data) / err
-#         res = res.flatten()
-#         return res[~np.isnan(res)]
-
-#     thetas = np.linspace(np.nanmin(costheta), np.nanmax(costheta), knb)
-#     guess = np.zeros(knb, dtype=float)
-#     guess.fill(np.nanmedian(data_map))
-#     fit = scipy.optimize.leastsq(
-#         diff, guess,
-#         args=(data_map, costheta, err_map, thetas),
-#         full_output=True)
-
-#     data_map_fit = model(fit[0], thetas)(costheta)
-#     res_map = (data_map - data_map_fit)
-#     fit_error_map = np.abs(res_map) / np.abs(data_map)
-#     fit_error_map[np.isinf(fit_error_map)] = np.nan
-#     fit_res_std = np.nanstd(res_map)
-#     fit_error = np.nanmedian(fit_error_map)
-#     logging.info('Standard deviation of the residual: {}'.format(fit_res_std))
-#     logging.info('Median relative error (err/val)): {:.2f}%'.format(
-#         fit_error * 100.))
-
-#     if not return_spline:
-#         return data_map_fit, res_map, fit_error
-#     else:
-#         return costheta, model(fit[0], thetas)
-
-
 def fit_map_zernike(data_map, weights_map, nmodes):
     """
     Fit a map with Zernike polynomials.

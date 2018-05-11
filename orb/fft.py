@@ -31,11 +31,13 @@ import utils.err
 import core
 import scipy
 
+import fit
+
 class Interferogram(core.Vector1d):
     """Interferogram class.
     """
     needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path'
-    optional_params = ('filter_cm1_min', 'filter_cm1_max')
+    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'nm_laser')
         
     def __init__(self, interf, params=None, **kwargs):
         """Init method.
@@ -229,7 +231,7 @@ class Cm1Vector1d(core.Vector1d):
     (e.g. complex spectrum, phase)
     """
     needed_params = ('filter_file_path', )
-    optional_params = ('filter_cm1_min', 'filter_cm1_max')
+    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path', 'nm_laser')
     
     def __init__(self, spectrum, axis, params=None, **kwargs):
         """Init method.
@@ -430,7 +432,7 @@ class Phase(Cm1Vector1d):
 
 class Spectrum(Cm1Vector1d):
     """Spectrum class
-    """    
+    """
     def __init__(self, spectrum, axis, params=None, **kwargs):
         """Init method.
 
@@ -447,7 +449,7 @@ class Spectrum(Cm1Vector1d):
           supplied in the params dictionnary.    
         """
         Cm1Vector1d.__init__(self, spectrum, axis, params=params, **kwargs)
-     
+        
         if not np.iscomplexobj(self.data):
             raise TypeError('input spectrum is not complex')
 
@@ -562,6 +564,24 @@ class Spectrum(Cm1Vector1d):
                    + self.axis.data[0])
         f = scipy.interpolate.interp1d(zp_axis, zp_spec, bounds_error=False)
         return Spectrum(f(axis), axis, params=self.params)
+
+
+    def fit(self, lines, **kwargs):
+        """Fit lines in a spectrum
+
+        Wrapper around orb.fit.fit_lines_in_spectrum.
+
+        :param lines: lines to fit.
+        
+        :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
+        """
+        theta = utils.spectrum.corr2theta(self.params.calib_coeff)
+        spectrum = np.copy(self.data)
+        spectrum[np.isnan(spectrum)] = 0
+        return fit.fit_lines_in_spectrum(
+            spectrum, lines, self.params.step, self.params.order,
+            self.params.nm_laser, theta, self.params.zpd_index,
+            filter_file_path=self.params.filter_file_path, **kwargs)
 
 
 #################################################
