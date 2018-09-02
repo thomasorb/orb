@@ -200,15 +200,18 @@ class Interferogram(core.Vector1d):
 
         spec = Spectrum(interf_fft, axis, params=self.params)
 
-        # zpd shift phase correction
-        if self.has_params():
-            spec.zpd_shift(self.params.zpd_index)
-
         # spectrum is reversed if order is even
         if self.has_params():
             if int(self.params.order)&1:
                 spec.reverse()
-            
+
+        # zpd shift phase correction. The sign depends on even or odd order.
+        if self.has_params():
+            if int(self.params.order)&1:
+                spec.zpd_shift(-self.params.zpd_index)
+            else:
+                spec.zpd_shift(self.params.zpd_index)
+
         return spec
 
     def get_spectrum(self):
