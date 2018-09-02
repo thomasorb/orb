@@ -296,8 +296,12 @@ def get_filter_function(filter_file_path, step, order, n,
 
     f_axis = interpolate.UnivariateSpline(np.arange(n),
                                           spectrum_axis)
-    fpix_axis = interpolate.UnivariateSpline(spectrum_axis[::-1],
-                                             np.arange(n)[::-1])
+    if (not wavenumber):
+        fpix_axis = interpolate.UnivariateSpline(spectrum_axis,
+                                                 np.arange(n))
+    else:
+        fpix_axis = interpolate.UnivariateSpline(spectrum_axis[::-1],
+                                                 np.arange(n)[::-1])
 
     # Interpolation of the filter function
     interpol_f = interpolate.UnivariateSpline(filter_nm, filter_trans, 
