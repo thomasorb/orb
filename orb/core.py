@@ -413,10 +413,8 @@ class ROParams(dict):
         :param value: Item value.
         """
         if key in self:
-            warnings.warn('Parameter {} already defined')
-            if self[key] == value:
-                warnings.warn('Value unchanged')
-            else:
+            if self[key] != value:
+                warnings.warn('Parameter {} already defined'.format(key))
                 warnings.warn('Old value={} / new_value={}'.format(self[key], value))
         dict.__setitem__(self, key, value)
 
@@ -2872,13 +2870,13 @@ class OCube(Cube):
     def get_base_axis(self):
         """Return the spectral axis (in cm-1) at the center of the cube"""
         self.validate()
-        try: return np.copy(self.base_axis)
+        try: return Axis(np.copy(self.base_axis))
         except AttributeError:
             calib_map = self.get_calibration_coeff_map()
             self.base_axis = utils.spectrum.create_cm1_axis(
                 self.dimz, self.params.step, self.params.order,
                 corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
-        return Axis(self.base_axis)
+        return Axis(np.copy(self.base_axis))
 
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
