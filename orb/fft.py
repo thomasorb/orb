@@ -335,28 +335,43 @@ class Cm1Vector1d(core.Vector1d):
 
         :param path: hdf file path.
         """
+        if np.iscomplexobj(self.data):
+            _data = self.data.astype(complex)
+        else:
+            _data = self.data.astype(float)
+
+            
         with utils.io.open_hdf5(path, 'w') as hdffile:
             for iparam in self.params:
                 hdffile.attrs[iparam] = self.params[iparam]
 
             hdffile.create_dataset(
                 '/vector',
-                data=self.data)
+                data=_data)
 
             hdffile.create_dataset(
                 '/axis',
-                data=self.axis.data)
+                data=self.axis.data.astype(float))
 
 
     
 class Phase(Cm1Vector1d):
     """Phase class
     """
-    def cleaned(self):
+    def cleaned(self, border_ratio=0.):
         """Return a cleaned phase vector with values out of the filter set to
         nan and a median around 0 (modulo pi).
+        
+        :param border_ratio: (Optional) Relative portion of the phase
+          in the filter range removed (can be a negative float,
+          default 0.)
         """
         zmin, zmax = np.array(self.get_filter_bandpass_pix()).astype(int)
+        if not -0.2 <= border_ratio <= 0.2:
+            raise ValueError('border ratio must be between -0.2 and 0.2')
+        border = int((zmax - zmin) * border_ratio)
+        zmin += border
+        zmax -= border
         data = np.empty_like(self.data)
         data.fill(np.nan)
         ph = utils.vector.robust_unwrap(self.data[zmin:zmax], 2*np.pi)
@@ -379,30 +394,39 @@ class Phase(Cm1Vector1d):
             
         data[zmin:zmax] = ph
         
-        return Phase(data, self.axis, params=self.params)
+        return Phase(data, self.axis, params=self.params)        
         
-    def polyfit(self, deg, coeffs=None, return_coeffs=False):
+    def polyfit(self, deg, coeffs=None, return_coeffs=False,
+                border_ratio=0.1):
         """Polynomial fit of the phase
    
         :param deg: Degree of the fitting polynomial. Must be >= 0.
 
-        :param coeffs: Used to fix some coefficients to a given
-          value. If not None, must be a list of length = deg. set a
-          coeff to a np.nan or a None to let the parameter free.
+        :param coeffs: (Optional) Used to fix some coefficients to a
+          given value. If not None, must be a list of length =
+          deg. set a coeff to a np.nan or a None to let the parameter
+          free (default None).
 
-        :param return_coeffs: If True return (fit coefficients, error
-          on coefficients) else return a Phase instance
-          representing the fitted phase.
+        :param return_coeffs: (Optional) If True return (fit
+          coefficients, error on coefficients) else return a Phase
+          instance representing the fitted phase (default None).
+
+        :param border_ratio: (Optional) relative width on the
+          borders of the filter range removed from the fitted values
+          (default 0.1)
+
         """
-        RANGE_BORDER_COEFF = 0.1
-
         self.assert_params()
         deg = int(deg)
         if deg < 0: raise ValueError('deg must be >= 0')
+
+        if not 0 <= border_ratio < 0.5:
+            raise ValueError(
+                'border_ratio must be between 0 and 0.5')
             
         cm1_min, cm1_max = self.get_filter_bandpass_cm1()
         
-        cm1_border = np.abs(cm1_max - cm1_min) * RANGE_BORDER_COEFF
+        cm1_border = np.abs(cm1_max - cm1_min) * border_ratio
         cm1_min += cm1_border
         cm1_max -= cm1_border
 

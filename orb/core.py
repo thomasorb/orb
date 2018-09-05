@@ -5568,13 +5568,18 @@ class Vector1d(object):
 
         :param path: hdf file path.
         """
+        if np.iscomplexobj(self.data):
+            _data = self.data.astype(complex)
+        else:
+            _data = self.data.astype(float)
+            
         with utils.io.open_hdf5(path, 'w') as hdffile:
             for iparam in self.params:
                 hdffile.attrs[iparam] = self.params[iparam]
 
             hdffile.create_dataset(
                 '/vector',
-                data=self.data)
+                data=_data)
 
 
 #################################################
