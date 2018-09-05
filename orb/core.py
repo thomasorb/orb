@@ -704,7 +704,7 @@ class Tools(object):
         :param filter_name: Name of the filter.
         """
         phase_file_path =  self._get_orb_data_file_path(
-            "phase_" + filter_name + ".orb")
+            "phase_" + filter_name + ".hdf5")
         
         if not os.path.exists(phase_file_path):
              warnings.warn(
@@ -5462,17 +5462,29 @@ class Vector1d(object):
     def __init__(self, vector, params=None, **kwargs):
         """Init method.
 
-        :param vector: A 1d numpy.ndarray vector.
+        :param vector: A 1d numpy.ndarray vector or a path to an hdf5
+          vector file.
 
         :param params: (Optional) A dict containing additional
           parameters giving access to more methods. The needed params
-          are stored in self.needed_params (default None).
+          are stored in self.needed_params (default None). If vector
+          is a path it must be set to None.
 
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
           dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.    
+          supplied in the params dictionnary.
+
         """
+        if isinstance(vector, str):
+            if params is not None:
+                raise TypeError('params must be set to None if vector is a path')
+            with utils.io.open_hdf5(vector, 'r') as hdffile:
+                params = dict()
+                for iparam in hdffile.attrs:
+                    params[iparam] = hdffile.attrs[iparam]
+                vector = hdffile['/vector'][:]
+
         if isinstance(vector, self.__class__):
             vector = np.copy(vector.data)
         else: vector = np.copy(vector)
@@ -5511,6 +5523,7 @@ class Vector1d(object):
             if not isinstance(params, dict):
                 raise TypeError('params must be a dict ! not a {}'.format(type(params)))
             self.params = ROParams()
+                
             for iparam in self.needed_params:
                 try:
                     self.params[iparam] = kwargs[iparam]
@@ -5549,6 +5562,20 @@ class Vector1d(object):
     def copy(self):
         """Return a copy of the instance"""
         return self.__class__(np.copy(self.data), params=self.params.convert())
+
+    def writeto(self, path):
+        """Write vector and params to an hdf file
+
+        :param path: hdf file path.
+        """
+        with utils.io.open_hdf5(path, 'w') as hdffile:
+            for iparam in self.params:
+                hdffile.attrs[iparam] = self.params[iparam]
+
+            hdffile.create_dataset(
+                '/vector',
+                data=self.data)
+
 
 #################################################
 #### CLASS Axis #################################

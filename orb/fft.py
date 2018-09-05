@@ -239,7 +239,13 @@ class Cm1Vector1d(core.Vector1d):
     def __init__(self, spectrum, axis, params=None, **kwargs):
         """Init method.
 
-        :param vector: A 1d numpy.ndarray vector.
+        :param spectrum: A 1d numpy.ndarray vector or a path to an
+          hdf5 cm1 vector file (note that axis must be set to None in
+          this case).
+
+        :param axis: A 1d numpy.ndarray axis (if a file is loaded,
+          i.e. spectrum is a path to an hdf5 file, it must be set to
+          None).
         
         :param params: (Optional) A dict containing observation
           parameters (default None).
@@ -247,9 +253,15 @@ class Cm1Vector1d(core.Vector1d):
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
           dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.    
+          supplied in the params dictionnary.
+
         """
         core.Vector1d.__init__(self, spectrum, params=params, **kwargs)
+        if isinstance(spectrum, str):
+            if axis is not None:
+                raise TypeError('if spectrum is a path to an hdf5 file, axis must be set to None')
+            with utils.io.open_hdf5(spectrum, 'r') as hdffile:
+                axis = hdffile['/axis'][:]
 
         self.axis = core.Axis(axis)
 
@@ -290,10 +302,52 @@ class Cm1Vector1d(core.Vector1d):
         :param new_axis: Axis. Must be an orb.core.Axis instance.
         """
         if not isinstance(new_axis, core.Axis):
-            raise NotImplementedError('axis must be an orb.core.Axis instance')
-        f = scipy.interpolate.interp1d(self.axis.data, self.data, bounds_error=False)
+            raise TypeError('axis must be an orb.core.Axis instance')
+        f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
+                                       self.data.astype(np.float128),
+                                       bounds_error=False)
         return self.__class__(
             f(new_axis.data), new_axis.data, params=self.params)
+
+    def add(self, cm1vector):
+        """Add another cm1 vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param cm1vector: Must be a Cm1Vector instance.
+        """
+        if not isinstance(cm1vector, self.__class__):
+            raise TypeError('phase must be a {} instance'.format(self.__class__))
+        self.data += cm1vector.project(self.axis).data
+
+    def subtract(self, cm1vector):
+        """Subtract another cm1 vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param cm1vector: Must be a Cm1Vector instance.
+        """
+        if not isinstance(cm1vector, self.__class__):
+            raise TypeError('phase must be a {} instance'.format(self.__class__))
+        self.data -= cm1vector.project(self.axis).data
+
+    
+    def writeto(self, path):
+        """Write cm1 vector and params to an hdf file
+
+        :param path: hdf file path.
+        """
+        with utils.io.open_hdf5(path, 'w') as hdffile:
+            for iparam in self.params:
+                hdffile.attrs[iparam] = self.params[iparam]
+
+            hdffile.create_dataset(
+                '/vector',
+                data=self.data)
+
+            hdffile.create_dataset(
+                '/axis',
+                data=self.axis.data)
+
+
     
 class Phase(Cm1Vector1d):
     """Phase class
