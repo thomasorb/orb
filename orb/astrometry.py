@@ -637,16 +637,18 @@ class Astrometry(Tools):
         if use_deep_frame and self.deep_frame is not None:
             return np.copy(self.deep_frame)
 
+        _cube = None
+        
+        # realignment of the frames if necessary
+        if realign and self.dimz > 1:
+            _cube = self.data[:,:,:]
+            _cube = utils.astrometry.realign_images(_cube)
+                
         # If we have 3D data we work on a combined image of the first
         # frames
         if self.dimz > 1:
             _cube = None
-            
-            if realign: # realign first and then get the median or
-                        # stack frames
-                _cube = self.data[:,:,:]
-                _cube = utils.astrometry.realign_images(_cube)
-            
+                        
             if use_deep_frame:
                 if _cube is None:
                     self.deep_frame = self.data.get_median_image().astype(float)
@@ -659,12 +661,9 @@ class Astrometry(Tools):
             if stack_nb + self.DETECT_INDEX > self.frame_nb:
                 stack_nb = self.frame_nb - self.DETECT_INDEX
 
-            if _cube is not None:
-                dat = _cube # use the realigned frames
-            else:
-                dat = self.data[
-                    :,:, int(self.DETECT_INDEX):
-                    int(self.DETECT_INDEX+stack_nb)]
+            dat = self.data[
+                :,:, int(self.DETECT_INDEX):
+                int(self.DETECT_INDEX+stack_nb)]
                 
             if not self.config.BIG_DATA:
                 im = utils.image.create_master_frame(dat)

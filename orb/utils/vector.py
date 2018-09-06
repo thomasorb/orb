@@ -28,6 +28,7 @@ from scipy import interpolate, signal
 import orb.utils.spectrum
 import orb.utils.stats
 import orb.cutils
+import orb.utils.validate
 
 def smooth(a, deg=2, kind='gaussian', keep_sides=True):
     """Smooth a given vector.
@@ -311,3 +312,41 @@ def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=np.nan):
     result[np.nonzero(new_axis > np.max(old_axis))] = fill_value
     result[np.nonzero(new_axis < np.min(old_axis))] = fill_value
     return result
+
+
+def robust_unwrap(vec, dis):
+    """Unwrap a vector with a given discontinuity. Robust to nans.
+
+    Note that the returned vector will start somewhere around 0 since
+    all modulo bias is removed.
+    
+    :param vec: 1d Vector to unwrap.
+
+    :param dis: discontinuity (eg. np.pi)
+    """
+    orb.utils.validate.is_1darray(vec)
+    orb.utils.validate.has_dtype(vec, float)
+    nvec = np.copy(vec)
+
+    nvec = np.fmod(nvec, dis)
+    last = None
+    for i in range(nvec.size):
+        if not np.isnan(nvec[i]):
+            if last is not None:
+                nvec[i] = last + np.fmod(nvec[i] - last, dis)
+                if np.abs(nvec[i] - last - dis) < np.abs(nvec[i] - last):
+                    nvec[i] -= dis
+                elif np.abs(nvec[i] - last + dis) < np.abs(nvec[i] - last):
+                    nvec[i] += dis
+                
+                last = float(nvec[i])
+            else:
+                last = np.fmod(nvec[i], dis)
+                if np.abs(last - dis) < np.abs(last):
+                    last -= dis
+                
+                nvec[i] = last
+            # validation
+            check = (nvec[i] - vec[i]) / dis # should be an integer
+            if not np.isclose(check, round(check)): raise RuntimeError('unwrapped value {} is not close to the original value {} modulo {}'.format(nvec[i], vec[i], dis))
+    return nvec

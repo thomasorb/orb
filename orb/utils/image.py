@@ -22,12 +22,12 @@
 
 import logging
 import numpy as np
-import math
 import scipy
 import warnings
 from scipy import interpolate, optimize, ndimage, signal
 import bottleneck as bn
 
+import orb.utils.validate
 import orb.utils.stats
 import orb.utils.vector
 import orb.utils.parallel
@@ -535,60 +535,64 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
-def fit_map_cos(data_map, err_map, calib_map, nm_laser, knb=15):
-    """Fit a map with a theta dependant value. The function f(theta)
-    is a spline with a given number of knots.
+def fit_map_theta(data_map, err_map, theta_map):
+    """fit any data map with respect to theta. Given the corresponding theta map.
 
-    :param data_map: Data map
-
-    :param err_map: Error map
-
-    :param calib_map: Calibration laser map
-
-    :param nm_laser: Calibration laser wavelength in nm
-
-    :param knb: (Optional) Number of knots for the spline (default
-      10).
+    :param data_map: Data map to fit
+    :param err_map: Uncertainty on the data map
+    :param theta_map: Theta map (in degree)
     """
+    orb.utils.validate.is_2darray(data_map)
+    orb.utils.validate.have_same_shape((data_map, err_map, theta_map))
+    KNOTS_NB = 100
+    thetas = np.linspace(np.nanpercentile(theta_map,.1),
+                         np.nanpercentile(theta_map,99.9),
+                         KNOTS_NB)
+    okpix = np.zeros_like(data_map, dtype=bool)
+    okpix[np.nonzero(data_map)] = True
+    okpix[np.nonzero(np.isnan(data_map))] = False
+    okpix[np.nonzero(np.isinf(data_map))] = False
+
+    means = list()
+    sdevs = list()
+    okthetas = list()
     
-    costheta = nm_laser / calib_map
-    err_map = np.abs(err_map)
-    min_threshold = np.nanpercentile(err_map, 30.) # avoid "too good"
-                                                   # points
-    err_map[err_map <=  min_threshold] = min_threshold
-    err_map /= np.nanpercentile(err_map, 99.9)
-    err_map[err_map >= 1] = 1.
+    pixmap = np.zeros_like(data_map, dtype=bool)
+    for i in range(thetas.size-1):
+        ipix = np.nonzero((theta_map > thetas[i])
+                          * (theta_map <= thetas[i+1])
+                          * okpix.astype(float))
+
+        pixmap[ipix] = True
+
+        dist = data_map[ipix]
+        dist = orb.utils.stats.sigmacut(dist)
+        med = np.nanmedian(dist)
+        std = np.nanstd(dist)
+        if not np.isnan(med) and not np.isnan(std):
+            means.append(med)
+            sdevs.append(std)
+            okthetas.append(np.nanmedian(theta_map[ipix]))
     
-    def model(p, costheta, thetas):
-        spl = interpolate.UnivariateSpline(thetas, np.array(p),
-                                           k=3, s=0, ext=0)
-        return spl(costheta)
-        
-    def diff(p, data, costheta, err, thetas):
-        res = (model(p, costheta, thetas) - data) / err
-        res = res.flatten()
-        return res[~np.isnan(res)]
+    w = 1. / np.array(sdevs)
+    w /= np.nanmax(w)
+    model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=None)
+    model_err = interpolate.UnivariateSpline(okthetas, sdevs, w=w, ext=0, k=3, s=None)
 
-    thetas = np.linspace(np.nanmin(costheta), np.nanmax(costheta), knb)
-    guess = np.zeros(knb, dtype=float)
-    guess.fill(np.nanmedian(data_map))
-    fit = scipy.optimize.leastsq(
-        diff, guess,
-        args=(data_map, costheta, err_map, thetas),
-        full_output=True)
+    # import pylab as pl
+    # pl.plot(okthetas, means)
+    # pl.plot(okthetas, model(okthetas))
+    # #pl.plot(okthetas, means)
+    # pl.show()
+    
 
-    data_map_fit = model(fit[0], costheta, thetas)
-    res_map = (data_map - data_map_fit)
-    fit_error_map = np.abs(res_map) / np.abs(data_map)
-    fit_error_map[np.isinf(fit_error_map)] = np.nan
-    fit_res_std = np.nanstd(res_map)
-    fit_error = np.nanmedian(fit_error_map)
-    logging.info('Standard deviation of the residual: {}'.format(fit_res_std))
-    logging.info('Median relative error (err/val)): {:.2f}%'.format(
-        fit_error * 100.))
+    err = (model(theta_map) - data_map)[np.nonzero(pixmap)]
+    logging.info('modeling error: {} (uncertainty on data: {})'.format(
+        np.nanstd(err),
+        np.nanmedian(sdevs)))
 
-    return data_map_fit, res_map, fit_error
 
+    return okthetas, model, model_err
 
 def fit_map_zernike(data_map, weights_map, nmodes):
     """
@@ -610,7 +614,7 @@ def fit_map_zernike(data_map, weights_map, nmodes):
       libtim. It can be found in ORB module in ./ext/zern.py.
     """
     # bigger version used to fit corners
-    data_map_big = np.zeros(list((np.array(data_map.shape) * math.sqrt(2.) + 1).astype(int)),
+    data_map_big = np.zeros(list((np.array(data_map.shape) * np.sqrt(2.) + 1).astype(int)),
                             dtype=float)
     borders = ((np.array(data_map_big.shape) - np.array(data_map.shape))/2.).astype(int)
     data_map_big[borders[0]:borders[0]+data_map.shape[0],
@@ -773,9 +777,9 @@ def tilt_calibration_laser_map(cmap, calib_laser_nm, phi_x, phi_y, phi_r):
     :param phi_y: tilt angle along Y axis (degrees).
     :param phi_r: Rotation angle (degrees).
     """
-    phi_x = phi_x / 180. * math.pi
-    phi_y = phi_y / 180. * math.pi
-    phi_r = phi_r / 180. * math.pi
+    phi_x = phi_x / 180. * np.pi
+    phi_y = phi_y / 180. * np.pi
+    phi_r = phi_r / 180. * np.pi
     
     xc, yc = cmap.shape[0]/2, cmap.shape[1]/2
     theta_map = np.arccos(calib_laser_nm / cmap)
@@ -786,21 +790,21 @@ def tilt_calibration_laser_map(cmap, calib_laser_nm, phi_x, phi_y, phi_r):
     X -= xc
     Y -= yc
     
-    alpha = math.pi/2. - theta_map
+    alpha = np.pi/2. - theta_map
 
     if phi_r != 0:
-        Xr = X * math.cos(phi_r) - Y * math.sin(phi_r)
-        Yr = X * math.sin(phi_r) + Y * math.cos(phi_r)
+        Xr = X * np.cos(phi_r) - Y * np.sin(phi_r)
+        Yr = X * np.sin(phi_r) + Y * np.cos(phi_r)
         X = Xr
         Y = Yr
     
     if phi_x != 0.:
-        alpha2 = math.pi/2. - theta_map - phi_x
+        alpha2 = np.pi/2. - theta_map - phi_x
         ratio = np.sin(alpha) / np.sin(alpha2)
         X *= ratio
         
     if phi_y != 0.:
-        alpha2 = math.pi/2. - theta_map - phi_y
+        alpha2 = np.pi/2. - theta_map - phi_y
         ratio = np.sin(alpha) / np.sin(alpha2)
         Y *= ratio
     
@@ -1014,15 +1018,15 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
                + '    distance to mirror: {} cm {}\n'.format(
                    params[0] * 1e-4, print_fix(0))
                + '    X angle from the optical axis to the center: {} degrees {}\n'.format(
-                   math.fmod(float(params[1]),360), print_fix(1))
+                   np.fmod(float(params[1]),360), print_fix(1))
                + '    Y angle from the optical axis to the center: {} degrees {}\n'.format(
-                   math.fmod(float(params[2]),360), print_fix(2))
+                   np.fmod(float(params[2]),360), print_fix(2))
                + '    Tip-tilt angle of the detector along X: {} degrees {}\n'.format(
-                   math.fmod(float(params[3]),360), print_fix(3))
+                   np.fmod(float(params[3]),360), print_fix(3))
                + '    Tip-tilt angle of the detector along Y: {} degrees {}\n'.format(
-                   math.fmod(float(params[4]),360), print_fix(4))
+                   np.fmod(float(params[4]),360), print_fix(4))
                + '    Rotation angle of the detector: {} degrees {}\n'.format(
-                   math.fmod(float(params[5]),360), print_fix(5))
+                   np.fmod(float(params[5]),360), print_fix(5))
                + '    Calibration laser wavelength: {} nm {}\n'.format(
                    params[6], print_fix(6))
                + '    Error on fit: mean {}, std {} (in nm)\n'.format(
@@ -1041,15 +1045,15 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     cx = calib_laser_map.shape[0]/2.
     cy = calib_laser_map.shape[1]/2.
     center_calib_nm = np.nanmean(
-        calib_laser_map[int(cx-0.5):int(math.ceil(cx-0.5+1)),
-                        int(cy-0.5):int(math.ceil(cy-0.5+1))])
+        calib_laser_map[int(cx-0.5):int(np.ceil(cx-0.5+1)),
+                        int(cy-0.5):int(np.ceil(cy-0.5+1))])
     
-    theta_c = math.acos(calib_laser_nm/center_calib_nm) / math.pi * 180.
+    theta_c = np.acos(calib_laser_nm/center_calib_nm) / np.pi * 180.
     logging.info('Angle at the center of the frame: {}'.format(theta_c))
 
     # filter calibration laser map
-    value_min = calib_laser_nm / math.cos((theta_c - ANGLE_RANGE)/180.*math.pi)
-    value_max = calib_laser_nm / math.cos((theta_c + ANGLE_RANGE)/180.*math.pi)
+    value_min = calib_laser_nm / np.cos((theta_c - ANGLE_RANGE)/180.*np.pi)
+    value_max = calib_laser_nm / np.cos((theta_c + ANGLE_RANGE)/180.*np.pi)
     calib_laser_map[np.nonzero(calib_laser_map > value_max)] = np.nan
     calib_laser_map[np.nonzero(calib_laser_map < value_min)] = np.nan
 
@@ -1315,7 +1319,7 @@ def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
             if p_ind[i] == 1: return '(fixed)'
             else: return ''
         def ang(_a):
-            return math.fmod(float(_a),360.)
+            return np.fmod(float(_a),360.)
 
         poly_str = ''.join(['a{}: {} radians {}\n'.format(
             i, params[i], str_fix(i)) for i in range(poly_deg + 1)])
@@ -1566,11 +1570,11 @@ def unwrap_phase_map0(phase_map):
     LINE_SIZE = 30
 
     def unwrap(val, target):
-        while abs(val - target) > math.pi / 2.:
+        while abs(val - target) > np.pi / 2.:
             if val  - target > 0. :
-                val -= math.pi
+                val -= np.pi
             else:
-                val += math.pi
+                val += np.pi
         return val
 
     def unwrap_columns(pm0, bin_size):
@@ -1598,6 +1602,8 @@ def unwrap_phase_map0(phase_map):
         diff = test_line - test_line_init
         pm0 = (pm0.T + diff.T).T
         return pm0
+
+    phase_map = np.fmod(phase_map, np.pi)
 
     # unwrap pixels along columns
     phase_map = unwrap_columns(phase_map, BIN_SIZE)
@@ -1647,7 +1653,7 @@ def on_ellipse(x, y, x0, y0, rX, rY, theta, e=0.5):
     :param rY: Radius of the Y axis
     :param e: (Optional) Precision in pixels (default 0.5).
     """
-    a = theta / 180 * math.pi
+    a = theta / 180 * np.pi
     e = float(rX) / float(rY) # ellipticity
     X = (x - x0) * np.cos(a) + (y - y0) * np.sin(a)
     Y = (x - x0) * np.sin(a) - (y - y0) * np.cos(a)
@@ -1665,7 +1671,7 @@ def in_ellipse(x, y, x0, y0, rX, rY, theta):
     :param rX: Radius of the X axis
     :param rY: Radius of the Y axis
     """
-    a = theta / 180. * math.pi
+    a = theta / 180. * np.pi
     e = float(rX) / float(rY) # ellipticity
     X = (x - x0) * np.cos(a) + (y - y0) * np.sin(a)
     Y = (x - x0) * np.sin(a) - (y - y0) * np.cos(a)

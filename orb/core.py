@@ -55,19 +55,13 @@ import bottleneck as bn
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
-import h5py
 
-## ORB IMPORTS
+import pygit2
+
 ## MODULES IMPORTS
-# check if the compilation is up-to-date
-# recompile if necessary
-## import pyximport; pyximport.install(
-##     setup_args={"include_dirs":np.get_include()})
 import cutils
-
 import utils.spectrum, utils.parallel, utils.io, utils.filters
 import utils.photometry
-
 
 #################################################
 #### CLASS TextColor ############################
@@ -232,8 +226,16 @@ class Logger(object):
             self.level = logging.DEBUG
         else:
             self.level = logging.INFO
-        self.start_logging()
 
+        # get git branch (if possible)
+        repo_path = os.path.abspath(os.path.dirname(__file__) + os.sep + '..')
+        try:
+            self.branch_name = pygit2.Repository(repo_path).head.shorthand + '|'
+        except pygit2.GitError:
+            self.branch_name = ''
+        
+        self.start_logging()
+        
         # start tcp listener
         if self.debug:
             try:
@@ -343,14 +345,12 @@ class Logger(object):
         
         
     def get_logformat(self):
-        """Return a string describing the logging format"""
-        
-        return '%(asctime)s|%(module)s:%(lineno)s:%(funcName)s|%(levelname)s> %(message)s'
+        """Return a string describing the logging format"""        
+        return '%(asctime)s|%(module)s:%(lineno)s:%(funcName)s|{}%(levelname)s> %(message)s'.format(self.branch_name)
 
     def get_simplelogformat(self):
         """Return a string describing the simple logging format"""
-        
-        return '%(levelname)s| %(message)s'
+        return '{}%(levelname)s| %(message)s'.format(self.branch_name)
 
 
     def get_logdateformat(self):
@@ -413,7 +413,9 @@ class ROParams(dict):
         :param value: Item value.
         """
         if key in self:
-            warnings.warn('Parameter already defined')
+            if self[key] != value:
+                warnings.warn('Parameter {} already defined'.format(key))
+                warnings.warn('Old value={} / new_value={}'.format(self[key], value))
         dict.__setitem__(self, key, value)
 
     def __getstate__(self):
@@ -468,6 +470,7 @@ class Tools(object):
     _MASK_FRAME_TAIL = '_mask.fits' # Tail of a mask frame
     
     def __init__(self, instrument=None, data_prefix="./temp/data.",
+                 config=None,
                  tuning_parameters=dict(), ncpus=None, silent=False):
         """Initialize Tools class.
 
@@ -478,6 +481,9 @@ class Tools(object):
         :param data_prefix: (Optional) Prefix used to determine the
           header of the name of each created file (default
           'temp_data')
+
+        :param config: (Optional) Configuration dictionary to update
+          default loaded config values (default None).
 
         :param ncpus: (Optional) Number of CPUs to use for parallel
           processing. set to None gives the maximum number available
@@ -496,7 +502,7 @@ class Tools(object):
           screen (default False).
         """
         self.params = ROParams()
-        
+
         if instrument is not None:
             if instrument in self.instruments:
                 self.config = ROParams()
@@ -576,12 +582,22 @@ class Tools(object):
             self.set_config('SATURATION_THRESHOLD', float)
             self.set_config('WCS_ROTATION', float)
 
+            # optional parameters
+            self.set_config('BIAS_CALIB_PARAM_A', float)
+            self.set_config('BIAS_CALIB_PARAM_B', float)
+            self.set_config('DARK_ACTIVATION_ENERGY', float)
+
 
         self._data_prefix = data_prefix
         self._msg_class_hdr = self._get_msg_class_hdr()
         self._data_path_hdr = self._get_data_path_hdr()
         self._tuning_parameters = tuning_parameters
-        self._silent = silent    
+        self._silent = silent
+        if self.instrument is not None:
+            self.set_param('instrument', self.instrument)
+
+        if config is not None:
+            self.update_config(config)
 
     def get_param(self, key):
         """Get class parameter
@@ -597,15 +613,31 @@ class Tools(object):
         """
         self.params[key] = value
 
-    def set_config(self, key, cast):
+    def set_config(self, key, cast, optional=False):
         """Set configuration parameter (from the configuration file)
         """
+        if optional:
+            if self._get_config_parameter(key, optional=optional) is None:
+                return None
+            
         if cast is not bool:
             self.config[key] = cast(self._get_config_parameter(key))
         else:
             self.config[key] = bool(int(self._get_config_parameter(key)))
 
 
+    def update_config(self, config):
+        """Update config values from a dict
+
+        :param config: Configuration dictionary
+        """
+        if not isinstance(config, dict):
+            raise TypeError('config must be a dict')
+        for ikey in config:
+            if ikey not in self.config:
+                raise ValueError('Unknown config key: {}'.format(ikey))
+            self.config[ikey] = config[ikey]
+        
     def _get_msg_class_hdr(self):
         """Return the header of the displayed messages."""
         return "# " + self.__class__.__name__ + "."
@@ -672,7 +704,7 @@ class Tools(object):
         :param filter_name: Name of the filter.
         """
         phase_file_path =  self._get_orb_data_file_path(
-            "phase_" + filter_name + ".orb")
+            "phase_" + filter_name + ".hdf5")
         
         if not os.path.exists(phase_file_path):
              warnings.warn(
@@ -852,8 +884,7 @@ class Tools(object):
 
         :param camera_number: Number of the camera, can be 1 or 2.
         """
-        file_name = self.config[
-            'CAM{}_QE_FILE'.format(camera_number)]
+        file_name = self.config['CAM{}_QE_FILE'.format(camera_number)]
         return self._get_orb_data_file_path(file_name)
     
   
@@ -1658,24 +1689,8 @@ class Tools(object):
 
         .. note:: Please refer to http://www.h5py.org/.
         """
-        if mode in ['w', 'a', 'w-', 'x']:
-            # create folder if it does not exist
-            dirname = os.path.dirname(file_path)
-            if dirname != '':
-                if not os.path.exists(dirname): 
-                    os.makedirs(dirname)
-                    
-        f = h5py.File(file_path, mode)
-        
-        if mode in ['w', 'a', 'w-', 'x', 'r+']:
-            f.attrs['program'] = 'Generated by ORB version {}'.format(
-                __version__)
-            f.attrs['class'] = str(self.__class__.__name__)
-            f.attrs['author'] = 'Thomas Martin (thomas.martin.1@ulaval.ca)'
-            f.attrs['date'] = str(datetime.datetime.now())
-            
-        return f
-
+        return utils.io.open_hdf5(file_path, mode)
+    
     def write_hdf5(self, file_path, data, header=None,
                    silent=False, overwrite=False, max_hdu_check=True,
                    compress=False):
@@ -1731,159 +1746,25 @@ class Tools(object):
     
 
         .. note:: Please refer to http://www.h5py.org/.
-        """
-        MAX_HDUS = 3
-
-        start_time = time.time()
-        
-        # change extension if nescessary
-        if os.path.splitext(file_path)[1] != '.hdf5':
-            file_path = os.path.splitext(file_path)[0] + '.hdf5'
+        """        
+        return utils.io.write_hdf5(file_path, data, header=header, silent=silent,
+                                   overwrite=overwrite, max_hdu_check=max_hdu_check,
+                                   compress=compress)
     
-        # Check if data is a list of arrays.
-        if not isinstance(data, list):
-            data = [data]
-
-        if max_hdu_check and len(data) > MAX_HDUS:
-            raise StandardError('Data list length is > {}. As a list is interpreted has a list of data unit make sure to pass a numpy.ndarray instance instead of a list. '.format(MAX_HDUS))
-
-        # Check header format
-        if header is not None:
-        
-            if isinstance(header, pyfits.Header):
-                header = [header]
-                
-            elif isinstance(header, list):
-                
-                if (isinstance(header[0], list)
-                    or isinstance(header[0], tuple)):
-                    
-                    header_seems_ok = False
-                    if (isinstance(header[0][0], list)
-                        or isinstance(header[0][0], tuple)):
-                        # we have a list of headers
-                        if len(header) == len(data):
-                            header_seems_ok = True
-                            
-                    elif isinstance(header[0][0], str):
-                        # we only have one header
-                        if len(header[0]) > 2:
-                            header = [header]
-                            header_seems_ok = True
-                            
-                    if not header_seems_ok:
-                        raise StandardError('Badly formated header')
-                            
-                elif not isinstance(header[0], pyfits.Header):
-                    
-                    raise StandardError('Header must be a pyfits.Header instance or a list')
-
-            else:
-                raise StandardError('Header must be a pyfits.Header instance or a list')
-            
-
-            if len(header) != len(data):
-                raise StandardError('The number of headers must be the same as the number of data units.')
-            
-
-        # change path if file exists and must not be overwritten
-        new_file_path = str(file_path)
-        if not overwrite and os.path.exists(new_file_path):
-            index = 0
-            while os.path.exists(new_file_path):
-                new_file_path = (os.path.splitext(file_path)[0] + 
-                                 "_" + str(index) + 
-                                 os.path.splitext(file_path)[1])
-                index += 1
-                
-
-        # open file
-        with self.open_hdf5(new_file_path, 'w') as f:
-        
-            ## add data + header
-            for i in range(len(data)):
-
-                idata = data[i]
-                
-                # Check if data has a valid format.
-                if not isinstance(idata, np.ndarray):
-                    try:
-                        idata = np.array(idata, dtype=float)
-                    except Exception, e:
-                        raise StandardError('Data to write must be convertible to a numpy array of numeric values: {}'.format(e))
-
-
-                # convert data to float32
-                if idata.dtype == np.float64:
-                    idata = idata.astype(np.float32)
-
-                # hdu name
-                hdu_group_name = 'hdu{}'.format(i)
-                if compress:
-                    data_group = f.create_dataset(
-                        hdu_group_name + '/data', data=idata,
-                        compression='lzf', compression_opts=None)
-                        #compression='szip', compression_opts=('nn', 32))
-                        #compression='gzip', compression_opts=9)
-                else:
-                    data_group = f.create_dataset(
-                        hdu_group_name + '/data', data=idata)
-                
-                # add header
-                if header is not None:
-                    iheader = header[i]
-                    if not isinstance(iheader, pyfits.Header):
-                        iheader = pyfits.Header(iheader)
-
-                    f[hdu_group_name + '/header'] = self._header_fits2hdf5(
-                        iheader)
-
-        logging.info('Data written as {} in {:.2f} s'.format(
-            new_file_path, time.time() - start_time))
-        
-        return new_file_path
 
     def _header_fits2hdf5(self, fits_header):
         """convert a pyfits.Header() instance to a header for an hdf5 file
 
         :param fits_header: Header of the FITS file
         """
-        hdf5_header = list()
-        
-        for ikey in range(len(fits_header)):
-            _tstr = str(type(fits_header[ikey]))
-            ival = np.array(
-                (fits_header.keys()[ikey], str(fits_header[ikey]),
-                 fits_header.comments[ikey], _tstr))
-            
-            hdf5_header.append(ival)
-        return np.array(hdf5_header)
-
+        return utils.io.header_fits2hdf5(fits_header)
+    
     def _header_hdf52fits(self, hdf5_header):
         """convert an hdf5 header to a pyfits.Header() instance.
 
         :param hdf5_header: Header of the HDF5 file
         """
-        def cast(a, t_str):
-            for _t in [int, float, str, unicode,
-                       np.int64, np.float64, long, np.float128]:
-                if t_str == repr(_t):
-                    return _t(a)
-            if t_str == repr(bool): # Special case for boolean entries
-                if a == 'False':
-                    return False
-                else:
-                    return True
-            raise StandardError('Bad type string {}'.format(t_str))
-                    
-        fits_header = pyfits.Header()
-        for i in range(hdf5_header.shape[0]):
-            ival = hdf5_header[i,:]
-            if ival[3] != 'comment':
-                fits_header[ival[0]] = (cast(ival[1], ival[3]), str(ival[2]))
-            else:
-                fits_header['comment'] = ival[1]
-        return fits_header
+        return utils.io.header_hdf52fits(hdf5_header)
         
     def read_hdf5(self, file_path, return_header=False, dtype=float):
         
@@ -1899,32 +1780,10 @@ class Tools(object):
         :param dtype: (Optional) Data is converted to the given type
           (e.g. np.float32, default float).
         
-        .. note:: Please refer to http://www.h5py.org/."""
-        
-        
-        with self.open_hdf5(file_path, 'r') as f:
-            data = list()
-            header = list()
-            for hdu_name in f:
-                data.append(f[hdu_name + '/data'][:].astype(dtype))
-                if return_header:
-                    if hdu_name + '/header' in f:
-                        # extract header
-                        header.append(
-                            self._header_hdf52fits(f[hdu_name + '/header'][:]))
-                    else: header.append(None)
-
-        if len(data) == 1:
-            if return_header:
-                return data[0], header[0]
-            else:
-                return data[0]
-        else:
-            if return_header:
-                return data, header
-            else:
-                return data
-            
+        .. note:: Please refer to http://www.h5py.org/."""    
+        return utils.io.read_hdf5(file_path, return_header=return_header,
+                                  dtype=dtype)
+    
     def _get_hdf5_data_path(self, frame_index, mask=False):
         """Return path to the data of a given frame in an HDF5 cube.
 
@@ -2053,7 +1912,7 @@ class Cube(Tools):
         :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
         """
         Tools.__init__(self, **kwargs)
-        
+
         self.star_list = None
         self.z_median = None
         self.z_mean = None
@@ -2093,15 +1952,10 @@ class Cube(Tools):
         
         # check data
         if isinstance(data, str):
-            if os.path.exists(data):
-                data = self.read_fits(data)
-                
-        if not isinstance(data, np.ndarray):
-            raise TypeError('data must be a numpy.ndarray')
-        if data.ndim != 3:
-            raise ValueError('data must have 3 dimensions')
-        if data.dtype != np.float:
-            raise TypeError('data.dtype is {} and must be a float'.format(data.dtype))
+            data = self.read_fits(data)
+
+        utils.validate.is_3darray(data)
+        utils.validate.has_dtype(data, float)
         
         self._data = np.copy(data)
         self.dimx = self._data.shape[0]
@@ -2112,7 +1966,51 @@ class Cube(Tools):
     def __getitem__(self, key):
         """Getitem special method"""
         return self._data.__getitem__(key)
-    
+
+    def _get_default_slice(self, _slice, _max):
+        """Utility function used by __getitem__. Return a valid slice
+        object given an integer or slice.
+
+        :param _slice: a slice object or an integer
+        :param _max: size of the considered axis of the slice.
+        """
+        if isinstance(_slice, slice):
+            if _slice.start is not None:
+                if (isinstance(_slice.start, int)
+                    or isinstance(_slice.start, long)):
+                    if (_slice.start >= 0) and (_slice.start <= _max):
+                        slice_min = int(_slice.start)
+                    else:
+                        raise StandardError(
+                            "Index error: list index out of range")
+                else:
+                    raise StandardError("Type error: list indices of slice must be integers")
+            else: slice_min = 0
+
+            if _slice.stop is not None:
+                if (isinstance(_slice.stop, int)
+                    or isinstance(_slice.stop, long)):
+                    if _slice.stop < 0: # transform negative index to real index
+                        slice_stop = _max + _slice.stop
+                    else:  slice_stop = _slice.stop
+                    if ((slice_stop <= _max)
+                        and slice_stop > slice_min):
+                        slice_max = int(slice_stop)
+                    else:
+                        raise StandardError(
+                            "Index error: list index out of range")
+
+                else:
+                    raise StandardError("Type error: list indices of slice must be integers")
+            else: slice_max = _max
+
+        elif isinstance(_slice, int) or isinstance(_slice, long):
+            slice_min = _slice
+            slice_max = slice_min + 1
+        else:
+            raise StandardError("Type error: list indices must be integers or slices")
+        return slice(slice_min, slice_max, 1)
+
     def is_same_2D_size(self, cube_test):
         """Check if another cube has the same dimensions along x and y
         axes.
@@ -2285,7 +2183,7 @@ class Cube(Tools):
         :param size_y: New size of the cube along y axis
         
         .. warning:: This function must not be used to resize images
-          containing star-like objects (a linear interpopolation must
+          containing star-like objects (a linear interpolation must
           be done in this case).
         """
         resized_cube = np.empty((size_x, size_y, self.dimz), dtype=self.dtype)
@@ -2643,13 +2541,16 @@ class Cube(Tools):
             outcube.append_header(header)
 
             if calibration_laser_map_path is None:
-                calibration_laser_map = self.get_calibration_laser_map()
-                calib_map_hdr = None
+                try:
+                    calibration_laser_map = self.get_calibration_laser_map()
+                    calib_map_hdr = None
+                except StandardError:
+                    calibration_laser_map = None
             else:
                 calibration_laser_map, calib_map_hdr = self.read_fits(
                     calibration_laser_map_path, return_header=True)
                 if (calibration_laser_map.shape[0] != self.dimx):
-                    calibration_laser_map = orb.utils.image.interpolate_map(
+                    calibration_laser_map = utils.image.interpolate_map(
                         calibration_laser_map, self.dimx, self.dimy)
 
             if calibration_laser_map is not None:
@@ -2749,14 +2650,47 @@ class Cube(Tools):
             self.write_fits(export_path, data, overwrite=overwrite,
                             fits_header=header)
 
+    
+            
+    def validate_x_index(self, x, clip=True):
+        """validate an x index, return an integer inside the boundaries or
+        raise an exception if it is off boundaries
+
+        :param x: x index
+
+        :param clip: (Optional) If True return an index inside the
+          boundaries, else: raise an exception (default True).
+        """
+        return utils.validate.index(x, 0, self.dimx, clip=clip)
+    
+    def validate_y_index(self, y, clip=True):
+        """validate an y index, return an integer inside the boundaries or
+        raise an exception if it is off boundaries
+
+        :param y: y index (can be an array or a list of indexes)
+
+        :param clip: (Optional) If True return an index inside the
+          boundaries, else: raise an exception (default True).
+        """
+        return utils.validate.index(y, 0, self.dimy, clip=clip)
+
+        
 #################################################
 #### CLASS OCube ################################
 #################################################
 class OCube(Cube):
     """Provide additional cube methods when observation parameters are known.
-
-    .. warning:: This class cannot be used alone.
     """
+
+    needed_params = ('step', 'order', 'filter_name', 'exposure_time',
+                     'step_nb', 'calibration_laser_map_path', 'zpd_index')
+
+    optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
+                       'dark_time', 'flat_time', 'camera_index', 'wcs_rotation')
+
+    computed_params = ('filter_nm_min', 'filter_nm_max', 'filter_file_path',
+                       'filter_cm1_min', 'filter_cm1_max', 'binning')
+    
     def __init__(self, data, params, **kwargs):
         """
         Initialize Cube class.
@@ -2765,49 +2699,88 @@ class OCube(Cube):
           cube or a 3d numpy.ndarray. Can be None if data init is
           handled differently (e.g. if this class is inherited)
 
-        :param params: Path to an option file.
+        :param params: Path to an option file or dict instance.
+
+        :param kwargs: Cube kwargs + other parameters not supplied in
+          params (else overwrite parameters set in params)
         """
-        Cube.__init__(self, data, params, **kwargs)
-        self.load_params(params)
-        
-    
-    def load_params(self, params):
+        kwargs_params = dict()
+        for ikey in kwargs.keys():
+            if ikey in (self.needed_params + self.optional_params):
+                kwargs_params[ikey] = kwargs.pop(ikey)
+        Cube.__init__(self, data, **kwargs)
+        self.needed_params = tuple(self.params.keys() + list(self.needed_params))
+        self.load_params(params, **kwargs_params)
+        if data is not None:
+            # else it should be computed in the init of the child
+            # class when data parameters are known (e.g. self.dimx,
+            # self.dimy etc.)
+            self.compute_data_parameters()
+            
+    def load_params(self, params, **kwargs):
         """Load observation parameters
 
-        :params: Path to an option file.
+        :params: Path to an option file or a dict
+
+        :param kwargs: other parameters not supplied in params (else
+          overwrite parameters set in params)
         """
         def set_param(pkey, okey, cast):
             if okey in ofile.options:
                 self.set_param(pkey, ofile.get(okey, cast=cast))
             else:
                 raise Exception('Malformed option file. {} not set.'.format(okey))
-                
-    
+
         # parse optionfile
         if isinstance(params, str):
             if os.path.exists(params):
                 ofile = OptionFile(params)
                 for iopt in ofile.options:
-                    print iopt, ofile[iopt]
+                    logging.debug('{}: {}'.format(iopt, ofile[iopt]))
                 set_param('step', 'SPESTEP', float)
                 set_param('order', 'SPEORDR', int)
-                set_param('filter_name', 'FILTER', str)
-                self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
-                nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
-                self.set_param('filter_nm_min', nm_min)
-                self.set_param('filter_nm_max', nm_max)
-                self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
-                self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
-                
+                set_param('filter_name', 'FILTER', str)                
                 set_param('exposure_time', 'SPEEXPT', float)
                 set_param('step_nb', 'SPESTNB', int)
                 set_param('calibration_laser_map_path', 'CALIBMAP', str)
                 
-                
             else:
                 raise IOError('file {} does not exist'.format(params))
+
+        # parse dict
+        elif isinstance(params, dict):
+            for iparam in (self.needed_params + self.optional_params):
+                if iparam in params:
+                    self.set_param(iparam, params[iparam])
+                
         else: raise TypeError('params type ({}) not handled'.format(type(params)))
 
+        # parse additional parameters
+        for iparam in kwargs:
+            if iparam in (self.needed_params + self.optional_params):
+                self.set_param(iparam, kwargs[iparam])
+            else: raise ValueError('parameter {} supplied as a keyword argument but not used. Please remove it'.format(iparam))
+            
+
+        # validate needed params
+        for iparam in self.needed_params:
+            if iparam not in self.params:
+                raise ValueError('parameter {} must be defined in params'.format(iparam))
+
+        for iparam in self.params:
+            if iparam not in (self.needed_params + self.optional_params):
+                warnings.warn('parameter {} defined but not used'.format(iparam))
+
+        
+        # compute additional parameters
+        self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
+        nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
+        self.set_param('filter_nm_min', nm_min)
+        self.set_param('filter_nm_max', nm_max)
+        self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
+        self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
+
+        
         self.params_defined = True
 
     def validate(self):
@@ -2816,6 +2789,33 @@ class OCube(Cube):
         try: self.params_defined
         except AttributeError: raise StandardError("class not valid: set params at init")
         if not self.params_defined: raise StandardError("class not valid: set params at init")
+
+        # validate needed params
+        for iparam in self.needed_params:
+            if iparam not in self.params:
+                raise ValueError('parameter {} must be defined in params'.format(iparam))
+
+        # validate optional parameters
+        for iparam in self.params:
+            if iparam not in (self.needed_params + self.optional_params + self.computed_params):
+                warnings.warn('parameter {} defined but not used'.format(iparam))
+
+
+    def compute_data_parameters(self):
+        """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
+        if 'camera_index' in self.params:
+            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera_index)],
+                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera_index)]]
+            binning = utils.image.compute_binning(
+                (self.dimx, self.dimy), detector_shape)
+                            
+            if binning[0] != binning[1]:
+                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
+            self.set_param('binning', binning[0])
+            
+            logging.debug('Computed binning of camera {}: {}x{}'.format(
+                self.params.camera_index, self.params.binning, self.params.binning))
+
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
@@ -2834,12 +2834,13 @@ class OCube(Cube):
         filter_max_pix_map = (filter_max_cm1 - cm1_axis_min_map) / cm1_axis_step_map
         
         return filter_min_pix_map, filter_max_pix_map
+
     
     def get_calibration_laser_map(self):
         """Return calibration laser map"""
         self.validate()
         try:
-            return self.calibration_laser_map
+            return np.copy(self.calibration_laser_map)
         except AttributeError:
             self.calibration_laser_map = self.read_fits(self.params.calibration_laser_map_path)
         if (self.calibration_laser_map.shape[0] != self.dimx):
@@ -2853,7 +2854,7 @@ class OCube(Cube):
         """Return calibration laser map"""
         self.validate()
         try:
-            return self.calibration_coeff_map
+            return np.copy(self.calibration_coeff_map)
         except AttributeError:
             self.calibration_coeff_map = self.get_calibration_laser_map() / self.config.CALIB_NM_LASER 
         return self.calibration_coeff_map
@@ -2862,10 +2863,99 @@ class OCube(Cube):
         """Return the incident angle map from the calibration laser map"""
         self.validate()
         try:
-            return self.theta_map
+            return np.copy(self.theta_map)
         except AttributeError:
             self.theta_map = utils.spectrum.corr2theta(self.get_calibration_coeff_map())
 
+    def get_base_axis(self):
+        """Return the spectral axis (in cm-1) at the center of the cube"""
+        self.validate()
+        try: return Axis(np.copy(self.base_axis))
+        except AttributeError:
+            calib_map = self.get_calibration_coeff_map()
+            self.base_axis = utils.spectrum.create_cm1_axis(
+                self.dimz, self.params.step, self.params.order,
+                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
+        return Axis(np.copy(self.base_axis))
+
+    def get_axis(self, x, y):
+        """Return the spectral axis at x, y
+        """
+        self.validate()
+        utils.validate.index(x, 0, self.dimx, clip=False)
+        utils.validate.index(y, 0, self.dimy, clip=False)
+        
+        axis = utils.spectrum.create_cm1_axis(
+            self.dimz, self.params.step, self.params.order,
+            corr=self.get_calibration_coeff_map()[x, y])
+        return Axis(np.copy(axis))
+
+    def add_params_to_hdf_file(self, hdffile):
+        """Write parameters as attributes to an hdf5 file"""
+        self.validate()
+        for iparam in self.params:
+            hdffile.attrs[iparam] = self.params[iparam]
+
+    def get_astrometry(self, data=None, profile_name=None, **kwargs):
+        """Return an astrometry.Astrometry instance.
+
+        :param data: (Optional) data to pass. If None, the cube itself
+          is passed.
+
+        :param profile_name: (Optional) PSF profile. Can be gaussian or
+          moffat. default is read in config file (PSF_PROFILE).
+
+        :param kwargs: orb.astrometry.Astrometry kwargs.
+        """
+        self.validate()
+        from astrometry import Astrometry # cannot be imported at the
+                                          # beginning of the file
+
+        if profile_name is None:
+            profile_name = self.config.PSF_PROFILE
+
+        if ('target_ra' in self.params and 'target_dec' in self.params):
+            if not isinstance(self.params.target_ra, float):
+                raise TypeError('target_ra must be a float')
+            if not isinstance(self.params.target_dec, float):
+                raise TypeError('target_dec must be a float')
+
+            target_radec = (self.params.target_ra, self.params.target_dec)
+        else:
+            target_radec = None
+            
+        if ('target_x' in self.params and 'target_y' in self.params):
+            target_xy = (self.params.target_x, self.params.target_y)               
+        else:
+            target_xy = None
+
+        if data is None:
+            data = self
+        else:
+            utils.validate.is_2darray(data, object_name='data')
+            if data.shape != (self.dimx, self.dimy): raise TypeError('data must be a 2d array of shape {} {}'.format(self.dimx, self.dimy))
+
+        if 'data_prefix' not in kwargs:
+            kwargs['data_prefix'] = self._data_prefix
+
+        if 'wcs_rotation' in self.params:
+            wcs_rotation = self.params.wcs_rotation
+        else:
+            wcs_rotation=self.config.INIT_ANGLE
+
+        self.validate()
+        
+        return Astrometry(
+            data, profile_name=profile_name,
+            moffat_beta=self.config.MOFFAT_BETA,
+            tuning_parameters=self._tuning_parameters,
+            instrument=self.params.instrument,
+            ncpus=self.ncpus,
+            target_radec=target_radec,
+            target_xy=target_xy,
+            wcs_rotation=wcs_rotation,
+            **kwargs)
+        
 ##################################################
 #### CLASS ProgressBar ###########################
 ##################################################
@@ -3751,12 +3841,12 @@ class ParamsFile(Tools):
 #### CLASS FDCube ###############################
 #################################################
 
-class FDCube(Cube):
+class FDCube(OCube):
     """
     Generate and manage a **virtual frame-divided cube**.
 
     .. note:: A **frame-divided cube** is a set of frames grouped
-      together by a list.  It avoids storing a data cube in one large
+      together by a list.  Avoids storing a data cube in one large
       data file and loading an entire cube to process it.
 
     This class has been designed to handle large data cubes. Its data
@@ -3771,7 +3861,7 @@ class FDCube(Cube):
     """
 
     def __init__(self, image_list_path, image_mode='classic',
-                 chip_index=1, binning=1, no_sort=False, silent_init=False,
+                 chip_index=1, binning=1, params=None, no_sort=False, silent_init=False,
                  **kwargs):
         """Init frame-divided cube class
 
@@ -3800,6 +3890,9 @@ class FDCube(Cube):
           this amount. i.e. 1000x1000xN raw frames with a prebinning
           of 2 will give a cube of 500x500xN (default 1).
 
+        :param params: Path to an option file or dictionary
+          containting observation parameters.
+
         :param no_sort: (Optional) If True, no sort of the file list
           is done. Files list is taken as is (default False).
 
@@ -3809,7 +3902,10 @@ class FDCube(Cube):
 
         :param kwargs: (Optional) :py:class:`~orb.core.Cube` kwargs.
         """
-        Cube.__init__(self, None, **kwargs)
+        if params is None:
+            Cube.__init__(self, None, **kwargs)
+        else:
+            OCube.__init__(self, None, params, **kwargs)
 
         self.image_list_path = image_list_path
 
@@ -3871,10 +3967,7 @@ class FDCube(Cube):
                                 binning=self._prebinning)
                             self.dimx = image_data.shape[0]
                             self.dimy = image_data.shape[1]
-                            
-                            hdul = self.read_fits(
-                                image_name, return_hdu_only=True)
-                            
+                                                        
                         else:
                             with self.open_hdf5(image_name, 'r') as f:
                                 if 'hdu0/data' in f:
@@ -3916,7 +4009,9 @@ class FDCube(Cube):
                 raise StandardError("Incorrect data shape : (" 
                                   + str(self.dimx) + ", " + str(self.dimy) 
                                   + ", " +str(self.dimz) + ")")
-
+            
+            if params is not None:
+                self.compute_data_parameters()
 
     def __getitem__(self, key):
         """Implement the evaluation of self[key].
@@ -3967,7 +4062,7 @@ class FDCube(Cube):
                     added_data[:,:,ijob] = job()
 
                 data = np.dstack((data, added_data))
-                if not self._silent_load:
+                if not self._silent_load and not (ik - z_slice.start)%500:
                     progress.update(ik - z_slice.start, info="Loading data")
             if not self._silent_load:
                 progress.end()
@@ -3981,56 +4076,12 @@ class FDCube(Cube):
                 added_data = self._get_frame_section(x_slice, y_slice, ik)
 
                 data = np.dstack((data, added_data))
-                if not self._silent_load:
+                if not self._silent_load and not (ik - z_slice.start)%500:
                     progress.update(ik - z_slice.start, info="Loading data")
             if not self._silent_load:
                 progress.end()
             
         return np.squeeze(data)
-
-    def _get_default_slice(self, _slice, _max):
-        """Utility function used by __getitem__. Return a valid slice
-        object given an integer or slice.
-
-        :param _slice: a slice object or an integer
-        :param _max: size of the considered axis of the slice.
-        """
-        if isinstance(_slice, slice):
-            if _slice.start is not None:
-                if (isinstance(_slice.start, int)
-                    or isinstance(_slice.start, long)):
-                    if (_slice.start >= 0) and (_slice.start <= _max):
-                        slice_min = int(_slice.start)
-                    else:
-                        raise StandardError(
-                            "Index error: list index out of range")
-                else:
-                    raise StandardError("Type error: list indices of slice must be integers")
-            else: slice_min = 0
-
-            if _slice.stop is not None:
-                if (isinstance(_slice.stop, int)
-                    or isinstance(_slice.stop, long)):
-                    if _slice.stop < 0: # transform negative index to real index
-                        slice_stop = _max + _slice.stop
-                    else:  slice_stop = _slice.stop
-                    if ((slice_stop <= _max)
-                        and slice_stop > slice_min):
-                        slice_max = int(slice_stop)
-                    else:
-                        raise StandardError(
-                            "Index error: list index out of range")
-
-                else:
-                    raise StandardError("Type error: list indices of slice must be integers")
-            else: slice_max = _max
-
-        elif isinstance(_slice, int) or isinstance(_slice, long):
-            slice_min = _slice
-            slice_max = slice_min + 1
-        else:
-            raise StandardError("Type error: list indices must be integers or slices")
-        return slice(slice_min, slice_max, 1)
 
     def _get_frame_section(self, x_slice, y_slice, frame_index):
         """Utility function used by __getitem__.
@@ -4189,7 +4240,7 @@ class FDCube(Cube):
 #################################################
 
 
-class HDFCube(FDCube):
+class HDFCube(OCube):
     """ This class implements the use of an HDF5 cube.
 
     An HDF5 cube is similar to the *frame-divided cube* implemented by
@@ -4210,13 +4261,17 @@ class HDFCube(FDCube):
 
     * A **mask** dataset can be added to each frame.
     """        
-    def __init__(self, cube_path, silent_init=False,
+    def __init__(self, cube_path, params=None,
+                 silent_init=False,
                  binning=None, **kwargs):
         
         """
         Initialize HDFCube class.
         
         :param cube_path: Path to the HDF5 cube.
+
+        :param params: Path to an option file or dictionary containtin
+          observation parameters.
 
         :param overwrite: (Optional) If True existing FITS files will
           be overwritten (default True).
@@ -4233,8 +4288,11 @@ class HDFCube(FDCube):
 
         :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
         """
-        Cube.__init__(self, None, **kwargs)
-
+        if params is None:
+            Cube.__init__(self, None, **kwargs)
+        else:
+            OCube.__init__(self, None, params, **kwargs)
+            
         self._hdf5f = None # Instance of h5py.File
         self.quad_nb = None # number of quads (set to None if HDFCube
                             # is not a cube split in quads but a cube
@@ -4339,6 +4397,9 @@ class HDFCube(FDCube):
                               + ", " +str(self.dimz) + ")")
 
         self.shape = (self.dimx, self.dimy, self.dimz)
+
+        if params is not None:
+            self.compute_data_parameters()
 
         
     def __getitem__(self, key):
@@ -4511,8 +4572,11 @@ class HDFCube(FDCube):
             if 'calib_map' in f:
                 return f['calib_map'][:]
             else:
-                warnings.warn('No calibration laser map stored')
-                return None
+                if isinstance(self, OCube):
+                    return OCube.get_calibration_laser_map(self)
+                else:
+                    warnings.warn('No calibration laser map stored')
+                    return None
 
            
     def get_mean_image(self, recompute=False):
@@ -5081,7 +5145,7 @@ class Standard(Tools):
 
         :param order: Folding order
         
-        :param step: Step size in um
+        :param step: Step size in nm
         
         :param n: Number of steps
         
@@ -5193,7 +5257,7 @@ class Standard(Tools):
         :param corr: (Optional) Correction coefficient related to the
            incident angle (default 1).
         """
-
+    
         STEP_NB = 1000
         camera_number = int(camera_number)
         if camera_number not in (1,2):
@@ -5323,12 +5387,12 @@ class FilterFile(Tools):
         if not os.path.exists(self.basic_path):
             raise ValueError('filter_name is not a valid filter name and is not a valid filter file path')
 
-    def read_filter_file(self):
+    def read_filter_file(self, return_spline=False):
         """Wrapper around
         :py:meth:`orb.utils.filters.read_filter_file`
         """
         return utils.filters.read_filter_file(
-            self.basic_path)
+            self.basic_path, return_spline=return_spline)
 
     def get_filter_function(self, step, order, step_nb,
                             wavenumber=False, silent=False, corr=1.):
@@ -5368,132 +5432,8 @@ class FilterFile(Tools):
         """Wrapper around
         :py:meth:`orb.utils.filters.get_filter_bandpass`
         """
-        print self.basic_path
         return utils.filters.get_filter_bandpass(
             self.basic_path)
-
-
-#################################################
-#### CLASS PhaseFile ############################
-#################################################
-class PhaseFile(Tools):
-    """Manage phase files"""
-
-    def __init__(self, filter_name, **kwargs):
-        """Initialize PhaseFile class.
-
-        :param filter_name: Name of the filter.
-
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
-        """
-        Tools.__init__(self, **kwargs)
-        self.basic_path = self._get_phase_file_path(filter_name)
-        self.improved_path = os.path.splitext(self.basic_path)[0] + '.hdf5'
-
-        if not os.path.exists(self.improved_path):
-            warnings.warn('Improved phase file {} does not exist !'.format(self.improved_path))
-            self.basic_phase = utils.fft.read_phase_file(
-                self.basic_path, return_spline=True)
-        else:
-            self.basic_phase = None
-
-            with self.open_hdf5(self.improved_path, 'r') as inf:
-                if 'angles' in inf:
-                    self.angles = inf['angles'][:]
-                else: raise StandardError('Badly formatted phase file: angles is missing')
-                if 'phases' in inf:
-                    self.phases = inf['phases'][:]
-                else: raise StandardError('Badly formatted phase file: phases is missing')
-                if 'phases_err_min' in inf:
-                    self.phases_err_min = inf['phases_err_min'][:]
-                else: raise StandardError('Badly formatted phase file: phases_err_min is missing')
-                if 'phases_err_max' in inf:
-                    self.phases_err_max = inf['phases_err_max'][:]
-                else: raise StandardError('Badly formatted phase file: phases_err_max is missing')
-
-                if 'step' in inf.attrs:
-                    self.step = inf.attrs['step']
-                else: raise StandardError('Badly formatted phase file: step attribute is missing')
-                if 'order' in inf.attrs:
-                    self.order = inf.attrs['order']
-                else: raise StandardError('Badly formatted phase file: order attribute is missing')
-
-            
-
-
-    def write_improved_phase_file(self, step, order, angles, phases,
-                                  phases_err_min, phases_err_max):
-        """Write an improved phase file as an hdf5 archive.
-
-        :param step: Step size in nm
-
-        :param order: Folding order.
-        
-        :param angles: limit angles of each phase group.
-        
-        :param phases: list of phase vectors corresponding to each
-          angle group.
-        
-        :param phases_err_min: list of min error vectors of each phase
-          vector.
-        
-        :param phases_err_max: list of max error vectors of each phase
-          vector.
-
-        .. warning:: To avoid unwanted replacement of ORB's data files
-          the phase file is not written in ORB folder but at the root
-          folder. It must thus be placed in the orb/data folder to be
-          readable with self.read_improved_phase_file.
-        """
-        path = os.path.split(self.improved_path)[1]
-        with self.open_hdf5(path, 'w') as outf:
-            outf.attrs['step'] = step
-            outf.attrs['order'] = order
-            outf.create_dataset('angles', data=np.array(angles))
-            outf.create_dataset('phases', data=np.array(phases))
-            outf.create_dataset('phases_err_min', data=np.array(phases_err_min))
-            outf.create_dataset('phases_err_max', data=np.array(phases_err_max))
-        logging.info('Improved phase file {} written'.format(path))
-        
-
-    def get_improved_phase(self, calib_laser_nm, return_spline=True):
-        """Return a scipy.interpolate.UnivariateSpline instance
-        corresponding to the phase at a given calibration laser
-        wavelength (i.e. a given incident angle theta).
-
-        :param calib_laser_nm: Calibration laser wavelength in nm.
-
-        :param return_spline: (Optional) If not True, the phase vector
-          is returned without any spline interpolation. Useful and
-          faster when no interpolation is needed (default True).
-
-        .. note:: The returned spline is projected along an axis in
-          cm-1
-        """
-
-        if self.basic_phase is not None: return self.basic_phase
-        
-        argmax = np.nanargmax(self.angles > calib_laser_nm)
-        if (argmax==self.phases.shape[0]):
-            argmax = argmax-1
-        calib_max = self.angles[argmax]
-        calib_min = self.angles[argmax - 1]
-        ratio = (calib_laser_nm - calib_min) / (calib_max - calib_min)
-        ph_max = self.phases[argmax,:]
-        ph_min = self.phases[argmax - 1,:]
-        phase = (ph_max * ratio + ph_min * (1.-ratio))
-        
-        cm1_axis = utils.spectrum.create_cm1_axis(
-            phase.shape[0], self.step, self.order,
-            corr=calib_laser_nm/float(
-                self.config.CALIB_NM_LASER))
-        if return_spline:
-            nonans = ~np.isnan(phase)
-            return interpolate.UnivariateSpline(
-                cm1_axis[nonans], phase[nonans], k=3, s=0, ext=1)
-        else: return phase
-            
-
 
 #################################################
 #### CLASS Vector1d #############################
@@ -5509,19 +5449,32 @@ class Vector1d(object):
     def __init__(self, vector, params=None, **kwargs):
         """Init method.
 
-        :param vector: A 1d numpy.ndarray vector.
+        :param vector: A 1d numpy.ndarray vector or a path to an hdf5
+          vector file.
 
         :param params: (Optional) A dict containing additional
           parameters giving access to more methods. The needed params
-          are stored in self.needed_params (default None).
+          are stored in self.needed_params (default None). If vector
+          is a path it must be set to None.
 
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
           dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.    
+          supplied in the params dictionnary.
+
         """
+        if isinstance(vector, str):
+            if params is not None:
+                raise TypeError('params must be set to None if vector is a path')
+            with utils.io.open_hdf5(vector, 'r') as hdffile:
+                params = dict()
+                for iparam in hdffile.attrs:
+                    params[iparam] = hdffile.attrs[iparam]
+                vector = hdffile['/vector'][:]
+
         if isinstance(vector, self.__class__):
             vector = np.copy(vector.data)
+        else: vector = np.copy(vector)
 
         # checking
         if not isinstance(vector, np.ndarray):
@@ -5555,8 +5508,9 @@ class Vector1d(object):
 
         if params is not None:
             if not isinstance(params, dict):
-                raise TypeError('params must be a dict')
-            self.params = core.ROParams()
+                raise TypeError('params must be a dict ! not a {}'.format(type(params)))
+            self.params = ROParams()
+                
             for iparam in self.needed_params:
                 try:
                     self.params[iparam] = kwargs[iparam]
@@ -5590,8 +5544,30 @@ class Vector1d(object):
 
     def __getitem__(self, key):
         """Getitem special method"""
-        return self.data.__getitem__(key)
-    
+        return self.__class__(self.data.__getitem__(key), params=self.params)
+
+    def copy(self):
+        """Return a copy of the instance"""
+        return self.__class__(np.copy(self.data), params=self.params.convert())
+
+    def writeto(self, path):
+        """Write vector and params to an hdf file
+
+        :param path: hdf file path.
+        """
+        if np.iscomplexobj(self.data):
+            _data = self.data.astype(complex)
+        else:
+            _data = self.data.astype(float)
+            
+        with utils.io.open_hdf5(path, 'w') as hdffile:
+            for iparam in self.params:
+                hdffile.attrs[iparam] = self.params[iparam]
+
+            hdffile.create_dataset(
+                '/vector',
+                data=_data)
+
 
 #################################################
 #### CLASS Axis #################################
@@ -5599,18 +5575,27 @@ class Vector1d(object):
 class Axis(Vector1d):
     """Axis class"""
 
-    def __init__(self, axis):
+    def __init__(self, axis, params=None, **kwargs):
         """Init class with an axis vector
 
         :param axis: Regularly sampled and naturally ordered axis.
+
+        :param params: (Optional) A dict containing additional
+          parameters giving access to more methods. The needed params
+          are stored in self.needed_params (default None).
+
+        :param kwargs: (Optional) Keyword arguments, can be used to
+          supply observation parameters not included in the params
+          dict. These parameters take precedence over the parameters
+          supplied in the params dictionnary.    
         """
-        Vector1d.__init__(self, axis)
+        Vector1d.__init__(self, axis, params=params, **kwargs)
 
         # check that axis is regularly sampled
         diff = np.diff(self.data)
         if np.any(~np.isclose(diff - diff[0], 0.)):
             raise StandardError('axis must be regularly sampled')
-        if self[0] > self[-1]:
+        if self.data[0] > self.data[-1]:
             raise StandardError('axis must be naturally ordered')
 
         self.axis_step = diff[0]
@@ -5622,7 +5607,7 @@ class Axis(Vector1d):
 
         :return: Position in index
         """
-        pos_index = (pos - self[0]) / float(self.axis_step)
+        pos_index = (pos - self.data[0]) / float(self.axis_step)
         if pos_index < 0 or pos_index >= self.step_nb:
             warnings.warn('requested position is off axis')
         return pos_index
