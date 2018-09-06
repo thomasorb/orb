@@ -4074,7 +4074,7 @@ class FDCube(OCube):
                     added_data[:,:,ijob] = job()
 
                 data = np.dstack((data, added_data))
-                if not self._silent_load:
+                if not self._silent_load and not (ik - z_slice.start)%500:
                     progress.update(ik - z_slice.start, info="Loading data")
             if not self._silent_load:
                 progress.end()
@@ -4088,7 +4088,7 @@ class FDCube(OCube):
                 added_data = self._get_frame_section(x_slice, y_slice, ik)
 
                 data = np.dstack((data, added_data))
-                if not self._silent_load:
+                if not self._silent_load and not (ik - z_slice.start)%500:
                     progress.update(ik - z_slice.start, info="Loading data")
             if not self._silent_load:
                 progress.end()
