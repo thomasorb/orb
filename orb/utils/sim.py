@@ -22,7 +22,6 @@
 
 import logging
 import numpy as np
-import math
 import warnings
 
 import orb.cutils
@@ -83,7 +82,7 @@ def line_interf(sigma, step_nb, phi=0, symm=False):
     """
     if sigma > step_nb / 2.: raise ValueError('Sigma must be < step_nb/2')
     x = np.arange(step_nb, dtype=float) / (step_nb-1)
-    a = np.cos(x*sigma*2.*math.pi + phi) / 2. + 0.5
+    a = np.cos(x * sigma *2. * np.pi + phi) / 2. + 0.5
     if symm:
         return np.hstack((a[::-1][:-1], a))
     else:
@@ -97,7 +96,7 @@ def fft(interf, zp_coeff=10, apod=None, phase=None):
 
     ZPD is assumed to be on the first sample of the interferogram
     
-    :param a: interferogram
+    :param interf: interferogram
 
     :param zp_coeff: Zero-padding coefficient
 

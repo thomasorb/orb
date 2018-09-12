@@ -2863,7 +2863,6 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
       * log(Gaussian Bayes Factor) [key: 'logGBF']
    
     """
-    raise NotImplementedError('must be checked')
     ip = InputParams(vector.shape[0])
 
     ip.add_lines_model(lines, fwhm_guess, **kwargs)
