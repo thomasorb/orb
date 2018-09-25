@@ -88,7 +88,7 @@ def line_interf(sigma, step_nb, phi=0, symm=False):
     else:
         return a
 
-def fft(interf, zp_coeff=10, apod=None, phase=None):
+def fft(interf, zp_coeff=2, apod=None, phase=None):
     """
     Basic Fourier Transform with zero-padding.
 
@@ -98,12 +98,13 @@ def fft(interf, zp_coeff=10, apod=None, phase=None):
     
     :param interf: interferogram
 
-    :param zp_coeff: Zero-padding coefficient
+    :param zp_coeff: Zero-padding coefficient (2 by default)
 
     :param apod: Apodization function
 
     :return: axis, complex interferogram FFT
     """
+    if zp_coeff < 1: raise ValueError('zero-padding coeff should be >= 1')
     step_nb = interf.shape[0]
 
     # remove mean
@@ -116,7 +117,7 @@ def fft(interf, zp_coeff=10, apod=None, phase=None):
 
         
     # zero padding
-    zp_nb = step_nb * zp_coeff * 2
+    zp_nb = int(step_nb * zp_coeff)
     zp_interf = np.zeros(zp_nb, dtype=float)
     zp_interf[:step_nb] = interf
 

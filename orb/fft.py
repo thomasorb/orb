@@ -200,7 +200,7 @@ class Interferogram(core.Vector1d):
 
         spec = Spectrum(interf_fft, axis, params=self.params)
 
-        # spectrum is reversed if order is even
+        # spectrum is flipped if order is even
         if self.has_params():
             if int(self.params.order)&1:
                 spec.reverse()
@@ -647,7 +647,7 @@ class Spectrum(Cm1Vector1d):
         return Spectrum(f(axis), axis, params=self.params)
 
 
-    def fit(self, lines, **kwargs):
+    def fit(self, lines, fmodel='sinc', **kwargs):
         """Fit lines in a spectrum
 
         Wrapper around orb.fit.fit_lines_in_spectrum.
@@ -656,13 +656,16 @@ class Spectrum(Cm1Vector1d):
         
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
-        theta = utils.spectrum.corr2theta(self.params.calib_coeff)
+        if not isinstance(lines, list): raise TypeError("lines should be a list of lines, e.g. ['Halpha'] or [15534.25]")
+        theta = utils.spectrum.corr2theta(
+            self.params.calib_coeff)
         spectrum = np.copy(self.data)
         spectrum[np.isnan(spectrum)] = 0
         return fit.fit_lines_in_spectrum(
             spectrum, lines, self.params.step, self.params.order,
             self.params.nm_laser, theta, self.params.zpd_index,
-            filter_file_path=self.params.filter_file_path, **kwargs)
+            filter_file_path=self.params.filter_file_path,
+            fmodel=fmodel, **kwargs)
 
 
 #################################################
