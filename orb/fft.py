@@ -294,10 +294,26 @@ class Cm1Vector1d(core.Vector1d):
             
         return self.params.filter_cm1_min, self.params.filter_cm1_max
 
-    def get_filter_bandpass_pix(self):
-        """Return filter bandpass in channels"""
-        return (self.axis(self.get_filter_bandpass_cm1()[0]),
-                self.axis(self.get_filter_bandpass_cm1()[1]))
+    def get_filter_bandpass_pix(self, border_ratio=0.):
+        """Return filter bandpass in channels
+
+        :param border_ratio: (Optional) Relative portion of the phase
+          in the filter range removed (can be a negative float,
+          default 0.)
+        
+        :return: (min, max)
+        """
+        if not -0.2 <= border_ratio <= 0.2:
+            raise ValueError('border ratio must be between -0.2 and 0.2')
+
+        zmin = int(self.axis(self.get_filter_bandpass_cm1()[0]))
+        zmax = int(self.axis(self.get_filter_bandpass_cm1()[1]))
+        if border_ratio != 0:
+            border = int((zmax - zmin) * border_ratio)
+            zmin += border
+            zmax -= border
+        
+        return zmin, zmax
 
     def project(self, new_axis):
         """Project vector on a new axis
@@ -368,13 +384,10 @@ class Phase(Cm1Vector1d):
         :param border_ratio: (Optional) Relative portion of the phase
           in the filter range removed (can be a negative float,
           default 0.)
+
+        :return: A Phase instance
         """
-        zmin, zmax = np.array(self.get_filter_bandpass_pix()).astype(int)
-        if not -0.2 <= border_ratio <= 0.2:
-            raise ValueError('border ratio must be between -0.2 and 0.2')
-        border = int((zmax - zmin) * border_ratio)
-        zmin += border
-        zmax -= border
+        zmin, zmax = self.get_filter_bandpass_pix(border_ratio=border_ratio)
         data = np.empty_like(self.data)
         data.fill(np.nan)
         ph = utils.vector.robust_unwrap(self.data[zmin:zmax], 2*np.pi)
