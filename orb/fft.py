@@ -134,7 +134,9 @@ class Interferogram(core.Vector1d):
     def multiply_by_mertz_ramp(self):
         """Multiply by Mertz (1976) ramp function to avoid counting
         symmetric samples twice and reduce emission lines contrast wrt
-        the background.   
+        the background.
+
+        :return: Mertz ramp as a 1d np.ndarray
         """
         # create ramp
         zeros_vector = np.zeros(self.step_nb, dtype=self.data.dtype)
@@ -149,7 +151,8 @@ class Interferogram(core.Vector1d):
         
         self.data *= zeros_vector
 
-        
+        return zeros_vector
+
     def transform(self):
         """zero padded fft.
           
