@@ -3,8 +3,9 @@
 # Filter name : C4
 # Filter edges are taken at 90% (FILTER_MIN) and 90% (FILTER_MAX)
 # Wavelength in nm | Transmission percentage
-# FILTER_MIN 798
-# FILTER_MAX 823
+# min max defined at 95%
+# FILTER_MIN 798.5
+# FILTER_MAX 823.4
 # ORDER 12
 # STEP 5271.5
 # PHASE_FIT_ORDER 1

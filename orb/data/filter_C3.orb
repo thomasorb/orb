@@ -2,12 +2,13 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # Filter name : C3
 # Wavelength in nm | Transmission percentage
-# FILTER_MIN 507.0
-# FILTER_MAX 557.0
+# min max defined at 90%
+# FILTER_MIN 511.0
+# FILTER_MAX 555.4
 # ORDER 6
 # STEP 1785
 # MODULATION_EFFICIENCY 0.8
-# PHASE_FIT_ORDER 1
+# PHASE_FIT_ORDER 2
 1000.0 0.0
 999.973332444 0.0
 999.946664889 0.0

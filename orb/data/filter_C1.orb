@@ -2,8 +2,9 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # Filter name : C1
 # Wavelength in nm | Transmission percentage
-# FILTER_MIN 389.0
-# FILTER_MAX 483.7
+# min max defined at 85%
+# FILTER_MIN 385.4
+# FILTER_MAX 485.2
 # ORDER 2
 # STEP 570
 # MODULATION_EFFICIENCY 0.7
