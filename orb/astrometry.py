@@ -1753,7 +1753,7 @@ class Astrometry(Tools):
 
         :param rscale_coeff: (Optional) Coefficient on the maximum
           radius of the fitted stars to compute scale. When rscale_coeff
-          = 1, rmax is half the longer side of the image (default 1).
+          = 1, rmax is half the longest side of the image (default 1).
 
         :param compute_distortion: (Optional) If True, optical
           distortion (SIP) are computed. Note that a frame with a lot

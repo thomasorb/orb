@@ -527,6 +527,18 @@ class Phase(Cm1Vector1d):
             return self.__class__(model(self.axis.data.astype(float), *pfit),
                                   self.axis, params=self.params)
 
+    def subtract_low_order_poly(self, deg, border_ratio=0.1):
+                """ low order polynomial substraction to suppress low
+        frequency noise
+
+        :param deg: Degree of the fitting polynomial. Must be >= 0.
+
+        :param border_ratio: (Optional) relative width on the
+          borders of the filter range removed from the fitted values
+          (default 0.1)
+        """
+        self.subtract(self.polyfit(deg, border_ratio=border_ratio))
+
 class Spectrum(Cm1Vector1d):
     """Spectrum class
     """
