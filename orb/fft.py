@@ -528,7 +528,7 @@ class Phase(Cm1Vector1d):
                                   self.axis, params=self.params)
 
     def subtract_low_order_poly(self, deg, border_ratio=0.1):
-                """ low order polynomial substraction to suppress low
+        """ low order polynomial substraction to suppress low
         frequency noise
 
         :param deg: Degree of the fitting polynomial. Must be >= 0.
