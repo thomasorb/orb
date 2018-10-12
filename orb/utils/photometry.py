@@ -338,35 +338,6 @@ def compute_equivalent_bandwidth(nm_axis, filter_transmission):
                      / np.nanmax(filter_transmission))
 
 
-def compute_star_flux_in_frame(nm_axis, star_flux, filter_trans,
-                               optics_trans, atm_trans,
-                               mirror_trans, qe, mirror_surface, ccd_gain):
-    """Return the estimation of the flux of a star in counts/s in one image.
-
-    :param nm_axis: Wavelentgh axis in nm
-    :param star_flux: Star flux curve in ergs/cm2/s/A
-    :param filter_trans: Transmission curve of the filter
-    :param optics_trans: Transmission of the optics
-    :param atm_trans: Transmission of the atmosphere
-    :param qe: Quantum Efficiency curve of the detector
-    :param mirror_surface: Surface of the primary mirror in cm2
-    :param ccd_gain: Gain of the detector.
-    """
-    flux = star_flux # erg/cm2/s/A
-    flux /= compute_photon_energy(nm_axis) # photons/s/A
-    flux *= atm_trans
-    flux *= mirror_surface # photons/s/A
-    flux *= mirror_trans**2 # **2 because we have two mirrors 
-    flux *= optics_trans
-    flux *= filter_trans
-    flux *= qe # electrons/s/A
-    flux *= ccd_gain # counts/s/A
-    # sum all counts by wavelength bins
-    flux = np.diff(nm_axis) * 10. * flux[:-1] 
-    flux = np.nansum(flux) # counts/s
-    flux /= 2 # photon flux divided by two at the beam splitter
-    return flux
-
 def compute_star_central_pixel_value(seeing, plate_scale):
     """Return the relative value of the pixel containing the greatest
     proportion of the flux (central pixel) of Gaussian star.

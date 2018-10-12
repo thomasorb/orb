@@ -42,17 +42,21 @@ def step_interf(sigma_min, sigma_max, step_nb, symm=False):
     :param symm: (Optional) If True, returned spectrum is symmetric,
       it has two times more steps - 1. Zpd position is equal to
       step_nb - 0.5.
-   
+
     .. note:: results are much better with a symmetric interferogram
       but ZPD is not on the first sample and the spectrum must thus be
       phase corrected.
+
     """
     if sigma_max > step_nb / 2.: raise ValueError('sigma_max must be < step_nb/2')
     if sigma_min >= sigma_max: raise ValueError('sigma_min must be < sigma_max')
     if not 0 <= sigma_min < sigma_max: raise ValueError('sigma_min must be < sigma_max and > 0')
-
+    jitter = float(jitter)
+    if not 0 <= jitter < 1: raise ValueError('jitter must be between 0 and 1')
+    
     x = np.arange(step_nb, dtype=float)
     x = x / (step_nb - 1.)
+
     
     fwhm = 1. / (float(sigma_max - sigma_min)) * orb.constants.FWHM_SINC_COEFF
     interf = orb.utils.spectrum.sinc1d(x, 0, 1, 0, fwhm)
@@ -64,7 +68,7 @@ def step_interf(sigma_min, sigma_max, step_nb, symm=False):
         return interf
 
 
-def line_interf(sigma, step_nb, phi=0, symm=False):
+def line_interf(sigma, step_nb, phi=0, symm=False, jitter=0.):
     """
     Simulate a simple line interferogram (a cosine)
 
@@ -79,10 +83,33 @@ def line_interf(sigma, step_nb, phi=0, symm=False):
     :param symm: (Optional) If True, returned spectrum is symmetric,
       it has two times more steps - 1. Zpd position is equal to
       step_nb - 0.5.
+
+    :param jitter: (Optional) Std of an OPD jitter. Must be a float
+      between 0 and 1 (jitter distribution is normal, default 0.).
     """
+    RANDNB = 10000
+    
     if sigma > step_nb / 2.: raise ValueError('Sigma must be < step_nb/2')
+    if jitter > 0.:
+        randnb = RANDNB
+    else:
+        randnb = 1
+    
+    a = np.zeros(step_nb, dtype=float)
     x = np.arange(step_nb, dtype=float) / (step_nb-1)
-    a = np.cos(x * sigma *2. * np.pi + phi) / 2. + 0.5
+
+    print jitter
+    for i in range(randnb):    
+        if jitter != 0:
+            rand = np.random.standard_normal(x.size) * jitter
+            ix = x + np.where(rand <= 3*jitter, rand, 3*jitter) 
+        else:
+            ix = x
+        
+        a += np.cos(ix * sigma *2. * np.pi + phi) / 2. + 0.5
+        
+    a /= randnb
+    
     if symm:
         return np.hstack((a[::-1][:-1], a))
     else:

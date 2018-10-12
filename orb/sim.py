@@ -63,17 +63,17 @@ class Simulator(object):
     def get_interferogram(self):
         return orb.fft.Interferogram(np.copy(self.data), params=self.params)
 
-    def add_line(self, sigma):
-        
+    def add_line(self, sigma, jitter=0):
+        """
+        :param jitter: Std of an OPD jitter. Must be given in nm.
+        """
         if isinstance(sigma, str):
             sigma = orb.core.Lines().get_line_cm1(sigma)
-            
+
         line_interf = orb.utils.sim.line_interf(
             self.spectrum_axis(sigma) / 2.,
-            self.params.step_nb, symm=True)
-
-        #line_interf /= line_interf.size
-        #print np.mean(line_interf)
+            self.params.step_nb, symm=True,
+            jitter = jitter / self.params.step)
         
         line_interf = line_interf[-self.params.step_nb-self.params.zpd_index:
                                   -self.params.zpd_index]

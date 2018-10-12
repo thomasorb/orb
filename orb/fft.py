@@ -231,150 +231,8 @@ class Interferogram(core.Vector1d):
         new_interf.subtract_mean()
         new_spectrum = new_interf.transform()
         return new_spectrum.get_phase().cleaned()
-
-class Cm1Vector1d(core.Vector1d):
-    """General 1d vector class for data projected on a cm-1 axis
-    (e.g. complex spectrum, phase)
-    """
-    needed_params = ('filter_file_path', )
-    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path', 'nm_laser')
     
-    def __init__(self, spectrum, axis, params=None, **kwargs):
-        """Init method.
-
-        :param spectrum: A 1d numpy.ndarray vector or a path to an
-          hdf5 cm1 vector file (note that axis must be set to None in
-          this case).
-
-        :param axis: A 1d numpy.ndarray axis (if a file is loaded,
-          i.e. spectrum is a path to an hdf5 file, it must be set to
-          None).
-        
-        :param params: (Optional) A dict containing observation
-          parameters (default None).
-
-        :param kwargs: (Optional) Keyword arguments, can be used to
-          supply observation parameters not included in the params
-          dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.
-
-        """
-        core.Vector1d.__init__(self, spectrum, params=params, **kwargs)
-        if isinstance(spectrum, str):
-            if axis is not None:
-                raise TypeError('if spectrum is a path to an hdf5 file, axis must be set to None')
-            with utils.io.open_hdf5(spectrum, 'r') as hdffile:
-                axis = hdffile['/axis'][:]
-
-        self.axis = core.Axis(axis)
-
-        if self.axis.step_nb != self.step_nb:
-            raise ValueError('axis must have the same size as spectrum')
-
-    def copy(self):
-        """Return a copy of the instance"""
-        return self.__class__(
-            np.copy(self.data),
-            np.copy(self.axis.data),
-            params=self.params.convert())
-
-    def reverse(self):
-        """Reverse data. Do not reverse the axis.
-        """
-        self.data = self.data[::-1]
-
-    def get_filter_bandpass_cm1(self):
-        """Return filter bandpass in cm-1"""
-        if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
-            nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
-            warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
-            cm1_min, cm1_max = utils.spectrum.nm2cm1((nm_max, nm_min))
-            self.params['filter_cm1_min'] = cm1_min
-            self.params['filter_cm1_max'] = cm1_max
-            
-        return self.params.filter_cm1_min, self.params.filter_cm1_max
-
-    def get_filter_bandpass_pix(self, border_ratio=0.):
-        """Return filter bandpass in channels
-
-        :param border_ratio: (Optional) Relative portion of the phase
-          in the filter range removed (can be a negative float,
-          default 0.)
-        
-        :return: (min, max)
-        """
-        if not -0.2 <= border_ratio <= 0.2:
-            raise ValueError('border ratio must be between -0.2 and 0.2')
-
-        zmin = int(self.axis(self.get_filter_bandpass_cm1()[0]))
-        zmax = int(self.axis(self.get_filter_bandpass_cm1()[1]))
-        if border_ratio != 0:
-            border = int((zmax - zmin) * border_ratio)
-            zmin += border
-            zmax -= border
-        
-        return zmin, zmax
-
-    def project(self, new_axis):
-        """Project vector on a new axis
-
-        :param new_axis: Axis. Must be an orb.core.Axis instance.
-        """
-        if not isinstance(new_axis, core.Axis):
-            raise TypeError('axis must be an orb.core.Axis instance')
-        f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
-                                       self.data.astype(np.float128),
-                                       bounds_error=False)
-        return self.__class__(
-            f(new_axis.data), new_axis.data, params=self.params)
-
-    def add(self, cm1vector):
-        """Add another cm1 vector. Note that, if the axis differs, only the
-        common part is kept.
-
-        :param cm1vector: Must be a Cm1Vector instance.
-        """
-        if not isinstance(cm1vector, self.__class__):
-            raise TypeError('phase must be a {} instance'.format(self.__class__))
-        self.data += cm1vector.project(self.axis).data
-
-    def subtract(self, cm1vector):
-        """Subtract another cm1 vector. Note that, if the axis differs, only the
-        common part is kept.
-
-        :param cm1vector: Must be a Cm1Vector instance.
-        """
-        if not isinstance(cm1vector, self.__class__):
-            raise TypeError('phase must be a {} instance'.format(self.__class__))
-        self.data -= cm1vector.project(self.axis).data
-
-    
-    def writeto(self, path):
-        """Write cm1 vector and params to an hdf file
-
-        :param path: hdf file path.
-        """
-        if np.iscomplexobj(self.data):
-            _data = self.data.astype(complex)
-        else:
-            _data = self.data.astype(float)
-
-            
-        with utils.io.open_hdf5(path, 'w') as hdffile:
-            for iparam in self.params:
-                hdffile.attrs[iparam] = self.params[iparam]
-
-            hdffile.create_dataset(
-                '/vector',
-                data=_data)
-
-            hdffile.create_dataset(
-                '/axis',
-                data=self.axis.data.astype(float))
-
-
-    
-class Phase(Cm1Vector1d):
+class Phase(core.Cm1Vector1d):
     """Phase class
     """
     def cleaned(self, border_ratio=0.):
@@ -539,7 +397,7 @@ class Phase(Cm1Vector1d):
         """
         self.subtract(self.polyfit(deg, border_ratio=border_ratio))
 
-class Spectrum(Cm1Vector1d):
+class Spectrum(core.Cm1Vector1d):
     """Spectrum class
     """
     def __init__(self, spectrum, axis, params=None, **kwargs):
@@ -557,7 +415,8 @@ class Spectrum(Cm1Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        Cm1Vector1d.__init__(self, spectrum, axis, params=params, **kwargs)
+        core.Cm1Vector1d.__init__(self, spectrum, axis,
+                                  params=params, **kwargs)
         
         if not np.iscomplexobj(self.data):
             raise TypeError('input spectrum is not complex')

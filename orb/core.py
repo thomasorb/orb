@@ -56,7 +56,8 @@ import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
 
-import pygit2
+try: import pygit2
+except ImportError: pass
 
 ## MODULES IMPORTS
 import cutils
@@ -230,9 +231,14 @@ class Logger(object):
         # get git branch (if possible)
         repo_path = os.path.abspath(os.path.dirname(__file__) + os.sep + '..')
         try:
-            self.branch_name = pygit2.Repository(repo_path).head.shorthand + '|'
-        except pygit2.GitError:
+            pygit2
+            try:
+                self.branch_name = pygit2.Repository(repo_path).head.shorthand + '|'
+            except pygit2.GitError:
+                self.branch_name = ''
+        except NameError:
             self.branch_name = ''
+
         
         self.start_logging()
         
@@ -5100,236 +5106,6 @@ class Waves(object):
         return utils.spectrum.nm2cm1(self.nm)
 
 
-
-
-#################################################
-#### CLASS Standard #############################
-#################################################
-class Standard(Tools):
-    """Manage standard files and photometrical calibration"""
-
-    ang = None # Angstrom axis of the standard file
-    flux = None # Flux of the standard in erg/cm2/s/Ang
-
-    def __init__(self, std_name, **kwargs):
-        """Initialize Standard class.
-
-        :param std_name: Name of the standard.
-
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
-        """
-        Tools.__init__(self, **kwargs)
-             
-        std_file_path, std_type = self._get_standard_file_path(std_name)
-
-        if std_type == 'MASSEY' or std_type == 'MISC':
-            self.ang, self.flux = self._read_massey_dat(std_file_path)
-        elif std_type == 'CALSPEC':
-            self.ang, self.flux = self._read_calspec_fits(std_file_path)
-        elif std_type == 'OKE':
-            self.ang, self.flux = self._read_oke_dat(std_file_path)
-        else:
-            raise StandardError(
-                "Bad type of standard file. Must be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'")
-       
-
-    def _get_data_prefix(self):
-        return (os.curdir + os.sep + 'STANDARD' + os.sep
-                + 'STD' + '.')
-
-    def get_spectrum(self, step, order, n, wavenumber=False, corr=1.):
-        """Return part of the standard spectrum corresponding to the
-        observation parameters.
-
-        Returned spectrum is calibrated in erg/cm^2/s/A
-
-        :param order: Folding order
-        
-        :param step: Step size in nm
-        
-        :param n: Number of steps
-        
-        :param wavenumber: (Optional) If True spectrum is returned along a
-          wavenumber axis (default False).
-          
-        :param corr: (Optional) Correction coefficient related to the incident
-          angle (default 1).
-        """
-        if wavenumber:
-            axis = utils.spectrum.create_cm1_axis(n, step, order, corr=corr)
-            old_axis = utils.spectrum.nm2cm1(self.ang / 10.)
-        else:
-            axis = utils.spectrum.create_nm_axis(n, step, order, corr=corr)
-            old_axis = self.ang / 10.
-        
-        return axis, utils.vector.interpolate_axis(
-            self.flux, axis, 3, old_axis=old_axis)
-
-    def _read_oke_dat(self, file_path):
-        """Read a data file from Oke J. B., Faint spectrophotometric
-        standards, AJ, (1990) and return a tuple of arrays (wavelength,
-        flux).
-        
-        Returned wavelength axis is in A. Returned flux is converted
-        in erg/cm^2/s/A.
-
-        :param file_path: Path to the Oke dat file ('fXX.dat').
-        """
-        std_file = self.open_file(file_path, 'r')
-        
-        spec_ang = list()
-        spec_flux = list()
-        for line in std_file:
-             line = line.split()
-             spec_ang.append(line[0])
-             spec_flux.append(line[1])
-
-        spec_ang = np.array(spec_ang, dtype=float)
-        spec_flux = np.array(spec_flux, dtype=float) * 1e-16
-
-        return spec_ang, spec_flux
-
-
-
-    def _read_massey_dat(self, file_path):
-        """Read a data file from Massey et al., Spectrophotometric
-        Standards (1988) and return a tuple of arrays (wavelength,
-        flux).
-        
-        Returned wavelength axis is in A. Returned flux is converted
-        in erg/cm^2/s/A.
-
-        :param file_path: Path to the Massey dat file (generally
-          'spXX.dat').
-        """
-        std_file = self.open_file(file_path, 'r')
-        
-        spec_ang = list()
-        spec_mag = list()
-        for line in std_file:
-             line = line.split()
-             spec_ang.append(line[0])
-             spec_mag.append(line[1])
-
-        spec_ang = np.array(spec_ang, dtype=float)
-        spec_mag = np.array(spec_mag, dtype=float)
-        
-        # convert mag to flux in erg/cm^2/s/A
-        spec_flux = utils.photometry.ABmag2flambda(spec_mag, spec_ang)
-
-        return spec_ang, spec_flux
-
-    def _read_calspec_fits(self, file_path):
-        """Read a CALSPEC fits file containing a standard spectrum and
-          return a tuple of arrays (wavelength, flux).
-
-        Returned wavelength axis is in A. Returned flux is in
-        erg/cm^2/s/A.
-        
-        :param file_path: Path to the Massey dat file (generally
-          'spXX.dat').
-        """
-        hdu = self.read_fits(file_path, return_hdu_only=True)
-        hdr = hdu[1].header
-        data = hdu[1].data
-
-        logging.info('Calspec file flux unit: %s'%hdr['TUNIT2'])
-        
-        # wavelength is in A
-        spec_ang = np.array([data[ik][0] for ik in range(len(data))])
-
-        # flux is in erg/cm2/s/A
-        spec_flux = np.array([data[ik][1] for ik in range(len(data))])
-
-        return spec_ang, spec_flux
-
-
-    def compute_star_flux_in_frame(self, step, order, filter_name,
-                                   camera_number, airmass=1., corr=1.):
-        """Return flux in ADU/s in an image.
-
-        :param step: Step size in nm
-        :param order: Folding order
-        :param filter_name: Name fo the filter
-        :param optics_file_path: Path to the optics file
-        :param camera_number: Number of the camera
-        :param airmass: (Optional) Airmass (default 1)
-        :param corr: (Optional) Correction coefficient related to the
-           incident angle (default 1).
-        """
-    
-        STEP_NB = 1000
-        camera_number = int(camera_number)
-        if camera_number not in (1,2):
-            raise StandardError('Camera number must be 1 or 2')
-        
-        (filter_trans,
-         filter_min, filter_max) = FilterFile(filter_name).get_filter_function(
-            step, order, STEP_NB, corr=corr)
-        
-        nm_axis, std_spectrum = self.get_spectrum(step, order, STEP_NB, corr=corr)
-
-        atm_trans = utils.photometry.get_atmospheric_transmission(
-            self._get_atmospheric_extinction_file_path(),
-            step, order, STEP_NB, airmass=airmass, corr=corr)
-
-        qe_cam = utils.photometry.get_quantum_efficiency(
-            self._get_quantum_efficiency_file_path(camera_number),
-            step, order, STEP_NB, corr=corr)
-
-        mirror_trans = utils.photometry.get_mirror_transmission(
-            self._get_mirror_transmission_file_path(),
-            step, order, STEP_NB, corr=corr)
-        
-        optics_trans = utils.photometry.get_optics_transmission(
-            self._get_optics_file_path(filter_name),
-            step, order, STEP_NB, corr=corr)
-
-        star_flux = utils.photometry.compute_star_flux_in_frame(
-            nm_axis, std_spectrum,
-            filter_trans, optics_trans, atm_trans,
-            mirror_trans, qe_cam,
-            self.config.MIR_SURFACE,
-            self.config['CAM{}_GAIN'.format(camera_number)])
-        return star_flux
-        
-
-    def compute_optimal_texp(self, step, order, seeing, filter_name,
-                             camera_number,
-                             saturation=30000, airmass=1.):
-
-        """Compute the optimal exposition time given the total flux of
-        the star in ADU/s.
-
-        :param step: Step size in nm
-        
-        :param order: Folding order
-        
-        :param seeing: Star's FWHM in arcsec
-        
-        :param filter_name: Name of the filter
-        
-        :param camera_number: Number of the camera
-        
-        :param saturation: (Optional) Saturation value of the detector
-          (default 30000).
-
-        :param airmass: (Optional) Airmass (default 1)    
-        """
-        star_flux = self.compute_star_flux_in_frame(
-            step, order, filter_name,
-            camera_number, airmass=airmass)
-        
-        dimx = self.config['CAM{}_DETECTOR_SIZE_X'.format(camera_number)]
-        dimy = self.config['CAM{}_DETECTOR_SIZE_Y'.format(camera_number)]
-        fov = self.config['FIELD_OF_VIEW_{}'.format(camera_number)]
-        plate_scale = fov / max(dimx, dimy) * 60 # arcsec
-        return utils.photometry.compute_optimal_texp(
-            star_flux, seeing,
-            plate_scale,
-            saturation=saturation)
-
-
 #################################################
 #### CLASS Header ###############################
 #################################################
@@ -5611,3 +5387,147 @@ class Axis(Vector1d):
         if pos_index < 0 or pos_index >= self.step_nb:
             warnings.warn('requested position is off axis')
         return pos_index
+
+
+#################################################
+#### CLASS Axis #################################
+#################################################
+class Cm1Vector1d(Vector1d):
+    """General 1d vector class for data projected on a cm-1 axis
+    (e.g. complex spectrum, phase)
+    """
+    needed_params = ('filter_file_path', )
+    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path', 'nm_laser')
+    
+    def __init__(self, spectrum, axis, params=None, **kwargs):
+        """Init method.
+
+        :param spectrum: A 1d numpy.ndarray vector or a path to an
+          hdf5 cm1 vector file (note that axis must be set to None in
+          this case).
+
+        :param axis: A 1d numpy.ndarray axis (if a file is loaded,
+          i.e. spectrum is a path to an hdf5 file, it must be set to
+          None).
+        
+        :param params: (Optional) A dict containing observation
+          parameters (default None).
+
+        :param kwargs: (Optional) Keyword arguments, can be used to
+          supply observation parameters not included in the params
+          dict. These parameters take precedence over the parameters
+          supplied in the params dictionnary.
+
+        """
+        Vector1d.__init__(self, spectrum, params=params, **kwargs)
+        if isinstance(spectrum, str):
+            if axis is not None:
+                raise TypeError('if spectrum is a path to an hdf5 file, axis must be set to None')
+            with utils.io.open_hdf5(spectrum, 'r') as hdffile:
+                axis = hdffile['/axis'][:]
+
+        self.axis = Axis(axis)
+
+        if self.axis.step_nb != self.step_nb:
+            raise ValueError('axis must have the same size as spectrum')
+
+    def copy(self):
+        """Return a copy of the instance"""
+        return self.__class__(
+            np.copy(self.data),
+            np.copy(self.axis.data),
+            params=self.params.convert())
+
+    def reverse(self):
+        """Reverse data. Do not reverse the axis.
+        """
+        self.data = self.data[::-1]
+
+    def get_filter_bandpass_cm1(self):
+        """Return filter bandpass in cm-1"""
+        if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
+            nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
+            warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
+            cm1_min, cm1_max = utils.spectrum.nm2cm1((nm_max, nm_min))
+            self.params['filter_cm1_min'] = cm1_min
+            self.params['filter_cm1_max'] = cm1_max
+            
+        return self.params.filter_cm1_min, self.params.filter_cm1_max
+
+    def get_filter_bandpass_pix(self, border_ratio=0.):
+        """Return filter bandpass in channels
+
+        :param border_ratio: (Optional) Relative portion of the phase
+          in the filter range removed (can be a negative float,
+          default 0.)
+        
+        :return: (min, max)
+        """
+        if not -0.2 <= border_ratio <= 0.2:
+            raise ValueError('border ratio must be between -0.2 and 0.2')
+
+        zmin = int(self.axis(self.get_filter_bandpass_cm1()[0]))
+        zmax = int(self.axis(self.get_filter_bandpass_cm1()[1]))
+        if border_ratio != 0:
+            border = int((zmax - zmin) * border_ratio)
+            zmin += border
+            zmax -= border
+        
+        return zmin, zmax
+
+    def project(self, new_axis):
+        """Project vector on a new axis
+
+        :param new_axis: Axis. Must be an orb.core.Axis instance.
+        """
+        if not isinstance(new_axis, Axis):
+            raise TypeError('axis must be an orb.core.Axis instance')
+        f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
+                                       self.data.astype(np.float128),
+                                       bounds_error=False)
+        return self.__class__(
+            f(new_axis.data), new_axis.data, params=self.params)
+
+    def add(self, cm1vector):
+        """Add another cm1 vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param cm1vector: Must be a Cm1Vector instance.
+        """
+        if not isinstance(cm1vector, self.__class__):
+            raise TypeError('phase must be a {} instance'.format(self.__class__))
+        self.data += cm1vector.project(self.axis).data
+
+    def subtract(self, cm1vector):
+        """Subtract another cm1 vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param cm1vector: Must be a Cm1Vector instance.
+        """
+        if not isinstance(cm1vector, self.__class__):
+            raise TypeError('phase must be a {} instance'.format(self.__class__))
+        self.data -= cm1vector.project(self.axis).data
+
+    
+    def writeto(self, path):
+        """Write cm1 vector and params to an hdf file
+
+        :param path: hdf file path.
+        """
+        if np.iscomplexobj(self.data):
+            _data = self.data.astype(complex)
+        else:
+            _data = self.data.astype(float)
+
+            
+        with utils.io.open_hdf5(path, 'w') as hdffile:
+            for iparam in self.params:
+                hdffile.attrs[iparam] = self.params[iparam]
+
+            hdffile.create_dataset(
+                '/vector',
+                data=_data)
+
+            hdffile.create_dataset(
+                '/axis',
+                data=self.axis.data.astype(float))
