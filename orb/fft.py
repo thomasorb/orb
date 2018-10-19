@@ -33,16 +33,23 @@ import scipy
 
 import fit
 
+#################################################
+#### CLASS Interferogram ########################
+#################################################
+
 class Interferogram(core.Vector1d):
     """Interferogram class.
     """
     needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path'
     optional_params = ('filter_cm1_min', 'filter_cm1_max', 'nm_laser')
         
-    def __init__(self, interf, params=None, **kwargs):
+    def __init__(self, interf, axis=None, params=None, **kwargs):
         """Init method.
 
         :param vector: A 1d numpy.ndarray interferogram.
+
+        :param axis: (optional) A 1d numpy.ndarray axis (default None)
+          with the same size as vector.
 
         :param params: (Optional) A dict containing observation
           parameters (default None).
@@ -50,15 +57,27 @@ class Interferogram(core.Vector1d):
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
           dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.    
-        """
-        core.Vector1d.__init__(self, interf, params=params, **kwargs)
+          supplied in the params dictionnary.
+        """       
+        core.Vector1d.__init__(self, interf, axis=axis, params=params, **kwargs)
+
         if self.params.zpd_index < 0 or self.params.zpd_index >= self.step_nb:
             raise ValueError('zpd must be in the interferogram')
 
+        # opd axis (in cm) is automatically computed from the parameters
+        opdaxis = (np.arange(self.step_nb) * self.params.step
+                - (self.params.step * self.params.zpd_index))
+        if self.axis is None:
+            self.axis = core.Axis(opdaxis * 1e-7)
+        elif opdaxis.data != self.axis.data:
+            warnings.warn('provided axis is inconsistent with the opd axis computed from the observation parameters')
+        
+        if self.axis.step_nb != self.step_nb:
+            raise ValueError('axis must have the same size as the interferogram')        
+
     def __getitem__(self, key):
         """Implement __getitem__ special method and return a valid
-        inteferogram class (with its parameters changed to reflect the
+        interferogram class (with its parameters changed to reflect the
         slicing)
         """
         axis = np.zeros(self.step_nb)
@@ -201,7 +220,7 @@ class Interferogram(core.Vector1d):
             axis_max = (self.step_nb - 1) * axis_step
             axis = core.Axis(np.linspace(0, axis_max, self.step_nb))
 
-        spec = Spectrum(interf_fft, axis, params=self.params)
+        spec = Spectrum(interf_fft, axis=axis.data, params=self.params)
 
         # spectrum is flipped if order is even
         if self.has_params():
@@ -231,7 +250,12 @@ class Interferogram(core.Vector1d):
         new_interf.subtract_mean()
         new_spectrum = new_interf.transform()
         return new_spectrum.get_phase().cleaned()
-    
+
+
+#################################################
+#### CLASS Phase ################################
+#################################################
+
 class Phase(core.Cm1Vector1d):
     """Phase class
     """
@@ -268,7 +292,7 @@ class Phase(core.Cm1Vector1d):
             
         data[zmin:zmax] = ph
         
-        return Phase(data, self.axis, params=self.params)        
+        return Phase(data, axis=self.axis, params=self.params)        
         
     def polyfit(self, deg, coeffs=None, return_coeffs=False,
                 border_ratio=0.1):
@@ -395,15 +419,22 @@ class Phase(core.Cm1Vector1d):
           borders of the filter range removed from the fitted values
           (default 0.1)
         """
-        self.subtract(self.polyfit(deg, border_ratio=border_ratio))
+        self = self.subtract(self.polyfit(deg, border_ratio=border_ratio))
+
+#################################################
+#### CLASS Spectrum #############################
+#################################################
 
 class Spectrum(core.Cm1Vector1d):
     """Spectrum class
     """
-    def __init__(self, spectrum, axis, params=None, **kwargs):
+    def __init__(self, spectrum, axis=None, params=None, **kwargs):
         """Init method.
 
         :param vector: A 1d numpy.ndarray vector.
+
+        :param axis: (optional) A 1d numpy.ndarray axis (default None)
+          with the same size as vector.
         
         :param params: (Optional) A dict containing additional
           parameters giving access to more methods. The needed params
@@ -415,7 +446,7 @@ class Spectrum(core.Cm1Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        core.Cm1Vector1d.__init__(self, spectrum, axis,
+        core.Cm1Vector1d.__init__(self, spectrum, axis=axis,
                                   params=params, **kwargs)
         
         if not np.iscomplexobj(self.data):
@@ -429,7 +460,7 @@ class Spectrum(core.Cm1Vector1d):
         _data[nans] = 0
         _phase = np.unwrap(np.angle(_data))
         _phase[nans] = np.nan
-        return Phase(_phase, self.axis, params=self.params)
+        return Phase(_phase, axis=self.axis, params=self.params)
 
     def get_amplitude(self):
         """return amplitude"""
@@ -458,7 +489,7 @@ class Spectrum(core.Cm1Vector1d):
             phase = phase.project(self.axis).data
         else:
             utils.validate.is_1darray(phase, object_name='phase')
-            phase = core.Vector1d(phase).data
+            phase = core.Vector1d(phase, axis=self.axis).data
             
         if phase.shape[0] != self.step_nb:
             warnings.warn('phase does not have the same size as spectrum. It will be interpolated.')
@@ -496,7 +527,7 @@ class Spectrum(core.Cm1Vector1d):
         ## else:
         ##     spec = dft_spec
             
-        ## return Spectrum(spec, axis, params=self.params)
+        ## return Spectrum(spec, axis=axis, params=self.params)
 
 
     def interpolate(self, axis, quality=10):
@@ -531,7 +562,7 @@ class Spectrum(core.Cm1Vector1d):
                    * (self.axis.data[1] - self.axis.data[0])  / float(quality)
                    + self.axis.data[0])
         f = scipy.interpolate.interp1d(zp_axis, zp_spec, bounds_error=False)
-        return Spectrum(f(axis), axis, params=self.params)
+        return Spectrum(f(axis), axis=axis, params=self.params)
 
 
     def fit(self, lines, fmodel='sinc', **kwargs):
@@ -574,7 +605,7 @@ class InterferogramCube(core.OCube):
         y = self.validate_x_index(y, clip=False)
         
         calib_coeff = self.get_calibration_coeff_map()[x, y]
-        return Interferogram(self[x, y, :], self.params,
+        return Interferogram(self[x, y, :], params=self.params,
                              zpd_index=self.params.zpd_index, calib_coeff=calib_coeff)
 
     def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
@@ -595,5 +626,6 @@ class InterferogramCube(core.OCube):
         
         calib_coeff = np.nanmean(self.get_calibration_coeff_map()[xmin:xmax, ymin:ymax])
         interf = np.nanmean(np.nanmean(self[xmin:xmax, ymin:ymax, :], axis=0), axis=0)
-        return Interferogram(interf, self.params, zpd_index=self.params.zpd_index,
+        return Interferogram(interf, params=self.params,
+                             zpd_index=self.params.zpd_index,
                              calib_coeff=calib_coeff)

@@ -38,8 +38,7 @@ def flambda2ABmag(flambda, lam):
     :param lambda: Wavelength in A of the Flux. If flambda is an array
       lambda must have the same shape.
     """
-    c = 2.99792458e18 # Ang/s
-    fnu = lam**2./c*flambda
+    fnu = lam**2. / orb.constants.LIGHT_VEL_AAS * flambda
     ABmag = -2.5 * np.log10(fnu) - 48.60
     return ABmag
 
@@ -65,16 +64,14 @@ def fnu2flambda(fnu, nu):
     :param fnu: Flux in erg/cm2/s/Hz
     :param nu: frequency in Hz
     """
-    c = 2.99792458e18 # Ang/s
-    return fnu * nu**2. / c
+    return fnu * nu**2. / orb.constants.LIGHT_VEL_AAS
 
 def lambda2nu(lam):
     """Convert lambda in Ang to nu in Hz
 
     :param lam: Wavelength in angstrom
     """
-    c = 2.99792458e18 # Ang/s
-    return c / lam
+    return orb.constants.LIGHT_VEL_AAS / lam
 
 def ABmag2flambda(ABmag, lam):
     """Convert AB magnitude to flux in erg/cm2/s/A
@@ -86,215 +83,14 @@ def ABmag2flambda(ABmag, lam):
     return fnu2flambda(ABmag2fnu(ABmag), lambda2nu(lam))
 
 
-def read_atmospheric_extinction_file(file_path):
-    """Read atmospheric extinction file
+def ext2trans(ext, airmass):
+    """Convert extinction to transmission
 
-    :param file_path: Path to the atmospheric extinction file.
+    :param ext: extinction
 
-    :return: a tuple (axis [in nm], atmospheric extinction in
-      [mag/airmass])
+    :param airmass: airmass
     """
-    with open(file_path, 'r') as f:
-        wav = list()
-        ext = list()
-        for line in f:
-            if ('#' not in line) and (len(line) > 2):
-                line = np.array(line.strip().split(), dtype=float)
-                wav.append(line[0] / 10.) # ang -> nm
-                ext.append(line[1])
-        
-    return np.array(wav), np.array(ext)
-
-def get_atmospheric_extinction(file_path, step, order, step_nb, corr=1.):
-    """Return the atmospheric extinction curve in mag/airmass in the
-    range defined by the observation parameters along a reference nm
-    axis (on the interferometer optical axis).
-
-    :param file_path: Path to the file
-
-    :param step: Step size in nm
-
-    :param order: Folding order
-
-    :param step_nb: Number of step along the nm axis.
-    
-    :param corr: (Optional) Correction coefficient related to the
-      incident angle (default 1).
-    """
-    axis, atm_ext = read_atmospheric_extinction_file(file_path)
-    atm_extf = scipy.interpolate.UnivariateSpline(axis, atm_ext, s=0, k=3)
-    nm_axis = orb.utils.spectrum.create_nm_axis(
-        step_nb, step, order, corr=corr).astype(float)
-    return atm_extf(nm_axis)
-
-def get_atmospheric_transmission(file_path, step, order, step_nb, airmass=1,
-                                 corr=1.):
-    """Return the atmospheric transmission curve at a given airmass
-    in the range defined by the observation parameters along a
-    reference nm axis (on the interferometer optical axis).
-
-    :param file_path: Path to the file
-
-    :param step: Step size in nm
-
-    :param order: Folding order
-
-    :param step_nb: Number of step along the nm axis.
-
-    :param airmass: (Optional) Airmass (default 1)
-
-    :param corr: (Optional) Correction coefficient related to the
-      incident angle (default 1).
-    """
-    atm_ext = get_atmospheric_extinction(file_path, step, order, step_nb, corr=corr)
-    return 10**(-atm_ext*airmass/2.5)
-
-def read_quantum_efficiency_file(file_path):
-    """Read quantum efficiency file
-
-    :param file_path: Path to the file
-
-    :return: a tuple (axis [in nm], quantum efficiency (from 0 to 1))
-    """
-  
-    with open(file_path, 'r') as f:
-        wav = list()
-        qe = list()
-        for line in f:
-            if ('#' not in line) and (len(line) > 2):
-                line = np.array(line.strip().split(), dtype=float)
-                wav.append(line[0])
-                qe.append(line[1]) # percent to coeff
-        
-    return np.array(wav), np.array(qe)
-
-def get_quantum_efficiency(file_path, step, order, step_nb, corr=1.):
-    """Return the quantum efficiency curve in the range defined by the
-    observation parameters along a reference nm axis (on the
-    interferometer optical axis).
-
-    :param file_path: Path to the file
-
-    :param step: Step size in nm
-
-    :param order: Folding order
-
-    :param step_nb: Number of step along the nm axis.
-
-    :param corr: (Optional) Correction coefficient related to the
-      incident angle (default 1).
-    """
-    axis, qe = read_quantum_efficiency_file(file_path)
-    qef = scipy.interpolate.UnivariateSpline(axis, qe, s=0, k=3)
-    nm_axis = orb.utils.spectrum.create_nm_axis(
-        step_nb, step, order, corr=corr).astype(float)
-    return qef(nm_axis)
-
-
-def read_mirror_transmission_file(file_path):
-    """Read mirror transmission file
-
-    :param file_path: Path to the file
-
-    :return: a tuple (axis [in nm], Mirror transmission (from 0 to 1))
-    """
-    with open(file_path, 'r') as f:
-        wav = list()
-        mir_trans = list()
-        for line in f:
-            if ('#' not in line) and (len(line) > 2):
-                line = np.array(line.strip().split(), dtype=float)
-                wav.append(line[0])
-                mir_trans.append(line[1]/100.) # percent to coeff
-        
-    return np.array(wav), np.array(mir_trans)
-
-def get_mirror_transmission(file_path, step, order, step_nb, corr=1.):
-    """Return the mirror transmission curve in mag/airmass in the
-    range defined by the observation parameters along a reference nm
-    axis (on the interferometer optical axis).
-
-    :param file_path: Path to the file
-
-    :param step: Step size in nm
-
-    :param order: Folding order
-
-    :param step_nb: Number of step along the nm axis.
-
-    :param corr: (Optional) Correction coefficient related to the
-      incident angle (default 1).
-    """
-    axis, mir_trans = read_mirror_transmission_file(file_path)
-    mir_transf = scipy.interpolate.UnivariateSpline(axis, mir_trans, s=0, k=3)
-    nm_axis = orb.utils.spectrum.create_nm_axis(
-        step_nb, step, order, corr=corr).astype(float)
-    return mir_transf(nm_axis)
-
-
-def read_optics_file(optics_file_path):
-    """
-    Read a file containing the optics transmission function.
-
-    :param optics_file_path: Path to the optics file.
-
-    :returns: (wavelength, transmission coefficients)
-      
-    .. note:: The optics file used must have two colums separated by a
-      space character. The first column contains the wavelength axis
-      in nm. The second column contains the transmission
-      coefficients. Comments are preceded with a #.  
-
-        ## ORBS optics file 
-        # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
-        # Filter name : SpIOMM_R
-        # Wavelength in nm | Transmission percentage
-        1000 0.001201585284
-        999.7999878 0.009733387269
-        999.5999756 -0.0004460749624
-        999.4000244 0.01378122438
-        999.2000122 0.002538740868
-
-    """
-    optics_file = open(optics_file_path, 'r')
-    optics_trans_list = list()
-    optics_nm_list = list()
-    for line in optics_file:
-        if len(line) > 2:
-            line = line.split()
-            if '#' not in line[0]: # avoid comment lines
-                optics_nm_list.append(float(line[0]))
-                optics_trans_list.append(float(line[1]))
-    optics_nm = np.array(optics_nm_list)
-    optics_trans = np.array(optics_trans_list)
-    # sort coefficients the correct way
-    if optics_nm[0] > optics_nm[1]:
-        optics_nm = optics_nm[::-1]
-        optics_trans = optics_trans[::-1]
-        
-    return optics_nm, optics_trans
-
-def get_optics_transmission(file_path, step, order, step_nb, corr=1.):
-    """Return the optics transmission curve in mag/airmass in the
-    range defined by the observation parameters along a reference nm
-    axis (on the interferometer optical axis).
-
-    :param file_path: Path to the file
-
-    :param step: Step size in nm
-
-    :param order: Folding order
-
-    :param step_nb: Number of step along the nm axis.
-
-    :param corr: (Optional) Correction coefficient related to the
-      incident angle (default 1).
-    """
-    axis, optics_trans = read_optics_file(file_path)
-    optics_transf = scipy.interpolate.UnivariateSpline(axis, optics_trans, s=0, k=1)
-    nm_axis = orb.utils.spectrum.create_nm_axis(
-        step_nb, step, order, corr=corr).astype(float)
-    return optics_transf(nm_axis)
+    return 10**(-ext*airmass/2.5)
 
 def compute_mean_star_flux(star_spectrum, filter_transmission):
     """Return mean star flux given a spectrum and the filter. Both
@@ -473,3 +269,30 @@ def compute_flux_calibration_vector(re_spectrum, th_spectrum,
     logging.info('Mean Flambda calibration: %e ergs/cm^2/[ADU]'%np.nanmean(flux_calibf[~np.isnan(th_spectrum)]))
 
     return std_cm1_axis, flux_calibf
+
+
+def modulation_efficiency_opd_jitter(cm1, opd_jitter):
+    """Return the ME given the OPD jitter
+
+    :param cm1: wavenumber in cm-1
+
+    :param opd_jitter: OPD jitter in nm (standard deviation)
+    """
+    return 1. - (2. * np.pi**2 * opd_jitter**2 * (cm1/1e7)**2)
+
+def modulation_efficiency_wavefront_error(cm1, wferr):
+    """Return the ME given the OPD jitter
+
+    :param cm1: wavenumber in cm-1
+
+    :param wferr: wavefront error ratio (e.g. 1/30.)
+    """
+    def delta_sq(ratio_mirrors, ratio_bs):
+        """total fw error in a plane mirror configuration"""
+        V_mirrors = (632.8 * ratio_mirrors / 4.)**2.
+        V_bs = (632.8 * ratio_bs / 4.)**2.
+    
+        return 8 * (V_mirrors + 2 * V_bs * np.cos(np.deg2rad(33.5))**2 + V_bs)
+    
+    return 1. - (2. * np.pi**2 * delta_sq(wferr, wferr) * (cm1/1e7)**2)
+

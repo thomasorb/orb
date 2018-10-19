@@ -587,12 +587,17 @@ class Tools(object):
             self.set_config('ALIGNER_RANGE_COEFF', float)
             self.set_config('SATURATION_THRESHOLD', float)
             self.set_config('WCS_ROTATION', float)
+            
+            self.set_config('OPD_JITTER', float)
+            self.set_config('WF_ERROR', float)
+            self.set_config('4RT_FILE', str)
 
+            
             # optional parameters
             self.set_config('BIAS_CALIB_PARAM_A', float)
             self.set_config('BIAS_CALIB_PARAM_B', float)
             self.set_config('DARK_ACTIVATION_ENERGY', float)
-
+            
 
         self._data_prefix = data_prefix
         self._msg_class_hdr = self._get_msg_class_hdr()
@@ -691,7 +696,7 @@ class Tools(object):
         :param filter_name: Name of the filter.
         """
         filter_file_path =  self._get_orb_data_file_path(
-            "filter_" + filter_name + ".orb")
+            "filter_" + filter_name + ".hdf5")
         if not os.path.exists(filter_file_path):
              warnings.warn(
                  "Filter file %s does not exist !"%filter_file_path)
@@ -756,7 +761,7 @@ class Tools(object):
         :param filter_name: Name of the filter.
         """
         optics_file_path =  self._get_orb_data_file_path(
-            "optics_" + filter_name + ".orb")
+            "optics_" + filter_name + ".hdf5")
         if not os.path.exists(optics_file_path):
              warnings.warn(
                  "Optics file %s does not exist !"%optics_file_path)
@@ -892,6 +897,12 @@ class Tools(object):
         """
         file_name = self.config['CAM{}_QE_FILE'.format(camera_number)]
         return self._get_orb_data_file_path(file_name)
+
+    def _get_4rt_file_path(self):
+        """Return the path to 4RT transmission file"""
+        file_name = self.config['4RT_FILE']
+        return self._get_orb_data_file_path(file_name)
+
     
   
     def _get_config_parameter(self, param_key, optional=False):
@@ -5141,92 +5152,27 @@ class Header(pyfits.Header):
         """Return a nice string to print"""
         return self.tostring(sep='\n')
 
-    
-#################################################
-#### CLASS FilterFile ###########################
-#################################################
-class FilterFile(Tools):
-    """Manage filter files"""
-
-    def __init__(self, filter_name, **kwargs):
-        """Initialize FilterFile class.
-
-        :param filter_name: Name of the filter or path to the filter file.
-
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
-        """
-        Tools.__init__(self, **kwargs)
-        if os.path.exists(filter_name):
-            self.basic_path = filter_name
-        else:
-            self.basic_path = self._get_filter_file_path(filter_name)
-        if not os.path.exists(self.basic_path):
-            raise ValueError('filter_name is not a valid filter name and is not a valid filter file path')
-
-    def read_filter_file(self, return_spline=False):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.read_filter_file`
-        """
-        return utils.filters.read_filter_file(
-            self.basic_path, return_spline=return_spline)
-
-    def get_filter_function(self, step, order, step_nb,
-                            wavenumber=False, silent=False, corr=1.):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.get_filter_function`.
-
-        Parameters are the same.
-        """
-        return utils.filters.get_filter_function(
-            self.basic_path, step, order,
-            step_nb, wavenumber=wavenumber,
-            corr=corr)
-
-    def get_modulation_efficiency(self):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.get_modulation_efficiency`
-        """
-        return utils.filters.get_modulation_efficiency(
-            self.basic_path)
-
-    def get_observation_params(self):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.get_observation_params`
-        """
-        if self.basic_path is None: return None, None
-        return utils.filters.get_observation_params(
-            self.basic_path)
-
-    def get_phase_fit_order(self):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.get_phase_fit_order`
-        """
-        return utils.filters.get_phase_fit_order(
-            self.basic_path)
-
-    def get_filter_bandpass(self):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.get_filter_bandpass`
-        """
-        return utils.filters.get_filter_bandpass(
-            self.basic_path)
-
 #################################################
 #### CLASS Vector1d #############################
 #################################################
 class Vector1d(object):
     """Basic 1d vector management class.
 
+    The vector can have a projection axis.
+
     Useful for checking purpose.
     """
     needed_params = ()
     optional_params = ()
     
-    def __init__(self, vector, params=None, **kwargs):
+    def __init__(self, vector, axis=None, params=None, **kwargs):
         """Init method.
 
         :param vector: A 1d numpy.ndarray vector or a path to an hdf5
           vector file.
+
+        :param axis: (optional) A 1d numpy.ndarray axis (default None)
+          with the same size as vector.
 
         :param params: (Optional) A dict containing additional
           parameters giving access to more methods. The needed params
@@ -5239,18 +5185,33 @@ class Vector1d(object):
           supplied in the params dictionnary.
 
         """
+        self.axis = None
+
         if isinstance(vector, str):
             if params is not None:
-                raise TypeError('params must be set to None if vector is a path')
+                # params are transformed into kwargs
+                kwargs.update(params)
+                
             with utils.io.open_hdf5(vector, 'r') as hdffile:
                 params = dict()
                 for iparam in hdffile.attrs:
                     params[iparam] = hdffile.attrs[iparam]
                 vector = hdffile['/vector'][:]
+                if '/axis' in hdffile:
+                    if axis is not None:
+                        raise StandardError('An axis is already provided in the input file')
+                    axis = hdffile['/axis'][:]
 
-        if isinstance(vector, self.__class__):
+
+        elif isinstance(vector, self.__class__):
+            if vector.axis is not None:
+                if axis is not None:
+                    raise StandardError('An axis is already provided in the input class')
+                axis = np.copy(vector.axis.data)
             vector = np.copy(vector.data)
-        else: vector = np.copy(vector)
+            
+        else:
+            vector = np.copy(vector)
 
         # checking
         if not isinstance(vector, np.ndarray):
@@ -5279,55 +5240,174 @@ class Vector1d(object):
         self.data_orig = np.copy(vector)
         self.step_nb = self.data.shape[0]
 
+        if axis is not None:
+            axis = Axis(axis)
+            if axis.step_nb != self.step_nb:
+                raise TypeError('axis must have the same length as vector')
+            self.axis = axis
+            
         # load parameters
         self.params = None        
 
+        def load_params(params, plist, needed=False, pop=True):
+            for iparam in plist:
+                try:
+                    self.params[iparam] = kwargs.pop(iparam)
+                except KeyError: 
+                    try:
+                        if pop:
+                            self.params[iparam] = params.pop(iparam)
+                        else:
+                            self.params[iparam] = params[iparam]
+                    except KeyError:
+                        if needed:
+                            raise KeyError('param {} needed in params dict'.format(iparam))
+            return params
+            
+        
         if params is not None:
             if not isinstance(params, dict):
                 raise TypeError('params must be a dict ! not a {}'.format(type(params)))
+
+            params = dict(params)
+            
             self.params = ROParams()
                 
-            for iparam in self.needed_params:
-                try:
-                    self.params[iparam] = kwargs[iparam]
-                except KeyError: 
-                    try:
-                        self.params[iparam] = params[iparam]
-                    except KeyError:
-                        raise KeyError('param {} needed in params dict'.format(iparam))
-            for iparam in self.optional_params:
-                try:
-                    self.params[iparam] = kwargs[iparam]
-                except KeyError: 
-                    try:
-                        self.params[iparam] = params[iparam]
-                    except KeyError: pass
+            params = load_params(params, self.needed_params, needed=True)
+            params = load_params(params, self.optional_params, needed=False)
+
+            for iparam in params:
+                logging.debug('parameter {} not added'.format(iparam))
 
         # check keyword arguments validity
         for iparam in kwargs:
             if iparam not in self.needed_params and iparam not in self.optional_params:
                 raise KeyError('supplied keyword argument {} not understood'.format(iparam))
 
-    def has_params(self):
-        """Check the presence of observation parameters"""
-        if self.params is None:
-            return False
-        else: return True
-
-    def assert_params(self):
-        """Assert the presence of observation parameters"""
-        if self.params is None: raise StandardError('Parameters not supplied, please give: {} at init'.format(self.needed_params))
 
     def __getitem__(self, key):
         """Getitem special method"""
         return self.__class__(self.data.__getitem__(key), params=self.params)
 
+    def has_params(self):
+        """Check the presence of observation parameters"""
+        if self.params is None:
+            return False
+        elif len(self.params) == 0:
+            return False
+        else: return True
+
+    def assert_params(self):
+        """Assert the presence of observation parameters"""
+        if not self.has_params():
+            raise StandardError(
+                'Parameters not supplied, please give: {} at init'.format(
+                    self.needed_params))
+
+    def assert_axis(self):
+        """Assert the presence of an axis"""
+        if self.axis is None: raise StandardError('No axis supplied')
+
     def copy(self):
         """Return a copy of the instance"""
-        return self.__class__(np.copy(self.data), params=self.params.convert())
+        if self.has_params():
+            _params = self.params.convert()
+        else:
+            _params = None
+
+        if self.axis is not None:
+            _axis = np.copy(self.axis.data)
+        else:
+            _axis = None
+
+        return self.__class__(np.copy(self.data), axis=_axis, params=_params)
+
+    def reverse(self):
+        """Reverse data. Do not reverse the axis.
+        """
+        self.data = self.data[::-1]
+
+    def project(self, new_axis, returned_class=None):
+        """Project vector on a new axis
+
+        :param new_axis: Axis. Must be an orb.core.Axis instance.
+
+        :param returned_class: (Optional) If not None, set the
+          returned class. Must be a subclass of Vector1d.
+        """
+        self.assert_axis()
+
+        if returned_class is None:
+            returned_class = self.__class__
+        else:
+            if not issubclass(returned_class, Vector1d):
+                raise TypeError('Returned class must be a subclass of Vector1d')
+            
+        if not isinstance(new_axis, Axis):
+            raise TypeError('axis must be an orb.core.Axis instance')
+        f = interpolate.interp1d(self.axis.data.astype(np.float128),
+                                 self.data.astype(np.float128),
+                                 bounds_error=False)
+        return returned_class(
+            f(new_axis.data), axis=new_axis.data, params=self.params)
+
+    def math(self, opname, arg=None):
+        """Do math operations with another vector instance.
+
+        :param opname: math operation, must be a numpy.ufuncs.
+
+        :param arg: If None, no argument is supplied. Else, can be a
+          float or a Vector1d instance.
+        """
+        self.assert_axis()
+
+        out = self.copy()
+        try:
+            if arg is None:
+                getattr(np, opname)(out.data, out=out.data)
+            else:
+                if isinstance(arg, Vector1d):
+                    arg = arg.project(out.axis).data
+                elif np.size(arg) != 1:
+                    raise TypeError('arg must be a float or a Vector1d instance')
+
+                getattr(np, opname)(out.data, arg, out=out.data)
+
+        except AttributeError:
+            raise AttributeError('unknown operation')
+
+        return out
+
+    def add(self, vector):
+        """Add another vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param vector: Must be a Vector1d instance.
+        """
+        return self.math('add', vector)
+
+    def subtract(self, vector):
+        """Subtract another vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param vector: Must be a Cm1Vector1d instance.
+        """
+        return self.math('subtract', vector)
+
+    def multiply(self, vector):
+        """Multiply by another vector. Note that, if the axis differs, only the
+        common part is kept.
+
+        :param vector: Must be a Cm1Vector1d instance.
+        """
+        return self.math('multiply', vector)
+
+    def sum(self):
+        """Sum of the data"""
+        return np.sum(self.data)
 
     def writeto(self, path):
-        """Write vector and params to an hdf file
+        """Write cm1 vector and params to an hdf file
 
         :param path: hdf file path.
         """
@@ -5337,12 +5417,18 @@ class Vector1d(object):
             _data = self.data.astype(float)
             
         with utils.io.open_hdf5(path, 'w') as hdffile:
-            for iparam in self.params:
-                hdffile.attrs[iparam] = self.params[iparam]
+            if self.has_params():
+                for iparam in self.params:
+                    hdffile.attrs[iparam] = self.params[iparam]
 
             hdffile.create_dataset(
                 '/vector',
                 data=_data)
+
+            if self.axis is not None:
+                hdffile.create_dataset(
+                    '/axis',
+                    data=self.axis.data.astype(float))
 
 
 #################################################
@@ -5365,7 +5451,7 @@ class Axis(Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        Vector1d.__init__(self, axis, params=params, **kwargs)
+        Vector1d.__init__(self, axis, axis=None, params=params, **kwargs)
 
         # check that axis is regularly sampled
         diff = np.diff(self.data)
@@ -5388,27 +5474,32 @@ class Axis(Vector1d):
             warnings.warn('requested position is off axis')
         return pos_index
 
-
+    
 #################################################
-#### CLASS Axis #################################
+#### CLASS Cm1Vector1d ##########################
 #################################################
 class Cm1Vector1d(Vector1d):
-    """General 1d vector class for data projected on a cm-1 axis
-    (e.g. complex spectrum, phase)
+    """1d vector class for data projected on a cm-1 axis (e.g. complex
+    spectrum, phase)
+
     """
     needed_params = ('filter_file_path', )
-    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path', 'nm_laser')
-    
-    def __init__(self, spectrum, axis, params=None, **kwargs):
+    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'step', 'order',
+                       'zpd_index', 'calib_coeff', 'filter_file_path', 'nm_laser')
+
+    obs_params = ('step', 'order', 'calib_coeff')
+   
+    def __init__(self, spectrum, axis=None, params=None, **kwargs):
         """Init method.
 
         :param spectrum: A 1d numpy.ndarray vector or a path to an
           hdf5 cm1 vector file (note that axis must be set to None in
           this case).
 
-        :param axis: A 1d numpy.ndarray axis (if a file is loaded,
-          i.e. spectrum is a path to an hdf5 file, it must be set to
-          None).
+        :param axis: (Optional) A 1d numpy.ndarray axis. Must be given
+          if observation paramters are not provided and if spectrum is
+          a pure np.ndarray. If a file is loaded, i.e. spectrum is a
+          path to an hdf5 file, it must be set to None (default None).
         
         :param params: (Optional) A dict containing observation
           parameters (default None).
@@ -5419,34 +5510,25 @@ class Cm1Vector1d(Vector1d):
           supplied in the params dictionnary.
 
         """
-        Vector1d.__init__(self, spectrum, params=params, **kwargs)
-        if isinstance(spectrum, str):
-            if axis is not None:
-                raise TypeError('if spectrum is a path to an hdf5 file, axis must be set to None')
-            with utils.io.open_hdf5(spectrum, 'r') as hdffile:
-                axis = hdffile['/axis'][:]
+        Vector1d.__init__(self, spectrum, axis=axis, params=params, **kwargs)
 
-        self.axis = Axis(axis)
-
-        if self.axis.step_nb != self.step_nb:
-            raise ValueError('axis must have the same size as spectrum')
-
-    def copy(self):
-        """Return a copy of the instance"""
-        return self.__class__(
-            np.copy(self.data),
-            np.copy(self.axis.data),
-            params=self.params.convert())
-
-    def reverse(self):
-        """Reverse data. Do not reverse the axis.
-        """
-        self.data = self.data[::-1]
-
+        if self.has_params():
+            if len(set(self.obs_params).intersection(self.params)) == len(self.obs_params):
+                check_axis = utils.spectrum.create_cm1_axis(
+                    self.step_nb, self.params.step, self.params.order, corr=self.params.calib_coeff)
+                if self.axis is None:
+                    self.axis = Axis(check_axis)
+                else:
+                    if np.any(check_axis != self.axis.data):
+                        warnings.warn('provided axis is inconsistent with the given parameters')
+            
+        if self.axis is None: raise StandardError('an axis must be provided or the observation parameters ({}) must be provided'.format(self.obs_params))
+            
     def get_filter_bandpass_cm1(self):
         """Return filter bandpass in cm-1"""
         if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
-            nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
+            
+            nm_min, nm_max = FilterFile(self.params.filter_file_path).get_filter_bandpass()
             warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
             cm1_min, cm1_max = utils.spectrum.nm2cm1((nm_max, nm_min))
             self.params['filter_cm1_min'] = cm1_min
@@ -5475,59 +5557,94 @@ class Cm1Vector1d(Vector1d):
         
         return zmin, zmax
 
+    def mean_in_filter(self, bandpass_threshold=0.6):
+        ff = FilterFile(self.params.filter_file_path)
+        ftrans = ff.get_transmission(self.step_nb)
+        return np.sum(self.multiply(ftrans).data) / ftrans.sum() 
+    
+#################################################
+#### CLASS FilterFile ###########################
+#################################################
+class FilterFile(Vector1d):
+    """Manage filter files"""
+
+    needed_params = ('step', 'order', 'phase_fit_order', 'modulation_efficiency',
+                     'bandpass_min_nm', 'bandpass_max_nm', 'instrument')
+    
+    def __init__(self, filter_name, axis=None, params=None, **kwargs):
+        """Initialize FilterFile class.
+
+        :param filter_name: Name of the filter or path to the filter file.
+        """
+        self.tools = Tools()
+
+        if os.path.exists(filter_name):
+            self.basic_path = filter_name
+            self.filter_name = None
+        else:
+            self.filter_name = filter_name
+            self.basic_path = self.tools._get_filter_file_path(filter_name)
+        if not os.path.exists(self.basic_path):
+            raise ValueError('filter_name is not a valid filter name and is not a valid filter file path')
+        Vector1d.__init__(self, self.basic_path, axis=None, params=params, **kwargs)
+
+        # reload self.tools with new params
+        self.tools = Tools(instrument=self.params.instrument) 
+
+
+    def read_filter_file(self, return_spline=False):
+        """Return transmission, axis and bandpass
+
+        :param return_spline: If True a cubic spline
+          (scipy.interpolate.UnivariateSpline instance) is returned
+          instead of a tuple (filter_nm, filter_trans, filter_min, filter_max)
+        """
+        if not return_spline:
+            return (self.axis.data, self.data,
+                    self.params.bandpass_min_pix,
+                    self.params.bandpass_max_pix)
+        else:
+            return interpolate.UnivariateSpline(
+            self.axis.data, self.data, k=3, s=0, ext=0)
+
+
     def project(self, new_axis):
         """Project vector on a new axis
 
         :param new_axis: Axis. Must be an orb.core.Axis instance.
         """
-        if not isinstance(new_axis, Axis):
-            raise TypeError('axis must be an orb.core.Axis instance')
-        f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
-                                       self.data.astype(np.float128),
-                                       bounds_error=False)
-        return self.__class__(
-            f(new_axis.data), new_axis.data, params=self.params)
+        return Vector1d.project(self, new_axis, returned_class=Vector1d)
 
-    def add(self, cm1vector):
-        """Add another cm1 vector. Note that, if the axis differs, only the
-        common part is kept.
+    def get_transmission(self, step_nb, corr=None):
+        """Return transmission in the filter bandpass
 
-        :param cm1vector: Must be a Cm1Vector instance.
+        :param step_nb: number of steps
+
+        :param corr: calibration coeff (at center if None)
         """
-        if not isinstance(cm1vector, self.__class__):
-            raise TypeError('phase must be a {} instance'.format(self.__class__))
-        self.data += cm1vector.project(self.axis).data
+        if corr is None:
+            corr = utils.spectrum.theta2corr(
+                self.tools.config['OFF_AXIS_ANGLE_CENTER'])
+        cm1_axis = Axis(utils.spectrum.create_cm1_axis(
+            step_nb, self.params.step, self.params.order,
+            corr=corr))
 
-    def subtract(self, cm1vector):
-        """Subtract another cm1 vector. Note that, if the axis differs, only the
-        common part is kept.
-
-        :param cm1vector: Must be a Cm1Vector instance.
-        """
-        if not isinstance(cm1vector, self.__class__):
-            raise TypeError('phase must be a {} instance'.format(self.__class__))
-        self.data -= cm1vector.project(self.axis).data
-
-    
-    def writeto(self, path):
-        """Write cm1 vector and params to an hdf file
-
-        :param path: hdf file path.
-        """
-        if np.iscomplexobj(self.data):
-            _data = self.data.astype(complex)
-        else:
-            _data = self.data.astype(float)
-
+        return self.project(cm1_axis)
             
-        with utils.io.open_hdf5(path, 'w') as hdffile:
-            for iparam in self.params:
-                hdffile.attrs[iparam] = self.params[iparam]
+    def get_modulation_efficiency(self):
+        """Return modulation efficiency."""
+        return self.params.modulation_efficiency
 
-            hdffile.create_dataset(
-                '/vector',
-                data=_data)
+    def get_observation_params(self):
+        """Return observation params as tuple (step, order)."""
+        return self.params.step, self.params.order
 
-            hdffile.create_dataset(
-                '/axis',
-                data=self.axis.data.astype(float))
+    def get_phase_fit_order(self):
+        """Return phase fit order."""
+        return self.params.phase_fit_order
+
+    def get_filter_bandpass(self):
+        """Wrapper around
+        :py:meth:`orb.utils.filters.get_filter_bandpass`
+        """
+        return self.params.bandpass_min_nm, self.params.bandpass_max_nm

@@ -37,6 +37,10 @@ FWHM_SINC_COEFF = 1.20671
 LIGHT_VEL_KMS = 299792.458
 """Velocity of the light in the vacuum in km.s-1"""
 
+LIGHT_VEL_AAS = 2.99792458e18
+"""Velocity of the light in the vacuum in A.s-1"""
+
+
 FITS_CARD_MAX_STR_LENGTH = 18
 """Max length of a FITS string card"""
 

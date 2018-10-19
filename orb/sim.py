@@ -30,6 +30,7 @@ import orb.utils.sim
 import orb.utils.spectrum
 import orb.core
 import orb.fft
+import orb.constants
 
 class Simulator(object):
 
@@ -42,9 +43,10 @@ class Simulator(object):
         
         self.params['step_nb'] = int(step_nb)
         self.params['filter_name'] = str(filter_name)
-        self.params['filter_file_path'] = self.tools._get_filter_file_path(self.params.filter_name)
-        self.params['step'] = orb.utils.filters.get_key(self.params.filter_file_path, 'STEP', float)
-        self.params['order'] = orb.utils.filters.get_key(self.params.filter_file_path, 'ORDER', int)
+        self.filterfile = orb.core.FilterFile(self.params.filter_name)
+        self.params['filter_file_path'] = self.filterfile.basic_path
+        self.params['step'] = self.filterfile.params.step
+        self.params['order'] = self.filterfile.params.order
         self.params['zpd_index'] = self.params.step_nb // 5
         self.params['calib_coeff'] = orb.utils.spectrum.theta2corr(
             self.tools.config['OFF_AXIS_ANGLE_CENTER'])
@@ -70,27 +72,63 @@ class Simulator(object):
         if isinstance(sigma, str):
             sigma = orb.core.Lines().get_line_cm1(sigma)
 
-        line_interf = orb.utils.sim.line_interf(
-            self.spectrum_axis(sigma) / 2.,
-            self.params.step_nb, symm=True,
-            jitter = jitter / self.params.step)
-        
-        line_interf = line_interf[-self.params.step_nb-self.params.zpd_index:
-                                  -self.params.zpd_index]
+        # line_interf = orb.utils.sim.line_interf(
+        #     self.spectrum_axis(sigma) / 2.,
+        #     self.params.step_nb, symm=True,
+        #     jitter = jitter / self.params.step)
 
-        self.data += line_interf
+
+        RESOLV_COEFF = self.params.order * 10
+        opd_axis = (np.arange(self.params.step_nb) * self.params.step
+                    - (self.params.step * self.params.zpd_index)) * 1e-7
+
+        if jitter == 0:
+            interf = np.cos(2 * np.pi * sigma * opd_axis) / 2. + 0.5
+        else:
+            jitter_range = np.linspace(-jitter * 3, jitter * 3, RESOLV_COEFF) * 1e-7
+            highres_opd_axis = np.concatenate([iopd + jitter_range for iopd in opd_axis])
+            highres_interf = np.cos(2 * np.pi * sigma * highres_opd_axis) / 2. + 0.5
+            
+            # import pylab as pl
+            # pl.scatter(highres_opd_axis, highres_interf, label='test')
+            # pure_interf = np.cos(2 * np.pi * sigma * opd_axis) / 2. + 0.5
+            # pl.plot(opd_axis, pure_interf, label='pure')
+
+            kernel = np.array(orb.utils.spectrum.gaussian1d(
+                jitter_range / jitter * 1e7, 0., 1., 0,
+                orb.constants.FWHM_COEFF))
+            kernel /= np.sum(kernel)
+
+            print jitter_range / jitter * 3e7
+            print kernel
+
+
+            interf = np.array([np.sum(sub * kernel)
+                               for sub in np.split(highres_interf, self.params.step_nb)])
+            # pl.plot(opd_axis, interf, label='sim')
+            # pl.legend()
+        
+
+        self.data += interf
         
     def add_background(self):
         QUALITY_COEFF = 100
         
-        a, _, _ = orb.utils.filters.get_filter_function(
-            self.params.filter_file_path, self.params.step,
-            self.params.order, self.params.step_nb * QUALITY_COEFF,
-            wavenumber=True, silent=True, corr=self.params.calib_coeff)
+        a = self.filterfile.get_transmission(
+            self.params.step_nb * QUALITY_COEFF,
+            corr=self.params.calib_coeff)
 
-        a *= self.params.step_nb
+        return self.add_spectrum(a)
+    
+    def add_spectrum(self, spectrum):
+        """
+        :param spectrum: Spectrum instance which must be defined on the filter range.
+        """
+        a = spectrum.project(self.spectrum_axis)
+        if np.any(np.isnan(a.data)):
+            raise ValueError('spectrum must be defined at least on the whole filter bandpass')
         
-        a = np.concatenate((a, np.zeros(a.size)))
+        a = np.concatenate((a.data, np.zeros(a.step_nb)))
         
         a_ifft = np.fft.ifft(a)
 
@@ -98,5 +136,4 @@ class Simulator(object):
             (a_ifft[-self.params.zpd_index:], 
              a_ifft[:self.params.step_nb - self.params.zpd_index]))
         
-        print np.argmax(a_interf), self.params.zpd_index
         self.data += a_interf.real.astype(float)
