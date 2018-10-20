@@ -315,10 +315,6 @@ class Standard(core.Tools):
         photom = Photometry(filter_name, camera_index,
                             instrument=self.params.instrument,
                             airmass=airmass)
-
-        trans = photom.get_modulated_transmission(
-            opd_jitter=opd_jitter, wf_error=wf_error)
-        spe = spe.multiply(trans)
         
         spe = photom.modulated_flux2counts(spe)
         
