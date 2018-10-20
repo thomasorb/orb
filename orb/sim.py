@@ -130,6 +130,7 @@ class Simulator(object):
         
         a = np.concatenate((a.data, np.zeros(a.step_nb)))
         
+
         a_ifft = np.fft.ifft(a)
 
         a_interf = np.concatenate(

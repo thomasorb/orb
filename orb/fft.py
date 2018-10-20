@@ -198,17 +198,7 @@ class Interferogram(core.Vector1d):
         interf_fft = np.fft.fft(zp_interf)
         #interf_fft = interf_fft[:interf_fft.shape[0]/2+1]
         interf_fft = interf_fft[:self.step_nb]
-        
-
-        # normalization of the vector to take into account zero-padding
-        # and mimic a dispersive instrument: if the same energy is
-        # dispersed over more channels (more zeros) then you get less
-        # counts/channel
-        if np.iscomplexobj(self.data):
-            interf_fft /= (zp_nb / float(self.step_nb))
-        else:
-            interf_fft /= (zp_nb / float(self.step_nb)) / 2.
-                            
+                                    
         # create axis
         if self.has_params():
             axis = core.Axis(utils.spectrum.create_cm1_axis(
