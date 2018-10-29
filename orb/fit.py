@@ -53,7 +53,7 @@ import utils.validate
 import utils.err
 import cutils
 
-from core import Lines
+from core import Lines, FilterFile, Axis
 
 class FitVector(object):
     """
@@ -2196,6 +2196,8 @@ class Cm1InputParams(InputParams):
         self.axis = np.arange(self.base_params.step_nb) * self.axis_step + self.axis_min
         
         self.set_signal_range(self.axis_min, self.axis_max)
+        
+        self.filterfile = FilterFile(self.base_params.filter_file_path)
 
     def _get_sigma_cov_vel(self, fwhm_guess_cm1, lines_cm1):
         if self.base_params.apodization == 1.:
@@ -2281,13 +2283,8 @@ class Cm1InputParams(InputParams):
 
         if self.base_params.filter_file_path is None:
             raise utils.err.FitInputError('filter_file_path is None')
-        
-        filter_spline_nm = utils.filters.read_filter_file(
-            self.base_params.filter_file_path, return_spline=True)
-        nm_axis_ireg = utils.spectrum.create_nm_axis_ireg(
-            self.base_params.step_nb, self.base_params.step, self.base_params.order,
-            corr=self.base_params.axis_corr_proj)
-        filter_function = filter_spline_nm(nm_axis_ireg.astype(float)) / 100.
+
+        filter_function = self.filterfile.project(Axis(self.axis))
         
 
         default_params = Params()
@@ -2318,9 +2315,7 @@ class Cm1InputParams(InputParams):
         
     def check_signal_range(self):
         if self.has_model(FilterModel):
-            filter_bandpass = utils.spectrum.nm2cm1(utils.filters.get_filter_bandpass(
-                self.base_params.filter_file_path))
-
+            filter_bandpass = self.filterfile.get_filter_bandpass_cm1()
             if (min(self.signal_range_cm1) > min(filter_bandpass)
                 or max(self.signal_range_cm1) < max(filter_bandpass)):
                 warnings.warn('Filter model might be badly constrained with such a signal range')

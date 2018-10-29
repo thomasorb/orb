@@ -2790,12 +2790,12 @@ class OCube(Cube):
 
         
         # compute additional parameters
-        self.set_param('filter_file_path', self._get_filter_file_path(self.params.filter_name))
-        nm_min, nm_max = utils.filters.get_filter_bandpass(self.params.filter_file_path)
-        self.set_param('filter_nm_min', nm_min)
-        self.set_param('filter_nm_max', nm_max)
-        self.set_param('filter_cm1_min', utils.spectrum.nm2cm1(nm_max))
-        self.set_param('filter_cm1_max', utils.spectrum.nm2cm1(nm_min))
+        self.filterfile = FilterFile(self.params.filter_name)
+        self.set_param('filter_file_path', self.filterfile.basic_path)
+        self.set_param('filter_nm_min', self.filterfile.get_filter_bandpass()[0])
+        self.set_param('filter_nm_max', self.filterfile.get_filter_bandpass()[1])
+        self.set_param('filter_cm1_min', self.filterfile.get_filter_bandpass_cm1()[0])
+        self.set_param('filter_cm1_max', self.filterfile.get_filter_bandpass_cm1()[1])
 
         
         self.params_defined = True
@@ -3304,8 +3304,8 @@ class Lines(Tools):
         'Hgamma':434.0471,
         'Hbeta':486.1333,
         'Halpha':656.2819,
-        '[OII]3726':372.7319, 
-        '[OII]3729':372.9221, 
+        '[OII]3726':372.6032, 
+        '[OII]3729':372.8815, 
         '[NeIII]3869':386.876, 
         '[OIII]4363':436.3209,
         '[OIII]4959':495.8911,
@@ -5578,12 +5578,15 @@ class FilterFile(Vector1d):
         """
         self.tools = Tools()
 
+        if filter_name in [None, 'None']: filter_name = 'FULL'
+        
         if os.path.exists(filter_name):
             self.basic_path = filter_name
-            self.filter_name = None
+            self.filter_name = filter_name
         else:
             self.filter_name = filter_name
             self.basic_path = self.tools._get_filter_file_path(filter_name)
+
         if not os.path.exists(self.basic_path):
             raise ValueError('filter_name is not a valid filter name and is not a valid filter file path')
         Vector1d.__init__(self, self.basic_path, axis=None, params=params, **kwargs)
