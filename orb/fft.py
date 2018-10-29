@@ -555,7 +555,7 @@ class Spectrum(core.Cm1Vector1d):
         return Spectrum(f(axis), axis=axis, params=self.params)
 
 
-    def fit(self, lines, fmodel='sinc', **kwargs):
+    def fit(self, lines, fmodel='sinc', no_filter=True, **kwargs):
         """Fit lines in a spectrum
 
         Wrapper around orb.fit.fit_lines_in_spectrum.
@@ -573,7 +573,7 @@ class Spectrum(core.Cm1Vector1d):
             spectrum, lines, self.params.step, self.params.order,
             self.params.nm_laser, theta, self.params.zpd_index,
             filter_file_path=self.params.filter_file_path,
-            fmodel=fmodel, **kwargs)
+            fmodel=fmodel, no_filter=no_filter, **kwargs)
 
 
 #################################################

@@ -123,7 +123,7 @@ class Photometry(object):
         rt4.data *= me_opd_jitter**2. * me_wf
         return rt4
     
-    def modulated_flux2counts(self, flux):
+    def flux2counts(self, flux, modulated=True, opd_jitter=None, wf_error=None):
         """
         convert a flux in erg/cm2/s/A to a flux in counts/s in both cameras
         
@@ -131,6 +131,9 @@ class Photometry(object):
         
         :return: a flux in counts/s
         """
+        if not modulated:
+            if opd_jitter is not None or wf_error is not None:
+                warnings.warn('opd_jitter and wf_error have no effect when computing unmodulated flux')
         if isinstance(flux, core.Cm1Vector1d):
             cm1_axis = flux.axis.data
             params = flux.params
@@ -144,7 +147,13 @@ class Photometry(object):
             
         flux /= utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
         flux *= self.tools.config.MIR_SURFACE # photons/s/A
-        flux *= self.get_modulated_transmission().project(core.Axis(cm1_axis)).data # electrons/s/A
+        if modulated:
+            flux *= self.get_modulated_transmission(
+                opd_jitter=opd_jitter, wf_error=wf_error).project(
+                    core.Axis(cm1_axis)).data # electrons/s/A
+        else:
+            flux *= self.get_unmodulated_transmission().project(
+                core.Axis(cm1_axis)).data # electrons/s/A
         flux *= self.get_ccd_gain() # counts/s/A
 
         delta_cm1 = np.diff(cm1_axis)[0] # in cm-1, channels have the same width
@@ -295,9 +304,9 @@ class Standard(core.Tools):
         return core.Cm1Vector1d(utils.vector.interpolate_axis(
             self.flux, axis, 3, old_axis=old_axis), axis=axis, params=params)
 
-    def simulate_observed_spectrum(self, filter_name, n, airmass=1, corr=None, camera_index=1,
-                                   opd_jitter=None, wf_error=None):
-        """Return the simulate observed spectrum in counts/s
+    def simulate_measured_flux(self, filter_name, n, airmass=1, corr=None, camera_index=1,
+                               opd_jitter=None, wf_error=None, modulated=True):
+        """Return a simulattion of the measured flux in counts/s
 
         :param filter_name: Filter name        
         
@@ -316,11 +325,12 @@ class Standard(core.Tools):
                             instrument=self.params.instrument,
                             airmass=airmass)
         
-        spe = photom.modulated_flux2counts(spe)
+        spe = photom.flux2counts(spe, modulated=modulated,
+                                 opd_jitter=opd_jitter,
+                                 wf_error=wf_error)
         
         return spe
         
-    
     def compute_optimal_texp(self, step, order, seeing, filter_name,
                              camera_number,
                              saturation=30000, airmass=1.):

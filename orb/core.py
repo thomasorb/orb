@@ -2838,7 +2838,8 @@ class OCube(Cube):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
         self.validate()
         filterfile = FilterFile(self.get_param('filter_file_path'))
-        filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(filterfile.get_filter_bandpass())[::-1]
+        filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(
+            filterfile.get_filter_bandpass())[::-1]
         
         cm1_axis_step_map = cutils.get_cm1_axis_step(
             self.dimz, self.params.step) * self.get_calibration_coeff_map()
@@ -5528,9 +5529,8 @@ class Cm1Vector1d(Vector1d):
         """Return filter bandpass in cm-1"""
         if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
             
-            nm_min, nm_max = FilterFile(self.params.filter_file_path).get_filter_bandpass()
+            cm1_min, cm1_max = FilterFile(self.params.filter_file_path).get_filter_bandpass_cm1()
             warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
-            cm1_min, cm1_max = utils.spectrum.nm2cm1((nm_max, nm_min))
             self.params['filter_cm1_min'] = cm1_min
             self.params['filter_cm1_max'] = cm1_max
             
@@ -5617,7 +5617,6 @@ class FilterFile(Vector1d):
 
     def get_transmission(self, step_nb, corr=None):
         """Return transmission in the filter bandpass
-
         :param step_nb: number of steps
 
         :param corr: calibration coeff (at center if None)
@@ -5644,7 +5643,9 @@ class FilterFile(Vector1d):
         return self.params.phase_fit_order
 
     def get_filter_bandpass(self):
-        """Wrapper around
-        :py:meth:`orb.utils.filters.get_filter_bandpass`
-        """
+        """Return filter bandpass in nm"""
         return self.params.bandpass_min_nm, self.params.bandpass_max_nm
+
+    def get_filter_bandpass_cm1(self):
+        """Return filter bandpass in cm-1"""
+        return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
