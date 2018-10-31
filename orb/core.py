@@ -5277,8 +5277,8 @@ class Vector1d(object):
             params = load_params(params, self.needed_params, needed=True)
             params = load_params(params, self.optional_params, needed=False)
 
-            for iparam in params:
-                logging.debug('parameter {} not added'.format(iparam))
+            # for iparam in params:
+            #     logging.debug('parameter {} not added'.format(iparam))
 
         # check keyword arguments validity
         for iparam in kwargs:

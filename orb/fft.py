@@ -65,12 +65,12 @@ class Interferogram(core.Vector1d):
             raise ValueError('zpd must be in the interferogram')
 
         # opd axis (in cm) is automatically computed from the parameters
-        opdaxis = (np.arange(self.step_nb) * self.params.step
+        opdaxis = 1e-7 * (np.arange(self.step_nb) * self.params.step
                 - (self.params.step * self.params.zpd_index))
         if self.axis is None:
-            self.axis = core.Axis(opdaxis * 1e-7)
-        elif opdaxis.data != self.axis.data:
-            warnings.warn('provided axis is inconsistent with the opd axis computed from the observation parameters')
+            self.axis = core.Axis(opdaxis)
+        elif np.any(opdaxis != self.axis.data):
+            raise StandardError('provided axis is inconsistent with the opd axis computed from the observation parameters')
         
         if self.axis.step_nb != self.step_nb:
             raise ValueError('axis must have the same size as the interferogram')        
