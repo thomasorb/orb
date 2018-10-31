@@ -581,7 +581,7 @@ class Spectrum(core.Cm1Vector1d):
 #################################################
 #### CLASS InteferogramCube #####################
 #################################################
-class InterferogramCube(core.OCube):
+class InterferogramOCube(core.OCube):
     """Provide additional methods for an interferogram cube when
     observation parameters are known.
     """
@@ -595,9 +595,9 @@ class InterferogramCube(core.OCube):
         self.validate()
         x = self.validate_x_index(x, clip=False)
         y = self.validate_x_index(y, clip=False)
-        
+
         calib_coeff = self.get_calibration_coeff_map()[x, y]
-        return Interferogram(self[x, y, :], params=self.params,
+        return Interferogram(self[int(x), int(y), :], params=self.params,
                              zpd_index=self.params.zpd_index, calib_coeff=calib_coeff)
 
     def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
@@ -621,3 +621,7 @@ class InterferogramCube(core.OCube):
         return Interferogram(interf, params=self.params,
                              zpd_index=self.params.zpd_index,
                              calib_coeff=calib_coeff)
+
+class InterferogramHDFCube(core.HDFCube, InterferogramOCube):
+    pass
+    
