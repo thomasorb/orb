@@ -134,15 +134,20 @@ class Photometry(object):
         if not modulated:
             if opd_jitter is not None or wf_error is not None:
                 warnings.warn('opd_jitter and wf_error have no effect when computing unmodulated flux')
+                
         if isinstance(flux, core.Cm1Vector1d):
             cm1_axis = flux.axis.data
             params = flux.params
             flux = flux.data
+            is_float = False
             
         elif np.size(flux) != 1:
             raise TypeError('If flux is a vector it must be passed as a Cm1Vector1d instance')
         else:
+            cm1_axis = self.cm1_axis.data
+            params = dict(self.params)
             flux = float(flux)
+            is_float=True
 
             
         flux /= utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
@@ -160,11 +165,12 @@ class Photometry(object):
         nm_bins = utils.spectrum.fwhm_cm12nm(delta_cm1, cm1_axis) # bins in nm
 
         flux *= nm_bins * 10. # counts/s in each channel
-  
-        if np.size(flux) > 1:
-            return core.Cm1Vector1d(flux, axis=cm1_axis, params=params)
-        else:
+
+        flux = core.Cm1Vector1d(flux, axis=cm1_axis, params=params)
+        if not is_float:
             return flux
+        else:
+            return flux.data.mean_in_filter()
         
 #################################################
 #### CLASS Standard #############################

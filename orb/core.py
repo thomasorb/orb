@@ -5557,7 +5557,7 @@ class Cm1Vector1d(Vector1d):
         
         return zmin, zmax
 
-    def mean_in_filter(self, bandpass_threshold=0.6):
+    def mean_in_filter(self):
         ff = FilterFile(self.params.filter_file_path)
         ftrans = ff.get_transmission(self.step_nb)
         return np.sum(self.multiply(ftrans).data) / ftrans.sum() 
