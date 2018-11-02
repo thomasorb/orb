@@ -1317,7 +1317,7 @@ class Tools(object):
             for path in file_list:
                 if '.fits' in path:
                     try:
-                        hdr = self.read_fits(
+                        hdr = utils.io.read_fits(
                             path, return_hdu_only=True)[0].header
                         if 'SITSTEP' in hdr:
                             steplist.append(int(hdr['SITSTEP']))
@@ -1348,7 +1348,7 @@ class Tools(object):
         clean_hdr = self._clean_sip(hdr)
         data = np.empty((1,1))
         data.fill(np.nan)
-        self.write_fits(
+        utils.io.write_fits(
             fits_path, data, fits_header=clean_hdr, overwrite=overwrite)
 
     def load_sip(self, fits_path):
@@ -1357,7 +1357,7 @@ class Tools(object):
     
         :param fits_path: Path to the FITS file    
         """
-        hdr = self.read_fits(fits_path, return_hdu_only=True)[0].header
+        hdr = utils.io.read_fits(fits_path, return_hdu_only=True)[0].header
         return pywcs.WCS(hdr)
                     
     def _get_quadrant_dims(self, quad_number, dimx, dimy, div_nb):
@@ -1569,7 +1569,7 @@ class OCube(Cube):
         try:
             return np.copy(self.calibration_laser_map)
         except AttributeError:
-            self.calibration_laser_map = self.read_fits(self.params.calibration_laser_map_path)
+            self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
         if (self.calibration_laser_map.shape[0] != self.dimx):
             self.calibration_laser_map = utils.image.interpolate_map(
                 self.calibration_laser_map, self.dimx, self.dimy)

@@ -51,6 +51,7 @@ import utils.stats
 import utils.vector
 import utils.web
 import utils.misc
+import utils.io
 
 import pyximport; pyximport.install(
     setup_args={"include_dirs":np.get_include()})
@@ -277,7 +278,7 @@ class StarsParams(Tools):
         if group is None and os.path.exists(params_file_path):
             os.remove(params_file_path)
 
-        with self.open_hdf5(params_file_path, 'a') as f:
+        with utils.io.open_hdf5(params_file_path, 'a') as f:
 
             if group is not None:
                 if group in f:
@@ -311,7 +312,7 @@ class StarsParams(Tools):
             logging.info('Loading stars parameters')
 
         start_t = time.time()
-        with self.open_hdf5(params_file_path, 'r') as f:
+        with utils.io.open_hdf5(params_file_path, 'r') as f:
         
             star_nb = None
             keys = None
@@ -780,7 +781,7 @@ class Astrometry(Tools):
 
 
     def set_deep_frame(self, deep_frame_path):
-        deep_frame = self.read_fits(deep_frame_path)
+        deep_frame = utils.io.read_fits(deep_frame_path)
         if deep_frame.shape == (self.dimx, self.dimy):
             self.deep_frame = deep_frame
         else:
@@ -1921,8 +1922,8 @@ class Astrometry(Tools):
         
         # Query to get reference star positions in degrees
         star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
-        ## self.write_fits('star_list_query.fits', star_list_query, overwrite=True)
-        ## star_list_query = self.read_fits('star_list_query.fits')
+        ## utils.io.write_fits('star_list_query.fits', star_list_query, overwrite=True)
+        ## star_list_query = utils.io.read_fits('star_list_query.fits')
         
         if len(star_list_query) < MIN_STAR_NB:
             raise StandardError("Not enough stars found in the field (%d < %d)"%(len(star_list_query), MIN_STAR_NB))
@@ -2619,10 +2620,10 @@ class Aligner(Tools):
             self.db = 0.
 
             # Save guess matrix
-            self.write_fits(self._get_guess_matrix_path(),
-                            guess_matrix,
-                            fits_header=self._get_guess_matrix_header(),
-                            overwrite=self.overwrite)
+            utils.io.write_fits(self._get_guess_matrix_path(),
+                                guess_matrix,
+                                fits_header=self._get_guess_matrix_header(),
+                                overwrite=self.overwrite)
 
         
             

@@ -25,6 +25,8 @@ import utils.photometry
 import utils.filters
 import utils.spectrum
 import utils.vector
+import utils.io
+
 import numpy as np
 import logging
 
@@ -270,7 +272,7 @@ class Standard(core.Tools):
         :param file_path: Path to the Massey dat file (generally
           'spXX.dat').
         """
-        hdu = self.read_fits(file_path, return_hdu_only=True)
+        hdu = utils.io.read_fits(file_path, return_hdu_only=True)
         hdr = hdu[1].header
         data = hdu[1].data
 
