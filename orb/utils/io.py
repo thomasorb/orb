@@ -738,6 +738,36 @@ def write_hdf5(file_path, data, header=None,
 
     return new_file_path
 
+def cast(a, t_str):
+    for _t in [int, float, bool, str, unicode,
+               np.int64, np.float64, long, np.float128]:
+        if t_str == repr(_t):
+            return _t(a)
+    raise StandardError('Bad type string {}'.format(t_str))
+
+def dict2array(data):
+    """Convert a dictionary to an array that can be written in an hdf5 file
+
+    :param data: Must be a dict instance
+    """
+    if not isinstance(data, dict): raise TypeError('data must be a dict')
+    arr = list()
+    for key in data:
+        _tstr = str(type(data[key]))
+        arr.append(np.array(
+            (key, data[key], _tstr)))
+    return np.array(arr)
+
+def array2dict(data):
+    """Convert an array read from an hdf5 file to a dict.
+    :param data: array of params returned by dict2array
+    """
+    _dict = dict()
+    for i in range(len(data)):
+        _dict[data[i][0]] = cast(data[i][1], data[i][2])
+    return _dict
+        
+        
 def header_fits2hdf5(fits_header):
     """convert a pyfits.Header() instance to a header for an hdf5 file
 
@@ -754,18 +784,12 @@ def header_fits2hdf5(fits_header):
         hdf5_header.append(ival)
     return np.array(hdf5_header)
 
+
 def header_hdf52fits(hdf5_header):
     """convert an hdf5 header to a pyfits.Header() instance.
 
     :param hdf5_header: Header of the HDF5 file
     """
-    def cast(a, t_str):
-        for _t in [int, float, bool, str, unicode,
-                   np.int64, np.float64, long, np.float128]:
-            if t_str == repr(_t):
-                return _t(a)
-        raise StandardError('Bad type string {}'.format(t_str))
-
     fits_header = pyfits.Header()
     for i in range(hdf5_header.shape[0]):
         ival = hdf5_header[i,:]

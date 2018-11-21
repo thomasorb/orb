@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: core.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2018 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -463,7 +463,6 @@ class NoInstrumentConfigParams(ROParams):
 #################################################
 #### CLASS Tools ################################
 #################################################
-
 class Tools(object):
     """
     Parent class of all classes of orb.
@@ -1372,7 +1371,6 @@ class Tools(object):
         :param div_nb: Number of divisions along x and y axes. (e.g. if
           div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
           number of quadrant is 16)
-
         """
         quad_nb = div_nb**2
         
@@ -1396,298 +1394,10 @@ class Tools(object):
             y_max = dimy
 
         return x_min, x_max, y_min, y_max
-
-
-            
-
-        
-#################################################
-#### CLASS OCube ################################
-#################################################
-class OCube(Cube):
-    """Provide additional cube methods when observation parameters are known.
-    """
-
-    needed_params = ('step', 'order', 'filter_name', 'exposure_time',
-                     'step_nb', 'calibration_laser_map_path', 'zpd_index')
-
-    optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
-                       'dark_time', 'flat_time', 'camera_index', 'wcs_rotation')
-
-    computed_params = ('filter_nm_min', 'filter_nm_max', 'filter_file_path',
-                       'filter_cm1_min', 'filter_cm1_max', 'binning')
-    
-    def __init__(self, data, params, **kwargs):
-        """
-        Initialize Cube class.
-
-        :param data: Can be a path to a FITS file containing a data
-          cube or a 3d numpy.ndarray. Can be None if data init is
-          handled differently (e.g. if this class is inherited)
-
-        :param params: Path to an option file or dict instance.
-
-        :param kwargs: Cube kwargs + other parameters not supplied in
-          params (else overwrite parameters set in params)
-        """
-        kwargs_params = dict()
-        for ikey in kwargs.keys():
-            if ikey in (self.needed_params + self.optional_params):
-                kwargs_params[ikey] = kwargs.pop(ikey)
-        Cube.__init__(self, data, **kwargs)
-        self.needed_params = tuple(self.params.keys() + list(self.needed_params))
-        self.load_params(params, **kwargs_params)
-        if data is not None:
-            # else it should be computed in the init of the child
-            # class when data parameters are known (e.g. self.dimx,
-            # self.dimy etc.)
-            self.compute_data_parameters()
-            
-    def load_params(self, params, **kwargs):
-        """Load observation parameters
-
-        :params: Path to an option file or a dict
-
-        :param kwargs: other parameters not supplied in params (else
-          overwrite parameters set in params)
-        """
-        def set_param(pkey, okey, cast):
-            if okey in ofile.options:
-                self.set_param(pkey, ofile.get(okey, cast=cast))
-            else:
-                raise Exception('Malformed option file. {} not set.'.format(okey))
-
-        # parse optionfile
-        if isinstance(params, str):
-            if os.path.exists(params):
-                ofile = OptionFile(params)
-                for iopt in ofile.options:
-                    logging.debug('{}: {}'.format(iopt, ofile[iopt]))
-                set_param('step', 'SPESTEP', float)
-                set_param('order', 'SPEORDR', int)
-                set_param('filter_name', 'FILTER', str)                
-                set_param('exposure_time', 'SPEEXPT', float)
-                set_param('step_nb', 'SPESTNB', int)
-                set_param('calibration_laser_map_path', 'CALIBMAP', str)
-                
-            else:
-                raise IOError('file {} does not exist'.format(params))
-
-        # parse dict
-        elif isinstance(params, dict):
-            for iparam in (self.needed_params + self.optional_params):
-                if iparam in params:
-                    self.set_param(iparam, params[iparam])
-                
-        else: raise TypeError('params type ({}) not handled'.format(type(params)))
-
-        # parse additional parameters
-        for iparam in kwargs:
-            if iparam in (self.needed_params + self.optional_params):
-                self.set_param(iparam, kwargs[iparam])
-            else: raise ValueError('parameter {} supplied as a keyword argument but not used. Please remove it'.format(iparam))
-            
-
-        # validate needed params
-        for iparam in self.needed_params:
-            if iparam not in self.params:
-                raise ValueError('parameter {} must be defined in params'.format(iparam))
-
-        for iparam in self.params:
-            if iparam not in (self.needed_params + self.optional_params):
-                warnings.warn('parameter {} defined but not used'.format(iparam))
-
-        
-        # compute additional parameters
-        self.filterfile = FilterFile(self.params.filter_name)
-        self.set_param('filter_file_path', self.filterfile.basic_path)
-        self.set_param('filter_nm_min', self.filterfile.get_filter_bandpass()[0])
-        self.set_param('filter_nm_max', self.filterfile.get_filter_bandpass()[1])
-        self.set_param('filter_cm1_min', self.filterfile.get_filter_bandpass_cm1()[0])
-        self.set_param('filter_cm1_max', self.filterfile.get_filter_bandpass_cm1()[1])
-
-        
-        self.params_defined = True
-
-    def validate(self):
-        """Check if this class is valid"""
-        if self.instrument not in ['sitelle', 'spiomm']: raise StandardError("class not valid: set instrument to 'sitelle' or 'spiomm' at init")
-        try: self.params_defined
-        except AttributeError: raise StandardError("class not valid: set params at init")
-        if not self.params_defined: raise StandardError("class not valid: set params at init")
-
-        # validate needed params
-        for iparam in self.needed_params:
-            if iparam not in self.params:
-                raise ValueError('parameter {} must be defined in params'.format(iparam))
-
-        # validate optional parameters
-        for iparam in self.params:
-            if iparam not in (self.needed_params + self.optional_params + self.computed_params):
-                warnings.warn('parameter {} defined but not used'.format(iparam))
-
-
-    def compute_data_parameters(self):
-        """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
-        if 'camera_index' in self.params:
-            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera_index)],
-                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera_index)]]
-            binning = utils.image.compute_binning(
-                (self.dimx, self.dimy), detector_shape)
-                            
-            if binning[0] != binning[1]:
-                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
-            self.set_param('binning', binning[0])
-            
-            logging.debug('Computed binning of camera {}: {}x{}'.format(
-                self.params.camera_index, self.params.binning, self.params.binning))
-
-
-    def get_uncalibrated_filter_bandpass(self):
-        """Return filter bandpass as two 2d matrices (min, max) in pixels"""
-        self.validate()
-        filterfile = FilterFile(self.get_param('filter_file_path'))
-        filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(
-            filterfile.get_filter_bandpass())[::-1]
-        
-        cm1_axis_step_map = cutils.get_cm1_axis_step(
-            self.dimz, self.params.step) * self.get_calibration_coeff_map()
-
-        cm1_axis_min_map = (self.params.order / (2 * self.params.step)
-                            * self.get_calibration_coeff_map() * 1e7)
-        if int(self.params.order) & 1:
-            cm1_axis_min_map += cm1_axis_step_map
-        filter_min_pix_map = (filter_min_cm1 - cm1_axis_min_map) / cm1_axis_step_map
-        filter_max_pix_map = (filter_max_cm1 - cm1_axis_min_map) / cm1_axis_step_map
-        
-        return filter_min_pix_map, filter_max_pix_map
-
-    
-    def get_calibration_laser_map(self):
-        """Return calibration laser map"""
-        self.validate()
-        try:
-            return np.copy(self.calibration_laser_map)
-        except AttributeError:
-            self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
-        if (self.calibration_laser_map.shape[0] != self.dimx):
-            self.calibration_laser_map = utils.image.interpolate_map(
-                self.calibration_laser_map, self.dimx, self.dimy)
-        if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
-            raise StandardError('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
-        return self.calibration_laser_map
-        
-    def get_calibration_coeff_map(self):
-        """Return calibration laser map"""
-        self.validate()
-        try:
-            return np.copy(self.calibration_coeff_map)
-        except AttributeError:
-            self.calibration_coeff_map = self.get_calibration_laser_map() / self.config.CALIB_NM_LASER 
-        return self.calibration_coeff_map
-
-    def get_theta_map(self):
-        """Return the incident angle map from the calibration laser map"""
-        self.validate()
-        try:
-            return np.copy(self.theta_map)
-        except AttributeError:
-            self.theta_map = utils.spectrum.corr2theta(self.get_calibration_coeff_map())
-
-    def get_base_axis(self):
-        """Return the spectral axis (in cm-1) at the center of the cube"""
-        self.validate()
-        try: return Axis(np.copy(self.base_axis))
-        except AttributeError:
-            calib_map = self.get_calibration_coeff_map()
-            self.base_axis = utils.spectrum.create_cm1_axis(
-                self.dimz, self.params.step, self.params.order,
-                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
-        return Axis(np.copy(self.base_axis))
-
-    def get_axis(self, x, y):
-        """Return the spectral axis at x, y
-        """
-        self.validate()
-        utils.validate.index(x, 0, self.dimx, clip=False)
-        utils.validate.index(y, 0, self.dimy, clip=False)
-        
-        axis = utils.spectrum.create_cm1_axis(
-            self.dimz, self.params.step, self.params.order,
-            corr=self.get_calibration_coeff_map()[x, y])
-        return Axis(np.copy(axis))
-
-    def add_params_to_hdf_file(self, hdffile):
-        """Write parameters as attributes to an hdf5 file"""
-        self.validate()
-        for iparam in self.params:
-            hdffile.attrs[iparam] = self.params[iparam]
-
-    def get_astrometry(self, data=None, profile_name=None, **kwargs):
-        """Return an astrometry.Astrometry instance.
-
-        :param data: (Optional) data to pass. If None, the cube itself
-          is passed.
-
-        :param profile_name: (Optional) PSF profile. Can be gaussian or
-          moffat. default is read in config file (PSF_PROFILE).
-
-        :param kwargs: orb.astrometry.Astrometry kwargs.
-        """
-        self.validate()
-        from astrometry import Astrometry # cannot be imported at the
-                                          # beginning of the file
-
-        if profile_name is None:
-            profile_name = self.config.PSF_PROFILE
-
-        if ('target_ra' in self.params and 'target_dec' in self.params):
-            if not isinstance(self.params.target_ra, float):
-                raise TypeError('target_ra must be a float')
-            if not isinstance(self.params.target_dec, float):
-                raise TypeError('target_dec must be a float')
-
-            target_radec = (self.params.target_ra, self.params.target_dec)
-        else:
-            target_radec = None
-            
-        if ('target_x' in self.params and 'target_y' in self.params):
-            target_xy = (self.params.target_x, self.params.target_y)               
-        else:
-            target_xy = None
-
-        if data is None:
-            data = self
-        else:
-            utils.validate.is_2darray(data, object_name='data')
-            if data.shape != (self.dimx, self.dimy): raise TypeError('data must be a 2d array of shape {} {}'.format(self.dimx, self.dimy))
-
-        if 'data_prefix' not in kwargs:
-            kwargs['data_prefix'] = self._data_prefix
-
-        if 'wcs_rotation' in self.params:
-            wcs_rotation = self.params.wcs_rotation
-        else:
-            wcs_rotation=self.config.INIT_ANGLE
-
-        self.validate()
-        
-        return Astrometry(
-            data, profile_name=profile_name,
-            moffat_beta=self.config.MOFFAT_BETA,
-            tuning_parameters=self._tuning_parameters,
-            instrument=self.params.instrument,
-            ncpus=self.ncpus,
-            target_radec=target_radec,
-            target_xy=target_xy,
-            wcs_rotation=wcs_rotation,
-            **kwargs)
         
 ##################################################
 #### CLASS ProgressBar ###########################
 ##################################################
-
-
 class ProgressBar(object):
     """Display a simple progress bar in the terminal
 
@@ -1830,7 +1540,6 @@ class ProgressBar(object):
 ##################################################
 #### CLASS Indexer ###############################
 ##################################################
-
 class Indexer(Tools):
     """Manage locations of created files.
 

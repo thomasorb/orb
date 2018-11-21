@@ -44,7 +44,8 @@ import bottleneck as bn
 
 import core
 __version__ = core.__version__
-from core import Tools, Cube, ProgressBar
+from core import Tools, ProgressBar
+from cube import Cube
 import utils.astrometry
 import utils.image
 import utils.stats
@@ -652,7 +653,7 @@ class Astrometry(Tools):
                         
             if use_deep_frame:
                 if _cube is None:
-                    self.deep_frame = self.data.get_median_image().astype(float)
+                    self.deep_frame = self.data.get_mean_image().astype(float)
                 else:
                     self.deep_frame = np.nanmedian(_cube, axis=2)
                 return np.copy(self.deep_frame)
