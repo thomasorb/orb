@@ -338,10 +338,9 @@ class HDFCube(core.Tools):
         return core.Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
 
-    def export(self, export_path, x_range=None, y_range=None,
-               z_range=None):
+    def export(self, export_path, x_range=None, y_range=None, z_range=None):
         
-        """Export cube as one FITS/HDF5 file.
+        """Export cube as one HDF5 file.
 
         :param export_path: Path of the exported FITS file
 
@@ -353,6 +352,8 @@ class HDFCube(core.Tools):
         
         :param z_range: (Optional) Tuple (z_min, z_max) (default
           None).
+
+        :param mask: (Optional)
         """
         old_keys = 'quad', 'frame'
         def is_exportable(key):
@@ -778,7 +779,318 @@ class InterferogramCube(Cube):
                                  calib_coeff=calib_coeff)
 
     
+#################################################
+#### CLASS FDCube ###############################
+#################################################
+class FDCube(core.Tools):
+    """Basic handling class for a set of frames grouped into one virtual
+    cube.
 
+    This is a basic class which is mainly used to export data into an
+    hdf5 format.
+
+    """
+
+    def __init__(self, image_list_path, image_mode='classic',
+                 chip_index=1, no_sort=False, silent_init=False,
+                 
+                 **kwargs):
+        """Init frame-divided cube class
+
+        :param image_list_path: Path to the list of images which form
+          the virtual cube. If image_list_path is set to '' then
+          this class will not try to load any data.  Can be useful
+          when the user don't want to use or process any data.
+
+        :param image_mode: (Optional) Image mode. Can be 'spiomm',
+          'sitelle' or 'classic'. In 'sitelle' mode bias, is
+          automatically substracted and the overscan regions are not
+          present in the data cube. The chip index option can also be
+          used in this mode to read only one of the two chips
+          (i.e. one of the 2 cameras). In 'spiomm' mode, if
+          :file:`*_bias.fits` frames are present along with the image
+          frames, bias is substracted from the image frames, this
+          option is used to precisely correct the bias of the camera
+          2. In 'classic' mode, the whole array is extracted in its
+          raw form (default 'classic').
+
+        :param chip_index: (Optional) Useful only in 'sitelle' mode
+          (see image_mode option). Gives the number of the ship to
+          read. Must be an 1 or 2 (default 1).
+
+        :param params: Path to an option file or dictionary
+          containting observation parameters.
+
+        :param no_sort: (Optional) If True, no sort of the file list
+          is done. Files list is taken as is (default False).
+
+        :param silent_init: (Optional) If True no message is displayed
+          at initialization.
+
+
+        :param kwargs: (Optional) :py:class:`~orb.core.Cube` kwargs.
+        """
+        core.Tools.__init__(self, **kwargs)
+
+        self.image_list_path = image_list_path
+
+        self._image_mode = image_mode
+        self._chip_index = chip_index
+
+        if (self.image_list_path != ""):
+            # read image list and get cube dimensions  
+            image_list_file = self.open_file(self.image_list_path, "r")
+            image_name_list = image_list_file.readlines()
+            if len(image_name_list) == 0:
+                raise StandardError('No image path in the given image list')
+            is_first_image = True
+            
+            for image_name in image_name_list:
+                image_name = (image_name.splitlines())[0]    
+                
+                if self._image_mode == 'spiomm' and '_bias' in image_name:
+                    spiomm_bias_frame = True
+                else: spiomm_bias_frame = False
+                
+                if is_first_image:
+                    # check list parameter
+                    if '#' in image_name:
+                        if 'sitelle' in image_name:
+                            self._image_mode = 'sitelle'
+                            self._chip_index = int(image_name.split()[-1])
+                        elif 'spiomm' in image_name:
+                            self._image_mode = 'spiomm'
+                            self._chip_index = None
+                            
+                    elif not spiomm_bias_frame:
+                        self.image_list = [image_name]
+
+                        image_data = utils.io.read_fits(
+                            image_name,
+                            image_mode=self._image_mode,
+                            chip_index=self._chip_index)
+                        self.dimx = image_data.shape[0]
+                        self.dimy = image_data.shape[1]
+                                                        
+                            
+                        is_first_image = False
+                        # check if masked frame exists
+                        if os.path.exists(self._get_mask_path(image_name)):
+                            self._mask_exists = True
+                        else:
+                            self._mask_exists = False
+                            
+                elif (self._MASK_FRAME_TAIL not in image_name
+                      and not spiomm_bias_frame):
+                    self.image_list.append(image_name)
+
+            image_list_file.close()
+
+            # image list is sorted
+            if not no_sort:
+                self.image_list = self.sort_image_list(self.image_list,
+                                                       self._image_mode)
+            
+            self.image_list = np.array(self.image_list)
+            self.dimz = self.image_list.shape[0]
+            
+            
+            if (self.dimx) and (self.dimy) and (self.dimz):
+                if not silent_init:
+                    logging.info("Data shape : (" + str(self.dimx) 
+                                    + ", " + str(self.dimy) + ", " 
+                                    + str(self.dimz) + ")")
+            else:
+                raise StandardError("Incorrect data shape : (" 
+                                  + str(self.dimx) + ", " + str(self.dimy) 
+                                  + ", " +str(self.dimz) + ")")
+            
+
+    def __getitem__(self, key):
+        """Implement the evaluation of self[key].
+        
+        .. note:: To make this function silent just set
+          Cube()._silent_load to True.
+        """
+        # check return mask possibility
+        if self._return_mask and not self._mask_exists:
+            raise StandardError("No mask found with data, cannot return mask")
+        
+        # produce default values for slices
+        x_slice = self._get_default_slice(key[0], self.dimx)
+        y_slice = self._get_default_slice(key[1], self.dimy)
+        z_slice = self._get_default_slice(key[2], self.dimz)
+        
+        # get first frame
+        data = self._get_frame_section(x_slice, y_slice, z_slice.start)
+        
+        # return this frame if only one frame is wanted
+        if z_slice.stop == z_slice.start + 1L:
+            return data
+
+        if self._parallel_access_to_data:
+            # load other frames
+            job_server, ncpus = self._init_pp_server(silent=self._silent_load) 
+
+            if not self._silent_load:
+                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+            
+            for ik in range(z_slice.start + 1L, z_slice.stop, ncpus):
+                # No more jobs than frames to compute
+                if (ik + ncpus >= z_slice.stop): 
+                    ncpus = z_slice.stop - ik
+
+                added_data = np.empty((x_slice.stop - x_slice.start,
+                                       y_slice.stop - y_slice.start, ncpus),
+                                      dtype=float)
+
+                jobs = [(ijob, job_server.submit(
+                    self._get_frame_section,
+                    args=(x_slice, y_slice, ik+ijob),
+                    modules=("import logging",
+                             "numpy as np",)))
+                        for ijob in range(ncpus)]
+
+                for ijob, job in jobs:
+                    added_data[:,:,ijob] = job()
+
+                data = np.dstack((data, added_data))
+                if not self._silent_load and not (ik - z_slice.start)%500:
+                    progress.update(ik - z_slice.start, info="Loading data")
+            if not self._silent_load:
+                progress.end()
+            self._close_pp_server(job_server)
+        else:
+            if not self._silent_load:
+                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+            
+            for ik in range(z_slice.start + 1L, z_slice.stop):
+
+                added_data = self._get_frame_section(x_slice, y_slice, ik)
+
+                data = np.dstack((data, added_data))
+                if not self._silent_load and not (ik - z_slice.start)%500:
+                    progress.update(ik - z_slice.start, info="Loading data")
+            if not self._silent_load:
+                progress.end()
+            
+        return np.squeeze(data)
+
+    def _get_frame_section(self, x_slice, y_slice, frame_index):
+        """Utility function used by __getitem__.
+
+        Return a section of one frame in the cube.
+
+        :param x_slice: slice object along x axis.
+        :param y_slice: slice object along y axis.
+        :param frame_index: Index of the frame.
+
+        .. warning:: This function must only be used by
+           __getitem__. To get a frame section please use the method
+           :py:meth:`orb.core.get_data_frame` or
+           :py:meth:`orb.core.get_data`.
+        """
+        hdu = utils.io.read_fits(self.image_list[frame_index],
+                                 return_hdu_only=True,
+                                 return_mask=self._return_mask)
+        image = None
+        stored_file_path = None
+
+        if self._image_mode == 'sitelle': 
+            if image is None:
+                image = self._read_sitelle_chip(hdu, self._chip_index)
+            section = image[x_slice, y_slice]
+
+        elif self._image_mode == 'spiomm': 
+            if image is None:
+                image, header = self._read_spiomm_data(
+                    hdu, self.image_list[frame_index])
+            section = image[x_slice, y_slice]
+
+        else:
+            if image is None:
+                section = np.copy(
+                    hdu[0].section[y_slice, x_slice].transpose())
+            else: 
+                section = image[y_slice, x_slice].transpose()
+        del hdu
+
+         # FITS only
+        if stored_file_path is not None and image is not None:
+            utils.io.write_fits(stored_file_path, image, overwrite=True,
+                            silent=True)
+
+        self._return_mask = False # always reset self._return_mask to False
+        return section
+
+    def get_frame_header(self, index):
+        """Return the header of a frame given its index in the list.
+
+        The header is returned as an instance of pyfits.Header().
+
+        :param index: Index of the frame
+
+        .. note:: Please refer to
+          http://www.stsci.edu/institute/software_hardware/pyfits/ for
+          more information on PyFITS module and
+          http://fits.gsfc.nasa.gov/ for more information on FITS
+          files.
+        """
+        hdu = utils.io.read_fits(self.image_list[index],
+                             return_hdu_only=True)
+        hdu.verify('silentfix')
+        return hdu[0].header
+
+    def get_cube_header(self):
+        """
+        Return the header of a cube from the header of the first frame
+        by keeping only the general keywords.
+        """
+        def del_key(key, header):
+            if '*' in key:
+                key = key[:key.index('*')]
+                for k in header.keys():
+                    if key in k:
+                        header.remove(k)
+            else:
+                while key in header:
+                    header.remove(key)
+            return header
+                
+        cube_header = self.get_frame_header(0)
+        cube_header = del_key('COMMENT', cube_header)
+        cube_header = del_key('EXPNUM', cube_header)
+        cube_header = del_key('BSEC*', cube_header)
+        cube_header = del_key('DSEC*', cube_header)
+        cube_header = del_key('FILENAME', cube_header)
+        cube_header = del_key('PATHNAME', cube_header)
+        cube_header = del_key('OBSID', cube_header)
+        cube_header = del_key('IMAGEID', cube_header)
+        cube_header = del_key('CHIPID', cube_header)
+        cube_header = del_key('DETSIZE', cube_header)
+        cube_header = del_key('RASTER', cube_header)
+        cube_header = del_key('AMPLIST', cube_header)
+        cube_header = del_key('CCDSIZE', cube_header)
+        cube_header = del_key('DATASEC', cube_header)
+        cube_header = del_key('BIASSEC', cube_header)
+        cube_header = del_key('CSEC1', cube_header)
+        cube_header = del_key('CSEC2', cube_header)
+        cube_header = del_key('TIME-OBS', cube_header)
+        cube_header = del_key('DATEEND', cube_header)
+        cube_header = del_key('TIMEEND', cube_header)
+        cube_header = del_key('SITNEXL', cube_header)
+        cube_header = del_key('SITPZ*', cube_header)
+        cube_header = del_key('SITSTEP', cube_header)
+        cube_header = del_key('SITFRING', cube_header)
+        
+        return cube_header
+
+
+    def export(self, export_path):
+        """Export FDCube as an hdf5 cube
+        """
+        HDFCube(self).export(export_path)
+        
 # ##################################################
 # #### CLASS OutHDFCube ############################
 # ##################################################
