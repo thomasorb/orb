@@ -44,7 +44,7 @@ class HDFCube(core.Tools):
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
     
-    def __init__(self, path, indexer=None, instrument=None, **kwargs):
+    def __init__(self, path, indexer=None, instrument=None, shape=None, **kwargs):
 
         """:param path: Path to an HDF5 cube
 
@@ -61,6 +61,22 @@ class HDFCube(core.Tools):
         """
         self.cube_path = str(path)
 
+        # create file if it does not exists
+        if not os.path.exists(path):
+            if shape is None:
+                raise ValueError('cube does not exist. If you want to create one, shape must be set.')
+            if instrument is None:
+                raise ValueError('to create a new cube, instrument must be set')
+            with utils.io.open_hdf5(path, 'w') as f:
+                utils.validate.has_len(shape, 3, object_name='shape')
+                f.create_dataset('data', shape=shape, chunks=True)
+                f.attrs['level2'] = True
+                
+
+        elif shape is not None:
+            raise ValueError('shape must be set only when creating a new HDFCube')
+            
+        
         # read instrument parameter from file
         with utils.io.open_hdf5(path, 'r') as f:
             if instrument is None:
@@ -97,7 +113,6 @@ class HDFCube(core.Tools):
             
         self.dimx, self.dimy, self.dimz = self.shape
 
-
         if indexer is not None:
             if not isinstance(indexer, core.Indexer):
                 raise TypeError('indexer must be an orb.core.Indexer instance')
@@ -107,7 +122,7 @@ class HDFCube(core.Tools):
         """Implement getitem special method"""
         if self.is_old:
             if self.has_dataset('mask'):
-                warnings.warn('mask cannot is not handled for old cubes format')
+                warnings.warn('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
         with self.open_hdf5('r') as f:
@@ -238,7 +253,6 @@ class HDFCube(core.Tools):
             return True
         else:
             return False
-
 
     def get_data_frame(self, index):
         """Return one frame of the cube.
@@ -427,7 +441,21 @@ class HDFCube(core.Tools):
         :param index: Index of the frame
         """
         return utils.io.header_hdf52fits(
-            self.get_dataset(self._get_hdf5_header_path(index)))
+            self.get_dataset('frame_header_{}'.format(index)))
+
+            
+    def set_frame_header(self, index, header):
+        """Set the header of a frame.
+
+        The header must be an instance of pyfits.Header().
+
+        :param index: Index of the frame
+
+        :param header: Header as a pyfits.Header instance.
+        """
+        self.set_dataset('frame_header_{}'.format(index),
+                         utils.io.header_fits2hdf5(header))
+            
 
     def get_cube_header(self):
         """Return the header of a the cube.
@@ -438,6 +466,16 @@ class HDFCube(core.Tools):
             return utils.io.header_hdf52fits(self.get_dataset('header'))
         else:
             return pyfits.Header()
+
+    def set_cube_header(self, header):
+        """Set cube header.
+
+        :param header: Header as a pyfits.Header instance.
+        """
+        self.set_dataset(
+            'header', utils.io.header_fits2hdf5(header),
+            protect=False)
+
 
     def get_calibration_laser_map(self):
         """Return stored calibration laser map"""
@@ -831,8 +869,7 @@ class FDCube(core.Tools):
     """
 
     def __init__(self, image_list_path, image_mode='classic',
-                 chip_index=1, no_sort=False, silent_init=False,
-                 
+                 chip_index=1, no_sort=False, silent_init=False, 
                  **kwargs):
         """Init frame-divided cube class
 
@@ -910,17 +947,10 @@ class FDCube(core.Tools):
                             chip_index=self._chip_index)
                         self.dimx = image_data.shape[0]
                         self.dimy = image_data.shape[1]
-                                                        
-                            
+                        
                         is_first_image = False
-                        # check if masked frame exists
-                        if os.path.exists(self._get_mask_path(image_name)):
-                            self._mask_exists = True
-                        else:
-                            self._mask_exists = False
                             
-                elif (self._MASK_FRAME_TAIL not in image_name
-                      and not spiomm_bias_frame):
+                elif not spiomm_bias_frame:
                     self.image_list.append(image_name)
 
             image_list_file.close()
@@ -950,11 +980,7 @@ class FDCube(core.Tools):
         
         .. note:: To make this function silent just set
           Cube()._silent_load to True.
-        """
-        # check return mask possibility
-        if self._return_mask and not self._mask_exists:
-            raise StandardError("No mask found with data, cannot return mask")
-        
+        """        
         # produce default values for slices
         x_slice = self._get_default_slice(key[0], self.dimx)
         y_slice = self._get_default_slice(key[1], self.dimy)
@@ -1015,6 +1041,49 @@ class FDCube(core.Tools):
             
         return np.squeeze(data)
 
+    def _get_default_slice(self, _slice, _max):
+        """Utility function used by __getitem__. Return a valid slice
+        object given an integer or slice.
+        :param _slice: a slice object or an integer
+        :param _max: size of the considered axis of the slice.
+        """
+        if isinstance(_slice, slice):
+            if _slice.start is not None:
+                if (isinstance(_slice.start, int)
+                    or isinstance(_slice.start, long)):
+                    if (_slice.start >= 0) and (_slice.start <= _max):
+                        slice_min = int(_slice.start)
+                    else:
+                        raise StandardError(
+                            "Index error: list index out of range")
+                else:
+                    raise StandardError("Type error: list indices of slice must be integers")
+            else: slice_min = 0
+
+            if _slice.stop is not None:
+                if (isinstance(_slice.stop, int)
+                    or isinstance(_slice.stop, long)):
+                    if _slice.stop < 0: # transform negative index to real index
+                        slice_stop = _max + _slice.stop
+                    else:  slice_stop = _slice.stop
+                    if ((slice_stop <= _max)
+                        and slice_stop > slice_min):
+                        slice_max = int(slice_stop)
+                    else:
+                        raise StandardError(
+                            "Index error: list index out of range")
+
+                else:
+                    raise StandardError("Type error: list indices of slice must be integers")
+            else: slice_max = _max
+
+        elif isinstance(_slice, int) or isinstance(_slice, long):
+            slice_min = _slice
+            slice_max = slice_min + 1
+        else:
+            raise StandardError("Type error: list indices must be integers or slices")
+        return slice(slice_min, slice_max, 1)
+
     def _get_frame_section(self, x_slice, y_slice, frame_index):
         """Utility function used by __getitem__.
 
@@ -1030,19 +1099,18 @@ class FDCube(core.Tools):
            :py:meth:`orb.core.get_data`.
         """
         hdu = utils.io.read_fits(self.image_list[frame_index],
-                                 return_hdu_only=True,
-                                 return_mask=self._return_mask)
+                                 return_hdu_only=True)
         image = None
         stored_file_path = None
 
         if self._image_mode == 'sitelle': 
             if image is None:
-                image = self._read_sitelle_chip(hdu, self._chip_index)
+                image = utils.io.read_sitelle_chip(hdu, self._chip_index)
             section = image[x_slice, y_slice]
 
         elif self._image_mode == 'spiomm': 
             if image is None:
-                image, header = self._read_spiomm_data(
+                image, header = utils.io.read_spiomm_data(
                     hdu, self.image_list[frame_index])
             section = image[x_slice, y_slice]
 
@@ -1059,7 +1127,6 @@ class FDCube(core.Tools):
             utils.io.write_fits(stored_file_path, image, overwrite=True,
                             silent=True)
 
-        self._return_mask = False # always reset self._return_mask to False
         return section
 
     def get_frame_header(self, index):
@@ -1128,9 +1195,23 @@ class FDCube(core.Tools):
     def export(self, export_path, mask):
         """Export FDCube as an hdf5 cube
         """
-        HDFCube(self).export(export_path)
-        cube = HDFCube(export_path)
-        cube.set_mask(mask)
+        cube = HDFCube(
+            export_path, shape=(self.dimx, self.dimy, self.dimz),
+            instrument=self.instrument)
+
+        if mask is not None:
+            cube.set_mask(mask)
+        cube.set_cube_header(self.get_cube_header())
+            
+        progress = core.ProgressBar(self.dimz)
+        for iframe in range(self.dimz):
+            progress.update(iframe, info='writing frame {}/{}'.format(
+                iframe + 1, self.dimz))
+            cube[:,:,iframe] = self[:,:,iframe]
+            cube.set_frame_header(iframe, self.get_frame_header(iframe))
+        progress.end()
+            
+            
         
 # ##################################################
 # #### CLASS OutHDFCube ############################
