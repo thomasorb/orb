@@ -41,6 +41,8 @@ import fft
 
 class HDFCube(core.Tools):
     """ This class implements the use of an HDF5 cube."""        
+
+    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
     
     def __init__(self, path, indexer=None, instrument=None, **kwargs):
 
@@ -104,10 +106,16 @@ class HDFCube(core.Tools):
     def __getitem__(self, key):
         """Implement getitem special method"""
         if self.is_old:
+            if self.has_dataset('mask'):
+                warnings.warn('mask cannot is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
         with self.open_hdf5('r') as f:
-            return np.squeeze(f['data'].__getitem__(key))
+            _data = np.copy(f['data'].__getitem__(key))
+            if self.has_dataset('mask'):
+                _data *= self.get_dataset('mask').__getitem__((key[0], key[1]))
+                
+            return np.squeeze(_data)
 
     def __setitem__(self, key, value):
         """Implement setitem special method"""
@@ -169,13 +177,20 @@ class HDFCube(core.Tools):
                 raise AttributeError('{} dataset not in the hdf5 file'.format(path))
             return f[path][:]
 
-    def set_dataset(self, path, data):
+    def set_dataset(self, path, data, protect=True):
         """Write a dataset to the hdf5 file
 
         :param path: dataset path
 
         :param data: data to write.
+
+        :param protect: (Optional) check if dataset is protected
+          (default True).
         """
+        if protect:
+            if path in self.protected_datasets:
+                raise IOError('dataset {} is protected. please use the corresponding higher level method (something like get_{} might do)'.format(path, path))
+
         if path == 'data':
             raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. cube[:,:,:] = value.')
         with self.open_hdf5('a') as f:
@@ -187,6 +202,30 @@ class HDFCube(core.Tools):
                 data = utils.io.dict2array(data)
             f.create_dataset(path, data=data, chunks=True)
 
+
+    def set_mask(self, data):
+        """Set mask. A mask must be a 2d frame of shape (self.dimx,
+        self.dimy). A Zero indicates a pixel which should be masked
+        (Nans are returned for this pixel).
+
+        :param data: Must be a 2d frame of shape (self.dimx,
+        self.dimy).
+        """
+        utils.validate.is_2darray(data, object_name='data')
+        if data.shape != (self.dimx, self.dimy):
+            raise TypeError('data must have shape ({}, {})'.format(
+                self.dimx, self.dimy))
+        if data.dtype != np.bool:
+            raise TypeError('data should be of type boolean')
+        _data = np.copy(data).astype(float)
+        _data[np.nonzero(_data == 0)] = np.nan
+        self.set_dataset('mask', _data, protect=False)
+
+    def get_mask(self):
+        """Return mask."""
+        _mask = np.copy(self.get_dataset('mask'))
+        _mask[np.isnan(_mask)] = 0
+        return _mask.astype(bool)
         
     def has_same_2D_size(self, cube_test):
         """Check if another cube has the same dimensions along x and y
@@ -576,7 +615,7 @@ class Cube(HDFCube):
 
     def write_params(self):
         """Write loaded params to the file."""
-        self.set_dataset('params', self.params)
+        self.set_dataset('params', self.params, protect=False)
         
     def compute_data_parameters(self):
         """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
@@ -1086,10 +1125,12 @@ class FDCube(core.Tools):
         return cube_header
 
 
-    def export(self, export_path):
+    def export(self, export_path, mask):
         """Export FDCube as an hdf5 cube
         """
         HDFCube(self).export(export_path)
+        cube = HDFCube(export_path)
+        cube.set_mask(mask)
         
 # ##################################################
 # #### CLASS OutHDFCube ############################
