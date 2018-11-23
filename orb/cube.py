@@ -71,7 +71,7 @@ class HDFCube(core.Tools):
                 utils.validate.has_len(shape, 3, object_name='shape')
                 f.create_dataset('data', shape=shape, chunks=True)
                 f.attrs['level2'] = True
-                
+                f.attrs['instrument'] = instrument
 
         elif shape is not None:
             raise ValueError('shape must be set only when creating a new HDFCube')
@@ -509,6 +509,27 @@ class HDFCube(core.Tools):
           boundaries, else: raise an exception (default True).
         """
         return utils.validate.index(y, 0, self.dimy, clip=clip)
+
+    def set_params(self, params):
+        """set params of the file.
+
+        :param params: dict of parameters
+
+        .. note:: Note that this is different from setting
+        self.params. file params are loaded with load_params, and some
+        params are not used depending on self.needed params and
+        self.optional_params.
+        """
+        self.set_dataset('params', utils.io.dict2array(params), protect=False)
+
+    def get_params(self):
+        """get params of the file.
+
+        :return: dict of parameters
+
+        .. note:: Note that this is different from getting self.params. 
+        """
+        return utils.io.array2dict(self.get_dataset('params'))
         
 #################################################
 #### CLASS Cube ################################
@@ -531,8 +552,7 @@ class Cube(HDFCube):
 
         :param data: Path to an HDF5 Cube
 
-        :param params: (Optional) Path to an option file or dict
-        instance.
+        :param params: (Optional) Path to a dict.
 
         :param kwargs: Cube kwargs + other parameters not supplied in
           params (else overwrite parameters set in params)
@@ -557,7 +577,7 @@ class Cube(HDFCube):
     def load_params(self, params, **kwargs):
         """Load observation parameters
 
-        :params: Path to an option file or a dict
+        :params: Path to a dict
 
         :param kwargs: other parameters not supplied in params (else
           overwrite parameters set in params)
@@ -568,31 +588,14 @@ class Cube(HDFCube):
             else:
                 raise Exception('Malformed option file. {} not set.'.format(okey))
             
-        # parse optionfile
-        if isinstance(params, str):
-            if os.path.exists(params):
-                ofile = core.OptionFile(params)
-                for iopt in ofile.options:
-                    logging.debug('{}: {}'.format(iopt, ofile[iopt]))
-                set_param('step', 'SPESTEP', float)
-                set_param('order', 'SPEORDR', int)
-                set_param('filter_name', 'FILTER', str)                
-                set_param('exposure_time', 'SPEEXPT', float)
-                set_param('step_nb', 'SPESTNB', int)
-                set_param('calibration_laser_map_path', 'CALIBMAP', str)
-                
-            else:
-                raise IOError('file {} does not exist'.format(params))
-
         # parse dict
-        elif isinstance(params, dict):
+        if isinstance(params, dict):
             for iparam in (self.needed_params + self.optional_params):
                 if iparam in params:
                     self.set_param(iparam, params[iparam])
                 
         elif params is not None:
             raise TypeError('params type ({}) not handled'.format(type(params)))
-
 
         # parse additional parameters
         for iparam in kwargs:
@@ -603,10 +606,10 @@ class Cube(HDFCube):
 
         # load params from file
         if self.has_dataset('params'):
-            fileparams = utils.io.array2dict(self.get_dataset('params'))
+            fileparams = self.get_params()
             
             for iparam in fileparams:
-                if iparam not in self.params:
+                if iparam not in self.params: # only unknown parameters are loaded from file
                     self.set_param(iparam, fileparams[iparam])
 
             
@@ -614,11 +617,6 @@ class Cube(HDFCube):
         for iparam in self.needed_params:
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
-
-        for iparam in self.params:
-            if iparam not in (self.needed_params + self.optional_params + self.computed_params):
-                warnings.warn('parameter {} defined but not used'.format(iparam))
-
         
         # compute additional parameters
         self.filterfile = core.FilterFile(self.params.filter_name)
@@ -645,16 +643,7 @@ class Cube(HDFCube):
         for iparam in self.needed_params:
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
-
-        # validate optional parameters
-        for iparam in self.params:
-            if iparam not in (self.needed_params + self.optional_params + self.computed_params):
-                warnings.warn('parameter {} defined but not used'.format(iparam))
-
-    def write_params(self):
-        """Write loaded params to the file."""
-        self.set_dataset('params', self.params, protect=False)
-        
+                                  
     def compute_data_parameters(self):
         """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
         if 'camera_index' in self.params:
@@ -811,6 +800,16 @@ class Cube(HDFCube):
             **kwargs)
 
 
+#################################################
+#### CLASS SpectralCube ####################
+#################################################
+class SpectralCube(Cube):
+    """Provide additional methods for an interferogram cube when
+    observation parameters are known.
+    """
+    pass#raise NotImplementedError()
+
+    
 #################################################
 #### CLASS InteferogramCube ####################
 #################################################
@@ -1192,8 +1191,17 @@ class FDCube(core.Tools):
         return cube_header
 
 
-    def export(self, export_path, mask):
+    def export(self, export_path, mask=None, params=None):
         """Export FDCube as an hdf5 cube
+
+        :param export_path: Export path
+
+        :param mask: (Optional) A boolean array of shape (self.dimx,
+          self.dimy) which zeros indicates bad pixels to be replaced
+          with Nans when reading data (default None).
+
+        :param params: (Optional) A dict of parameters that will be
+          added to the exported cube.
         """
         cube = HDFCube(
             export_path, shape=(self.dimx, self.dimy, self.dimz),
@@ -1201,8 +1209,12 @@ class FDCube(core.Tools):
 
         if mask is not None:
             cube.set_mask(mask)
+
+        if params is not None:
+            cube.set_params(params)
+
         cube.set_cube_header(self.get_cube_header())
-            
+
         progress = core.ProgressBar(self.dimz)
         for iframe in range(self.dimz):
             progress.update(iframe, info='writing frame {}/{}'.format(

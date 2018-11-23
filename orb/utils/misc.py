@@ -29,6 +29,7 @@ import orb.cutils
 import pyregion
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
+import os
 
 def aggregate_pixels(pixel_list, radius=1.42):
     """Aggregate neighbouring pixels into a set of sources. Two
@@ -241,3 +242,8 @@ def restore_error_settings(old_settings):
     np.seterr(over = old_settings["over"])
     np.seterr(under = old_settings["under"])
     np.seterr(invalid = old_settings["invalid"])
+
+
+def get_cfht_odometer(path):
+    """Return the odometer of a cfht FITS file from its path."""
+    return int(os.path.splitext(os.path.split(path.strip())[-1])[0][:-1])

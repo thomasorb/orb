@@ -36,7 +36,7 @@ import orb.utils.validate
 __version__ = orb.version.__version__
 
 def write_fits(fits_path, fits_data, fits_header=None,
-               silent=False, overwrite=False, mask=None,
+               silent=False, overwrite=True, mask=None,
                replace=False, record_stats=False, mask_path=None):
 
     """Write data in FITS format. If the file doesn't exist create
@@ -60,7 +60,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
       display any message (default False)
 
     :param overwrite: (Optional) If True overwrite the output file
-      if it exists (default False).
+      if it exists (default True).
 
     :param mask: (Optional) It not None must be an array with the
       same size as the given data but filled with ones and
@@ -572,7 +572,7 @@ def open_hdf5(file_path, mode):
     return f
 
 def write_hdf5(file_path, data, header=None,
-               silent=False, overwrite=False, max_hdu_check=True,
+               silent=False, overwrite=True, max_hdu_check=True,
                compress=False):
 
     """    
@@ -617,7 +617,7 @@ def write_hdf5(file_path, data, header=None,
       display any message (default False)
 
     :param overwrite: (Optional) If True overwrite the output file
-      if it exists (default False).
+      if it exists (default True).
 
     :param compress: (Optional) If True data is compressed using
       the SZIP library (see
