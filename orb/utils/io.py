@@ -35,6 +35,33 @@ import orb.utils.validate
 
 __version__ = orb.version.__version__
 
+def open_file(file_name, mode='r'):
+    """Open a file in write mode (by default) and return a file
+    object.
+
+    Create the file if it doesn't exist (only in write mode).
+
+    :param file_name: Path to the file, can be either
+      relative or absolute.
+
+    :param mode: (Optional) Can be 'w' for write mode, 'r' for
+      read mode and 'a' for append mode.
+    """
+    if mode not in ['w','r','a','rU']:
+        raise StandardError("mode option must be 'w', 'r', 'rU' or 'a'")
+
+    if mode in ['w','a']:
+        # create folder if it does not exist
+        dirname = os.path.dirname(file_name)
+        if dirname != '':
+            if not os.path.exists(dirname): 
+                os.makedirs(dirname)
+    if mode == 'r': mode = 'rU' # read in universal mode by
+                                # default to handle Windows files.
+
+    return open(file_name, mode)
+
+
 def write_fits(fits_path, fits_data, fits_header=None,
                silent=False, overwrite=True, mask=None,
                replace=False, record_stats=False, mask_path=None):

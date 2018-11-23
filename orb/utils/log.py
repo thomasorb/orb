@@ -20,7 +20,6 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
-
     
 def setup_socket_logging():
     import logging
@@ -30,3 +29,19 @@ def setup_socket_logging():
     socketHandler = logging.handlers.SocketHandler(
         'localhost',logging.handlers.DEFAULT_TCP_LOGGING_PORT)
     rootLogger.addHandler(socketHandler)
+
+
+def print_caller_traceback(self):
+    """Print the traceback of the calling function."""
+    import logging
+
+    traceback = inspect.stack()
+    traceback_msg = ''
+    for i in range(len(traceback))[::-1]:
+        traceback_msg += ('  File %s'%traceback[i][1]
+                          + ', line %d'%traceback[i][2]
+                          + ', in %s\n'%traceback[i][3] +
+                          traceback[i][4][0])
+
+    logging.debug('\r' + traceback_msg)
+

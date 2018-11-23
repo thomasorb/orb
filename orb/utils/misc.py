@@ -247,3 +247,73 @@ def restore_error_settings(old_settings):
 def get_cfht_odometer(path):
     """Return the odometer of a cfht FITS file from its path."""
     return int(os.path.splitext(os.path.split(path.strip())[-1])[0][:-1])
+
+
+def sort_image_list(file_list, image_mode, cube=True):
+    """Sort a list of fits files.
+
+    :param file_list: A list of file names
+
+    :param image_mode: Image mode, can be 'sitelle' or 'spiomm'.
+
+    :param cube: If True, image list is considered as a cube
+      list. Headers are used to get the right order based on step
+      number instead of file path (default True).
+    """
+
+    file_list = [path for path in file_list if
+                 (('.fits' in path) or ('.hdf5' in path))]
+
+    if len(file_list) == 0: return None
+
+    if image_mode == 'spiomm':
+        file_list = [path for path in file_list
+                     if not '_bias.fits' in path]
+
+    # get all numbers
+    file_seq = [re.findall("[0-9]+", path)
+                    for path in file_list if
+                (('.fits' in path) or ('.hdf5' in path))]
+
+    try:
+        file_keys = np.array(file_seq, dtype=int)
+    except Exception, e:
+        raise StandardError('Malformed sequence of files: {}:\n{}'.format(
+            e, file_seq))
+
+
+    # get changing column
+    test = np.sum(file_keys == file_keys[0,:], axis=0)
+
+    if np.min(test) > 1:
+        warnings.warn('Images list cannot be safely sorted. Two images at least have the same index')
+        column_index = np.nan
+    else:
+        column_index = np.argmin(test)
+
+    # get changing step (if possible)
+    steplist = list()
+    if cube:
+        for path in file_list:
+            if '.fits' in path:
+                try:
+                    hdr = utils.io.read_fits(
+                        path, return_hdu_only=True)[0].header
+                    if 'SITSTEP' in hdr:
+                        steplist.append(int(hdr['SITSTEP']))
+                except Exception: pass
+
+
+    if len(steplist) == len(file_list):
+        _list = list()
+        for i in range(len(file_list)):
+            _list.append({'path':file_list[i], 'step':steplist[i]})
+        _list.sort(key=lambda x: x['step'])
+        file_list = [_path['path'] for _path in _list]
+    elif not np.isnan(column_index):
+        file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
+            column_index]))
+    else:
+        raise StandardError('Image list cannot be sorted.')
+
+    return file_list

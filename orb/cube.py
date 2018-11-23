@@ -39,14 +39,18 @@ import fft
 #### CLASS HDFCube ##############################
 #################################################
 
-class HDFCube(core.Tools):
+class HDFCube(core.Data, core.Tools):
     """ This class implements the use of an HDF5 cube."""        
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
     
-    def __init__(self, path, indexer=None, instrument=None, shape=None, **kwargs):
+    def __init__(self, path, shape=None, indexer=None, instrument=None,  **kwargs):
 
         """:param path: Path to an HDF5 cube
+
+        :param shape: (Optional) Must be set to something else than
+          None to create an empty file. It the file already exists,
+          shape must be set to None.
 
         :param indexer: (Optional) Must be a :py:class:`core.Indexer`
           instance. If not None created files can be indexed by this
@@ -65,8 +69,6 @@ class HDFCube(core.Tools):
         if not os.path.exists(path):
             if shape is None:
                 raise ValueError('cube does not exist. If you want to create one, shape must be set.')
-            if instrument is None:
-                raise ValueError('to create a new cube, instrument must be set')
             with utils.io.open_hdf5(path, 'w') as f:
                 utils.validate.has_len(shape, 3, object_name='shape')
                 f.create_dataset('data', shape=shape, chunks=True)
@@ -76,15 +78,14 @@ class HDFCube(core.Tools):
         elif shape is not None:
             raise ValueError('shape must be set only when creating a new HDFCube')
             
-        
         # read instrument parameter from file
         with utils.io.open_hdf5(path, 'r') as f:
             if instrument is None:
                 if 'instrument' not in f.attrs:
-                    raise ValueError("instrument could be read from the file attributes. Please set it to 'sitelle' or 'spiomm'")                
+                    raise ValueError("instrument could not be read from the file attributes. Please set it to 'sitelle' or 'spiomm'")                
                 instrument = f.attrs['instrument']
                     
-                
+        # init tools
         core.Tools.__init__(self, instrument=instrument, **kwargs)        
 
         self.star_list = None
@@ -129,7 +130,13 @@ class HDFCube(core.Tools):
             _data = np.copy(f['data'].__getitem__(key))
             if self.has_dataset('mask'):
                 _data *= self.get_dataset('mask').__getitem__((key[0], key[1]))
-                
+
+            # increase representation in case of complex or floats
+            if _data.dtype == np.float32:
+                _data = _data.astype(np.float64)
+            elif _data.dtype == np.complex64:
+                _data = _data.astype(np.complex128)
+            
             return np.squeeze(_data)
 
     def __setitem__(self, key, value):
@@ -138,7 +145,18 @@ class HDFCube(core.Tools):
             raise StandardError('Old cubes cannot be modified. Please export the actual cube first with cube.export().')
         
         with self.open_hdf5('a') as f:
+            # decrease representation in case of complex or floats to
+            # minimize data size
+            if value.dtype == np.float64:
+                value = value.astype(np.float32)
+            elif value.dtype == np.complex128:
+                value = value.astype(np.complex64)
+            
             return f['data'].__setitem__(key, value)
+
+    def copy(self):
+        raise NotImplementedError('HDFCube instance cannot be copied')
+    
     
     def open_hdf5(self, mode='r'):
         """Return the hdf5 file.

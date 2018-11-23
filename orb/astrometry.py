@@ -419,8 +419,7 @@ class Astrometry(Tools):
                  fwhm_arc=None,
                  detect_stack=None, fit_tol=1e-2, moffat_beta=None,
                  star_list_path=None, box_size_coeff=7.,
-                 check_mask=True, reduced_chi_square_limit=1.5,
-                 readout_noise=10., dark_current_level=0.,
+                 reduced_chi_square_limit=1.5,
                  target_radec=None, target_xy=None, wcs_rotation=None,
                  sip=None, **kwargs):
 
@@ -458,23 +457,9 @@ class Astrometry(Tools):
           Note that this coeff is divided by 3 if the moffat profile
           is used (helps to avoid bad fit).
         
-        :param check_mask: (Optional) If True and if the data frames
-          are masked, masked pixels in a star are considered as bad so
-          that no fit is done over it (returned fit parameters for the
-          star are None). This is valid only if data is an instance of
-          core.Cube() (default True).
-
         :param reduced_chi_square_limit: (Optional) Coefficient on the
           reduced chi square for bad quality fits rejection (default
           1.5)
-
-        :param readout_noise: (Optional) Readout noise in ADU/pixel
-          (can be computed from bias frames: std(master_bias_frame))
-          (default 10.)
-    
-        :param dark_current_level: (Optional) Dark current level in
-          ADU/pixel (can be computed from dark frames:
-          median(master_dark_frame)) (default 0.)
 
         :param target_radec: (Optional) [RA, DEC] in degrees of a
           target near the center of the field. If the options
@@ -520,9 +505,6 @@ class Astrometry(Tools):
                                 # (as dictionaries) of the fit of each
                                 # star in each frame
 
-
-        # check mask or not
-        self._check_mask = check_mask
         
         # load data and init parameters
         if isinstance(data, Cube):
@@ -531,7 +513,6 @@ class Astrometry(Tools):
             self.dimy = self.data.dimy
             self.dimz = self.data.dimz
         elif isinstance(data, np.ndarray):
-            self._check_mask = False
             if len(data.shape) == 2 or len(data.shape) == 3:
                 self.data = data
                 self.dimx = self.data.shape[0]
@@ -583,10 +564,6 @@ class Astrometry(Tools):
         self.reset_profile_name(profile_name)
 
         self.reduced_chi_square_limit = reduced_chi_square_limit
-
-        # get noise values
-        self.readout_noise = readout_noise
-        self.dark_current_level = dark_current_level
 
         # get RADEC and XY position of a target
         if target_radec is not None:
@@ -840,12 +817,8 @@ class Astrometry(Tools):
             * scale
             * fwhm_pix
             * beta
-            * fit_tol
-            * readout_noise
-            * dark_current_level
-          
+            * fit_tol          
         """
-        print
         if self.data is None: raise StandardError(
             "Some data must be loaded first")
         
@@ -861,11 +834,6 @@ class Astrometry(Tools):
         else:
             if self.dimz > 1:
                 frame = self.data[:,:,index]
-                if self._check_mask:
-                    if self.data._mask_exists:
-                        mask = self.data.get_data_frame(index, mask=True)
-                        frame = frame.astype(float)
-                        frame[np.nonzero(mask)] = np.nan
             else:
                 frame = np.copy(self.data)
                 
@@ -875,8 +843,6 @@ class Astrometry(Tools):
         kwargs['fwhm_pix'] = self.fwhm_pix
         kwargs['beta'] = self.default_beta
         kwargs['fit_tol'] = self.fit_tol
-        kwargs['readout_noise'] = self.readout_noise
-        kwargs['dark_current_level'] = self.dark_current_level
 
         fit_results = StarsParams(star_nb=len(self.star_list), frame_nb=1)
 
@@ -1115,12 +1081,6 @@ class Astrometry(Tools):
                 if add_cube is not None:
                     frame += added_cube[:,:,ik+ijob] * added_cube_scale
         
-                # check mask
-                if self._check_mask:
-                    if self.data._mask_exists:
-                        mask = self.data.get_data_frame(ik+ijob, mask=True)
-                        frame = frame.astype(float)
-                        frame[np.nonzero(mask)] = np.nan
                 if hpfilter:
                     frame = utils.image.high_pass_diff_image_filter(
                         frame, deg=2)
@@ -1134,7 +1094,6 @@ class Astrometry(Tools):
                       self.profile_name, self.scale, fwhm_mean,
                       self.default_beta, self.fit_tol, fwhm_min,
                       fix_height, fix_aperture_fwhm_pix, fix_beta, fix_fwhm,
-                      self.readout_noise, self.dark_current_level,
                       local_background, no_aperture_photometry,
                       precise_guess,
                       aper_coeff, blur, no_fit, estimate_local_noise,

@@ -41,7 +41,6 @@ class Interferogram(core.Vector1d):
     """Interferogram class.
     """
     needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path'
-    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'nm_laser')
         
     def __init__(self, interf, axis=None, params=None, **kwargs):
         """Init method.
@@ -61,18 +60,18 @@ class Interferogram(core.Vector1d):
         """       
         core.Vector1d.__init__(self, interf, axis=axis, params=params, **kwargs)
 
-        if self.params.zpd_index < 0 or self.params.zpd_index >= self.step_nb:
+        if self.params.zpd_index < 0 or self.params.zpd_index >= self.dimx:
             raise ValueError('zpd must be in the interferogram')
 
         # opd axis (in cm) is automatically computed from the parameters
-        opdaxis = 1e-7 * (np.arange(self.step_nb) * self.params.step
+        opdaxis = 1e-7 * (np.arange(self.dimx) * self.params.step
                 - (self.params.step * self.params.zpd_index))
         if self.axis is None:
             self.axis = core.Axis(opdaxis)
         elif np.any(opdaxis != self.axis.data):
             raise StandardError('provided axis is inconsistent with the opd axis computed from the observation parameters')
         
-        if self.axis.step_nb != self.step_nb:
+        if self.axis.dimx != self.dimx:
             raise ValueError('axis must have the same size as the interferogram')        
 
     def __getitem__(self, key):
@@ -80,7 +79,7 @@ class Interferogram(core.Vector1d):
         interferogram class (with its parameters changed to reflect the
         slicing)
         """
-        axis = np.zeros(self.step_nb)
+        axis = np.zeros(self.dimx)
         axis[self.params.zpd_index] = 1
         axis = axis.__getitem__(key)
         if axis.size <= 1:
@@ -119,10 +118,10 @@ class Interferogram(core.Vector1d):
         """
         self.assert_params()
         
-        if not (0 <= self.params.zpd_index <= self.step_nb):
+        if not (0 <= self.params.zpd_index <= self.dimx):
             raise ValueError('zpd index must be >= 0 and <= interferogram size')
         
-        x = np.arange(self.step_nb, dtype=float) - self.params.zpd_index
+        x = np.arange(self.dimx, dtype=float) - self.params.zpd_index
         x /= max(np.abs(x[0]), np.abs(x[-1]))
         
         if window_type is None: return
@@ -139,7 +138,7 @@ class Interferogram(core.Vector1d):
         """Check if interferogram is right sided (left side wrt zpd
         shorter than right side)
         """
-        return (self.params.zpd_index < self.step_nb / 2) # right sided
+        return (self.params.zpd_index < self.dimx / 2) # right sided
         
 
     def symmetric(self):
@@ -147,7 +146,7 @@ class Interferogram(core.Vector1d):
         if self.is_right_sided():
             return self[:self.params.zpd_index * 2 - 1]
         else:
-            shortlen = self.step_nb - self.params.zpd_index
+            shortlen = self.dimx - self.params.zpd_index
             return self[max(self.params.zpd_index - shortlen, 0):]
 
     def multiply_by_mertz_ramp(self):
@@ -158,13 +157,13 @@ class Interferogram(core.Vector1d):
         :return: Mertz ramp as a 1d np.ndarray
         """
         # create ramp
-        zeros_vector = np.zeros(self.step_nb, dtype=self.data.dtype)
+        zeros_vector = np.zeros(self.dimx, dtype=self.data.dtype)
         if self.is_right_sided():
             sym_len = self.params.zpd_index * 2
             zeros_vector[:sym_len] = np.linspace(0,2,sym_len)
             zeros_vector[sym_len:] = 2.
         else:
-            sym_len = (self.step_nb - self.params.zpd_index) * 2
+            sym_len = (self.dimx - self.params.zpd_index) * 2
             zeros_vector[-sym_len:] = np.linspace(0,2,sym_len)
             zeros_vector[:-sym_len] = 2.
         
@@ -183,32 +182,32 @@ class Interferogram(core.Vector1d):
         if self.anynan:
             logging.debug('Nan detected in interferogram')
             return core.Vector1d(np.zeros(
-                self.step_nb, dtype=self.data.dtype) * np.nan)
+                self.dimx, dtype=self.data.dtype) * np.nan)
         if self.allzero:
             logging.debug('interferogram is filled with zeros')
             return core.Vector1d(np.zeros(
-                self.step_nb, dtype=self.data.dtype))
+                self.dimx, dtype=self.data.dtype))
         
         # zero padding
-        zp_nb = self.step_nb * 2
+        zp_nb = self.dimx * 2
         zp_interf = np.zeros(zp_nb, dtype=float)
-        zp_interf[:self.step_nb] = np.copy(self.data)
+        zp_interf[:self.dimx] = np.copy(self.data)
 
         # dft
         interf_fft = np.fft.fft(zp_interf)
         #interf_fft = interf_fft[:interf_fft.shape[0]/2+1]
-        interf_fft = interf_fft[:self.step_nb]
+        interf_fft = interf_fft[:self.dimx]
                                     
         # create axis
         if self.has_params():
             axis = core.Axis(utils.spectrum.create_cm1_axis(
-                self.step_nb, self.params.step, self.params.order,
+                self.dimx, self.params.step, self.params.order,
                 corr=self.params.calib_coeff))
 
         else:
-            axis_step = (self.step_nb - 1) / 2. / self.step_nb
-            axis_max = (self.step_nb - 1) * axis_step
-            axis = core.Axis(np.linspace(0, axis_max, self.step_nb))
+            axis_step = (self.dimx - 1) / 2. / self.dimx
+            axis_max = (self.dimx - 1) * axis_step
+            axis = core.Axis(np.linspace(0, axis_max, self.dimx))
 
         spec = Spectrum(interf_fft, axis=axis.data, params=self.params)
 
@@ -318,7 +317,7 @@ class Phase(core.Cm1Vector1d):
         cm1_min += cm1_border
         cm1_max -= cm1_border
 
-        weights = np.ones(self.step_nb, dtype=float) * 1e-35
+        weights = np.ones(self.dimx, dtype=float) * 1e-35
         weights[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1] = 1.
         
         
@@ -467,8 +466,8 @@ class Spectrum(core.Cm1Vector1d):
     def zpd_shift(self, shift):
         """correct spectrum phase from shifted zpd"""
         self.correct_phase(
-            np.arange(self.step_nb, dtype=float)
-            * -1. * shift * np.pi / self.step_nb)
+            np.arange(self.dimx, dtype=float)
+            * -1. * shift * np.pi / self.dimx)
         
     def correct_phase(self, phase):
         """Correct spectrum phase
@@ -481,9 +480,9 @@ class Spectrum(core.Cm1Vector1d):
             utils.validate.is_1darray(phase, object_name='phase')
             phase = core.Vector1d(phase, axis=self.axis).data
             
-        if phase.shape[0] != self.step_nb:
+        if phase.shape[0] != self.dimx:
             warnings.warn('phase does not have the same size as spectrum. It will be interpolated.')
-            phase = utils.vector.interpolate_size(phase, self.step_nb, 1)
+            phase = utils.vector.interpolate_size(phase, self.dimx, 1)
             
         self.data *= np.exp(-1j * phase)
         
@@ -501,7 +500,7 @@ class Spectrum(core.Cm1Vector1d):
         ## interf = self.transform().data
         ## real_axis_step = float(self.axis[1] - self.axis[0])
         ## samples = (axis - self.axis[0]) / real_axis_step
-        ## ok_samples = (0 <= samples) * (samples < self.step_nb)
+        ## ok_samples = (0 <= samples) * (samples < self.dimx)
         ## if not np.all(ok_samples):
         ##     logging.debug('at least some samples are not in the axis range {}-{}'.format(
         ##         self.axis[0], self.axis[-1]))
@@ -540,7 +539,7 @@ class Spectrum(core.Cm1Vector1d):
         if quality < 2: raise ValueError('quality must be an interger > 2')
    
         interf_complex = np.fft.ifft(self.data)
-        zp_interf = np.zeros(self.step_nb * quality, dtype=complex)
+        zp_interf = np.zeros(self.dimx * quality, dtype=complex)
         center = interf_complex.shape[0] / 2
         zp_interf[:center] = interf_complex[:center]
         zp_interf[

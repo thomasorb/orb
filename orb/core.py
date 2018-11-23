@@ -464,16 +464,12 @@ class NoInstrumentConfigParams(ROParams):
 #### CLASS Tools ################################
 #################################################
 class Tools(object):
-    """
-    Parent class of all classes of orb.
+    """Base parent class for processing classes.
 
-    Manage configuration file, implement basic methods and manage the
-    server for parallel processing.
+    Load instrument config file and give access to orb data files.
     """
     instruments = ['sitelle', 'spiomm']
-    
-    _MASK_FRAME_TAIL = '_mask.fits' # Tail of a mask frame
-    
+        
     def __init__(self, instrument=None, data_prefix="./temp/data.",
                  config=None,
                  tuning_parameters=dict(), ncpus=None, silent=False):
@@ -506,8 +502,6 @@ class Tools(object):
         :param silent: If True only error messages will be diplayed on
           screen (default False).
         """
-        self.params = ROParams()
-
         if instrument is not None:
             if instrument in self.instruments:
                 self.config = ROParams()
@@ -609,19 +603,6 @@ class Tools(object):
         if config is not None:
             self.update_config(config)
 
-    def get_param(self, key):
-        """Get class parameter
-
-        :param key: parameter key
-        """
-        return self.params[key]
-
-    def set_param(self, key, value):
-        """Set class parameter
-
-        :param key: parameter key
-        """
-        self.params[key] = value
 
     def set_config(self, key, cast, optional=False):
         """Set configuration parameter (from the configuration file)
@@ -647,11 +628,7 @@ class Tools(object):
             if ikey not in self.config:
                 raise ValueError('Unknown config key: {}'.format(ikey))
             self.config[ikey] = config[ikey]
-        
-    def _get_msg_class_hdr(self):
-        """Return the header of the displayed messages."""
-        return "# " + self.__class__.__name__ + "."
-    
+            
     def _get_data_path_hdr(self):
         """Return the header of the created files."""
         return self._data_prefix + self.__class__.__name__ + "."
@@ -943,243 +920,7 @@ class Tools(object):
                 param_key, self.config_file_name))
             return None
 
-    def _print_caller_traceback(self):
-        """Print the traceback of the calling function."""
-        traceback = inspect.stack()
-        traceback_msg = ''
-        for i in range(len(traceback))[::-1]:
-            traceback_msg += ('  File %s'%traceback[i][1]
-                              + ', line %d'%traceback[i][2]
-                              + ', in %s\n'%traceback[i][3] +
-                              traceback[i][4][0])
-            
-        logging.debug('\r' + traceback_msg)
-
         
-    def _print_traceback(self, no_hdr=False):
-        """Print a traceback
-
-        :param no_hdr: (Optional) If True, The message is displayed
-          as it is, without any header.
-
-        .. note:: This method returns a traceback only if an error has
-          been raised.
-        """
-        message = traceback.format_exc()
-        if not no_hdr:
-            message = (self._get_date_str() + self._msg_class_hdr + 
-                       sys._getframe(1).f_code.co_name + " > " + message)
-            
-        logging.debug("\r" + message)
-            
-
-    def _get_basic_header(self, file_type, config_file_name='config.orb'):
-        """
-        Return a basic header as a list of tuples (key, value,
-        comment) that can be added to any FITS file created by
-        :meth:`core.Tools.write_fits`.
-        
-        :param file_type: Description of the type of file created.
-        
-        :param config_file_name: (Optional) Name of the configuration
-          file (config.orb by default).
-        """
-        hdr = list()
-        hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','General',''))
-        hdr.append(('COMMENT','-------',''))
-        hdr.append(('COMMENT','',''))
-        hdr.append(('FILETYPE', file_type, 'Type of file'))
-        hdr.append(('OBSERVAT', self.config.OBSERVATORY_NAME, 
-                    'Observatory name'))
-        hdr.append(('TELESCOP', self.config.TELESCOPE_NAME,
-                    'Telescope name'))  
-        hdr.append(('INSTRUME', self.config.INSTRUMENT_NAME,
-                    'Instrument name'))
-        return hdr
-        
-    def _get_basic_frame_header(self, dimx, dimy,
-                                config_file_name='config.orb'):
-        """
-        Return a specific part of a header that can be used for image
-        files or frames. It creates a false WCS useful to get a rough
-        idea of the angular separation between two objects in the
-        image.
-
-        The header is returned as a list of tuples (key, value,
-        comment) that can be added to any FITS file created by
-        :meth:`core.Tools.write_fits`. You can add this part to the
-        basic header returned by :meth:`core.Tools._get_basic_header`
-
-        :param dimx: dimension of the first axis of the frame
-        :param dimy: dimension of the second axis of the frame
-        :param config_file_name: (Optional) Name of the configuration
-          file (config.orb by default).
-        """
-        hdr = list()
-        FIELD_OF_VIEW = self.config.FIELD_OF_VIEW_1
-        x_delta = FIELD_OF_VIEW / dimx * (1/60.)
-        y_delta = FIELD_OF_VIEW / dimy * (1/60.)
-        hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','Frame WCS',''))
-        hdr.append(('COMMENT','---------',''))
-        hdr.append(('COMMENT','',''))
-        hdr.append(('CTYPE1', 'DEC--TAN', 'Gnomonic projection'))
-        hdr.append(('CRVAL1', 0.000000, 'DEC at reference point'))
-        hdr.append(('CUNIT1', 'deg', ''))
-        hdr.append(('CRPIX1', 0, 'Pixel coordinate of reference point'))
-        hdr.append(('CDELT1', x_delta, 'Degrees per pixel'))
-        hdr.append(('CROTA1', 0.000000, ''))
-        hdr.append(('CTYPE2', 'RA---TAN', 'Gnomonic projection'))
-        hdr.append(('CRVAL2', 0.000000, 'RA at reference point'))
-        hdr.append(('CUNIT2', 'deg', ''))
-        hdr.append(('CRPIX2', 0, 'Pixel coordinate of reference point'))
-        hdr.append(('CDELT2', y_delta, 'Degrees per pixel'))
-        hdr.append(('CROTA2', 0.000000, ''))
-        return hdr
-
-    def _get_fft_params_header(self, apodization_function):
-        """Return a specific part of the header containing the
-        parameters of the FFT.
-
-        :param apodization_function: Name of the apodization function.
-        """
-        hdr = list()
-        hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','FFT Parameters',''))
-        hdr.append(('COMMENT','--------------',''))
-        hdr.append(('COMMENT','',''))
-        hdr.append(('APODIZ', '%s'%str(apodization_function),
-                    'Apodization function'))
-        return hdr
-
-    def _get_basic_spectrum_frame_header(self, frame_index, axis,
-                                         wavenumber=False):
-        """
-        Return a specific part of a header that can be used for
-        independant frames of a spectral cube. It gives the wavelength
-        position of the frame.
-
-        The header is returned as a list of tuples (key, value,
-        comment) that can be added to any FITS file created by
-        :meth:`core.Tools.write_fits`. You can add this part to the
-        basic header returned by :meth:`core.Tools._get_basic_header`
-        and :meth:`core.Tools._get_frame_header`
-        
-        :param frame_index: Index of the frame.
-        
-        :param axis: Spectrum axis. The axis must have the same length
-          as the number of frames in the cube. Must be an axis in
-          wavenumber (cm1) or in wavelength (nm).
-
-        :param wavenumber: (Optional) If True the axis is considered
-          to be in wavenumber (cm1). If False it is considered to be
-          in wavelength (nm) (default False).
-        """
-        hdr = list()
-        if not wavenumber:
-            wave_type = 'wavelength'
-            wave_unit = 'nm'
-        else:
-            wave_type = 'wavenumber'
-            wave_unit = 'cm-1'
-
-        hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','Frame {}'.format(wave_type),''))
-        hdr.append(('COMMENT','----------------',''))
-        hdr.append(('COMMENT','',''))
-        hdr.append(('FRAMENB', frame_index, 'Frame number'))
-        
-        hdr.append(('WAVEMIN', axis[frame_index], 
-                    'Minimum {} in the frame in {}'.format(wave_type,
-                                                           wave_unit)))
-        hdr.append(('WAVEMAX', axis[frame_index] + axis[1] - axis[0], 
-                    'Maximum {} in the frame in {}'.format(wave_type,
-                                                           wave_unit)))
-        return hdr
-
-    def _get_basic_spectrum_cube_header(self, axis, wavenumber=False):
-        """
-        Return a specific part of a header that can be used for
-        a spectral cube. It creates the wavelength axis of the cube.
-
-        The header is returned as a list of tuples (key, value,
-        comment) that can be added to any FITS file created by
-        :meth:`core.Tools.write_fits`. You can add this part to the
-        basic header returned by :meth:`core.Tools._get_basic_header`
-        and :meth:`core.Tools._get_frame_header`
-
-        :param axis: Spectrum axis. The axis must have the same length
-          as the number of frames in the cube. Must be an axis in
-          wavenumber (cm1) or in wavelength (nm)
-          
-        :param wavenumber: (Optional) If True the axis is considered
-          to be in wavenumber (cm1). If False it is considered to be
-          in wavelength (nm) (default False).
-        """
-        hdr = list()
-        if not wavenumber:
-            wave_type = 'wavelength'
-            wave_unit = 'nm'
-        else:
-            wave_type = 'wavenumber'
-            wave_unit = 'cm-1'
-        hdr.append(('COMMENT','',''))
-        hdr.append(('COMMENT','Spectrum axis',''))
-        hdr.append(('COMMENT','-------------',''))
-        hdr.append(('COMMENT','',''))
-        hdr.append(('WAVTYPE', '{}'.format(wave_type.upper()),
-                    'Spectral axis type: wavenumber or wavelength'))
-        hdr.append(('CTYPE3', 'WAVE', '{} in {}'.format(wave_type,
-                                                        wave_unit)))
-        hdr.append(('CRVAL3', axis[0], 'Minimum {} in {}'.format(wave_type,
-                                                                    wave_unit)))
-        hdr.append(('CUNIT3', '{}'.format(wave_unit), ''))
-        hdr.append(('CRPIX3', 1.000000, 'Pixel coordinate of reference point'))
-        hdr.append(('CDELT3', 
-                    ((axis[-1] - axis[0]) / (len(axis) - 1)), 
-                    '{} per pixel'.format(wave_unit)))
-        hdr.append(('CROTA3', 0.000000, ''))
-        return hdr
-
-    def _get_basic_spectrum_header(self, axis, wavenumber=False):
-        """
-        Return a specific part of a header that can be used for
-        a 1D spectrum. It creates the wavelength axis.
-
-        The header is returned as a list of tuples (key, value,
-        comment) that can be added to any FITS file created by
-        :meth:`core.Tools.write_fits`. You can add this part to the
-        basic header returned by :meth:`core.Tools._get_basic_header`
-        and :meth:`core.Tools._get_frame_header`
-
-        :param axis: Spectrum axis. The axis must have the same length
-          as the spectrum length. Must be an axis in wavenumber (cm1)
-          or in wavelength (nm)
-          
-        :param wavenumber: (Optional) If True the axis is considered
-          to be in wavenumber (cm1). If False it is considered to be
-          in wavelength (nm) (default False).
-        """
-        hdr = list()
-        if not wavenumber:
-            wave_type = 'wavelength'
-            wave_unit = 'nm'
-        else:
-            wave_type = 'wavenumber'
-            wave_unit = 'cm-1'
-        hdr.append(('CTYPE1', 'WAVE', '{} in {}'.format(
-            wave_type, wave_unit)))
-        hdr.append(('CRVAL1', axis[0], 'Minimum {} in {}'.format(
-            wave_type, wave_unit)))
-        hdr.append(('CUNIT1', '{}'.format(wave_unit),
-                    'Spectrum coordinate unit'))
-        hdr.append(('CRPIX1', 1.000000, 'Pixel coordinate of reference point'))
-        hdr.append(('CD1_1', 
-                    ((axis[-1] - axis[0]) / (len(axis) - 1)), 
-                    '{} per pixel'.format(wave_unit)))
-        return hdr
-
     def _init_pp_server(self, silent=False):
         """Initialize a server for parallel processing.
 
@@ -1204,13 +945,6 @@ class Tools(object):
         """
         return utils.parallel.close_pp_server(js)
         
-    def _get_mask_path(self, path):
-        """Return the path to the mask given the path to the original
-        FITS file.
-
-        :param path: Path of the origial FITS file.
-        """
-        return os.path.splitext(path)[0] + self._MASK_FRAME_TAIL
 
     def _get_tuning_parameter(self, parameter_name, default_value):
         """Return the value of the tuning parameter if it exists. In
@@ -1241,102 +975,6 @@ class Tools(object):
         else:
             return default_value
                 
-
-    def open_file(self, file_name, mode='w'):
-        """Open a file in write mode (by default) and return a file
-        object.
-        
-        Create the file if it doesn't exist (only in write mode).
-
-        :param fits_name: Path to the file, can be either
-          relative or absolute.
-
-        :param mode: (Optional) Can be 'w' for write mode, 'r' for
-          read mode and 'a' for append mode.
-        """
-        if mode not in ['w','r','a','rU']:
-            raise StandardError("mode option must be 'w', 'r', 'rU' or 'a'")
-            
-        if mode in ['w','a']:
-            # create folder if it does not exist
-            dirname = os.path.dirname(file_name)
-            if dirname != '':
-                if not os.path.exists(dirname): 
-                    os.makedirs(dirname)
-        if mode == 'r': mode = 'rU' # read in universal mode by
-                                    # default to handle Windows files.
-
-        return open(file_name, mode)
-    
-    def sort_image_list(self, file_list, image_mode, cube=True):
-        """Sort a list of fits files.
-
-        :param file_list: A list of file names
-
-        :param image_mode: Image mode, can be 'sitelle' or 'spiomm'.
-
-        :param cube: If True, image list is considered as a cube
-          list. Headers are used to get the right order based on step
-          number instead of file path (default True).
-        """
-    
-        file_list = [path for path in file_list if
-                     (('.fits' in path) or ('.hdf5' in path))]
-        
-        if len(file_list) == 0: return None
-
-        if image_mode == 'spiomm':
-            file_list = [path for path in file_list
-                         if not '_bias.fits' in path]
-
-        # get all numbers
-        file_seq = [re.findall("[0-9]+", path)
-                        for path in file_list if
-                    (('.fits' in path) or ('.hdf5' in path))]
-        
-        try:
-            file_keys = np.array(file_seq, dtype=int)
-        except Exception, e:
-            raise StandardError('Malformed sequence of files: {}:\n{}'.format(
-                e, file_seq))
-                             
-            
-        # get changing column
-        test = np.sum(file_keys == file_keys[0,:], axis=0)
-        
-        if np.min(test) > 1:
-            warnings.warn('Images list cannot be safely sorted. Two images at least have the same index')
-            column_index = np.nan
-        else:
-            column_index = np.argmin(test)
-
-        # get changing step (if possible)
-        steplist = list()
-        if cube:
-            for path in file_list:
-                if '.fits' in path:
-                    try:
-                        hdr = utils.io.read_fits(
-                            path, return_hdu_only=True)[0].header
-                        if 'SITSTEP' in hdr:
-                            steplist.append(int(hdr['SITSTEP']))
-                    except Exception: pass
-                
-        
-        if len(steplist) == len(file_list):
-            _list = list()
-            for i in range(len(file_list)):
-                _list.append({'path':file_list[i], 'step':steplist[i]})
-            _list.sort(key=lambda x: x['step'])
-            file_list = [_path['path'] for _path in _list]
-        elif not np.isnan(column_index):
-            file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
-                column_index]))
-        else:
-            raise StandardError('Image list cannot be sorted.')
-            
-        return file_list
-
     def save_sip(self, fits_path, hdr, overwrite=True):
         """Save SIP parameters from a header to a blanck FITS file.
 
@@ -2150,32 +1788,39 @@ class Header(pyfits.Header):
         """Return a nice string to print"""
         return self.tostring(sep='\n')
 
-#################################################
-#### CLASS Vector1d #############################
-#################################################
-class Vector1d(object):
-    """Basic 1d vector management class.
 
-    The vector can have a projection axis.
+#################################################
+#### CLASS Data #################################
+#################################################
+class Data(object):
+    """base class for data objects.
 
-    Useful for checking purpose.
+    data = array 
+    + params (equiv to header, wcs params are contained in the params) 
+    + axis (for 1d data and 3d data)
+    + mask (1d for 1d, 2d for 2d and 3d)
     """
     needed_params = ()
-    optional_params = ()
-    
-    def __init__(self, vector, axis=None, params=None, **kwargs):
+
+    def __init__(self, data, axis=None, params=None, mask=None, **kwargs):
         """Init method.
 
-        :param vector: A 1d numpy.ndarray vector or a path to an hdf5
-          vector file.
+        :param data: A numpy.ndarray a path to an hdf5 file. If an
+          hdf5 file is loaded the values of the its axis, params,
+          and mask can be changed by setting their respective keywords
+          to something else than None. Note that file parameters are
+          updated from the dictionary supplied with the params keyword
+          and the kwargs.
 
         :param axis: (optional) A 1d numpy.ndarray axis (default None)
           with the same size as vector.
 
         :param params: (Optional) A dict containing additional
-          parameters giving access to more methods. The needed params
-          are stored in self.needed_params (default None). If vector
-          is a path it must be set to None.
+          parameters.
+
+        :param mask: (Optional) A numpy.ndarray with the same shape as
+          the input data (for 3D data, a 2D array can be provided with
+          shape (dimx, dimy))
 
         :param kwargs: (Optional) Keyword arguments, can be used to
           supply observation parameters not included in the params
@@ -2184,108 +1829,144 @@ class Vector1d(object):
 
         """
         self.axis = None
+        self.params = dict()
+        self.mask = None
 
-        if isinstance(vector, str):
+        # load from file
+        if isinstance(data, str):
             if params is not None:
                 # params are transformed into kwargs
                 kwargs.update(params)
                 
-            with utils.io.open_hdf5(vector, 'r') as hdffile:
-                params = dict()
+            with utils.io.open_hdf5(data, 'r') as hdffile:
+                # load data
+                self.data = hdffile['/data'][:]
+                
+                # load params
                 for iparam in hdffile.attrs:
-                    params[iparam] = hdffile.attrs[iparam]
-                vector = hdffile['/vector'][:]
+                    self.params[iparam] = hdffile.attrs[iparam]
+
+                # load axis
                 if '/axis' in hdffile:
-                    if axis is not None:
-                        raise StandardError('An axis is already provided in the input file')
-                    axis = hdffile['/axis'][:]
+                    if axis is None:
+                        self.axis = Axis(hdffile['/axis'][:])
 
+                # load mask
+                if '/mask' in hdffile:
+                    if mask is None:
+                        self.mask = hdffile['/mask'][:]
 
-        elif isinstance(vector, self.__class__):
-            if vector.axis is not None:
+        # load from another instance
+        elif isinstance(data, self.__class__):
+            _data = data.copy()
+            self.data = _data.data
+
+            # load params
+            if _data.params is not None:
+                self.params = _data.params
+
+            # load axis
+            if _data.axis is not None:
                 if axis is not None:
-                    raise StandardError('An axis is already provided in the input class')
-                axis = np.copy(vector.axis.data)
-            vector = np.copy(vector.data)
+                    self.axis = _data.axis
+
+            # load mask
+            if _data.mask is not None:
+                if mask is not None:
+                    self.mask = _data.mask
             
+        # load from np.ndarray
         else:
-            vector = np.copy(vector)
+            if not isinstance(data, np.ndarray):
+                raise TypeError('input data is a {} but must be a numpy.ndarray'.format(type(data)))
+            data = np.squeeze(np.copy(data))
+            if data.ndim > 3: raise TypeError('data dimension > 3 is not supported')
+            self.data = data
+            
+            # check data
+            if len(np.nonzero(self.data)[0]) == 0:
+                self.allzero = True
+            else:
+                self.allzero = False
 
-        # checking
-        if not isinstance(vector, np.ndarray):
-            raise TypeError('input vector is a {} but must be a numpy.ndarray'.format(type(vector)))
-        if vector.ndim != 1:
-            vector = np.squeeze(vector)
-            if vector.ndim != 1:
-                raise TypeError('input vector has {} dims but must have only one dimension'.format(vector.ndim))
-        if len(np.nonzero(vector)[0]) == 0:
-            self.allzero = True
-        else:
-            self.allzero = False
+            if np.all(np.isnan(self.data)):
+                self.allnan = True
+            else:
+                self.allnan = False
 
-        if np.all(np.isnan(vector)):
-            self.allnan = True
-        else:
-            self.allnan = False
+            if np.any(np.isnan(self.data)):
+                self.anynan = True
+            else:
+                self.anynan = False
 
-        if np.any(np.isnan(vector)):
-            self.anynan = True
-        else:
-            self.anynan = False
+        self.dimx = self.data.shape[0]
+        if self.data.ndim > 1:
+            self.dimy = self.data.shape[1]
+            if self.data.ndim > 2:
+                self.dimz = self.data.shape[2]
+
+            
+        # load params
+        if params is not None:
+            self.params.update(params)
+        self.params.update(**kwargs)
+
+        # check params
+        for iparam in self.needed_params:
+            if iparam not in self.params:
+                raise StandardError('param {} must be set'.format(iparam))
 
 
-        self.data = np.copy(vector)
-        self.data_orig = np.copy(vector)
-        self.step_nb = self.data.shape[0]
-
+        # load axis
         if axis is not None:
             axis = Axis(axis)
-            if axis.step_nb != self.step_nb:
+            if axis.dimx != self.dimx:
                 raise TypeError('axis must have the same length as vector')
             self.axis = axis
+
+        # load mask
+        if mask is not None:
+            if not isinstance(mask, np.ndarray):
+                raise TypeError('input mask is a {} but must be a numpy.ndarray'.format(type(mask)))
+
+            if mask.dtype != np.bool: raise TypeError('input mask must be of boolean type')
             
-        # load parameters
-        self.params = None        
+            if self.data.ndim < 3:
+                if mask.shape != self.data.shape:
+                    raise TypeError('mask has shape {} but must have the same shape as data: {}'.format(mask.shape, self.data.shape))
 
-        def load_params(params, plist, needed=False, pop=True):
-            for iparam in plist:
-                try:
-                    self.params[iparam] = kwargs.pop(iparam)
-                except KeyError: 
-                    try:
-                        if pop:
-                            self.params[iparam] = params.pop(iparam)
-                        else:
-                            self.params[iparam] = params[iparam]
-                    except KeyError:
-                        if needed:
-                            raise KeyError('param {} needed in params dict'.format(iparam))
-            return params
-            
-        
-        if params is not None:
-            if not isinstance(params, dict):
-                raise TypeError('params must be a dict ! not a {}'.format(type(params)))
-
-            params = dict(params)
-            
-            self.params = ROParams()
-                
-            params = load_params(params, self.needed_params, needed=True)
-            params = load_params(params, self.optional_params, needed=False)
-
-            # for iparam in params:
-            #     logging.debug('parameter {} not added'.format(iparam))
-
-        # check keyword arguments validity
-        for iparam in kwargs:
-            if iparam not in self.needed_params and iparam not in self.optional_params:
-                raise KeyError('supplied keyword argument {} not understood'.format(iparam))
-
+            else:
+                if mask.shape != (self.data.shape[0:2]):
+                    raise TypeError('mask has shape {} but must have shape {}'.format(mask.shape, self.data.shape[0:2]))
+            self.mask = mask
+               
+        if len(self.params) == 0:
+            self.params = None
+        else:
+            self.params = ROParams(self.params)
 
     def __getitem__(self, key):
-        """Getitem special method"""
-        return self.__class__(self.data.__getitem__(key), params=self.params)
+        _data = self.data.__getitem__(key)
+        if self.has_mask():
+            if _data.size > 1:
+                _data[np.nonzero(self.mask.__getitem__(key) == 0)] = np.nan
+            else:
+                if not self.mask.__getitem__(key): _data = np.nan
+        return _data
+        
+    def get_param(self, key):
+        """Get class parameter
+
+        :param key: parameter key
+        """
+        return self.params[key]
+
+    def set_param(self, key, value):
+        """Set class parameter
+
+        :param key: parameter key
+        """
+        self.params[key] = value
 
     def has_params(self):
         """Check the presence of observation parameters"""
@@ -2302,10 +1983,22 @@ class Vector1d(object):
                 'Parameters not supplied, please give: {} at init'.format(
                     self.needed_params))
 
+    def has_axis(self):
+        if self.axis is None: return False
+        return True
+        
     def assert_axis(self):
         """Assert the presence of an axis"""
-        if self.axis is None: raise StandardError('No axis supplied')
+        if self.has_axis(): raise StandardError('No axis supplied')
 
+    def has_mask(self):
+        if self.mask is None: return False
+        return True
+        
+    def assert_mask(self):
+        """Assert the presence of a mask"""
+        if self.has_mask(): raise StandardError('No mask supplied')
+        
     def copy(self):
         """Return a copy of the instance"""
         if self.has_params():
@@ -2313,12 +2006,69 @@ class Vector1d(object):
         else:
             _params = None
 
-        if self.axis is not None:
+        if self.has_axis():
             _axis = np.copy(self.axis.data)
         else:
             _axis = None
+            
+        if self.has_mask():
+            _mask = np.copy(self.mask)
+        else:
+            _mask = None
 
-        return self.__class__(np.copy(self.data), axis=_axis, params=_params)
+        print self.__class__, '?????'
+        return self.__class__(
+            np.copy(self.data),
+            axis=_axis,
+            params=_params,
+            mask=_mask)
+
+    def writeto(self, path):
+        """Write data to an hdf file
+
+        :param path: hdf file path.
+        """
+        if np.iscomplexobj(self.data):
+            _data = self.data.astype(complex)
+        else:
+            _data = self.data.astype(float)
+            
+        with utils.io.open_hdf5(path, 'w') as hdffile:
+            if self.has_params():
+                for iparam in self.params:
+                    hdffile.attrs[iparam] = self.params[iparam]
+
+            hdffile.create_dataset(
+                '/data',
+                data=_data)
+
+            if self.has_axis():
+                hdffile.create_dataset(
+                    '/axis',
+                    data=self.axis.data.astype(float))
+
+            if self.has_mask():
+                hdffile.create_dataset(
+                    '/mask',
+                    data=self.mask)
+
+    
+#################################################
+#### CLASS Vector1d #############################
+#################################################
+class Vector1d(Data):
+    """Basic 1d vector management class.
+
+    Vector can have a projection axis.
+    """
+    
+    def __init__(self, *args, **kwargs):
+
+        Data.__init__(self, *args, **kwargs)
+
+        # checking
+        if self.data.ndim != 1:
+            raise TypeError('input vector has {} dims but must have only one dimension'.format(vector.ndim))
 
     def reverse(self):
         """Reverse data. Do not reverse the axis.
@@ -2404,29 +2154,6 @@ class Vector1d(object):
         """Sum of the data"""
         return np.sum(self.data)
 
-    def writeto(self, path):
-        """Write cm1 vector and params to an hdf file
-
-        :param path: hdf file path.
-        """
-        if np.iscomplexobj(self.data):
-            _data = self.data.astype(complex)
-        else:
-            _data = self.data.astype(float)
-            
-        with utils.io.open_hdf5(path, 'w') as hdffile:
-            if self.has_params():
-                for iparam in self.params:
-                    hdffile.attrs[iparam] = self.params[iparam]
-
-            hdffile.create_dataset(
-                '/vector',
-                data=_data)
-
-            if self.axis is not None:
-                hdffile.create_dataset(
-                    '/axis',
-                    data=self.axis.data.astype(float))
 
 
 #################################################
@@ -2435,21 +2162,15 @@ class Vector1d(object):
 class Axis(Vector1d):
     """Axis class"""
 
-    def __init__(self, axis, params=None, **kwargs):
+    def __init__(self, data, axis=None, params=None, mask=None, **kwargs):
         """Init class with an axis vector
 
-        :param axis: Regularly sampled and naturally ordered axis.
-
-        :param params: (Optional) A dict containing additional
-          parameters giving access to more methods. The needed params
-          are stored in self.needed_params (default None).
-
-        :param kwargs: (Optional) Keyword arguments, can be used to
-          supply observation parameters not included in the params
-          dict. These parameters take precedence over the parameters
-          supplied in the params dictionnary.    
+        :param data: 1d np.ndarray.
         """
-        Vector1d.__init__(self, axis, axis=None, params=params, **kwargs)
+        if axis is not None: raise ValueError('axis must be set to None')
+        if mask is not None: raise ValueError('mask must be set to None')
+        
+        Vector1d.__init__(self, data, **kwargs)
 
         # check that axis is regularly sampled
         diff = np.diff(self.data)
@@ -2468,7 +2189,7 @@ class Axis(Vector1d):
         :return: Position in index
         """
         pos_index = (pos - self.data[0]) / float(self.axis_step)
-        if pos_index < 0 or pos_index >= self.step_nb:
+        if pos_index < 0 or pos_index >= self.dimx:
             warnings.warn('requested position is off axis')
         return pos_index
 
@@ -2482,9 +2203,6 @@ class Cm1Vector1d(Vector1d):
 
     """
     needed_params = ('filter_file_path', )
-    optional_params = ('filter_cm1_min', 'filter_cm1_max', 'step', 'order',
-                       'zpd_index', 'calib_coeff', 'filter_file_path', 'nm_laser')
-
     obs_params = ('step', 'order', 'calib_coeff')
    
     def __init__(self, spectrum, axis=None, params=None, **kwargs):
@@ -2513,7 +2231,7 @@ class Cm1Vector1d(Vector1d):
         if self.has_params():
             if len(set(self.obs_params).intersection(self.params)) == len(self.obs_params):
                 check_axis = utils.spectrum.create_cm1_axis(
-                    self.step_nb, self.params.step, self.params.order, corr=self.params.calib_coeff)
+                    self.dimx, self.params.step, self.params.order, corr=self.params.calib_coeff)
                 if self.axis is None:
                     self.axis = Axis(check_axis)
                 else:
@@ -2556,7 +2274,7 @@ class Cm1Vector1d(Vector1d):
 
     def mean_in_filter(self):
         ff = FilterFile(self.params.filter_file_path)
-        ftrans = ff.get_transmission(self.step_nb)
+        ftrans = ff.get_transmission(self.dimx)
         return np.sum(self.multiply(ftrans).data) / ftrans.sum() 
     
 #################################################
