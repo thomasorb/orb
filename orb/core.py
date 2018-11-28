@@ -593,12 +593,9 @@ class Tools(object):
             
 
         self._data_prefix = data_prefix
-        self._msg_class_hdr = self._get_msg_class_hdr()
         self._data_path_hdr = self._get_data_path_hdr()
         self._tuning_parameters = tuning_parameters
         self._silent = silent
-        if self.instrument is not None:
-            self.set_param('instrument', self.instrument)
 
         if config is not None:
             self.update_config(config)
@@ -769,7 +766,7 @@ class Tools(object):
         groups = ['MASSEY', 'MISC', 'CALSPEC', 'OKE', None]
         if group not in groups:
             raise StandardError('Group must be in %s'%str(groups))
-        std_table = self.open_file(self._get_standard_table_path(
+        std_table = utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
         std_list = list()
         for iline in std_table:
@@ -797,7 +794,7 @@ class Tools(object):
         :return: A tuple [standard file path, standard type]. Standard type
           can be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'.
         """
-        std_table = self.open_file(self._get_standard_table_path(
+        std_table = utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
 
         for iline in std_table:
@@ -828,7 +825,7 @@ class Tools(object):
         :return: A tuple [standard file path, standard type]. Standard type
           can be 'MASSEY', 'MISC', 'CALSPEC' or 'OKE'.
         """
-        std_table = self.open_file(self._get_standard_table_path(
+        std_table = utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
 
         for iline in std_table:
@@ -906,7 +903,7 @@ class Tools(object):
              PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
              PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
         """ 
-        f = self.open_file(
+        f = utils.io.open_file(
             self._get_config_file_path(), 'r')
         for line in f:
             if len(line) > 2:
@@ -1292,7 +1289,7 @@ class Indexer(Tools):
         """Load index file and rebuild index of already located files"""
         self.index = dict()
         if os.path.exists(self._get_index_path()):
-            f = self.open_file(self._get_index_path(), 'r')
+            f = utils.io.open_file(self._get_index_path(), 'r')
             for iline in f:
                 if len(iline) > 2:
                     iline = iline.split()
@@ -1301,7 +1298,7 @@ class Indexer(Tools):
 
     def update_index(self):
         """Update index files with data in the virtual index"""
-        f = self.open_file(self._get_index_path(), 'w')
+        f = utils.io.open_file(self._get_index_path(), 'w')
         for ikey in self.index:
             f.write('%s %s\n'%(ikey, self.index[ikey]))
         f.close()
@@ -1421,7 +1418,7 @@ class Lines(Tools):
         """
         sky_lines_file_path = self._get_orb_data_file_path(
             self.sky_lines_file_name)
-        f = self.open_file(sky_lines_file_path, 'r')
+        f = utils.io.open_file(sky_lines_file_path, 'r')
         self.air_sky_lines_nm = dict()
         try:
             for line in f:
@@ -1622,7 +1619,7 @@ class ParamsFile(Tools):
         
         self._params_list = list()
         if not reset and os.path.exists(file_path):
-            self.f = self.open_file(file_path, 'r')
+            self.f = utils.io.open_file(file_path, 'r')
             for iline in self.f:
                 if '##' not in iline and len(iline) > 3:
                     if '# KEYS' in iline:
@@ -1637,10 +1634,10 @@ class ParamsFile(Tools):
                         raise StandardError(
                             'Wrong file format: {:s}'.format(file_path))
             self.f.close()
-            self.f = self.open_file(file_path, 'a')
+            self.f = utils.io.open_file(file_path, 'a')
 
         else:
-            self.f = self.open_file(file_path, 'w')
+            self.f = utils.io.open_file(file_path, 'w')
             self.f.write("## PARAMS FILE\n## created by {:s}\n".format(
                 self.__class__.__name__))
             self.f.flush()
@@ -1828,6 +1825,8 @@ class Data(object):
           supplied in the params dictionnary.
 
         """
+        LIMIT_SIZE = 100
+        
         self.axis = None
         self.params = dict()
         self.mask = None
@@ -1840,7 +1839,13 @@ class Data(object):
                 
             with utils.io.open_hdf5(data, 'r') as hdffile:
                 # load data
-                self.data = hdffile['/data'][:]
+                if hdffile['/data'].ndim > 2 and np.any(hdffile['/data'].shape) > LIMIT_SIZE:
+                    self.data = hdffile['/data'] # data is not loaded,
+                                                 # a pointer to the
+                                                 # dataset is returned
+
+                else:
+                    self.data = hdffile['/data'][:]
                 
                 # load params
                 for iparam in hdffile.attrs:
@@ -1905,7 +1910,6 @@ class Data(object):
             if self.data.ndim > 2:
                 self.dimz = self.data.shape[2]
 
-            
         # load params
         if params is not None:
             self.params.update(params)
@@ -1915,7 +1919,6 @@ class Data(object):
         for iparam in self.needed_params:
             if iparam not in self.params:
                 raise StandardError('param {} must be set'.format(iparam))
-
 
         # load axis
         if axis is not None:

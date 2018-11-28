@@ -44,7 +44,8 @@ class HDFCube(core.Data, core.Tools):
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
     
-    def __init__(self, path, shape=None, indexer=None, instrument=None,  **kwargs):
+    def __init__(self, path, shape=None, indexer=None, instrument=None,
+                 params=None, mask=None, **kwargs):
 
         """:param path: Path to an HDF5 cube
 
@@ -87,7 +88,8 @@ class HDFCube(core.Data, core.Tools):
                     
         # init tools
         core.Tools.__init__(self, instrument=instrument, **kwargs)        
-
+        core.Data.__init__(self, path, params=params, mask=mask)
+        
         self.star_list = None
         self.z_median = None
         self.z_mean = None
