@@ -417,7 +417,7 @@ class FitVector(object):
                        vector),
                 prior=priors_dict,
                 fcn=self._get_model_onrange,
-                debug=True, extend=True,
+                debug=True, 
                 tol=self.fit_tol,
                 maxit=self.max_iter)
 
