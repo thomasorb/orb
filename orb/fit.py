@@ -792,7 +792,7 @@ class Model(object):
         
         :param p_val: New full set of parameters.
         """
-        if p_val.viewkeys() == self.p_val.viewkeys():
+        if dict(p_val).viewkeys() == dict(self.p_val).viewkeys():
             self.p_val = copy.copy(p_val)
             self.val2free()
         else: raise Exception('bad format of passed val parameters')
