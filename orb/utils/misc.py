@@ -138,13 +138,14 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
     """
     ### Warning: pyregion works in 'transposed' coordinates
     ### We will work here in python (y,x) convention
-
     _regions = pyregion.open(reg_path)
     if not _regions.check_imagecoord():
         if header is None: raise Exception('DS9 region file is not in image coordinates. Please change it to image coordinates or pass a astropy.io.fits.Header instance to the function to transform the actual coordinates to image coordinates.')
         else:
-            wcs = pywcs.WCS(header, naxis=2) 
-            _regions = _regions.as_imagecoord(wcs.to_header())
+            wcsheader = pywcs.WCS(header, naxis=2).to_header()
+            wcsheader.update({'NAXIS1': header['NAXIS1'],
+                              'NAXIS2': header['NAXIS2']})
+            _regions = _regions.as_imagecoord(wcsheader)
             
     shape = (np.max(y_range), np.max(x_range))
     mask = np.zeros(shape, dtype=float)

@@ -2050,7 +2050,7 @@ def get_wcs_parameters(_wcs):
 
     if deltax < 0.: raise StandardError('deltax and deltay must be equal and > 0')
     if abs(rotation) > 90. : raise StandardError('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
-    if not np.allclose(deltax, deltay): raise StandardError('deltax ({}) must be equal to deltay ({})'.format(deltax, deltay))
+    if not np.allclose(deltax, deltay): warnings.warn('deltax ({}) should be equal to deltay ({})'.format(deltax, deltay))
     deltay = float(deltax)
     
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
