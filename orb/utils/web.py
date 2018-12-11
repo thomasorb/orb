@@ -159,6 +159,8 @@ def query_vizier(radius, target_ra, target_dec,
            + '&-out.max=unlimited&-out.meta=-huD'
            + '&-out={}&-sort={}'.format(out, sort))
 
+    logging.info('Vizier URL: {}'.format(URL))
+
     retry = 0
     while retry <= MAX_RETRY:
         try:
@@ -203,7 +205,7 @@ def query_vizier(radius, target_ra, target_dec,
 
     # sorting list to get the brightest stars first
     star_list = np.array(sorted(star_list, key=lambda istar: istar[2]))
-
+    
     logging.info("%d stars recorded in the given field"%len(star_list))
     logging.info("Magnitude min: {}, max:{}".format(
         np.min(star_list[:,2]), np.max(star_list[:,2])))

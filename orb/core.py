@@ -470,9 +470,8 @@ class Tools(object):
     """
     instruments = ['sitelle', 'spiomm']
         
-    def __init__(self, instrument=None, data_prefix="./temp/data.",
-                 config=None,
-                 tuning_parameters=dict(), ncpus=None, silent=False):
+    def __init__(self, instrument=None, config=None,
+                 data_prefix="./temp/data.", ):
         """Initialize Tools class.
 
         :param instrument: (Optional) Instrument configuration to
@@ -485,22 +484,6 @@ class Tools(object):
 
         :param config: (Optional) Configuration dictionary to update
           default loaded config values (default None).
-
-        :param ncpus: (Optional) Number of CPUs to use for parallel
-          processing. set to None gives the maximum number available
-          (default None).
-
-        :param tuning_parameters: (Optional) Some parameters of the
-          methods can be tuned externally using this dictionary. The
-          dictionary must contains the full parameter name
-          (class.method.parameter_name) and its value. For example :
-          {'InterferogramMerger.find_alignment.BOX_SIZE': 7}. Note
-          that only some parameters can be tuned. This possibility is
-          implemented into the method itself with the method
-          :py:meth:`core.Tools._get_tuning_parameter`.
-
-        :param silent: If True only error messages will be diplayed on
-          screen (default False).
         """
         if instrument is not None:
             if instrument in self.instruments:
@@ -518,12 +501,7 @@ class Tools(object):
         self.set_config('DIV_NB', int)
         self.config['QUAD_NB'] = self.config.DIV_NB**2L
         self.set_config('BIG_DATA', bool)
-        self.set_config('NCPUS', int)
-        if ncpus is None:
-            self.ncpus = int(self.config.NCPUS)
-        else:
-            self.ncpus = int(ncpus)
-
+        
         if self.instrument is not None:
             # load instrument configuration
             self.set_config('OBSERVATORY_NAME', str)
@@ -568,6 +546,9 @@ class Tools(object):
             self.set_config('CALIB_STEP_SIZE', float)
             self.set_config('PHASE_FIT_DEG', int)
 
+            self.set_config('NCPUS', int)
+            self.set_config('DIV_NB', int)
+            self.set_config('BIG_DATA', bool)
             self.set_config('OPTIM_DARK_CAM1', bool) 
             self.set_config('OPTIM_DARK_CAM2', bool)
             self.set_config('EXT_ILLUMINATION', bool)
@@ -594,8 +575,6 @@ class Tools(object):
 
         self._data_prefix = data_prefix
         self._data_path_hdr = self._get_data_path_hdr()
-        self._tuning_parameters = tuning_parameters
-        self._silent = silent
 
         if config is not None:
             self.update_config(config)
@@ -927,7 +906,7 @@ class Tools(object):
         .. note:: Please refer to http://www.parallelpython.com/ for
           sources and information on Parallel Python software
         """
-        return utils.parallel.init_pp_server(ncpus=self.ncpus,
+        return utils.parallel.init_pp_server(ncpus=self.config.NCPUS,
                                              silent=silent)
 
     def _close_pp_server(self, js):
@@ -962,13 +941,13 @@ class Tools(object):
         full_parameter_name = caller_name + '.' + parameter_name
         logging.info('looking for tuning parameter: {}'.format(
             full_parameter_name))
-        if full_parameter_name in self._tuning_parameters:
+        if full_parameter_name in self.config:
             warnings.warn(
                 'Tuning parameter {} changed to {} (default {})'.format(
                     full_parameter_name,
-                    self._tuning_parameters[full_parameter_name],
+                    self.config[full_parameter_name],
                     default_value))
-            return self._tuning_parameters[full_parameter_name]
+            return self.config[full_parameter_name]
         else:
             return default_value
                 
@@ -1836,30 +1815,38 @@ class Data(object):
             if params is not None:
                 # params are transformed into kwargs
                 kwargs.update(params)
-                
-            with utils.io.open_hdf5(data, 'r') as hdffile:
-                # load data
-                if hdffile['/data'].ndim > 2 and np.any(hdffile['/data'].shape) > LIMIT_SIZE:
-                    self.data = hdffile['/data'] # data is not loaded,
-                                                 # a pointer to the
-                                                 # dataset is returned
+            
+            if 'fits' in data:    
+                self.data, _header = utils.io.read_fits(data, return_header=True)
+                self.params = dict(_header)
+                self.params.pop('COMMENT')
 
-                else:
-                    self.data = hdffile['/data'][:]
-                
-                # load params
-                for iparam in hdffile.attrs:
-                    self.params[iparam] = hdffile.attrs[iparam]
+            elif 'hdf' in data:    
+                with utils.io.open_hdf5(data, 'r') as hdffile:
+                    # load data
+                    if hdffile['/data'].ndim > 2 and np.any(hdffile['/data'].shape) > LIMIT_SIZE:
+                        self.data = hdffile['/data'] # data is not loaded,
+                                                     # a pointer to the
+                                                     # dataset is returned
 
-                # load axis
-                if '/axis' in hdffile:
-                    if axis is None:
-                        self.axis = Axis(hdffile['/axis'][:])
+                    else:
+                        self.data = hdffile['/data'][:]
 
-                # load mask
-                if '/mask' in hdffile:
-                    if mask is None:
-                        self.mask = hdffile['/mask'][:]
+                    # load params
+                    for iparam in hdffile.attrs:
+                        self.params[iparam] = hdffile.attrs[iparam]
+
+                    # load axis
+                    if '/axis' in hdffile:
+                        if axis is None:
+                            self.axis = Axis(hdffile['/axis'][:])
+
+                    # load mask
+                    if '/mask' in hdffile:
+                        if mask is None:
+                            self.mask = hdffile['/mask'][:]
+            else:
+                raise ValueError('extension not recognized, must be fits or hdf5')
 
         # load from another instance
         elif isinstance(data, self.__class__):
@@ -2019,7 +2006,6 @@ class Data(object):
         else:
             _mask = None
 
-        print self.__class__, '?????'
         return self.__class__(
             np.copy(self.data),
             axis=_axis,
@@ -2071,7 +2057,7 @@ class Vector1d(Data):
 
         # checking
         if self.data.ndim != 1:
-            raise TypeError('input vector has {} dims but must have only one dimension'.format(vector.ndim))
+            raise TypeError('input vector has {} dims but must have only one dimension'.format(self.data.ndim))
 
     def reverse(self):
         """Reverse data. Do not reverse the axis.
@@ -2370,3 +2356,20 @@ class FilterFile(Vector1d):
     def get_filter_bandpass_cm1(self):
         """Return filter bandpass in cm-1"""
         return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
+
+#################################################
+#### CLASS Frame2D ##############################
+#################################################
+
+class Frame2D(Data):
+
+    def __init__(self, *args, **kwargs):
+
+        Data.__init__(self, *args, **kwargs)
+
+        # checking
+        if self.data.ndim != 2:
+            raise TypeError('input image has {} dims but must have exactly 2 dimension'.format(self.data.ndim))
+
+
+

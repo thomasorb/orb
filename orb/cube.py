@@ -34,12 +34,13 @@ import old
 import utils.io
 import scipy.interpolate
 import fft
+import image
 
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
 
-class HDFCube(core.Data, core.Tools):
+class HDFCube(image.Image):
     """ This class implements the use of an HDF5 cube."""        
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
@@ -64,6 +65,8 @@ class HDFCube(core.Data, core.Tools):
         :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
 
         """
+
+        raise NotImplementedError('HDFCube init should be reimplemented with changes on core.Image')
         self.cube_path = str(path)
 
         # create file if it does not exists
@@ -79,16 +82,9 @@ class HDFCube(core.Data, core.Tools):
         elif shape is not None:
             raise ValueError('shape must be set only when creating a new HDFCube')
             
-        # read instrument parameter from file
-        with utils.io.open_hdf5(path, 'r') as f:
-            if instrument is None:
-                if 'instrument' not in f.attrs:
-                    raise ValueError("instrument could not be read from the file attributes. Please set it to 'sitelle' or 'spiomm'")                
-                instrument = f.attrs['instrument']
                     
         # init tools
-        core.Tools.__init__(self, instrument=instrument, **kwargs)        
-        core.Data.__init__(self, path, params=params, mask=mask)
+        core.Image.__init__(self, path, params=params, mask=mask)
         
         self.star_list = None
         self.z_median = None
@@ -759,65 +755,6 @@ class Cube(HDFCube):
         for iparam in self.params:
             hdffile.attrs[iparam] = self.params[iparam]
 
-    def get_astrometry(self, data=None, profile_name=None, **kwargs):
-        """Return an astrometry.Astrometry instance.
-
-        :param data: (Optional) data to pass. If None, the cube itself
-          is passed.
-
-        :param profile_name: (Optional) PSF profile. Can be gaussian or
-          moffat. default is read in config file (PSF_PROFILE).
-
-        :param kwargs: orb.astrometry.Astrometry kwargs.
-        """
-        self.validate()
-        from astrometry import Astrometry # cannot be imported at the
-                                          # beginning of the file
-
-        if profile_name is None:
-            profile_name = self.config.PSF_PROFILE
-
-        if ('target_ra' in self.params and 'target_dec' in self.params):
-            if not isinstance(self.params.target_ra, float):
-                raise TypeError('target_ra must be a float')
-            if not isinstance(self.params.target_dec, float):
-                raise TypeError('target_dec must be a float')
-
-            target_radec = (self.params.target_ra, self.params.target_dec)
-        else:
-            target_radec = None
-            
-        if ('target_x' in self.params and 'target_y' in self.params):
-            target_xy = (self.params.target_x, self.params.target_y)               
-        else:
-            target_xy = None
-
-        if data is None:
-            data = self
-        else:
-            utils.validate.is_2darray(data, object_name='data')
-            if data.shape != (self.dimx, self.dimy): raise TypeError('data must be a 2d array of shape {} {}'.format(self.dimx, self.dimy))
-
-        if 'data_prefix' not in kwargs:
-            kwargs['data_prefix'] = self._data_prefix
-
-        if 'wcs_rotation' in self.params:
-            wcs_rotation = self.params.wcs_rotation
-        else:
-            wcs_rotation=self.config.INIT_ANGLE
-
-        self.validate()
-        
-        return Astrometry(
-            data, profile_name=profile_name,
-            moffat_beta=self.config.MOFFAT_BETA,
-            tuning_parameters=self._tuning_parameters,
-            instrument=self.params.instrument,
-            ncpus=self.ncpus,
-            target_radec=target_radec,
-            target_xy=target_xy,
-            wcs_rotation=wcs_rotation,
-            **kwargs)
 
 
 #################################################
