@@ -55,6 +55,7 @@ import bottleneck as bn
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate
+import pandas
 
 try: import pygit2
 except ImportError: pass
@@ -1958,6 +1959,54 @@ class Data(object):
         """
         self.params[key] = value
 
+    def has_param(self, key):
+        """Test the presence of a parameter
+        """
+        return (key in self.params)
+        
+    def update_params(self, params):
+        """Update params with a dictionary or an astropy.io.fits.Header
+
+        :param params: A dict or an astropy.io.fits.Header instance.
+        """
+        if isinstance(params, pyfits.Header):
+            params = dict(params)
+            if self.data.ndim >= 3:
+                params['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
+                                              # inconsistency
+
+        elif not isinstance(params, dict):
+            raise TypeError('params must be a dict or an astropy.io.fits.Header instance')
+        self.params.update(params)
+        self.assert_params()
+
+    def get_header(self):
+        """Return params as an astropy.io.fits.Header instance
+        """
+        # filter illegal header values
+        _params = dict()
+        for iparam in self.params:
+            val = self.params[iparam]
+            val_ok = True
+            if isinstance(val, np.ndarray):
+                if val.size > 1:
+                    val_ok = False
+            if val_ok:
+                _params[iparam] = val
+                
+        header = pyfits.Header(_params)
+        if self.data.ndim >= 3:
+            header['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
+                                          # inconsistency
+        return header
+
+    def set_header(self, header):
+        """update params from an astropy.io.fits.Header instance.
+
+        :param header: An astropy.io.fits.Header instance.
+        """
+        self.update_params(header)
+        
     def has_params(self):
         """Check the presence of observation parameters"""
         if self.params is None:
@@ -1967,7 +2016,7 @@ class Data(object):
         else: return True
 
     def assert_params(self):
-        """Assert the presence of observation parameters"""
+        """Assert the presence of needed parameters"""
         if not self.has_params():
             raise StandardError(
                 'Parameters not supplied, please give: {} at init'.format(
@@ -2357,19 +2406,4 @@ class FilterFile(Vector1d):
         """Return filter bandpass in cm-1"""
         return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
 
-#################################################
-#### CLASS Frame2D ##############################
-#################################################
-
-class Frame2D(Data):
-
-    def __init__(self, *args, **kwargs):
-
-        Data.__init__(self, *args, **kwargs)
-
-        # checking
-        if self.data.ndim != 2:
-            raise TypeError('input image has {} dims but must have exactly 2 dimension'.format(self.data.ndim))
-
-
-
+    

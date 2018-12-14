@@ -907,12 +907,20 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
         enable_rotation=False,
         estimate_local_noise=False)
 
+
     if fit_params != []:
         return fit_params['stars-params'][:,4], fit_params['stars-params-err'][:,4]
     else:
         warnings.warn('FWHM could not be measured, check star positions')
         return None, None
 
+def sources2list(sources):
+    """Convert a sources pandas.DataFrame instance to a list of centroid
+    """
+    if 'xcentroid' not in sources or 'ycentroid' not in sources:
+        raise TypeError('Badly formatted stars params')
+        
+    return np.array([sources['xcentroid'].values, sources['ycentroid'].values]).T
 
 def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                               aper_coeff=3., detect_fwhm=False,
@@ -982,47 +990,47 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                         'fwhm_pix_err':fwhm_err[istar]})
     return results
 
-def load_star_list(star_list_path, silent=False):
-    """Load a list of stars coordinates
+# def load_star_list(star_list_path, silent=False):
+#     """Load a list of stars coordinates
 
-    :param star_list_path: The path to the star list file.
+#     :param star_list_path: The path to the star list file.
 
-    :param silent: (Optional) If True no message is printed (default
-      False).
+#     :param silent: (Optional) If True no message is printed (default
+#       False).
 
-    .. note:: A list of stars is a list of star coordinates (x and
-       y). Each set of coordinates is separated by a line
-       break. There must not be any blank line or comments.
+#     .. note:: A list of stars is a list of star coordinates (x and
+#        y). Each set of coordinates is separated by a line
+#        break. There must not be any blank line or comments.
 
-       For example::
+#        For example::
 
-           221.994164678 62.8374036151
-           135.052291354 274.848787038
-           186.478298303 11.8162949818
-           362.642981933 323.083868198
-           193.546595814 321.017948051
+#            221.994164678 62.8374036151
+#            135.052291354 274.848787038
+#            186.478298303 11.8162949818
+#            362.642981933 323.083868198
+#            193.546595814 321.017948051
 
-    The star list can be created using DS9
-    (http://hea-www.harvard.edu/RD/ds9/site/Home.html) on the
-    first image of the sequence :
+#     The star list can be created using DS9
+#     (http://hea-www.harvard.edu/RD/ds9/site/Home.html) on the
+#     first image of the sequence :
 
-          1. Select more than 3 stars with the circular tool (the
-             more you select, the better will be the alignment)
-          2. Save the regions you have created with the options:
+#           1. Select more than 3 stars with the circular tool (the
+#              more you select, the better will be the alignment)
+#           2. Save the regions you have created with the options:
 
-             * Format = 'XY'
-             * Coordinate system = 'Image'
-    """
-    star_list = []
-    star_list_file = open(star_list_path, "r")
-    for star_coords in star_list_file:
-        coords = star_coords.split()
-        star_list.append((coords[0], coords[1]))
+#              * Format = 'XY'
+#              * Coordinate system = 'Image'
+#     """
+#     star_list = []
+#     star_list_file = open(star_list_path, "r")
+#     for star_coords in star_list_file:
+#         coords = star_coords.split()
+#         star_list.append((coords[0], coords[1]))
 
-    star_list = np.array(star_list, dtype=float)
-    if not silent:
-        logging.info("Star list of " + str(star_list.shape[0]) + " stars loaded")
-    return star_list
+#     star_list = np.array(star_list, dtype=float)
+#     if not silent:
+#         logging.info("Star list of " + str(star_list.shape[0]) + " stars loaded")
+#     return star_list
 
 def radial_profile(a, xc, yc, rmax):
     """Return the average radial profile on a region of a 2D array.
@@ -1291,8 +1299,7 @@ def get_profile(profile_name):
         return Moffat
     else:
         raise ValueError("Bad profile name (%s) ! Profile name must be 'gaussian' or 'moffat'"%str(profile_name))
-
-
+    
 def fit_stars_in_frame(frame, star_list, box_size,
                        profile_name='gaussian', scale=None,
                        fwhm_pix=None, beta=3.5, fit_tol=1e-2,

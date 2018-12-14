@@ -40,7 +40,7 @@ import image
 #### CLASS HDFCube ##############################
 #################################################
 
-class HDFCube(image.Image):
+class HDFCube(core.Data):
     """ This class implements the use of an HDF5 cube."""        
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
@@ -66,7 +66,7 @@ class HDFCube(image.Image):
 
         """
 
-        raise NotImplementedError('HDFCube init should be reimplemented with changes on core.Image')
+        raise NotImplementedError('HDFCube init should be reimplemented with changes on core.Data')
         self.cube_path = str(path)
 
         # create file if it does not exists

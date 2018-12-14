@@ -251,7 +251,289 @@ class Astrometry(Tools):
         else:
             raise StandardError('Deep frame must have the same shape')
 
+    def fwhm(self, x):
+        """Return fwhm from width
 
+        :param x: width
+        """
+        return x * abs(2.*np.sqrt(2. * np.log(2.)))
+
+    def width(self, x):
+        """Return width from fwhm
+
+        :param x: fwhm.
+        """
+        return x / abs(2.*np.sqrt(2. * np.log(2.)))
+
+    def detect_stars(self, min_star_number=4, no_save=False,
+                     saturation_threshold=35000, try_catalogue=False,
+                     r_max_coeff=0.6, filter_image=True):
+        """Detect star positions in data.
+
+        :param index: Minimum index of the images used for star detection.
+        
+        :param min_star_number: Minimum number of stars to
+          detect. Must be greater or equal to 4 (minimum star number
+          for any alignment process).
+
+        :param no_save: (Optional) If True do not save the list of
+          detected stars in a file, only return a list (default
+          False).
+
+
+        :param try_catalogue: (Optional) If True, try to use a star
+          catalogue (e.g. USNO-B1) to detect stars if target_ra,
+          target_dec, target_x, target_y and wcs_rotation parameters
+          have been given (see
+          :py:meth:`astrometry.Astrometry.query_vizier`, default
+          False).
+
+        :param r_max_coeff: (Optional) Coefficient that sets the limit
+          radius of the stars (default 0.6).
+
+        :param filter_image: (Optional) If True, image is filtered
+          before detection to remove nebulosities (default True).
+
+        :return: (star_list_path, mean_fwhm_arc) : (a path to a list
+          of the dected stars, the mean FWHM of the stars in arcsec)
+
+        .. note:: Star detection walks through 2 steps:
+        
+           1. Preselection of 4 times the minimum number of stars to
+              detect using a variable threshold with a filter for hot
+              pixels and stars near the border of the image.
+
+           2. Stars are fitted to test if they are 'real' stars. The
+              most luminous stars (that do not saturate) are
+              eventually taken.
+        """
+        def define_box(x,y,box_size,ima):
+            minx = x - int(box_size/2.)
+            if minx < 0: minx = 0
+            maxx = x + int(box_size/2.) + 1
+            if maxx > ima.shape[0]: maxx = ima.shape[0]
+            miny = y - int(box_size/2.)
+            if miny < 0: miny = 0
+            maxy = y + int(box_size/2.) + 1
+            if maxy > ima.shape[1] : maxy = ima.shape[1]
+            return ima[minx:maxx, miny:maxy], [minx, miny]
+
+        def test_fit(box, mins, profile_name, fwhm_pix,
+                     default_beta, fit_tol, min_fwhm_coeff,
+                     saturation_threshold, profile):
+
+            height = np.median(box)
+
+            params = fit_star(
+                box, profile_name=profile_name,
+                fwhm_pix=fwhm_pix,
+                height=height,
+                beta=default_beta, fix_height=True,
+                fit_tol=fit_tol,
+                fix_beta=True,
+                fwhm_min=min_fwhm_coeff * fwhm_pix)
+            if params != []:
+                # eliminate possible saturated star
+                if (params['height'] + params['amplitude']
+                    < saturation_threshold):
+                    # keep only a star far enough from another star or
+                    # another bright point
+                    
+                    # 1 - remove fitted star from box
+                    box -= profile(params).array2d(box.shape[0],
+                                                   box.shape[1])
+                    
+                    # 2 - check pixels around
+                    if np.max(box) > params['amplitude'] / 3.:
+                        return []
+                  
+                    params['x'] += float(mins[0])
+                    params['y'] += float(mins[1])
+                else:
+                    return []
+
+            return params
+           
+        THRESHOLD_COEFF = 0.1
+        """Starting threshold coefficient"""
+        
+        PRE_DETECT_COEFF = float(
+            self._get_tuning_parameter('PRE_DETECT_COEFF', 8))
+        """Ratio of the number of pre-detected stars over the minimum
+        number of stars"""
+        
+        MIN_FWHM_COEFF = 0.5
+        """Coefficient used to determine the minimum FWHM given the
+        Rough stars FWHM. """
+
+        
+        # TRY catalogue
+        if try_catalogue:
+            if (self.target_ra is not None and self.target_dec is not None
+                and self.target_x is not None and self.target_y is not None
+                and self.wcs_rotation is not None):
+                return self.detect_stars_from_catalogue(
+                    min_star_number=min_star_number, no_save=no_save,
+                    saturation_threshold=saturation_threshold)
+         
+
+        logging.info("Detecting stars")
+
+        # high pass filtering of the image to remove nebulosities
+        if filter_image:
+            start_time = time.time()
+            logging.info("Filtering master image")
+            hp_im = utils.image.high_pass_diff_image_filter(self.data, deg=1)
+            logging.info("Master image filtered in {} s".format(
+                time.time() - start_time))
+        else:
+            hp_im = np.copy(self.data)
+
+        # preselection
+        logging.info("Stars preselection")
+        mean_hp_im = np.nanmean(hp_im)
+        std_hp_im = np.nanstd(hp_im)
+        max_im = np.nanmax(self.data)
+        # +1 is just here to make sure we enter the loop
+        star_number = PRE_DETECT_COEFF * min_star_number + 1 
+        
+        old_star_list = []
+        while(star_number > PRE_DETECT_COEFF * min_star_number):
+            pre_star_list = np.array(np.nonzero(
+                (hp_im > mean_hp_im + THRESHOLD_COEFF * std_hp_im)
+                * (self.data < saturation_threshold)))
+            star_list = list()
+            for istar in range(pre_star_list.shape[1]):
+                ix = pre_star_list[0, istar]
+                iy = pre_star_list[1, istar]
+                (box, mins)  = define_box(ix, iy, self.box_size, self.data)
+                ilevel = self.data[ix, iy]
+                if (ilevel == np.max(box)) and (ilevel <= max_im):
+                    # filter stars too far from the center
+                    cx, cy = self.dimx/2., self.dimy/2.
+                    r_max = np.sqrt(cx**2. + cy**2.) * r_max_coeff
+                    if np.sqrt((ix - cx)**2. + (iy - cy)**2.) <= r_max:
+                        star_list.append([ix, iy])
+                    
+            star_number = np.array(star_list).shape[0]
+            if star_number > PRE_DETECT_COEFF * min_star_number:
+                old_star_list = star_list
+            THRESHOLD_COEFF += 0.1
+        if old_star_list != []:
+            star_list = old_star_list
+        else: 
+            if star_number < min_star_number:
+                warnings.warn(
+                    "Not enough detected stars in the image : %d"%star_number)
+        
+        ### FIT POSSIBLE STARS ############
+                
+        # first fit test to eliminate "bad" stars
+        
+        logging.info("Bad stars rejection based on fitting")
+        
+        params_list = list()
+        
+        job_server, ncpus = self._init_pp_server()
+        
+        progress = core.ProgressBar(len(star_list), silent=False)
+        for istar in range(0, len(star_list), ncpus):
+            
+            if istar + ncpus >= len(star_list):
+                ncpus = len(star_list) - istar
+
+            jobs = [(ijob, job_server.submit(
+                test_fit, 
+                args=(define_box(star_list[istar+ijob][0],
+                                 star_list[istar+ijob][1],
+                                 self.box_size, self.data)[0],
+                      define_box(star_list[istar+ijob][0],
+                                 star_list[istar+ijob][1],
+                                 self.box_size, self.data)[1],
+                      self.profile_name, self.fwhm_pix,
+                      self.default_beta, self.fit_tol, MIN_FWHM_COEFF,
+                      saturation_threshold, self.profile),
+                modules=("import logging",
+                         "import numpy as np",
+                         "from orb.utils.astrometry import fit_star")))
+                    for ijob in range(ncpus)]
+
+            for ijob, job in jobs:
+                params = job()
+                if params != []:
+                    params_list.append(params)
+            progress.update(
+                istar,
+                info="Fitting star %d/%d"%(istar, len(star_list)))
+
+        self._close_pp_server(job_server)
+        progress.end()
+
+        ### FIT CHECK ##############
+        logging.info("Fit check")
+        
+        fitted_star_list = list()
+        fwhm_list = list()
+        snr_list = list()
+        for params in params_list:
+            fitted_star_list.append((params['x'],
+                                     params['y'], 
+                                     params['amplitude']))
+            fwhm_list.append((params['fwhm_pix']))
+            snr_list.append((params['snr']))
+
+        if len(fwhm_list) == 0:
+            raise StandardError("All detected stars have been rejected !")
+
+        # check FWHM value to ensure that it is a star and reject too
+        # large or too narrow structures (e.g. galaxies and hot pixels)
+        median_fwhm = utils.stats.robust_median(utils.stats.sigmacut(
+            fwhm_list, sigma=3.))
+        std_fwhm = utils.stats.robust_std(utils.stats.sigmacut(
+            fwhm_list, sigma=3.))
+      
+        istar = 0
+        while istar < len(fwhm_list):
+            if ((fwhm_list[istar] > median_fwhm + 3. * std_fwhm)
+                or (fwhm_list[istar] < median_fwhm - 2. * std_fwhm)
+                or fwhm_list[istar] < 1.):
+                fitted_star_list.pop(istar)
+                fwhm_list.pop(istar)
+                snr_list.pop(istar)
+            else:
+                istar += 1
+
+        # keep the brightest stars only
+        fitted_star_list.sort(key=lambda star: star[2], reverse=True)
+        star_list = fitted_star_list[:min_star_number]
+
+        # write down detected stars
+        mean_fwhm = np.mean(np.array(fwhm_list))
+
+        star_list_file = utils.io.open_file(self._get_star_list_path(), 'w')
+        for istar in star_list:
+            star_list_file.write(str(istar[0]) + " " + str(istar[1]) + "\n")
+
+        # Print some comments and check number of detected stars    
+        logging.info("%d stars detected" %(len(star_list)))
+        logging.info("Detected stars FWHM : %f pixels, %f arc-seconds"%(
+            mean_fwhm, self.pix2arc(mean_fwhm)))
+        snr_list = np.array(snr_list)
+        logging.info("SNR Min: %.1e, Max:%.1e, Median:%.1e"%(
+            np.min(snr_list), np.max(snr_list), np.median(snr_list)))
+        
+        if len(star_list) < min_star_number:
+            warnings.warn(
+                "Not enough detected stars in the image : %d/%d"%(
+                    len(star_list), min_star_number))
+        if len(star_list) < 4:
+            raise StandardError(
+                "Not enough detected stars: %d < 4"%len(star_list))
+
+        self.reset_star_list(np.array(star_list)[:,:2])
+        self.reset_fwhm_pix(mean_fwhm)
+        
+        return self._get_star_list_path(), self.pix2arc(mean_fwhm)
             
 
 
@@ -1050,3 +1332,225 @@ class Aligner(Tools):
                 'fwhm_arc2': fwhm_arc2}
 
 
+    def fit_stars(self, save=False, **kwargs):
+        """
+        Fit stars in one frame.
+
+        This function is basically a wrapper around
+        :meth:`utils.astrometry.fit_stars_in_frame`.
+
+        .. note:: 2 fitting modes are possible::
+        
+            * Individual fit mode [multi_fit=False]
+            * Multi fit mode [multi_fit=True]
+
+            see :meth:`utils.astrometry.fit_stars_in_frame` for more
+            information.
+
+        :param save: (Optional) If True save the fit results in a file
+          (default True).
+          
+        :param kwargs: Same optional arguments as for
+          :meth:`utils.astrometry.fit_stars_in_frame`.
+
+        .. warning:: Some optional arguments are taken directly from the
+          values computed at the init of the Class. The following
+          optional arguments thus cannot be passed::
+          
+            * profile_name
+            * scale
+            * fwhm_pix
+            * beta
+            * fit_tol          
+        """        
+        if self.star_list is None: raise StandardError(
+            "A star list must be loaded or created first")
+
+        frame = np.copy(self.data)        
+
+        kwargs['profile_name'] = self.profile_name
+        kwargs['scale'] = self.scale
+        kwargs['fwhm_pix'] = self.fwhm_pix
+        kwargs['beta'] = self.default_beta
+        kwargs['fit_tol'] = self.fit_tol
+
+        fit_results = core.StarsParams(
+            star_nb=len(self.star_list), frame_nb=1)
+
+        # fit
+        _fit_results = utils.astrometry.fit_stars_in_frame(
+            frame, self.star_list, self.box_size, **kwargs)
+        
+
+        # convert results to a StarParams instance
+        for istar in range(len(self.star_list)):
+            fit_results[istar] = _fit_results[istar]
+
+        self.fit_results = fit_results
+                
+        if save:
+            self.fit_results.save_stars_params(self._get_fit_results_path())
+
+        return fit_results
+
+
+    def detect_stars_from_catalogue(self, min_star_number=4, no_save=False,
+                                    saturation_threshold=35000):
+        """Detect star positions in data from a catalogue.
+
+        :param index: Minimum index of the images used for star detection.
+        
+        :param min_star_number: Minimum number of stars to
+          detect. Must be greater or equal to 4 (minimum star number
+          for any alignment process).
+
+        :param no_save: if True do not save the list of detected stars
+          in a file, only return a list (default False).
+
+        :param saturation_threshold: Number of counts above which the
+          star can be considered as saturated. Very low by default
+          because at the ZPD the intensity of a star can be twice the
+          intensity far from it (default 35000).
+
+        :return: (star_list_path, mean_fwhm_arc) : (a path to a list
+          of the dected stars, the mean FWHM of the stars in arcsec)
+        """
+
+        LIMIT_RADIUS_RATIO = 1.0 # radius ratio around the center of
+                                 # the frame where the stars are kept
+  
+        logging.info("Detecting stars from catalogue")
+        # during registration a star list compted from the catalogue
+        # is created.
+        self.register()
+
+        fit_params = self.fit_stars(multi_fit=False,
+                                    local_background=True,
+                                    save=False)
+        
+        fitted_star_list = [[istar['x'], istar['y'],
+                             istar['flux'], istar['snr']]
+                            for istar in fit_params
+                            if (istar is not None
+                                and istar['amplitude'] < saturation_threshold)]
+        snr_list = np.array(fitted_star_list)[:,3]
+
+        # remove stars in the corners of the frame
+        rcx = self.dimx / 2.
+        rcy = self.dimy / 2.
+        fitted_star_list = [
+            istar for istar in fitted_star_list
+            if (np.sqrt((istar[0] - rcx)**2. + (istar[1] - rcy)**2.)
+                < LIMIT_RADIUS_RATIO * min(rcx, rcy))]
+
+        # keep the brightest stars only
+        fitted_star_list.sort(key=lambda star: star[3], reverse=True)
+        
+        star_list = np.array(fitted_star_list)[:min_star_number,:2]
+        snr_list = snr_list[:min_star_number]
+        
+        # write down detected stars
+        mean_fwhm = self.fwhm_arc
+        star_list_file = utils.io.open_file(self._get_star_list_path())
+        for istar in star_list:
+            star_list_file.write(str(istar[0]) + " " + str(istar[1]) + "\n")
+
+        # Print some comments and check number of detected stars    
+        logging.info("%d stars detected" %(len(star_list)))
+        logging.info("Detected stars FWHM : %f pixels, %f arc-seconds"%(
+            mean_fwhm, self.pix2arc(mean_fwhm)))
+        snr_list = np.array(snr_list)
+        logging.info("SNR Min: %.1e, Max:%.1e, Median:%.1e"%(
+            np.min(snr_list), np.max(snr_list), np.median(snr_list)))
+        
+        if len(star_list) < min_star_number:
+            warnings.warn(
+                "Not enough detected stars in the image : %d/%d"%(
+                    len(star_list), min_star_number))
+        if len(star_list) < 4:
+            raise StandardError(
+                "Not enough detected stars: %d < 4"%len(star_list))
+
+        self.reset_star_list(star_list)
+        
+        return self._get_star_list_path(), self.pix2arc(mean_fwhm)
+
+
+    def detect_all_sources(self):
+        """Detect all point sources in the cube regardless of there FWHM.
+
+        Galaxies, HII regions, filamentary knots and stars might be
+        detected.
+        """
+
+        SOURCE_SIZE = 2
+
+        def aggregate(init_source_list, source_size):
+            
+            px = list(init_source_list[0])
+            py = list(init_source_list[1])
+            
+            sources = list()
+            while len(px) > 0:
+                source = list()
+                source.append((px[0], py[0]))
+                px.pop(0)
+                py.pop(0)
+                
+                ii = 0
+                while ii < len(px):
+                    if ((abs(px[ii] - source[0][0]) <= source_size)
+                        and (abs(py[ii] - source[0][1]) <= source_size)):
+                        source.append((px[ii], py[ii]))
+                        px.pop(ii), py.pop(ii)
+                    else:
+                        ii += 1
+
+                if len(source) > source_size:
+                    xmean = 0.
+                    ymean = 0.
+                    for ipoint in source:
+                        xmean += float(ipoint[0])
+                        ymean += float(ipoint[1])
+                    xmean /= float(len(source))
+                    ymean /= float(len(source))
+
+                    sources.append((xmean, ymean))
+                    
+            return sources
+        
+        logging.info("Detecting all point sources in the cube")
+        
+        start_time = time.time()
+        logging.info("Filtering master image")
+        hp_im = utils.image.high_pass_diff_image_filter(self.data, deg=1)
+        logging.info("Master image filtered in {} s".format(
+            time.time() - start_time))
+
+
+        # image is binned to help detection
+        binning = int(self.fwhm_pix) + 1        
+        hp_im = utils.image.nanbin_image(hp_im, binning)
+
+        # detect all pixels above the sky theshold
+        detected_pixels = np.nonzero(
+            hp_im > 4. * np.nanstd(utils.stats.sigmacut(
+                hp_im)))
+        
+        logging.info('{} detected pixels'.format(len(detected_pixels[0])))
+        
+        # pixels aggregation in sources
+        logging.info('aggregating detected pixels')
+        sources = aggregate(detected_pixels, SOURCE_SIZE)
+            
+        
+        logging.info('{} sources detected'.format(len(sources)))
+        
+        star_list_file = utils.io.open_file(self._get_star_list_path())
+        for isource in sources:
+            star_list_file.write('{} {}\n'.format(
+                isource[0]*binning, isource[1]*binning))
+            
+        self.reset_star_list(sources)
+        
+        return self._get_star_list_path(), self.fwhm_arc
