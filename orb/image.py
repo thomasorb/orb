@@ -542,9 +542,40 @@ class Image(Frame2D, core.Tools):
         :param aper_coeff: (Optional) Aperture coefficient (default
           3.) Aperture = aper_coeff * fwhm.
         """
+        C_AP = aper_coeff # Aperture coefficient
+        C_IN = C_AP + 1. # Inner radius coefficient of the bckg annulus
+        MIN_BACK_COEFF = 5. # Minimum percentage of the pixels in the
+                            # annulus to estimate the background
+        C_OUT = np.sqrt((MIN_BACK_COEFF*C_AP**2.) + C_IN**2.)
+
+
         star_list = self.load_star_list(star_list)
-        apertures = photutils.CircularAperture(star_list, r=aper_coeff * self.fwhm_pix)
-        phot_table = photutils.aperture_photometry(self.data, apertures)
+        aper = photutils.CircularAperture(star_list,
+                                          r=C_AP * self.fwhm_pix)
+
+        aper_ann = photutils.CircularAnnulus(star_list,
+                                             r_in=C_IN * self.fwhm_pix,
+                                             r_out=C_OUT * self.fwhm_pix)
+        ann_masks = aper_ann.to_mask(method='center')
+        ann_medians = list()
+        for imask in ann_masks:
+            ivalues = imask.multiply(self.data)
+            ivalues = ivalues[ivalues > 0]
+            if ivalues.size > aper.area() * MIN_BACK_COEFF:
+                ann_medians.append(utils.astrometry.sky_background_level(
+                    ivalues, return_error=True))
+            else:
+                ann_medians.append((np.nan, np.nan))
+        
+        ann_medians = np.array(ann_medians)
+        phot_table = photutils.aperture_photometry(self.data, aper,
+                                                   method='subpixel',
+                                                   subpixels=10)
+        phot_table['background'] = ann_medians[:,0] * aper.area()
+        phot_table['photometry'] = phot_table['aperture_sum'] - phot_table['background']
+        phot_table['background_err'] = ann_medians[:,1] * aper.area()
+        phot_table['photometry_err'] = np.sqrt(np.abs(phot_table['photometry'])) + phot_table['background_err']
+
         return phot_table
     
     def register(self, max_stars_detect=60,
