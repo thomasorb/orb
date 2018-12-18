@@ -27,6 +27,7 @@ import bottleneck as bn
 import numpy as np
 import warnings
 import astropy.wcs as pywcs
+import pandas
 
 import orb.cutils
 import orb.utils.stats
@@ -990,47 +991,24 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                         'fwhm_pix_err':fwhm_err[istar]})
     return results
 
-# def load_star_list(star_list_path, silent=False):
-#     """Load a list of stars coordinates
+def load_star_list(star_list):
+    """Load a list of stars coordinates from an hdffile or a pandas DataFrame or a numpy.ndarray
 
-#     :param star_list_path: The path to the star list file.
+    :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
+    """
+    if isinstance(star_list, str):
+        sources = pandas.read_hdf(star_list, key='data')
+        star_list = sources2list(sources)
 
-#     :param silent: (Optional) If True no message is printed (default
-#       False).
+    elif isinstance(star_list, pandas.DataFrame):
+        star_list = sources2list(star_list)
 
-#     .. note:: A list of stars is a list of star coordinates (x and
-#        y). Each set of coordinates is separated by a line
-#        break. There must not be any blank line or comments.
-
-#        For example::
-
-#            221.994164678 62.8374036151
-#            135.052291354 274.848787038
-#            186.478298303 11.8162949818
-#            362.642981933 323.083868198
-#            193.546595814 321.017948051
-
-#     The star list can be created using DS9
-#     (http://hea-www.harvard.edu/RD/ds9/site/Home.html) on the
-#     first image of the sequence :
-
-#           1. Select more than 3 stars with the circular tool (the
-#              more you select, the better will be the alignment)
-#           2. Save the regions you have created with the options:
-
-#              * Format = 'XY'
-#              * Coordinate system = 'Image'
-#     """
-#     star_list = []
-#     star_list_file = open(star_list_path, "r")
-#     for star_coords in star_list_file:
-#         coords = star_coords.split()
-#         star_list.append((coords[0], coords[1]))
-
-#     star_list = np.array(star_list, dtype=float)
-#     if not silent:
-#         logging.info("Star list of " + str(star_list.shape[0]) + " stars loaded")
-#     return star_list
+    else:
+        if not isinstance(np.ndarray):
+            raise TypeError('star_list must be an instance of numpy.ndarray or a path to a star list')
+    if star_list.ndim != 2: raise TypeError('star list must have 2 dimensions')
+    if star_list.shape[1] != 2: raise TypeError('badly formatted star list. must have shape (n, 2)')
+    return star_list
 
 def radial_profile(a, xc, yc, rmax):
     """Return the average radial profile on a region of a 2D array.
@@ -2424,3 +2402,23 @@ def realign_images(_cube):
             im2, 0, im2.shape[0], 0, im2.shape[1], [dx, dy, 0, 0, 0],
             (im2.shape[0]/2., im2.shape[1]/2.), 1., 1)
     return _cube
+
+def fit2df(fit):
+    """Convert fit results to a pandas.DataFrame instance
+    """
+    df = dict()
+    keys = None
+    for istar in fit:
+        if keys is None:
+            if istar is None: continue
+            keys = istar.keys()
+            for ikey in keys:
+                df[ikey] = list()
+        for ikey in keys:
+            if istar is not None:
+                df[ikey].append(istar[ikey])
+            else:
+                df[ikey].append(np.nan)
+
+    df = pandas.DataFrame(df)
+    return df

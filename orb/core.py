@@ -455,7 +455,7 @@ class NoInstrumentConfigParams(ROParams):
     """
     def __getitem__(self, key):
         if key not in self:
-            raise AttributeError("Instrumental configuration not loaded. Set the option 'instrument' to a valid instrument name")
+            raise AttributeError("Instrument configuration not loaded. Set the option 'instrument' to a valid instrument name")
         return ROParams.__getitem__(self, key)
 
     __getattr__ = __getitem__
@@ -1810,7 +1810,7 @@ class Data(object):
         self.axis = None
         self.params = dict()
         self.mask = None
-
+        
         # load from file
         if isinstance(data, str):
             if params is not None:
@@ -1824,14 +1824,20 @@ class Data(object):
 
             elif 'hdf' in data:    
                 with utils.io.open_hdf5(data, 'r') as hdffile:
+                    _data_path = 'data'
+
+                    # backward compatibility issue
+                    if 'vector' in hdffile and not 'data' in hdffile:
+                        _data_path = 'vector'
+                        
                     # load data
-                    if hdffile['/data'].ndim > 2 and np.any(hdffile['/data'].shape) > LIMIT_SIZE:
-                        self.data = hdffile['/data'] # data is not loaded,
-                                                     # a pointer to the
-                                                     # dataset is returned
+                    if hdffile[_data_path].ndim > 2 and np.any(hdffile[_data_path].shape) > LIMIT_SIZE:
+                        self.data = hdffile[_data_path] # data is not loaded,
+                                                        # a pointer to the
+                                                        # dataset is returned
 
                     else:
-                        self.data = hdffile['/data'][:]
+                        self.data = hdffile[_data_path][:]
 
                     # load params
                     for iparam in hdffile.attrs:
@@ -1851,7 +1857,10 @@ class Data(object):
 
         # load from another instance
         elif isinstance(data, self.__class__):
-            _data = data.copy()
+            if data.data.ndim < 3:
+                _data = data.copy()
+            else: _data = data
+            
             self.data = _data.data
 
             # load params
@@ -1897,11 +1906,11 @@ class Data(object):
             self.dimy = self.data.shape[1]
             if self.data.ndim > 2:
                 self.dimz = self.data.shape[2]
-
+        
         # load params
         if params is not None:
             self.params.update(params)
-        self.params.update(**kwargs)
+        self.params.update(kwargs)
 
         # check params
         for iparam in self.needed_params:
@@ -1944,7 +1953,22 @@ class Data(object):
             else:
                 if not self.mask.__getitem__(key): _data = np.nan
         return _data
-        
+
+    def has_params(self):
+        """Check the presence of observation parameters"""
+        if self.params is None:
+            return False
+        elif len(self.params) == 0:
+            return False
+        else: return True
+
+    def assert_params(self):
+        """Assert the presence of needed parameters"""
+        if not self.has_params():
+            raise StandardError(
+                'Parameters not supplied, please give: {} at init'.format(
+                    self.needed_params))
+    
     def get_param(self, key):
         """Get class parameter
 
@@ -1977,7 +2001,9 @@ class Data(object):
 
         elif not isinstance(params, dict):
             raise TypeError('params must be a dict or an astropy.io.fits.Header instance')
-        self.params.update(params)
+
+        for ipar in params:
+            self.set_param(ipar, params[ipar])
         self.assert_params()
 
     def get_header(self):
@@ -2007,21 +2033,6 @@ class Data(object):
         """
         self.update_params(header)
         
-    def has_params(self):
-        """Check the presence of observation parameters"""
-        if self.params is None:
-            return False
-        elif len(self.params) == 0:
-            return False
-        else: return True
-
-    def assert_params(self):
-        """Assert the presence of needed parameters"""
-        if not self.has_params():
-            raise StandardError(
-                'Parameters not supplied, please give: {} at init'.format(
-                    self.needed_params))
-
     def has_axis(self):
         if self.axis is None: return False
         return True
@@ -2030,6 +2041,10 @@ class Data(object):
         """Assert the presence of an axis"""
         if self.has_axis(): raise StandardError('No axis supplied')
 
+    def get_axis(self):
+        """Return a copy of self.axis"""
+        return np.copy(self.axis)
+
     def has_mask(self):
         if self.mask is None: return False
         return True
@@ -2037,7 +2052,41 @@ class Data(object):
     def assert_mask(self):
         """Assert the presence of a mask"""
         if self.has_mask(): raise StandardError('No mask supplied')
+
+    def set_mask(self, data):
+        """Set mask. 
+
+        A mask must have the shape of the data but for 3d data which
+        has a 2d mask (self.dimx, self.dimy). A Zero indicates a pixel
+        which should be masked (Nans are returned for this pixel).
+
+        :param data: mask. Must be a boolean array
+        """
+        if self.data.ndim >= 2:
+            utils.validate.is_2darray(data, object_name='data')
+            if data.shape != (self.dimx, self.dimy):
+                raise TypeError('data must have shape ({}, {}) but has shape {}'.format(
+                    self.dimx, self.dimy, data.shape))
+
+        else:
+            utils.validata.is_1darray(data, object_name='data')
+            if data.shape != self.dimx:
+                raise TypeError('data must have shape ({}) but has shape'.format(
+                    self.dimx, data.shape))
+                          
+        if data.dtype != np.bool:
+            raise TypeError('data should be boolean')
         
+        _data = np.copy(data).astype(float)
+        _data[np.nonzero(_data == 0)] = np.nan
+        self.mask = _data
+        
+    def get_mask(self):
+        """Return a copy of self.mask"""
+        _mask = np.copy(self.mask)
+        _mask[np.isnan(_mask)] = 0
+        return _mask.astype(bool)
+
     def copy(self):
         """Return a copy of the instance"""
         if self.has_params():
@@ -2284,8 +2333,8 @@ class Cm1Vector1d(Vector1d):
             
             cm1_min, cm1_max = FilterFile(self.params.filter_file_path).get_filter_bandpass_cm1()
             warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
-            self.params['filter_cm1_min'] = cm1_min
-            self.params['filter_cm1_max'] = cm1_max
+            self.set_param('filter_cm1_min', cm1_min)
+            self.set_param('filter_cm1_max', cm1_max)
             
         return self.params.filter_cm1_min, self.params.filter_cm1_max
 

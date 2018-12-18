@@ -35,42 +35,28 @@ import utils.spectrum, utils.parallel, utils.io, utils.filters
 import utils.photometry
 from core import ProgressBar
 
+class FakeData(object):
+
+    def __init__(self, shape, dtype, ndim):
+
+        self.shape = shape
+        self.dtype = dtype
+        self.ndim = int(ndim)
+    
+
+
 ##################################################
 #### CLASS Cube ##################################
 ##################################################
 class Cube(core.Tools):
     """3d numpy data cube handling. Base class for all Cube classes"""
-    def __init__(self, data,
-                 project_header=list(),
-                 wcs_header=list(), calibration_laser_header=list(),
-                 overwrite=True, 
-                 indexer=None, **kwargs):
+    def __init__(self, data, **kwargs):
         """
         Initialize Cube class.
 
         :param data: Can be a path to a FITS file containing a data
           cube or a 3d numpy.ndarray. Can be None if data init is
           handled differently (e.g. if this class is inherited)
-        
-        :param project_header: (Optional) header section describing
-          the observation parameters that can be added to each output
-          files (an empty list() by default).
-
-        :param wcs_header: (Optional) header section describing WCS
-          that can be added to each created image files (an empty
-          list() by default).
-
-        :param calibration_laser_header: (Optional) header section
-          describing the calibration laser parameters that can be
-          added to the concerned output files e.g. calibration laser map,
-          spectral cube (an empty list() by default).
-
-        :param overwrite: (Optional) If True existing FITS files will
-          be overwritten (default True).
-          
-        :param indexer: (Optional) Must be a :py:class:`core.Indexer`
-          instance. If not None created files can be indexed by this
-          instance.
 
         :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
         """
@@ -100,17 +86,6 @@ class Cube(core.Tools):
         self.is_complex = False
         self.dtype = float
         
-        if overwrite in [True, False]:
-            self.overwrite = bool(overwrite)
-        else:
-            raise ValueError('overwrite must be True or False')
-        
-                
-        self.indexer = indexer
-        self._project_header = project_header
-        self._wcs_header = wcs_header
-        self._calibration_laser_header = calibration_laser_header
-
         if data is None: return
         
         # check data

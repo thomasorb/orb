@@ -245,7 +245,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
                            after=5)
 
             # write FITS file
-            hdu.writeto(fits_path, clobber=overwrite)
+            hdu.writeto(fits_path, overwrite=overwrite)
 
             if mask is not None:
                 hdu_mask.header = hdu.header
@@ -793,7 +793,7 @@ def array2dict(data):
     for i in range(len(data)):
         _dict[data[i][0]] = cast(data[i][1], data[i][2])
     return _dict
-        
+
         
 def header_fits2hdf5(fits_header):
     """convert a pyfits.Header() instance to a header for an hdf5 file
@@ -865,3 +865,12 @@ def read_hdf5(file_path, return_header=False, dtype=float):
             return data, header
         else:
             return data
+
+
+
+def cast2hdf5(val):
+    if val is None:
+        return 'None'
+    elif isinstance(val, long):
+        return str(val)
+    else: return val

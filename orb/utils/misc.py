@@ -20,16 +20,19 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import re
 import logging
 import numpy as np
 import math
 import warnings
 import sys
+
 import orb.cutils                       
 import pyregion
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
-import os
+import orb.utils.io
 
 def aggregate_pixels(pixel_list, radius=1.42):
     """Aggregate neighbouring pixels into a set of sources. Two
@@ -297,7 +300,7 @@ def sort_image_list(file_list, image_mode, cube=True):
         for path in file_list:
             if '.fits' in path:
                 try:
-                    hdr = utils.io.read_fits(
+                    hdr = orb.utils.io.read_fits(
                         path, return_hdu_only=True)[0].header
                     if 'SITSTEP' in hdr:
                         steplist.append(int(hdr['SITSTEP']))
@@ -317,3 +320,25 @@ def sort_image_list(file_list, image_mode, cube=True):
         raise StandardError('Image list cannot be sorted.')
 
     return file_list
+
+
+def read_instrument_value_from_file(path):
+    """Read the instrument value form an hdf5/fits file
+
+    :param path: path to an hdf5/fits file.
+    """
+    instrument = None
+    
+    if 'hdf' in path:
+        with orb.utils.io.open_hdf5(path, 'r') as f:
+            if instrument is None:
+                if 'instrument' not in f.attrs:
+                    raise ValueError("instrument could not be read from the file attributes. Please set it to 'sitelle' or 'spiomm'")                
+                instrument = f.attrs['instrument']
+    elif 'fit' in path:
+        hdu = orb.utils.io.read_fits(path, return_hdu_only=True)
+        _hdr = hdu[0].header
+        if 'INSTRUME' in _hdr:
+            instrument = _hdr['INSTRUME'].lower()
+            
+    return instrument

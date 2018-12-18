@@ -32,6 +32,9 @@ import logging
 import core
 import old
 import utils.io
+import utils.misc
+import utils.astrometry
+
 import scipy.interpolate
 import fft
 import image
@@ -39,20 +42,18 @@ import image
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
-
-class HDFCube(core.Data):
+class HDFCube(core.Data, core.Tools):
     """ This class implements the use of an HDF5 cube."""        
 
-    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params'
+    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis'
     
-    def __init__(self, path, shape=None, indexer=None, instrument=None,
-                 params=None, mask=None, **kwargs):
+    def __init__(self, path, indexer=None,
+                 instrument=None, config=None, data_prefix='./',
+                 **kwargs):
 
-        """:param path: Path to an HDF5 cube
+        """Init HDFCube
 
-        :param shape: (Optional) Must be set to something else than
-          None to create an empty file. It the file already exists,
-          shape must be set to None.
+        :param path: Path to an HDF5 cube
 
         :param indexer: (Optional) Must be a :py:class:`core.Indexer`
           instance. If not None created files can be indexed by this
@@ -62,56 +63,50 @@ class HDFCube(core.Data):
           'spiomm'). If it cannot be read from the file itself (in
           attributes) it must be set.
 
-        :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
-
+        :param kwargs: (Optional) :py:class:`~orb.core.Data` kwargs.
         """
-
-        raise NotImplementedError('HDFCube init should be reimplemented with changes on core.Data')
         self.cube_path = str(path)
 
         # create file if it does not exists
-        if not os.path.exists(path):
-            if shape is None:
-                raise ValueError('cube does not exist. If you want to create one, shape must be set.')
-            with utils.io.open_hdf5(path, 'w') as f:
-                utils.validate.has_len(shape, 3, object_name='shape')
-                f.create_dataset('data', shape=shape, chunks=True)
-                f.attrs['level2'] = True
-                f.attrs['instrument'] = instrument
-
-        elif shape is not None:
-            raise ValueError('shape must be set only when creating a new HDFCube')
-            
-                    
-        # init tools
-        core.Image.__init__(self, path, params=params, mask=mask)
-        
-        self.star_list = None
-        self.z_median = None
-        self.z_mean = None
-        self.z_std = None
+        if not os.path.exists(self.cube_path):
+            raise IOError('File does not exist')
+                                
+        # check if cube has an old format in which case it must be
+        # loaded before and passed as an instance to Data.
         self.is_old = False
+        if isinstance(self.cube_path, str):
+            with utils.io.open_hdf5(self.cube_path, 'r') as f:
+                if 'level2' not in f.attrs:
+                    warnings.warn('old cube architecture. IO performances could be reduced.')
+                    self.is_old = True
+                    self.oldcube = old.HDFCube(self.cube_path, silent_init=True)
+                    self.data = old.FakeData(self.oldcube.shape,
+                                             self.oldcube.dtype, 3)
+                    self.axis = None
+                    self.mask = None
+                    self.params = core.ROParams()
+                    for param in f.attrs:
+                        self.params[param] = f.attrs[param]
+                    if 'instrument' in self.params and instrument is None:
+                        instrument = self.params['instrument']
+                                    
+        # init Tools and Data
+        if not self.is_old:
+            instrument = utils.misc.read_instrument_value_from_file(self.cube_path)
         
-        with utils.io.open_hdf5(self.cube_path, 'r') as f:
-            if 'level2' not in f.attrs:
-                warnings.warn('old cube architecture. IO performances could be reduced.')
-                self.is_old = True
-
-            if not self.is_old:
-                if 'data' not in f:
-                    raise TypeError('cube does not contain any data')
-                self.shape = f['data'].shape
-                if len(self.shape) != 3:
-                    raise TypeError('malformed data cube, data shape is {}'.format(self.shape))
-                self.dtype = f['data'].dtype
+        core.Tools.__init__(self, instrument=instrument,
+                            data_prefix=data_prefix,
+                            config=config)
 
         if self.is_old:
-            self.oldcube = old.HDFCube(self.cube_path, silent_init=True)
-            self.shape = self.oldcube.shape
-            self.dtype = self.oldcube.dtype
+            core.Data.__init__(self, self, **kwargs)
+        else:
+            core.Data.__init__(self, self.cube_path, **kwargs)
             
-        self.dimx, self.dimy, self.dimz = self.shape
-
+        # checking dims
+        if self.data.ndim != 3:
+            raise TypeError('input cube has {} dims but must have exactly 3 dimensions'.format(self.data.ndim))
+            
         if indexer is not None:
             if not isinstance(indexer, core.Indexer):
                 raise TypeError('indexer must be an orb.core.Indexer instance')
@@ -124,7 +119,7 @@ class HDFCube(core.Data):
                 warnings.warn('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
-        with self.open_hdf5('r') as f:
+        with self.open_hdf5() as f:
             _data = np.copy(f['data'].__getitem__(key))
             if self.has_dataset('mask'):
                 _data *= self.get_dataset('mask').__getitem__((key[0], key[1]))
@@ -137,31 +132,13 @@ class HDFCube(core.Data):
             
             return np.squeeze(_data)
 
-    def __setitem__(self, key, value):
-        """Implement setitem special method"""
-        if self.is_old:
-            raise StandardError('Old cubes cannot be modified. Please export the actual cube first with cube.export().')
-        
-        with self.open_hdf5('a') as f:
-            # decrease representation in case of complex or floats to
-            # minimize data size
-            if value.dtype == np.float64:
-                value = value.astype(np.float32)
-            elif value.dtype == np.complex128:
-                value = value.astype(np.complex64)
-            
-            return f['data'].__setitem__(key, value)
 
     def copy(self):
         raise NotImplementedError('HDFCube instance cannot be copied')
     
-    
-    def open_hdf5(self, mode='r'):
-        """Return the hdf5 file.
-
-        :param mode: Opening mode (can be 'r', 'w', 'a')
-        """
-        return utils.io.open_hdf5(self.cube_path, mode)
+    def open_hdf5(self):
+        """Return the hdf5 file."""
+        return utils.io.open_hdf5(self.cube_path, 'r')
     
     def get_data(self, x_min, x_max, y_min, y_max, z_min, z_max, silent=False):
         """Return a part of the data cube.
@@ -192,71 +169,28 @@ class HDFCube(core.Data):
         
     def has_dataset(self, path):
         """Check if a dataset is present"""
-        with self.open_hdf5('r') as f:
+        with self.open_hdf5() as f:
             if path not in f: return False
             else: return True
     
-    def get_dataset(self, path):
+    def get_dataset(self, path, protect=True):
         """Return a dataset (but not 'data', instead use get_data).
 
         :param path: dataset path
-        """
-        if path == 'data':
-            raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. arr = cube[:,:,:].')
-        with self.open_hdf5('r') as f:
-            if path not in f:
-                raise AttributeError('{} dataset not in the hdf5 file'.format(path))
-            return f[path][:]
-
-    def set_dataset(self, path, data, protect=True):
-        """Write a dataset to the hdf5 file
-
-        :param path: dataset path
-
-        :param data: data to write.
 
         :param protect: (Optional) check if dataset is protected
           (default True).
         """
-        if protect:
-            if path in self.protected_datasets:
-                raise IOError('dataset {} is protected. please use the corresponding higher level method (something like get_{} might do)'.format(path, path))
+        if path in self.protected_datasets:
+                raise IOError('dataset {} is protected. please use the corresponding higher level method (something like set_{} should do)'.format(path, path))
 
         if path == 'data':
-            raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. cube[:,:,:] = value.')
-        with self.open_hdf5('a') as f:
-            if path in f:
-                del f[path]
-                warnings.warn('{} dataset changed'.format(path))
+            raise ValueError('to get data please use your cube as a classic 3d numpy array. e.g. arr = cube[:,:,:].')
+        with self.open_hdf5() as f:
+            if path not in f:
+                raise AttributeError('{} dataset not in the hdf5 file'.format(path))
+            return f[path][:]
 
-            if isinstance(data, dict):
-                data = utils.io.dict2array(data)
-            f.create_dataset(path, data=data, chunks=True)
-
-
-    def set_mask(self, data):
-        """Set mask. A mask must be a 2d frame of shape (self.dimx,
-        self.dimy). A Zero indicates a pixel which should be masked
-        (Nans are returned for this pixel).
-
-        :param data: Must be a 2d frame of shape (self.dimx,
-        self.dimy).
-        """
-        utils.validate.is_2darray(data, object_name='data')
-        if data.shape != (self.dimx, self.dimy):
-            raise TypeError('data must have shape ({}, {})'.format(
-                self.dimx, self.dimy))
-        if data.dtype != np.bool:
-            raise TypeError('data should be of type boolean')
-        _data = np.copy(data).astype(float)
-        _data[np.nonzero(_data == 0)] = np.nan
-        self.set_dataset('mask', _data, protect=False)
-
-    def get_mask(self):
-        """Return mask."""
-        _mask = np.copy(self.get_dataset('mask'))
-        _mask[np.isnan(_mask)] = 0
-        return _mask.astype(bool)
         
     def has_same_2D_size(self, cube_test):
         """Check if another cube has the same dimensions along x and y
@@ -353,7 +287,7 @@ class HDFCube(core.Data):
             
         mean_map = self.get_mean_image()
         energy_map = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
-        progress = ProgressBar(self.dimz)
+        progress = core.ProgressBar(self.dimz)
         for _ik in range(self.dimz):
             energy_map += np.abs(self.get_data_frame(_ik) - mean_map)**2.
             progress.update(_ik, info="Creating interf energy map")
@@ -362,11 +296,11 @@ class HDFCube(core.Data):
         f['energy_map'] = np.sqrt(energy_map / self.dimz)
         return f['energy_map'][:]
 
-    def get_mean_image(self, recompute=False):
-        """Return the mean image of a cube (corresponding to a deep
-        frame for an interferogram cube or a specral cube).
 
-        :param recompute: (Optional) Force to recompute mean image
+    def get_deep_frame(self, recompute=False):
+        """Return the deep frame of a cube.
+
+        :param recompute: (Optional) Force to recompute deep frame
           even if it is already present in the cube (default False).
         
         .. note:: In this process NaNs are handled correctly
@@ -377,7 +311,7 @@ class HDFCube(core.Data):
 
         if not recompute:
             if self.has_dataset('deep_frame'):
-                return self.get_dataset('deep_frame')
+                return self.get_dataset('deep_frame', protect=False)
         
             else:
                 raise NotImplementedError()
@@ -407,22 +341,10 @@ class HDFCube(core.Data):
         return core.Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
 
-    def export(self, export_path, x_range=None, y_range=None, z_range=None):
-        
-        """Export cube as one HDF5 file.
+    def writeto(self, path):
+        """Write data to an hdf file
 
-        :param export_path: Path of the exported FITS file
-
-        :param x_range: (Optional) Tuple (x_min, x_max) (default
-          None).
-        
-        :param y_range: (Optional) Tuple (y_min, y_max) (default
-          None).
-        
-        :param z_range: (Optional) Tuple (z_min, z_max) (default
-          None).
-
-        :param mask: (Optional)
+        :param path: hdf file path.
         """
         old_keys = 'quad', 'frame'
         def is_exportable(key):
@@ -434,7 +356,7 @@ class HDFCube(core.Data):
         with utils.io.open_hdf5(export_path, 'w') as fout:
             fout.attrs['level2'] = True
             
-            with self.open_hdf5('r') as f:
+            with self.open_hdf5() as f:
                 for iattr in f.attrs:
                     fout.attrs[iattr] = f.attrs[iattr]
                     
@@ -448,6 +370,7 @@ class HDFCube(core.Data):
                     iquad, self.config.QUAD_NB))
                 xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad)
                 fout['data'][xmin:xmax, ymin:ymax, :] = self[xmin:xmax, ymin:ymax, :]
+        
 
     def get_frame_header(self, index):
         """Return the header of a frame given its index in the list.
@@ -458,40 +381,6 @@ class HDFCube(core.Data):
         """
         return utils.io.header_hdf52fits(
             self.get_dataset('frame_header_{}'.format(index)))
-
-            
-    def set_frame_header(self, index, header):
-        """Set the header of a frame.
-
-        The header must be an instance of pyfits.Header().
-
-        :param index: Index of the frame
-
-        :param header: Header as a pyfits.Header instance.
-        """
-        self.set_dataset('frame_header_{}'.format(index),
-                         utils.io.header_fits2hdf5(header))
-            
-
-    def get_cube_header(self):
-        """Return the header of a the cube.
-
-        The header is returned as an instance of pyfits.Header().
-        """
-        if self.has_dataset('header'):
-            return utils.io.header_hdf52fits(self.get_dataset('header'))
-        else:
-            return pyfits.Header()
-
-    def set_cube_header(self, header):
-        """Set cube header.
-
-        :param header: Header as a pyfits.Header instance.
-        """
-        self.set_dataset(
-            'header', utils.io.header_fits2hdf5(header),
-            protect=False)
-
 
     def get_calibration_laser_map(self):
         """Return stored calibration laser map"""
@@ -526,27 +415,124 @@ class HDFCube(core.Data):
         """
         return utils.validate.index(y, 0, self.dimy, clip=clip)
 
-    def set_params(self, params):
-        """set params of the file.
 
-        :param params: dict of parameters
+#################################################
+#### CLASS RWHDFCube ############################
+#################################################
+class RWHDFCube(HDFCube):
 
-        .. note:: Note that this is different from setting
-        self.params. file params are loaded with load_params, and some
-        params are not used depending on self.needed params and
-        self.optional_params.
+    def __init__(self, path, shape=None, instrument=None, **kwargs):
         """
-        self.set_dataset('params', utils.io.dict2array(params), protect=False)
+        :param path: Path to an HDF5 cube
 
-    def get_params(self):
-        """get params of the file.
+        :param shape: (Optional) Must be set to something else than
+          None to create an empty file. It the file already exists,
+          shape must be set to None.
 
-        :return: dict of parameters
+        :param kwargs: (Optional) :py:class:`~orb.core.HDFCube` kwargs.
+        """        
+        # create file if it does not exists
+        if not os.path.exists(path):
+            if shape is None:
+                raise ValueError('cube does not exist. If you want to create one, shape must be set.')
+            with utils.io.open_hdf5(path, 'w') as f:
+                utils.validate.has_len(shape, 3, object_name='shape')
+                f.create_dataset('data', shape=shape, chunks=True)
+                f.attrs['level2'] = True
+                f.attrs['instrument'] = instrument
 
-        .. note:: Note that this is different from getting self.params. 
+        elif shape is not None:
+            raise ValueError('shape must be set only when creating a new HDFCube')
+
+        HDFCube.__init__(self, path, instrument=instrument, **kwargs)
+
+        if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
+
+    def __setitem__(self, key, value):
+        """Implement setitem special method"""        
+        with self.open_hdf5('a') as f:
+            # decrease representation in case of complex or floats to
+            # minimize data size
+            if value.dtype == np.float64:
+                value = value.astype(np.float32)
+            elif value.dtype == np.complex128:
+                value = value.astype(np.complex64)
+            
+            return f['data'].__setitem__(key, value)
+
+    def set_param(self, key, value):
+        """Set class parameter
+
+        :param key: parameter key
         """
-        return utils.io.array2dict(self.get_dataset('params'))
-        
+        self.params[key] = value
+        with self.open_hdf5(mode='a') as f:
+            _update = True
+            value = utils.io.cast2hdf5(value)
+            if key in f.attrs:
+                if f.attrs[key] == value:
+                    _update = False
+            if _update:
+                f.attrs[key] = value
+
+    def set_mask(self, data):
+        """Set mask
+
+        A mask must have the shape of the data but for 3d data which
+        has a 2d mask (self.dimx, self.dimy). A Zero indicates a pixel
+        which should be masked (Nans are returned for this pixel).
+
+        :param data: mask. Must be a boolean array
+        """
+        HDFCube.set_mask(self, data)
+        self.set_dataset('mask', data, protect=False)
+            
+    def open_hdf5(self, mode='r'):
+        """Return the hdf5 file.
+
+        :param mode: Opening mode (can be 'r', 'a')
+        """
+        if mode not in ['r', 'a']: raise ValueError('mode must be r or a')
+        return utils.io.open_hdf5(self.cube_path, mode=mode)
+
+    def set_dataset(self, path, data, protect=True):
+        """Write a dataset to the hdf5 file
+
+        :param path: dataset path
+
+        :param data: data to write.
+
+        :param protect: (Optional) check if dataset is protected
+          (default True).
+        """
+        if protect:
+            if path in self.protected_datasets:
+                raise IOError('dataset {} is protected. please use the corresponding higher level method (something like set_{} should do)'.format(path, path))
+
+        if path == 'data':
+            raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. cube[:,:,:] = value.')
+        with self.open_hdf5('a') as f:
+            if path in f:
+                del f[path]
+                warnings.warn('{} dataset changed'.format(path))
+
+            if isinstance(data, dict):
+                data = utils.io.dict2array(data)
+            f.create_dataset(path, data=data, chunks=True)
+
+    def set_frame_header(self, index, header):
+        """Set the header of a frame.
+
+        The header must be an instance of pyfits.Header().
+
+        :param index: Index of the frame
+
+        :param header: Header as a pyfits.Header instance.
+        """
+        self.set_dataset('frame_header_{}'.format(index),
+                         utils.io.header_fits2hdf5(header))
+            
+
 #################################################
 #### CLASS Cube ################################
 #################################################
@@ -559,9 +545,6 @@ class Cube(HDFCube):
 
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
                        'dark_time', 'flat_time', 'camera_index', 'wcs_rotation')
-
-    computed_params = ('filter_nm_min', 'filter_nm_max', 'filter_file_path',
-                       'filter_cm1_min', 'filter_cm1_max', 'binning')
     
     def __init__(self, path, params=None, instrument=None, **kwargs):
         """Initialize Cube class.
@@ -577,63 +560,9 @@ class Cube(HDFCube):
           itself. They can be modified through the params dictionary
           and the params dictionary can itself be modified with
           keyword arguments.
-        """
-        kwargs_params = dict()
-        for ikey in kwargs.keys():
-            if ikey in (self.needed_params + self.optional_params):
-                kwargs_params[ikey] = kwargs.pop(ikey)
+        """               
+        HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
 
-        HDFCube.__init__(self, path, instrument=instrument, **kwargs)
-                
-        self.needed_params = tuple(self.params.keys() + list(self.needed_params))
-        self.load_params(params, **kwargs_params)
-        self.compute_data_parameters()
-        self.validate()
-            
-    def load_params(self, params, **kwargs):
-        """Load observation parameters
-
-        :params: Path to a dict
-
-        :param kwargs: other parameters not supplied in params (else
-          overwrite parameters set in params)
-        """
-        def set_param(pkey, okey, cast):
-            if okey in ofile.options:
-                self.set_param(pkey, ofile.get(okey, cast=cast))
-            else:
-                raise Exception('Malformed option file. {} not set.'.format(okey))
-            
-        # parse dict
-        if isinstance(params, dict):
-            for iparam in (self.needed_params + self.optional_params):
-                if iparam in params:
-                    self.set_param(iparam, params[iparam])
-                
-        elif params is not None:
-            raise TypeError('params type ({}) not handled'.format(type(params)))
-
-        # parse additional parameters
-        for iparam in kwargs:
-            if iparam in (self.needed_params + self.optional_params):
-                self.set_param(iparam, kwargs[iparam])
-            else: raise ValueError('parameter {} supplied as a keyword argument but not used. Please remove it'.format(iparam))
-            
-
-        # load params from file
-        if self.has_dataset('params'):
-            fileparams = self.get_params()
-            
-            for iparam in fileparams:
-                if iparam not in self.params: # only unknown parameters are loaded from file
-                    self.set_param(iparam, fileparams[iparam])
-
-            
-        # validate needed params
-        for iparam in self.needed_params:
-            if iparam not in self.params:
-                raise ValueError('parameter {} must be defined in params'.format(iparam))
-        
         # compute additional parameters
         self.filterfile = core.FilterFile(self.params.filter_name)
         self.set_param('filter_file_path', self.filterfile.basic_path)
@@ -642,9 +571,23 @@ class Cube(HDFCube):
         self.set_param('filter_cm1_min', self.filterfile.get_filter_bandpass_cm1()[0])
         self.set_param('filter_cm1_max', self.filterfile.get_filter_bandpass_cm1()[1])
 
+        if 'camera_index' in self.params:
+            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera_index)],
+                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera_index)]]
+            binning = utils.image.compute_binning(
+                (self.dimx, self.dimy), detector_shape)
+                            
+            if binning[0] != binning[1]:
+                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
+            self.set_param('binning', binning[0])
+            
+            logging.debug('Computed binning of camera {}: {}x{}'.format(
+                self.params.camera_index, self.params.binning, self.params.binning))
         
         self.params_defined = True
 
+        self.validate()
+            
         
     def validate(self):
         """Check if this class is valid"""
@@ -660,20 +603,6 @@ class Cube(HDFCube):
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
                                   
-    def compute_data_parameters(self):
-        """Compute some more parameters when data paramters are known (like self.dimx, self.dimy etc.)"""
-        if 'camera_index' in self.params:
-            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera_index)],
-                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera_index)]]
-            binning = utils.image.compute_binning(
-                (self.dimx, self.dimy), detector_shape)
-                            
-            if binning[0] != binning[1]:
-                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
-            self.set_param('binning', binning[0])
-            
-            logging.debug('Computed binning of camera {}: {}x{}'.format(
-                self.params.camera_index, self.params.binning, self.params.binning))
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
@@ -749,19 +678,234 @@ class Cube(HDFCube):
             corr=self.get_calibration_coeff_map()[x, y])
         return Axis(np.copy(axis))
 
-    def add_params_to_hdf_file(self, hdffile):
-        """Write parameters as attributes to an hdf5 file"""
-        self.validate()
-        for iparam in self.params:
-            hdffile.attrs[iparam] = self.params[iparam]
+    def detect_stars(self, **kwargs):
+        """Detect valid stars in the image
+
+        :param kwargs: image.Image.detect_stars kwargs.
+        """
+        if self.has_dataset('deep_frame'):
+            df = self.get_deep_frame()
+        else:
+            _stack = self[:,:,:self.config.DETECT_STACK]
+            df = np.nanmedian(_stack, axis=2)
+        df = image.Image(df, params=self.params)
+        return df.detect_stars(**kwargs)
+
+    def fit_stars_in_frame(self, star_list, index, **kwargs):
+        """Fit stars in frame
+
+        :param star_list: Path to a list of stars
+
+        :param index: frame index
+
+        :param kwargs: image.Image.fit_stars kwargs.
+        """
+        im = image.Image(self[:,:,index], params=self.params)
+        return im.fit_stars(star_list, **kwargs)
+
+    def fit_stars_in_cube(self, star_list,
+                          correct_alignment=False, save=False,
+                          add_cube=None, hpfilter=False, fix_aperture_size=False,
+                          **kwargs):
+        
+        """Fit stars in the cube.
+
+        Frames must not be too disaligned. Disalignment can be
+        corrected as the cube is fitted by setting correct_alignment
+        option to True.
+
+        .. note:: 2 fitting modes are possible::
+        
+            * Individual fit mode [multi_fit=False]
+            * Multi fit mode [multi_fit=True]
+
+            see :meth:`astrometry.utils.fit_stars_in_frame` for more
+            information.
+    
+        :param correct_alignment: (Optional) If True, the initial star
+          positions from the star list are corrected by their last
+          recorded deviation. Useful when the cube is smoothly
+          disaligned from one frame to the next.
+
+        :param save: (Optional) If True save the fit results in a file
+          (default True).
+
+        :param add_cube: (Optional) A tuple [Cube instance,
+          coeff]. This cube is added to the data before the fit so
+          that the fitted data is self.data[] + coeff * Cube[].
+
+        :param hpfilter: (Optional) If True, frames are HP filtered
+          before fitting stars. Useful for alignment purpose if there
+          are too much nebulosities in the frames. This option must
+          not be used for photometry (default False).
+
+        :param fix_aperture_size: (Optional) If True, aperture size is fixed to
+          self.fwhm_value. default False.
+        
+        :param kwargs: (Optional) utils.astrometry.fit_stars_in_frame
+          kwargs.
+
+        """
+        def get_index_mean_dev(index):
+            dx = utils.stats.robust_mean(utils.stats.sigmacut(
+                self.fit_results[:,index,'dx']))
+            dy = utils.stats.robust_mean(utils.stats.sigmacut(
+                self.fit_results[:,index,'dy']))
+            return dx, dy
 
 
+        FOLLOW_NB = 5 # Number of deviation value to get to follow the
+                      # stars
 
+        star_list = utils.astrometry.load_star_list(star_list)
+                
+        logging.info("Fitting stars in cube")
+        
+        if self.dimz < 2: raise StandardError(
+            "Data must have 3 dimensions. Use fit_stars_in_frame method instead")
+        
+        if fix_aperture_size:
+            fix_aperture_fwhm_pix = self.fwhm_pix
+        else:
+            fix_aperture_fwhm_pix = None
+
+        if add_cube is not None:
+            if np.size(add_cube) >= 2:
+                added_cube = add_cube[0]
+                added_cube_scale = add_cube[1]
+                if not isinstance(added_cube, Cube):
+                    raise StandardError('Added cube must be a Cube instance. Check add_cube option')
+                if np.size(added_cube_scale) != 1:
+                    raise StandardError('Bad added cube scale. Check add_cube option.')
+
+        # Init of the multiprocessing server
+        job_server, ncpus = self._init_pp_server()
+
+        frames = np.empty((self.dimx, self.dimy, ncpus), dtype=float)
+        
+        progress = core.ProgressBar(int(self.dimz))
+        x_corr = None
+        y_corr = None
+        for ik in range(0, self.dimz, ncpus):
+            # no more jobs than frames to compute
+            if (ik + ncpus >= self.dimz):
+                ncpus = self.dimz - ik
+    
+            if correct_alignment:
+                if ik > 0:
+                    old_x_corr = float(x_corr)
+                    old_y_corr = float(y_corr)
+
+                    if ik > FOLLOW_NB - 1:
+                        # try to get the mean deviation over the
+                        # last fitted frames
+                        x_mean_dev = [get_index_mean_dev(ik-ifol-1)[0]
+                                      for ifol in np.arange(FOLLOW_NB)]
+                        y_mean_dev = [get_index_mean_dev(ik-ifol-1)[1]
+                                      for ifol in np.arange(FOLLOW_NB)]
+                        x_corr = utils.stats.robust_median(x_mean_dev)
+                        y_corr = utils.stats.robust_median(y_mean_dev)
+                    else:
+                        x_corr, y_corr = get_index_mean_dev(ik-1)
+
+                    if np.isnan(x_corr):
+                        x_corr = float(old_x_corr)
+                    if np.isnan(y_corr):
+                        y_corr = float(old_y_corr)
+                    
+                else:
+                    x_corr = 0.
+                    y_corr = 0.
+
+                star_list = np.copy(star_list)
+                star_list[:,0] += x_corr
+                star_list[:,1] += y_corr
+
+
+            # follow FWHM variations
+            if ik > FOLLOW_NB - 1 and not no_fit:
+                fwhm_mean = utils.stats.robust_median(
+                    [utils.stats.robust_mean(utils.stats.sigmacut(
+                        self.fit_results[:,ik-ifol-1,'fwhm_pix']))
+                     for ifol in np.arange(FOLLOW_NB)])
+                
+                if np.isnan(fwhm_mean):
+                    fwhm_mean = self.fwhm_pix
+            else:
+                fwhm_mean = self.fwhm_pix
+          
+
+            for ijob in range(ncpus):
+                frame = np.copy(self.data[:,:,ik+ijob])
+                
+                # add cube
+                if add_cube is not None:
+                    frame += added_cube[:,:,ik+ijob] * added_cube_scale
+        
+                if hpfilter:
+                    frame = utils.image.high_pass_diff_image_filter(
+                        frame, deg=2)
+                    
+                frames[:,:,ijob] = np.copy(frame)
+
+            def _fit_stars_in_frame(
+                    frame, star_list, box_size, kwargs):
+                
+                return utils.astrometry.fit_stars_in_frame(
+                    frame, star_list, box_size, **kwargs)
+            
+            # get stars photometry for each frame
+            _kwargs = {'profile_name': self.profile_name,
+                       'scale': self.scale,
+                       'fwhm_mean': self.fwhm_mean,
+                       'default_beta': self.default_beta,
+                       'fit_tol': self.fit_tol}
+            kwargs.update(_kwargs)
+            
+            jobs = [(ijob, job_server.submit(
+                _fit_stars_in_frame,
+                args=(frames[:,:,ijob], star_list, self.box_size, kwargs),
+                modules=("import logging",
+                         "import orb.utils.stats",
+                         "import orb.utils.image",
+                         "import numpy as np",
+                         "import math",
+                         "import orb.cutils",
+                         "import bottleneck as bn",
+                         "import warnings",
+                         "from orb.utils.astrometry import *")))
+                    for ijob in range(ncpus)]
+
+            for ijob, job in jobs:
+                res = job()
+                if res is not None:
+                    for istar in range(len(star_list)):
+                        self.fit_results[istar, ik+ijob] = res[istar]
+                
+            progress.update(ik, info="frame : " + str(ik))
+            
+        self._close_pp_server(job_server)
+        
+        progress.end()
+
+        if save:
+            self.fit_results.save_stars_params(self._get_fit_results_path())
+
+        # print reduced chi square
+        mean_red_chi_square = utils.stats.robust_mean(utils.stats.sigmacut(
+            self.fit_results[:, 'reduced-chi-square']))
+        
+        logging.info("Mean reduced chi-square: %f"%mean_red_chi_square)
+        
+        return self.fit_results
+
+
+    
 #################################################
 #### CLASS SpectralCube ####################
 #################################################
 class SpectralCube(Cube):
-    """Provide additional methods for an interferogram cube when
+    """Provide additional methods for a spectral cube when
     observation parameters are known.
     """
     pass#raise NotImplementedError()
@@ -820,8 +964,7 @@ class FDCube(core.Tools):
     cube.
 
     This is a basic class which is mainly used to export data into an
-    hdf5 format.
-
+    hdf5 cube.
     """
 
     def __init__(self, image_list_path, image_mode='classic',
@@ -859,7 +1002,6 @@ class FDCube(core.Tools):
         :param silent_init: (Optional) If True no message is displayed
           at initialization.
 
-
         :param kwargs: (Optional) :py:class:`~orb.core.Cube` kwargs.
         """
         core.Tools.__init__(self, **kwargs)
@@ -871,7 +1013,7 @@ class FDCube(core.Tools):
 
         if (self.image_list_path != ""):
             # read image list and get cube dimensions  
-            image_list_file = self.open_file(self.image_list_path, "r")
+            image_list_file = utils.io.open_file(self.image_list_path, "r")
             image_name_list = image_list_file.readlines()
             if len(image_name_list) == 0:
                 raise StandardError('No image path in the given image list')
@@ -913,8 +1055,8 @@ class FDCube(core.Tools):
 
             # image list is sorted
             if not no_sort:
-                self.image_list = self.sort_image_list(self.image_list,
-                                                       self._image_mode)
+                self.image_list = utils.misc.sort_image_list(self.image_list,
+                                                             self._image_mode)
             
             self.image_list = np.array(self.image_list)
             self.dimz = self.image_list.shape[0]
@@ -954,7 +1096,7 @@ class FDCube(core.Tools):
             job_server, ncpus = self._init_pp_server(silent=self._silent_load) 
 
             if not self._silent_load:
-                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1L)
             
             for ik in range(z_slice.start + 1L, z_slice.stop, ncpus):
                 # No more jobs than frames to compute
@@ -983,7 +1125,7 @@ class FDCube(core.Tools):
             self._close_pp_server(job_server)
         else:
             if not self._silent_load:
-                progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
+                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1L)
             
             for ik in range(z_slice.start + 1L, z_slice.stop):
 
@@ -1160,7 +1302,7 @@ class FDCube(core.Tools):
         :param params: (Optional) A dict of parameters that will be
           added to the exported cube.
         """
-        cube = HDFCube(
+        cube = RWHDFCube(
             export_path, shape=(self.dimx, self.dimy, self.dimz),
             instrument=self.instrument)
 
@@ -1168,9 +1310,9 @@ class FDCube(core.Tools):
             cube.set_mask(mask)
 
         if params is not None:
-            cube.set_params(params)
+            cube.update_params(params)
 
-        cube.set_cube_header(self.get_cube_header())
+        cube.set_header(self.get_cube_header())
 
         progress = core.ProgressBar(self.dimz)
         for iframe in range(self.dimz):

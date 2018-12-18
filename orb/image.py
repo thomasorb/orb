@@ -60,7 +60,7 @@ class Frame2D(core.Data):
 
         # checking
         if self.data.ndim != 2:
-            raise TypeError('input image has {} dims but must have exactly 2 dimension'.format(self.data.ndim))
+            raise TypeError('input image has {} dims but must have exactly 2 dimensions'.format(self.data.ndim))
 
     def get_stats(self, fast=True):
         """Return image stats
@@ -74,7 +74,7 @@ class Frame2D(core.Data):
 
         if fast:
             pix = np.random.randint(0, high=self.data.size,
-                                    size=FAST_FRAC*self.data.size)
+                                    size=int(FAST_FRAC*self.data.size))
             _data = np.copy(self.data).flatten()[pix]
         else:
             _data = self.data
@@ -100,28 +100,22 @@ class Image(Frame2D, core.Tools):
                  data_prefix="./", sip=None, **kwargs):
 
         # try to read instrument parameter from file
-        if isinstance(data, str):
-            if 'hdf' in data:
-                with utils.io.open_hdf5(data, 'r') as f:
-                    if instrument is None:
-                        if 'instrument' not in f.attrs:
-                            raise ValueError("instrument could not be read from the file attributes. Please set it to 'sitelle' or 'spiomm'")                
-                        instrument = f.attrs['instrument']
-            elif 'fit' in data:
-                hdu = utils.io.read_fits(data, return_hdu_only=True)
-                _hdr = hdu[0].header
-                if 'INSTRUME' in _hdr:
-                    instrument = _hdr['INSTRUME'].lower()
-                            
-        
+        if instrument is None:
+            if isinstance(data, str):
+                if os.path.exists(data):
+                    instrument = utils.misc.read_instrument_value_from_file(data)
+                    
+        if instrument is None: # important even if duplicated ;)
+            if 'params' in kwargs:
+                if 'instrument' in kwargs['params']:
+                    instrument = kwargs['params']['instrument']
+                
         core.Tools.__init__(self, instrument=instrument,
                             data_prefix=data_prefix,
                             config=config)
         
         Frame2D.__init__(self, data, **kwargs)
-
-        self.params['instrument'] = instrument
-
+            
         # load old orb file header
         if 'target_x' not in self.params:
             if 'TARGETX' in self.params:
@@ -338,20 +332,6 @@ class Image(Frame2D, core.Tools):
             fit_results_path = self._get_fit_results_path()
         self.fit_results.load_stars_params(fit_results_path)
     
-    def load_star_list(self, star_list_path):
-        """Load a list of stars coordinates
-
-        :param star_list_path: The path to the star list file.
-
-        .. seealso:: :py:meth:`astrometry.load_star_list`
-        """
-        star_list = utils.astrometry.load_star_list(
-            star_list_path, silent=False)
-        
-        self.reset_star_list(np.array(star_list, dtype=float))
-        
-        return self.star_list
-
     def reset_profile_name(self, profile_name):
         """Reset the name of the profile used.
 
@@ -366,28 +346,6 @@ class Image(Frame2D, core.Tools):
                 "Bad profile name (%s) please choose it in: %s"%(
                     profile_name, str(self.profiles)))
         
-    def reset_star_list(self, star_list):
-        """Reset the list of stars
-        
-        :param star_list: An array of shape (star_nb, 2) giving the
-          positions in x and y of the stars.
-        """
-        if isinstance(star_list, list):
-            star_list = np.array(star_list)
-            
-        if len(star_list.shape) == 2:
-            if star_list.shape[1] != 2:
-                raise StandardError('Incorrect star list shape. The star list must be an array of shape (star_nb, 2)')
-        else:
-            raise StandardError('Incorrect star list shape. The star list must be an array of shape (star_nb, 2)')
-            
-        self.star_list = star_list
-        self.star_nb = self.star_list.shape[0]
-        # create an empty StarsParams array
-        self.fit_results = core.StarsParams(self.star_nb, 1,
-                                            instrument=self.instrument)
-        return self.star_list
-    
     def reset_scale(self, scale):
         """Reset scale attribute.
         
@@ -483,9 +441,11 @@ class Image(Frame2D, core.Tools):
         daofind = photutils.DAOStarFinder(fwhm=self.fwhm_pix,
                                           threshold=DETECT_THRESHOLD * std)
         sources = daofind(self.data.T - median).to_pandas()
+        if len(sources) == 0: raise StandardError('no star detected, check input image')
         sources = sources[sources.peak < saturation_threshold]
         sources = sources[np.abs(sources.roundness2) < MAX_ROUNDNESS]
         sources = sources.sort_values(by=['flux'], ascending=False)
+        sources = sources[:min_star_number]
         logging.info("%d stars detected" %(len(sources)))
 
         mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])
@@ -494,36 +454,16 @@ class Image(Frame2D, core.Tools):
         logging.info('sources written to {}'.format(self._get_star_list_path()))
         return self._get_star_list_path(), mean_fwhm
 
-    def load_star_list(self, star_list):
-        """Load a star list from different sources.
-
-        :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
-        """
-        if isinstance(star_list, str):
-            sources = pandas.read_hdf(self._get_star_list_path(), key='data')
-            star_list = utils.astrometry.sources2list(sources)
-
-        elif isinstance(star_list, pandas.DataFrame):
-            star_list = utils.astrometry.sources2list(star_list)
-
-        else:
-            if not isinstance(np.ndarray):
-                raise TypeError('star_list must be an instance of numpy.ndarray or a path to a star list')
-        if star_list.ndim != 2: raise TypeError('star list must have 2 dimensions')
-        if star_list.shape[1] != 2: raise TypeError('badly formatted star list. must have shape (n, 2)')
-        self.star_list = np.copy(star_list)
-        return star_list
-
     def detect_fwhm(self, star_list):
         """Return fwhm of a list of stars
 
         :param star_list: list of stars (can be an np.ndarray or a path
           ot a star list).
         """
-        self.load_star_list(star_list)
+        star_list = utils.astrometry.load_star_list(star_list)
         
         mean_fwhm, mean_fwhm_err = utils.astrometry.detect_fwhm_in_frame(
-            self.data, utils.astrometry.sources2list(star_list),
+            self.data, star_list,
             self.fwhm_pix)
         
         logging.info("Detected stars FWHM : {:.2f}({:.2f}) pixels, {:.2f}({:.2f}) arc-seconds".format(mean_fwhm[0], mean_fwhm_err[0], self.pix2arc(mean_fwhm[0]), self.pix2arc(mean_fwhm_err[0])))
@@ -549,7 +489,7 @@ class Image(Frame2D, core.Tools):
         C_OUT = np.sqrt((MIN_BACK_COEFF*C_AP**2.) + C_IN**2.)
 
 
-        star_list = self.load_star_list(star_list)
+        star_list = utils.astrometry.load_star_list(star_list)
         aper = photutils.CircularAperture(star_list,
                                           r=C_AP * self.fwhm_pix)
 
@@ -737,7 +677,7 @@ class Image(Frame2D, core.Tools):
         # get FWHM
         star_list_fit_init_path, fwhm_arc = self.detect_stars(
             min_star_number=max_stars_detect)
-        star_list_fit_init = self.load_star_list(star_list_fit_init_path)
+        star_list_fit_init = utils.astrometry.load_star_list(star_list_fit_init_path)
         ## star_list_fit_init = self.load_star_list(
         ##     './temp/data.Astrometry.star_list)'
         ## fwhm_arc= 1.
@@ -1213,3 +1153,50 @@ class Image(Frame2D, core.Tools):
             self.dimx, self.dimy, self.scale, star_list1, star_list2,
             params=params, init_sip=init_sip, err=err, sip_order=sip_order,
             crpix=crpix, crval=crval)
+
+
+
+    def fit_stars(self, star_list, **kwargs):
+        """
+        Fit stars in one frame.
+
+        This function is basically a wrapper around
+        :meth:`utils.astrometry.fit_stars_in_frame`.
+
+        .. note:: 2 fitting modes are possible::
+        
+            * Individual fit mode [multi_fit=False]
+            * Multi fit mode [multi_fit=True]
+
+            see :meth:`utils.astrometry.fit_stars_in_frame` for more
+            information.
+
+        :param star_list: Path tot alist of stars
+          
+        :param kwargs: Same optional arguments as for
+          :meth:`utils.astrometry.fit_stars_in_frame`.
+
+        .. warning:: Some optional arguments are taken directly from the
+          values computed at the init of the Class. The following
+          optional arguments thus cannot be passed::
+          
+            * profile_name
+            * scale
+            * fwhm_pix
+            * beta
+            * fit_tol          
+        """        
+        frame = np.copy(self.data)
+        star_list = utils.astrometry.load_star_list(star_list)
+
+        kwargs['profile_name'] = self.profile_name
+        kwargs['scale'] = self.scale
+        kwargs['fwhm_pix'] = self.fwhm_pix
+        kwargs['beta'] = self.default_beta
+        kwargs['fit_tol'] = self.fit_tol
+
+        # fit
+        fit_results = utils.astrometry.fit_stars_in_frame(
+            frame, star_list, self.box_size, **kwargs)
+        
+        return utils.astrometry.fit2df(fit_results)
