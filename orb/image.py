@@ -445,9 +445,11 @@ class Image(Frame2D, core.Tools):
         sources = sources[sources.peak < saturation_threshold]
         sources = sources[np.abs(sources.roundness2) < MAX_ROUNDNESS]
         sources = sources.sort_values(by=['flux'], ascending=False)
-        sources = sources[:min_star_number]
         logging.info("%d stars detected" %(len(sources)))
-
+        sources = sources[:min_star_number]
+        logging.info("star list reduced to %d stars" %(len(sources)))
+        sources = utils.astrometry.df2list(sources)
+        sources = self.fit_stars(sources, no_aperture_photometry=True)
         mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])
 
         sources.to_hdf(self._get_star_list_path(), 'data', mode='w')
@@ -1189,6 +1191,11 @@ class Image(Frame2D, core.Tools):
         frame = np.copy(self.data)
         star_list = utils.astrometry.load_star_list(star_list)
 
+        protected_kwargs =['profile_name', 'scale', 'fwhm_pix', 'beta', 'fit_tol']
+        for ik in protected_kwargs:
+            if ik in kwargs:
+                raise StandardError('{} should not be passed in kwargs'.format(ik))
+        
         kwargs['profile_name'] = self.profile_name
         kwargs['scale'] = self.scale
         kwargs['fwhm_pix'] = self.fwhm_pix

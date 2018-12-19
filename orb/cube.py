@@ -705,7 +705,7 @@ class Cube(HDFCube):
 
     def fit_stars_in_cube(self, star_list,
                           correct_alignment=False, save=False,
-                          add_cube=None, hpfilter=False, fix_aperture_size=False,
+                          add_cube=None, 
                           **kwargs):
         
         """Fit stars in the cube.
@@ -734,42 +734,35 @@ class Cube(HDFCube):
           coeff]. This cube is added to the data before the fit so
           that the fitted data is self.data[] + coeff * Cube[].
 
-        :param hpfilter: (Optional) If True, frames are HP filtered
-          before fitting stars. Useful for alignment purpose if there
-          are too much nebulosities in the frames. This option must
-          not be used for photometry (default False).
-
-        :param fix_aperture_size: (Optional) If True, aperture size is fixed to
-          self.fwhm_value. default False.
-        
         :param kwargs: (Optional) utils.astrometry.fit_stars_in_frame
           kwargs.
 
         """
-        def get_index_mean_dev(index):
-            dx = utils.stats.robust_mean(utils.stats.sigmacut(
-                self.fit_results[:,index,'dx']))
-            dy = utils.stats.robust_mean(utils.stats.sigmacut(
-                self.fit_results[:,index,'dy']))
-            return dx, dy
-
+        def _fit_stars_in_frame(frame, star_list, fwhm_pix, params, kwargs):
+            im = orb.image.Image(frame, params=params)
+            if fwhm_pix is not None:
+                im.reset_fwhm_pix(fwhm_pix)
+            return im.fit_stars(star_list, **kwargs)
 
         FOLLOW_NB = 5 # Number of deviation value to get to follow the
                       # stars
 
+        if add_cube is not None: raise NotImplementedError()
+
         star_list = utils.astrometry.load_star_list(star_list)
                 
         logging.info("Fitting stars in cube")
+
+        fit_results = list([None] * self.dimz)
+        dx_mean = list([np.nan] * self.dimz)
+        dy_mean = list([np.nan] * self.dimz)
+        fwhm_mean = list([np.nan] * self.dimz)
         
         if self.dimz < 2: raise StandardError(
             "Data must have 3 dimensions. Use fit_stars_in_frame method instead")
         
-        if fix_aperture_size:
-            fix_aperture_fwhm_pix = self.fwhm_pix
-        else:
-            fix_aperture_fwhm_pix = None
-
         if add_cube is not None:
+            raise NotImplementedError()
             if np.size(add_cube) >= 2:
                 added_cube = add_cube[0]
                 added_cube_scale = add_cube[1]
@@ -780,12 +773,10 @@ class Cube(HDFCube):
 
         # Init of the multiprocessing server
         job_server, ncpus = self._init_pp_server()
-
-        frames = np.empty((self.dimx, self.dimy, ncpus), dtype=float)
         
         progress = core.ProgressBar(int(self.dimz))
-        x_corr = None
-        y_corr = None
+        x_corr = 0.
+        y_corr = 0.
         for ik in range(0, self.dimz, ncpus):
             # no more jobs than frames to compute
             if (ik + ncpus >= self.dimz):
@@ -799,75 +790,59 @@ class Cube(HDFCube):
                     if ik > FOLLOW_NB - 1:
                         # try to get the mean deviation over the
                         # last fitted frames
-                        x_mean_dev = [get_index_mean_dev(ik-ifol-1)[0]
-                                      for ifol in np.arange(FOLLOW_NB)]
-                        y_mean_dev = [get_index_mean_dev(ik-ifol-1)[1]
-                                      for ifol in np.arange(FOLLOW_NB)]
-                        x_corr = utils.stats.robust_median(x_mean_dev)
-                        y_corr = utils.stats.robust_median(y_mean_dev)
+                        x_corr = np.nanmedian(dx_mean[ik-FOLLOW_NB:ik])
+                        y_corr = np.nanmedian(dy_mean[ik-FOLLOW_NB:ik])
                     else:
-                        x_corr, y_corr = get_index_mean_dev(ik-1)
-
+                        x_corr = np.nan
+                        y_corr = np.nan
+                        if dx_mean[-1] is not None:
+                            x_corr = dx_mean[ik-1]
+                        if dy_mean[-1] is not None:
+                            y_corr = dy_mean[ik-1]
+                                       
                     if np.isnan(x_corr):
                         x_corr = float(old_x_corr)
                     if np.isnan(y_corr):
                         y_corr = float(old_y_corr)
                     
-                else:
-                    x_corr = 0.
-                    y_corr = 0.
-
-                star_list = np.copy(star_list)
                 star_list[:,0] += x_corr
                 star_list[:,1] += y_corr
 
 
             # follow FWHM variations
-            if ik > FOLLOW_NB - 1 and not no_fit:
-                fwhm_mean = utils.stats.robust_median(
-                    [utils.stats.robust_mean(utils.stats.sigmacut(
-                        self.fit_results[:,ik-ifol-1,'fwhm_pix']))
-                     for ifol in np.arange(FOLLOW_NB)])
-                
-                if np.isnan(fwhm_mean):
-                    fwhm_mean = self.fwhm_pix
-            else:
-                fwhm_mean = self.fwhm_pix
+            fwhm_pix = None
+            if ik > FOLLOW_NB - 1:
+                fwhm_pix = np.nanmean(utils.stats.sigmacut(fwhm_mean[ik-FOLLOW_NB:ik]))
+                if np.isnan(fwhm_pix): fwhm_pix = None
           
 
-            for ijob in range(ncpus):
-                frame = np.copy(self.data[:,:,ik+ijob])
+            # for ijob in range(ncpus):
+            #     frame = np.copy(self.data[:,:,ik+ijob])
                 
-                # add cube
-                if add_cube is not None:
-                    frame += added_cube[:,:,ik+ijob] * added_cube_scale
+            #     # add cube
+            #     if add_cube is not None:
+            #         frame += added_cube[:,:,ik+ijob] * added_cube_scale
         
-                if hpfilter:
-                    frame = utils.image.high_pass_diff_image_filter(
-                        frame, deg=2)
+            #     if hpfilter:
+            #         frame = utils.image.high_pass_diff_image_filter(
+            #             frame, deg=2)
                     
-                frames[:,:,ijob] = np.copy(frame)
+            #     frames[:,:,ijob] = np.copy(frame)
 
-            def _fit_stars_in_frame(
-                    frame, star_list, box_size, kwargs):
                 
-                return utils.astrometry.fit_stars_in_frame(
-                    frame, star_list, box_size, **kwargs)
+                # return utils.astrometry.fit_stars_in_frame(  
+                #     frame, star_list, box_size, **kwargs)
             
             # get stars photometry for each frame
-            _kwargs = {'profile_name': self.profile_name,
-                       'scale': self.scale,
-                       'fwhm_mean': self.fwhm_mean,
-                       'default_beta': self.default_beta,
-                       'fit_tol': self.fit_tol}
-            kwargs.update(_kwargs)
-            
+            params = self.params.convert()
+
             jobs = [(ijob, job_server.submit(
                 _fit_stars_in_frame,
-                args=(frames[:,:,ijob], star_list, self.box_size, kwargs),
+                args=(self[:,:,ik+ijob], star_list, fwhm_pix, params, kwargs),
                 modules=("import logging",
                          "import orb.utils.stats",
                          "import orb.utils.image",
+                         'import orb.image',
                          "import numpy as np",
                          "import math",
                          "import orb.cutils",
@@ -878,28 +853,38 @@ class Cube(HDFCube):
 
             for ijob, job in jobs:
                 res = job()
+                fit_results[ik+ijob] = res
                 if res is not None:
-                    for istar in range(len(star_list)):
-                        self.fit_results[istar, ik+ijob] = res[istar]
+                    dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
+                    dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
+                    fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
                 
             progress.update(ik, info="frame : " + str(ik))
             
         self._close_pp_server(job_server)
         
         progress.end()
+  
+        return fit_results
 
-        if save:
-            self.fit_results.save_stars_params(self._get_fit_results_path())
+    def get_alignment_vectors(self, star_list, min_coeff=0.2):
+        """Return alignement vectors
 
-        # print reduced chi square
-        mean_red_chi_square = utils.stats.robust_mean(utils.stats.sigmacut(
-            self.fit_results[:, 'reduced-chi-square']))
-        
-        logging.info("Mean reduced chi-square: %f"%mean_red_chi_square)
-        
-        return self.fit_results
+        :param star_list: list of stars
 
+        :param min_coeff: The minimum proportion of stars correctly
+            fitted to assume a good enough calculated disalignment
+            (default 0.2).
 
+        :return: alignment_vector_x, alignment_vector_y, alignment_error
+        """
+        star_list = utils.astrometry.load_star_list(star_list)
+        fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
+                                             no_aperture_photometry=True,
+                                             multi_fit=False, fix_height=False,
+                                             save=False)
+        return utils.astrometry.compute_alignment_vectors(fit_results)
+            
     
 #################################################
 #### CLASS SpectralCube ####################

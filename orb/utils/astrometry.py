@@ -915,14 +915,6 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
         warnings.warn('FWHM could not be measured, check star positions')
         return None, None
 
-def sources2list(sources):
-    """Convert a sources pandas.DataFrame instance to a list of centroid
-    """
-    if 'xcentroid' not in sources or 'ycentroid' not in sources:
-        raise TypeError('Badly formatted stars params')
-        
-    return np.array([sources['xcentroid'].values, sources['ycentroid'].values]).T
-
 def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                               aper_coeff=3., detect_fwhm=False,
                               silent=False):
@@ -990,25 +982,6 @@ def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                         'fwhm_pix':fwhm_guess_pix[istar],
                         'fwhm_pix_err':fwhm_err[istar]})
     return results
-
-def load_star_list(star_list):
-    """Load a list of stars coordinates from an hdffile or a pandas DataFrame or a numpy.ndarray
-
-    :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
-    """
-    if isinstance(star_list, str):
-        sources = pandas.read_hdf(star_list, key='data')
-        star_list = sources2list(sources)
-
-    elif isinstance(star_list, pandas.DataFrame):
-        star_list = sources2list(star_list)
-
-    else:
-        if not isinstance(np.ndarray):
-            raise TypeError('star_list must be an instance of numpy.ndarray or a path to a star list')
-    if star_list.ndim != 2: raise TypeError('star list must have 2 dimensions')
-    if star_list.shape[1] != 2: raise TypeError('badly formatted star list. must have shape (n, 2)')
-    return star_list
 
 def radial_profile(a, xc, yc, rmax):
     """Return the average radial profile on a region of a 2D array.
@@ -2422,3 +2395,81 @@ def fit2df(fit):
 
     df = pandas.DataFrame(df)
     return df
+
+def df2list(sources):
+    """Convert a sources pandas.DataFrame instance to a list of positions
+    """
+    if 'x' in sources and 'y' in sources:
+        return np.array([sources['x'].values, sources['y'].values]).T
+    elif 'xcentroid' in sources and 'ycentroid' in sources:
+        return np.array([sources['xcentroid'].values, sources['ycentroid'].values]).T
+    else:
+        raise TypeError('Badly formatted stars params')
+        
+def load_star_list(star_list):
+    """Load a list of stars coordinates from an hdffile or a pandas DataFrame or a numpy.ndarray
+
+    :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
+    """
+    if isinstance(star_list, str):
+        sources = pandas.read_hdf(star_list, key='data')
+        star_list = df2list(sources)
+
+    elif isinstance(star_list, pandas.DataFrame):
+        star_list = df2list(star_list)
+
+    else:
+        if not isinstance(star_list, np.ndarray):
+            raise TypeError('star_list must be an instance of numpy.ndarray or a path to a star list')
+    if star_list.ndim != 2: raise TypeError('star list must have 2 dimensions')
+    if star_list.shape[1] != 2: raise TypeError('badly formatted star list. must have shape (n, 2)')
+    return star_list
+
+
+def compute_alignment_vectors(fit_results, min_coeff=0.2):
+    """compute alignement vectors from a list of fit results as returned
+    by fit_stars_in_cube.
+
+    :param fit_results: fit results.
+
+    :param min_coeff: The minimum proportion of stars correctly fitted
+      to assume a good enough calculated disalignment (default 0.2).
+
+    """
+    star_nb = len(fit_results[0])
+    print star_nb
+        
+    if star_nb < 4: 
+        raise StandardError("Not enough stars to align properly : %d (must be >= 3)"%star_nb)
+
+    fit_x = np.array([ifit['x'].values for ifit in fit_results]).T
+    fit_y = np.array([ifit['y'].values for ifit in fit_results]).T
+    fit_x_err = np.array([ifit['x_err'].values for ifit in fit_results]).T
+    fit_y_err = np.array([ifit['y_err'].values for ifit in fit_results]).T
+
+    start_x = np.squeeze(np.copy(fit_x[:, 0]))
+    start_y = np.squeeze(np.copy(fit_y[:, 0]))
+
+    # Check if enough stars have been fitted in the first frame
+    good_nb = len(np.nonzero(~np.isnan(start_x))[0])
+
+    if good_nb < 4 or good_nb < min_coeff * star_nb:
+        raise StandardError("Not enough detected stars (%d) in the first frame"%good_nb)
+
+    ## Create alignment vectors from fitted positions
+    alignment_vector_x = ((fit_x.T - start_x.T).T)[0,:]
+    alignment_vector_y = ((fit_y.T - start_y.T).T)[0,:]
+    alignment_error = np.sqrt(fit_x_err[0,:]**2. + fit_y_err[0,:]**2.)
+
+    # correct alignment vectors for NaN values
+    alignment_vector_x = orb.utils.vector.correct_vector(
+        alignment_vector_x, polyfit=True, deg=3)
+    alignment_vector_y = orb.utils.vector.correct_vector(
+        alignment_vector_y, polyfit=True, deg=3)
+
+    # print some info
+    logging.info(
+        'Alignment vectors median error: %f pixel'%orb.utils.stats.robust_median(alignment_error))
+
+    return alignment_vector_x, alignment_vector_y, alignment_error
+
