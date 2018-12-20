@@ -54,6 +54,8 @@ import numpy as np
 import bottleneck as bn
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
+from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
+
 from scipy import interpolate
 import pandas
 
@@ -2010,17 +2012,33 @@ class Data(object):
         """Return params as an astropy.io.fits.Header instance
         """
         # filter illegal header values
-        _params = dict()
+        cards = list()
+        ok_types = [float, int, str, bool]
         for iparam in self.params:
             val = self.params[iparam]
-            val_ok = True
-            if isinstance(val, np.ndarray):
-                if val.size > 1:
-                    val_ok = False
+            val_ok = False
+            for itype in ok_types:
+                if isinstance(val, itype):
+                    val_ok = True
             if val_ok:
-                _params[iparam] = val
-                
-        header = pyfits.Header(_params)
+                if isinstance(val, bool):
+                    val = int(val)
+                card = pyfits.Card(
+                    keyword=iparam,
+                    value=val,
+                    comment=None)
+                try:
+                    card.verify(option='exception')
+                    cards.append(card)
+                except (VerifyError, ValueError, TypeError):
+                    pass
+                    
+                    
+                    
+
+        warnings.simplefilter('ignore', category=VerifyWarning)
+        warnings.simplefilter('ignore', category=AstropyUserWarning)
+        header = pyfits.Header(cards)
         if self.data.ndim >= 3:
             header['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
                                           # inconsistency
