@@ -1971,9 +1971,12 @@ class Data(object):
     def get_header(self):
         """Return params as an astropy.io.fits.Header instance
         """
+        if not self.has_params(): return None
+        
         # filter illegal header values
         cards = list()
         ok_types = [float, int, str, bool]
+        
         for iparam in self.params:
             val = self.params[iparam]
             val_ok = False
