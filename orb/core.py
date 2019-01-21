@@ -793,7 +793,7 @@ class Tools(object):
                             standard_table_name='std_table.orb',
                             return_pm=False):
         """
-        Return a standard spectrum file path.
+        Return standard RA and DEC and optionally PM
         
         :param standard_name: Name of the standard star. Must be
           recorded in the standard table.
@@ -803,9 +803,6 @@ class Tools(object):
 
         :param return_pm: (Optional) Returns also proper motion if
           recorded (in mas/yr), else returns 0.
-
-        :return: A tuple [standard file path, standard type]. Standard type
-          can be 'MASSEY', 'MISC', 'CALSPEC' or 'OKE'.
         """
         std_table = utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
@@ -1731,43 +1728,6 @@ class Waves(object):
         """Return restframe wavelength of waves in cm-1"""
         return utils.spectrum.nm2cm1(self.nm)
 
-
-#################################################
-#### CLASS Header ###############################
-#################################################
-class Header(pyfits.Header):
-    """Extension of :py:class:`astropy.io.fits.Header`"""
-
-    def __init__(self, *args, **kwargs):
-        """Initialize Header class.
-
-        :param args: args of :py:class:`astropy.io.fits.Header`
-
-        :param kwargs: Kwargs of :py:class:`astropy.io.fits.Header`
-        """
-        pyfits.Header.__init__(self, *args, **kwargs)
-        try:
-            self.wcs = pywcs.WCS(self, relax=True)
-        except pywcs.WcsError, e:
-            warnings.warn('Exception occured during wcs interpretation: {}'.format(e))
-            self.wcs = None
-
-    def bin_wcs(self, binning):
-        """Bin WCS
-
-        :param binning: Binning
-        """
-        if self.wcs is None:
-            raise StandardError('No WCS is set')
-        self.wcs.wcs.crpix /= binning
-        self.wcs.wcs.cdelt *= binning
-        self.extend(self.wcs.to_header(), update=True)
-
-    def tostr(self):
-        """Return a nice string to print"""
-        return self.tostring(sep='\n')
-
-
 #################################################
 #### CLASS Data #################################
 #################################################
@@ -1955,7 +1915,7 @@ class Data(object):
             else:
                 if not self.mask.__getitem__(key): _data = np.nan
         return _data
-
+    
     def has_params(self):
         """Check the presence of observation parameters"""
         if self.params is None:
@@ -2044,6 +2004,9 @@ class Data(object):
                                           # inconsistency
         return header
 
+    def get_wcs(self):
+        return pywcs.WCS(self.get_header(), relax=True)
+
     def set_header(self, header):
         """update params from an astropy.io.fits.Header instance.
 
@@ -2057,7 +2020,7 @@ class Data(object):
         
     def assert_axis(self):
         """Assert the presence of an axis"""
-        if self.has_axis(): raise StandardError('No axis supplied')
+        if not self.has_axis(): raise StandardError('No axis supplied')
 
     def get_axis(self):
         """Return a copy of self.axis"""
@@ -2069,7 +2032,7 @@ class Data(object):
         
     def assert_mask(self):
         """Assert the presence of a mask"""
-        if self.has_mask(): raise StandardError('No mask supplied')
+        if not self.has_mask(): raise StandardError('No mask supplied')
 
     def set_mask(self, data):
         """Set mask. 
@@ -2105,8 +2068,14 @@ class Data(object):
         _mask[np.isnan(_mask)] = 0
         return _mask.astype(bool)
 
-    def copy(self):
-        """Return a copy of the instance"""
+    def copy(self, data=None, **kwargs):
+        """Return a copy of the instance
+
+        :param data: (Optional) can be used to change data
+
+        :param kwargs: Addition kwargs (useful to copy child classes
+          with more kwargs at init)
+        """
         if self.has_params():
             _params = self.params.convert()
         else:
@@ -2122,11 +2091,15 @@ class Data(object):
         else:
             _mask = None
 
+        if data is None:
+            data = np.copy(self.data)
+            
         return self.__class__(
-            np.copy(self.data),
+            data,
             axis=_axis,
             params=_params,
-            mask=_mask)
+            mask=_mask,
+            **kwargs)
 
     def writeto(self, path):
         """Write data to an hdf file
@@ -2157,7 +2130,16 @@ class Data(object):
                     '/mask',
                     data=self.mask)
 
-    
+    def to_fits(self, path):
+        """write data to a FITS file. 
+
+        Note that information may be lost in the process. The only
+        guaranteed format is hdf5 (usr writeto() method instead)
+
+        :param path: Path to the FITS file
+        """
+        utils.io.write_fits(path, self.data, fits_header=self.get_header())
+        
 #################################################
 #### CLASS Vector1d #############################
 #################################################
@@ -2380,7 +2362,7 @@ class Cm1Vector1d(Vector1d):
     def mean_in_filter(self):
         ff = FilterFile(self.params.filter_file_path)
         ftrans = ff.get_transmission(self.dimx)
-        return np.sum(self.multiply(ftrans).data) / ftrans.sum() 
+        return np.nansum(self.multiply(ftrans).data) / ftrans.sum() 
     
 #################################################
 #### CLASS FilterFile ###########################
@@ -2450,7 +2432,7 @@ class FilterFile(Vector1d):
         cm1_axis = Axis(utils.spectrum.create_cm1_axis(
             step_nb, self.params.step, self.params.order,
             corr=corr))
-
+    
         return self.project(cm1_axis)
             
     def get_modulation_efficiency(self):

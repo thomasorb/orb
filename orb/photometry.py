@@ -1,4 +1,4 @@
-#!/usr/bin/python
+0#!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: photometry.py
@@ -72,7 +72,7 @@ class Photometry(object):
                                    params=self.params).project(self.cm1_axis)
         elif tterm == 'optics':
             return core.Cm1Vector1d(self.tools._get_optics_file_path(self.filter_name),
-                                   params=self.params).project(self.cm1_axis)
+                                    params=self.params).project(self.cm1_axis)
         elif tterm == 'filter':
             return self.filter_trans.copy()
         elif tterm == 'telescope':
@@ -150,7 +150,6 @@ class Photometry(object):
             params = dict(self.params)
             flux = float(flux)
             is_float=True
-
             
         flux /= utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
         flux *= self.tools.config.MIR_SURFACE # photons/s/A
@@ -314,7 +313,7 @@ class Standard(core.Tools):
 
     def simulate_measured_flux(self, filter_name, n, airmass=1, corr=None, camera_index=1,
                                opd_jitter=None, wf_error=None, modulated=True):
-        """Return a simulattion of the measured flux in counts/s
+        """Return a simulation of the measured flux in counts/s
 
         :param filter_name: Filter name        
         
@@ -330,7 +329,7 @@ class Standard(core.Tools):
         spe = self.get_spectrum(filter_name, n, corr=corr)
         
         photom = Photometry(filter_name, camera_index,
-                            instrument=self.params.instrument,
+                            instrument=self.instrument,
                             airmass=airmass)
         
         spe = photom.flux2counts(spe, modulated=modulated,

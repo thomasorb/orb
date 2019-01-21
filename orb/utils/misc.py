@@ -328,17 +328,16 @@ def read_instrument_value_from_file(path):
     :param path: path to an hdf5/fits file.
     """
     instrument = None
-    
     if 'hdf' in path:
         with orb.utils.io.open_hdf5(path, 'r') as f:
-            if instrument is None:
-                if 'instrument' not in f.attrs:
-                    raise ValueError("instrument could not be read from the file attributes. Please set it to 'sitelle' or 'spiomm'")                
+            if 'instrument' in f.attrs:
                 instrument = f.attrs['instrument']
+            elif 'INSTRUME' in f.attrs:
+                instrument = f.attrs['INSTRUME'].lower()
+
     elif 'fit' in path:
         hdu = orb.utils.io.read_fits(path, return_hdu_only=True)
         _hdr = hdu[0].header
         if 'INSTRUME' in _hdr:
             instrument = _hdr['INSTRUME'].lower()
-            
     return instrument

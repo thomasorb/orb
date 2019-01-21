@@ -26,7 +26,9 @@ import math
 import bottleneck as bn
 import numpy as np
 import warnings
+import astropy
 import astropy.wcs as pywcs
+from astropy.coordinates import SkyCoord
 import pandas
 
 import orb.cutils
@@ -1103,74 +1105,53 @@ def ra2deg(ra):
 
     :param ra: RA in sexagesimal format
     """
-    ra = np.array(ra, dtype=float)
-    if (ra.shape == (3,)):
-        return (ra[0] + ra[1]/60. + ra[2]/3600.)*(360./24.)
-    else:
-        return None
+    if not isinstance(ra, str):        
+        ra = np.array(ra, dtype=float)
+        if (ra.shape == (3,)):    
+            ra = '{}:{}:{}'.format(int(ra[0]), int(ra[1]), ra[2])
+        else:
+            raise TypeError('badly formatted input coordinates: {}'.format(ra))
+
+    return SkyCoord(ra, 0, unit=astropy.units.hourangle).ra.deg
 
 def dec2deg(dec):
     """Convert DEC in sexagesimal format to degrees.
 
     :param dec: DEC in sexagesimal format
     """
-    dec = np.array(dec, dtype=float)
-    if (dec.shape == (3,)):
-        if dec[0] >= 0:
-            return dec[0] + dec[1]/60. + dec[2]/3600.
+    if not isinstance(dec, str):        
+        dec = np.array(dec, dtype=float)
+        if (dec.shape == (3,)):    
+            dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), dec[2])
         else:
-            return dec[0] - dec[1]/60. - dec[2]/3600.
-    else:
-        return None   
+            raise TypeError('badly formatted input coordinates: {}'.format(dec))
+
+    return SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
 def deg2ra(deg, string=False):
     """Convert RA in degrees to sexagesimal.
 
     :param deg: RA in degrees
     """
-    
-    deg=float(deg)
-    ra = np.empty((3), dtype=float)
-    deg = deg*24./360.
-    ra[0] = int(deg)
-    deg = deg - ra[0]
-    deg *= 60.
-    ra[1] = int(deg)
-    deg = deg - ra[1]
-    deg *= 60.
-    ra[2] = deg
+    c = SkyCoord(deg, 0, unit='deg')
+    hms = c.ra.hms
     if not string:
-        return ra
+        return [hms.h, hms.m, hms.s]
     else:
-        return "%d:%d:%.2f" % (ra[0], ra[1], ra[2])
+        return "%d:%d:%.2f" % (hms.h, hms.m, hms.s)
 
 def deg2dec(deg, string=False):
     """Convert DEC in degrees to sexagesimal.
 
     :param deg: DEC in degrees
     """
-    deg=float(deg)
-    dec = np.empty((3), dtype=float)
-    dec[0] = int(deg)
-    deg = deg - dec[0]
-    deg *= 60.
-    dec[1] = int(deg)
-    deg = deg - dec[1]
-    deg *= 60.
-    dec[2] = deg
-    if (float("%.2f" % (dec[2])) == 60.0):
-        dec[2] = 0.
-        dec[1] += 1
-    if dec[1] == 60:
-        dec[0] += 1
-    if dec[0] < 0:
-        dec[1] = -dec[1]
-        dec[2] = -dec[2]
+    c = SkyCoord(0, deg, unit='deg')
+    dms = c.dec.dms
     if not string:
-        return dec
+        return [dms.d, dms.m, dms.s]
     else:
-        return "+%d:%d:%.2f" % (dec[0], dec[1], dec[2])
-
+        return "%d:%d:%.2f" % (dms.d, dms.m, dms.s)
+    
 def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
                                    sip_A=None, sip_B=None):
     """Transform star positions in camera A to the positions in camera
@@ -1553,7 +1534,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
                 else:
                     fit_results.append(None)
         else:
-            for istar in range(star_list.shape[0]):        
+            for istar in range(star_list.shape[0]):
                 ## Create fit box
                 guess = star_list[istar,:]
                 if guess.shape[0] == 2:
@@ -1569,18 +1550,17 @@ def fit_stars_in_frame(frame, star_list, box_size,
                      y_min, y_max) = orb.utils.image.get_box_coords(
                         x_test, y_test, box_size,
                         0, dimx, 0, dimy)
-
                     star_box = fit_frame[x_min:x_max, y_min:y_max]
                 else:
                     (x_min, x_max, y_min, y_max) = (
                         np.nan, np.nan, np.nan, np.nan)
                     star_box = np.empty((1,1))
-
+                    star_box.fill(np.nan)
+                
                 ## Profile Fitting
                 if (min(star_box.shape) > float(box_size/2.)
                     and (x_max < dimx) and (x_min >= 0)
                     and (y_max < dimy) and (y_min >= 0)):
-
                     ## Local background determination for fitting
                     if local_background:
                         background_box_size = BIG_BOX_COEFF * box_size
@@ -1989,29 +1969,12 @@ def get_wcs_parameters(_wcs):
     """
     target_x, target_y = _wcs.wcs.crpix
     target_ra, target_dec = _wcs.wcs.crval
-    try:
-        cd = np.copy(_wcs.wcs.cd)
-        warnings.warn('CD_ij based WCS is not recommended. Please prefer a PC_ij representation.')
-        rotation = np.rad2deg(np.arctan2(-cd[0,1], -cd[0,0]))
-        deltax = - cd[0,0] / np.cos(np.deg2rad(rotation))
-        deltay = - cd[0,1] / np.sin(np.deg2rad(rotation))
-        
-    except AttributeError: # no cd is present
-        pc = np.copy(_wcs.wcs.get_pc())
-        deltax, deltay = _wcs.wcs.cdelt
-        rotation = np.rad2deg(np.arctan2(-pc[0,1]/deltax, -pc[0,0]/deltax))
-        if np.isclose(np.abs(rotation), 180): rotation = 0.
+    deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(_wcs)
+    vec10 = np.array(_wcs.all_world2pix(_wcs.wcs.crval[0] - deltax, _wcs.wcs.crval[1], 1)) - _wcs.wcs.crpix
+    rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-        check_angle = np.rad2deg(np.arctan2(-pc[1,0]/deltay, pc[1,1]/deltay))
-        if not np.isclose(check_angle, rotation):
-            raise RuntimeError('Malformed PC_ij matrix ? ({} not close to {})'.format(check_angle, rotation))
-        deltax = abs(deltax)
-        deltay = abs(deltay)
-
-    if deltax < 0.: raise StandardError('deltax and deltay must be equal and > 0')
     if abs(rotation) > 90. : raise StandardError('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
-    #if not np.allclose(deltax, deltay): raise StandardError('deltax ({}) must be equal to deltay ({})'.format(deltax, deltay))
-    deltay = float(deltax)
+    if not np.allclose(deltax, deltay): raise StandardError('deltax ({}) must be equal to deltay ({})'.format(deltax, deltay))
     
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
 
@@ -2406,10 +2369,12 @@ def df2list(sources):
     else:
         raise TypeError('Badly formatted stars params')
         
-def load_star_list(star_list):
+def load_star_list(star_list, remove_nans=False):
     """Load a list of stars coordinates from an hdffile or a pandas DataFrame or a numpy.ndarray
 
     :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
+
+    :param remove_nans: If True, Nans are removed from the output star list
     """
     if isinstance(star_list, str):
         sources = pandas.read_hdf(star_list, key='data')
@@ -2419,10 +2384,19 @@ def load_star_list(star_list):
         star_list = df2list(star_list)
 
     else:
-        if not isinstance(star_list, np.ndarray):
-            raise TypeError('star_list must be an instance of numpy.ndarray or a path to a star list')
+        star_list = np.array(star_list)
+
+    if np.size(star_list) == 2:
+        star_list = np.array([np.squeeze(star_list),])
+    
     if star_list.ndim != 2: raise TypeError('star list must have 2 dimensions')
     if star_list.shape[1] != 2: raise TypeError('badly formatted star list. must have shape (n, 2)')
+
+    if remove_nans:
+        if np.any(np.isnan(star_list)):
+            star_list[:,1][np.isnan(star_list[:,0])] = np.nan
+            star_list = np.array([star_list[:,0][~np.isnan(star_list[:,0])],
+                                  star_list[:,1][~np.isnan(star_list[:,1])]]).T
     return star_list
 
 

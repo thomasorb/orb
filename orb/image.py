@@ -34,12 +34,16 @@ import os
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 import astropy.stats
+import astropy.nddata
+from  astropy.coordinates.name_resolve import NameResolveError
+
 import photutils
 
 from scipy import optimize, interpolate, signal
 import pandas
 
 import core
+import cutils
 
 import utils.astrometry
 import utils.image
@@ -81,6 +85,25 @@ class Frame2D(core.Data):
             
         return astropy.stats.sigma_clipped_stats(_data, sigma=3.0)
 
+    def crop(self, cx, cy, size):
+        """Return a portion of the image as another Frame2D instance.
+
+        :param cx: X center position
+
+        :param xy: Y center position
+
+        :param size: Size of the cropped box
+
+        .. warning:: size of the returned box is not guaranteed if cx
+          and cy are on the border of the image.
+        """
+        cutout = astropy.nddata.Cutout2D(
+            self.data.T, position=[cx, cy],
+            size=size, wcs=self.get_wcs())
+        newim = self.copy(data=cutout.data)        
+        newim.update_params(cutout.wcs.to_header())
+        return newim
+        
 
 #################################################
 #### CLASS Image ################################
@@ -94,7 +117,7 @@ class Image(Frame2D, core.Tools):
     DETECT_INDEX = 0
     
     profiles = ['moffat', 'gaussian']
-    wcs_params = ('target_ra', 'target_dec', 'target_x', 'target_y')
+    wcs_params = ('instrument', 'camera', 'target_ra', 'target_dec', 'target_x', 'target_y')
     
     def __init__(self, data, instrument=None, config=None,
                  data_prefix="./", sip=None, **kwargs):
@@ -104,7 +127,7 @@ class Image(Frame2D, core.Tools):
             if isinstance(data, str):
                 if os.path.exists(data):
                     instrument = utils.misc.read_instrument_value_from_file(data)
-                    
+        
         if instrument is None: # important even if duplicated ;)
             if 'params' in kwargs:
                 if 'instrument' in kwargs['params']:
@@ -115,14 +138,69 @@ class Image(Frame2D, core.Tools):
                             config=config)
         
         Frame2D.__init__(self, data, **kwargs)
+        
+        # check params
+        self.params.reset('instrument', self.instrument)
+        
+        if not self.has_param('camera'):
+            if self.has_param('CAMERA'):
+                self.params['camera'] = self.params.CAMERA
+            else:
+                raise StandardError('parameter camera must be supplied')
+
+        if '1' in str(self.params.camera):
+            self.params.reset('camera', 1)
+        elif '2' in str(self.params.camera):
+            self.params.reset('camera', 2)
+        elif '0' in str(self.params.camera):
+            self.params.reset('camera', 0)
+        else:
+            raise ValueError('camera number not understood, must be 1, 2 or 0')
+
+        if self.is_cam1():
+            if self.has_param('bin_cam_1'):
+                self.params.reset('binning', self.params.bin_cam_1)
+        if self.is_cam2():
+            if self.has_param('bin_cam_2'):
+                self.params.reset('binning', self.params.bin_cam_2)
+    
             
-        # load old orb file header
-        if 'target_x' not in self.params:
-            if 'TARGETX' in self.params:
-                self.params['target_x'] = float(self.params['TARGETX'])
-        if 'target_y' not in self.params:
-            if 'TARGETY' in self.params:
-                self.params['target_y'] = float(self.params['TARGETY'])
+        if not self.has_param('binning'):
+            if self.has_param('BINNING'):
+                self.params['binning'] = self.params.BINNING
+            else:
+                raise StandardError('binning parameter must be supplied')
+            
+        if self.dimx != self.config['CAM' + str(self.params.camera) + '_DETECTOR_SIZE_X'] // self.params.binning:
+            warnings.warn('image cropped, target_x might be wrong')
+            
+        target_x = float(self.dimx / 2.)
+        target_y = float(self.dimy / 2.)
+        if self.is_cam2():
+            if self.instrument == 'spiomm':
+                raise NotImplementedError()
+            else:
+                bin_cam_1 = self.params.binning
+                bin_cam_2 = self.params.binning
+
+            # get initial shift
+            init_dx = self.config["INIT_DX"] / bin_cam_2
+            init_dy = self.config["INIT_DY"] / bin_cam_2
+            pix_size_1 = self.config["PIX_SIZE_CAM1"]
+            pix_size_2 = self.config["PIX_SIZE_CAM2"]
+            zoom = (pix_size_2 * bin_cam_2) / (pix_size_1 * bin_cam_1)
+            xrc = self.dimx / 2.
+            yrc = self.dimy / 2.
+
+            target_x, target_y = cutils.transform_A_to_B(
+                target_x, target_y,
+                init_dx, init_dy,
+                self.config["INIT_ANGLE"],
+                0., 0., xrc, yrc, zoom, zoom)
+
+        self.params.reset('target_x', target_x)
+        self.params.reset('target_y', target_y)
+
         if 'target_ra' not in self.params:
             if 'TARGETR' in self.params:
                 self.params['target_ra'] = utils.astrometry.ra2deg(
@@ -132,38 +210,48 @@ class Image(Frame2D, core.Tools):
                 self.params['target_dec'] = utils.astrometry.dec2deg(
                     self.params['TARGETD'].split(':'))
 
-        # check if all needed parameters are present
-        for iparam in self.wcs_params:
-            if iparam not in self.params:
-                raise StandardError('param {} must be set'.format(iparam))
-
-        # load astrometry params
         if 'profile_name' not in self.params:
             self.params['profile_name'] = self.config.PSF_PROFILE
 
-        if ('target_ra' in self.params and 'target_dec' in self.params):
+        if 'target_ra' in self.params:
             if not isinstance(self.params.target_ra, float):
                 raise TypeError('target_ra must be a float')
+        if 'target_dec' in self.params:
             if not isinstance(self.params.target_dec, float):
-                raise TypeError('target_dec must be a float')
-
-            target_radec = (self.params.target_ra, self.params.target_dec)
-        else:
-            target_radec = None
-            
-        if ('target_x' in self.params and 'target_y' in self.params):
-            target_xy = (self.params.target_x, self.params.target_y)               
-        else:
-            target_xy = None
+                raise TypeError('target_dec must be a float')            
           
         if 'data_prefix' not in kwargs:
             kwargs['data_prefix'] = self._data_prefix
             
-        if 'wcs_rotation' in self.params:
-            wcs_rotation = self.params.wcs_rotation
-        else:
-            wcs_rotation=self.config.INIT_ANGLE
+        if not self.has_param('wcs_rotation'):
+            if self.is_cam1():
+                self.params['wcs_rotation'] = self.config.WCS_ROTATION
+            else:
+                self.params['wcs_rotation'] = self.config.WCS_ROTATION - self.config.INIT_ANGLE
         
+        ## load astrometry params
+
+        # load wcs (loaded default parameters are reset)
+        try:
+            wcs = self.get_wcs()
+            (target_x, target_y,
+             scale, _,
+             target_ra, target_dec,
+             wcs_rotation) = utils.astrometry.get_wcs_parameters(wcs)
+            self.params.reset('target_x', target_x)
+            self.params.reset('target_y', target_y)
+            self.params.reset('target_ra', target_ra)
+            self.params.reset('target_dec', target_dec)
+            self.params.reset('wcs_rotation', wcs_rotation)
+            self.params.reset('scale', scale * 3600.)
+                        
+        except Exception, e:
+            warnings.warn('error loading image WCS: {}'.format(e))
+                
+        # check if all needed parameters are present
+        for iparam in self.wcs_params:
+            if iparam not in self.params:
+                raise StandardError('param {} must be set'.format(iparam))
 
         # define astrometry parameters
         if 'box_size_coeff' in self.params:
@@ -180,9 +268,24 @@ class Image(Frame2D, core.Tools):
         else:
             self.fwhm_arc = self.config.INIT_FWHM
 
-        self.fov = self.config.FIELD_OF_VIEW_1
-        self.reset_scale(float(self.fov) * 60. / self.dimx)
+        if 'scale' in self.params:
+            self.scale = self.params.scale
+        else:
+            self.scale = self.config.FIELD_OF_VIEW_1 / self.config.CAM1_DETECTOR_SIZE_X * 60.
+            
+        self.reset_scale(self.scale)
 
+        # define profile
+        self.reset_profile_name(self.params.profile_name)
+
+        self.reduced_chi_square_limit = self.REDUCED_CHISQ_LIMIT
+
+        self.target_ra = self.params.target_ra
+        self.target_dec = self.params.target_dec
+        self.target_x = self.params.target_x
+        self.target_y = self.params.target_y
+        self.wcs_rotation = self.params.wcs_rotation
+        
         if 'detect_stack' in self.params:
             self.detect_stack = self.params.detect_stack
         else:
@@ -194,28 +297,15 @@ class Image(Frame2D, core.Tools):
             self.default_beta = self.config.MOFFAT_BETA
         
         self.fit_tol = self.FIT_TOL
-    
-        # define profile
-        self.reset_profile_name(self.params.profile_name)
 
-        self.reduced_chi_square_limit = self.REDUCED_CHISQ_LIMIT
-
-        self.target_ra = self.params.target_ra
-        self.target_dec = self.params.target_dec
-        self.target_x = self.params.target_x
-        self.target_y = self.params.target_y
-        
-        if 'wcs_rotation' in self.params:
-            self.wcs_rotation = self.params.wcs_rotation
-        else:
-            self.wcs_rotation = self.config.INIT_ANGLE
-        
         self.sip = None
         if sip is not None:
             if isinstance(sip, pywcs.WCS):
                 self.sip = sip
             else:
                 raise StandardError('sip must be an astropy.wcs.WCS instance')
+        else:
+            self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
 
     def _get_star_list_path(self):
         """Return the default path to the star list file."""
@@ -226,6 +316,32 @@ class Image(Frame2D, core.Tools):
         results."""
         return self._data_path_hdr + "fit_results.hdf5"
 
+    def is_cam1(self):
+        """Return true is image comes from camera 1 or is a merged frame
+        """
+        if self.params.camera not in [0, 1, 2]: raise ValueError('camera must be 0, 1 or 2')
+        if self.params.camera == 1 or self.params.camera == 0:
+            return True
+        return False
+
+    def is_cam2(self):
+        """Return true is image comes from camera 2
+        """
+        if self.params.camera not in [0, 1, 2]: raise ValueError('camera must be 0, 1 or 2')
+        if self.params.camera == 2:
+            return True
+        return False
+    
+    def copy(self, data=None):
+        """Return a copy of the instance
+
+        :param data: (Optional) can be used to change data
+        """
+        return Frame2D.copy(self, data=data, instrument=self.instrument,
+                            config=self.config, data_prefix=self._data_prefix,
+                            sip=self.sip)
+    
+        
     def set_wcs(self, wcs):
         """Set WCS from w WCS instance or a FITS image
 
@@ -245,7 +361,47 @@ class Image(Frame2D, core.Tools):
         """Return the WCS of the cube as a astropy.wcs.WCS instance """
         return self.get_wcs().to_header(relax=True)
 
-        
+    def find_object(self, is_standard=False):
+        """Try to find the object given the name in the header
+
+        :param is_standard: if object is a standard, do not try to
+          resolve the name.
+        """
+        object_found = False
+        if not is_standard:
+            logging.info('resolving coordinates of {}'.format(self.params.OBJECT))
+            try:
+                print astropy.coordinates.get_icrs_coordinates(self.params.OBJECT)
+                object_found = True
+            except NameResolveError:
+                warnings.warn('object name could not be resolved')
+                
+        logging.info('looking in the standard table for {}'.format(self.params.OBJECT))
+        try:
+            std_name = ''.join(self.params.OBJECT.strip().split()).upper()
+            std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
+                self.params.OBJECT, return_pm=True)
+            object_found = True
+        except StandardError:
+            warnings.warn('object name not found in the standard table')
+
+        if not object_found:
+            raise StandardError('object coordinates could not be resolved')
+
+        std_yr_obs = float(self.params['DATE-OBS'].split('-')[0])
+        pm_orig_yr = 2000 # radec are considered to be J2000
+        # compute ra/dec with proper motion
+        std_ra, std_dec = utils.astrometry.compute_radec_pm(
+            std_ra, std_dec, std_pm_ra, std_pm_dec,
+            std_yr_obs - pm_orig_yr)
+        std_ra_str = '{:.0f}:{:.0f}:{:.3f}'.format(
+            *utils.astrometry.deg2ra(std_ra))
+        std_dec_str = '{:.0f}:{:.0f}:{:.3f}'.format(
+            *utils.astrometry.deg2dec(std_dec))
+        logging.info('Object {} RA/DEC: {} ({:.3f}) {} ({:.3f}) (corrected for proper motion)'.format(self.params.OBJECT, std_ra_str, std_ra, std_dec_str, std_dec))
+        return np.squeeze(self.world2pix([std_ra, std_dec]))
+
+    
     def pix2world(self, xy, deg=True):
         """Convert pixel coordinates to celestial coordinates
 
@@ -280,14 +436,14 @@ class Image(Frame2D, core.Tools):
                 xyarr = np.atleast_2d([x, y]).T
             else:
                 xyarr = xy
-            coords = orb.utils.astrometry.pix2world(
+            coords = utils.astrometry.pix2world(
                 self.get_wcs_header(), self.dimx, self.dimy, xyarr,
                 self.params.dxmap, self.params.dymap)
         if deg:
             return coords
         else: return np.array(
-            [orb.utils.astrometry.deg2ra(coords[:,0]),
-             orb.utils.astrometry.deg2dec(coords[:,1])])
+            [utils.astrometry.deg2ra(coords[:,0]),
+             utils.astrometry.deg2dec(coords[:,1])])
 
 
     def world2pix(self, radec, deg=True):
@@ -320,7 +476,7 @@ class Image(Frame2D, core.Tools):
                     quiet=True)).T
         else:
             radecarr = np.atleast_2d([ra, dec]).T
-            coords = orb.utils.astrometry.world2pix(
+            coords = utils.astrometry.world2pix(
                 self.get_wcs_header(), self.dimx, self.dimy, radecarr,
                 self.params.dxmap, self.params.dymap)
 
@@ -352,6 +508,7 @@ class Image(Frame2D, core.Tools):
         :param scale: Frame scale in arcsec/pixel
         """
         self.scale = float(scale)
+        self.fov = self.dimx * self.scale / 60.
         self.reset_fwhm_arc(self.fwhm_arc)
 
     def reset_fwhm_arc(self, fwhm_arc):
@@ -488,20 +645,19 @@ class Image(Frame2D, core.Tools):
         C_IN = C_AP + 1. # Inner radius coefficient of the bckg annulus
         MIN_BACK_COEFF = 5. # Minimum percentage of the pixels in the
                             # annulus to estimate the background
-        C_OUT = np.sqrt((MIN_BACK_COEFF*C_AP**2.) + C_IN**2.)
-
+        C_OUT = np.sqrt((MIN_BACK_COEFF * 1.5 * C_AP**2.) + C_IN**2.)
 
         star_list = utils.astrometry.load_star_list(star_list)
         aper = photutils.CircularAperture(star_list,
                                           r=C_AP * self.fwhm_pix)
-
         aper_ann = photutils.CircularAnnulus(star_list,
                                              r_in=C_IN * self.fwhm_pix,
                                              r_out=C_OUT * self.fwhm_pix)
+
         ann_masks = aper_ann.to_mask(method='center')
         ann_medians = list()
         for imask in ann_masks:
-            ivalues = imask.multiply(self.data)
+            ivalues = imask.multiply(self.data)            
             ivalues = ivalues[ivalues > 0]
             if ivalues.size > aper.area() * MIN_BACK_COEFF:
                 ann_medians.append(utils.astrometry.sky_background_level(
@@ -517,7 +673,9 @@ class Image(Frame2D, core.Tools):
         phot_table['photometry'] = phot_table['aperture_sum'] - phot_table['background']
         phot_table['background_err'] = ann_medians[:,1] * aper.area()
         phot_table['photometry_err'] = np.sqrt(np.abs(phot_table['photometry'])) + phot_table['background_err']
-
+        if 'EXPTIME' in self.params:
+            phot_table['flux'] = phot_table['photometry'] / self.params.EXPTIME
+            phot_table['flux_err'] = phot_table['photometry_err'] / self.params.EXPTIME
         return phot_table
     
     def register(self, max_stars_detect=60,
@@ -617,10 +775,10 @@ class Image(Frame2D, core.Tools):
                                 return_index=False):
 
             if param == 'star_list':
-                param_list = fit_params.get_star_list(all_params=True)
+                param_list = utils.astrometry.df2list(fit_params)
             else:
-                param_list = fit_params[:,param]
-            snr = fit_params[:,'snr']
+                param_list = fit_params[param]
+            snr = fit_params['snr']
             
             if snr_min is None:
                 snr_min = max(utils.stats.robust_median(snr), 3.)
@@ -631,8 +789,8 @@ class Image(Frame2D, core.Tools):
             param_list_f = list()
             for istar in range(param_list.shape[0]):
                 if not np.isnan(snr[istar]):
-                    dist = np.sqrt(fit_params[istar,'dx']**2
-                                   + fit_params[istar,'dy']**2)
+                    dist = np.sqrt(fit_params['dx'][istar]**2
+                                   + fit_params['dy'][istar]**2)
                     if snr[istar] > snr_min and dist < dist_min:
                         if param == 'star_list':
                             param_list_f.append(param_list[istar,:])
@@ -670,16 +828,18 @@ class Image(Frame2D, core.Tools):
 
         logging.info("Initial scale: {} arcsec/pixel".format(self.scale))
         logging.info("Initial rotation: {} degrees".format(self.wcs_rotation))
-        logging.info("Initial target position in the image (X,Y): {} {}".format(
+        logging.info("Initial target position in the image (X, Y): {} {}".format(
             self.target_x, self.target_y))
-
+        logging.info("Initial target position in the image (RA, DEC): {} {}".format(
+            self.target_ra, self.target_dec))
         deltax = self.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
 
         # get FWHM
         star_list_fit_init_path, fwhm_arc = self.detect_stars(
             min_star_number=max_stars_detect)
-        star_list_fit_init = utils.astrometry.load_star_list(star_list_fit_init_path)
+        star_list_fit_init = utils.astrometry.load_star_list(
+            star_list_fit_init_path, remove_nans=True)
         ## star_list_fit_init = self.load_star_list(
         ##     './temp/data.Astrometry.star_list)'
         ## fwhm_arc= 1.
@@ -712,7 +872,7 @@ class Image(Frame2D, core.Tools):
             
         # reference star position list in degrees
         star_list_deg = star_list_query[:max_stars_detect*20]
-
+        
         ## Define a basic WCS        
         wcs = utils.astrometry.create_wcs(
             self.target_x, self.target_y,
@@ -724,7 +884,6 @@ class Image(Frame2D, core.Tools):
         rmax = max(self.dimx, self.dimy) / np.sqrt(2)
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_deg), rmax)
-        self.reset_star_list(star_list_pix)
 
         ## Plot star lists #####
         ## import pylab as pl
@@ -767,7 +926,6 @@ class Image(Frame2D, core.Tools):
 
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_deg), rmax)
-        self.reset_star_list(star_list_pix)
 
         logging.info(
             "Histogram guess of the parameters:\n"
@@ -855,7 +1013,6 @@ class Image(Frame2D, core.Tools):
         ## im.set_cmap('gray')
         ## star_list_pix = radius_filter(
         ##     world2pix(wcs, star_list_deg), rmax)
-        ## self.reset_star_list(star_list_pix)
         ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
         ##            edgecolor='blue', linewidth=2., alpha=1.,
         ##            facecolor=(0,0,0,0))
@@ -877,12 +1034,11 @@ class Image(Frame2D, core.Tools):
             star_list_pix = radius_filter(
                 world2pix(wcs, star_list_query), rmax,
                 borders=[0, self.dimx, 0, self.dimy])
-            self.reset_star_list(star_list_pix)
             
             fit_params = self.fit_stars(
                 local_background=True,
                 multi_fit=False, fix_fwhm=True,
-                no_aperture_photometry=True, save=False)
+                no_aperture_photometry=True)
             
             ## SNR and DIST filter
             star_list_fit, index = get_filtered_params(
@@ -924,22 +1080,21 @@ class Image(Frame2D, core.Tools):
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_query), rmax, borders=[
                 0, self.dimx, 0, self.dimy])
-        self.reset_star_list(star_list_pix)
 
         # fit based on SIP corrected parameters
         fit_params = self.fit_stars(
+            star_list_pix,
             local_background=False,
             multi_fit=False, fix_fwhm=True,
-            no_aperture_photometry=True,
-            save=False)
+            no_aperture_photometry=True)
 
-        _x = fit_params[:,'x']
-        _y = fit_params[:,'y']
+        _x = fit_params['x'].values
+        _y = fit_params['y'].values
         _r = np.sqrt((_x - self.dimx / 2.)**2.
                      + (_y - self.dimy / 2.)**2.)
 
-        _dx = fit_params[:, 'dx']
-        _dy = fit_params[:, 'dy']
+        _dx = fit_params['dx'].values
+        _dy = fit_params['dy'].values
 
         # filtering badly fitted stars (jumping stars)
         ## _x[np.nonzero(np.abs(_dx) > 5.)] = np.nan
@@ -953,11 +1108,11 @@ class Image(Frame2D, core.Tools):
                  _x[ix] = np.nan
 
         nonans = np.nonzero(~np.isnan(_x))
-        _w = 1./fit_params[:, 'x_err'][nonans]
-        _x = fit_params[:, 'x'][nonans]
-        _y = fit_params[:, 'y'][nonans]
-        _dx = fit_params[:, 'dx'][nonans]
-        _dy = fit_params[:, 'dy'][nonans]
+        _w = 1./fit_params['x_err'].values[nonans]
+        _x = fit_params['x'].values[nonans]
+        _y = fit_params['y'].values[nonans]
+        _dx = fit_params['dx'].values[nonans]
+        _dy = fit_params['dy'].values[nonans]
 
         dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
         dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
@@ -1020,13 +1175,12 @@ class Image(Frame2D, core.Tools):
             ##     star_list_pix[:,1] += dyspl.ev(star_list_pix_old[:,0],
             ##                                    star_list_pix_old[:,1])
                 
-            self.reset_star_list(star_list_pix)
 
             fit_params = self.fit_stars(
+                star_list_pix,
                 local_background=False,
                 multi_fit=False, fix_fwhm=True,
-                no_aperture_photometry=True,
-                save=False)
+                no_aperture_photometry=True)
             
             ############################
             ### plot stars positions ###
@@ -1190,7 +1344,6 @@ class Image(Frame2D, core.Tools):
         """        
         frame = np.copy(self.data)
         star_list = utils.astrometry.load_star_list(star_list)
-
         protected_kwargs =['profile_name', 'scale', 'fwhm_pix', 'beta', 'fit_tol']
         for ik in protected_kwargs:
             if ik in kwargs:
