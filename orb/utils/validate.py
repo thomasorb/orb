@@ -144,7 +144,8 @@ def index(a, a_min, a_max, clip=True):
     :param clip: (Optional) If True return an index inside the
       boundaries, else: raise an exception (default True).
     """
-    a = np.array(a).astype(int)
+    a = np.squeeze(np.array(a).astype(int))
+    if a.size == 1: a = int(a)
     if not isinstance(a_min, int) or not isinstance(a_max, int):
         raise orb.utils.err.ValidationError('min and max boundaries must be integers')
     if np.any(a < a_min) or np.any(a >= a_max):

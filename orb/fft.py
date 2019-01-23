@@ -158,7 +158,8 @@ class Interferogram(core.Vector1d):
         """
         # create ramp
         zeros_vector = np.zeros(self.dimx, dtype=self.data.dtype)
-        if self.is_right_sided():
+
+        if self.is_right_sided():        
             sym_len = self.params.zpd_index * 2
             zeros_vector[:sym_len] = np.linspace(0,2,sym_len)
             zeros_vector[sym_len:] = 2.
@@ -166,7 +167,10 @@ class Interferogram(core.Vector1d):
             sym_len = (self.dimx - self.params.zpd_index) * 2
             zeros_vector[-sym_len:] = np.linspace(0,2,sym_len)
             zeros_vector[:-sym_len] = 2.
-        
+
+        if sym_len > self.dimx / 2.:
+            warnings.warn('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
+            
         self.data *= zeros_vector
 
         return zeros_vector
@@ -225,11 +229,15 @@ class Interferogram(core.Vector1d):
 
         return spec
 
-    def get_spectrum(self):
-        """Classical spectrum computation method. Returns a Spectrum instance."""
+    def get_spectrum(self, mertz=True):
+        """Classical spectrum computation method. Returns a Spectrum instance.
+
+        :param mertz: If True, multiply by Mertz ramp. Must be used for assymetric interferograms.
+        """
         new_interf = self.copy()
         new_interf.subtract_mean()
-        new_interf.multiply_by_mertz_ramp()
+        if mertz:
+            new_interf.multiply_by_mertz_ramp()
         return new_interf.transform()
 
     def get_phase(self):

@@ -166,6 +166,51 @@ class HDFCube(core.Data, core.Tools):
         
         return self[x_min:x_max, y_min:y_max, zmin_zmax]
 
+    def get_data_from_region(self, region):
+        """Return a list of vectors extracted along the 3rd axis at the pixel
+        positions defined by a list of pixels.
+
+        .. note:: pixels do not have to be contiguous but, as the
+          quadrant containing all the pixels is extracted primarily to
+          speed up the process, they should be contained in a field
+          small enough to avoid filling the RAM (a 400x400 pixels box
+          is generally a good limit).
+
+        :param region: A list of pixels having the same format as the
+          list returned by np.nonzero(), i.e. (x_positions_1d_array,
+          y_positions_1d_array).
+        """
+        SIZE_LIMIT = 400*400
+        
+        if len(region) != 2: raise TypeError('badly formatted region.')
+        if not utils.validate.is_iterable(region[0], raise_exception=False):
+            raise TypeError('badly formatted region.')
+        if not utils.validate.is_iterable(region[1], raise_exception=False):
+            raise TypeError('badly formatted region.')
+        if not len(region[0]) == len(region[1]):
+            raise TypeError('badly formatted region.')
+
+        xmin = self.validate_x_index(np.nanmin(region[0]), clip=False)
+        xmax = self.validate_y_index(np.nanmax(region[0]), clip=False) + 1
+        ymin = self.validate_x_index(np.nanmin(region[1]), clip=False)
+        ymax = self.validate_y_index(np.nanmax(region[1]), clip=False) + 1
+
+        if (xmax - xmin)  * (ymax - ymin) > SIZE_LIMIT:
+            raise StandardError('size limit exceeded, try a smaller region')
+
+        quadrant = self.get_data(xmin, xmax, ymin, ymax, 0, self.dimz)
+        xpix = np.copy(region[0])
+        ypix = np.copy(region[1])
+        xpix -= xmin
+        ypix -= ymin
+
+        out = list()
+        for i in range(len(xpix)):
+            ix = xpix[i]
+            iy = ypix[i]
+            out.append(quadrant[ix, iy, :])
+
+        return np.array(out)
         
     def has_dataset(self, path):
         """Check if a dataset is present"""
@@ -904,18 +949,40 @@ class InterferogramCube(Cube):
     observation parameters are known.
     """
 
-    def get_interferogram(self, x, y):
+    def get_interferogram(self, x, y, r=0):
         """Return an orb.fft.Interferogram instance
         
-        :param x: x position
-        :param y: y position
+        :param x: x position 
+        
+        :param y: y position 
+
+        :param r: (Optional) If r > 0, spectrum is integrated over a
+          circular aperture of radius r. In this case the number of
+          pixels is returned as a parameter: pixels
+
         """
         self.validate()
-        x = self.validate_x_index(x, clip=False)
-        y = self.validate_x_index(y, clip=False)
 
-        calib_coeff = self.get_calibration_coeff_map()[x, y]
-        return fft.Interferogram(self[int(x), int(y), :], params=self.params,
+        x = self.validate_x_index(x, clip=False)
+        y = self.validate_y_index(y, clip=False)
+
+        if r == 0:
+            calib_coeff = self.get_calibration_coeff_map()[x, y]
+            interf = self[int(x), int(y), :]
+            params = dict(self.params)
+        else:
+            xmin, xmax, ymin, ymax = utils.image.get_box_coords(x, y, (int(r)+1)*2+1,
+                                                                0, self.dimx,
+                                                                0, self.dimy)
+            X, Y = np.mgrid[0:self.dimx,0:self.dimy]
+            R = np.sqrt(((X-x)**2 + (Y-y)**2))
+            region = np.nonzero(R <= r)
+            calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
+            interfs = self.get_data_from_region(region)
+            interf = np.nansum(interfs, axis=0)
+            params = dict(self.params)
+            params['pixels'] = len(interfs)
+        return fft.Interferogram(interf, params=params,
                                  zpd_index=self.params.zpd_index, calib_coeff=calib_coeff)
 
     def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
