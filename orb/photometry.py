@@ -1,4 +1,4 @@
-0#!/usr/bin/python
+#!/usr/bin/python
 # *-* coding: utf-8 *-*
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: photometry.py
@@ -217,7 +217,7 @@ class Standard(core.Tools):
 
         :param file_path: Path to the Oke dat file ('fXX.dat').
         """
-        std_file = self.open_file(file_path, 'r')
+        std_file = utils.io.open_file(file_path, 'r')
         
         spec_ang = list()
         spec_flux = list()
@@ -244,7 +244,7 @@ class Standard(core.Tools):
         :param file_path: Path to the Massey dat file (generally
           'spXX.dat').
         """
-        std_file = self.open_file(file_path, 'r')
+        std_file = utils.io.open_file(file_path, 'r')
         
         spec_ang = list()
         spec_mag = list()
