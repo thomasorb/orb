@@ -36,7 +36,7 @@ class Simulator(object):
 
     def __init__(self, step_nb, filter_name, instrument='sitelle'):
 
-        self.tools = orb.core.Tools(instrument=instrument, silent=True)
+        self.tools = orb.core.Tools(instrument=instrument)
         
         self.params = orb.core.ROParams()
         if step_nb <= 0: raise ValueError('step_nb must be > 0')
@@ -63,7 +63,7 @@ class Simulator(object):
 
 
     def get_interferogram(self):
-        return orb.fft.Interferogram(np.copy(self.data), params=self.params)
+        return orb.fft.Interferogram(np.copy(self.data), params=self.params, exposure_time=1)
 
     def add_line(self, sigma, jitter=0):
         """
@@ -128,8 +128,7 @@ class Simulator(object):
         if np.any(np.isnan(a.data)):
             raise ValueError('spectrum must be defined at least on the whole filter bandpass')
         
-        a = np.concatenate((a.data, np.zeros(a.step_nb)))
-        
+        a = np.concatenate((a.data, np.zeros(a.dimx))).astype(float)
 
         a_ifft = np.fft.ifft(a)
 

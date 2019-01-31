@@ -30,22 +30,29 @@ import utils.vector
 import utils.err
 import core
 import scipy
+import gvar
 
 import fit
+
 
 #################################################
 #### CLASS Interferogram ########################
 #################################################
 
 class Interferogram(core.Vector1d):
+
     """Interferogram class.
     """
-    needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path'
+    needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path', 'exposure_time'
         
-    def __init__(self, interf, axis=None, params=None, **kwargs):
+    def __init__(self, interf, err=None, axis=None, params=None, **kwargs):
         """Init method.
 
-        :param vector: A 1d numpy.ndarray interferogram.
+
+        :param interf: A 1d numpy.ndarray interferogram in counts (not
+          counts/s)
+
+        :param err: (Optional) Error vector. A 1d numpy.ndarray (default None).
 
         :param axis: (optional) A 1d numpy.ndarray axis (default None)
           with the same size as vector.
@@ -57,8 +64,9 @@ class Interferogram(core.Vector1d):
           supply observation parameters not included in the params
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.
+
         """       
-        core.Vector1d.__init__(self, interf, axis=axis, params=params, **kwargs)
+        core.Vector1d.__init__(self, interf, axis=axis, err=err, params=params, **kwargs)
 
         if self.params.zpd_index < 0 or self.params.zpd_index >= self.dimx:
             raise ValueError('zpd must be in the interferogram')
@@ -72,32 +80,29 @@ class Interferogram(core.Vector1d):
             raise StandardError('provided axis is inconsistent with the opd axis computed from the observation parameters')
         
         if self.axis.dimx != self.dimx:
-            raise ValueError('axis must have the same size as the interferogram')        
+            raise ValueError('axis must have the same size as the interferogram')
 
-    def __getitem__(self, key):
-        """Implement __getitem__ special method and return a valid
-        interferogram class (with its parameters changed to reflect the
-        slicing)
-        """
-        axis = np.zeros(self.dimx)
-        axis[self.params.zpd_index] = 1
-        axis = axis.__getitem__(key)
-        if axis.size <= 1:
-            raise ValueError('slicing cannot return an interferogram with less than 2 samples. Use self.data[index] instead of self[index].')
-        if np.max(axis) != 1:
+
+    def crop(self, xmin, xmax):
+        """Crop data. see Vector1d.crop()"""
+        out = core.Vector1d.crop(self, xmin, xmax, returned_class=core.Vector1d)
+        
+        if out.axis.data.size <= 1:
+            raise ValueError('cropping cannot return an interferogram with less than 2 samples. Use self.data[index] instead.')
+        
+        if out.params.zpd_index < xmin or out.params.zpd_index >= xmax:
             raise RuntimeError('ZPD is not anymore in the returned interferogram')
-        zpd_index = np.argmax(axis)
-        params = self.params
-        params['zpd_index'] = zpd_index
-        return self.__class__(self.data.__getitem__(key), params=params)
 
+        zpd_index = out.params.zpd_index - xmin
+        out.params.reset('zpd_index', zpd_index)
+        return self.__class__(out)
+        
         
     def subtract_mean(self):
         """substraction of the mean of the interferogram where the
         interferogram is not nan
         """
         self.data[~np.isnan(self.data)] -= np.nanmean(self.data)
-
 
     def subtract_low_order_poly(self, order=3):
         """ low order polynomial substraction to suppress low
@@ -132,6 +137,8 @@ class Interferogram(core.Vector1d):
             window = utils.fft.gaussian_window(window_type, x)
 
         self.data *= window
+        if self.has_err():
+            self.err *= window
 
 
     def is_right_sided(self):
@@ -144,10 +151,10 @@ class Interferogram(core.Vector1d):
     def symmetric(self):
         """Return an interferogram which is symmetric around the zpd"""
         if self.is_right_sided():
-            return self[:self.params.zpd_index * 2 - 1]
+            return self.crop(0, self.params.zpd_index * 2 - 1)
         else:
             shortlen = self.dimx - self.params.zpd_index
-            return self[max(self.params.zpd_index - shortlen, 0):]
+            return self.crop(max(self.params.zpd_index - shortlen, 0), self.dimx)
 
     def multiply_by_mertz_ramp(self):
         """Multiply by Mertz (1976) ramp function to avoid counting
@@ -172,6 +179,8 @@ class Interferogram(core.Vector1d):
             warnings.warn('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
             
         self.data *= zeros_vector
+        if self.has_err():
+            self.err *= zeros_vector
 
         return zeros_vector
 
@@ -213,7 +222,12 @@ class Interferogram(core.Vector1d):
             axis_max = (self.dimx - 1) * axis_step
             axis = core.Axis(np.linspace(0, axis_max, self.dimx))
 
-        spec = Spectrum(interf_fft, axis=axis.data, params=self.params)
+        # compute err (photon noise)
+        if self.has_err():
+            err = np.ones_like(self.data, dtype=float) * np.sqrt(np.sum(self.err**2))
+        else: err = None
+            
+        spec = Spectrum(interf_fft, err=err, axis=axis.data, params=self.params)
 
         # spectrum is flipped if order is even
         if self.has_params():
@@ -247,6 +261,165 @@ class Interferogram(core.Vector1d):
         new_interf.subtract_mean()
         new_spectrum = new_interf.transform()
         return new_spectrum.get_phase().cleaned()
+
+#################################################
+#### CLASS Interferogram ########################
+#################################################
+
+class RealInterferogram(Interferogram):
+    """Class used for an observed interferogram in counts"""
+    
+    def __init__(self, *args, **kwargs):
+        """.. warning:: in principle data unit should be counts (not
+          counts / s) so that computed noise value and helpful methods
+          keep working. The sky interferogram should not be subtracted
+          from the input interferogram. It can be done once the
+          interferogram is initialized with the method subtract_sky().
+
+        parameters are the same as the parent Interferogram
+        class. Note that, if not supplied in the arguments, the error
+        vector (err) which gives the photon noise will be computed as
+        sqrt(data)
+
+        important parameters that must supplied in params:
+
+        - pixels: number of integrated pixels (default 1). Must be an
+          integer.
+
+        - source_counts: total number of counts in the source. Must be
+          a float. Used to estimate the modulation
+          efficiency. It the given interferogram is raw (no sky
+          subtraction, no combination, no stray light removal...) the
+          total number of counts of the source is bascally
+          np.sum(data). This raw number will be actualized when
+          sky/stray light will be subtracted.
+
+        """
+        Interferogram.__init__(self, *args, **kwargs)
+
+        # check if integrated
+        if 'pixels' not in self.params:
+            self.params.reset('pixels', 1)
+        elif not isinstance(self.params.pixels, int):
+            raise TypeError('pixels must be an integer')
+
+        # check source_counts
+        if 'source_counts' not in self.params:
+            if np.nanmin(self.data) < 0:
+                warnings.warn('interferogram may be a combined interferogram. source_counts can be wrong')
+            self.params.reset('source_counts', np.sum(np.abs(self.data)))
+        elif not isinstance(self.params.source_counts, float):
+            raise TypeError('source_counts must be a float')
+            
+        # compute photon noise
+        if self.has_err(): # supplied err argument should have been
+                           # read during Vector1d init. Only
+                           # self.err is tested
+            if np.nanmin(self.data) < 0:
+                warnings.warn('interferogram may be a combined interferogram. photon noise can be wrong.')
+            
+            self.err = np.sqrt(np.abs(self.data))
+            
+
+    def math(self, opname, arg=None):
+        """Do math operations and update the 'source_counts' value.
+
+        :param opname: math operation, must be a numpy.ufuncs.
+
+        :param arg: If None, no argument is supplied. Else, can be a
+          float or a Vector1d instance.
+        """
+        out = Interferogram.math(self, opname, arg=arg)
+
+        if arg is None:
+            source_counts = getattr(np, opname)(self.params.source_counts)
+        else:
+            try:
+                _arg = arg.params.source_counts
+            except Exception:
+                _arg = arg    
+            source_counts = getattr(np, opname)(self.params.source_counts, _arg)
+            
+        out.params.reset('source_counts', source_counts)
+        
+    
+            
+    def subtract_sky(self, sky):
+        """Subtract sky interferogram. 
+        
+        The values of the parameter 'pixels' in both this
+        interferogram and the sky interferogram should be set to the
+        number of integrated pixels.
+        """
+        sky = sky.copy()
+        sky.data *= self.params.pixels / sky.params.pixels
+        self = self.math('subtract', sky)
+        
+        
+    def combine(self, interf, transmission=None, ratio=None):
+        """Combine two interferograms (one from each camera) and return the result
+
+        :param interf: Another Interferogram instance coming from the
+          complementary camera.
+
+        :param transmission: (Optional) Must be a Vector1d instance. if None
+          supplied, transmission is computed from the combined
+          interferogram which may add some noise (default None).
+
+        :param ratio: (Optional) optical transmission ratio self /
+          interf. As the beamsplitter and the differential gain of the
+          cameras produce a difference in the number of counts
+          collected in one camera or the other, the interferograms
+          must be corrected for this ratio before being combined. If
+          None, this ratio is computed from the provided
+          interferograms.
+        """
+        # project interf
+        interf = interf.project(self.axis)
+
+        # compute ratio
+        if ratio is None:
+            ratio = np.mean(self.data) / np.mean(interf.data)
+
+        corr = 1. - (1. - ratio) / 2.
+
+        comb = self.copy()
+
+        # compute transmission and correct for it
+        if transmission is None:
+            transmission = self.compute_transmission(interf)
+
+        # combine interferograms
+        _comb = (self.get_gvar() / corr - interf.get_gvar() * corr) / transmission.get_gvar()
+        
+        comb.data = gvar.mean(_comb)
+        comb.err = gvar.sdev(_comb)
+
+        # compute photon_noise
+        comb.params.reset('source_counts', interf.params.source_counts
+                          + self.params.source_counts)
+        
+        return comb
+
+    def compute_transmission(self, interf):
+        """Return the transmission vector computed from the combination of two
+        complementary interferograms.
+
+        :param interf: Another Interferogram instance coming from the
+          complementary camera.
+        """
+        NORM_PERCENTILE = 99
+
+        transmission = self.add(interf)
+        transmission.data /= np.nanpercentile(transmission.data, NORM_PERCENTILE)
+        return transmission                
+
+    def transform(self):
+        """Zero padded fft. See Interferogram.transform()
+        """
+        out = Interferogram.transform(self)
+
+        return RealSpectrum(out)        
 
 
 #################################################
@@ -425,7 +598,7 @@ class Phase(core.Cm1Vector1d):
 class Spectrum(core.Cm1Vector1d):
     """Spectrum class
     """
-    def __init__(self, spectrum, axis=None, params=None, **kwargs):
+    def __init__(self, spectrum, err=None, axis=None, params=None, **kwargs):
         """Init method.
 
         :param vector: A 1d numpy.ndarray vector.
@@ -443,7 +616,7 @@ class Spectrum(core.Cm1Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        core.Cm1Vector1d.__init__(self, spectrum, axis=axis,
+        core.Cm1Vector1d.__init__(self, spectrum, err=err, axis=axis,
                                   params=params, **kwargs)
         
         if not np.iscomplexobj(self.data):
@@ -584,3 +757,48 @@ class Spectrum(core.Cm1Vector1d):
             filter_file_path=filter_file_path,
             fmodel=fmodel, **kwargs)
 
+#################################################
+#### CLASS RealSpectrum #########################
+#################################################
+
+class RealSpectrum(Spectrum):
+    """Spectrum class computed from real interferograms (in counts)
+    """
+    def __init__(self, *args, **kwargs):
+        """Init method.
+
+        important parameters that must be supplied in params (if the
+          spectrum does not come from Interfrogram.transform()):
+
+        - pixels: number of integrated pixels (default 1)
+
+        - source_counts: total number of counts in the source. Must be
+          a float. Used to estimate the modulation
+          efficiency.
+        """
+        Spectrum.__init__(self, *args, **kwargs)
+        
+        # check if integrated
+        if 'pixels' not in self.params:
+            self.params.reset('pixels', 1)
+
+        # compute photon noise
+        if self.has_err():
+            raise StandardError('err vector (photon noise) must be supplied')
+
+        # recompute counts in the original interferogram if needed
+        if 'source_counts' not in self.params:
+            raise StandardError('source_counts must be supplied in the parameters')
+
+    def compute_me(self):
+        """Return the modulation efficiency, computed from the ratio between
+        the number of counts in the original interferogram and the
+        number of counts in the spectrum.
+        """
+        _data = gvar.gvar(np.abs(self.data), np.abs(self.err))
+        xmin, xmax = self.get_filter_bandpass_pix(border_ratio=-0.05)
+        _data[:xmin] = 0
+        _data[xmax:] = 0
+        _source_counts = gvar.gvar(self.params.source_counts,
+                                   np.sqrt(self.params.source_counts))
+        return np.sum(_data) / _source_counts

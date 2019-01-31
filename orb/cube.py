@@ -982,8 +982,9 @@ class InterferogramCube(Cube):
             interf = np.nansum(interfs, axis=0)
             params = dict(self.params)
             params['pixels'] = len(interfs)
-        return fft.Interferogram(interf, params=params,
-                                 zpd_index=self.params.zpd_index, calib_coeff=calib_coeff)
+        return fft.RealInterferogram(interf, params=params,
+                                     zpd_index=self.params.zpd_index,
+                                     calib_coeff=calib_coeff)
 
     def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
         """Return mean interferogram in a box [xmin:xmax, ymin:ymax, :]
@@ -1003,9 +1004,9 @@ class InterferogramCube(Cube):
         
         calib_coeff = np.nanmean(self.get_calibration_coeff_map()[xmin:xmax, ymin:ymax])
         interf = np.nanmean(np.nanmean(self[xmin:xmax, ymin:ymax, :], axis=0), axis=0)
-        return fft.Interferogram(interf, params=self.params,
-                                 zpd_index=self.params.zpd_index,
-                                 calib_coeff=calib_coeff)
+        return fft.RealInterferogram(interf, params=self.params,
+                                     zpd_index=self.params.zpd_index,
+                                     calib_coeff=calib_coeff)
 
     
 #################################################

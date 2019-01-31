@@ -56,6 +56,8 @@ import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
 
+import gvar
+
 from scipy import interpolate
 import pandas
 
@@ -437,7 +439,7 @@ class ROParams(dict):
         self.update(state)
 
     def reset(self, key, value):
-        """Force config parameter reset"""
+        """Force parameter reset"""
         dict.__setitem__(self, key, value)
 
     def convert(self):
@@ -1741,18 +1743,21 @@ class Data(object):
     """
     needed_params = ()
 
-    def __init__(self, data, axis=None, params=None, mask=None, **kwargs):
+    def __init__(self, data, err=None, axis=None, params=None, mask=None, **kwargs):
         """Init method.
 
-        :param data: A numpy.ndarray a path to an hdf5 file. If an
-          hdf5 file is loaded the values of the its axis, params,
-          and mask can be changed by setting their respective keywords
-          to something else than None. Note that file parameters are
-          updated from the dictionary supplied with the params keyword
-          and the kwargs.
+        :param data: A numpy.ndarray or a path to an
+          hdf5 file. If an hdf5 file is loaded the values of the its
+          axis, params, and mask can be changed by setting their
+          respective keywords to something else than None. Note that
+          file parameters are updated from the dictionary supplied
+          with the params keyword and the kwargs.
 
-        :param axis: (optional) A 1d numpy.ndarray axis (default None)
-          with the same size as vector.
+        :param err: (Optional) Error on data. A 1d numpy.ndarray axis
+          with the same size as vector (default None) .
+
+        :param axis: (Optional) Data axis. A 1d numpy.ndarray axis
+          with the same size as vector (default None).
 
         :param params: (Optional) A dict containing additional
           parameters.
@@ -1772,6 +1777,7 @@ class Data(object):
         self.axis = None
         self.params = dict()
         self.mask = None
+        self.err = None
         
         # load from file
         if isinstance(data, str):
@@ -1810,6 +1816,10 @@ class Data(object):
                         if axis is None:
                             self.axis = Axis(hdffile['/axis'][:])
 
+                    if '/err' in hdffile:
+                        if err is None:
+                            self.err = hdffile['/err'][:]
+
                     # load mask
                     if '/mask' in hdffile:
                         if mask is None:
@@ -1818,12 +1828,18 @@ class Data(object):
                 raise ValueError('extension not recognized, must be fits or hdf5')
 
         # load from another instance
-        elif isinstance(data, self.__class__):
+        elif isinstance(data, self.__class__) or isinstance(self, data.__class__):
+
             if data.data.ndim < 3:
                 _data = data.copy()
             else: _data = data
             
             self.data = _data.data
+
+            # load error
+            if _data.err is not None:
+                if err is None:
+                    self.err = _data.err
 
             # load params
             if _data.params is not None:
@@ -1831,12 +1847,12 @@ class Data(object):
 
             # load axis
             if _data.axis is not None:
-                if axis is not None:
+                if axis is None:
                     self.axis = _data.axis
 
             # load mask
             if _data.mask is not None:
-                if mask is not None:
+                if mask is None:
                     self.mask = _data.mask
             
         # load from np.ndarray
@@ -1879,11 +1895,20 @@ class Data(object):
             if iparam not in self.params:
                 raise StandardError('param {} must be set'.format(iparam))
 
+        # load err
+        if err is not None:
+            if not isinstance(err, np.ndarray):
+                raise TypeError('input err is a {} but must be a numpy.ndarray'.format(type(err)))
+
+            if err.shape != self.data.shape:
+                raise TypeError('err must have the same shape as data')
+            self.err = err
+            
         # load axis
         if axis is not None:
             axis = Axis(axis)
             if axis.dimx != self.dimx:
-                raise TypeError('axis must have the same length as vector')
+                raise TypeError('axis must have the same length as data first axis')
             self.axis = axis
 
         # load mask
@@ -1907,6 +1932,7 @@ class Data(object):
         else:
             self.params = ROParams(self.params)
 
+
     def __getitem__(self, key):
         _data = self.data.__getitem__(key)
         if self.has_mask():
@@ -1915,6 +1941,16 @@ class Data(object):
             else:
                 if not self.mask.__getitem__(key): _data = np.nan
         return _data
+
+    def set_writeable(self, write):
+        """Set writeability of the data.
+        """
+        self.data.flags.writeable = write
+
+    def is_writeable(self):
+        """Return False if data is read-only.
+        """
+        return bool(self.data.flags.writeable)
     
     def has_params(self):
         """Check the presence of observation parameters"""
@@ -2016,6 +2052,18 @@ class Data(object):
         :param header: An astropy.io.fits.Header instance.
         """
         self.update_params(header)
+
+    def has_err(self):
+        if self.err is None: return False
+        return True
+        
+    def assert_err(self):
+        """Assert the presence of an error"""
+        if not self.has_err(): raise StandardError('No error supplied')
+
+    def get_err(self):
+        """Return a copy of self.err"""
+        return np.copy(self.err)
         
     def has_axis(self):
         if self.axis is None: return False
@@ -2071,6 +2119,13 @@ class Data(object):
         _mask[np.isnan(_mask)] = 0
         return _mask.astype(bool)
 
+    def get_gvar(self):
+        """Return data and err as a gvar.GVar instance"""
+        if self.has_err():
+            return gvar.gvar(self.data, self.err)
+        else:
+            return gvar.gvar(self.data)
+                    
     def copy(self, data=None, **kwargs):
         """Return a copy of the instance
 
@@ -2088,7 +2143,12 @@ class Data(object):
             _axis = np.copy(self.axis.data)
         else:
             _axis = None
-            
+
+        if self.has_err():
+            _err = np.copy(self.err)
+        else:
+            _err = None
+
         if self.has_mask():
             _mask = np.copy(self.mask)
         else:
@@ -2099,6 +2159,7 @@ class Data(object):
             
         return self.__class__(
             data,
+            err=_err,
             axis=_axis,
             params=_params,
             mask=_mask,
@@ -2133,13 +2194,21 @@ class Data(object):
                     '/mask',
                     data=self.mask)
 
+            if self.has_err():
+                hdffile.create_dataset(
+                    '/err',
+                    data=self.err)
+
+
     def to_fits(self, path):
         """write data to a FITS file. 
 
-        Note that information may be lost in the process. The only
-        guaranteed format is hdf5 (usr writeto() method instead)
+        Note that most of the information will be lost in the
+        process. The only output guaranteed format is hdf5 (usr
+        writeto() method instead)
 
         :param path: Path to the FITS file
+
         """
         utils.io.write_fits(path, self.data, fits_header=self.get_header())
         
@@ -2164,6 +2233,8 @@ class Vector1d(Data):
         """Reverse data. Do not reverse the axis.
         """
         self.data = self.data[::-1]
+        if self.has_err():
+            self.err = self.err[::-1]
 
     def project(self, new_axis, returned_class=None):
         """Project vector on a new axis
@@ -2186,9 +2257,28 @@ class Vector1d(Data):
         f = interpolate.interp1d(self.axis.data.astype(np.float128),
                                  self.data.astype(np.float128),
                                  bounds_error=False)
-        return returned_class(
-            f(new_axis.data), axis=new_axis.data, params=self.params)
 
+        if self.has_err():
+            ferr = interpolate.interp1d(self.axis.data.astype(np.float128),
+                                     self.err.astype(np.float128),
+                                     bounds_error=False)
+            new_err = ferr(new_axis.data)
+        else:
+            new_err = None
+
+        return returned_class(
+            f(new_axis.data), err=new_err, axis=new_axis.data, params=self.params)
+
+
+    def crop(self, xmin, xmax, returned_class=None):
+        """Crop data. 
+        :param xmin: xmin
+        :param xmax: xmax
+        """
+        return self.project(Axis(self.axis[xmin:xmax]),
+                            returned_class=returned_class)
+
+        
     def math(self, opname, arg=None):
         """Do math operations with another vector instance.
 
@@ -2200,20 +2290,44 @@ class Vector1d(Data):
         self.assert_axis()
 
         out = self.copy()
-        try:
-            if arg is None:
-                getattr(np, opname)(out.data, out=out.data)
-            else:
-                if isinstance(arg, Vector1d):
-                    arg = arg.project(out.axis).data
-                elif np.size(arg) != 1:
-                    raise TypeError('arg must be a float or a Vector1d instance')
+        writeable = out.is_writeable()
+        out.set_writeable(True)
+        
+        if not hasattr(np, opname):
+            raise AttributeError('unknown operation: {}'.format(e))
 
-                getattr(np, opname)(out.data, arg, out=out.data)
+        # project arg on self axis
+        if arg is not None:
+            if isinstance(arg, Vector1d):
+                arg = arg.project(out.axis).data
 
-        except AttributeError:
-            raise AttributeError('unknown operation')
+            elif np.size(arg) != 1:
+                raise TypeError('arg must be a float or a Vector1d instance')
 
+        # transform self in gvar
+        if out.has_err():
+            _out = gvar.gvar(out.data, out.err)
+        else:
+            _out = gvar.gvar(out.data)
+
+        # transform arg in gvar
+        if arg is not None:
+            _arg = arg
+            if isinstance(_arg, Vector1d):
+                if arg.has_err():
+                    _arg = gvar.gvar(arg.data, arg.err)
+
+        # do the math
+        if arg is None:
+            _out = getattr(np, opname)(_out)
+        else:
+            _out = getattr(np, opname)(_out, _arg)
+
+        # transform gvar to data and err
+        out.data = gvar.mean(_out)
+        out.err = gvar.sdev(_out)
+            
+        out.set_writeable(writeable)
         return out
 
     def add(self, vector):
@@ -2344,11 +2458,12 @@ class Cm1Vector1d(Vector1d):
     def get_filter_bandpass_pix(self, border_ratio=0.):
         """Return filter bandpass in channels
 
-        :param border_ratio: (Optional) Relative portion of the phase
-          in the filter range removed (can be a negative float,
-          default 0.)
+        :param border_ratio: (Optional) Relative portion of filter
+          border removed (can be a negative float to get a bandpass
+          larger than the filter, default 0.)
         
         :return: (min, max)
+
         """
         if not -0.2 <= border_ratio <= 0.2:
             raise ValueError('border ratio must be between -0.2 and 0.2')
