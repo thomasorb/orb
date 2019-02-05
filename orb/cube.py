@@ -236,6 +236,14 @@ class HDFCube(core.Data, core.Tools):
                 raise AttributeError('{} dataset not in the hdf5 file'.format(path))
             return f[path][:]
 
+    def get_datasets(self):
+        """Return all datasets contained in the cube
+        """
+        ds = list()
+        with self.open_hdf5() as f:
+            for path in f:
+                ds.append(path)
+        return ds
         
     def has_same_2D_size(self, cube_test):
         """Check if another cube has the same dimensions along x and y
@@ -967,27 +975,9 @@ class Cube(HDFCube):
         return core.Vector1d(interf, params=params,
                              zpd_index=self.params.zpd_index,
                              calib_coeff=calib_coeff)
-
-#################################################
-#### CLASS SpectralCube ####################
-#################################################
-class SpectralCube(Cube):
-    """Provide additional methods for a spectral cube when
-    observation parameters are known.
-    """
-    def get_spectrum(self, *args, **kwargs):
-        """Return an orb.fft.Interferogram instance.
-
-        See Cube.get_zvector for the parameters.        
-        """
-        spec = Cube.get_zvector(self, *args, **kwargs)
-        if 'source_counts' not in spec.params:
-            spec.params.reset('source_counts', 0)
-        return fft.RealSpectrum(spec)
-
     
 #################################################
-#### CLASS InteferogramCube ####################
+#### CLASS InteferogramCube #####################
 #################################################
 class InterferogramCube(Cube):
     """Provide additional methods for an interferogram cube when
@@ -1797,3 +1787,19 @@ class FDCube(core.Tools):
 #             return data
         
         
+#################################################
+#### CLASS SpectralCube #########################
+#################################################
+class SpectralCube(Cube):
+    """Provide additional methods for a spectral cube when
+    observation parameters are known.
+    """
+    def get_spectrum(self, *args, **kwargs):
+        """Return an orb.fft.Interferogram instance.
+
+        See Cube.get_zvector for the parameters.        
+        """
+        spec = Cube.get_zvector(self, *args, **kwargs)
+        if 'source_counts' not in spec.params:
+            spec.params.reset('source_counts', 0)
+        return fft.RealSpectrum(spec)
