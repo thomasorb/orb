@@ -1927,10 +1927,7 @@ class Data(object):
                     raise TypeError('mask has shape {} but must have shape {}'.format(mask.shape, self.data.shape[0:2]))
             self.mask = mask
                
-        if len(self.params) == 0:
-            self.params = None
-        else:
-            self.params = ROParams(self.params)
+        self.params = ROParams(self.params) # self.params must always be an ROParams instance
 
 
     def __getitem__(self, key):
@@ -1955,13 +1952,13 @@ class Data(object):
     def has_params(self):
         """Check the presence of observation parameters"""
         if self.params is None:
-            return False
+            raise TypeError('params should not be None')
         elif len(self.params) == 0:
             return False
         else: return True
 
     def assert_params(self):
-        """Assert the presence of needed parameters"""
+        """Assert the presence of parameters"""
         if not self.has_params():
             raise StandardError(
                 'Parameters not supplied, please give: {} at init'.format(
@@ -1999,7 +1996,7 @@ class Data(object):
 
         elif not isinstance(params, dict):
             raise TypeError('params must be a dict or an astropy.io.fits.Header instance')
-
+            
         for ipar in params:
             self.set_param(ipar, params[ipar])
         self.assert_params()
@@ -2032,9 +2029,6 @@ class Data(object):
                 except (VerifyError, ValueError, TypeError):
                     pass
                     
-                    
-                    
-
         warnings.simplefilter('ignore', category=VerifyWarning)
         warnings.simplefilter('ignore', category=AstropyUserWarning)
         header = pyfits.Header(cards)
@@ -2044,7 +2038,15 @@ class Data(object):
         return header
 
     def get_wcs(self):
-        return pywcs.WCS(self.get_header(), relax=True)
+        naxis = None
+        if self.data.ndim == 3: naxis = 2
+        
+        warnings.simplefilter('ignore', category=VerifyWarning)
+        warnings.simplefilter('ignore', category=AstropyUserWarning)
+        return pywcs.WCS(self.get_header(), relax=True, naxis=naxis)
+
+    def get_wcs_header(self):
+        return self.get_wcs().to_header(relax=True)
 
     def set_header(self, header):
         """update params from an astropy.io.fits.Header instance.

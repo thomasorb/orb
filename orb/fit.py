@@ -2284,7 +2284,7 @@ class Cm1InputParams(InputParams):
         if self.base_params.filter_file_path is None:
             raise utils.err.FitInputError('filter_file_path is None')
 
-        filter_function = self.filterfile.project(Axis(self.axis))
+        filter_function = self.filterfile.project(Axis(self.axis)).data
         
 
         default_params = Params()

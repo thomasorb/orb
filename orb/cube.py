@@ -34,10 +34,11 @@ import old
 import utils.io
 import utils.misc
 import utils.astrometry
-
-import scipy.interpolate
 import fft
 import image
+
+import scipy.interpolate
+import gvar
 
 #################################################
 #### CLASS HDFCube ##############################
@@ -93,6 +94,24 @@ class HDFCube(core.Data, core.Tools):
         # init Tools and Data
         if not self.is_old:
             instrument = utils.misc.read_instrument_value_from_file(self.cube_path)
+
+        # load header if present and update params 
+        header = self._read_old_header()
+        if 'params' not in kwargs:
+            kwargs['params'] = header
+        else:
+            if kwargs['params'] is None:
+                kwargs['params'] = header
+            else:
+                for ikey in header:
+                    if ikey not in kwargs['params']:
+                        kwargs['params'][ikey] = header[ikey]
+        
+        # check if instrument is in params
+        if instrument is None:
+            if 'params' in kwargs:
+                if 'instrument' in kwargs['params']:
+                    instrument = kwargs['params']['instrument']
         
         core.Tools.__init__(self, instrument=instrument,
                             data_prefix=data_prefix,
@@ -102,7 +121,9 @@ class HDFCube(core.Data, core.Tools):
             core.Data.__init__(self, self, **kwargs)
         else:
             core.Data.__init__(self, self.cube_path, **kwargs)
-            
+
+
+        
         # checking dims
         if self.data.ndim != 3:
             raise TypeError('input cube has {} dims but must have exactly 3 dimensions'.format(self.data.ndim))
@@ -133,6 +154,46 @@ class HDFCube(core.Data, core.Tools):
             return np.squeeze(_data)
 
 
+    def _read_old_header(self):
+        """Backward compatibility method. Read old 'header' dataset and return a dict()
+        """
+        obs_date_f = lambda x: np.array(x.strip().split('-'), dtype=int)
+        hour_ut_f = lambda x: np.array(x.strip().split(':'), dtype=float)
+        instrument_f = lambda x: x.strip().lower()
+        
+        def apodiz_f(x):
+            if x != 'None':
+                return float(x)
+            else: return 1.
+            
+        translate = {'STEP': ('step', float),
+                     'ORDER': ('order', int),
+                     'AXISCORR': ('axis_corr', float),
+                     'CALIBNM': ('nm_laser', float),
+                     'OBJECT': ('object_name', str),
+                     'FILTER': ('filter_name', str),
+                     'APODIZ': ('apodization', apodiz_f),
+                     'EXPTIME': ('exposure_time', float),
+                     'FLAMBDA': ('flambda', float),
+                     'STEPNB': ('step_nb', int),
+                     'ZPDINDEX': ('zpd_index', int),
+                     'WAVTYPE': ('wavetype', str),
+                     'WAVCALIB': ('wavelength_calibration', bool),
+                     'DATE-OBS': ('obs_date', obs_date_f),
+                     'HOUT_UT': ('hour_ut', hour_ut_f),
+                     'INSTRUME': ('instrument', instrument_f)}
+        
+        if not self.has_dataset('header'): return dict()
+        header = utils.io.header_hdf52fits(self.get_dataset('header', protect=False))
+        params = dict()
+        for ikey in header:
+            if ikey in translate:
+                params[translate[ikey][0]] = translate[ikey][1](header[ikey])
+            elif ikey != 'COMMENT':
+                params[ikey] = header[ikey]
+                
+        return params
+        
     def copy(self):
         raise NotImplementedError('HDFCube instance cannot be copied')
     
@@ -226,7 +287,8 @@ class HDFCube(core.Data, core.Tools):
         :param protect: (Optional) check if dataset is protected
           (default True).
         """
-        if path in self.protected_datasets:
+        if protect:
+            if path in self.protected_datasets:
                 raise IOError('dataset {} is protected. please use the corresponding higher level method (something like set_{} should do)'.format(path, path))
 
         if path == 'data':
@@ -358,16 +420,19 @@ class HDFCube(core.Data, core.Tools):
         
         .. note:: In this process NaNs are handled correctly
         """
-        if self.is_old:
-            f['deep_frame'] = self.oldcube.get_mean_image(recompute=recompute)
-            return f['deep_frame'][:]
-
         if not recompute:
             if self.has_dataset('deep_frame'):
                 return self.get_dataset('deep_frame', protect=False)
         
+            elif self.is_old:
+                f['deep_frame'] = self.oldcube.get_mean_image(recompute=recompute)
+                return f['deep_frame'][:]
+
             else:
                 raise NotImplementedError()
+        else:
+            raise NotImplementedError()
+
 
     def get_quadrant_dims(self, quad_number, div_nb=None,
                           dimx=None, dimy=None):
@@ -594,10 +659,11 @@ class Cube(HDFCube):
     """
 
     needed_params = ('step', 'order', 'filter_name', 'exposure_time',
-                     'step_nb', 'calibration_laser_map_path', 'zpd_index')
+                     'step_nb', 'zpd_index')
 
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
-                       'dark_time', 'flat_time', 'camera_index', 'wcs_rotation')
+                       'dark_time', 'flat_time', 'camera_index', 'wcs_rotation',
+                       'calibration_laser_map_path')
     
     def __init__(self, path, params=None, instrument=None, **kwargs):
         """Initialize Cube class.
@@ -613,7 +679,7 @@ class Cube(HDFCube):
           itself. They can be modified through the params dictionary
           and the params dictionary can itself be modified with
           keyword arguments.
-        """               
+        """
         HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
 
         # compute additional parameters
@@ -683,7 +749,12 @@ class Cube(HDFCube):
         try:
             return np.copy(self.calibration_laser_map)
         except AttributeError:
-            self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
+            if self.has_dataset('calib_map'):
+                self.calibration_laser_map = self.get_dataset('calib_map')
+            else:
+                if 'calibration_laser_map_path' not in self.params:
+                    raise StandardError("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
+                self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
         if (self.calibration_laser_map.shape[0] != self.dimx):
             self.calibration_laser_map = utils.image.interpolate_map(
                 self.calibration_laser_map, self.dimx, self.dimy)
@@ -1791,15 +1862,563 @@ class FDCube(core.Tools):
 #### CLASS SpectralCube #########################
 #################################################
 class SpectralCube(Cube):
-    """Provide additional methods for a spectral cube when
-    observation parameters are known.
-    """
-    def get_spectrum(self, *args, **kwargs):
-        """Return an orb.fft.Interferogram instance.
+    """Provide additional methods for a spectral cube when observation
+    parameters are known.
 
-        See Cube.get_zvector for the parameters.        
+    """
+    def __init__(self, *args, **kwargs):
+        """Init class"""
+        Cube.__init__(self, *args, **kwargs)
+        self.reset_params()
+
+        js, ncpus = self._init_pp_server(silent=True)
+        self._close_pp_server(js)
+        self.set_param('ncpus', int(ncpus))
+
+    def get_filter_range(self):
+        """Return the range of the filter in the unit of the spectral
+        cube as a tuple (min, max)"""
+        if 'filter_range' in self.params:
+            return self.params.filter_range
+        return self.filterfile.get_filter_bandpass_cm1()
+
+    def get_filter_range_pix(self):
+        """Return the range of the filter in channel index as a tuple
+        (min, max)"""
+        return utils.spectrum.cm12pix(
+            self.params.base_axis, self.get_filter_range())        
+    
+    def reset_params(self):
+        """Reset parameters"""
+
+        self.filterfile = core.FilterFile(self.params.filter_name)
+
+        if not self.has_param('flambda'):
+            warnings.warn('FLAMBDA keyword not in cube header. Flux calibration may be bad.')
+            self.set_param('flambda', 1.)
+
+        step_nb = self.params.step_nb
+        if step_nb != self.dimz:
+            warnings.warn('Malformed spectral cube. The number of steps in the header ({}) does not correspond to the real size of the data cube ({})'.format(step_nb, self.dimz))
+            step_nb = int(self.dimz)
+        self.set_param('step_nb', step_nb)
+
+        if not self.has_param('zpd_index'):
+            raise KeyError('ZPDINDEX not in cube header. Please run again the last step of ORBS reduction process.')
+
+        # new data prefix
+        base_prefix = '{}_{}.{}'.format(self.params.object_name,
+                                        self.params.filter_name,
+                                        self.params.apodization)
+
+        self._data_prefix = base_prefix + '.ORCS' + os.sep + base_prefix + '.'
+        self._data_path_hdr = self._get_data_path_hdr()
+
+        # resolution
+        resolution = utils.spectrum.compute_resolution(
+            self.dimz - self.params.zpd_index,
+            self.params.step, self.params.order,
+            self.params.axis_corr)
+        self.set_param('resolution', resolution)
+
+        # incident angle of reference (in degrees)
+        self.set_param(
+            'theta_proj',
+            utils.spectrum.corr2theta(self.params.axis_corr))
+
+        # wavenumber
+        if self.params.wavetype == 'WAVELENGTH':
+            raise Exception('ORCS cannot handle wavelength cubes')
+        
+        self.params['wavenumber'] = True
+        logging.info('Cube is in WAVENUMBER (cm-1)')
+        self.unit = 'cm-1'
+
+        ## Get WCS header
+        self.wcs = self.get_wcs()
+        self.wcs_header = self.get_wcs_header()
+        self._wcs_header = self.get_wcs_header()
+
+        self.set_param('target_ra', float(self.wcs.wcs.crval[0]))
+        self.set_param('target_dec', float(self.wcs.wcs.crval[1]))
+        self.set_param('target_x', float(self.wcs.wcs.crpix[0]))
+        self.set_param('target_y', float(self.wcs.wcs.crpix[1]))
+
+        wcs_params = utils.astrometry.get_wcs_parameters(self.wcs)
+        self.set_param('wcs_rotation', float(wcs_params[-1]))
+
+        if not self.has_param('hour_ut'):
+            self.params['hour_ut'] = np.array([0, 0, 0], dtype=float)
+
+        # create base axis of the data
+        self.set_param('base_axis', utils.spectrum.create_cm1_axis(
+            self.dimz, self.params.step, self.params.order,
+            corr=self.params.axis_corr))
+
+        self.set_param('axis_min', np.min(self.params.base_axis))
+        self.set_param('axis_max', np.max(self.params.base_axis))
+        self.set_param('axis_step', np.min(self.params.base_axis[1] - self.params.base_axis[0]))
+        self.set_param('line_fwhm', utils.spectrum.compute_line_fwhm(
+            self.params.step_nb - self.params.zpd_index, self.params.step, self.params.order,
+            apod_coeff=self.params.apodization,
+            corr=self.params.axis_corr,
+            wavenumber=self.params.wavenumber))
+        self.set_param('filter_range', self.get_filter_range())
+
+    def get_sky_velocity_map(self):
+        if hasattr(self, 'sky_velocity_map'):
+            return self.sky_velocity_map
+        else: return None
+
+    def get_calibration_laser_map_orig(self):
+        """Return the original calibration laser map (not the version
+        computed by :py:meth:`~HDFCube.get_calibration_laser_map`)"""
+        return Cube.get_calibration_laser_map(self)
+
+    def get_calibration_coeff_map_orig(self):
+        """Return the original calibration coeff map (not the version
+        computed by :py:meth:`~HDFCube.get_calibration_coeff_map`)"""
+        return self.get_calibration_laser_map_orig() / self.params.nm_laser
+
+        
+    def get_calibration_laser_map(self):
+        """Return the calibration laser map of the cube"""
+        if hasattr(self, 'calibration_laser_map'):
+            return self.calibration_laser_map
+
+        calib_map = self.get_calibration_laser_map_orig()
+        if calib_map is None:
+            raise StandardError('No calibration laser map given. Please redo the last step of the data reduction')
+
+        if self.params.wavelength_calibration:
+            calib_map = (np.ones((self.dimx, self.dimy), dtype=float)
+                    * self.params.nm_laser * self.params.axis_corr)
+
+        elif (calib_map.shape[0] != self.dimx):
+            calib_map = utils.image.interpolate_map(
+                calib_map, self.dimx, self.dimy)
+
+        # calibration correction
+        if self.get_sky_velocity_map() is not None:
+            ratio = 1 + (self.get_sky_velocity_map() / constants.LIGHT_VEL_KMS)
+            calib_map /= ratio
+
+        self.calibration_laser_map = calib_map
+        self.reset_calibration_coeff_map()
+        return self.calibration_laser_map
+
+    def get_calibration_coeff_map(self):
+        """Return the calibration coeff map based on the calibration
+        laser map and the laser wavelength.
         """
-        spec = Cube.get_zvector(self, *args, **kwargs)
-        if 'source_counts' not in spec.params:
-            spec.params.reset('source_counts', 0)
-        return fft.RealSpectrum(spec)
+        if hasattr(self, 'calibration_coeff_map'):
+            return self.calibration_coeff_map
+        else:
+            self.calibration_coeff_map = self.get_calibration_laser_map() / self.params.nm_laser
+        return self.calibration_coeff_map
+
+
+    def get_fwhm_map(self):
+        """Return the theoretical FWHM map in cm-1 based only on the angle
+        and the theoretical attained resolution."""
+        return utils.spectrum.compute_line_fwhm(
+            self.params.step_nb - self.params.zpd_index, self.params.step, self.params.order,
+            self.params.apodization, self.get_calibration_coeff_map_orig(),
+            wavenumber=self.params.wavenumber)
+
+    def get_theta_map(self):
+        """Return the incident angle map (in degree)"""
+        return utils.spectrum.corr2theta(self.get_calibration_coeff_map_orig())
+
+    def reset_calibration_laser_map(self):
+        """Reset the compute calibration laser map (and also the
+        calibration coeff map). Must be called when the wavelength
+        calibration has changed
+
+        ..seealso :: :py:meth:`~HDFCube.correct_wavelength`
+        """
+        if hasattr(self, 'calibration_laser_map'):
+            del self.calibration_laser_map
+        self.reset_calibration_coeff_map()
+
+    def reset_calibration_coeff_map(self):
+        """Reset the computed calibration coeff map alone"""
+        if hasattr(self, 'calibration_coeff_map'):
+            del self.calibration_coeff_map
+
+    def get_sky_lines(self):
+        """Return the wavenumber/wavelength of the sky lines in the
+        filter range"""
+        _delta_nm = utils.spectrum.fwhm_cm12nm(
+            self.params.axis_step,
+            (self.params.axis_min + self.params.axis_max) / 2.)
+
+        _nm_min, _nm_max = self.get_filter_range()
+
+        # we add 5% to the computed size of the filter
+        _nm_range = _nm_max - _nm_min
+        _nm_min -= _nm_range * 0.05
+        _nm_max += _nm_range * 0.05
+
+        _nm_max, _nm_min = utils.spectrum.cm12nm([_nm_min, _nm_max])
+
+        _lines_nm = core.Lines().get_sky_lines(
+            _nm_min, _nm_max, _delta_nm)
+
+        return utils.spectrum.nm2cm1(_lines_nm)
+
+    def _extract_spectrum_from_region(self, region,
+                                      subtract_spectrum=None,
+                                      median=False,
+                                      mean_flux=False,
+                                      silent=False,
+                                      return_spec_nb=False,
+                                      return_mean_theta=False,
+                                      return_gvar=False,
+                                      output_axis=None):
+        """
+        Extract the integrated spectrum from a region of the cube.
+
+        All extraction of spectral data must use this core function
+        because it makes sure that all the updated calibrations are
+        taken into account.
+
+        :param region: A list of the indices of the pixels integrated
+          in the returned spectrum.
+
+        :param subtract_spectrum: (Optional) Remove the given spectrum
+          from the extracted spectrum before fitting
+          parameters. Useful to remove sky spectrum. Both spectra must
+          have the same size.
+
+        :param median: (Optional) If True the integrated spectrum is computed
+          from the median of the spectra multiplied by the number of
+          pixels integrated. Else the integrated spectrum is the pure
+          sum of the spectra. In both cases the flux of the spectrum
+          is the total integrated flux (Default False).
+
+        :param mean_flux: (Optional) If True the flux of the spectrum
+          is the mean flux of the extracted region (default False).
+
+        :param return_spec_nb: (Optional) If True the number of
+          spectra integrated is returned (default False).
+
+        :param silent: (Optional) If True, nothing is printed (default
+          False).
+
+        :param return_mean_theta: (Optional) If True, the mean of the
+          theta values covered by the region is returned (default False).
+
+        :param return_gvar: (Optional) If True, returned spectrum will be a
+          gvar. i.e. a data vector with it's uncetainty (default False).
+
+        :param output_axis: (Optional) If not None, the spectrum is
+          projected on the output axis. Else a scipy.UnivariateSpline
+          object is returned (defautl None).
+
+        :return: A scipy.UnivariateSpline object or a spectrum
+          projected on the ouput_axis if it is not None.
+        """
+        def _interpolate_spectrum(spec, corr, wavenumber, step, order, base_axis):
+            import utils.spectrum
+            import utils.vector
+            if wavenumber:
+                corr_axis = utils.spectrum.create_cm1_axis(
+                    spec.shape[0], step, order, corr=corr)
+                return utils.vector.interpolate_axis(
+                    spec, base_axis, 5, old_axis=corr_axis)
+            else: raise NotImplementedError()
+
+
+        def _extract_spectrum_in_column(data_col, calib_coeff_col, mask_col,
+                                        median,
+                                        wavenumber, base_axis, step, order,
+                                        base_axis_corr):
+
+            for icol in range(data_col.shape[0]):
+                if mask_col[icol]:
+                    corr = calib_coeff_col[icol]
+                    if corr != base_axis_corr:
+                        data_col[icol, :] = _interpolate_spectrum(
+                            data_col[icol, :], corr, wavenumber, step, order, base_axis)
+                else:
+                    data_col[icol, :].fill(np.nan)
+
+            if median:
+                with np.warnings.catch_warnings():
+                    np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                    return (np.nanmedian(data_col, axis=0) * np.nansum(mask_col),
+                            np.nansum(mask_col))
+            else:
+                return (np.nansum(data_col, axis=0),
+                        np.nansum(mask_col))
+
+        if median:
+            warnings.warn('Median integration')
+
+
+        calibration_coeff_map = self.get_calibration_coeff_map()
+
+        calibration_coeff_center = calibration_coeff_map[
+            calibration_coeff_map.shape[0]/2,
+            calibration_coeff_map.shape[1]/2]
+
+        mask = np.zeros((self.dimx, self.dimy), dtype=np.uint8)
+        mask[region] = 1
+        if not silent:
+            logging.info('Number of integrated pixels: {}'.format(np.sum(mask)))
+
+        if np.sum(mask) == 0: raise StandardError('A region must contain at least one valid pixel')
+
+        elif np.sum(mask) == 1:
+            ii = region[0][0] ; ij = region[1][0]
+            spectrum = _interpolate_spectrum(
+                self.get_data(ii, ii+1, ij, ij+1, 0, self.dimz, silent=silent),
+                calibration_coeff_map[ii, ij],
+                self.params.wavenumber, self.params.step, self.params.order,
+                self.params.base_axis)
+            counts = 1
+
+        else:
+            spectrum = np.zeros(self.dimz, dtype=float)
+            counts = 0
+
+            # get range to check if a quadrants extraction is necessary
+            mask_x_proj = np.nanmax(mask, axis=1).astype(float)
+            mask_x_proj[np.nonzero(mask_x_proj == 0)] = np.nan
+            mask_x_proj *= np.arange(self.dimx)
+            x_min = int(np.nanmin(mask_x_proj))
+            x_max = int(np.nanmax(mask_x_proj)) + 1
+
+            mask_y_proj = np.nanmax(mask, axis=0).astype(float)
+            mask_y_proj[np.nonzero(mask_y_proj == 0)] = np.nan
+            mask_y_proj *= np.arange(self.dimy)
+            y_min = int(np.nanmin(mask_y_proj))
+            y_max = int(np.nanmax(mask_y_proj)) + 1
+
+            if (x_max - x_min < self.dimx / float(self.config.DIV_NB)
+                and y_max - y_min < self.dimy / float(self.config.DIV_NB)):
+                quadrant_extraction = False
+                QUAD_NB = 1
+                DIV_NB = 1
+            else:
+                quadrant_extraction = True
+                QUAD_NB = self.config.QUAD_NB
+                DIV_NB = self.config.DIV_NB
+
+            # check if parallel extraction is necessary
+            parallel_extraction = True
+            # It takes roughly ncpus/4 s to initiate the parallel server
+            # The non-parallel algo runs at ~400 pixel/s
+            ncpus = self.params['ncpus']
+            if ncpus/4. > np.sum(mask)/400.:
+                parallel_extraction = False
+            for iquad in range(0, QUAD_NB):
+
+                if quadrant_extraction:
+                    # x_min, x_max, y_min, y_max are now used for quadrants boundaries
+                    x_min, x_max, y_min, y_max = self.get_quadrant_dims(iquad)
+
+                iquad_data = self.get_data(x_min, x_max, y_min, y_max,
+                                           0, self.dimz, silent=silent)
+                if parallel_extraction:
+                    logging.debug('Parallel extraction')
+                    # multi-processing server init
+                    job_server, ncpus = self._init_pp_server(silent=silent)
+                    if not silent: progress = core.ProgressBar(x_max - x_min)
+                    for ii in range(0, x_max - x_min, ncpus):
+                        # no more jobs than columns
+                        if (ii + ncpus >= x_max - x_min):
+                            ncpus = x_max - x_min - ii
+
+                        # jobs creation
+                        jobs = [(ijob, job_server.submit(
+                            _extract_spectrum_in_column,
+                            args=(iquad_data[ii+ijob,:,:],
+                                  calibration_coeff_map[x_min + ii + ijob,
+                                                        y_min:y_max],
+                                  mask[x_min + ii + ijob, y_min:y_max],
+                                  median, self.params.wavenumber,
+                                  self.params.base_axis, self.params.step,
+                                  self.params.order, self.params.axis_corr),
+                            modules=("import logging",
+                                     'import numpy as np',
+                                     'import orb.utils as utils'),
+                            depfuncs=(_interpolate_spectrum,)))
+                                for ijob in range(ncpus)]
+
+                        for ijob, job in jobs:
+                            spec_to_add, spec_nb = job()
+                            if not np.all(np.isnan(spec_to_add)):
+                                spectrum += spec_to_add
+                                counts += spec_nb
+
+                        if not silent:
+                            progress.update(ii, info="ext column : {}/{}".format(
+                                ii, int(self.dimx/float(DIV_NB))))
+                    self._close_pp_server(job_server)
+                    if not silent: progress.end()
+
+                else:
+                    logging.debug('Non Parallel extraction')
+                    local_mask = mask[x_min:x_max, y_min:y_max]
+                    local_calibration_coeff_map = calibration_coeff_map[x_min:x_max, y_min:y_max]
+                    if not silent:
+                        progress = core.ProgressBar(local_mask.size)
+                        k = 0
+                    for i,j in np.ndindex(iquad_data.shape[:-1]):
+                        if local_mask[i,j]:
+                            corr = local_calibration_coeff_map[i,j]
+                            if corr != self.params.axis_corr:
+                                iquad_data[i,j] = _interpolate_spectrum(
+                                    iquad_data[i,j], corr, self.params.wavenumber,
+                                    self.params.step, self.params.order, self.params.base_axis)
+                        else:
+                            iquad_data[i,j].fill(np.nan)
+                        if not silent:
+                            k+=1
+                            if not k%500: progress.update(k)
+                    if not silent: progress.end()
+                    if median:
+                        with np.warnings.catch_warnings():
+                            np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                            spec_to_add = np.nanmedian(iquad_data, axis=(0,1)) * np.nansum(local_mask)
+                            spec_nb = np.nansum(local_mask)
+                    else:
+                        spec_to_add = np.nansum(iquad_data, axis=(0,1))
+                        spec_nb = np.nansum(local_mask)
+                    if not np.all(np.isnan(spec_to_add)):
+                        spectrum += spec_to_add
+                        counts += spec_nb
+
+
+        # add uncertainty on the spectrum
+        if return_gvar:
+            flux_uncertainty = self.get_flux_uncertainty()
+
+            if flux_uncertainty is not None:
+                uncertainty = np.nansum(flux_uncertainty[np.nonzero(mask)])
+                logging.debug('computed mean flux uncertainty: {}'.format(uncertainty))
+                spectrum = gvar.gvar(spectrum, np.ones_like(spectrum) * uncertainty)
+
+
+        if subtract_spectrum is not None:
+            spectrum -= subtract_spectrum * counts
+
+        if mean_flux:
+            spectrum /= counts
+
+        returns = list()
+        if output_axis is not None and np.all(output_axis == self.params.base_axis):
+            spectrum[np.isnan(gvar.mean(spectrum))] = 0. # remove nans
+            returns.append(spectrum)
+
+        else:
+            nonans = ~np.isnan(gvar.mean(spectrum))
+            spectrum_function = scipy.interpolate.UnivariateSpline(
+                self.params.base_axis[nonans], gvar.mean(spectrum)[nonans],
+                s=0, k=1, ext=1)
+            if return_gvar:
+                spectrum_function_sdev = scipy.interpolate.UnivariateSpline(
+                    self.params.base_axis[nonans], gvar.sdev(spectrum)[nonans],
+                    s=0, k=1, ext=1)
+                raise Exception('now a tuple is returned with both functions for mean and sdev, this will raise an error somewhere and must be checked before')
+                spectrum_function = (spectrum_function, spectrum_function_sdev)
+
+            if output_axis is None:
+                returns.append(spectrum_function(gvar.mean(output_axis)))
+            else:
+                returns.append(spectrum_function)
+
+        if return_spec_nb:
+            returns.append(counts)
+        if return_mean_theta:
+            theta_map = self.get_theta_map()
+            mean_theta = np.nanmean(theta_map[np.nonzero(mask)])
+            logging.debug('computed mean theta: {}'.format(mean_theta))
+            returns.append(mean_theta)
+
+        return returns
+
+    def extract_spectrum_bin(self, x, y, b, **kwargs):
+        """Extract a spectrum integrated over a binned region.
+
+        :param x: X position of the bottom-left pixel
+
+        :param y: Y position of the bottom-left pixel
+
+        :param b: Binning. If 1, only the central pixel is extracted
+
+        :param kwargs: Keyword arguments of the function
+          :py:meth:`~HDFCube._extract_spectrum_from_region`.
+
+        :returns: (axis, spectrum)
+        """
+        if b < 1: raise StandardError('Binning must be at least 1')
+
+        mask = np.zeros((self.dimx, self.dimy), dtype=bool)
+        mask[int(x):int(x+b), int(y):int(y+b)] = True
+        region = np.nonzero(mask)
+
+        return self.extract_integrated_spectrum(region, **kwargs)
+
+    def extract_spectrum(self, x, y, r, **kwargs):
+        """Extract a spectrum integrated over a circular region of a
+        given radius.
+
+        :param x: X position of the center
+
+        :param y: Y position of the center
+
+        :param r: Radius. If 0, only the central pixel is extracted.
+
+        :param kwargs: Keyword arguments of the function
+          :py:meth:`~HDFCube._extract_spectrum_from_region`.
+
+        :returns: (axis, spectrum)
+        """
+        if r < 0: r = 0.001
+        X, Y = np.mgrid[0:self.dimx, 0:self.dimy]
+        R = np.sqrt(((X-x)**2 + (Y-y)**2))
+        region = np.nonzero(R <= r)
+
+        return self.extract_integrated_spectrum(region, **kwargs)
+
+
+    def extract_integrated_spectrum(self, region, **kwargs):
+        """Extract a spectrum integrated over a given region (can be a
+        list of pixels as returned by the function
+        :py:meth:`numpy.nonzero` or a ds9 region file).
+
+        :param region: Region to integrate (can be a list of pixel
+          coordinates as returned by the function
+          :py:meth:`numpy.nonzero` or the path to a ds9 region
+          file). If it is a ds9 region file, multiple regions can be
+          defined and all will be integrated into one spectrum.
+        """
+        region = self.get_mask_from_ds9_region_file(region)
+
+        returns = list()
+        returns.append(self.params.base_axis.astype(float))
+        returns += list(self._extract_spectrum_from_region(
+            region, output_axis=self.params.base_axis.astype(float), **kwargs))
+        return returns
+
+
+    def get_mask_from_ds9_region_file(self, region, integrate=True):
+        """Return a mask from a ds9 region file.
+
+        :param region: Path to a ds9 region file.
+
+        :param integrate: (Optional) If True, all pixels are integrated
+          into one mask, else a list of region masks is returned (default
+          True)
+        """
+        if isinstance(region, str):
+            return utils.misc.get_mask_from_ds9_region_file(
+                region,
+                [0, self.dimx],
+                [0, self.dimy],
+                header=self.header,
+                integrate=integrate)
+        else: return region
