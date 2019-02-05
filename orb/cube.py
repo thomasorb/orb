@@ -930,33 +930,15 @@ class Cube(HDFCube):
                                              save=False)
         return utils.astrometry.compute_alignment_vectors(fit_results)
             
-    
-#################################################
-#### CLASS SpectralCube ####################
-#################################################
-class SpectralCube(Cube):
-    """Provide additional methods for a spectral cube when
-    observation parameters are known.
-    """
-    pass#raise NotImplementedError()
 
-    
-#################################################
-#### CLASS InteferogramCube ####################
-#################################################
-class InterferogramCube(Cube):
-    """Provide additional methods for an interferogram cube when
-    observation parameters are known.
-    """
-
-    def get_interferogram(self, x, y, r=0):
-        """Return an orb.fft.Interferogram instance
+    def get_zvector(self, x, y, r=0):
+        """Return an orb.fft.Vector1d instance taken at a given position in x, y.
         
         :param x: x position 
         
         :param y: y position 
 
-        :param r: (Optional) If r > 0, spectrum is integrated over a
+        :param r: (Optional) If r > 0, vector is integrated over a
           circular aperture of radius r. In this case the number of
           pixels is returned as a parameter: pixels
 
@@ -982,9 +964,42 @@ class InterferogramCube(Cube):
             interf = np.nansum(interfs, axis=0)
             params = dict(self.params)
             params['pixels'] = len(interfs)
-        return fft.RealInterferogram(interf, params=params,
-                                     zpd_index=self.params.zpd_index,
-                                     calib_coeff=calib_coeff)
+        return core.Vector1d(interf, params=params,
+                             zpd_index=self.params.zpd_index,
+                             calib_coeff=calib_coeff)
+
+#################################################
+#### CLASS SpectralCube ####################
+#################################################
+class SpectralCube(Cube):
+    """Provide additional methods for a spectral cube when
+    observation parameters are known.
+    """
+    def get_spectrum(self, *args, **kwargs):
+        """Return an orb.fft.Interferogram instance.
+
+        See Cube.get_zvector for the parameters.        
+        """
+        spec = Cube.get_zvector(self, *args, **kwargs)
+        if 'source_counts' not in spec.params:
+            spec.params.reset('source_counts', 0)
+        return fft.RealSpectrum(spec)
+
+    
+#################################################
+#### CLASS InteferogramCube ####################
+#################################################
+class InterferogramCube(Cube):
+    """Provide additional methods for an interferogram cube when
+    observation parameters are known.
+    """
+
+    def get_interferogram(self, *args, **kwargs):
+        """Return an orb.fft.Interferogram instance.
+
+        See Cube.get_zvector for the parameters.        
+        """
+        return fft.RealInterferogram(Cube.get_zvector(self, *args, **kwargs))
 
     def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
         """Return mean interferogram in a box [xmin:xmax, ymin:ymax, :]

@@ -620,7 +620,8 @@ class Spectrum(core.Cm1Vector1d):
                                   params=params, **kwargs)
         
         if not np.iscomplexobj(self.data):
-            raise TypeError('input spectrum is not complex')
+            warnings.warn('input spectrum is not complex')
+            self.data = self.data.astype(complex)
 
                    
     def get_phase(self):
@@ -783,7 +784,7 @@ class RealSpectrum(Spectrum):
             self.params.reset('pixels', 1)
 
         # compute photon noise
-        if self.has_err():
+        if not self.has_err():
             raise StandardError('err vector (photon noise) must be supplied')
 
         # recompute counts in the original interferogram if needed

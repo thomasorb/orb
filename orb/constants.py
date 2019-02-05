@@ -54,8 +54,8 @@ VIZIER_URL_CA = "http://vizier.hia.nrc.ca/viz-bin/"
 VIZIER_URL = "http://webviz.u-strasbg.fr/viz-bin/"
 """Vizier URL in Canada """
 
-HEISEN = 6.6260755e-27
-"""Heisenberg constant in erg.s """
+PLANCK = 6.6260755e-27
+"""Planck constant in erg.s """
 
 K_BOLTZMANN = 1.38064852e-16
 """Boltzmann constant in erg/K"""

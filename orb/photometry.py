@@ -150,8 +150,9 @@ class Photometry(object):
             params = dict(self.params)
             flux = float(flux)
             is_float=True
-            
-        flux /= utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
+
+        flux = np.atleast_1d(np.copy(flux))
+        flux = flux / utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
         flux *= self.tools.config.MIR_SURFACE # photons/s/A
         if modulated:
             flux *= self.get_modulated_transmission(
@@ -171,7 +172,7 @@ class Photometry(object):
         if not is_float:
             return flux
         else:
-            return flux.data.mean_in_filter()
+            return flux.mean_in_filter()
         
 #################################################
 #### CLASS Standard #############################

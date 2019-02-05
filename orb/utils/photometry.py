@@ -120,7 +120,7 @@ def compute_photon_energy(nm_axis):
 
     :param nm_axis: Wavelength axis in nm
     """
-    return (orb.constants.HEISEN
+    return (orb.constants.PLANCK
             * orb.constants.LIGHT_VEL_KMS * 1e12
             / nm_axis)
 
