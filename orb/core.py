@@ -57,6 +57,7 @@ import astropy.wcs as pywcs
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
 
 import gvar
+import h5py
 
 from scipy import interpolate
 import pandas
@@ -392,19 +393,43 @@ class Logger(object):
 
 
 
+################################################
+#### CLASS ROParams ############################
+################################################
+class Params(dict):
+    """Special dictionary which elements can be accessed like
+    attributes.
+    """
+    __getattr__ = dict.__getitem__
+    __delattr__ = dict.__delitem__
+    __setattr__ = dict.__setitem__
+    
+
+    def __getstate__(self):
+        """Used to pickle object"""
+        state = self.copy()
+        return state
+
+    def __setstate__(self, state):
+        """Used to unpickle object"""
+        self.update(state)
+
+    def convert(self):
+        """Convert to a nice pickable object"""
+        conv = dict()
+        conv.update(self)
+        return conv
+
     
 ################################################
 #### CLASS ROParams ############################
 ################################################
-class ROParams(dict):
+class ROParams(Params):
     """Special dictionary which elements can be accessed like
     attributes.
 
     Attributes are read-only and may be defined only once.
     """
-    __getattr__ = dict.__getitem__
-    __delattr__ = dict.__delitem__
-    
     def __setattr__(self, key, value):
         """Special set attribute function. Always raise a read-only
         error.
@@ -428,26 +453,11 @@ class ROParams(dict):
                 warnings.warn('Parameter {} already defined'.format(key))
                 warnings.warn('Old value={} / new_value={}'.format(self[key], value))
         dict.__setitem__(self, key, value)
-
-    def __getstate__(self):
-        """Used to pickle object"""
-        state = self.copy()
-        return state
-
-    def __setstate__(self, state):
-        """Used to unpickle object"""
-        self.update(state)
-
+    
     def reset(self, key, value):
         """Force parameter reset"""
         dict.__setitem__(self, key, value)
 
-    def convert(self):
-        """Convert to a nice pickable object"""
-        conv = dict()
-        conv.update(self)
-        return conv
-    
 ################################################
 #### CLASS NoInstrumentConfigParams ############
 ################################################
@@ -476,7 +486,7 @@ class Tools(object):
     instruments = ['sitelle', 'spiomm']
         
     def __init__(self, instrument=None, config=None,
-                 data_prefix="./temp/data.", ):
+                 data_prefix="./temp/data."):
         """Initialize Tools class.
 
         :param instrument: (Optional) Instrument configuration to
@@ -608,7 +618,7 @@ class Tools(object):
         for ikey in config:
             if ikey not in self.config:
                 raise ValueError('Unknown config key: {}'.format(ikey))
-            self.config[ikey] = config[ikey]
+            self.config[ikey] = type(self.config[ikey])(config[ikey])
             
     def _get_data_path_hdr(self):
         """Return the header of the created files."""
@@ -908,7 +918,7 @@ class Tools(object):
         .. note:: Please refer to http://www.parallelpython.com/ for
           sources and information on Parallel Python software
         """
-        return utils.parallel.init_pp_server(ncpus=self.config.NCPUS,
+        return utils.parallel.init_pp_server(ncpus=int(self.config.NCPUS),
                                              silent=silent)
 
     def _close_pp_server(self, js):
@@ -1778,6 +1788,7 @@ class Data(object):
         self.params = dict()
         self.mask = None
         self.err = None
+        self.hdffile = None
         
         # load from file
         if isinstance(data, str):
@@ -1791,39 +1802,39 @@ class Data(object):
                 self.params.pop('COMMENT')
 
             elif 'hdf' in data:    
-                with utils.io.open_hdf5(data, 'r') as hdffile:
-                    _data_path = 'data'
+                self.hdffile = utils.io.open_hdf5(data, 'r')
+                _data_path = 'data'
 
-                    # backward compatibility issue
-                    if 'vector' in hdffile and not 'data' in hdffile:
-                        _data_path = 'vector'
-                        
-                    # load data
-                    if hdffile[_data_path].ndim > 2 and np.any(hdffile[_data_path].shape) > LIMIT_SIZE:
-                        self.data = hdffile[_data_path] # data is not loaded,
-                                                        # a pointer to the
-                                                        # dataset is returned
+                # backward compatibility issue
+                if 'vector' in self.hdffile and not 'data' in self.hdffile:
+                    _data_path = 'vector'
 
-                    else:
-                        self.data = hdffile[_data_path][:]
+                # load data
+                if (self.hdffile[_data_path].ndim > 2
+                    and np.any(self.hdffile[_data_path].shape > LIMIT_SIZE)):
+                    self.data = self.hdffile[_data_path] # data is not loaded,
+                                                         # a pointer to the
+                                                         # dataset is returned
 
-                    # load params
-                    for iparam in hdffile.attrs:
-                        self.params[iparam] = hdffile.attrs[iparam]
+                else:
+                    self.data = self.hdffile[_data_path][:]
+                # load params
+                for iparam in self.hdffile.attrs:
+                    self.params[iparam] = self.hdffile.attrs[iparam]
 
-                    # load axis
-                    if '/axis' in hdffile:
-                        if axis is None:
-                            self.axis = Axis(hdffile['/axis'][:])
+                # load axis
+                if '/axis' in self.hdffile:
+                    if axis is None:
+                        self.axis = Axis(self.hdffile['/axis'][:])
 
-                    if '/err' in hdffile:
-                        if err is None:
-                            self.err = hdffile['/err'][:]
+                if '/err' in self.hdffile:
+                    if err is None:
+                        self.err = self.hdffile['/err'][:]
 
-                    # load mask
-                    if '/mask' in hdffile:
-                        if mask is None:
-                            self.mask = hdffile['/mask'][:]
+                # load mask
+                if '/mask' in self.hdffile:
+                    if mask is None:
+                        self.mask = self.hdffile['/mask'][:]
             else:
                 raise ValueError('extension not recognized, must be fits or hdf5')
 
@@ -1884,6 +1895,7 @@ class Data(object):
             self.dimy = self.data.shape[1]
             if self.data.ndim > 2:
                 self.dimz = self.data.shape[2]
+        self.shape = self.data.shape
         
         # load params
         if params is not None:
@@ -1928,8 +1940,10 @@ class Data(object):
             self.mask = mask
                
         self.params = ROParams(self.params) # self.params must always be an ROParams instance
-
-
+        
+        if self.is_pointer: self.set_writeable(False)
+        else: self.set_writeable(True)
+        
     def __getitem__(self, key):
         _data = self.data.__getitem__(key)
         if self.has_mask():
@@ -1939,16 +1953,42 @@ class Data(object):
                 if not self.mask.__getitem__(key): _data = np.nan
         return _data
 
+    def is_pointer(self):
+        """Return True if data is a pointer to an hdf dataset (or if there is no data) in which case
+        some operations are impossible.
+        """
+        if not hasattr(self, 'data'): return True
+        return isinstance(self.data, h5py.Dataset)
+
+    def assert_no_pointer(self):
+        """Raise an exception if If data is a pointer to an hdf dataset"""
+        if self.is_pointer():
+            raise IOError('Data is a pointer on an HDF5 dataset. HDF5 file may be a large file. Operation may be illegal.')
+    
     def set_writeable(self, write):
         """Set writeability of the data.
         """
-        self.data.flags.writeable = write
+        if not isinstance(write, bool):
+            raise TypeError('write must be a boolean')
+        
+        self.writeable = write
+        
+        try:
+            self.data.flags.writeable = write
+        except AttributeError: pass
 
     def is_writeable(self):
         """Return False if data is read-only.
         """
-        return bool(self.data.flags.writeable)
-    
+        try:
+            write = bool(self.data.flags.writeable)
+            if write != self.writeable:
+                raise StandardError('unconsistency between self.writeable and self.data.flags.writeable')
+        except AttributeError:
+            pass
+
+        return bool(self.writeable)
+        
     def has_params(self):
         """Check the presence of observation parameters"""
         if self.params is None:
@@ -2006,32 +2046,11 @@ class Data(object):
         """
         if not self.has_params(): return None
         
-        # filter illegal header values
-        cards = list()
-        ok_types = [float, int, str, bool]
-        
-        for iparam in self.params:
-            val = self.params[iparam]
-            val_ok = False
-            for itype in ok_types:
-                if isinstance(val, itype):
-                    val_ok = True
-            if val_ok:
-                if isinstance(val, bool):
-                    val = int(val)
-                card = pyfits.Card(
-                    keyword=iparam,
-                    value=val,
-                    comment=None)
-                try:
-                    card.verify(option='exception')
-                    cards.append(card)
-                except (VerifyError, ValueError, TypeError):
-                    pass
-                    
         warnings.simplefilter('ignore', category=VerifyWarning)
         warnings.simplefilter('ignore', category=AstropyUserWarning)
-        header = pyfits.Header(cards)
+
+        header = utils.io.dict2header(dict(self.params))
+        
         if self.data.ndim >= 3:
             header['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
                                           # inconsistency
@@ -2123,6 +2142,7 @@ class Data(object):
 
     def get_gvar(self):
         """Return data and err as a gvar.GVar instance"""
+        self.assert_no_pointer()
         if self.has_err():
             return gvar.gvar(self.data, self.err)
         else:
@@ -2136,6 +2156,8 @@ class Data(object):
         :param kwargs: Addition kwargs (useful to copy child classes
           with more kwargs at init)
         """
+        self.assert_no_pointer()
+        
         if self.has_params():
             _params = self.params.convert()
         else:
@@ -2172,6 +2194,8 @@ class Data(object):
 
         :param path: hdf file path.
         """
+        self.assert_no_pointer()
+        
         if np.iscomplexobj(self.data):
             _data = self.data.astype(complex)
         else:
@@ -2212,6 +2236,8 @@ class Data(object):
         :param path: Path to the FITS file
 
         """
+        self.assert_no_pointer()
+        
         utils.io.write_fits(path, self.data, fits_header=self.get_header())
         
 #################################################

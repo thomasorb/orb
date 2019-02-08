@@ -37,6 +37,82 @@ import orb.cutils
 
 import orb.ext.zern
 
+
+def correct_cosmic_rays(frame, cr_map):
+    """correct cosmic rays in an image
+
+    CRs are replaced by a weighted average of the neighbouring
+    region. Weights are calculated from a 2d gaussian kernel.
+
+    :param frame: image
+
+    :param cr_map: cosmic ray map (1 = CR, 0 = NO_CR). must be of
+      boolean type.
+
+    """
+    MEDIAN_DEG = 2
+    x_range = range(MEDIAN_DEG, int(frame.shape[0] - MEDIAN_DEG - 1L))
+    y_range = range(MEDIAN_DEG, int(frame.shape[1] - MEDIAN_DEG - 1L))
+    x_min = np.min(x_range)
+    x_max = np.max(x_range) + 1L
+    y_min = np.min(y_range)
+    y_max = np.max(y_range) + 1L
+
+    
+    orb.utils.validate.is_2darray(frame, object_name='frame')
+    orb.utils.validate.is_2darray(cr_map, object_name='cr_map')
+    if frame.shape != cr_map.shape:
+        raise TypeError('frame and cr_map should have same shape')
+    if cr_map.dtype != np.bool:
+        raise TypeError('cr_map must be of boolean type')
+    
+    bad_pixels = np.nonzero(cr_map)
+    
+    for ibp in range(len(bad_pixels[0])):
+        ix = bad_pixels[0][ibp]
+        iy = bad_pixels[1][ibp]
+        if (ix < x_max and iy < y_max
+            and ix >= x_min and iy >= y_min):
+            (med_x_min, med_x_max,
+             med_y_min, med_y_max) = orb.utils.image.get_box_coords(
+                ix, iy, MEDIAN_DEG*2+1,
+                x_min, x_max, y_min, y_max)
+            box = frame[med_x_min:med_x_max,
+                        med_y_min:med_y_max]
+
+            # definition of the kernel. It must be
+            # adjusted to the real box
+            ker = orb.cutils.gaussian_kernel(MEDIAN_DEG)
+            if (box.shape[0] != MEDIAN_DEG*2+1
+                or box.shape[1] != MEDIAN_DEG*2+1):
+                if ix - med_x_min != MEDIAN_DEG:
+                    ker = ker[MEDIAN_DEG - (ix - med_x_min):,:]
+                if iy - med_y_min != MEDIAN_DEG:
+                    ker = ker[:,MEDIAN_DEG - (iy - med_y_min):]
+                if med_x_max - ix != MEDIAN_DEG + 1:
+                    ker = ker[:- (MEDIAN_DEG + 1
+                                  - (med_x_max - ix)),:]
+                if med_y_max - iy != MEDIAN_DEG + 1:
+                    ker = ker[:,:- (MEDIAN_DEG + 1
+                                    - (med_y_max - iy))]
+
+            # cosmic rays are removed from the
+            # weighted average (their weight is set to
+            # 0)
+            ker *=  1 - cr_map[med_x_min:med_x_max,
+                               med_y_min:med_y_max]
+
+            # pixel is replaced by the weighted average
+            if np.sum(ker) != 0:
+                frame[ix, iy] = np.sum(box * ker)/np.sum(ker)
+            else:
+                # if no good pixel around can be found
+                # the pixel is replaced by the median
+                # of the whole box
+                frame[ix, iy] = np.median(box)
+                
+    return frame
+
 def compute_binning(image_shape, detector_shape):
     """Return binning along both axis given the image shape and the
     detector shape.
@@ -54,7 +130,7 @@ def compute_binning(image_shape, detector_shape):
 
 
 def pp_create_master_frame(frames, combine='average', reject='avsigclip',
-                           sigma=3.):
+                           sigma=3., ncpus=0):
     """
     Run a parallelized version of :py:meth:`utils.create_master_frame`.
 
@@ -74,7 +150,7 @@ def pp_create_master_frame(frames, combine='average', reject='avsigclip',
 
     .. seealso:: :py:meth:`utils.create_master_frame`
     """
-    job_server, ncpus = orb.utils.parallel.init_pp_server()
+    job_server, ncpus = orb.utils.parallel.init_pp_server(ncpus=ncpus)
     divs = np.linspace(0, frames.shape[0], ncpus + 1).astype(int)
     result = np.empty((frames.shape[0], frames.shape[1]), dtype=float)
     

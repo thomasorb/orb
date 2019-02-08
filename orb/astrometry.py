@@ -44,6 +44,7 @@ import bottleneck as bn
 import pandas
 
 import core
+import cube
 __version__ = core.__version__
 from core import Tools, ProgressBar
 
@@ -89,7 +90,7 @@ class Astrometry(Tools):
         Init astrometry class.
 
         :param data: Can be an 2D or 3D Numpy array or an instance of
-          core.Cube class. Note that the frames must not be too
+          cube.Cube class. Note that the frames must not be too
           disaligned (a few pixels in both directions).
 
         :param fwhm_arc: (Optional) Rough FWHM of the stars in arcsec
@@ -169,7 +170,7 @@ class Astrometry(Tools):
 
         
         # load data and init parameters
-        if isinstance(data, Cube):
+        if isinstance(data, cube.Cube):
             self.data = data
             self.dimx = self.data.dimx
             self.dimy = self.data.dimy
@@ -586,7 +587,6 @@ class Aligner(Tools):
                  init_angle, init_dx, init_dy,
                  sip1=None, sip2=None,
                  saturation_threshold=60000,
-                 project_header=list(), overwrite=False,
                  **kwargs):
         """Aligner init   
 
@@ -623,21 +623,10 @@ class Aligner(Tools):
           of the detectors in the intensity unit of the images
           (default 60000, for images in counts).    
 
-        :param project_header: (Optional) header section to be added
-          to each output files based on merged data (an empty list by
-          default).
-
-        :param overwrite: (Optional) If True existing FITS files will
-          be overwritten (default False).
-
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         Tools.__init__(self, **kwargs)
-        self.overwrite = overwrite
-        self._project_header = project_header
         
-        self.range_coeff = float(self._get_tuning_parameter(
-            'RANGE_COEFF', self.config.ALIGNER_RANGE_COEFF))
         
         self.saturation_threshold = saturation_threshold
         
@@ -657,348 +646,10 @@ class Aligner(Tools):
         self.zoom_factor = ((float(self.pix_size2) * float(self.bin2)) / 
                             (float(self.pix_size1) * float(self.bin1)))
         
-        self.astro1 = Astrometry(self.image1, profile_name='gaussian', instrument=self.instrument)
-        self.astro2 = Astrometry(self.image2, profile_name='gaussian', instrument=self.instrument)
-
-        self.dx = init_dx
-        self.dy = init_dy
-        self.dr = init_angle
-        self.da = 0.
-        self.db = 0.
 
 
-    def _get_guess_matrix_path(self):
-        """Return path to the guess matrix"""
-        return self._data_path_hdr + "guess_matrix.fits"
-
-    def _get_guess_matrix_header(self):
-        """Return path to the guess matrix"""
-        return (self._get_basic_header('Alignment guess matrix') +
-                self._project_header)
     
-    def print_alignment_coeffs(self):
-        """Print the alignement coefficients."""
-        logging.info("\n> dx : " + str(self.dx) + "\n" +
-                        "> dy : " + str(self.dy) + "\n" +
-                        "> dr : " + str(self.dr) + "\n" +
-                        "> da : " + str(self.da) + "\n" +
-                        "> db : " + str(self.db))
     
-    def compute_alignment_parameters(self, correct_distortion=False,
-                                     star_list_path1=None, fwhm_arc=None,
-                                     brute_force=True):
-        """Return the alignment coefficients that match the stars of the
-        frame 2 to the stars of the frame 1.
-
-        :param correct_distortion: (Optional) If True, a SIP is computed to
-          match stars from frame 2 onto the stars from frame 1. But it
-          needs a lot of stars to run correctly (default False).
-
-        :param star_list_path1: (Optional) Path to a list of stars in
-          the image 1. If given the fwhm_arc must also be set (default None).
-
-        :param fwhm_arc: (Optional) mean FWHM of the stars in
-          arcseconds. Must be given if star_list_path1 is not None
-          (default None).
-
-        :param brute_force: (Optional) If True the first step is a
-          brute force guess. This is very useful if the initial
-          parameters are not well known (default True).
-
-        .. note:: The alignement coefficients are:
-        
-          * dx : shift along x axis in pixels
-          
-          * dy : shift along y axis in pixels
-          
-          * dr : rotation angle between images (the center of rotation
-            is the center of the images of the camera 1) in degrees
-            
-          * da : tip angle between cameras (along x axis) in degrees
-          
-          * db : tilt angle between cameras (along y axis) in degrees
-
-        .. note:: The process tries to find the stars detected in the camera A in the frame of the camera B. It goes through 2 steps:
-
-           1. Rough alignment (brute force style) only looking over
-              dx, dy. dr is kept to its initial value (init_angle), da
-              and db are set to 0.
-
-           2. Fine alignment pass.
-
-        .. warning:: This alignment process do not work if the initial
-          parameters are too far from the real value. The angle must
-          be known within a few degrees. The shift must be known
-          within 4 % of the frame size (The latter can be changed
-          using the SIZE_COEFF constant)
-        """
-
-        def match_star_lists(p, slin, slout, rc, zf, sip1, sip2):
-            """return the transformation parameters given two list of
-            star positions.
-            """
-            def diff(p, slin, slout, rc, zf, sip1, sip2):
-                slin_t = utils.astrometry.transform_star_position_A_to_B(
-                    slin, p, rc, zf,
-                    sip_A=sip1, sip_B=sip2)
-                result = (slin_t - slout).flatten()
-                return result[np.nonzero(~np.isnan(result))]
-
-            try:
-                fit = optimize.leastsq(diff, p,
-                                       args=(slin, slout, rc, zf, sip1, sip2),
-                                       full_output=True, xtol=1e-6)
-            except Exception, e:
-                raise Exception('No matching parameters found: {}'.format(e))
-            
-            if fit[-1] <= 4:
-                match = np.sqrt(np.mean(fit[2]['fvec']**2.))
-                if match > 1e-3:
-                    warnings.warn('Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
-                return fit[0]
-            
-            else:
-                raise Exception('No matching parameters found')
-
-        def brute_force_alignment(xystep_size, angle_range, angle_steps, range_coeff):
-            # define the ranges in x and y for the rough optimization
-            x_range_len = range_coeff * float(self.astro2.dimx)
-            y_range_len = range_coeff * float(self.astro2.dimy)
-
-            x_hrange = np.arange(xystep_size, x_range_len/2, xystep_size)
-            x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + self.dx
-            
-            y_hrange = np.arange(xystep_size, y_range_len/2, xystep_size)
-            y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + self.dy
-            
-          
-            r_range = np.linspace(-angle_range/2.,
-                                  angle_range/2.,
-                                  angle_steps) + self.dr
-
-            (self.dx, self.dy, self.dr, guess_matrix) = (
-                utils.astrometry.brute_force_guess(
-                    self.image2, self.astro1.star_list,
-                    x_range, y_range, r_range,
-                    self.rc, self.zoom_factor,
-                    self.astro2.fwhm_pix * 3.))
-            self.da = 0.
-            self.db = 0.
-
-            # Save guess matrix
-            utils.io.write_fits(self._get_guess_matrix_path(),
-                                guess_matrix,
-                                fits_header=self._get_guess_matrix_header(),
-                                overwrite=self.overwrite)
-
-        
-            
-        ERROR_RATIO = 0.2 # Minimum ratio of fitted stars once the
-                          # optimization pass has been done. If
-                          # the ratio of fitted stars is less than
-                          # this ratio an error is raised.
-
-        WARNING_RATIO = 0.5 # If there's less than this ratio of
-                            # fitted stars after the 
-                            # optimization pass a warning is printed.
-
-        WARNING_DIST = .3 # Max optimized distance in arcsec before a
-                          # warning is raised
-                          
-        ERROR_DIST = 2.* WARNING_DIST # Max optimized distance in
-                                      # arcsec before an error is
-                                      # raised
-        
-        MIN_STAR_NB = 30 # Target number of star to detect to find the
-                         # transformation parameters
-
-        XYSTEP_SIZE = 0.5 # Pixel step size of the search range
-
-        ANGLE_STEPS = 10 # Angle steps for brute force guess
-        ANGLE_RANGE = 1. # Angle range for brute force guess
-        
-        # Skip fit checking
-        SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', 0)))
-
-        if star_list_path1 is None:
-            star_list_path1, fwhm_arc = self.astro1.detect_stars(
-                min_star_number=MIN_STAR_NB,
-                saturation_threshold=self.saturation_threshold,
-                no_save=True)
-        elif fwhm_arc is not None:
-            self.astro1.load_star_list(star_list_path1)
-        else:
-            raise StandardError('If the path to a list of stars is given (star_list_path1) the fwhm in arcsec(fwhm_arc) must also be given.')
-
-        self.astro2.reset_fwhm_arc(fwhm_arc)
-        self.astro1.reset_fwhm_arc(fwhm_arc)
-
-
-        ##########################################
-        ### BRUTE FORCE GUESS (only dx and dy) ###
-        ##########################################
-        if brute_force:
-            logging.info("Brute force guess on large field")
-            brute_force_alignment(4*XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS/2, self.range_coeff*10)
-            logging.info("Brute force guess:") 
-            self.print_alignment_coeffs()
-
-            logging.info("Finer brute force guess")
-            brute_force_alignment(XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS, self.range_coeff)
-            logging.info("Brute force guess:") 
-            self.print_alignment_coeffs()
-
-
-        guess = [self.dx, self.dy, self.dr, self.da, self.db]
-        
-        ##########################
-        ## FINE ALIGNMENT STEP ###
-        ##########################
-        
-        # create sip corrected and transformed list
-        star_list2 = utils.astrometry.transform_star_position_A_to_B(
-            np.copy(self.astro1.star_list), guess, self.rc, self.zoom_factor,
-            sip_A=self.sip1)
-
-        self.astro2.reset_star_list(star_list2)
-
-        fit_results = self.astro2.fit_stars_in_frame(
-            0, no_aperture_photometry=True,
-            multi_fit=True, enable_zoom=False,
-            enable_rotation=True, fix_fwhm=True,
-            sip=self.sip2, save=False)
-        
-        [self.dx, self.dy, self.dr, self.da, self.db] = match_star_lists(
-            guess, np.copy(self.astro1.star_list), fit_results.get_star_list(
-                all_params=True),
-            self.rc, self.zoom_factor, sip1=self.sip1, sip2=self.sip2)
-
-        logging.info("Fine alignment parameters:") 
-        self.print_alignment_coeffs()
-                
-
-        #####################################
-        ### COMPUTE DISTORTION CORRECTION ###
-        #####################################
-
-        if correct_distortion:
-            logging.info('Computing distortion correction polynomial (SIP)')
-            raise Exception('Must be checked. using transformation parameters with sip may not be implemented properly.')
-            # try to detect a maximum number of stars in frame 1
-            star_list1_path1, fwhm_arc = self.astro1.detect_stars(
-                min_star_number=400,
-                saturation_threshold=self.saturation_threshold,
-                no_save=True, r_max_coeff=2.)
-
-            ############################
-            ### plot stars positions ###
-            ############################
-            ## import pylab as pl
-            ## im = pl.imshow(self.image1.T, vmin=0, vmax=1000)
-            ## im.set_cmap('gray')
-            ## pl.scatter(self.astro1.star_list[:,0], self.astro1.star_list[:,1],
-            ##            edgecolor='red', linewidth=2., alpha=1.,
-            ##            facecolor=(0,0,0,0))
-            ## pl.show()
-
-            star_list2 = utils.astrometry.transform_star_position_A_to_B(
-                np.copy(self.astro1.star_list),
-                [self.dx, self.dy, self.dr, self.da, self.db],
-                self.rc, self.zoom_factor,
-                sip_A=self.sip1, sip_B=self.sip2)
-            self.astro2.reset_star_list(star_list2)
-
-            # fit stars
-            fit_results = self.astro2.fit_stars_in_frame(
-                0, no_aperture_photometry=True,
-                multi_fit=False, enable_zoom=False,
-                enable_rotation=False, 
-                fix_fwhm=False, sip=None, save=False)
-            err = fit_results[:,'x_err']
-
-
-            ## FIT SIP 
-            ## SIP 1 and SIP 2 are replaced by only one SIP that matches the
-            ## stars of the frame 2 onto the stars of the frame 1
-            self.sip1 = self.astro1.fit_sip(
-                np.copy(self.astro1.star_list),
-                fit_results.get_star_list(all_params=True),
-                params=[self.dx, self.dy, self.dr, self.da, self.db,
-                        self.rc[0], self.rc[1], self.zoom_factor],
-                init_sip=None, err=None, crpix=self.sip1.wcs.crpix,
-                crval=self.sip1.wcs.crval)
-            self.sip2 = None
-
-
-        else:
-            # fit stars
-            fit_results = self.astro2.fit_stars_in_frame(
-                0, no_aperture_photometry=True,
-                multi_fit=False, enable_zoom=False,
-                enable_rotation=False, 
-                fix_fwhm=False, sip=None, save=False)
-
-            fitted_star_nb = float(np.sum(~np.isnan(
-                fit_results.get_star_list(all_params=True)[:,0])))
-            
-            if (fitted_star_nb < ERROR_RATIO * MIN_STAR_NB):
-                raise StandardError("Not enough fitted stars in both cubes (%d%%). Alignment parameters might be wrong."%int(fitted_star_nb / MIN_STAR_NB * 100.))
-                
-            if (fitted_star_nb < WARNING_RATIO * MIN_STAR_NB):
-                warnings.warn("Poor ratio of fitted stars in both cubes (%d%%). Check alignment parameters."%int(fitted_star_nb / MIN_STAR_NB * 100.))
-
-            
-            err = fit_results[:,'x_err']
-            
-        star_list2 = utils.astrometry.transform_star_position_A_to_B(
-        np.copy(self.astro1.star_list),
-            [self.dx, self.dy, self.dr, self.da, self.db],
-            self.rc, self.zoom_factor,
-            sip_A=self.sip1, sip_B=self.sip2)
-        self.astro2.reset_star_list(star_list2)
-
-        fwhm_arc2 = utils.stats.robust_mean(
-            utils.stats.sigmacut(fit_results[:, 'fwhm_arc']))
-        
-        dx_fit = (star_list2[:,0]
-                  - fit_results.get_star_list(all_params=True)[:,0])
-        dy_fit = (star_list2[:,1]
-                  - fit_results.get_star_list(all_params=True)[:,1])
-        dr_fit = np.sqrt(dx_fit**2. + dy_fit**2.)
-        final_err = np.mean(utils.stats.sigmacut(dr_fit))
-
-        if not SKIP_CHECK:
-            if final_err < self.astro1.arc2pix(WARNING_DIST):
-                logging.info('Mean difference on star positions: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
-            elif final_err < self.astro1.arc2pix(ERROR_DIST):
-                warnings.warn('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
-            else:
-                raise StandardError('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.astro1.pix2arc(final_err)))
-        
-
-        ### PLOT ERROR ON STAR POSITIONS ###
-        ## import pylab as pl
-        ## scale = self.astro1.scale
-        ## pl.errorbar(dx_fit*scale, dy_fit*scale, xerr=err*scale,
-        ##             yerr=err*scale, linestyle='None')
-        ## circ = pl.Circle([0.,0.], radius=fwhm_arc/2.,
-        ##                  fill=False, color='g', linewidth=2.)
-        ## pl.gca().add_patch(circ)
-        ## pl.axes().set_aspect('equal')
-        ## pl.grid()
-        ## pl.xlim([-fwhm_arc/2.,fwhm_arc/2.])
-        ## pl.ylim([-fwhm_arc/2.,fwhm_arc/2.])
-        ## pl.show()
-
-        return {'coeffs':[self.dx, self.dy, self.dr, self.da, self.db],
-                'rc': self.rc,
-                'zoom_factor': self.zoom_factor,
-                'sip1': self.sip1,
-                'sip2': self.sip2,
-                'star_list1': self.astro1.star_list,
-                'star_list2': self.astro2.star_list,
-                'fwhm_arc1': fwhm_arc,
-                'fwhm_arc2': fwhm_arc2}
 
 
 

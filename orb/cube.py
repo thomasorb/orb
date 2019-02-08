@@ -67,6 +67,7 @@ class HDFCube(core.Data, core.Tools):
         :param kwargs: (Optional) :py:class:`~orb.core.Data` kwargs.
         """
         self.cube_path = str(path)
+        self.writeable = False
 
         # create file if it does not exists
         if not os.path.exists(self.cube_path):
@@ -90,12 +91,12 @@ class HDFCube(core.Data, core.Tools):
                         self.params[param] = f.attrs[param]
                     if 'instrument' in self.params and instrument is None:
                         instrument = self.params['instrument']
-                                    
+
         # init Tools and Data
         if not self.is_old:
             instrument = utils.misc.read_instrument_value_from_file(self.cube_path)
 
-        # load header if present and update params 
+        # load header if present and update params
         header = self._read_old_header()
         if 'params' not in kwargs:
             kwargs['params'] = header
@@ -106,7 +107,7 @@ class HDFCube(core.Data, core.Tools):
                 for ikey in header:
                     if ikey not in kwargs['params']:
                         kwargs['params'][ikey] = header[ikey]
-        
+
         # check if instrument is in params
         if instrument is None:
             if 'params' in kwargs:
@@ -116,18 +117,15 @@ class HDFCube(core.Data, core.Tools):
         core.Tools.__init__(self, instrument=instrument,
                             data_prefix=data_prefix,
                             config=config)
-
         if self.is_old:
             core.Data.__init__(self, self, **kwargs)
         else:
             core.Data.__init__(self, self.cube_path, **kwargs)
 
-
-        
         # checking dims
         if self.data.ndim != 3:
             raise TypeError('input cube has {} dims but must have exactly 3 dimensions'.format(self.data.ndim))
-            
+
         if indexer is not None:
             if not isinstance(indexer, core.Indexer):
                 raise TypeError('indexer must be an orb.core.Indexer instance')
@@ -140,18 +138,18 @@ class HDFCube(core.Data, core.Tools):
                 warnings.warn('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
-        with self.open_hdf5() as f:
-            _data = np.copy(f['data'].__getitem__(key))
-            if self.has_dataset('mask'):
-                _data *= self.get_dataset('mask').__getitem__((key[0], key[1]))
+        f = self.open_hdf5()
+        _data = np.copy(f['data'].__getitem__(key))
+        if self.has_dataset('mask'):
+            _data *= self.get_dataset('mask').__getitem__((key[0], key[1]))
 
-            # increase representation in case of complex or floats
-            if _data.dtype == np.float32:
-                _data = _data.astype(np.float64)
-            elif _data.dtype == np.complex64:
-                _data = _data.astype(np.complex128)
-            
-            return np.squeeze(_data)
+        # increase representation in case of complex or floats
+        if _data.dtype == np.float32:
+            _data = _data.astype(np.float64)
+        elif _data.dtype == np.complex64:
+            _data = _data.astype(np.complex128)
+
+        return np.squeeze(_data)
 
 
     def _read_old_header(self):
@@ -197,9 +195,30 @@ class HDFCube(core.Data, core.Tools):
     def copy(self):
         raise NotImplementedError('HDFCube instance cannot be copied')
     
-    def open_hdf5(self):
-        """Return the hdf5 file."""
-        return utils.io.open_hdf5(self.cube_path, 'r')
+    def open_hdf5(self, mode=None):
+        """Return a handle on the hdf5 file.
+
+        :param mode: opening mode. can be 'r' or 'a'. If None, opening
+          mode is set to the same as the writeability of the class
+          (use is_writeable() to check it). Note that an unwriteable
+          cube cannot be forced to a mode different from 'r' unless
+          self.writeable is manually set to True.
+        """
+        if mode is None:
+            if self.is_writeable(): mode = 'a'
+            else: mode = 'r'
+        else:
+            if mode not in ['r', 'a']:
+                raise ValueError('mode must be r or a')
+            if not self.is_writeable() and mode != 'r':
+                raise IOError('HDF5 file is not writeable.')
+        
+        try:
+            self.hdffile.attrs
+        except Exception:
+            self.hdffile = utils.io.open_hdf5(self.cube_path, mode)
+            
+        return self.hdffile
     
     def get_data(self, x_min, x_max, y_min, y_max, z_min, z_max, silent=False):
         """Return a part of the data cube.
@@ -275,9 +294,9 @@ class HDFCube(core.Data, core.Tools):
         
     def has_dataset(self, path):
         """Check if a dataset is present"""
-        with self.open_hdf5() as f:
-            if path not in f: return False
-            else: return True
+        f = self.open_hdf5()
+        if path not in f: return False
+        else: return True
     
     def get_dataset(self, path, protect=True):
         """Return a dataset (but not 'data', instead use get_data).
@@ -293,18 +312,18 @@ class HDFCube(core.Data, core.Tools):
 
         if path == 'data':
             raise ValueError('to get data please use your cube as a classic 3d numpy array. e.g. arr = cube[:,:,:].')
-        with self.open_hdf5() as f:
-            if path not in f:
-                raise AttributeError('{} dataset not in the hdf5 file'.format(path))
-            return f[path][:]
+        f = self.open_hdf5()
+        if path not in f:
+            raise AttributeError('{} dataset not in the hdf5 file'.format(path))
+        return f[path][:]
 
     def get_datasets(self):
         """Return all datasets contained in the cube
         """
         ds = list()
-        with self.open_hdf5() as f:
-            for path in f:
-                ds.append(path)
+        f = self.open_hdf5()
+        for path in f:
+            ds.append(path)
         return ds
         
     def has_same_2D_size(self, cube_test):
@@ -387,31 +406,6 @@ class HDFCube(core.Data, core.Tools):
         logging.info("Data resized to shape : ({}, {}, {})".format(dimx, dimy,dimz))
         return data
 
-    def get_interf_energy_map(self, recompute=False):
-        """Return the energy map of an interferogram cube.
-    
-        :param recompute: (Optional) Force to recompute energy map
-          even if it is already present in the cube (default False).
-          
-        If an energy map has already been computed ('energy_map'
-        dataset) return it directly.
-        """
-        if not recompute:
-            if self.has_dataset('energy_map'):
-                return self.get_dataset('energy_map')
-            
-        mean_map = self.get_mean_image()
-        energy_map = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
-        progress = core.ProgressBar(self.dimz)
-        for _ik in range(self.dimz):
-            energy_map += np.abs(self.get_data_frame(_ik) - mean_map)**2.
-            progress.update(_ik, info="Creating interf energy map")
-        progress.end()
-        
-        f['energy_map'] = np.sqrt(energy_map / self.dimz)
-        return f['energy_map'][:]
-
-
     def get_deep_frame(self, recompute=False):
         """Return the deep frame of a cube.
 
@@ -425,13 +419,22 @@ class HDFCube(core.Data, core.Tools):
                 return self.get_dataset('deep_frame', protect=False)
         
             elif self.is_old:
-                f['deep_frame'] = self.oldcube.get_mean_image(recompute=recompute)
-                return f['deep_frame'][:]
+                return self.oldcube.get_mean_image(recompute=recompute) / self.params.exposure_time
 
-            else:
-                raise NotImplementedError()
-        else:
-            raise NotImplementedError()
+        return self.compute_sum_image() / self.dimz / self.params.exposure_time
+
+    def compute_sum_image(self):
+        """compute the sum along z axis
+        """
+        SIZE = 30
+        sum_im = np.zeros((self.dimx, self.dimy), dtype=self.data.dtype)
+        progress = core.ProgressBar(self.dimz)
+        for ik in range(0, self.dimz, SIZE):
+            frames = self[:,:,ik:ik+SIZE]
+            sum_im += np.nansum(frames, axis=2)
+            progress.update(ik, info="Creating sum image")
+        progress.end()
+        return sum_im
 
 
     def get_quadrant_dims(self, quad_number, div_nb=None,
@@ -474,15 +477,16 @@ class HDFCube(core.Data, core.Tools):
         with utils.io.open_hdf5(export_path, 'w') as fout:
             fout.attrs['level2'] = True
             
-            with self.open_hdf5() as f:
-                for iattr in f.attrs:
-                    fout.attrs[iattr] = f.attrs[iattr]
-                    
-                for ikey in f:
-                    if is_exportable(ikey):
-                        logging.info('adding {}'.format(ikey))
-                        fout.create_dataset(ikey, data=f[ikey], chunks=True)
-                fout.create_dataset('data', shape=self.shape, chunks=True)
+            f = self.open_hdf5()
+            for iattr in f.attrs:
+                fout.attrs[iattr] = f.attrs[iattr]
+
+            for ikey in f:
+                if is_exportable(ikey):
+                    logging.info('adding {}'.format(ikey))
+                    fout.create_dataset(ikey, data=f[ikey], chunks=True)
+            fout.create_dataset('data', shape=self.shape, chunks=True)
+            
             for iquad in range(self.config.QUAD_NB):
                 logging.info('writing quad {}/{}'.format(
                     iquad, self.config.QUAD_NB))
@@ -490,6 +494,17 @@ class HDFCube(core.Data, core.Tools):
                 fout['data'][xmin:xmax, ymin:ymax, :] = self[xmin:xmax, ymin:ymax, :]
         
 
+    def to_fits(self, path):
+        """write data to a FITS file. 
+
+        Note that most of the information will be lost in the
+        process. The only output guaranteed format is hdf5 (usr
+        writeto() method instead)
+
+        :param path: Path to the FITS file
+        """
+        raise NotImplementedError()
+                
     def get_frame_header(self, index):
         """Return the header of a frame given its index in the list.
 
@@ -534,21 +549,67 @@ class HDFCube(core.Data, core.Tools):
         return utils.validate.index(y, 0, self.dimy, clip=clip)
 
 
+    def get_master_frame(self, combine=None, reject=None):
+
+        """Combine frames along z to create a master frame.
+        
+        :param reject: (Optional) Rejection operation for master
+          frames creation. Can be 'sigclip', 'minmax', 'avsigclip' or
+          None (default 'avsigclip'). See
+          :py:meth:`orb.utils.image.create_master_frame`.
+        
+        :param combine: (Optional) Combining operation for master
+          frames creation. Can be 'average' or 'median' (default
+          'average'). See
+          :py:meth:`orb.utils.image.create_master_frame`.
+        """
+
+        if self.dimz > 25:
+            raise StandardError('master combination is useful for a small set of frames')
+        
+        if combine is None:
+            combine='average'
+        if reject is None:
+            reject='avsigclip'
+
+        if not self.config.BIG_DATA:
+            master = utils.image.create_master_frame(
+                self[:,:,:], combine=combine, reject=reject)
+        else:
+            master = utils.image.pp_create_master_frame(
+                self[:,:,:], combine=combine, reject=reject,
+                ncpus=self.config.NCPUS)
+
+        return master
+
+
+        
+    
+
+
 #################################################
 #### CLASS RWHDFCube ############################
 #################################################
 class RWHDFCube(HDFCube):
 
-    def __init__(self, path, shape=None, instrument=None, **kwargs):
-        """
-        :param path: Path to an HDF5 cube
+    def __init__(self, path, shape=None, instrument=None, reset=False, **kwargs):
+        """:param path: Path to an HDF5 cube
 
         :param shape: (Optional) Must be set to something else than
           None to create an empty file. It the file already exists,
           shape must be set to None.
 
+        :param reset: (Optional) If True and if a file already exists,
+          it is deleted before being created again.
+
         :param kwargs: (Optional) :py:class:`~orb.core.HDFCube` kwargs.
-        """        
+
+        """
+        # reset
+        if reset:
+            if os.path.exists(path):
+                os.remove(path)
+
         # create file if it does not exists
         if not os.path.exists(path):
             if shape is None:
@@ -564,34 +625,56 @@ class RWHDFCube(HDFCube):
 
         HDFCube.__init__(self, path, instrument=instrument, **kwargs)
 
+        # reopening in rw mode
+        if self.hdffile is not None:
+            _dataname = self.data.name
+            del self.hdffile
+            del self.data
+            self.set_writeable(True)
+            self.hdffile = self.open_hdf5('a')
+            self.data = self.hdffile[_dataname]
+
         if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
+
+        if self.has_params:
+            self.set_params(self.params)
 
     def __setitem__(self, key, value):
         """Implement setitem special method"""        
-        with self.open_hdf5('a') as f:
-            # decrease representation in case of complex or floats to
-            # minimize data size
-            if value.dtype == np.float64:
-                value = value.astype(np.float32)
-            elif value.dtype == np.complex128:
-                value = value.astype(np.complex64)
+        # decrease representation in case of complex or floats to
+        # minimize data size
+        if value.dtype == np.float64:
+            value = value.astype(np.float32)
+        elif value.dtype == np.complex128:
+            value = value.astype(np.complex64)
             
-            return f['data'].__setitem__(key, value)
+        f = self.open_hdf5()
+        return f['data'].__setitem__(key, value)
 
     def set_param(self, key, value):
         """Set class parameter
 
         :param key: parameter key
+
+        :param value: parameter value
         """
         self.params[key] = value
-        with self.open_hdf5(mode='a') as f:
-            _update = True
-            value = utils.io.cast2hdf5(value)
-            if key in f.attrs:
-                if f.attrs[key] == value:
-                    _update = False
-            if _update:
-                f.attrs[key] = value
+        f = self.open_hdf5()
+        _update = True
+        value = utils.io.cast2hdf5(value)
+        if key in f.attrs:
+            if f.attrs[key] == value:
+                _update = False
+        if _update:
+            f.attrs[key] = value
+
+    def set_params(self, params):
+        """Set class parameters
+
+        :param params: a dict of parameters
+        """
+        for ipar in params:
+            self.set_param(ipar, params[ipar])
 
     def set_mask(self, data):
         """Set mask
@@ -605,14 +688,6 @@ class RWHDFCube(HDFCube):
         HDFCube.set_mask(self, data)
         self.set_dataset('mask', data, protect=False)
             
-    def open_hdf5(self, mode='r'):
-        """Return the hdf5 file.
-
-        :param mode: Opening mode (can be 'r', 'a')
-        """
-        if mode not in ['r', 'a']: raise ValueError('mode must be r or a')
-        return utils.io.open_hdf5(self.cube_path, mode=mode)
-
     def set_dataset(self, path, data, protect=True):
         """Write a dataset to the hdf5 file
 
@@ -629,14 +704,26 @@ class RWHDFCube(HDFCube):
 
         if path == 'data':
             raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. cube[:,:,:] = value.')
-        with self.open_hdf5('a') as f:
-            if path in f:
-                del f[path]
-                warnings.warn('{} dataset changed'.format(path))
+        f = self.open_hdf5()
+        if path in f:
+            del f[path]
+            warnings.warn('{} dataset changed'.format(path))
 
-            if isinstance(data, dict):
-                data = utils.io.dict2array(data)
-            f.create_dataset(path, data=data, chunks=True)
+        if isinstance(data, dict):
+            data = utils.io.dict2array(data)
+        f.create_dataset(path, data=data, chunks=True)
+
+    def set_deep_frame(self, deep_frame):
+        """Append a deep frame to the HDF5 cube.
+
+        :param deep_frame: Deep frame to append.
+        """
+        if deep_frame.shape != (self.dimx, self.dimy):
+            raise TypeError('deep frame must have shape ({}, {})'.format(self.dimx, self.dimy))
+        
+            
+        self.set_dataset('deep_frame', deep_frame, protect=False)
+
 
     def set_frame_header(self, index, header):
         """Set the header of a frame.
@@ -650,6 +737,44 @@ class RWHDFCube(HDFCube):
         self.set_dataset('frame_header_{}'.format(index),
                          utils.io.header_fits2hdf5(header))
             
+    def write_frame(self, index, data=None, header=None, section=None,
+                    record_stats=False):
+        """Write a frame. 
+
+        This function is here for backward compatibility but a simple
+        self[:,:,index] may be used instead.
+
+        :param index: Index of the frame
+        
+        :param data: (Optional) Frame data (default None).
+        
+        :param header: (Optional) Frame header (default None).
+                
+        :param section: (Optional) If not None, must be a 4-tuple
+          [xmin, xmax, ymin, ymax] giving the section to write instead
+          of the whole frame. Useful to modify only a part of the
+          frame (default None).
+
+        :param record_stats: (Optional) If True, frame stats are
+          recorder in its header (default False).
+        """
+        if section is not None:
+            xmin, xmax, ymin, ymax = section
+        else:
+            xmin, xmax, ymin, ymax = 0, self.dimx, 0, self.dimy
+
+        if data is not None:
+            self[xmin:xmax, ymin:ymax, index] = data
+
+        if record_stats:
+            if header is None:
+                header = dict()
+            header['MEAN'] = np.nanmean(self[xmin:xmax, ymin:ymax, index].real)
+            header['MEDIAN'] = np.nanmedian(self[xmin:xmax, ymin:ymax, index].real)
+                        
+        if header is not None:
+            self.set_frame_header(index, header)
+
 
 #################################################
 #### CLASS Cube ################################
@@ -662,7 +787,7 @@ class Cube(HDFCube):
                      'step_nb', 'zpd_index')
 
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
-                       'dark_time', 'flat_time', 'camera_index', 'wcs_rotation',
+                       'dark_time', 'flat_time', 'camera', 'wcs_rotation',
                        'calibration_laser_map_path')
     
     def __init__(self, path, params=None, instrument=None, **kwargs):
@@ -681,7 +806,6 @@ class Cube(HDFCube):
           keyword arguments.
         """
         HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
-
         # compute additional parameters
         self.filterfile = core.FilterFile(self.params.filter_name)
         self.set_param('filter_file_path', self.filterfile.basic_path)
@@ -690,9 +814,9 @@ class Cube(HDFCube):
         self.set_param('filter_cm1_min', self.filterfile.get_filter_bandpass_cm1()[0])
         self.set_param('filter_cm1_max', self.filterfile.get_filter_bandpass_cm1()[1])
 
-        if 'camera_index' in self.params:
-            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera_index)],
-                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera_index)]]
+        if 'camera' in self.params:
+            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera)],
+                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera)]]
             binning = utils.image.compute_binning(
                 (self.dimx, self.dimy), detector_shape)
                             
@@ -701,7 +825,7 @@ class Cube(HDFCube):
             self.set_param('binning', binning[0])
             
             logging.debug('Computed binning of camera {}: {}x{}'.format(
-                self.params.camera_index, self.params.binning, self.params.binning))
+                self.params.camera, self.params.binning, self.params.binning))
         
         self.params_defined = True
 
@@ -829,8 +953,7 @@ class Cube(HDFCube):
 
     def fit_stars_in_cube(self, star_list,
                           correct_alignment=False, save=False,
-                          add_cube=None, 
-                          **kwargs):
+                          add_cube=None, **kwargs):
         
         """Fit stars in the cube.
 
@@ -863,6 +986,10 @@ class Cube(HDFCube):
 
         """
         def _fit_stars_in_frame(frame, star_list, fwhm_pix, params, kwargs):
+
+            import warnings
+            warnings.simplefilter('ignore')
+            
             im = orb.image.Image(frame, params=params)
             if fwhm_pix is not None:
                 im.reset_fwhm_pix(fwhm_pix)
@@ -982,7 +1109,6 @@ class Cube(HDFCube):
                     dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
                     dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
                     fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
-                
             progress.update(ik, info="frame : " + str(ik))
             
         self._close_pp_server(job_server)
@@ -1536,147 +1662,6 @@ class FDCube(core.Tools):
 #         """
 #         self.f[self._get_hdf5_frame_path(index)].attrs[attr] = value
 
-#     def write_frame(self, index, data=None, header=None, mask=None,
-#                     record_stats=False, force_float32=True, section=None,
-#                     force_complex64=False, compress=False):
-#         """Write a frame
-
-#         :param index: Index of the frame
-        
-#         :param data: (Optional) Frame data (default None).
-        
-#         :param header: (Optional) Frame header (default None).
-        
-#         :param mask: (Optional) Frame mask (default None).
-        
-#         :param record_stats: (Optional) If True Mean and Median of the
-#           frame are appended as attributes (data must be set) (defaut
-#           False).
-
-#         :param force_float32: (Optional) If True, data type is forced
-#           to numpy.float32 type (default True).
-
-#         :param section: (Optional) If not None, must be a 4-tuple
-#           [xmin, xmax, ymin, ymax] giving the section to write instead
-#           of the whole frame. Useful to modify only a part of the
-#           frame (deafult None).
-
-#         :param force_complex64: (Optional) If True, data type is
-#           forced to numpy.complex64 type (default False).
-
-#         :param compress: (Optional) If True, data is lossely
-#           compressed using a gzip algorithm (default False).
-#         """
-#         def _replace(name, dat):
-#             if name == 'data':
-#                 if force_complex64: dat = dat.astype(np.complex64)
-#                 elif force_float32: dat = dat.astype(np.float32)
-#                 dat_path = self._get_hdf5_data_path(index)
-#             if name == 'mask':
-#                 dat_path = self._get_hdf5_data_path(index, mask=True)
-#             if name == 'header':
-#                 dat_path = self._get_hdf5_header_path(index)
-#             if name == 'data' or name == 'mask':
-#                 if section is not None:
-#                     old_dat = None
-#                     if  dat_path in self.f:
-#                         if (self.f[dat_path].shape == self.imshape):
-#                             old_dat = self.f[dat_path][:]
-#                     if old_dat is None:
-#                         frame = np.empty(self.imshape, dtype=dat.dtype)
-#                         frame.fill(np.nan)
-#                     else:
-#                         frame = np.copy(old_dat).astype(dat.dtype)
-#                     frame[section[0]:section[1],section[2]:section[3]] = dat
-#                 else:
-#                     if dat.shape == self.imshape:
-#                         frame = dat
-#                     else:
-#                         raise StandardError(
-#                             "Bad data shape {}. Must be {}".format(
-#                                 dat.shape, self.imshape))
-#                 dat = frame
-                    
-#             if dat_path in self.f: del self.f[dat_path]
-#             if compress:
-#                 ## szip_types = (np.float32, np.float64, np.int16, np.int32, np.int64,
-#                 ##               np.uint8, np.uint16)
-            
-#                 ## if dat.dtype in szip_types:
-#                 ##     compression = 'szip'
-#                 ##     compression_opts = ('nn', 32)
-#                 ## else:
-#                 ##     compression = 'gzip'
-#                 ##     compression_opts = 4
-#                 compression = 'lzf'
-#                 compression_opts = None
-#             else:
-#                 compression = None
-#                 compression_opts = None
-#             self.f.create_dataset(
-#                 dat_path, data=dat,
-#                 compression=compression, compression_opts=compression_opts)
-#             return dat
-
-#         if force_float32 and force_complex64:
-#             raise StandardError('force_float32 and force_complex64 cannot be both set to True')
-
-            
-#         if data is None and header is None and mask is None:
-#             warnings.warn('Nothing to write in the frame {}').format(
-#                 index)
-#             return
-        
-#         if data is not None:
-#             data = _replace('data', data)
-            
-#             if record_stats:
-#                 mean = bn.nanmean(data.real)
-#                 median = bn.nanmedian(data.real)
-#                 self.f[self._get_hdf5_frame_path(index)].attrs['mean'] = (
-#                     mean)
-#                 self.f[self._get_hdf5_frame_path(index)].attrs['median'] = (
-#                     mean)
-#             else:
-#                 mean = None
-#                 median = None
-                
-#         if mask is not None:
-#             mask = mask.astype(np.bool_)
-#             _replace('mask', mask)
-
-
-#         # Creating pyfits.ImageHDU instance to format header
-#         if header is not None:
-#             if not isinstance(header, pyfits.Header):
-#                 header = pyfits.Header(header)
-
-#         if data.dtype != np.bool:
-#             if np.iscomplexobj(data) or force_complex64:
-#                 hdu = pyfits.ImageHDU(data=data.real, header=header)
-#             else:
-#                 hdu = pyfits.ImageHDU(data=data, header=header)
-#         else:
-#             hdu = pyfits.ImageHDU(data=data.astype(np.uint8), header=header)
-            
-        
-#         if hdu is not None:
-#             if record_stats:
-#                 if mean is not None:
-#                     if not np.isnan(mean):
-#                         hdu.header.set('MEAN', mean,
-#                                        'Mean of data (NaNs filtered)',
-#                                        after=5)
-#                 if median is not None:
-#                     if not np.isnan(median):
-#                         hdu.header.set('MEDIAN', median,
-#                                        'Median of data (NaNs filtered)',
-#                                        after=5)
-            
-#             hdu.verify(option=u'silentfix')
-                
-            
-#             _replace('header', self._header_fits2hdf5(hdu.header))
             
 
 #     def append_image_list(self, image_list):
@@ -1693,15 +1678,6 @@ class FDCube(core.Tools):
 #             warnings.warn('empty image list')
         
 
-#     def append_deep_frame(self, deep_frame):
-#         """Append a deep frame to the HDF5 cube.
-
-#         :param deep_frame: Deep frame to append.
-#         """
-#         if 'deep_frame' in self.f:
-#             del self.f['deep_frame']
-            
-#         self.f['deep_frame'] = deep_frame
 
 #     def append_energy_map(self, energy_map):
 #         """Append an energy map to the HDF5 cube.

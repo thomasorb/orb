@@ -31,11 +31,11 @@ import time
 import warnings
 import os
 
-import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 import astropy.stats
 import astropy.nddata
 from  astropy.coordinates.name_resolve import NameResolveError
+from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
 
 import photutils
 
@@ -52,6 +52,7 @@ import utils.vector
 import utils.web
 import utils.misc
 import utils.io
+
 
 #################################################
 #### CLASS Frame2D ##############################
@@ -177,26 +178,15 @@ class Image(Frame2D, core.Tools):
         target_x = float(self.dimx / 2.)
         target_y = float(self.dimy / 2.)
         if self.is_cam2():
-            if self.instrument == 'spiomm':
-                raise NotImplementedError()
-            else:
-                bin_cam_1 = self.params.binning
-                bin_cam_2 = self.params.binning
-
-            # get initial shift
-            init_dx = self.config["INIT_DX"] / bin_cam_2
-            init_dy = self.config["INIT_DY"] / bin_cam_2
-            pix_size_1 = self.config["PIX_SIZE_CAM1"]
-            pix_size_2 = self.config["PIX_SIZE_CAM2"]
-            zoom = (pix_size_2 * bin_cam_2) / (pix_size_1 * bin_cam_1)
-            xrc = self.dimx / 2.
-            yrc = self.dimy / 2.
-
+            coeffs = self.get_initial_alignment_parameters()
+            
+            warnings.warn('target_x, target_y initialy at {}, {}'.format(target_x, target_y))
             target_x, target_y = cutils.transform_A_to_B(
-                target_x, target_y,
-                init_dx, init_dy,
-                self.config["INIT_ANGLE"],
-                0., 0., xrc, yrc, zoom, zoom)
+                self.params.target_x, self.params.target_y,
+                coeffs.dx, coeffs.dy,
+                coeffs.dr,
+                0., 0., coeffs.rc[0], coeffs.rc[1], coeffs.zoom, coeffs.zoom)
+            warnings.warn('target_x, target_y recomputed to {}, {}'.format(target_x, target_y))
 
         self.params.reset('target_x', target_x)
         self.params.reset('target_y', target_y)
@@ -225,9 +215,10 @@ class Image(Frame2D, core.Tools):
             
         if not self.has_param('wcs_rotation'):
             if self.is_cam1():
-                self.params['wcs_rotation'] = self.config.WCS_ROTATION
+                self.params['wcs_rotation'] = float(self.config.WCS_ROTATION)
             else:
-                self.params['wcs_rotation'] = self.config.WCS_ROTATION - self.config.INIT_ANGLE
+                self.params['wcs_rotation'] = (float(self.config.WCS_ROTATION)
+                                               - float(self.config.INIT_ANGLE))
         
         ## load astrometry params
 
@@ -304,8 +295,8 @@ class Image(Frame2D, core.Tools):
                 self.sip = sip
             else:
                 raise StandardError('sip must be an astropy.wcs.WCS instance')
-        else:
-            self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+        #else:
+            #self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
 
     def _get_star_list_path(self):
         """Return the default path to the star list file."""
@@ -315,6 +306,10 @@ class Image(Frame2D, core.Tools):
         """Return the default path to the file containing all fit
         results."""
         return self._data_path_hdr + "fit_results.hdf5"
+
+    def _get_guess_matrix_path(self):
+        """Return path to the guess matrix"""
+        return self._data_path_hdr + "guess_matrix.fits"
 
     def is_cam1(self):
         """Return true is image comes from camera 1 or is a merged frame
@@ -341,24 +336,77 @@ class Image(Frame2D, core.Tools):
                             config=self.config, data_prefix=self._data_prefix,
                             sip=self.sip)
     
+
+    def detrend(self, bias=None, dark=None, flat=None, shift=None, cr_map=None):
+        """Return a detrended image
+
+        :param bias: Master bias
+
+        :param dark: Master dark (must be in counts/s)
+
+        :param flat: Master flat
+
+        :param shift: shift correction (dx, dy)
+
+        :param cr_map: A map of cosmic rays with boolean type: 1 = CR, 0 = NO_CR
+        """
+        frame = np.copy(self.data)
         
+        if bias is not None:
+            if bias.shape != self.shape: raise TypeError('Bias must have shape {}'.format(self.shape))
+            frame -= bias
+            
+        if dark is not None:
+            if dark.shape != self.shape: raise TypeError('Dark must have shape {}'.format(self.shape))
+            frame -= dark * self.params.exposure_time
+            
+        if flat is not None:
+            if flat.shape != self.shape: raise TypeError('Flat must have shape {}'.format(self.shape))
+            flat = np.copy(flat)
+            flat[np.nonzero(flat == 0)] = np.nan
+            flat /= np.nanpercentile(flat, 99.9)
+            frame /= flat
+                
+        if cr_map is not None:
+            if cr_map.shape != self.shape:
+                raise TypeError('cr_map must have shape {}'.format(self.shape))
+    
+            if cr_map.dtype != np.bool: raise TypeError('cr_map must have type bool')
+
+            frame = utils.image.correct_cosmic_rays(frame, cr_map)
+            
+        if shift is not None:
+            utils.validate.has_len(shift, 2, object_name='shift')
+            dx, dy = shift
+            if (dx != 0.) and (dy != 0.):
+                frame = utils.image.shift_frame(frame, dx, dy, 
+                                                0, self.dimx, 
+                                                0, self.dimy, 1)
+            
+        return frame
+        
+            
     def set_wcs(self, wcs):
         """Set WCS from w WCS instance or a FITS image
 
         :param wcs: Must be an astropy.wcs.WCS instance or a path to a FITS image
         """
         if isinstance(wcs, str):
+            warnings.simplefilter('ignore', category=VerifyWarning)
+            warnings.simplefilter('ignore', category=AstropyUserWarning)
             wcs = pywcs.WCS(
                 orb.utils.io.read_fits(wcs_path, return_hdu_only=True)[0].header,
                 naxis=2, relax=True)
         self.update_params(wcs.to_header(relax=True))
 
     def get_wcs(self):
-        """Return the WCS of the cube as a astropy.wcs.WCS instance """
+        """Return the WCS of the cube as an astropy.wcs.WCS instance """
+        warnings.simplefilter('ignore', category=VerifyWarning)
+        warnings.simplefilter('ignore', category=AstropyUserWarning)
         return pywcs.WCS(self.get_header(), naxis=2, relax=True)
 
     def get_wcs_header(self):
-        """Return the WCS of the cube as a astropy.wcs.WCS instance """
+        """Return the WCS of the cube as a astropy.io.fits.Header instance """
         return self.get_wcs().to_header(relax=True)
 
     def find_object(self, is_standard=False):
@@ -576,7 +624,7 @@ class Image(Frame2D, core.Tools):
             catalog=catalog, max_stars=max_stars)
 
 
-    def detect_stars(self, min_star_number=4, saturation_threshold=35000):
+    def detect_stars(self, min_star_number=30, saturation_threshold=35000):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
@@ -609,6 +657,7 @@ class Image(Frame2D, core.Tools):
         sources = self.fit_stars(sources, no_aperture_photometry=True)
         mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])
 
+        utils.io.open_file(self._get_star_list_path(), 'w') # used to create the folder tree
         sources.to_hdf(self._get_star_list_path(), 'data', mode='w')
         logging.info('sources written to {}'.format(self._get_star_list_path()))
         return self._get_star_list_path(), mean_fwhm
@@ -617,7 +666,7 @@ class Image(Frame2D, core.Tools):
         """Return fwhm of a list of stars
 
         :param star_list: list of stars (can be an np.ndarray or a path
-          ot a star list).
+          to a star list).
         """
         star_list = utils.astrometry.load_star_list(star_list)
         
@@ -1360,3 +1409,359 @@ class Image(Frame2D, core.Tools):
             frame, star_list, self.box_size, **kwargs)
         
         return utils.astrometry.fit2df(fit_results)
+
+
+    def get_initial_alignment_parameters(self):
+        """Return initial alignemnt coefficients for camera 2 as a core.Params instance"""
+        if self.instrument == 'spiomm':
+            raise NotImplementedError()
+        else:
+            bin_cam_1 = self.params.binning
+            bin_cam_2 = self.params.binning
+
+        init_dx = self.config["INIT_DX"] / bin_cam_2
+        init_dy = self.config["INIT_DY"] / bin_cam_2
+        pix_size_1 = self.config["PIX_SIZE_CAM1"]
+        pix_size_2 = self.config["PIX_SIZE_CAM2"]
+        zoom = (pix_size_2 * bin_cam_2) / (pix_size_1 * bin_cam_1)
+        xrc = self.dimx / 2.
+        yrc = self.dimy / 2.
+        
+        coeffs = core.Params()
+        coeffs.dx = float(init_dx)
+        coeffs.dy = float(init_dy)
+        coeffs.dr = float(self.config['INIT_ANGLE'])
+        coeffs.da = 0.
+        coeffs.db = 0.
+        coeffs.rc = float(xrc), float(yrc)
+        coeffs.zoom = float(zoom)
+
+        return coeffs
+
+
+    
+    def compute_alignment_parameters(self, image2, correct_distortion=False,
+                                     star_list1=None, fwhm_arc=None,
+                                     brute_force=True, saturation_threshold=35000):
+        """Return the alignment coefficients that match the stars of this
+        image to the stars of the image 2.
+
+        :param image2: Image instance.
+
+        :param correct_distortion: (Optional) If True, a SIP is computed to
+          match stars from frame 2 onto the stars from frame 1. But it
+          needs a lot of stars to run correctly (default False).
+
+        :param star_list1: (Optional) Path to a list of stars in
+          the image 1. If given the fwhm_arc must also be set (default None).
+
+        :param fwhm_arc: (Optional) mean FWHM of the stars in
+          arcseconds. Must be given if star_list1 is not None
+          (default None).
+
+        :param brute_force: (Optional) If True the first step is a
+          brute force guess. This is very useful if the initial
+          parameters are not well known (default True).
+
+        :param saturation_threshold: (Optional) Number of counts above
+          which the star can be considered as saturated. Very low by
+          default because at the ZPD the intensity of a star can be
+          twice the intensity far from it (default 35000).
+
+
+        .. note:: The alignement coefficients are:
+        
+          * dx : shift along x axis in pixels
+          
+          * dy : shift along y axis in pixels
+          
+          * dr : rotation angle between images (the center of rotation
+            is the center of the images of the camera 1) in degrees
+            
+          * da : tip angle between cameras (along x axis) in degrees
+          
+          * db : tilt angle between cameras (along y axis) in degrees
+
+        .. note:: The process tries to find the stars detected in the camera A in the frame of the camera B. It goes through 2 steps:
+
+           1. Rough alignment (brute force style) only looking over
+              dx, dy. dr is kept to its initial value (init_angle), da
+              and db are set to 0.
+
+           2. Fine alignment pass.
+
+        .. warning:: This alignment process do not work if the initial
+          parameters are too far from the real value. The angle must
+          be known within a few degrees. The shift must be known
+          within 4 % of the frame size (The latter can be changed
+          using the SIZE_COEFF constant)
+
+        """
+        def print_alignment_coeffs():
+            """Print the alignement coefficients."""
+            logging.info("\n> dx : " + str(coeffs.dx) + "\n" +
+                         "> dy : " + str(coeffs.dy) + "\n" +
+                         "> dr : " + str(coeffs.dr) + "\n" +
+                         "> da : " + str(coeffs.da) + "\n" +
+                         "> db : " + str(coeffs.db))
+
+        def match_star_lists(p, slin, slout, rc, zf, sip1, sip2):
+            """return the transformation parameters given two list of
+            star positions.
+            """
+            def diff(p, slin, slout, rc, zf, sip1, sip2):
+                slin_t = utils.astrometry.transform_star_position_A_to_B(
+                    slin, p, rc, zf,
+                    sip_A=sip1, sip_B=sip2)
+                result = (slin_t - slout).flatten()
+                return result[np.nonzero(~np.isnan(result))]
+
+            try:
+                fit = optimize.leastsq(diff, p,
+                                       args=(slin, slout, rc, zf, sip1, sip2),
+                                       full_output=True, xtol=1e-6)
+            except Exception, e:
+                raise Exception('No matching parameters found: {}'.format(e))
+            
+            if fit[-1] <= 4:
+                match = np.sqrt(np.mean(fit[2]['fvec']**2.))
+                if match > 1e-3:
+                    warnings.warn('Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
+                return fit[0]
+            
+            else:
+                raise Exception('No matching parameters found')
+
+        def brute_force_alignment(xystep_size, angle_range, angle_steps, range_coeff):
+            # define the ranges in x and y for the rough optimization
+            x_range_len = range_coeff * float(image2.dimx)
+            y_range_len = range_coeff * float(image2.dimy)
+
+            x_hrange = np.arange(xystep_size, x_range_len/2, xystep_size)
+            x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + coeffs.dx
+            
+            y_hrange = np.arange(xystep_size, y_range_len/2, xystep_size)
+            y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + coeffs.dy
+            
+          
+            r_range = np.linspace(-angle_range/2.,
+                                  angle_range/2.,
+                                  angle_steps) + coeffs.dr
+
+            (coeffs.dx, coeffs.dy, coeffs.dr, guess_matrix) = (
+                utils.astrometry.brute_force_guess(
+                    image2.data.astype(np.float64), star_list1,
+                    x_range, y_range, r_range,
+                    coeffs.rc, coeffs.zoom,
+                    image2.fwhm_pix * 3.))
+            coeffs.da = 0.
+            coeffs.db = 0.
+
+            # Save guess matrix
+            utils.io.write_fits(self._get_guess_matrix_path(),
+                                guess_matrix)
+
+        
+            
+        ERROR_RATIO = 0.2 # Minimum ratio of fitted stars once the
+                          # optimization pass has been done. If
+                          # the ratio of fitted stars is less than
+                          # this ratio an error is raised.
+
+        WARNING_RATIO = 0.5 # If there's less than this ratio of
+                            # fitted stars after the 
+                            # optimization pass a warning is printed.
+
+        WARNING_DIST = .3 # Max optimized distance in arcsec before a
+                          # warning is raised
+                          
+        ERROR_DIST = 2.* WARNING_DIST # Max optimized distance in
+                                      # arcsec before an error is
+                                      # raised
+        
+        MIN_STAR_NB = 30 # Target number of star to detect to find the
+                         # transformation parameters
+
+        XYSTEP_SIZE = 0.5 # Pixel step size of the search range
+
+        ANGLE_STEPS = 10 # Angle steps for brute force guess
+        ANGLE_RANGE = 1. # Angle range for brute force guess
+        
+        # Skip fit checking
+        SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', 0)))
+
+        RANGE_COEFF = float(self._get_tuning_parameter(
+            'RANGE_COEFF', self.config.ALIGNER_RANGE_COEFF))
+
+        coeffs = self.get_initial_alignment_parameters()
+        
+        if star_list1 is None:
+            star_list1, fwhm_arc = self.detect_stars(
+                min_star_number=MIN_STAR_NB,
+                saturation_threshold=saturation_threshold)
+        elif fwhm_arc is None:
+            raise StandardError('If the path to a list of stars is given (star_list1) the fwhm in arcsec(fwhm_arc) must also be given.')
+
+        star_list1 = utils.astrometry.load_star_list(star_list1)
+
+        image2.reset_fwhm_arc(fwhm_arc)
+        self.reset_fwhm_arc(fwhm_arc)
+
+        ##########################################
+        ### BRUTE FORCE GUESS (only dx and dy) ###
+        ##########################################
+        if brute_force:
+            logging.info("Brute force guess on large field")
+            brute_force_alignment(4*XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS/2, RANGE_COEFF*10)
+            logging.info("Brute force guess:") 
+            print_alignment_coeffs()
+
+            logging.info("Finer brute force guess")
+            brute_force_alignment(XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS, RANGE_COEFF)
+            logging.info("Brute force guess:") 
+            print_alignment_coeffs()
+
+
+        guess = [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db]
+        
+        ##########################
+        ## FINE ALIGNMENT STEP ###
+        ##########################
+        
+        # create sip corrected and transformed list
+        star_list2 = utils.astrometry.transform_star_position_A_to_B(
+            np.copy(star_list1), guess, coeffs.rc, coeffs.zoom,
+            sip_A=self.sip)
+
+        fit_results = image2.fit_stars(
+            star_list2, no_aperture_photometry=True,
+            multi_fit=True, enable_zoom=False,
+            enable_rotation=True, fix_fwhm=True)
+        
+        [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
+            guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
+            coeffs.rc, coeffs.zoom, sip1=self.sip, sip2=image2.sip)
+
+        logging.info("Fine alignment parameters:") 
+        print_alignment_coeffs()
+                
+
+        #####################################
+        ### COMPUTE DISTORTION CORRECTION ###
+        #####################################
+
+        if correct_distortion:
+            logging.info('Computing distortion correction polynomial (SIP)')
+            raise Exception('Must be checked. using transformation parameters with sip may not be implemented properly.')
+            # try to detect a maximum number of stars in frame 1
+            star_list1_path1, fwhm_arc = self.detect_stars(
+                min_star_number=400,
+                saturation_threshold=saturation_threshold)
+
+            ############################
+            ### plot stars positions ###
+            ############################
+            ## import pylab as pl
+            ## im = pl.imshow(self.image1.T, vmin=0, vmax=1000)
+            ## im.set_cmap('gray')
+            ## pl.scatter(self.astro1.star_list[:,0], self.astro1.star_list[:,1],
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.show()
+
+            star_list2 = utils.astrometry.transform_star_position_A_to_B(
+                np.copy(star_list1),
+                [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
+                coeffs.rc, coeffs.zoom,
+                sip_A=self.sip, sip_B=image2.sip)
+
+            # fit stars
+            fit_results = image2.fit_stars(
+                star_list2, no_aperture_photometry=True,
+                multi_fit=False, enable_zoom=False,
+                enable_rotation=False, 
+                fix_fwhm=False)
+            err = fit_results['x_err'].values
+
+
+            ## FIT SIP 
+            ## SIP 1 and SIP 2 are replaced by only one SIP that matches the
+            ## stars of the frame 2 onto the stars of the frame 1
+            self.sip = self.fit_sip(
+                np.copy(star_list1),
+                utils.astrometry.df2list(fit_results),
+                params=[coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db,
+                        coeffs.rc[0], coeffs.rc[1], coeffs.zoom],
+                init_sip=None, err=None, crpix=self.sip.wcs.crpix,
+                crval=self.sip.wcs.crval)
+            image2.sip = None
+
+
+        else:
+            # fit stars
+            fit_results = image2.fit_stars(
+                star_list2, no_aperture_photometry=True,
+                multi_fit=False, enable_zoom=False,
+                enable_rotation=False, 
+                fix_fwhm=False)
+
+            fitted_star_nb = float(np.sum(~np.isnan(
+                utils.astrometry.df2list(fit_results)[:,0])))
+            
+            if (fitted_star_nb < ERROR_RATIO * MIN_STAR_NB):
+                raise StandardError("Not enough fitted stars in both cubes (%d%%). Alignment parameters might be wrong."%int(fitted_star_nb / MIN_STAR_NB * 100.))
+                
+            if (fitted_star_nb < WARNING_RATIO * MIN_STAR_NB):
+                warnings.warn("Poor ratio of fitted stars in both cubes (%d%%). Check alignment parameters."%int(fitted_star_nb / MIN_STAR_NB * 100.))
+
+            
+            err = fit_results['x_err'].values
+            
+        star_list2 = utils.astrometry.transform_star_position_A_to_B(
+        np.copy(star_list1),
+            [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
+            coeffs.rc, coeffs.zoom,
+            sip_A=self.sip, sip_B=image2.sip)
+
+        fwhm_arc2 = utils.stats.robust_mean(
+            utils.stats.sigmacut(fit_results['fwhm_arc'].values))
+        
+        dx_fit = (star_list2[:,0]
+                  - utils.astrometry.df2list(fit_results)[:,0])
+        dy_fit = (star_list2[:,1]
+                  - utils.astrometry.df2list(fit_results)[:,1])
+        dr_fit = np.sqrt(dx_fit**2. + dy_fit**2.)
+        final_err = np.mean(utils.stats.sigmacut(dr_fit))
+
+        if not SKIP_CHECK:
+            if final_err < self.arc2pix(WARNING_DIST):
+                logging.info('Mean difference on star positions: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
+            elif final_err < self.arc2pix(ERROR_DIST):
+                warnings.warn('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
+            else:
+                raise StandardError('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
+        
+
+        ### PLOT ERROR ON STAR POSITIONS ###
+        ## import pylab as pl
+        ## scale = self.astro1.scale
+        ## pl.errorbar(dx_fit*scale, dy_fit*scale, xerr=err*scale,
+        ##             yerr=err*scale, linestyle='None')
+        ## circ = pl.Circle([0.,0.], radius=fwhm_arc/2.,
+        ##                  fill=False, color='g', linewidth=2.)
+        ## pl.gca().add_patch(circ)
+        ## pl.axes().set_aspect('equal')
+        ## pl.grid()
+        ## pl.xlim([-fwhm_arc/2.,fwhm_arc/2.])
+        ## pl.ylim([-fwhm_arc/2.,fwhm_arc/2.])
+        ## pl.show()
+
+        return {'coeffs':[coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
+                'rc': coeffs.rc,
+                'zoom_factor': coeffs.zoom,
+                'sip1': self.sip,
+                'sip2': image2.sip,
+                'star_list1': star_list1,
+                'star_list2': star_list2,
+                'fwhm_arc1': fwhm_arc,
+                'fwhm_arc2': fwhm_arc2}

@@ -2008,8 +2008,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     :param raise_border_error: (Optional) if True raise an exception
       if the returned guess is on the border of the brute force grid
       (defaut True).
-    """
-
+    """    
     def get_total_flux(guess_list, image, star_list,
                        rc, zoom_factor, box_size, kernel, _wcs_str, _wcsp):
         """Return the sum of the flux around a transformed list of
