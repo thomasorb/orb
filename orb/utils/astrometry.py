@@ -30,6 +30,7 @@ import astropy
 import astropy.wcs as pywcs
 from astropy.coordinates import SkyCoord
 import pandas
+import os
 
 import orb.cutils
 import orb.utils.stats
@@ -37,8 +38,10 @@ import orb.utils.image
 import orb.utils.vector
 import orb.utils.parallel
 import orb.utils.misc
+import orb.utils.io
 
 import copy
+
 
 
 ##################################################
@@ -2291,8 +2294,7 @@ def realign_images(_cube):
 
     .. warning:: This procedure is robust but very slow. Do not use it
       to realign a large number of images.
-    """
-    
+    """    
     im1 = _cube[:,:,0]
     dimz = _cube.shape[2]
     src1_list = np.nonzero(im1 > np.nanpercentile(im1, 99.9))
@@ -2351,7 +2353,10 @@ def fit2df(fit):
                 df[ikey] = list()
         for ikey in keys:
             if istar is not None:
-                df[ikey].append(istar[ikey])
+                if ikey in istar:
+                    df[ikey].append(istar[ikey])
+                else:
+                    df[ikey].append(np.nan)
             else:
                 df[ikey].append(np.nan)
 
@@ -2445,3 +2450,6 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
 
     return alignment_vector_x, alignment_vector_y, alignment_error
 
+            
+        
+    

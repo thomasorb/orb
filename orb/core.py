@@ -1874,22 +1874,6 @@ class Data(object):
             if data.ndim > 3: raise TypeError('data dimension > 3 is not supported')
             self.data = data
             
-            # check data
-            if len(np.nonzero(self.data)[0]) == 0:
-                self.allzero = True
-            else:
-                self.allzero = False
-
-            if np.all(np.isnan(self.data)):
-                self.allnan = True
-            else:
-                self.allnan = False
-
-            if np.any(np.isnan(self.data)):
-                self.anynan = True
-            else:
-                self.anynan = False
-
         self.dimx = self.data.shape[0]
         if self.data.ndim > 1:
             self.dimy = self.data.shape[1]
@@ -1941,7 +1925,7 @@ class Data(object):
                
         self.params = ROParams(self.params) # self.params must always be an ROParams instance
         
-        if self.is_pointer: self.set_writeable(False)
+        if self.is_pointer(): self.set_writeable(False)
         else: self.set_writeable(True)
         
     def __getitem__(self, key):

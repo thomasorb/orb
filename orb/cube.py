@@ -40,6 +40,8 @@ import image
 import scipy.interpolate
 import gvar
 
+
+
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
@@ -414,14 +416,18 @@ class HDFCube(core.Data, core.Tools):
         
         .. note:: In this process NaNs are handled correctly
         """
+        df = None
         if not recompute:
             if self.has_dataset('deep_frame'):
-                return self.get_dataset('deep_frame', protect=False)
+                df = self.get_dataset('deep_frame', protect=False)
         
             elif self.is_old:
-                return self.oldcube.get_mean_image(recompute=recompute) / self.params.exposure_time
+                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
 
-        return self.compute_sum_image() / self.dimz / self.params.exposure_time
+        if df is None:
+            df = self.compute_sum_image()
+
+        return image.Image(df, params=self.params)
 
     def compute_sum_image(self):
         """compute the sum along z axis
@@ -906,13 +912,13 @@ class Cube(HDFCube):
     def get_base_axis(self):
         """Return the spectral axis (in cm-1) at the center of the cube"""
         self.validate()
-        try: return Axis(np.copy(self.base_axis))
+        try: return core.Axis(np.copy(self.base_axis))
         except AttributeError:
             calib_map = self.get_calibration_coeff_map()
             self.base_axis = utils.spectrum.create_cm1_axis(
                 self.dimz, self.params.step, self.params.order,
                 corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
-        return Axis(np.copy(self.base_axis))
+        return core.Axis(np.copy(self.base_axis))
 
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
@@ -924,7 +930,7 @@ class Cube(HDFCube):
         axis = utils.spectrum.create_cm1_axis(
             self.dimz, self.params.step, self.params.order,
             corr=self.get_calibration_coeff_map()[x, y])
-        return Axis(np.copy(axis))
+        return core.Axis(np.copy(axis))
 
     def detect_stars(self, **kwargs):
         """Detect valid stars in the image
@@ -932,7 +938,7 @@ class Cube(HDFCube):
         :param kwargs: image.Image.detect_stars kwargs.
         """
         if self.has_dataset('deep_frame'):
-            df = self.get_deep_frame()
+            df = self.get_deep_frame().data
         else:
             _stack = self[:,:,:self.config.DETECT_STACK]
             df = np.nanmedian(_stack, axis=2)
@@ -952,7 +958,7 @@ class Cube(HDFCube):
         return im.fit_stars(star_list, **kwargs)
 
     def fit_stars_in_cube(self, star_list,
-                          correct_alignment=False, save=False,
+                          correct_alignment=False,
                           add_cube=None, **kwargs):
         
         """Fit stars in the cube.
@@ -973,9 +979,6 @@ class Cube(HDFCube):
           positions from the star list are corrected by their last
           recorded deviation. Useful when the cube is smoothly
           disaligned from one frame to the next.
-
-        :param save: (Optional) If True save the fit results in a file
-          (default True).
 
         :param add_cube: (Optional) A tuple [Cube instance,
           coeff]. This cube is added to the data before the fit so
@@ -998,8 +1001,6 @@ class Cube(HDFCube):
         FOLLOW_NB = 5 # Number of deviation value to get to follow the
                       # stars
 
-        if add_cube is not None: raise NotImplementedError()
-
         star_list = utils.astrometry.load_star_list(star_list)
                 
         logging.info("Fitting stars in cube")
@@ -1013,7 +1014,6 @@ class Cube(HDFCube):
             "Data must have 3 dimensions. Use fit_stars_in_frame method instead")
         
         if add_cube is not None:
-            raise NotImplementedError()
             if np.size(add_cube) >= 2:
                 added_cube = add_cube[0]
                 added_cube_scale = add_cube[1]
@@ -1066,30 +1066,19 @@ class Cube(HDFCube):
                 fwhm_pix = np.nanmean(utils.stats.sigmacut(fwhm_mean[ik-FOLLOW_NB:ik]))
                 if np.isnan(fwhm_pix): fwhm_pix = None
           
-
-            # for ijob in range(ncpus):
-            #     frame = np.copy(self.data[:,:,ik+ijob])
+            # load data
+            progress.update(ik, info="loading: " + str(ik))
+            frames = self[:,:,ik:ik+ncpus]
+            if add_cube is not None:
+                frames += added_cube[:,:,ik:ik+ncpus] * added_cube_scale
                 
-            #     # add cube
-            #     if add_cube is not None:
-            #         frame += added_cube[:,:,ik+ijob] * added_cube_scale
-        
-            #     if hpfilter:
-            #         frame = utils.image.high_pass_diff_image_filter(
-            #             frame, deg=2)
-                    
-            #     frames[:,:,ijob] = np.copy(frame)
-
-                
-                # return utils.astrometry.fit_stars_in_frame(  
-                #     frame, star_list, box_size, **kwargs)
-            
             # get stars photometry for each frame
             params = self.params.convert()
 
+            progress.update(ik, info="computing photometry: " + str(ik))
             jobs = [(ijob, job_server.submit(
                 _fit_stars_in_frame,
-                args=(self[:,:,ik+ijob], star_list, fwhm_pix, params, kwargs),
+                args=(frames[:,:,ijob], star_list, fwhm_pix, params, kwargs),
                 modules=("import logging",
                          "import orb.utils.stats",
                          "import orb.utils.image",
@@ -1106,10 +1095,13 @@ class Cube(HDFCube):
                 res = job()
                 fit_results[ik+ijob] = res
                 if res is not None:
-                    dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
-                    dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
-                    fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
-            progress.update(ik, info="frame : " + str(ik))
+                    if not res.empty:
+                        if 'dx' in res and 'dy' in res:
+                            dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
+                            dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
+                        if 'fwhm_pix' in res:
+                            fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
+            
             
         self._close_pp_server(job_server)
         
@@ -1131,8 +1123,7 @@ class Cube(HDFCube):
         star_list = utils.astrometry.load_star_list(star_list)
         fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
                                              no_aperture_photometry=True,
-                                             multi_fit=False, fix_height=False,
-                                             save=False)
+                                             multi_fit=False, fix_height=False)
         return utils.astrometry.compute_alignment_vectors(fit_results)
             
 

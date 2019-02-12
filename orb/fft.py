@@ -81,8 +81,7 @@ class Interferogram(core.Vector1d):
         
         if self.axis.dimx != self.dimx:
             raise ValueError('axis must have the same size as the interferogram')
-
-
+        
     def crop(self, xmin, xmax):
         """Crop data. see Vector1d.crop()"""
         out = core.Vector1d.crop(self, xmin, xmax, returned_class=core.Vector1d)
@@ -192,11 +191,11 @@ class Interferogram(core.Vector1d):
 
         .. note:: no phase correction is made here.
         """
-        if self.anynan:
+        if np.any(np.isnan(self.data)):
             logging.debug('Nan detected in interferogram')
             return core.Vector1d(np.zeros(
                 self.dimx, dtype=self.data.dtype) * np.nan)
-        if self.allzero:
+        if len(np.nonzero(self.data)[0]) == 0:
             logging.debug('interferogram is filled with zeros')
             return core.Vector1d(np.zeros(
                 self.dimx, dtype=self.data.dtype))

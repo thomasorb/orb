@@ -298,10 +298,6 @@ class Image(Frame2D, core.Tools):
         #else:
             #self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
 
-    def _get_star_list_path(self):
-        """Return the default path to the star list file."""
-        return self._data_path_hdr + "star_list.hdf5"
-
     def _get_fit_results_path(self):
         """Return the default path to the file containing all fit
         results."""
@@ -624,7 +620,7 @@ class Image(Frame2D, core.Tools):
             catalog=catalog, max_stars=max_stars)
 
 
-    def detect_stars(self, min_star_number=30, saturation_threshold=35000):
+    def detect_stars(self, min_star_number=30, saturation_threshold=35000, path=None):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
@@ -636,6 +632,9 @@ class Image(Frame2D, core.Tools):
           which the star can be considered as saturated. Very low by
           default because at the ZPD the intensity of a star can be
           twice the intensity far from it (default 35000).
+
+        :param path: (Optional) Path to the output star list file. If
+          None default path is used.
 
         """
         DETECT_THRESHOLD = 5
@@ -657,10 +656,11 @@ class Image(Frame2D, core.Tools):
         sources = self.fit_stars(sources, no_aperture_photometry=True)
         mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])
 
-        utils.io.open_file(self._get_star_list_path(), 'w') # used to create the folder tree
-        sources.to_hdf(self._get_star_list_path(), 'data', mode='w')
-        logging.info('sources written to {}'.format(self._get_star_list_path()))
-        return self._get_star_list_path(), mean_fwhm
+        if path is not None:         
+            utils.io.open_file(path, 'w') # used to create the folder tree
+            sources.to_hdf(path, 'data', mode='w')
+            logging.info('sources written to {}'.format(path))
+        return sources, mean_fwhm
 
     def detect_fwhm(self, star_list):
         """Return fwhm of a list of stars

@@ -27,6 +27,7 @@ import time
 import warnings
 import astropy.io.fits as pyfits
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
+import pandas as pd
 
 import bottleneck as bn
 import orb.cutils
@@ -906,11 +907,46 @@ def read_hdf5(file_path, return_header=False, dtype=float):
         else:
             return data
 
-
-
 def cast2hdf5(val):
     if val is None:
         return 'None'
     elif isinstance(val, long):
         return str(val)
     else: return val
+
+
+def save_dflist(dflist, path):
+    """Save a list of dataframes
+
+    :param dflist: list of pandas dataframes
+
+    :param path: path to the output file
+    """
+    if os.path.exists(path): os.remove(path)
+
+    with open_hdf5(path, 'w') as f:
+        f.attrs['len'] = len(dflist)
+        
+    for idf in range(len(dflist)):
+        if dflist[idf] is not None:
+            dflist[idf].to_hdf(path, 'df{:06d}'.format(idf), table=True, mode='a')
+            
+
+
+def load_dflist(path):
+    """Save a list of dataframes
+
+    :param path: path to the output file
+    """
+    with open_hdf5(path, 'r') as f:
+        _len = f.attrs['len']
+
+    dflist = list()
+
+    for i in range(_len):
+        try:
+            idf = pd.read_hdf(path, key='df{:06d}'.format(i))
+            dflist.append(idf)
+        except KeyError:
+            dflist.append(None)
+    return dflist
