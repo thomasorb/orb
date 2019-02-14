@@ -39,6 +39,7 @@ import image
 
 import scipy.interpolate
 import gvar
+import pyregion
 
 
 
@@ -48,7 +49,7 @@ import gvar
 class HDFCube(core.Data, core.Tools):
     """ This class implements the use of an HDF5 cube."""        
 
-    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis'
+    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis', 'calib_map', 'phase_map', 'phase_map_err', 'phase_maps_coeff_map', 'phase_maps_cm1_axis'
     
     def __init__(self, path, indexer=None,
                  instrument=None, config=None, data_prefix='./',
@@ -127,7 +128,7 @@ class HDFCube(core.Data, core.Tools):
         # checking dims
         if self.data.ndim != 3:
             raise TypeError('input cube has {} dims but must have exactly 3 dimensions'.format(self.data.ndim))
-
+        
         if indexer is not None:
             if not isinstance(indexer, core.Indexer):
                 raise TypeError('indexer must be an orb.core.Indexer instance')
@@ -193,7 +194,9 @@ class HDFCube(core.Data, core.Tools):
                 params[ikey] = header[ikey]
                 
         return params
-        
+
+
+    
     def copy(self):
         raise NotImplementedError('HDFCube instance cannot be copied')
     
@@ -246,11 +249,26 @@ class HDFCube(core.Data, core.Tools):
                 x_min, x_max, y_min, y_max, z_min, z_max,
                 silent=silent)
         
-        return self[x_min:x_max, y_min:y_max, zmin_zmax]
+        return self[x_min:x_max, y_min:y_max, z_min:z_max]
+
+    def get_region(self, region):
+        """Return a list of valid pixels from a ds9 region file or a ds9-style
+        region definition
+
+        e.g. for a circle defined in celestial coordinates:
+          "fk5;circle(290.96388,14.019167,843.31194")"
+        """
+        return utils.misc.get_mask_from_ds9_region_file(
+            region, [0, self.dimx], [0, self.dimy], integrate=True,
+            header=self.get_wcs_header())
+    
 
     def get_data_from_region(self, region):
         """Return a list of vectors extracted along the 3rd axis at the pixel
         positions defined by a list of pixels.
+
+        Return also a list of corresponding axes if self.get_axis()
+        returns something else than None.
 
         .. note:: pixels do not have to be contiguous but, as the
           quadrant containing all the pixels is extracted primarily to
@@ -261,9 +279,12 @@ class HDFCube(core.Data, core.Tools):
         :param region: A list of pixels having the same format as the
           list returned by np.nonzero(), i.e. (x_positions_1d_array,
           y_positions_1d_array).
+
         """
         SIZE_LIMIT = 400*400
-        
+        if isinstance(region, str):
+            region = self.get_region(region)
+
         if len(region) != 2: raise TypeError('badly formatted region.')
         if not utils.validate.is_iterable(region[0], raise_exception=False):
             raise TypeError('badly formatted region.')
@@ -271,6 +292,9 @@ class HDFCube(core.Data, core.Tools):
             raise TypeError('badly formatted region.')
         if not len(region[0]) == len(region[1]):
             raise TypeError('badly formatted region.')
+
+        if len(region[0]) == 1:
+            return np.atleast_2d(self[region[0][0], region[1][0], :])
 
         xmin = self.validate_x_index(np.nanmin(region[0]), clip=False)
         xmax = self.validate_y_index(np.nanmax(region[0]), clip=False) + 1
@@ -309,8 +333,9 @@ class HDFCube(core.Data, core.Tools):
           (default True).
         """
         if protect:
-            if path in self.protected_datasets:
-                raise IOError('dataset {} is protected. please use the corresponding higher level method (something like set_{} should do)'.format(path, path))
+            for iprot_path in self.protected_datasets:
+                if path in iprot_path:
+                    raise IOError('dataset {} is protected. please use the corresponding higher level method (something like set_{} should do)'.format(path, path))
 
         if path == 'data':
             raise ValueError('to get data please use your cube as a classic 3d numpy array. e.g. arr = cube[:,:,:].')
@@ -416,7 +441,10 @@ class HDFCube(core.Data, core.Tools):
         
         .. note:: In this process NaNs are handled correctly
         """
-        df = None
+        try:
+            return image.Image(self.deep_frame, params=self.params)
+        except AttributeError: pass
+        
         if not recompute:
             if self.has_dataset('deep_frame'):
                 df = self.get_dataset('deep_frame', protect=False)
@@ -426,8 +454,18 @@ class HDFCube(core.Data, core.Tools):
 
         if df is None:
             df = self.compute_sum_image()
+            
+        self.deep_frame = df
+        return image.Image(self.deep_frame, params=self.params)
+    
+    def get_phase_maps(self):
+        """Return a PhaseMaps instance if phase maps are set
+        """
+        try:
+            return fft.PhaseMaps(self.cube_path)
+        except StandardError:
+            return None
 
-        return image.Image(df, params=self.params)
 
     def compute_sum_image(self):
         """compute the sum along z axis
@@ -480,26 +518,50 @@ class HDFCube(core.Data, core.Tools):
                     return False
             return True
 
-        with utils.io.open_hdf5(export_path, 'w') as fout:
+        with utils.io.open_hdf5(path, 'w') as fout:
             fout.attrs['level2'] = True
             
             f = self.open_hdf5()
             for iattr in f.attrs:
                 fout.attrs[iattr] = f.attrs[iattr]
 
+            # write datasets
             for ikey in f:
                 if is_exportable(ikey):
                     logging.info('adding {}'.format(ikey))
                     fout.create_dataset(ikey, data=f[ikey], chunks=True)
-            fout.create_dataset('data', shape=self.shape, chunks=True)
+                    
+            # write data
+            dtype = self[0,0,0].dtype
+            fout.create_dataset('data', shape=self.shape, dtype=dtype, chunks=True)
             
             for iquad in range(self.config.QUAD_NB):
                 logging.info('writing quad {}/{}'.format(
                     iquad, self.config.QUAD_NB))
                 xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad)
-                fout['data'][xmin:xmax, ymin:ymax, :] = self[xmin:xmax, ymin:ymax, :]
+                fout['data'][xmin:xmax, ymin:ymax, :] = self.get_data(
+                    xmin, xmax, ymin, ymax, 0, self.dimz, silent=True)
         
 
+    def crop(self, path, cx, cy, size):
+        """Extract a part of the file and write it to a new hdf file
+
+        WCS and most datasets will be croped also to try to keep a valid cube
+
+        :param cx: X center position
+
+        :param xy: Y center position
+
+        :param size: Size of the cropped box
+
+        .. warning:: size of the returned box is not guaranteed if cx
+          and cy are on the border of the image.
+        """
+        df = self.get_deep_frame()
+        df = df.crop(cx, cy, size)
+        params = df.params
+        #outcube = RWHDFCube(path, shape=(xmax-xmin, ymax-ymin, 0, self.dimz), instrument=self.instrument, reset=True, params=self.params)
+                
     def to_fits(self, path):
         """write data to a FITS file. 
 
@@ -520,17 +582,40 @@ class HDFCube(core.Data, core.Tools):
         """
         return utils.io.header_hdf52fits(
             self.get_dataset('frame_header_{}'.format(index)))
-
+    
     def get_calibration_laser_map(self):
-        """Return stored calibration laser map"""
-        if self.has_dataset('calib_map'):
-            return self.get_dataset('calib_map')
-        else:
-            if isinstance(self, OCube):
-                return OCube.get_calibration_laser_map(self)
+        """Return calibration laser map"""
+        try:
+            return np.copy(self.calibration_laser_map)
+        except AttributeError:
+            if self.has_dataset('calib_map'):
+                self.calibration_laser_map = self.get_dataset('calib_map', protect=False)
             else:
-                warnings.warn('No calibration laser map stored')
-                return None
+                if 'calibration_laser_map_path' not in self.params:
+                    raise StandardError("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
+                self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
+        if (self.calibration_laser_map.shape[0] != self.dimx):
+            self.calibration_laser_map = utils.image.interpolate_map(
+                self.calibration_laser_map, self.dimx, self.dimy)
+        if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
+            raise StandardError('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
+        return self.calibration_laser_map
+        
+    def get_calibration_coeff_map(self):
+        """Return calibration laser map"""
+        try:
+            return np.copy(self.calibration_coeff_map)
+        except AttributeError:
+            self.calibration_coeff_map = self.get_calibration_laser_map() / self.config.CALIB_NM_LASER 
+        return self.calibration_coeff_map
+
+    def get_theta_map(self):
+        """Return the incident angle map from the calibration laser map"""
+        self.validate()
+        try:
+            return np.copy(self.theta_map)
+        except AttributeError:
+            self.theta_map = utils.spectrum.corr2theta(self.get_calibration_coeff_map())
 
     def validate_x_index(self, x, clip=True):
         """validate an x index, return an integer inside the boundaries or
@@ -589,10 +674,40 @@ class HDFCube(core.Data, core.Tools):
         return master
 
 
+    def get_axis(self, x, y):
+        """Return the axis at x, y"""
+        return None
+
+    def get_zvector(self, x, y, r=0):
+        """Return an orb.fft.Vector1d instance taken at a given position in x, y.
         
+        :param x: x position 
+        
+        :param y: y position 
+
+        :param r: (Optional) If r > 0, vector is integrated over a
+          circular aperture of radius r. In this case the number of
+          pixels is returned as a parameter: pixels
+
+        """
+        x = self.validate_x_index(x, clip=False)
+        y = self.validate_y_index(y, clip=False)
+
+        region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
+        calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
+        interfs = self.get_data_from_region(region)
+        interf = np.nansum(interfs, axis=0)
+        params = dict(self.params)
+        params['pixels'] = len(interfs)
+
+        params['source_counts'] = np.nansum(self.get_deep_frame().data[region])
+
+        return core.Vector1d(interf, params=params,
+                             zpd_index=self.params.zpd_index,
+                             calib_coeff=calib_coeff,
+                             axis=np.arange(self.dimz))
+
     
-
-
 #################################################
 #### CLASS RWHDFCube ############################
 #################################################
@@ -742,6 +857,53 @@ class RWHDFCube(HDFCube):
         """
         self.set_dataset('frame_header_{}'.format(index),
                          utils.io.header_fits2hdf5(header))
+
+    def set_calibration_laser_map(self, calib_map):
+        """Set calibration map.
+
+        :param calib_map: Calibration map
+        """
+        if calib_map.shape != (self.dimx, self.dimy):
+            raise TypeError('calib_map must have shape ({}, {})'.format(self.dimx, self.dimy))
+
+        self.set_dataset('calib_map', calib_map, protect=False)
+
+    def set_phase_maps(self, phase_maps):
+        """Set phase maps from a PhaseMaps instance
+        """
+        check_params = ['order', 'step', 'filter_name']
+
+        if not isinstance(phase_maps, fft.PhaseMaps):
+            raise TypeError('phase_maps must be a PhaseMaps instance')
+
+        for ipar in check_params:
+            if phase_maps.params[ipar] != self.params[ipar]:
+                raise ValueError('parameter {} in phase_maps is {}, but is {} for this cube'.format(
+                    ipar, phase_maps.params[ipar], self.params[ipar]))
+        
+        for i in range(len(phase_maps.phase_maps)):
+            self.set_dataset('phase_map_{}'.format(int(i)),
+                             phase_maps.phase_maps[i], protect=False)
+            self.set_dataset('phase_map_err_{}'.format(int(i)),
+                             phase_maps.phase_maps_err[i], protect=False)
+            
+        self.set_dataset('phase_maps_coeff_map',
+                         phase_maps.calibration_coeff_map, protect=False)
+        self.set_dataset('phase_maps_cm1_axis',
+                         phase_maps.axis, protect=False)
+        
+        # #self.set_calibration_laser_map()
+        # try:
+        #     clm = self.get_calibration_laser_map()
+        # except StandardError:
+        #     clm = None
+        # if clm is None:
+        #     calibration_laser_map = (phase_maps.unbinned_calibration_coeff_map
+        #                              * self.config.CALIB_NM_LASER)
+        #     self.set_calibration_laser_map(calibration_laser_map)
+        # else:
+        #     self.set_calibration_laser_map(self.calibration_laser_map)
+        #     warnings.warn('calibration laser map unchanged since it already exists')
             
     def write_frame(self, index, data=None, header=None, section=None,
                     record_stats=False):
@@ -814,7 +976,7 @@ class Cube(HDFCube):
         HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
         # compute additional parameters
         self.filterfile = core.FilterFile(self.params.filter_name)
-        self.set_param('filter_file_path', self.filterfile.basic_path)
+        self.set_param('filter_name', self.filterfile.basic_path)
         self.set_param('filter_nm_min', self.filterfile.get_filter_bandpass()[0])
         self.set_param('filter_nm_max', self.filterfile.get_filter_bandpass()[1])
         self.set_param('filter_cm1_min', self.filterfile.get_filter_bandpass_cm1()[0])
@@ -856,7 +1018,7 @@ class Cube(HDFCube):
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
         self.validate()
-        filterfile = FilterFile(self.get_param('filter_file_path'))
+        filterfile = FilterFile(self.get_param('filter_name'))
         filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(
             filterfile.get_filter_bandpass())[::-1]
         
@@ -873,65 +1035,6 @@ class Cube(HDFCube):
         return filter_min_pix_map, filter_max_pix_map
 
     
-    def get_calibration_laser_map(self):
-        """Return calibration laser map"""
-        self.validate()
-        try:
-            return np.copy(self.calibration_laser_map)
-        except AttributeError:
-            if self.has_dataset('calib_map'):
-                self.calibration_laser_map = self.get_dataset('calib_map')
-            else:
-                if 'calibration_laser_map_path' not in self.params:
-                    raise StandardError("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
-                self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
-        if (self.calibration_laser_map.shape[0] != self.dimx):
-            self.calibration_laser_map = utils.image.interpolate_map(
-                self.calibration_laser_map, self.dimx, self.dimy)
-        if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
-            raise StandardError('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
-        return self.calibration_laser_map
-        
-    def get_calibration_coeff_map(self):
-        """Return calibration laser map"""
-        self.validate()
-        try:
-            return np.copy(self.calibration_coeff_map)
-        except AttributeError:
-            self.calibration_coeff_map = self.get_calibration_laser_map() / self.config.CALIB_NM_LASER 
-        return self.calibration_coeff_map
-
-    def get_theta_map(self):
-        """Return the incident angle map from the calibration laser map"""
-        self.validate()
-        try:
-            return np.copy(self.theta_map)
-        except AttributeError:
-            self.theta_map = utils.spectrum.corr2theta(self.get_calibration_coeff_map())
-
-    def get_base_axis(self):
-        """Return the spectral axis (in cm-1) at the center of the cube"""
-        self.validate()
-        try: return core.Axis(np.copy(self.base_axis))
-        except AttributeError:
-            calib_map = self.get_calibration_coeff_map()
-            self.base_axis = utils.spectrum.create_cm1_axis(
-                self.dimz, self.params.step, self.params.order,
-                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
-        return core.Axis(np.copy(self.base_axis))
-
-    def get_axis(self, x, y):
-        """Return the spectral axis at x, y
-        """
-        self.validate()
-        utils.validate.index(x, 0, self.dimx, clip=False)
-        utils.validate.index(y, 0, self.dimy, clip=False)
-        
-        axis = utils.spectrum.create_cm1_axis(
-            self.dimz, self.params.step, self.params.order,
-            corr=self.get_calibration_coeff_map()[x, y])
-        return core.Axis(np.copy(axis))
-
     def detect_stars(self, **kwargs):
         """Detect valid stars in the image
 
@@ -1125,45 +1228,10 @@ class Cube(HDFCube):
                                              no_aperture_photometry=True,
                                              multi_fit=False, fix_height=False)
         return utils.astrometry.compute_alignment_vectors(fit_results)
-            
-
-    def get_zvector(self, x, y, r=0):
-        """Return an orb.fft.Vector1d instance taken at a given position in x, y.
-        
-        :param x: x position 
-        
-        :param y: y position 
-
-        :param r: (Optional) If r > 0, vector is integrated over a
-          circular aperture of radius r. In this case the number of
-          pixels is returned as a parameter: pixels
-
-        """
-        self.validate()
-
-        x = self.validate_x_index(x, clip=False)
-        y = self.validate_y_index(y, clip=False)
-
-        if r == 0:
-            calib_coeff = self.get_calibration_coeff_map()[x, y]
-            interf = self[int(x), int(y), :]
-            params = dict(self.params)
-        else:
-            xmin, xmax, ymin, ymax = utils.image.get_box_coords(x, y, (int(r)+1)*2+1,
-                                                                0, self.dimx,
-                                                                0, self.dimy)
-            X, Y = np.mgrid[0:self.dimx,0:self.dimy]
-            R = np.sqrt(((X-x)**2 + (Y-y)**2))
-            region = np.nonzero(R <= r)
-            calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
-            interfs = self.get_data_from_region(region)
-            interf = np.nansum(interfs, axis=0)
-            params = dict(self.params)
-            params['pixels'] = len(interfs)
-        return core.Vector1d(interf, params=params,
-                             zpd_index=self.params.zpd_index,
-                             calib_coeff=calib_coeff)
     
+
+        
+        
 #################################################
 #### CLASS InteferogramCube #####################
 #################################################
@@ -1172,12 +1240,35 @@ class InterferogramCube(Cube):
     observation parameters are known.
     """
 
-    def get_interferogram(self, *args, **kwargs):
+    def get_interferogram(self, x, y, r=0):
         """Return an orb.fft.Interferogram instance.
 
         See Cube.get_zvector for the parameters.        
         """
-        return fft.RealInterferogram(Cube.get_zvector(self, *args, **kwargs))
+        vector = Cube.get_zvector(self, x, y, r=r)
+        vector.axis = None
+        err = np.ones(self.dimz, dtype=float) * np.sqrt(
+            vector.params.source_counts / self.dimz)
+        return fft.RealInterferogram(vector, err=err)
+
+    def get_phase(self, x, y):
+        """If phase maps are set, return the phase at x, y
+        """
+        pm = self.get_phase_maps()
+        if pm is None: return None 
+        return pm.get_phase(x, y, unbin=True)
+
+    def get_spectrum(self, x, y, r=0):
+        """Return an orb.fft.Spectrum instance.
+
+        phase_maps must be set to get a reliable spectrum
+
+        See Cube.get_zvector for the parameters.        
+        """
+        interf = self.get_interferogram(x, y, r=r)
+        spectrum = interf.get_spectrum()
+        spectrum.correct_phase(self.get_phase(x, y))
+        return spectrum
 
     def get_mean_interferogram(self, xmin, xmax, ymin, ymax):
         """Return mean interferogram in a box [xmin:xmax, ymin:ymax, :]
@@ -1854,6 +1945,29 @@ class SpectralCube(Cube):
         (min, max)"""
         return utils.spectrum.cm12pix(
             self.params.base_axis, self.get_filter_range())        
+
+    def get_base_axis(self):
+        """Return the spectral axis (in cm-1) at the center of the cube"""
+        self.validate()
+        try: return core.Axis(np.copy(self.base_axis))
+        except AttributeError:
+            calib_map = self.get_calibration_coeff_map()
+            self.base_axis = utils.spectrum.create_cm1_axis(
+                self.dimz, self.params.step, self.params.order,
+                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
+        return core.Axis(np.copy(self.base_axis))
+
+    def get_axis(self, x, y):
+        """Return the spectral axis at x, y
+        """
+        self.validate()
+        utils.validate.index(x, 0, self.dimx, clip=False)
+        utils.validate.index(y, 0, self.dimy, clip=False)
+        
+        axis = utils.spectrum.create_cm1_axis(
+            self.dimz, self.params.step, self.params.order,
+            corr=self.get_calibration_coeff_map()[x, y])
+        return core.Axis(np.copy(axis))
     
     def reset_params(self):
         """Reset parameters"""
@@ -2081,11 +2195,13 @@ class SpectralCube(Cube):
 
         :param output_axis: (Optional) If not None, the spectrum is
           projected on the output axis. Else a scipy.UnivariateSpline
-          object is returned (defautl None).
+          object is returned (default None).
 
         :return: A scipy.UnivariateSpline object or a spectrum
           projected on the ouput_axis if it is not None.
         """
+        raise NotImplementedError('check if HDFCube.extract_from_region can be used instead')
+        
         def _interpolate_spectrum(spec, corr, wavenumber, step, order, base_axis):
             import utils.spectrum
             import utils.vector

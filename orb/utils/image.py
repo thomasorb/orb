@@ -2028,3 +2028,15 @@ def bf_laser_aligner(im1, im2, init_dx, init_dy, init_angle, zf,  binning=4):
         args=(im1, im2, xmin, xmax, ymin, ymax, zf))
 
             
+def crop_pixel_positions(pixs, xmin, xmax, ymin, ymax):
+    """Returned a croped list of pixels position
+    """
+    bounds = (int(xmin), int(xmax), int(ymin), int(ymax))
+    pixs = [np.copy(pixs[0]), np.copy(pixs[1])]
+    pixs[1] = pixs[1][(pixs[0] >= bounds[0]) * (pixs[0] < bounds[1])]
+    pixs[0] = pixs[0][(pixs[0] >= bounds[0]) * (pixs[0] < bounds[1])]
+    pixs[0] = pixs[0][(pixs[1] >= bounds[2]) * (pixs[1] < bounds[3])]
+    pixs[1] = pixs[1][(pixs[1] >= bounds[2]) * (pixs[1] < bounds[3])]
+    pixs[0] -= bounds[0]
+    pixs[1] -= bounds[2]
+    return pixs

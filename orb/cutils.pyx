@@ -2164,7 +2164,7 @@ def brute_photometry(np.ndarray[np.float64_t, ndim=2] im,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def detect_cosmic_rays(np.ndarray[np.float64_t, ndim=2] frame,
+def detect_cosmic_rays(np.ndarray[np.float32_t, ndim=2] frame,
                        crs_list, int box_size, double detect_coeff):
     """Check if a given pixel is a cosmic ray (classic detection).
 
@@ -2181,13 +2181,13 @@ def detect_cosmic_rays(np.ndarray[np.float64_t, ndim=2] frame,
       threshold)
     """
 
-    cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
+    cdef np.ndarray[np.float32_t, ndim=2] workframe = np.copy(frame)
     cdef np.ndarray[np.uint8_t, ndim=2] cr_map = np.zeros_like(
         frame, dtype=np.uint8)
     cdef int cr_list_len = len(crs_list[0])
     cdef int icr, ix, iy, xmin, xmax, ymin, ymax
     cdef double boxmed, boxstd
-    cdef np.ndarray[np.float64_t, ndim=2] box
+    cdef np.ndarray[np.float32_t, ndim=2] box
 
     workframe[crs_list] = np.nan
 
@@ -2214,7 +2214,7 @@ def detect_cosmic_rays(np.ndarray[np.float64_t, ndim=2] frame,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def check_cosmic_rays_neighbourhood(
-    np.ndarray[np.float64_t, ndim=2] frame,
+    np.ndarray[np.float32_t, ndim=2] frame,
     np.ndarray[np.uint8_t, ndim=2] cr_map,
     int box_size, double detect_coeff):
     """Check the neighbourhood around detected cosmic rays in a frame.
@@ -2230,9 +2230,9 @@ def check_cosmic_rays_neighbourhood(
       threshold)
     """
 
-    cdef np.ndarray[np.float64_t, ndim=2] workframe = np.copy(frame)
+    cdef np.ndarray[np.float32_t, ndim=2] workframe = np.copy(frame)
     cdef int inewcr, icr, ix, iy, xmin, xmax, ymin, ymax, ii, ij
-    cdef np.ndarray[np.float64_t, ndim=2] box
+    cdef np.ndarray[np.float32_t, ndim=2] box
     cdef double boxmed, boxstd
 
     crs_list = np.nonzero(cr_map)

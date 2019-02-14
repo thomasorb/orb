@@ -620,18 +620,13 @@ class Image(Frame2D, core.Tools):
             catalog=catalog, max_stars=max_stars)
 
 
-    def detect_stars(self, min_star_number=30, saturation_threshold=35000, path=None):
+    def detect_stars(self, min_star_number=30, path=None):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
           detect. Must be greater or equal to 4 (minimum star number
           for any alignment process). this is also the number of stars
           returned (sorted by intensity)
-
-        :param saturation_threshold: (Optional) Number of counts above
-          which the star can be considered as saturated. Very low by
-          default because at the ZPD the intensity of a star can be
-          twice the intensity far from it (default 35000).
 
         :param path: (Optional) Path to the output star list file. If
           None default path is used.
@@ -646,8 +641,15 @@ class Image(Frame2D, core.Tools):
                                           threshold=DETECT_THRESHOLD * std)
         sources = daofind(self.data.T - median).to_pandas()
         if len(sources) == 0: raise StandardError('no star detected, check input image')
+        # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
+        saturation_threshold = np.nanmax(self.data) * 0.45 
         sources = sources[sources.peak < saturation_threshold]
+        # filter by roundness
         sources = sources[np.abs(sources.roundness2) < MAX_ROUNDNESS]
+        # filter by radius from center to avoid using distorded stars
+        sources['radius'] = np.sqrt((sources.xcentroid - self.dimx/2.)**2
+                                    + (sources.ycentroid - self.dimy/2.)**2)
+        sources = sources[sources.radius < min(self.dimx, self.dimy) / 2.]
         sources = sources.sort_values(by=['flux'], ascending=False)
         logging.info("%d stars detected" %(len(sources)))
         sources = sources[:min_star_number]
@@ -1442,7 +1444,7 @@ class Image(Frame2D, core.Tools):
     
     def compute_alignment_parameters(self, image2, correct_distortion=False,
                                      star_list1=None, fwhm_arc=None,
-                                     brute_force=True, saturation_threshold=35000):
+                                     brute_force=True):
         """Return the alignment coefficients that match the stars of this
         image to the stars of the image 2.
 
@@ -1462,12 +1464,6 @@ class Image(Frame2D, core.Tools):
         :param brute_force: (Optional) If True the first step is a
           brute force guess. This is very useful if the initial
           parameters are not well known (default True).
-
-        :param saturation_threshold: (Optional) Number of counts above
-          which the star can be considered as saturated. Very low by
-          default because at the ZPD the intensity of a star can be
-          twice the intensity far from it (default 35000).
-
 
         .. note:: The alignement coefficients are:
         
@@ -1597,8 +1593,7 @@ class Image(Frame2D, core.Tools):
         
         if star_list1 is None:
             star_list1, fwhm_arc = self.detect_stars(
-                min_star_number=MIN_STAR_NB,
-                saturation_threshold=saturation_threshold)
+                min_star_number=MIN_STAR_NB)
         elif fwhm_arc is None:
             raise StandardError('If the path to a list of stars is given (star_list1) the fwhm in arcsec(fwhm_arc) must also be given.')
 
@@ -1655,8 +1650,7 @@ class Image(Frame2D, core.Tools):
             raise Exception('Must be checked. using transformation parameters with sip may not be implemented properly.')
             # try to detect a maximum number of stars in frame 1
             star_list1_path1, fwhm_arc = self.detect_stars(
-                min_star_number=400,
-                saturation_threshold=saturation_threshold)
+                min_star_number=400)
 
             ############################
             ### plot stars positions ###

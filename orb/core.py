@@ -2049,7 +2049,10 @@ class Data(object):
         return pywcs.WCS(self.get_header(), relax=True, naxis=naxis)
 
     def get_wcs_header(self):
-        return self.get_wcs().to_header(relax=True)
+        hdr = self.get_wcs().to_header(relax=True)
+        for i in range(hdr['WCSAXES']):
+            hdr['NAXIS{}'.format(i+1)] = self.shape[i]
+        return hdr
 
     def set_header(self, header):
         """update params from an astropy.io.fits.Header instance.
@@ -2418,7 +2421,7 @@ class Cm1Vector1d(Vector1d):
     spectrum, phase)
 
     """
-    needed_params = ('filter_file_path', )
+    needed_params = ('filter_name', )
     obs_params = ('step', 'order', 'calib_coeff')
    
     def __init__(self, spectrum, axis=None, params=None, **kwargs):
@@ -2460,7 +2463,7 @@ class Cm1Vector1d(Vector1d):
         """Return filter bandpass in cm-1"""
         if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
             
-            cm1_min, cm1_max = FilterFile(self.params.filter_file_path).get_filter_bandpass_cm1()
+            cm1_min, cm1_max = FilterFile(self.params.filter_name).get_filter_bandpass_cm1()
             warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
             self.set_param('filter_cm1_min', cm1_min)
             self.set_param('filter_cm1_max', cm1_max)
@@ -2490,7 +2493,7 @@ class Cm1Vector1d(Vector1d):
         return zmin, zmax
 
     def mean_in_filter(self):
-        ff = FilterFile(self.params.filter_file_path)
+        ff = FilterFile(self.params.filter_name)
         ftrans = ff.get_transmission(self.dimx)
         return np.nansum(self.multiply(ftrans).data) / ftrans.sum() 
     

@@ -113,9 +113,10 @@ def get_axis_from_hdr(hdr, axis_index=1):
                         
 def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
                                   integrate=True, header=None):
-    """Return a mask from a ds9 region file.
+    """Return a mask from a ds9 region file or from a ds9-like region
+    string.
 
-    :param reg_path: Path to a ds9 region file
+    :param reg_path: Path to a ds9 region file or ds9-like region string
 
     :param x_range: Range of x image coordinates
         considered as valid. Pixels outside this range are
@@ -138,11 +139,16 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
     .. note:: Coordinates can be celestial or image coordinates
       (x,y). if coordinates are celestial a header must be passed to
       the function.
+
     """
     ### Warning: pyregion works in 'transposed' coordinates
     ### We will work here in python (y,x) convention
 
-    _regions = pyregion.open(reg_path)
+    if os.path.exists(reg_path):
+        _regions = pyregion.open(reg_path)
+    else:
+        _regions = pyregion.parse(reg_path)
+        
     if not _regions.check_imagecoord():
         if header is None: raise Exception('DS9 region file is not in image coordinates. Please change it to image coordinates or pass a astropy.io.fits.Header instance to the function to transform the actual coordinates to image coordinates.')
         else:
@@ -150,10 +156,9 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
             #_regions = _regions.as_imagecoord(wcs.to_header())
             # WCS does not export NAXIS1, NAXIS2 anymore...
             h = wcs.to_header(relax=True)
-            h.set('NAXIS1',header['NAXIS1'])
-            h.set('NAXIS2',header['NAXIS2'])
+            h.set('NAXIS1', header['NAXIS1'])
+            h.set('NAXIS2', header['NAXIS2'])
             _regions = _regions.as_imagecoord(h)
-
     shape = (np.max(y_range), np.max(x_range))
     mask = np.zeros(shape, dtype=float)
     hdu = pyfits.PrimaryHDU(mask)

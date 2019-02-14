@@ -29,10 +29,12 @@ import utils.fft
 import utils.vector
 import utils.err
 import core
+import cutils
+import fit
+
 import scipy
 import gvar
 
-import fit
 
 
 #################################################
@@ -43,7 +45,7 @@ class Interferogram(core.Vector1d):
 
     """Interferogram class.
     """
-    needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_file_path', 'exposure_time'
+    needed_params = 'step', 'order', 'zpd_index', 'calib_coeff', 'filter_name', 'exposure_time'
         
     def __init__(self, interf, err=None, axis=None, params=None, **kwargs):
         """Init method.
@@ -262,7 +264,7 @@ class Interferogram(core.Vector1d):
         return new_spectrum.get_phase().cleaned()
 
 #################################################
-#### CLASS Interferogram ########################
+#### CLASS RealInterferogram ####################
 #################################################
 
 class RealInterferogram(Interferogram):
@@ -311,9 +313,9 @@ class RealInterferogram(Interferogram):
             raise TypeError('source_counts must be a float')
             
         # compute photon noise
-        if self.has_err(): # supplied err argument should have been
-                           # read during Vector1d init. Only
-                           # self.err is tested
+        if not self.has_err(): # supplied err argument should have been
+                               # read during Vector1d init. Only
+                               # self.err is tested
             if np.nanmin(self.data) < 0:
                 warnings.warn('interferogram may be a combined interferogram. photon noise can be wrong.')
             
@@ -749,12 +751,12 @@ class Spectrum(core.Cm1Vector1d):
             self.params.calib_coeff)
         spectrum = np.copy(self.data)
         spectrum[np.isnan(spectrum)] = 0
-        if nofilter: filter_file_path = None
-        else: filter_file_path = self.params.filter_file_path
+        if nofilter: filter_name = None
+        else: filter_name = self.params.filter_name
         return fit.fit_lines_in_spectrum(
             spectrum, lines, self.params.step, self.params.order,
             self.params.nm_laser, theta, self.params.zpd_index,
-            filter_file_path=filter_file_path,
+            filter_name=filter_name,
             fmodel=fmodel, **kwargs)
 
 #################################################
@@ -802,3 +804,289 @@ class RealSpectrum(Spectrum):
         _source_counts = gvar.gvar(self.params.source_counts,
                                    np.sqrt(self.params.source_counts))
         return np.sum(_data) / _source_counts
+
+
+#################################################
+#### CLASS PhaseMaps ############################
+#################################################
+class PhaseMaps(core.Tools):
+
+    phase_maps = None
+
+    def __init__(self, phase_maps_path,
+                 overwrite=False, indexer=None, **kwargs):
+        """Initialize PhaseMaps class.
+
+        :param phase_maps_path: path to the hdf5 file containing the
+          phase maps.
+      
+        :param overwrite: (Optional) If True existing FITS files will
+          be overwritten (default False).
+
+        :param indexer: (Optional) Must be a :py:class:`core.Indexer`
+          instance. If not None created files can be indexed by this
+          instance.    
+
+        :param kwargs: Kwargs are :meth:`core.Tools` properties.
+        """
+        with utils.io.open_hdf5(phase_maps_path, 'r') as f:
+            kwargs['instrument'] = f.attrs['instrument']
+    
+        core.Tools.__init__(self, **kwargs)
+        self.params = core.ROParams()
+        
+        self.overwrite = overwrite
+        self.indexer = indexer
+
+        self.dimx_unbinned = self.config['CAM1_DETECTOR_SIZE_X']
+        self.dimy_unbinned = self.config['CAM1_DETECTOR_SIZE_Y']
+
+        self.phase_maps = list()
+        self.phase_maps_err = list()
+        with utils.io.open_hdf5(phase_maps_path, 'r') as f:
+            self.phase_maps_path = phase_maps_path
+            if 'calibration_coeff_map' in f:
+                self.calibration_coeff_map = f['calibration_coeff_map'][:]
+            else: 
+                self.calibration_coeff_map = f['phase_maps_coeff_map'][:]
+            if 'cm1_axis' in f:
+                self.axis = f['cm1_axis'][:]
+            else:
+                self.axis = f['phase_maps_cm1_axis'][:]
+                
+            self.theta_map = utils.spectrum.corr2theta(
+                self.calibration_coeff_map)
+            
+            loaded = False
+            iorder = 0
+            while not loaded:
+                ipm_path ='phase_map_{}'.format(iorder)
+                ipm_path_err ='phase_map_err_{}'.format(iorder)
+                if ipm_path in f:
+                    ipm_mean = f[ipm_path][:]
+                    if ipm_path_err in f:
+                        ipm_sdev = f[ipm_path_err][:]
+                        self.phase_maps.append(ipm_mean)
+                        self.phase_maps_err.append(ipm_sdev)
+                        
+                    else: raise ValueError('Badly formatted phase maps file')
+                else:
+                    loaded = True
+                    continue
+                iorder += 1
+
+            if len(self.phase_maps) == 0: raise ValueError('No phase maps in phase map file')
+
+            # add params
+            for ikey in f.attrs.keys():
+                self.params[ikey] = f.attrs[ikey]
+
+            
+        # detect binning
+        self.dimx = self.phase_maps[0].shape[0]
+        self.dimy = self.phase_maps[0].shape[1]
+        
+        binx = self.dimx_unbinned/self.dimx
+        biny = self.dimy_unbinned/self.dimy
+        if binx != biny: raise StandardError('Binning along x and y axes is different ({} != {})'.format(binx, biny))
+        else: self.binning = binx
+
+        logging.info('Phase maps loaded : order {}, shape ({}, {}), binning {}'.format(
+            len(self.phase_maps) - 1, self.dimx, self.dimy, self.binning))
+
+        self._compute_unbinned_maps()
+
+    def _compute_unbinned_maps(self):
+        """Compute unbinnned maps"""
+        # unbin maps
+        self.unbinned_maps = list()
+        self.unbinned_maps_err = list()
+        
+        for iorder in range(len(self.phase_maps)):
+            self.unbinned_maps.append(cutils.unbin_image(
+                gvar.mean(self.phase_maps[iorder]),
+                self.dimx_unbinned, self.dimy_unbinned))
+            self.unbinned_maps_err.append(cutils.unbin_image(
+                gvar.sdev(self.phase_maps[iorder]),
+                self.dimx_unbinned, self.dimy_unbinned))
+
+        self.unbinned_calibration_coeff_map = cutils.unbin_image(
+            self.calibration_coeff_map,
+            self.dimx_unbinned, self.dimy_unbinned)
+        
+    def _isvalid_order(self, order):
+        """Validate order
+        
+        :param order: Polynomial order
+        """
+        if not isinstance(order, int): raise TypeError('order must be an integer')
+        order = int(order)
+        if order in range(len(self.phase_maps)):
+            return True
+        else:
+            raise ValueError('order must be between 0 and {}'.format(len(self.phase_maps)))
+
+    def get_map(self, order):
+        """Return map of a given order
+
+        :param order: Polynomial order
+        """
+        if self._isvalid_order(order):
+            return np.copy(self.phase_maps[order])
+
+    def get_map_err(self, order):
+        """Return map uncertainty of a given order
+
+        :param order: Polynomial order
+        """
+        if self._isvalid_order(order):
+            return np.copy(self.phase_maps_err[order])
+
+    def get_model_0(self):
+        """Return order 0 model as a Scipy.UnivariateSpline instance.
+
+        :return: (original theta vector, model, uncertainty), model
+          and uncertainty are returned as UnivariateSpline instances
+
+        """
+        _phase_map = self.get_map(0)
+        _phase_map_err = self.get_map_err(0)
+        
+        thetas, model, err = utils.image.fit_map_theta(
+            _phase_map,
+            _phase_map_err,
+            #np.cos(np.deg2rad(self.theta_map)), model is linear with
+            # this input but it will be analyzed later
+            self.theta_map)
+
+        return thetas, model, err
+
+    def modelize(self):
+        """Replace phase maps by their model inplace
+        """
+        thetas, model, err = self.get_model_0()
+        self.phase_maps[0] = model(self.theta_map)
+
+        for iorder in range(1, len(self.phase_maps)):
+            self.phase_maps[iorder] = (np.ones_like(self.phase_maps[iorder])
+                                       * np.nanmean(self.phase_maps[iorder]))
+        self._compute_unbinned_maps()
+
+
+    def reverse_polarity(self):
+        """Add pi to the order 0 phase map to reverse polarity of the
+        corrected spectrum.
+        """
+        self.phase_maps[0] += np.pi
+        self._compute_unbinned_maps()
+
+
+    def get_coeffs(self, x, y, unbin=False):
+        """Return coeffs at position x, y in the maps. x, y are binned
+        position by default (set unbin to True to get real positions
+        on the detector)
+
+        :param x: X position (dectector position)
+        :param y: Y position (dectector position)
+
+        :param unbin: If True, positions are unbinned position
+          (i.e. real positions on the detector) (default False).
+        """
+        if unbin:
+            utils.validate.index(x, 0, self.dimx_unbinned, clip=False)
+            utils.validate.index(y, 0, self.dimy_unbinned, clip=False)
+        else:
+            utils.validate.index(x, 0, self.dimx, clip=False)
+            utils.validate.index(y, 0, self.dimy, clip=False)
+        coeffs = list()
+        for iorder in range(len(self.phase_maps)):
+            if unbin:
+                coeffs.append(self.unbinned_maps[iorder][x, y])
+            else:
+                coeffs.append(self.phase_maps[iorder][x, y])
+                
+        return coeffs
+    
+    def get_phase(self, x, y, unbin=False, coeffs=None):
+        """Return a phase instance at position x, y in the maps. x, y are
+        binned position by default (set unbin to True to get real
+        positions on the detector)
+        
+        :param x: X position (dectector position)
+        :param y: Y position (dectector position)
+
+        :param unbin: If True, positions are unbinned position
+          (i.e. real positions on the detector) (default False).
+
+        :param coeffs: Used to set some coefficients to a given
+          value. If not None, must be a list of length = order. set a
+          coeff to a np.nan to use the phase map value.
+        """
+        _coeffs = self.get_coeffs(x, y, unbin=unbin)
+        if coeffs is not None:
+            utils.validate.has_len(coeffs, len(self.phase_maps))
+            for i in range(len(coeffs)):
+                if coeffs[i] is not None:
+                    if not np.isnan(coeffs[i]):
+                        _coeffs[i] = coeffs[i]
+            
+        return Phase(
+            np.polynomial.polynomial.polyval(
+                self.axis, _coeffs).astype(float),
+            axis=self.axis, params=self.params)
+    
+
+    def generate_phase_cube(self, path, coeffs=None):
+        """Generate a phase cube from the given phase maps.
+
+        :param coeffs: Used to set some coefficients to a given
+          value. If not None, must be a list of length = order. set a
+          coeff to a np.nan to use the phase map value.
+
+        """
+        phase_cube = np.empty((self.dimx, self.dimy, self.axis.size), dtype=float)
+        phase_cube.fill(np.nan)
+        
+        progress = core.ProgressBar(self.dimx)
+        for ii in range(self.dimx):
+            progress.update(
+                ii, info="computing column {}/{}".format(
+                    ii, self.dimx))
+                
+            for ij in range(self.dimy):
+                phase_cube[ii, ij, :] = self.get_phase(ii, ij, coeffs=coeffs).data
+                
+        progress.end()
+
+        utils.io.write_fits(path, phase_cube, overwrite=True)
+        
+    
+    def unwrap_phase_map_0(self):
+        """Unwrap order 0 phase map.
+
+
+        Phase is defined modulo pi/2. The Unwrapping is a
+        reconstruction of the phase so that the distance between two
+        neighboor pixels is always less than pi/4. Then the real phase
+        pattern can be recovered and fitted easily.
+    
+        The idea is the same as with np.unwrap() but in 2D, on a
+        possibly very noisy map, where a naive 2d unwrapping cannot be
+        done.
+        """
+        self.phase_map_order_0_unwraped = utils.image.unwrap_phase_map0(
+            np.copy(self.phase_maps[0]))
+        
+        # Save unwraped map
+        phase_map_path = self._get_phase_map_path(0, phase_map_type='unwraped')
+
+        utils.io.write_fits(phase_map_path,
+                            cutils.unbin_image(
+                                np.copy(self.phase_map_order_0_unwraped),
+                                self.dimx_unbinned,
+                                self.dimy_unbinned), 
+                            fits_header=self._get_phase_map_header(
+                                0, phase_map_type='unwraped'),
+                            overwrite=True)
+        if self.indexer is not None:
+            self.indexer['phase_map_unwraped_0'] = phase_map_path
