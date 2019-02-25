@@ -434,6 +434,29 @@ def sinc1d_complex(x, h, a, dx, fwhm):
     s1dc_re[X == 0] = 0
     return (s1dc_re, s1dc_im)
 
+def mertz1d(x, h, a, dx, fwhm, ratio):
+    """Complex ILS when Mertz ramp is used during the Fourier transform.
+
+    :param x: 1D array of float64 giving the positions where the
+      function is evaluated
+    
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM of the sinc
+
+    :param ratio: Ratio of the shortest side over the longest side of
+      the interferogram
+    """
+    width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
+    width /= np.pi
+    width /= 2.###
+    X = (x-dx) / (2*width)
+
+    f = np.sin(X) / X + 1j * (np.cos(X)/X
+                              - 1./((X**2)*ratio) * np.sin(ratio*X))
+    return (f.real, f.imag)
+
 
 def sinc1d_phased(x, h, a, dx, fwhm, alpha):
     """The phased version of the sinc function when that can be used to

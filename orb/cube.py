@@ -773,6 +773,8 @@ class RWHDFCube(HDFCube):
         """Implement setitem special method"""        
         # decrease representation in case of complex or floats to
         # minimize data size
+        if not isinstance(value, np.ndarray):
+            value = np.array(value)
         if value.dtype == np.float64:
             value = value.astype(np.float32)
         elif value.dtype == np.complex128:
