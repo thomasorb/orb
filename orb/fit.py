@@ -126,12 +126,20 @@ class FitVector(object):
             max_iter = 1000
         self.max_iter = max_iter
 
+        if np.any(np.iscomplex(vector)):
+            self.vector_imag = np.copy(vector.imag)
+        else:
+            self.vector_imag = None
+        vector = vector.real
+
         self.vector = gvar.mean(np.copy(vector))
         self.sigma = gvar.sdev(np.copy(vector))
         if np.all(self.sigma == 0.): self.sigma.fill(1.)
         self.fit_tol = fit_tol
         self.normalization_coeff = np.nanmax(self.vector) - np.nanmedian(self.vector)
         self.vector /= self.normalization_coeff
+        if self.vector_imag is not None:
+            self.vector_imag /= self.normalization_coeff
         self.sigma /= self.normalization_coeff
 
         self.classic = bool(classic)
@@ -312,6 +320,9 @@ class FitVector(object):
         else:
             models = list()
         all_p_list = self._all_p_dict2list(all_p_free)
+
+        if self.vector_imag is not None: return_complex = True
+        else: return_complex = False
         
         # all multiplicative models must be multiplied together before
         # beging applied to the the additive models using the
@@ -321,7 +332,8 @@ class FitVector(object):
         for i in range(len(self.models)):
             if self.models_operation[i] == 'mult':
                 model_list = self.models[i].get_model(
-                    x, all_p_list[i], return_models=return_models)
+                    x, all_p_list[i], return_models=return_models, return_complex=return_complex)
+                
                 if return_models:
                     model_to_append, models_to_append = model_list
                     models[self.models[i].__class__.__name__] = models_to_append
@@ -335,19 +347,22 @@ class FitVector(object):
         for i in range(len(self.models)):
             if self.models_operation[i] == 'add':
                 model_list = self.models[i].get_model(
-                    x, all_p_list[i], return_models=return_models, multf=mult_model)
+                    x, all_p_list[i], return_models=return_models, multf=mult_model, return_complex=return_complex)
                 if return_models:
                     model_to_append, models_to_append = model_list
                     models[self.models[i].__class__.__name__] = models_to_append
                 else:
                     model_to_append = model_list
 
-                if self.classic: model_to_append = gvar.mean(model_to_append)
-                
+                if self.classic:
+                    if self.vector_imag is None:
+                        model_to_append = gvar.mean(model_to_append)
+                        
                 if model is None:
                     model = model_to_append
                 else:
                     model += model_to_append
+                
     
         if np.any(np.isnan(gvar.mean(model))):
             warnings.warn('Nan in model')
@@ -370,8 +385,17 @@ class FitVector(object):
         """
         if self.classic:
             all_p_free = self._all_p_arr2dict(all_p_free)
-        return self.get_model(all_p_free, x=x)[
-            np.min(self.signal_range):np.max(self.signal_range)]
+        
+        out = self.get_model(all_p_free, x=x)
+        
+        if self.vector_imag is None:
+            return out[np.min(self.signal_range):np.max(self.signal_range)]
+        else:
+            out = utils.vector.float2complex(out)
+            return utils.vector.complex2float((
+                out[0][np.min(self.signal_range):np.max(self.signal_range)],
+                out[1][np.min(self.signal_range):np.max(self.signal_range)]))
+            
 
     def _get_vector_onrange(self):
         """Return the part of the vector contained in the signal
@@ -380,8 +404,15 @@ class FitVector(object):
         .. note:: This function has been defined only to be used with
           scipy.optimize.curve_fit.
         """
-        return self.vector[
+        out = self.vector[
             np.min(self.signal_range):np.max(self.signal_range)]
+        if self.vector_imag is None:
+            return out
+        else:
+            out_imag = self.vector_imag[
+                np.min(self.signal_range):np.max(self.signal_range)]
+            return utils.vector.complex2float((out, out_imag))
+        
 
     def _get_sigma_onrange(self):
         """Return the part of the uncertainty on the vector contained
@@ -430,7 +461,6 @@ class FitVector(object):
                         
         ### CLASSIC MODE ##################
         if self.classic:
-            
             priors_arr = self._all_p_dict2arr(priors_dict)
             try:
                 fit_classic = scipy.optimize.curve_fit(
@@ -466,11 +496,17 @@ class FitVector(object):
 
                 last_diff = fit_classic[2]['fvec']
 
-                fitted_vector = self.get_model(self._all_p_arr2dict(gvar.gvar(fit_classic[0])))
-                residual = (self.vector - fitted_vector)[
-                    np.min(self.signal_range):np.max(self.signal_range)]
+                fitted_vector = self._get_model_onrange(
+                    np.arange(self.vector.shape[0], dtype=float),
+                    *gvar.gvar(fit_classic[0]))
+                vector = self._get_vector_onrange()
+                                    
+                residual = (vector - fitted_vector)
 
-                res_ratio = residual/self._get_sigma_onrange()
+                if self.vector_imag is None:
+                    res_ratio = residual/self._get_sigma_onrange()
+                else:
+                    res_ratio = residual
                 res_ratio[np.isinf(res_ratio)] = np.nan
                 fit.chi2 = np.nansum(res_ratio**2)
                 fit.dof = self._get_vector_onrange().shape[0] - np.size(fit_classic[0])
@@ -485,6 +521,9 @@ class FitVector(object):
 
         ### LSQFIT MODE ##################
         else:
+            if self.vector_imag is not None:
+                raise NotImplementedError('gvar mode is not compatible with complex')
+            
             if self.snr_guess is None:
                 raise Exception('No SNR guess. This fit must be made in classic mode')
 
@@ -512,10 +551,25 @@ class FitVector(object):
             returned_data['iter_nb'] = fit.fitter_results['nfev']
 
             ## get fit model
-            (returned_data['fitted_vector_gvar'],
-             returned_data['fitted_models_gvar']) = self.get_model(
+            _model, _models = self.get_model(
                 fit_p,
                 return_models=True)
+            if self.vector_imag is not None:
+                print _model.shape
+                _model = utils.vector.float2complex(_model)
+                for ikey in _models:
+                    if isinstance(_models[ikey], list):
+                        _new_model = list()
+                        for imod in _models[ikey]:
+                            _new_model.append(utils.vector.float2complex(imod))
+                        _models[ikey] = _new_model
+                    else:
+                        _models[ikey] = utils.vector.float2complex(_models[ikey])
+                            
+                    
+            (returned_data['fitted_vector_gvar'],
+             returned_data['fitted_models_gvar']) = _model, _models
+            
 
             returned_data['fitted_vector'] = gvar.mean(returned_data['fitted_vector_gvar'])
             returned_data['fitted_models'] = dict()
@@ -736,7 +790,7 @@ class Model(object):
         """
         raise NotImplementedError()
 
-    def get_model(self, x, return_models=False):
+    def get_model(self, x, return_models=False, return_complex=False):
         """Compute a model M(x, p) for all passed x positions. p are
         the parameter values stored in :py:attr:`fit.Model.p_val`
 
@@ -744,6 +798,9 @@ class Model(object):
 
         :param return_models: (Optional) If True return also
           individual models (default False)
+
+        :param return_complex: (Optional) If True return a complex
+          model (default False).
         """
         raise NotImplementedError()
 
@@ -921,7 +978,7 @@ class FilterModel(Model):
         SHIFT_SDEV = 3 # channels
         return gvar.gvar(mean, min(SHIFT_SDEV, self.filter_axis.shape[0] / 20))
 
-    def get_model(self, x, p_free=None, return_models=False):
+    def get_model(self, x, p_free=None, return_models=False, return_complex=False):
         """Return model M(x, p).
 
         :param x: Positions where the model M(x, p) is computed.
@@ -931,6 +988,9 @@ class FilterModel(Model):
           
         :param return_models: (Optional) If True return also
           individual models (default False)
+
+        :param return_complex: (Optional) If True return a complex
+          model (default False).
         """
         if p_free is not None:
             self.set_p_free(p_free)
@@ -942,6 +1002,10 @@ class FilterModel(Model):
             mod = copy.copy(self.filter_function(
                 self.filter_axis
                 + gvar.mean(self.p_free['filter_shift'])))
+
+        if return_complex:
+            mod = utils.vector.complex2float((mod, np.zeros_like(mod)))
+
         if return_models:
             return mod, (mod)
         else:
@@ -1044,7 +1108,7 @@ class ContinuumModel(Model):
             return gvar.gvar(mean, mean*10.)
 
 
-    def get_model(self, x, p_free=None, return_models=False, multf=None):
+    def get_model(self, x, p_free=None, return_models=False, multf=None, return_complex=False):
         """Return model M(x, p).
 
         :param x: Positions where the model M(x, p) is computed.
@@ -1057,6 +1121,9 @@ class ContinuumModel(Model):
           
         :param return_models: (Optional) If True return also
           individual models (default False)
+
+        :param return_complex: (Optional) If True return a complex
+          model (default False).
         """
         if p_free is not None:
             self.set_p_free(p_free)
@@ -1079,6 +1146,9 @@ class ContinuumModel(Model):
 
         if np.any(np.isnan(gvar.mean(mod))):
             warnings.warn('Nan in model')
+
+        if return_complex:
+            mod = utils.vector.complex2float((mod, np.zeros_like(mod)))
 
         if return_models:
             return mod, (mod)
@@ -1577,7 +1647,7 @@ class LinesModel(Model):
             self.p_val = dict(p_array)
 
 
-    def get_model(self, x, p_free=None, return_models=False, multf=None):
+    def get_model(self, x, p_free=None, return_models=False, multf=None, return_complex=False):
         """Return model M(x, p).
 
         :param x: Positions where the model M(x, p) is computed.
@@ -1590,6 +1660,8 @@ class LinesModel(Model):
           
         :param return_models: (Optional) If True return also
           individual models (default False)
+
+        :param return_complex: (Optional) If True return a complex model.
         """
         if p_free is not None:
             self.set_p_free(p_free)
@@ -1627,14 +1699,25 @@ class LinesModel(Model):
 
             
             if fmodel == 'sinc':
-                line_mod = utils.spectrum.sinc1d(
+                if return_complex:
+                    model_function = utils.spectrum.sinc1d_complex
+                else:
+                    model_function = utils.spectrum.sinc1d
+                    
+                line_mod = model_function(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
                     self.p_array[self._get_ikey('fwhm', iline)])
                 
+
             elif fmodel == 'sincgauss':
-                line_mod = utils.spectrum.sincgauss1d(
+                if return_complex:
+                    model_function = utils.spectrum.sincgauss1d_complex
+                else:
+                    model_function = utils.spectrum.sincgauss1d
+                    
+                line_mod = model_function(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
@@ -1642,6 +1725,8 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('sigma', iline)])
 
             elif fmodel == 'sincphased':
+                if return_complex:
+                    raise NotImplementedError('sincphased model not implemeted for complex vector')
                 line_mod = utils.spectrum.sinc1d_phased(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
@@ -1650,6 +1735,8 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('alpha', iline)])
 
             elif fmodel == 'sincgaussphased':
+                if return_complex:
+                    raise NotImplementedError('sincgaussphased model not implemeted for complex vector')
                 line_mod = utils.spectrum.sincgauss1d_phased(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
@@ -1673,6 +1760,10 @@ class LinesModel(Model):
             else:
                 raise ValueError("fmodel must be set to 'sinc', 'gaussian', 'sincgauss', 'sincphased', 'sincgaussphased' or 'sinc2'")
 
+
+            if return_complex:
+                line_mod = utils.vector.complex2float(line_mod)
+                
             line_mod *= mult_amp
             
             if mod is None:
@@ -2148,7 +2239,7 @@ class Cm1InputParams(InputParams):
     """
     def __init__(self, step, order, step_nb, nm_laser,
                  theta_proj, theta_orig, apodization, zpd_index,
-                 filter_file_path):
+                 filter_name):
 
         """
 
@@ -2179,7 +2270,7 @@ class Cm1InputParams(InputParams):
         self.base_params['nm_laser_obs'] = (self.base_params.nm_laser
                                             * self.base_params.axis_corr_proj)
         
-        self.base_params['filter_file_path'] = str(filter_file_path)
+        self.base_params['filter_name'] = str(filter_name)
 
         self.allparams = Params()
         self.allparams.update(self.base_params)
@@ -2197,7 +2288,7 @@ class Cm1InputParams(InputParams):
         
         self.set_signal_range(self.axis_min, self.axis_max)
         
-        self.filterfile = FilterFile(self.base_params.filter_file_path)
+        self.filterfile = FilterFile(self.base_params.filter_name)
 
     def _get_sigma_cov_vel(self, fwhm_guess_cm1, lines_cm1):
         if self.base_params.apodization == 1.:
@@ -2281,8 +2372,8 @@ class Cm1InputParams(InputParams):
 
     def add_filter_model(self, **kwargs):
 
-        if self.base_params.filter_file_path is None:
-            raise utils.err.FitInputError('filter_file_path is None')
+        if self.base_params.filter_name is None:
+            raise utils.err.FitInputError('filter_name is None')
 
         filter_function = self.filterfile.project(Axis(self.axis)).data
         
@@ -2599,7 +2690,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
 
 def _prepare_input_params(step_nb, lines, step, order, nm_laser,
                           theta_proj, zpd_index, wavenumber=True,
-                          filter_file_path=None,
+                          filter_name=None,
                           theta_orig=None,
                           apodization=1., 
                           **kwargs):    
@@ -2627,7 +2718,7 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
       broadening due to the apodization and the real line broadening
       (see 'broadening' output parameter, default 1.).
 
-    :param filter_file_path: (Optional) Filter file path (default
+    :param filter_name: (Optional) Filter file path (default
       None).
 
    :param theta_orig: (Optional) Real incident angle (in degrees) of
@@ -2650,11 +2741,11 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
     logging.debug("theta_orig {}, theta_proj: {}".format(theta_orig, theta_proj))
     ip = inputparams(step, order, step_nb,
                      nm_laser, theta_proj, theta_orig, apodization,
-                     zpd_index, filter_file_path)
+                     zpd_index, filter_name)
 
     kwargs = ip.add_lines_model(lines, **kwargs)
 
-    if filter_file_path is not None:
+    if filter_name is not None:
         ip.add_filter_model(**kwargs)
         
     if 'signal_range' in kwargs:
@@ -2668,7 +2759,7 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           theta, zpd_index, wavenumber=True,
-                          filter_file_path=None,
+                          filter_name=None,
                           apodization=1.,
                           fit_tol=1e-10,
                           velocity_range=None,
@@ -2706,7 +2797,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     :param fit_tol: (Optional) Tolerance on the fit value (default
       1e-10).
 
-    :param filter_file_path: (Optional) Filter file path (default
+    :param filter_name: (Optional) Filter file path (default
       None).
 
     :param velocity_range: (Optional) Range of velocity to check
@@ -2773,7 +2864,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                               
     ip = _prepare_input_params(spectrum.shape[0], lines, step, order, nm_laser,
                                theta, zpd_index, wavenumber=wavenumber,
-                               filter_file_path=filter_file_path,
+                               filter_name=filter_name,
                                apodization=apodization,
                                **kwargs)
 

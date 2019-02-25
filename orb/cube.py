@@ -444,7 +444,8 @@ class HDFCube(core.Data, core.Tools):
         try:
             return image.Image(self.deep_frame, params=self.params)
         except AttributeError: pass
-        
+
+        df = None
         if not recompute:
             if self.has_dataset('deep_frame'):
                 df = self.get_dataset('deep_frame', protect=False)
@@ -534,13 +535,21 @@ class HDFCube(core.Data, core.Tools):
             # write data
             dtype = self[0,0,0].dtype
             fout.create_dataset('data', shape=self.shape, dtype=dtype, chunks=True)
+
+            DIV_NB = 6
+            QUAD_NB = DIV_NB**2
             
-            for iquad in range(self.config.QUAD_NB):
+            for iquad in range(QUAD_NB):
+                xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad, div_nb=DIV_NB)
+                logging.info('loading quad {}/{}'.format(
+                    iquad, QUAD_NB))
+
+                data = self.get_data(
+                    xmin, xmax, ymin, ymax, 0, self.dimz, silent=False)
+                
                 logging.info('writing quad {}/{}'.format(
-                    iquad, self.config.QUAD_NB))
-                xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad)
-                fout['data'][xmin:xmax, ymin:ymax, :] = self.get_data(
-                    xmin, xmax, ymin, ymax, 0, self.dimz, silent=True)
+                    iquad, QUAD_NB))
+                fout['data'][xmin:xmax, ymin:ymax, :] = data
         
 
     def crop(self, path, cx, cy, size):
@@ -784,7 +793,7 @@ class RWHDFCube(HDFCube):
         _update = True
         value = utils.io.cast2hdf5(value)
         if key in f.attrs:
-            if f.attrs[key] == value:
+            if np.all(f.attrs[key] == value):
                 _update = False
         if _update:
             f.attrs[key] = value
@@ -795,7 +804,10 @@ class RWHDFCube(HDFCube):
         :param params: a dict of parameters
         """
         for ipar in params:
-            self.set_param(ipar, params[ipar])
+            try:
+                self.set_param(ipar, params[ipar])
+            except TypeError:
+                warnings.warn('error setting param {}'.format(ipar))
 
     def set_mask(self, data):
         """Set mask

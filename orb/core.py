@@ -449,7 +449,7 @@ class ROParams(Params):
         :param value: Item value.
         """
         if key in self:
-            if self[key] != value:
+            if np.all(self[key] != value):
                 warnings.warn('Parameter {} already defined'.format(key))
                 warnings.warn('Old value={} / new_value={}'.format(self[key], value))
         dict.__setitem__(self, key, value)
@@ -1820,7 +1820,10 @@ class Data(object):
                     self.data = self.hdffile[_data_path][:]
                 # load params
                 for iparam in self.hdffile.attrs:
-                    self.params[iparam] = self.hdffile.attrs[iparam]
+                    try:
+                        self.params[iparam] = self.hdffile.attrs[iparam]
+                    except TypeError:
+                        pass
 
                 # load axis
                 if '/axis' in self.hdffile:

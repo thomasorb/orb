@@ -350,3 +350,11 @@ def robust_unwrap(vec, dis):
             check = (nvec[i] - vec[i]) / dis # should be an integer
             if not np.isclose(check, round(check)): raise RuntimeError('unwrapped value {} is not close to the original value {} modulo {}'.format(nvec[i], vec[i], dis))
     return nvec
+
+
+def complex2float(a):
+    return np.concatenate([a[0], a[1]])
+
+def float2complex(a):
+    return (a[:a.size//2], a[a.size//2:])
+    
