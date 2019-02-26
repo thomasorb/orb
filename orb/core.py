@@ -2038,9 +2038,17 @@ class Data(object):
 
         header = utils.io.dict2header(dict(self.params))
         
+        if 'CTYPE1' in header:
+            header['CTYPE1'] = 'RA---TAN-SIP'
+
+        if 'CTYPE2' in header:
+            header['CTYPE2'] = 'DEC--TAN-SIP'
+
         if self.data.ndim >= 3:
             header['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
                                           # inconsistency
+        
+
         return header
 
     def get_wcs(self):
@@ -2592,3 +2600,363 @@ class FilterFile(Vector1d):
         return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
 
     
+#################################################
+#### CLASS WCSData ##############################
+#################################################
+class WCSData(Data, Tools):
+    """Add WCS functionalities to a Data instance.
+    """
+    wcs_params = ('instrument', 'camera', 'target_ra', 'target_dec', 'target_x', 'target_y')
+
+    def __init__(self, data, instrument=None, config=None,
+                 data_prefix="./", sip=None, **kwargs):
+
+        # try to read instrument parameter from file
+        if instrument is None:
+            if isinstance(data, str):
+                if os.path.exists(data):
+                    instrument = utils.misc.read_instrument_value_from_file(data)
+        
+        if instrument is None: # important even if seems duplicated ;)
+            if 'params' in kwargs:
+                if 'instrument' in kwargs['params']:
+                    instrument = kwargs['params']['instrument']
+                
+        Tools.__init__(self, instrument=instrument,
+                       data_prefix=data_prefix,
+                       config=config)
+
+        Data.__init__(self, data, **kwargs)
+
+        # checking
+        if self.data.ndim < 2:
+            raise TypeError('A dataset must have at least 2 dimensions to support WCS')
+
+        # for params in wcs_params:
+        #     if params not in self.params:
+        #         warnings.warn('{} not set. WCS functionalities cannot be used.')
+        #         return # wcs init not done
+
+        # check params
+        self.params.reset('instrument', self.instrument)
+
+        if not self.has_param('camera'):
+            if self.has_param('camera_number'):
+                self.params['camera'] = self.params.camera_number
+            elif self.has_param('CAMERA'):
+                self.params['camera'] = self.params.CAMERA
+                if self.params.camera == 'MERGED_DATA':
+                    self.params.reset('camera', 0)
+            else:
+                raise StandardError('parameter camera must be supplied')
+
+        if '1' in str(self.params.camera):
+            self.params.reset('camera', 1)
+        elif '2' in str(self.params.camera):
+            self.params.reset('camera', 2)
+        elif '0' in str(self.params.camera):
+            self.params.reset('camera', 0)
+        else:
+            raise ValueError('camera number not understood, must be 1, 2 or 0')
+
+
+        # compute binning
+        if self.is_cam1(): cam = 'CAM1'
+        else: cam = 'CAM2'
+
+        if 'cropped_bbox' in self.params: cropped = True
+        else: cropped = False
+        
+        if self.is_cam1():
+            if self.has_param('bin_cam_1'):
+                self.params.reset('binning', self.params.bin_cam_1)
+        if self.is_cam2():
+            if self.has_param('bin_cam_2'):
+                self.params.reset('binning', self.params.bin_cam_2)
+            
+        if not self.has_param('binning'):
+            if self.has_param('BINNING'):
+                self.params['binning'] = self.params.BINNING
+            else:
+                if cropped:
+                    warnings.warn('data is cropped. computed binning might be inconsistent')
+                detector_shape = [self.config[cam + '_DETECTOR_SIZE_X'],
+                                  self.config[cam + '_DETECTOR_SIZE_Y']]
+        
+                binning = utils.image.compute_binning(
+                    (self.dimx, self.dimy), detector_shape)
+
+                if binning[0] != binning[1]:
+                    raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
+                self.set_param('binning', binning[0])
+                
+                logging.debug('Computed binning of camera {}: {}x{}'.format(
+                    self.params.camera, self.params.binning, self.params.binning))
+
+            
+        if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:
+            warnings.warn('image might be cropped, target_x, target_y and other parameters might be wrong')
+            
+        target_x = float(self.dimx / 2.)
+        target_y = float(self.dimy / 2.)
+        if self.is_cam2():
+            coeffs = self.get_initial_alignment_parameters()
+            
+            warnings.warn('target_x, target_y initialy at {}, {}'.format(target_x, target_y))
+            target_x, target_y = cutils.transform_A_to_B(
+                self.params.target_x, self.params.target_y,
+                coeffs.dx, coeffs.dy,
+                coeffs.dr,
+                0., 0., coeffs.rc[0], coeffs.rc[1], coeffs.zoom, coeffs.zoom)
+            warnings.warn('target_x, target_y recomputed to {}, {}'.format(target_x, target_y))
+
+        self.params.reset('target_x', target_x)
+        self.params.reset('target_y', target_y)
+
+        if 'target_ra' not in self.params:
+            if 'TARGETR' in self.params:
+                self.params['target_ra'] = utils.astrometry.ra2deg(
+                    self.params['TARGETR'].split(':'))
+        if 'target_dec' not in self.params:
+            if 'TARGETD' in self.params:
+                self.params['target_dec'] = utils.astrometry.dec2deg(
+                    self.params['TARGETD'].split(':'))
+        
+        if 'target_ra' in self.params:
+            if not isinstance(self.params.target_ra, float):
+                raise TypeError('target_ra must be a float')
+        if 'target_dec' in self.params:
+            if not isinstance(self.params.target_dec, float):
+                raise TypeError('target_dec must be a float')            
+          
+        if 'data_prefix' not in kwargs:
+            kwargs['data_prefix'] = self._data_prefix
+            
+        if not self.has_param('wcs_rotation'):
+            if self.is_cam1():
+                self.params['wcs_rotation'] = float(self.config.WCS_ROTATION)
+            else:
+                self.params['wcs_rotation'] = (float(self.config.WCS_ROTATION)
+                                               - float(self.config.INIT_ANGLE))
+        
+        ## load astrometry params
+
+        # load wcs (reset loaded parameters)
+        try:
+            wcs = self.get_wcs()
+            (target_x, target_y,
+             scale, _,
+             target_ra, target_dec,
+             wcs_rotation) = utils.astrometry.get_wcs_parameters(wcs)
+            self.params.reset('target_x', target_x)
+            self.params.reset('target_y', target_y)
+            self.params.reset('target_ra', target_ra)
+            self.params.reset('target_dec', target_dec)
+            self.params.reset('wcs_rotation', wcs_rotation)
+            self.params.reset('scale', scale * 3600.)
+                        
+        except Exception, e:
+            warnings.warn('error loading image WCS: {}'.format(e))
+                
+        # check if all needed parameters are present
+        for iparam in self.wcs_params:
+            if iparam not in self.params:
+                raise StandardError('param {} must be set'.format(iparam))
+
+        self.sip = None
+        if sip is not None:
+            if isinstance(sip, pywcs.WCS):
+                self.sip = sip
+            else:
+                raise StandardError('sip must be an astropy.wcs.WCS instance')
+        #else:
+            #self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+
+    def is_cam1(self):
+        """Return true is image comes from camera 1 or is a merged frame
+        """
+        if self.params.camera not in [0, 1, 2]: raise ValueError('camera must be 0, 1 or 2')
+        if self.params.camera == 1 or self.params.camera == 0:
+            return True
+        return False
+
+    def is_cam2(self):
+        """Return true is image comes from camera 2
+        """
+        if self.params.camera not in [0, 1, 2]: raise ValueError('camera must be 0, 1 or 2')
+        if self.params.camera == 2:
+            return True
+        return False
+
+    def set_wcs(self, wcs):
+        """Set WCS from w WCS instance or a FITS image
+
+        :param wcs: Must be an astropy.wcs.WCS instance or a path to a FITS image
+        """
+        if isinstance(wcs, str):
+            warnings.simplefilter('ignore', category=VerifyWarning)
+            warnings.simplefilter('ignore', category=AstropyUserWarning)
+            wcs = pywcs.WCS(
+                orb.utils.io.read_fits(wcs_path, return_hdu_only=True)[0].header,
+                naxis=2, relax=True)
+        self.update_params(wcs.to_header(relax=True))
+
+    def get_wcs(self):
+        """Return the WCS of the cube as an astropy.wcs.WCS instance """
+        warnings.simplefilter('ignore', category=VerifyWarning)
+        warnings.simplefilter('ignore', category=AstropyUserWarning)
+        return pywcs.WCS(self.get_header(), naxis=2, relax=True)
+
+    def get_wcs_header(self):
+        """Return the WCS of the cube as a astropy.io.fits.Header instance """
+        return self.get_wcs().to_header(relax=True)
+
+    def pix2world(self, xy, deg=True):
+        """Convert pixel coordinates to celestial coordinates
+
+        :param xy: A tuple (x,y) of pixel coordinates or a list of
+          tuples ((x0,y0), (x1,y1), ...)
+
+        :param deg: (Optional) If true, celestial coordinates are
+          returned in sexagesimal format (default False).
+
+        .. note:: it is much more effficient to pass a list of
+          coordinates than run the function for each couple of
+          coordinates you want to transform.
+        """
+        xy = np.squeeze(xy).astype(float)
+        if np.size(xy) == 2:
+            x = [xy[0]]
+            y = [xy[1]]
+        elif np.size(xy) > 2 and len(xy.shape) == 2:
+            if xy.shape[0] < xy.shape[1]:
+                xy = np.copy(xy.T)
+            x = xy[:,0]
+            y = xy[:,1]
+        else:
+            raise StandardError('xy must be a tuple (x,y) of coordinates or a list of tuples ((x0,y0), (x1,y1), ...)')
+
+        if not self.has_param('dxmap') or not self.has_param('dymap'):
+            coords = np.array(
+                self.get_wcs().all_pix2world(
+                    x, y, 0)).T
+        else:
+            if np.size(x) == 1:
+                xyarr = np.atleast_2d([x, y]).T
+            else:
+                xyarr = xy
+            coords = utils.astrometry.pix2world(
+                self.get_wcs_header(), self.dimx, self.dimy, xyarr,
+                self.params.dxmap, self.params.dymap)
+        if deg:
+            return coords
+        else: return np.array(
+            [utils.astrometry.deg2ra(coords[:,0]),
+             utils.astrometry.deg2dec(coords[:,1])])
+
+
+    def world2pix(self, radec, deg=True):
+        """Convert celestial coordinates to pixel coordinates
+
+        :param xy: A tuple (x,y) of celestial coordinates or a list of
+          tuples ((x0,y0), (x1,y1), ...). Must be in degrees.
+
+        .. note:: it is much more effficient to pass a list of
+          coordinates than run the function for each couple of
+          coordinates you want to transform.
+        """
+        radec = np.squeeze(radec)
+        if np.size(radec) == 2:
+            ra = [radec[0]]
+            dec = [radec[1]]
+        elif np.size(radec) > 2 and len(radec.shape) == 2:
+            if radec.shape[0] < radec.shape[1]:
+                radec = np.copy(radec.T)
+            ra = radec[:,0]
+            dec = radec[:,1]
+        else:
+            raise StandardError('radec must be a tuple (ra,dec) of coordinates or a list of tuples ((ra0,dec0), (ra1,dec1), ...)')
+
+        if not self.has_param('dxmap') or not self.has_param('dymap'):
+            coords = np.array(
+                self.get_wcs().all_world2pix(
+                    ra, dec, 0,
+                    detect_divergence=False,
+                    quiet=True)).T
+        else:
+            radecarr = np.atleast_2d([ra, dec]).T
+            coords = utils.astrometry.world2pix(
+                self.get_wcs_header(), self.dimx, self.dimy, radecarr,
+                self.params.dxmap, self.params.dymap)
+
+        return coords
+    
+    def arc2pix(self, x):
+        """Convert pixels to arcseconds
+
+        :param x: a value or a vector in pixel
+        """
+        if self.scale is not None:
+            return np.array(x).astype(float) / self.scale
+        else:
+            raise StandardError("Scale not defined")
+
+    def pix2arc(self, x):
+        """Convert arcseconds to pixels
+
+        :param x: a value or a vector in arcsec
+        """
+        if self.scale is not None:
+            return np.array(x).astype(float) * self.scale
+        else:
+            raise StandardError("Scale not defined")
+
+    def query_vizier(self, catalog='gaia', max_stars=100):
+        """Return a list of star coordinates around an object in a
+        given radius based on a query to VizieR Services
+        (http://vizier.u-strasbg.fr/viz-bin/VizieR)    
+
+        :param catalog: (Optional) Catalog to ask on the VizieR
+          database (see notes) (default 'gaia')
+
+        :param max_stars: (Optional) Maximum number of row to retrieve
+          (default 100)
+
+        .. seealso:: :py:meth:`orb.utils.web.query_vizier`
+        """
+        radius = self.fov / np.sqrt(2)
+        if self.target_ra is None or self.target_dec is None:
+            raise StandardError('No catalogue query can be done. Please make sure to give target_radec and target_xy parameter at class init')
+        
+        return utils.web.query_vizier(
+            radius, self.target_ra, self.target_dec,
+            catalog=catalog, max_stars=max_stars)
+
+    def get_initial_alignment_parameters(self):
+        """Return initial alignemnt coefficients for camera 2 as a core.Params instance"""
+        if self.instrument == 'spiomm':
+            raise NotImplementedError()
+        else:
+            bin_cam_1 = self.params.binning
+            bin_cam_2 = self.params.binning
+
+        init_dx = self.config["INIT_DX"] / bin_cam_2
+        init_dy = self.config["INIT_DY"] / bin_cam_2
+        pix_size_1 = self.config["PIX_SIZE_CAM1"]
+        pix_size_2 = self.config["PIX_SIZE_CAM2"]
+        zoom = (pix_size_2 * bin_cam_2) / (pix_size_1 * bin_cam_1)
+        xrc = self.dimx / 2.
+        yrc = self.dimy / 2.
+        
+        coeffs = Params()
+        coeffs.dx = float(init_dx)
+        coeffs.dy = float(init_dy)
+        coeffs.dr = float(self.config['INIT_ANGLE'])
+        coeffs.da = 0.
+        coeffs.db = 0.
+        coeffs.rc = float(xrc), float(yrc)
+        coeffs.zoom = float(zoom)
+
+        return coeffs
+
+

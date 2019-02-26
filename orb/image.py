@@ -57,11 +57,11 @@ import utils.io
 #################################################
 #### CLASS Frame2D ##############################
 #################################################
-class Frame2D(core.Data):
+class Frame2D(core.WCSData):
 
     def __init__(self, *args, **kwargs):
 
-        core.Data.__init__(self, *args, **kwargs)
+        core.WCSData.__init__(self, *args, **kwargs)
 
         # checking
         if self.data.ndim != 2:
@@ -101,8 +101,10 @@ class Frame2D(core.Data):
         cutout = astropy.nddata.Cutout2D(
             self.data.T, position=[cx, cy],
             size=size, wcs=self.get_wcs())
-        newim = self.copy(data=cutout.data)        
+        newim = self.copy(data=cutout.data)
         newim.update_params(cutout.wcs.to_header())
+        ((ymin, ymax), (xmin, xmax)) = cutout.bbox_original
+        newim.params['cropped_bbox'] = (xmin, xmax+1, ymin, ymax+1)
         return newim
         
 
@@ -110,7 +112,7 @@ class Frame2D(core.Data):
 #### CLASS Image ################################
 #################################################
 
-class Image(Frame2D, core.Tools):
+class Image(Frame2D):
 
     BOX_SIZE_COEFF = 7
     FIT_TOL = 1e-2
@@ -118,164 +120,27 @@ class Image(Frame2D, core.Tools):
     DETECT_INDEX = 0
     
     profiles = ['moffat', 'gaussian']
-    wcs_params = ('instrument', 'camera', 'target_ra', 'target_dec', 'target_x', 'target_y')
     
-    def __init__(self, data, instrument=None, config=None,
-                 data_prefix="./", sip=None, **kwargs):
-
-        # try to read instrument parameter from file
-        if instrument is None:
-            if isinstance(data, str):
-                if os.path.exists(data):
-                    instrument = utils.misc.read_instrument_value_from_file(data)
-        
-        if instrument is None: # important even if duplicated ;)
-            if 'params' in kwargs:
-                if 'instrument' in kwargs['params']:
-                    instrument = kwargs['params']['instrument']
-                
-        core.Tools.__init__(self, instrument=instrument,
-                            data_prefix=data_prefix,
-                            config=config)
+    def __init__(self, data, **kwargs):
         
         Frame2D.__init__(self, data, **kwargs)
-        
-        # check params
-        self.params.reset('instrument', self.instrument)
-        
-        if not self.has_param('camera'):
-            if self.has_param('CAMERA'):
-                self.params['camera'] = self.params.CAMERA
-            else:
-                raise StandardError('parameter camera must be supplied')
 
-        if '1' in str(self.params.camera):
-            self.params.reset('camera', 1)
-        elif '2' in str(self.params.camera):
-            self.params.reset('camera', 2)
-        elif '0' in str(self.params.camera):
-            self.params.reset('camera', 0)
-        else:
-            raise ValueError('camera number not understood, must be 1, 2 or 0')
-
-        if self.is_cam1():
-            if self.has_param('bin_cam_1'):
-                self.params.reset('binning', self.params.bin_cam_1)
-        if self.is_cam2():
-            if self.has_param('bin_cam_2'):
-                self.params.reset('binning', self.params.bin_cam_2)
-    
-            
-        if not self.has_param('binning'):
-            if self.has_param('BINNING'):
-                self.params['binning'] = self.params.BINNING
-            else:
-                raise StandardError('binning parameter must be supplied')
-            
-        if self.dimx != self.config['CAM' + str(self.params.camera) + '_DETECTOR_SIZE_X'] // self.params.binning:
-            warnings.warn('image cropped, target_x might be wrong')
-            
-        target_x = float(self.dimx / 2.)
-        target_y = float(self.dimy / 2.)
-        if self.is_cam2():
-            coeffs = self.get_initial_alignment_parameters()
-            
-            warnings.warn('target_x, target_y initialy at {}, {}'.format(target_x, target_y))
-            target_x, target_y = cutils.transform_A_to_B(
-                self.params.target_x, self.params.target_y,
-                coeffs.dx, coeffs.dy,
-                coeffs.dr,
-                0., 0., coeffs.rc[0], coeffs.rc[1], coeffs.zoom, coeffs.zoom)
-            warnings.warn('target_x, target_y recomputed to {}, {}'.format(target_x, target_y))
-
-        self.params.reset('target_x', target_x)
-        self.params.reset('target_y', target_y)
-
-        if 'target_ra' not in self.params:
-            if 'TARGETR' in self.params:
-                self.params['target_ra'] = utils.astrometry.ra2deg(
-                    self.params['TARGETR'].split(':'))
-        if 'target_dec' not in self.params:
-            if 'TARGETD' in self.params:
-                self.params['target_dec'] = utils.astrometry.dec2deg(
-                    self.params['TARGETD'].split(':'))
-
-        if 'profile_name' not in self.params:
-            self.params['profile_name'] = self.config.PSF_PROFILE
-
-        if 'target_ra' in self.params:
-            if not isinstance(self.params.target_ra, float):
-                raise TypeError('target_ra must be a float')
-        if 'target_dec' in self.params:
-            if not isinstance(self.params.target_dec, float):
-                raise TypeError('target_dec must be a float')            
-          
-        if 'data_prefix' not in kwargs:
-            kwargs['data_prefix'] = self._data_prefix
-            
-        if not self.has_param('wcs_rotation'):
-            if self.is_cam1():
-                self.params['wcs_rotation'] = float(self.config.WCS_ROTATION)
-            else:
-                self.params['wcs_rotation'] = (float(self.config.WCS_ROTATION)
-                                               - float(self.config.INIT_ANGLE))
-        
-        ## load astrometry params
-
-        # load wcs (loaded default parameters are reset)
-        try:
-            wcs = self.get_wcs()
-            (target_x, target_y,
-             scale, _,
-             target_ra, target_dec,
-             wcs_rotation) = utils.astrometry.get_wcs_parameters(wcs)
-            self.params.reset('target_x', target_x)
-            self.params.reset('target_y', target_y)
-            self.params.reset('target_ra', target_ra)
-            self.params.reset('target_dec', target_dec)
-            self.params.reset('wcs_rotation', wcs_rotation)
-            self.params.reset('scale', scale * 3600.)
-                        
-        except Exception, e:
-            warnings.warn('error loading image WCS: {}'.format(e))
-                
-        # check if all needed parameters are present
-        for iparam in self.wcs_params:
-            if iparam not in self.params:
-                raise StandardError('param {} must be set'.format(iparam))
-
-        # define astrometry parameters
         if 'box_size_coeff' in self.params:
             self.box_size_coeff = self.params.box_size_coeff
         else:
             self.box_size_coeff = self.BOX_SIZE_COEFF
-        
-        
+
+        if 'profile_name' not in self.params:
+            self.params['profile_name'] = self.config.PSF_PROFILE
+
         if self.params.profile_name == 'moffat':
             self.box_size_coeff /= 3.
-            
-        if 'fwhm_arc' in self.params:
-            self.fwhm_arc = self.params.fwhm_arc
-        else:
-            self.fwhm_arc = self.config.INIT_FWHM
-
-        if 'scale' in self.params:
-            self.scale = self.params.scale
-        else:
-            self.scale = self.config.FIELD_OF_VIEW_1 / self.config.CAM1_DETECTOR_SIZE_X * 60.
-            
-        self.reset_scale(self.scale)
-
+                    
         # define profile
         self.reset_profile_name(self.params.profile_name)
 
         self.reduced_chi_square_limit = self.REDUCED_CHISQ_LIMIT
 
-        self.target_ra = self.params.target_ra
-        self.target_dec = self.params.target_dec
-        self.target_x = self.params.target_x
-        self.target_y = self.params.target_y
-        self.wcs_rotation = self.params.wcs_rotation
         
         if 'detect_stack' in self.params:
             self.detect_stack = self.params.detect_stack
@@ -289,14 +154,24 @@ class Image(Frame2D, core.Tools):
         
         self.fit_tol = self.FIT_TOL
 
-        self.sip = None
-        if sip is not None:
-            if isinstance(sip, pywcs.WCS):
-                self.sip = sip
-            else:
-                raise StandardError('sip must be an astropy.wcs.WCS instance')
-        #else:
-            #self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+        # define astrometry parameters        
+        if 'fwhm_arc' in self.params:
+            self.fwhm_arc = self.params.fwhm_arc
+        else:
+            self.fwhm_arc = self.config.INIT_FWHM
+
+        if 'scale' in self.params:
+            self.scale = self.params.scale
+        else:
+            self.scale = self.config.FIELD_OF_VIEW_1 / self.config.CAM1_DETECTOR_SIZE_X * 60.
+            
+        self.reset_scale(self.scale)
+
+        self.target_ra = self.params.target_ra
+        self.target_dec = self.params.target_dec
+        self.target_x = self.params.target_x
+        self.target_y = self.params.target_y
+        self.wcs_rotation = self.params.wcs_rotation
 
     def _get_fit_results_path(self):
         """Return the default path to the file containing all fit
@@ -307,21 +182,38 @@ class Image(Frame2D, core.Tools):
         """Return path to the guess matrix"""
         return self._data_path_hdr + "guess_matrix.fits"
 
-    def is_cam1(self):
-        """Return true is image comes from camera 1 or is a merged frame
+    def reset_scale(self, scale):
+        """Reset scale attribute.
+        
+        :param scale: Frame scale in arcsec/pixel
         """
-        if self.params.camera not in [0, 1, 2]: raise ValueError('camera must be 0, 1 or 2')
-        if self.params.camera == 1 or self.params.camera == 0:
-            return True
-        return False
+        self.scale = float(scale)
+        self.fov = self.dimx * self.scale / 60.
+        self.reset_fwhm_arc(self.fwhm_arc)
 
-    def is_cam2(self):
-        """Return true is image comes from camera 2
+    def reset_fwhm_arc(self, fwhm_arc):
+        """Reset FWHM of stars in arcsec
+
+        :param fwhm_arc: FWHM of stars in arcsec
         """
-        if self.params.camera not in [0, 1, 2]: raise ValueError('camera must be 0, 1 or 2')
-        if self.params.camera == 2:
-            return True
-        return False
+        self.fwhm_arc = float(fwhm_arc)
+        self.reset_fwhm_pix(self.arc2pix(self.fwhm_arc))
+
+    def reset_fwhm_pix(self, fwhm_pix):
+        """Reset FWHM of stars in pixels
+
+        :param fwhm_arc: FWHM of stars in pixels
+        """
+        self.fwhm_pix = float(fwhm_pix)
+        self.reset_box_size()
+
+    def reset_box_size(self):
+        """Reset box size attribute. Useful if FWHM or scale has been
+        modified after class init.
+        """
+        self.box_size = int(np.ceil(self.box_size_coeff *  self.fwhm_pix))
+        self.box_size += int(~self.box_size%2) # make it odd
+
     
     def copy(self, data=None):
         """Return a copy of the instance
@@ -382,28 +274,6 @@ class Image(Frame2D, core.Tools):
         return frame
         
             
-    def set_wcs(self, wcs):
-        """Set WCS from w WCS instance or a FITS image
-
-        :param wcs: Must be an astropy.wcs.WCS instance or a path to a FITS image
-        """
-        if isinstance(wcs, str):
-            warnings.simplefilter('ignore', category=VerifyWarning)
-            warnings.simplefilter('ignore', category=AstropyUserWarning)
-            wcs = pywcs.WCS(
-                orb.utils.io.read_fits(wcs_path, return_hdu_only=True)[0].header,
-                naxis=2, relax=True)
-        self.update_params(wcs.to_header(relax=True))
-
-    def get_wcs(self):
-        """Return the WCS of the cube as an astropy.wcs.WCS instance """
-        warnings.simplefilter('ignore', category=VerifyWarning)
-        warnings.simplefilter('ignore', category=AstropyUserWarning)
-        return pywcs.WCS(self.get_header(), naxis=2, relax=True)
-
-    def get_wcs_header(self):
-        """Return the WCS of the cube as a astropy.io.fits.Header instance """
-        return self.get_wcs().to_header(relax=True)
 
     def find_object(self, is_standard=False):
         """Try to find the object given the name in the header
@@ -446,85 +316,6 @@ class Image(Frame2D, core.Tools):
         return np.squeeze(self.world2pix([std_ra, std_dec]))
 
     
-    def pix2world(self, xy, deg=True):
-        """Convert pixel coordinates to celestial coordinates
-
-        :param xy: A tuple (x,y) of pixel coordinates or a list of
-          tuples ((x0,y0), (x1,y1), ...)
-
-        :param deg: (Optional) If true, celestial coordinates are
-          returned in sexagesimal format (default False).
-
-        .. note:: it is much more effficient to pass a list of
-          coordinates than run the function for each couple of
-          coordinates you want to transform.
-        """
-        xy = np.squeeze(xy).astype(float)
-        if np.size(xy) == 2:
-            x = [xy[0]]
-            y = [xy[1]]
-        elif np.size(xy) > 2 and len(xy.shape) == 2:
-            if xy.shape[0] < xy.shape[1]:
-                xy = np.copy(xy.T)
-            x = xy[:,0]
-            y = xy[:,1]
-        else:
-            raise StandardError('xy must be a tuple (x,y) of coordinates or a list of tuples ((x0,y0), (x1,y1), ...)')
-
-        if not self.has_param('dxmap') or not self.has_param('dymap'):
-            coords = np.array(
-                self.get_wcs().all_pix2world(
-                    x, y, 0)).T
-        else:
-            if np.size(x) == 1:
-                xyarr = np.atleast_2d([x, y]).T
-            else:
-                xyarr = xy
-            coords = utils.astrometry.pix2world(
-                self.get_wcs_header(), self.dimx, self.dimy, xyarr,
-                self.params.dxmap, self.params.dymap)
-        if deg:
-            return coords
-        else: return np.array(
-            [utils.astrometry.deg2ra(coords[:,0]),
-             utils.astrometry.deg2dec(coords[:,1])])
-
-
-    def world2pix(self, radec, deg=True):
-        """Convert celestial coordinates to pixel coordinates
-
-        :param xy: A tuple (x,y) of celestial coordinates or a list of
-          tuples ((x0,y0), (x1,y1), ...). Must be in degrees.
-
-        .. note:: it is much more effficient to pass a list of
-          coordinates than run the function for each couple of
-          coordinates you want to transform.
-        """
-        radec = np.squeeze(radec)
-        if np.size(radec) == 2:
-            ra = [radec[0]]
-            dec = [radec[1]]
-        elif np.size(radec) > 2 and len(radec.shape) == 2:
-            if radec.shape[0] < radec.shape[1]:
-                radec = np.copy(radec.T)
-            ra = radec[:,0]
-            dec = radec[:,1]
-        else:
-            raise StandardError('radec must be a tuple (ra,dec) of coordinates or a list of tuples ((ra0,dec0), (ra1,dec1), ...)')
-
-        if not self.has_param('dxmap') or not self.has_param('dymap'):
-            coords = np.array(
-                self.get_wcs().all_world2pix(
-                    ra, dec, 0,
-                    detect_divergence=False,
-                    quiet=True)).T
-        else:
-            radecarr = np.atleast_2d([ra, dec]).T
-            coords = utils.astrometry.world2pix(
-                self.get_wcs_header(), self.dimx, self.dimy, radecarr,
-                self.params.dxmap, self.params.dymap)
-
-        return coords
 
     def load_fit_results(self, fit_results_path=None):
         """Load a file containing the fit results"""
@@ -546,79 +337,6 @@ class Image(Frame2D, core.Tools):
                 "Bad profile name (%s) please choose it in: %s"%(
                     profile_name, str(self.profiles)))
         
-    def reset_scale(self, scale):
-        """Reset scale attribute.
-        
-        :param scale: Frame scale in arcsec/pixel
-        """
-        self.scale = float(scale)
-        self.fov = self.dimx * self.scale / 60.
-        self.reset_fwhm_arc(self.fwhm_arc)
-
-    def reset_fwhm_arc(self, fwhm_arc):
-        """Reset FWHM of stars in arcsec
-
-        :param fwhm_arc: FWHM of stars in arcsec
-        """
-        self.fwhm_arc = float(fwhm_arc)
-        self.reset_fwhm_pix(self.arc2pix(self.fwhm_arc))
-
-    def reset_fwhm_pix(self, fwhm_pix):
-        """Reset FWHM of stars in pixels
-
-        :param fwhm_arc: FWHM of stars in pixels
-        """
-        self.fwhm_pix = float(fwhm_pix)
-        self.reset_box_size()
-
-    def reset_box_size(self):
-        """Reset box size attribute. Useful if FWHM or scale has been
-        modified after class init.
-        """
-        self.box_size = int(np.ceil(self.box_size_coeff *  self.fwhm_pix))
-        self.box_size += int(~self.box_size%2) # make it odd
-    
-    def arc2pix(self, x):
-        """Convert pixels to arcseconds
-
-        :param x: a value or a vector in pixel
-        """
-        if self.scale is not None:
-            return np.array(x).astype(float) / self.scale
-        else:
-            raise StandardError("Scale not defined")
-
-    def pix2arc(self, x):
-        """Convert arcseconds to pixels
-
-        :param x: a value or a vector in arcsec
-        """
-        if self.scale is not None:
-            return np.array(x).astype(float) * self.scale
-        else:
-            raise StandardError("Scale not defined")
-
-    def query_vizier(self, catalog='gaia', max_stars=100):
-        """Return a list of star coordinates around an object in a
-        given radius based on a query to VizieR Services
-        (http://vizier.u-strasbg.fr/viz-bin/VizieR)    
-
-        :param catalog: (Optional) Catalog to ask on the VizieR
-          database (see notes) (default 'gaia')
-
-        :param max_stars: (Optional) Maximum number of row to retrieve
-          (default 100)
-
-        .. seealso:: :py:meth:`orb.utils.web.query_vizier`
-        """
-        radius = self.fov / np.sqrt(2)
-        if self.target_ra is None or self.target_dec is None:
-            raise StandardError('No catalogue query can be done. Please make sure to give target_radec and target_xy parameter at class init')
-        
-        return utils.web.query_vizier(
-            radius, self.target_ra, self.target_dec,
-            catalog=catalog, max_stars=max_stars)
-
 
     def detect_stars(self, min_star_number=30, path=None):
         """Detect star positions in data.
@@ -1411,36 +1129,6 @@ class Image(Frame2D, core.Tools):
             frame, star_list, self.box_size, **kwargs)
         
         return utils.astrometry.fit2df(fit_results)
-
-
-    def get_initial_alignment_parameters(self):
-        """Return initial alignemnt coefficients for camera 2 as a core.Params instance"""
-        if self.instrument == 'spiomm':
-            raise NotImplementedError()
-        else:
-            bin_cam_1 = self.params.binning
-            bin_cam_2 = self.params.binning
-
-        init_dx = self.config["INIT_DX"] / bin_cam_2
-        init_dy = self.config["INIT_DY"] / bin_cam_2
-        pix_size_1 = self.config["PIX_SIZE_CAM1"]
-        pix_size_2 = self.config["PIX_SIZE_CAM2"]
-        zoom = (pix_size_2 * bin_cam_2) / (pix_size_1 * bin_cam_1)
-        xrc = self.dimx / 2.
-        yrc = self.dimy / 2.
-        
-        coeffs = core.Params()
-        coeffs.dx = float(init_dx)
-        coeffs.dy = float(init_dy)
-        coeffs.dr = float(self.config['INIT_ANGLE'])
-        coeffs.da = 0.
-        coeffs.db = 0.
-        coeffs.rc = float(xrc), float(yrc)
-        coeffs.zoom = float(zoom)
-
-        return coeffs
-
-
     
     def compute_alignment_parameters(self, image2, correct_distortion=False,
                                      star_list1=None, fwhm_arc=None,

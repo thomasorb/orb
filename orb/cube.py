@@ -46,7 +46,7 @@ import pyregion
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
-class HDFCube(core.Data, core.Tools):
+class HDFCube(core.WCSData):
     """ This class implements the use of an HDF5 cube."""        
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis', 'calib_map', 'phase_map', 'phase_map_err', 'phase_maps_coeff_map', 'phase_maps_cm1_axis'
@@ -117,13 +117,14 @@ class HDFCube(core.Data, core.Tools):
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
         
-        core.Tools.__init__(self, instrument=instrument,
-                            data_prefix=data_prefix,
-                            config=config)
         if self.is_old:
-            core.Data.__init__(self, self, **kwargs)
+            core.WCSData.__init__(self, self, instrument=instrument,
+                                  data_prefix=data_prefix,
+                                  config=config, **kwargs)
         else:
-            core.Data.__init__(self, self.cube_path, **kwargs)
+            core.WCSData.__init__(self, self.cube_path, instrument=instrument,
+                                  data_prefix=data_prefix,
+                                  config=config, **kwargs)
 
         # checking dims
         if self.data.ndim != 3:
@@ -260,7 +261,7 @@ class HDFCube(core.Data, core.Tools):
         """
         return utils.misc.get_mask_from_ds9_region_file(
             region, [0, self.dimx], [0, self.dimy], integrate=True,
-            header=self.get_wcs_header())
+            header=self.get_header())
     
 
     def get_data_from_region(self, region):
@@ -566,10 +567,17 @@ class HDFCube(core.Data, core.Tools):
         .. warning:: size of the returned box is not guaranteed if cx
           and cy are on the border of the image.
         """
-        df = self.get_deep_frame()
+        # a fake image is used to compute the cropped wcs
+        df = image.Image(np.empty((self.dimx, self.dimy), dtype=float),
+                         params=self.params)
         df = df.crop(cx, cy, size)
-        params = df.params
-        #outcube = RWHDFCube(path, shape=(xmax-xmin, ymax-ymin, 0, self.dimz), instrument=self.instrument, reset=True, params=self.params)
+        xmin, xmax, ymin, ymax = df.params.cropped_bbox
+        outcube = RWHDFCube(path, shape=(df.dimx, df.dimy, self.dimz),
+                            instrument=self.instrument, reset=True, params=df.params)
+        logging.info('writing cube')
+        data = self[xmin:xmax, ymin:ymax, :]
+        outcube[:,:,:] = data
+        logging.info('cropped cube written at {}'.format(path))
                 
     def to_fits(self, path):
         """write data to a FITS file. 
@@ -709,8 +717,6 @@ class HDFCube(core.Data, core.Tools):
         params = dict(self.params)
         params['pixels'] = len(interfs)
 
-        params['source_counts'] = np.nansum(self.get_deep_frame().data[region])
-
         return core.Vector1d(interf, params=params,
                              zpd_index=self.params.zpd_index,
                              calib_coeff=calib_coeff,
@@ -740,6 +746,7 @@ class RWHDFCube(HDFCube):
             if os.path.exists(path):
                 os.remove(path)
 
+        self.empty = False
         # create file if it does not exists
         if not os.path.exists(path):
             if shape is None:
@@ -747,6 +754,7 @@ class RWHDFCube(HDFCube):
             with utils.io.open_hdf5(path, 'w') as f:
                 utils.validate.has_len(shape, 3, object_name='shape')
                 f.create_dataset('data', shape=shape, chunks=True)
+                self.empty = True
                 f.attrs['level2'] = True
                 f.attrs['instrument'] = instrument
 
@@ -779,10 +787,20 @@ class RWHDFCube(HDFCube):
             value = value.astype(np.float32)
         elif value.dtype == np.complex128:
             value = value.astype(np.complex64)
-            
-        f = self.open_hdf5()
-        return f['data'].__setitem__(key, value)
 
+        f = self.open_hdf5()
+        if self.is_empty():
+            del f['data']
+            f.create_dataset('data', shape=self.shape, chunks=True, dtype=value.dtype)
+            self.empty = False
+
+        f['data'].__setitem__(key, value)
+
+    def is_empty(self):
+        """return True if data is empty
+        """
+        return bool(self.empty)
+        
     def set_param(self, key, value):
         """Set class parameter
 
@@ -995,19 +1013,6 @@ class Cube(HDFCube):
         self.set_param('filter_nm_max', self.filterfile.get_filter_bandpass()[1])
         self.set_param('filter_cm1_min', self.filterfile.get_filter_bandpass_cm1()[0])
         self.set_param('filter_cm1_max', self.filterfile.get_filter_bandpass_cm1()[1])
-
-        if 'camera' in self.params:
-            detector_shape = [self.config['CAM{}_DETECTOR_SIZE_X'.format(self.params.camera)],
-                              self.config['CAM{}_DETECTOR_SIZE_Y'.format(self.params.camera)]]
-            binning = utils.image.compute_binning(
-                (self.dimx, self.dimy), detector_shape)
-                            
-            if binning[0] != binning[1]:
-                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
-            self.set_param('binning', binning[0])
-            
-            logging.debug('Computed binning of camera {}: {}x{}'.format(
-                self.params.camera, self.params.binning, self.params.binning))
         
         self.params_defined = True
 
@@ -1028,6 +1033,16 @@ class Cube(HDFCube):
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
                                   
+    def get_base_axis(self):
+        """Return the spectral axis (in cm-1) at the center of the cube"""
+        self.validate()
+        try: return core.Axis(np.copy(self.base_axis))
+        except AttributeError:
+            calib_map = self.get_calibration_coeff_map()
+            self.base_axis = utils.spectrum.create_cm1_axis(
+                self.dimz, self.params.step, self.params.order,
+                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
+        return core.Axis(np.copy(self.base_axis))
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
@@ -1260,6 +1275,8 @@ class InterferogramCube(Cube):
         See Cube.get_zvector for the parameters.        
         """
         vector = Cube.get_zvector(self, x, y, r=r)
+        vector.params['source_counts'] = np.nansum(self.get_deep_frame().data[region])
+
         vector.axis = None
         err = np.ones(self.dimz, dtype=float) * np.sqrt(
             vector.params.source_counts / self.dimz)
@@ -1959,17 +1976,6 @@ class SpectralCube(Cube):
         (min, max)"""
         return utils.spectrum.cm12pix(
             self.params.base_axis, self.get_filter_range())        
-
-    def get_base_axis(self):
-        """Return the spectral axis (in cm-1) at the center of the cube"""
-        self.validate()
-        try: return core.Axis(np.copy(self.base_axis))
-        except AttributeError:
-            calib_map = self.get_calibration_coeff_map()
-            self.base_axis = utils.spectrum.create_cm1_axis(
-                self.dimz, self.params.step, self.params.order,
-                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
-        return core.Axis(np.copy(self.base_axis))
 
     def get_axis(self, x, y):
         """Return the spectral axis at x, y

@@ -808,7 +808,7 @@ def dict2header(params):
     """
     # filter illegal header values
     cards = list()
-    ok_types = [float, int, str, bool]
+    ok_types = [float, int, str, bool, unicode, np.bool_]
 
     for iparam in params:
         val = params[iparam]
