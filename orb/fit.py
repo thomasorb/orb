@@ -555,7 +555,6 @@ class FitVector(object):
                 fit_p,
                 return_models=True)
             if self.vector_imag is not None:
-                print _model.shape
                 _model = utils.vector.float2complex(_model)
                 for ikey in _models:
                     if isinstance(_models[ikey], list):
@@ -1299,6 +1298,7 @@ class LinesModel(Model):
 
     accepted_keys = ('line_nb',
                      'fmodel',
+                     'ratio',
                      'amp_def',
                      'pos_def',
                      'fwhm_def',
@@ -1559,6 +1559,12 @@ class LinesModel(Model):
                 if self._get_fmodel() in ['sincphased', 'sincgaussphased']:
                     if 'alpha' in key:
                         warnings.warn('No initial alpha given')
+        ratio = self._get_ratio()
+        if ratio is None:
+            raise ValueError('ratio must be set to something else than None (e.g. 0.25)')
+        if not 0 < ratio < 1:
+            raise ValueError('ratio must be strictly between 0 and 1')
+
 
 
     def make_guess(self, v):
@@ -1602,6 +1608,14 @@ class LinesModel(Model):
             return self.p_dict['line_nb']
         else:
             raise ValueError("'line_nb' must be set")
+
+    def _get_ratio(self):
+        """Return the ratio value (shortest side of the interferogram over longest side)"""
+        if 'ratio' in self.p_dict:
+            if 'ratio' in self.unused_keys: self.unused_keys.pop('ratio')
+            return self.p_dict['ratio']
+        else:
+            raise ValueError("'ratio' must be set")
 
     def _get_fmodel(self):
         """Return the line model"""
@@ -1670,6 +1684,7 @@ class LinesModel(Model):
         self._p_val2array()
         line_nb = self._get_line_nb()
         fmodel = self._get_fmodel()
+        ratio = self._get_ratio()
         mod = None
         models = list()
         
@@ -1710,7 +1725,16 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('pos', iline)],
                     self.p_array[self._get_ikey('fwhm', iline)])
                 
-
+            elif fmodel == 'mertz':
+                line_mod = utils.spectrum.mertz1d(
+                    x, 0.,
+                    self.p_array[self._get_ikey('amp', iline)],
+                    self.p_array[self._get_ikey('pos', iline)],
+                    self.p_array[self._get_ikey('fwhm', iline)],
+                    ratio)
+                if not return_complex:    
+                    line_mod = line_mod[0] # return only the real part
+                
             elif fmodel == 'sincgauss':
                 if return_complex:
                     model_function = utils.spectrum.sincgauss1d_complex
@@ -2262,7 +2286,7 @@ class Cm1InputParams(InputParams):
         self.base_params['apodization'] = float(apodization)
         self.base_params['theta_proj'] = float(theta_proj)
         self.base_params['theta_orig'] = float(theta_orig)
-        self.base_params['zpd_index'] = int(zpd_index)
+        self.base_params['zpd_index'] = int(zpd_index)        
 
         self.base_params['axis_corr_proj'] = utils.spectrum.theta2corr(theta_proj)
         self.base_params['axis_corr_orig'] = utils.spectrum.theta2corr(theta_orig)
@@ -2338,10 +2362,16 @@ class Cm1InputParams(InputParams):
 
         sigma_guess = gvar.gvar(sigma_cov_vel, gvar.mean(sigma_sdev_kms))
 
+        # guess ratio
+        ratio = (float(self.base_params.zpd_index)
+                 / float(self.base_params.step_nb - self.base_params.zpd_index))
+
+        
         line_nb = np.size(lines)
         default_params = {
             'line_nb':line_nb,
             'amp_def':['free'] * line_nb,
+            'ratio':ratio,
             #'amp_cov':1., # never put a gvar here or the amplitude sdev is forced to a given value
             'fwhm_def':['fixed'] * line_nb,
             'fwhm_guess':[fwhm_guess_cm1] * line_nb,

@@ -453,9 +453,9 @@ def mertz1d(x, h, a, dx, fwhm, ratio):
     width /= 2.###
     X = (x-dx) / (2*width)
 
-    f = np.sin(X) / X + 1j * (np.cos(X)/X
-                              - 1./((X**2)*ratio) * np.sin(ratio*X))
-    return (f.real, f.imag)
+    f_real = h + a * np.sin(X) / X
+    f_imag = h + a * (np.cos(X) / X - 1./((X**2)*ratio) * np.sin(ratio*X))
+    return (f_real, f_imag)
 
 
 def sinc1d_phased(x, h, a, dx, fwhm, alpha):
