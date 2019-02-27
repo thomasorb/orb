@@ -473,11 +473,15 @@ class HDFCube(core.WCSData):
         """compute the sum along z axis
         """
         SIZE = 30
-        sum_im = np.zeros((self.dimx, self.dimy), dtype=self.data.dtype)
+        sum_im = None
         progress = core.ProgressBar(self.dimz)
         for ik in range(0, self.dimz, SIZE):
             frames = self[:,:,ik:ik+SIZE]
-            sum_im += np.nansum(frames, axis=2)
+            if sum_im is None: # avoid creating a zeros frame with a
+                               # possibly uncompatible dtype
+                sum_im = np.nansum(frames, axis=2)
+            else:
+                sum_im += np.nansum(frames, axis=2)
             progress.update(ik, info="Creating sum image")
         progress.end()
         return sum_im
