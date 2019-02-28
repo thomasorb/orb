@@ -1029,7 +1029,8 @@ class ContinuumModel(Model):
     .. note:: This model must be added to the others.
     """
 
-    accepted_keys = ('poly_order',
+    accepted_keys = ('poly_def',
+                     'poly_order',
                      'poly_guess')
     """Accepted keys of the input dictionary (see
     :py:attr:`fit.Model.p_dict`)"""
@@ -1078,6 +1079,14 @@ class ContinuumModel(Model):
             self.p_val[self._get_ikey(ip)] = None
             self.p_def[self._get_ikey(ip)] = 'free'
 
+        if 'poly_def' in self.p_dict:
+            if self.p_dict['poly_def'] is not None:
+                if np.size(self.p_dict['poly_def']) == self.poly_order + 1:
+                    for ip in range(self.poly_order + 1):
+                        self.p_def[self._get_ikey(ip)] = self.p_dict['poly_def'][ip]
+                else: raise Exception('poly_def must be an array of size equal to poly_order + 1')
+            self.unused_keys.pop('poly_def')
+            
         if 'poly_guess' in self.p_dict:
             if self.p_dict['poly_guess'] is not None:
                 if np.size(self.p_dict['poly_guess']) == self.poly_order + 1:
