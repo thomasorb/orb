@@ -760,3 +760,16 @@ def guess_snr(calib_spectrum, flambda, exp_time):
     noise = np.sqrt(np.nansum(np.sqrt(spec_counts**2)))
     signal = np.nanmax(spec_counts) - np.nanmedian(spec_counts)
     return signal / noise
+
+def amp_ratio_from_flux_ratio(line0_cm1, line1_cm1, flux_ratio):
+    """Return the amplitude ratio (amp(line0) / amp(line1)) from the flux
+        ratio (at constant fwhm and broadening).
+
+    :param line0: Wavenumber of the line 0 (in cm-1).
+
+    :param line1: Wavenumber of the line 1 (in cm-1).
+
+    :param flux_ratio: Flux ratio: flux(line0) / flux(line1).
+
+    """
+    return line0_cm1**2 / line1_cm1**2 * flux_ratio

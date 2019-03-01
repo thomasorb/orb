@@ -619,7 +619,19 @@ class Spectrum(core.Cm1Vector1d):
         """
         core.Cm1Vector1d.__init__(self, spectrum, err=err, axis=axis,
                                   params=params, **kwargs)
+
+        params_axis = core.Axis(utils.spectrum.create_cm1_axis(
+            self.dimx, self.params.step, self.params.order,
+            corr=self.params.calib_coeff))
+
+        if self.axis is None:
+            self.axis = params_axis
+        elif np.any(params_axis.data != self.axis.data):
+            raise StandardError('provided axis is inconsistent with the axis computed from the observation parameters')
         
+        if self.axis.dimx != self.dimx:
+            raise ValueError('axis must have the same size as the interferogram')
+            
         if not np.iscomplexobj(self.data):
             warnings.warn('input spectrum is not complex')
             self.data = self.data.astype(complex)

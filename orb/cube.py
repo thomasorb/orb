@@ -615,6 +615,10 @@ class HDFCube(core.WCSData):
                 if 'calibration_laser_map_path' not in self.params:
                     raise StandardError("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
                 self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
+                if 'cropped_bbox' in self.params:
+                    xmin, xmax, ymin, ymax = self.params.cropped_bbox
+                    self.calibration_laser_map = self.calibration_laser_map[xmin:xmax, ymin:ymax]
+                    
         if (self.calibration_laser_map.shape[0] != self.dimx):
             self.calibration_laser_map = utils.image.interpolate_map(
                 self.calibration_laser_map, self.dimx, self.dimy)

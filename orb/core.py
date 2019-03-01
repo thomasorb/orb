@@ -2423,6 +2423,16 @@ class Axis(Vector1d):
             warnings.warn('requested position is off axis')
         return pos_index
 
+    def convert(self, pos):
+        """convert the position in channel to a a value in axis unit
+
+        :param pos: Position in channel
+
+        :return: Value in axis unit
+        """
+        return self.data[0] + float(self.axis_step) * pos
+            
+
     
 #################################################
 #### CLASS Cm1Vector1d ##########################
