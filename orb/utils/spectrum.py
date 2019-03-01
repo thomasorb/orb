@@ -773,3 +773,4 @@ def amp_ratio_from_flux_ratio(line0_cm1, line1_cm1, flux_ratio):
 
     """
     return line0_cm1**2 / line1_cm1**2 * flux_ratio
+

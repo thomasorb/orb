@@ -2477,6 +2477,7 @@ class Cm1Vector1d(Vector1d):
                 else:
                     if np.any(check_axis != self.axis.data):
                         warnings.warn('provided axis is inconsistent with the given parameters')
+            else: raise StandardError('{} must all be provided'.format(self.obs_params))
             
         if self.axis is None: raise StandardError('an axis must be provided or the observation parameters ({}) must be provided'.format(self.obs_params))
             
@@ -2608,6 +2609,33 @@ class FilterFile(Vector1d):
     def get_filter_bandpass_cm1(self):
         """Return filter bandpass in cm-1"""
         return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
+
+    def get_sky_lines(self, step_nb):
+        """Return the sky lines in a given filter
+        """
+        corr = utils.spectrum.theta2corr(
+            self.tools.config['OFF_AXIS_ANGLE_CENTER'])
+        axis = utils.spectrum.create_cm1_axis(
+            step_nb, self.params.step, self.params.order,
+            corr=corr)
+
+        _delta_nm = utils.spectrum.fwhm_cm12nm(
+            axis[1] - axis[0],
+            (np.min(axis) + np.max(axis)) / 2.)
+
+        _nm_min, _nm_max = self.get_filter_bandpass()
+        
+        # we add 5% to the computed size of the filter
+        _nm_range = _nm_max - _nm_min
+        _nm_min -= _nm_range * 0.05
+        _nm_max += _nm_range * 0.05
+
+        _lines_nm = Lines().get_sky_lines(
+            _nm_min, _nm_max, _delta_nm)
+
+        return utils.spectrum.nm2cm1(_lines_nm)
+
+
 
     
 #################################################

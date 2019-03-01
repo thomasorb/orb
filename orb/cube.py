@@ -2156,25 +2156,9 @@ class SpectralCube(Cube):
             del self.calibration_coeff_map
 
     def get_sky_lines(self):
-        """Return the wavenumber/wavelength of the sky lines in the
+        """Return the wavenumber of the sky lines in the
         filter range"""
-        _delta_nm = utils.spectrum.fwhm_cm12nm(
-            self.params.axis_step,
-            (self.params.axis_min + self.params.axis_max) / 2.)
-
-        _nm_min, _nm_max = self.get_filter_range()
-
-        # we add 5% to the computed size of the filter
-        _nm_range = _nm_max - _nm_min
-        _nm_min -= _nm_range * 0.05
-        _nm_max += _nm_range * 0.05
-
-        _nm_max, _nm_min = utils.spectrum.cm12nm([_nm_min, _nm_max])
-
-        _lines_nm = core.Lines().get_sky_lines(
-            _nm_min, _nm_max, _delta_nm)
-
-        return utils.spectrum.nm2cm1(_lines_nm)
+        return self.filterfile.get_sky_lines(self.dimz)
 
     def _extract_spectrum_from_region(self, region,
                                       subtract_spectrum=None,
