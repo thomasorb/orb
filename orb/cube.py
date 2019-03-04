@@ -566,7 +566,9 @@ class HDFCube(core.WCSData):
 
         :param xy: Y center position
 
-        :param size: Size of the cropped box
+        :param size: Size of the cropped rectangle. A tuple (sz,
+          sy). Can be single int in which case the cropped data is a
+          box.
 
         .. warning:: size of the returned box is not guaranteed if cx
           and cy are on the border of the image.

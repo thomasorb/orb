@@ -60,7 +60,7 @@ import utils.io
 class Frame2D(core.WCSData):
 
     def __init__(self, *args, **kwargs):
-
+        
         core.WCSData.__init__(self, *args, **kwargs)
 
         # checking
@@ -91,17 +91,29 @@ class Frame2D(core.WCSData):
 
         :param cx: X center position
 
-        :param xy: Y center position
+        :param cy: Y center position
 
-        :param size: Size of the cropped box
+        :param size: Size of the cropped rectangle. A tuple (sz,
+          sy). Can be single int in which case the cropped data is a
+          box.
 
         .. warning:: size of the returned box is not guaranteed if cx
           and cy are on the border of the image.
+
         """
+        size = np.array(size)
+        if size.size == 2:
+            size = size[::-1]
+        elif size.size == 1:
+            size = [size, size]
+        else:
+            raise TypeError('size must be a single number or a tuple (sx, sy)')
+        
         cutout = astropy.nddata.Cutout2D(
             self.data.T, position=[cx, cy],
             size=size, wcs=self.get_wcs())
-        newim = self.copy(data=cutout.data)
+        
+        newim = self.copy(data=cutout.data.T)
         newim.update_params(cutout.wcs.to_header())
         ((ymin, ymax), (xmin, xmax)) = cutout.bbox_original
         newim.params['cropped_bbox'] = (xmin, xmax+1, ymin, ymax+1)

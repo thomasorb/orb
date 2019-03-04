@@ -450,8 +450,8 @@ class ROParams(Params):
         """
         if key in self:
             if np.all(self[key] != value):
-                warnings.warn('Parameter {} already defined'.format(key))
-                warnings.warn('Old value={} / new_value={}'.format(self[key], value))
+                logging.debug('Parameter {} already defined'.format(key))
+                logging.debug('Old value={} / new_value={}'.format(self[key], value))
         dict.__setitem__(self, key, value)
     
     def reset(self, key, value):
@@ -2644,7 +2644,12 @@ class FilterFile(Vector1d):
 class WCSData(Data, Tools):
     """Add WCS functionalities to a Data instance.
     """
-    wcs_params = ('instrument', 'camera', 'target_ra', 'target_dec', 'target_x', 'target_y')
+    wcs_params = {'instrument':'sitelle',
+                  'camera':1,
+                  'target_ra':0.,
+                  'target_dec':0.,
+                  'target_x':0,
+                  'target_y':0}
 
     def __init__(self, data, instrument=None, config=None,
                  data_prefix="./", sip=None, **kwargs):
@@ -2670,11 +2675,12 @@ class WCSData(Data, Tools):
         if self.data.ndim < 2:
             raise TypeError('A dataset must have at least 2 dimensions to support WCS')
 
-        # for params in wcs_params:
-        #     if params not in self.params:
-        #         warnings.warn('{} not set. WCS functionalities cannot be used.')
-        #         return # wcs init not done
-
+        for iparam in self.wcs_params:
+            if iparam not in self.params:
+                self.params.reset(iparam, self.wcs_params[iparam])
+                logging.debug('{} set to default value: {}'.format(
+                    iparam, self.wcs_params[iparam]))
+                
         # check params
         self.params.reset('instrument', self.instrument)
 
@@ -2740,13 +2746,13 @@ class WCSData(Data, Tools):
         if self.is_cam2():
             coeffs = self.get_initial_alignment_parameters()
             
-            warnings.warn('target_x, target_y initialy at {}, {}'.format(target_x, target_y))
+            logging.debug('target_x, target_y initially at {}, {}'.format(target_x, target_y))
             target_x, target_y = cutils.transform_A_to_B(
                 self.params.target_x, self.params.target_y,
                 coeffs.dx, coeffs.dy,
                 coeffs.dr,
                 0., 0., coeffs.rc[0], coeffs.rc[1], coeffs.zoom, coeffs.zoom)
-            warnings.warn('target_x, target_y recomputed to {}, {}'.format(target_x, target_y))
+            logging.debug('target_x, target_y recomputed to {}, {}'.format(target_x, target_y))
 
         self.params.reset('target_x', target_x)
         self.params.reset('target_y', target_y)
@@ -2794,7 +2800,7 @@ class WCSData(Data, Tools):
             self.params.reset('scale', scale * 3600.)
                         
         except Exception, e:
-            warnings.warn('error loading image WCS: {}'.format(e))
+            logging.debug('error loading image WCS: {}'.format(e))
                 
         # check if all needed parameters are present
         for iparam in self.wcs_params:
