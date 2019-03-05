@@ -344,6 +344,8 @@ class FitVector(object):
                 raise StandardError('Bad model operation. Model operation must be in {}'.format(self.models_operations))
 
         model = None
+        if np.all(mult_model == 1): mult_model = None
+        
         for i in range(len(self.models)):
             if self.models_operation[i] == 'add':
                 model_list = self.models[i].get_model(
@@ -448,7 +450,7 @@ class FitVector(object):
                        vector),
                 prior=priors_dict,
                 fcn=self._get_model_onrange,
-                debug=True, extend=True,
+                debug=True,
                 tol=self.fit_tol,
                 maxit=self.max_iter)
 
@@ -528,7 +530,7 @@ class FitVector(object):
                 raise Exception('No SNR guess. This fit must be made in classic mode')
 
             fit = lsqfit.nonlinear_fit(**fit_args(self.snr_guess))
-            
+                
             fitted_vector = gvar.mean(self.get_model(fit.p))
             residual = (self.vector - fitted_vector)[
                 np.min(self.signal_range):np.max(self.signal_range)]
@@ -1139,7 +1141,7 @@ class ContinuumModel(Model):
         self.free2val()
         coeffs = [self.p_val[self._get_ikey(ip)] for ip in range(self.poly_order + 1)]
         mod = np.polyval(coeffs, x)
-
+        
         if multf is not None:
             if isinstance(multf[0], gvar.GVar):
                 multfsp_mean = scipy.interpolate.UnivariateSpline(
@@ -2221,9 +2223,10 @@ class InputParams(object):
             lines = gvar.gvar(lines, np.ones_like(lines) * lines_sdev)
 
         
-        fwhm_sdev = self.axis_step * self.FWHM_SDEV
-        fwhm_guess = gvar.gvar(gvar.mean(fwhm_guess), fwhm_sdev)
-        
+        if np.all(gvar.sdev(fwhm_guess) == 0.):
+            fwhm_sdev = self.axis_step * self.FWHM_SDEV
+            fwhm_guess = gvar.gvar(gvar.mean(fwhm_guess), fwhm_sdev)
+
         sigma_guess = gvar.gvar(
             0., self.axis_step * self.FWHM_SDEV)
 
