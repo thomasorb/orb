@@ -2221,14 +2221,10 @@ class InputParams(object):
         if np.any(gvar.sdev(lines) == 0.):
             lines_sdev = self.SHIFT_SDEV * self.axis_step
             lines = gvar.gvar(lines, np.ones_like(lines) * lines_sdev)
-
         
         if np.all(gvar.sdev(fwhm_guess) == 0.):
             fwhm_sdev = self.axis_step * self.FWHM_SDEV
             fwhm_guess = gvar.gvar(gvar.mean(fwhm_guess), fwhm_sdev)
-
-        sigma_guess = gvar.gvar(
-            0., self.axis_step * self.FWHM_SDEV)
 
         line_nb = np.size(lines)
 
