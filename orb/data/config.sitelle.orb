@@ -53,7 +53,7 @@ NCPUS 0 # Max number of CPU to use (0 : max available)
 BIG_DATA 1 # Some processes can be optimized for big data set (> 1000
            # x 1000 x 500) but they will run slower for small data
            # set.
-DIV_NB 5 # Number of "Quadrants" division along one axis of a cube
+DIV_NB 3 # Number of "Quadrants" division along one axis of a cube
 	 # (the total number of quadrants is thus DIV_NB^2)
 OPTIM_DARK_CAM1 0 # Optimization routine for the dark of CAM 1 
 OPTIM_DARK_CAM2 0 # Optimization routine for the dark of CAM 2

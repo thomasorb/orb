@@ -653,16 +653,10 @@ def fit_map_theta(data_map, err_map, theta_map):
     w = 1. / np.array(sdevs)
     w /= np.nanmax(w)
     model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=None)
-    model_err = interpolate.UnivariateSpline(okthetas, sdevs, w=w, ext=0, k=3, s=None)
-
-    # import pylab as pl
-    # pl.plot(okthetas, means)
-    # pl.plot(okthetas, model(okthetas))
-    # #pl.plot(okthetas, means)
-    # pl.show()
-    
+    model_err = interpolate.UnivariateSpline(okthetas, sdevs, w=w, ext=0, k=3, s=None)   
 
     err = (model(theta_map) - data_map)[np.nonzero(pixmap)]
+    err = orb.utils.stats.sigmacut(err, sigma=2.5)
     logging.info('modeling error: {} (uncertainty on data: {})'.format(
         np.nanstd(err),
         np.nanmedian(sdevs)))

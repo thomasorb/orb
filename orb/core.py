@@ -1890,6 +1890,11 @@ class Data(object):
         self.params.update(kwargs)
 
         # check params
+
+        if self.has_param('filter_file_path'):
+            if not self.has_param('filter_name'):
+                self.set_param('filter_name', self.params['filter_file_path'])
+        
         for iparam in self.needed_params:
             if iparam not in self.params:
                 raise StandardError('param {} must be set'.format(iparam))
@@ -2485,7 +2490,8 @@ class Cm1Vector1d(Vector1d):
                 else:
                     if np.any(check_axis != self.axis.data):
                         warnings.warn('provided axis is inconsistent with the given parameters')
-            else: raise StandardError('{} must all be provided'.format(self.obs_params))
+            #else:
+                #raise StandardError('{} must all be provided'.format(self.obs_params))
             
         if self.axis is None: raise StandardError('an axis must be provided or the observation parameters ({}) must be provided'.format(self.obs_params))
             

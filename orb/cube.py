@@ -1068,7 +1068,14 @@ class Cube(HDFCube):
                     
     def get_base_axis(self):
         """Return the spectral axis (in cm-1) at the center of the cube"""
-        return core.Axis(self.params.base_axis)
+        if not self.has_param('base_axis'):
+            base_axis = utils.spectrum.create_cm1_axis(
+                self.dimz, self.params.step, self.params.order,
+                corr=self.get_axis_corr())
+        else:
+            base_axis = self.params.base_axis
+            
+        return core.Axis(base_axis)
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
@@ -2112,9 +2119,7 @@ class SpectralCube(Cube):
             self.params['hour_ut'] = np.array([0, 0, 0], dtype=float)
 
         # create base axis of the data
-        self.set_param('base_axis', utils.spectrum.create_cm1_axis(
-            self.dimz, self.params.step, self.params.order,
-            corr=self.params.axis_corr))
+        self.set_param('base_axis', self.get_base_axis())
 
         self.set_param('axis_min', np.min(self.params.base_axis))
         self.set_param('axis_max', np.max(self.params.base_axis))
