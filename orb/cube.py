@@ -616,7 +616,12 @@ class HDFCube(core.WCSData):
             else:
                 if 'calibration_laser_map_path' not in self.params:
                     raise StandardError("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
-                self.calibration_laser_map = utils.io.read_fits(self.params.calibration_laser_map_path)
+                calib_path = self.params.calibration_laser_map_path
+                if not os.path.exists(calib_path):
+                    if not os.path.isabs(calib_path):
+                        calib_path = os.path.join(os.path.dirname(self.hdffile.filename), calib_path)
+                
+                self.calibration_laser_map = utils.io.read_fits(calib_path)
                 if 'cropped_bbox' in self.params:
                     xmin, xmax, ymin, ymax = self.params.cropped_bbox
                     self.calibration_laser_map = self.calibration_laser_map[xmin:xmax, ymin:ymax]
@@ -1042,21 +1047,21 @@ class Cube(HDFCube):
         for iparam in self.needed_params:
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
-                                  
+
+    def get_axis_corr(self):
+        """Return the reference wavelength correction"""
+        if self.has_param('axis_corr'):
+            return float(self.params.axis_corr)
+        else:
+            calib_map = self.get_calibration_coeff_map()
+            return calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2]
+                    
     def get_base_axis(self):
         """Return the spectral axis (in cm-1) at the center of the cube"""
-        self.validate()
-        try: return core.Axis(np.copy(self.base_axis))
-        except AttributeError:
-            calib_map = self.get_calibration_coeff_map()
-            self.base_axis = utils.spectrum.create_cm1_axis(
-                self.dimz, self.params.step, self.params.order,
-                corr=calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2])
-        return core.Axis(np.copy(self.base_axis))
+        return core.Axis(self.params.base_axis)
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
-        self.validate()
         filterfile = FilterFile(self.get_param('filter_name'))
         filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(
             filterfile.get_filter_bandpass())[::-1]
@@ -1973,6 +1978,12 @@ class SpectralCube(Cube):
         js, ncpus = self._init_pp_server(silent=True)
         self._close_pp_server(js)
         self.set_param('ncpus', int(ncpus))
+        self.validate()
+
+        logging.info('shape: {}'.format(self.shape))
+        logging.info('wavelength calibration: {}'.format(self.has_wavelength_calibration()))
+        logging.info('flux calibration: {}'.format(self.has_flux_calibration()))
+        logging.info('wcs calibration: {}'.format(self.has_wcs_calibration()))
 
     def get_filter_range(self):
         """Return the range of the filter in the unit of the spectral
@@ -1998,19 +2009,55 @@ class SpectralCube(Cube):
             self.dimz, self.params.step, self.params.order,
             corr=self.get_calibration_coeff_map()[x, y])
         return core.Axis(np.copy(axis))
+
+    def has_wavelength_calibration(self):
+        """Return True if the cube is calibrated in wavelength"""
+        return bool(self.params.wavelength_calibration)
+
+    def has_flux_calibration(self):
+        """Return True if the cube is calibrated in wavelength"""
+        return bool(self.params.flux_calibration)
+
+    def has_wcs_calibration(self):
+        """Return True if the cube is calibrated in wavelength"""
+        return bool(self.params.wcs_calibration)
     
     def reset_params(self):
         """Reset parameters"""
 
         self.filterfile = core.FilterFile(self.params.filter_name)
 
+        self.set_param('flux_calibration', True)
         if not self.has_param('flambda'):
-            warnings.warn('FLAMBDA keyword not in cube header. Flux calibration may be bad.')
+            logging.debug('FLAMBDA keyword not in cube header.')
+            self.set_param('flux_calibration', False)
             self.set_param('flambda', 1.)
+            
+        if not self.has_param('apodization'):
+            logging.debug('apodization unknown. automatically set to 1.')
+            self.set_param('apodization', 1.)
+
+        if not self.has_param('nm_laser'):
+            logging.debug('nm_laser set to config value')
+            self.set_param('nm_laser', self.config.CALIB_NM_LASER)
+
+        if not self.has_param('wavetype'):
+            logging.debug('wavetype unknown. set to wavenumber.')
+            self.set_param('wavetype', 'WAVENUMBER')
+
+        if not self.has_param('axis_corr'):
+            if self.has_param('wavelength_calibration'):
+                if self.params.wavelength_calibration:
+                    raise StandardError('wavelength_calibration is True but axis_corr is not set')
+            logging.debug('axis_corr not set: cube is considered uncalibrated in wavelength')
+            self.set_param('wavelength_calibration', False)
+            self.set_param('axis_corr', self.get_axis_corr())
+        else:
+            self.set_param('wavelength_calibration', True)
 
         step_nb = self.params.step_nb
         if step_nb != self.dimz:
-            warnings.warn('Malformed spectral cube. The number of steps in the header ({}) does not correspond to the real size of the data cube ({})'.format(step_nb, self.dimz))
+            logging.debug('Malformed spectral cube. The number of steps in the header ({}) does not correspond to the real size of the data cube ({})'.format(step_nb, self.dimz))
             step_nb = int(self.dimz)
         self.set_param('step_nb', step_nb)
 
@@ -2042,22 +2089,15 @@ class SpectralCube(Cube):
             raise Exception('ORCS cannot handle wavelength cubes')
         
         self.params['wavenumber'] = True
-        logging.info('Cube is in WAVENUMBER (cm-1)')
+        logging.debug('Cube is in WAVENUMBER (cm-1)')
         self.unit = 'cm-1'
 
-        ## Get WCS header
-        self.wcs = self.get_wcs()
-        self.wcs_header = self.get_wcs_header()
-        self._wcs_header = self.get_wcs_header()
+        # check wcs calibration
+        self.set_param('wcs_calibration', True)
+        if self.params.wcs_rotation == self.config.WCS_ROTATION:
+            self.set_param('wcs_calibration', False)
 
-        self.set_param('target_ra', float(self.wcs.wcs.crval[0]))
-        self.set_param('target_dec', float(self.wcs.wcs.crval[1]))
-        self.set_param('target_x', float(self.wcs.wcs.crpix[0]))
-        self.set_param('target_y', float(self.wcs.wcs.crpix[1]))
-
-        wcs_params = utils.astrometry.get_wcs_parameters(self.wcs)
-        self.set_param('wcs_rotation', float(wcs_params[-1]))
-
+        # load hour_ut
         if not self.has_param('hour_ut'):
             self.params['hour_ut'] = np.array([0, 0, 0], dtype=float)
 

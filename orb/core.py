@@ -2037,6 +2037,14 @@ class Data(object):
         warnings.simplefilter('ignore', category=AstropyUserWarning)
 
         header = utils.io.dict2header(dict(self.params))
+        if self.data.ndim >= 1:
+            header['NAXIS1'] = self.dimx
+
+        if self.data.ndim >= 2:
+            header['NAXIS2'] = self.dimy
+        
+        if self.data.ndim >= 3:
+            header['NAXIS3'] = self.dimz
         
         if 'CTYPE1' in header:
             header['CTYPE1'] = 'RA---TAN-SIP'
@@ -2800,8 +2808,8 @@ class WCSData(Data, Tools):
             self.params.reset('scale', scale * 3600.)
                         
         except Exception, e:
-            logging.debug('error loading image WCS: {}'.format(e))
-                
+            logging.debug('error loading WCS: {}'.format(e))
+
         # check if all needed parameters are present
         for iparam in self.wcs_params:
             if iparam not in self.params:
@@ -2816,6 +2824,7 @@ class WCSData(Data, Tools):
         #else:
             #self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
 
+            
     def is_cam1(self):
         """Return true is image comes from camera 1 or is a merged frame
         """
