@@ -211,16 +211,15 @@ class HDFCube(core.WCSData):
           self.writeable is manually set to True.
         """
         if mode is None:
-            if self.is_writeable(): mode = 'a'
-            else: mode = 'r'
+            mode = 'r'
         else:
             if mode not in ['r', 'a']:
                 raise ValueError('mode must be r or a')
             if not self.is_writeable() and mode != 'r':
                 raise IOError('HDF5 file is not writeable.')
 
-        # check if hdf5 file is already opened and can be read
-        already_opened = True
+        # if a handle already exists try first to close the file
+        # before opening it again
         try:
             self.hdffile.close()
         except Exception: pass
@@ -807,7 +806,7 @@ class RWHDFCube(HDFCube):
         elif value.dtype == np.complex128:
             value = value.astype(np.complex64)
 
-        f = self.open_hdf5()
+        f = self.open_hdf5('a')
         if self.is_empty():
             del f['data']
             f.create_dataset('data', shape=self.shape, chunks=True, dtype=value.dtype)
@@ -834,7 +833,7 @@ class RWHDFCube(HDFCube):
         :param value: parameter value
         """
         self.params[key] = value
-        f = self.open_hdf5()
+        f = self.open_hdf5('a')
         _update = True
         value = utils.io.cast2hdf5(value)
         if key in f.attrs:
@@ -882,7 +881,7 @@ class RWHDFCube(HDFCube):
 
         if path == 'data':
             raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. cube[:,:,:] = value.')
-        f = self.open_hdf5()
+        f = self.open_hdf5('a')
         if path in f:
             del f[path]
             warnings.warn('{} dataset changed'.format(path))
