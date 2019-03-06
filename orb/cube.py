@@ -218,12 +218,17 @@ class HDFCube(core.WCSData):
                 raise ValueError('mode must be r or a')
             if not self.is_writeable() and mode != 'r':
                 raise IOError('HDF5 file is not writeable.')
-        
+
+        # check if hdf5 file is already opened and can be read
+        already_opened = True
         try:
-            self.hdffile.attrs
-        except Exception:
-            self.hdffile = utils.io.open_hdf5(self.cube_path, mode)
-            
+            self.hdffile.close()
+        except Exception: pass
+    
+        self.hdffile = utils.io.open_hdf5(self.cube_path, mode)
+        try:
+            self.data = self.hdffile['data']
+        except Exception: pass
         return self.hdffile
     
     def get_data(self, x_min, x_max, y_min, y_max, z_min, z_max, silent=False):
@@ -777,8 +782,9 @@ class RWHDFCube(HDFCube):
             raise ValueError('shape must be set only when creating a new HDFCube')
 
         HDFCube.__init__(self, path, instrument=instrument, **kwargs)
+        if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
-        # reopening in rw mode
+        # reopening in rw mode            
         if self.hdffile is not None:
             _dataname = self.data.name
             del self.hdffile
@@ -786,8 +792,6 @@ class RWHDFCube(HDFCube):
             self.set_writeable(True)
             self.hdffile = self.open_hdf5('a')
             self.data = self.hdffile[_dataname]
-
-        if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
         if self.has_params:
             self.set_params(self.params)
@@ -810,6 +814,12 @@ class RWHDFCube(HDFCube):
             self.empty = False
 
         f['data'].__setitem__(key, value)
+
+    def open_hdf5(self, mode=None):
+        """Return a handle on the hdf5 file."""
+        self.set_writeable(True)
+        return HDFCube.open_hdf5(self, mode=mode)
+
 
     def is_empty(self):
         """return True if data is empty
