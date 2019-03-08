@@ -41,7 +41,7 @@ import scipy.interpolate
 import gvar
 import pyregion
 
-
+import photometry
 
 #################################################
 #### CLASS HDFCube ##############################
@@ -49,7 +49,7 @@ import pyregion
 class HDFCube(core.WCSData):
     """ This class implements the use of an HDF5 cube."""        
 
-    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis', 'calib_map', 'phase_map', 'phase_map_err', 'phase_maps_coeff_map', 'phase_maps_cm1_axis'
+    protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis', 'calib_map', 'phase_map', 'phase_map_err', 'phase_maps_coeff_map', 'phase_maps_cm1_axis', 'standard_image'
     
     def __init__(self, path, indexer=None,
                  instrument=None, config=None, data_prefix='./',
@@ -223,8 +223,9 @@ class HDFCube(core.WCSData):
         try:
             self.hdffile.close()
         except Exception: pass
-    
+
         self.hdffile = utils.io.open_hdf5(self.cube_path, mode)
+        
         try:
             self.data = self.hdffile['data']
         except Exception: pass
@@ -348,6 +349,16 @@ class HDFCube(core.WCSData):
         if path not in f:
             raise AttributeError('{} dataset not in the hdf5 file'.format(path))
         return f[path][:]
+
+
+    def get_dataset_attrs(self, path):
+        """Return the attributes attached to a dataset
+        """
+        f = self.open_hdf5()
+        if path not in f:
+            raise AttributeError('{} dataset not in the hdf5 file'.format(path))
+        return f[path].attrs
+
 
     def get_datasets(self):
         """Return all datasets contained in the cube
@@ -960,6 +971,24 @@ class RWHDFCube(HDFCube):
         # else:
         #     self.set_calibration_laser_map(self.calibration_laser_map)
         #     warnings.warn('calibration laser map unchanged since it already exists')
+
+    def set_standard_image(self, std_im):
+        """Set standard image
+
+        :param std_im: An image.Image instance or a path to an
+          hdf5 image.
+
+        """
+        try:
+            std_im = image.Image(std_im, instrument=self.instrument)
+        except ValueError:
+            raise TypeError('std_im must be an orb.image.Image instance or a path to valid hdf5 image')
+        self.set_dataset('standard_image', std_im.data, protect=False)
+
+        f = self.open_hdf5('a')
+        for iparam in std_im.params:
+            f['standard_image'].attrs[iparam] = std_im.params[iparam]
+            
             
     def write_frame(self, index, data=None, header=None, section=None,
                     record_stats=False):
@@ -1057,6 +1086,22 @@ class Cube(HDFCube):
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
 
+
+    def get_airmass(self):
+        """Return the airmass"""
+        if self.has_param('airmass'):
+            return self.params.airmass
+        elif not self.has_dataset('frame_header_0'):
+            raise StandardError('airmass not set and no frame headers')
+
+        airmass = list()
+        for i in range(self.dimz):
+            try:
+                airmass.append(float(self.get_frame_header(i)['AIRMASS']))
+            except KeyError:
+                raise StandardError('frame_header_{} not present'.format(i))
+        return np.array(airmass)
+                
     def get_axis_corr(self):
         """Return the reference wavelength correction"""
         if self.has_param('axis_corr'):
@@ -2118,7 +2163,7 @@ class SpectralCube(Cube):
             self.params['hour_ut'] = np.array([0, 0, 0], dtype=float)
 
         # create base axis of the data
-        self.set_param('base_axis', self.get_base_axis())
+        self.set_param('base_axis', self.get_base_axis().data)
 
         self.set_param('axis_min', np.min(self.params.base_axis))
         self.set_param('axis_max', np.max(self.params.base_axis))
@@ -2573,3 +2618,68 @@ class SpectralCube(Cube):
                 header=self.header,
                 integrate=integrate)
         else: return region
+
+    def get_standard_image(self):
+        """Return standard image
+        """
+        if not self.has_param('standard_image_path'):
+            if self.has_param('standard_image_path_1'):
+                self.params['standard_image_path'] = self.params['standard_image_path_1']
+        
+        if not self.has_dataset('standard_image'):
+            if self.has_param('standard_image_path'):
+                std_cube = HDFCube(self.params.standard_image_path)
+                std_im = std_cube.compute_sum_image() / std_cube.dimz 
+            else: raise StandardError('if no standard image can be found in the archive, standard_image_path must be set')
+            return photometry.StandardImage(
+                std_im, params=std_cube.params)
+        else:
+            return photometry.StandardImage(
+                self.get_dataset('standard_image', protect=False),
+                params=self.get_dataset_attrs('standard_image'),
+                instrument=self.params.instrument)
+        
+        
+    def compute_flambda(self, deg=2, std_im=None):
+        """Return flamba calibration function
+        """
+        # compute flambda from configuration curves
+        photom = photometry.Photometry(self.params.filter_name, self.params.camera,
+                                       instrument=self.params.instrument)
+        flam_config = photom.compute_flambda()
+        logging.info('mean flambda config: {}'.format(np.nanmean(flam_config.data)))
+
+        # compute the correction from a standard star spectrum
+        if self.has_param('standard_path'):
+            data, hdr = utils.io.read_fits(self.params.standard_path, return_header=True)
+            std_flux_sp, wav = data.T
+            wav = np.linspace(wav[0], wav[-1], wav.size) # avoids rounding errors due to float32 conversion
+            std_flux_sp = photometry.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
+            eps_vector = std_flux_sp.compute_flux_correction_vector(deg=deg)
+
+            logging.info('relative correction vector: max {:.2f}, min {:.2f}'.format(
+                np.nanmax(eps_vector.data), np.nanmin(eps_vector.data)))
+        else:
+            logging.debug('standard_path not set: no relative vector correction computed')
+            eps_vector = core.Cm1Vector1d(np.ones(self.dimz, dtype=float), params=params)
+        
+
+        # compute the correction from a standard star calibration image
+        if std_im is None:
+            try:
+                std_im = self.get_standard_image()
+                eps_mean = std_im.compute_flux_correction_factor()
+                logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
+
+            except StandardError:
+                logging.debug('standard_image_path not set: no absolute vector correction computed')
+
+        return photom.compute_flambda(eps=eps_vector.multiply(eps_mean))
+
+        
+        
+            
+        
+        
+        
+        

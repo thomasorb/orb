@@ -21,6 +21,8 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 import core
+import image
+import fft
 import utils.photometry
 import utils.filters
 import utils.spectrum
@@ -29,6 +31,7 @@ import utils.io
 
 import numpy as np
 import logging
+import scipy.optimize
 
 #################################################
 #### CLASS Photometry ###########################
@@ -37,7 +40,7 @@ class Photometry(object):
 
     STEP_NB = 2000
     transmission_terms = ['atmosphere', 'mirror', 'optics', 'filter', 'telescope']
-    cameras = [1,2]
+    cameras = [0,1,2]
     def __init__(self, filter_name, camera_index, instrument='sitelle', airmass=1):
         
         self.tools = core.Tools(instrument=instrument)
@@ -82,25 +85,43 @@ class Photometry(object):
 
         else: raise NotImplementedError('{} not defined'.format(tterm))
         
-    def get_unmodulated_transmission(self):
+    def get_unmodulated_transmission(self, eps=None):
         trans = self.get_transmission('atmosphere')
         trans = trans.multiply(self.get_transmission('telescope'))
         trans = trans.multiply(self.get_transmission('optics'))
         trans = trans.multiply(self.get_transmission('filter'))
         trans = trans.multiply(self.get_qe())
+        if self.camera_index != 0:
+            trans = trans.math('divide', 2)
+        if eps is not None:
+            if not isinstance(eps, core.Cm1Vector1d):
+                raise TypeError('eps must be a core.Cm1Vector1d instance')
+            trans = trans.math('divide', eps)
+            
+
         return trans
 
-    def get_modulated_transmission(self, opd_jitter=None, wf_error=None):
-        trans = self.get_unmodulated_transmission()
+    def get_modulated_transmission(self, eps=None, opd_jitter=None, wf_error=None):
+        trans = self.get_unmodulated_transmission(eps=eps)
         trans = trans.multiply(self.get_modulation_efficiency(
             opd_jitter=opd_jitter, wf_error=wf_error))
         return trans
     
     def get_qe(self):
-        return core.Cm1Vector1d(self.tools._get_quantum_efficiency_file_path(
-            self.camera_index), params=self.params).project(self.cm1_axis)
+        def qe(cam_index):
+            return core.Cm1Vector1d(self.tools._get_quantum_efficiency_file_path(cam_index),
+                                    params=self.params).project(self.cm1_axis) 
+        if self.camera_index == 0:
+            qe1 = qe(1)
+            qe2 = qe(2)
+            return qe1.add(qe2).math('divide', 2)
+        else: 
+            return qe(self.camera_index) 
 
     def get_ccd_gain(self):
+        if self.camera_index == 0:
+            return (self.tools.config['CAM1_GAIN']
+                    + self.tools.config['CAM2_GAIN']) / 2.
         return self.tools.config['CAM{}_GAIN'.format(self.camera_index)]
 
     def get_modulation_efficiency(self, opd_jitter=None, wf_error=None):
@@ -125,7 +146,7 @@ class Photometry(object):
         rt4.data *= me_opd_jitter**2. * me_wf
         return rt4
     
-    def flux2counts(self, flux, modulated=True, opd_jitter=None, wf_error=None):
+    def flux2counts(self, flux, modulated=True, eps=None, opd_jitter=None, wf_error=None):
         """
         convert a flux in erg/cm2/s/A to a flux in counts/s in both cameras
         
@@ -156,10 +177,10 @@ class Photometry(object):
         flux *= self.tools.config.MIR_SURFACE # photons/s/A
         if modulated:
             flux *= self.get_modulated_transmission(
-                opd_jitter=opd_jitter, wf_error=wf_error).project(
+                eps=eps, opd_jitter=opd_jitter, wf_error=wf_error).project(
                     core.Axis(cm1_axis)).data # electrons/s/A
         else:
-            flux *= self.get_unmodulated_transmission().project(
+            flux *= self.get_unmodulated_transmission(eps=eps).project(
                 core.Axis(cm1_axis)).data # electrons/s/A
         flux *= self.get_ccd_gain() # counts/s/A
 
@@ -169,11 +190,34 @@ class Photometry(object):
         flux *= nm_bins * 10. # counts/s in each channel
 
         flux = core.Cm1Vector1d(flux, axis=cm1_axis, params=params)
+        
         if not is_float:
             return flux
         else:
             return flux.mean_in_filter()
+
+    def compute_flambda(self, eps=None):
+        """Compute the flambda calibration function from the correction vector.
+
+        It can be computed with
+        cube.SpectralCube.compute_flux_calibration() or
+        StandardImage.compute_flux_correction_factor() and
+        StandardSpectrum.compute_flux_calibration_vector().
+        """
+        flux = core.Cm1Vector1d(
+            np.ones_like(self.cm1_axis.data, dtype=float),
+            axis=self.cm1_axis, filter_name=self.filter_name)
+        # flux must be in erg/cm2/s/A
         
+        f2c = self.flux2counts(flux, eps=eps, modulated=True)
+        f2c = f2c.math('power', -1)
+        xmin, xmax = f2c.get_filter_bandpass_pix()
+        f2c.data[:xmin] = f2c.data[xmin]
+        f2c.data[xmax:] = f2c.data[xmax]
+        return f2c
+
+
+
 #################################################
 #### CLASS Standard #############################
 #################################################
@@ -231,8 +275,6 @@ class Standard(core.Tools):
         spec_flux = np.array(spec_flux, dtype=float) * 1e-16
 
         return spec_ang, spec_flux
-
-
 
     def _read_massey_dat(self, file_path):
         """Read a data file from Massey et al., Spectrophotometric
@@ -374,3 +416,139 @@ class Standard(core.Tools):
             star_flux, seeing,
             plate_scale,
             saturation=saturation)
+
+#################################################
+#### CLASS StandardImage ########################
+#################################################
+
+class StandardImage(image.Image):
+
+    def __init__(self, data, **kwargs):
+
+        image.Image.__init__(self, data, **kwargs)
+
+        radec = self.find_object(is_standard=True, return_radec=True)
+        self.params.reset('target_ra', radec[0])
+        self.params.reset('target_dec', radec[1])
+        self.target_ra = self.params.target_ra
+        self.target_dec = self.params.target_dec
+        self.params.reset('object_name', ''.join(
+            self.params.OBJECT.strip().split()).upper())
+        self.params.reset('exposure_time', self.params.EXPTIME) # must be forced
+        self.params.reset('airmass', self.params.AIRMASS) # must be forced
+        
+        
+    def compute_flux_correction_factor(self):
+        """Compute the flux correction factor that can be used by
+        photometry.Photometry.get_flambda()"""
+        
+        std_xy = self.find_object()
+        try:
+            utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
+            utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
+        except orb.utils.err.ValidationError:
+            raise StandardError('standard star not in the image, check image registration')
+
+        star_list, fwhm = self.detect_stars(min_star_number=30)
+        self.reset_fwhm_pix(fwhm)
+        std_fit = self.fit_stars([std_xy], aper_coeff=6)
+        std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
+
+        std = Standard(self.params.object_name,
+                       instrument=self.instrument)
+
+        std_flux_sim = std.simulate_measured_flux(
+            self.params.filter_name, 1000,
+            camera_index=self.params.camera,
+            modulated=False, airmass=self.params.airmass) 
+
+        eps_mean = std_flux_im / np.nansum(std_flux_sim.data)
+        return eps_mean
+
+#################################################
+#### CLASS StandardSpectrum #####################
+#################################################
+
+class StandardSpectrum(fft.RealSpectrum):
+    """Spectrum class computed from real interferograms (in counts)
+    """
+
+    convert_params = {'AIRMASS':'airmass',
+                      'EXPTIME':'exposure_time',
+                      'FILTER':'filter_name',
+                      'INSTRUME':'instrument',
+                      'CAMERA': 'camera'}
+    
+    def __init__(self, *args, **kwargs):
+        fft.RealSpectrum.__init__(self, *args, **kwargs)
+        self.params.reset('object_name', ''.join(
+            self.params.OBJECT.strip().split()).upper())
+        self.params.reset('instrument', self.params.instrument.lower())
+        
+        self.params.reset(
+            'camera', utils.misc.convert_camera_parameter(
+                self.params.camera))
+
+        if not self.has_param('airmass'):
+            logging.debug('airmass not set, automatically set to 1')
+            self.params['airmass'] = 1.
+    
+    
+    def compute_flux_correction_vector(self, deg=2):
+        """Compute flux correction vector by fitting a simulated model of the
+        standard star on the observed spectrum.
+        """
+        def model(_sim, *p):
+            m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
+            return np.array(m, dtype=float)
+
+        std = Standard(self.params.object_name,
+                       instrument=self.params.instrument)
+
+        sim = std.simulate_measured_flux(
+            self.params.filter_name, self.dimx,
+            camera_index=self.params.camera,
+            modulated=False, airmass=self.params.airmass) 
+
+        sim = sim.project(self.axis)
+        sim.data[np.isnan(sim.data)] = 0
+
+        spe_data = np.copy(self.data).astype(float)
+        spe_data[np.isnan(spe_data)] = 0
+
+        xmin, xmax = self.get_filter_bandpass_pix(
+            border_ratio=0.05)
+        sim.data[:xmin] = 0
+        sim.data[xmax:] = 0
+        spe_data[:xmin] = 0
+        spe_data[xmax:] = 0
+
+
+        fit = scipy.optimize.curve_fit(
+            model, sim.data, spe_data,
+            p0=np.ones(deg+1, dtype=float)/10.)
+        
+        sim_fit = core.Cm1Vector1d(
+            model(sim.data, *fit[0]),
+            axis=self.axis, params=self.params)
+
+        poly = np.polynomial.polynomial.polyval(
+            np.arange(sim.dimx), fit[0])
+        
+        xmin, xmax = self.get_filter_bandpass_pix(
+            border_ratio=-0.1)
+        
+        poly[:xmin] = np.nan
+        poly[xmax:] = np.nan
+        poly /= np.nanmean(poly)
+        poly[np.isnan(poly)] = 1.
+        
+        eps = core.Cm1Vector1d(
+            poly, axis=self.axis, params=self.params)
+                
+        # import pylab as pl
+        # pl.figure()
+        # pl.plot(sim_fit.axis.data, sim_fit.data)
+        # pl.plot(self.axis.data, spe_data)
+        
+        return eps

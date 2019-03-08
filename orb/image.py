@@ -1,4 +1,4 @@
-0#!/usr/bin/env python
+#!/usr/bin/env python
 # *-* coding: utf-8 *-*
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: image.py
@@ -287,11 +287,14 @@ class Image(Frame2D):
         
             
 
-    def find_object(self, is_standard=False):
+    def find_object(self, is_standard=False, return_radec=False):
         """Try to find the object given the name in the header
 
         :param is_standard: if object is a standard, do not try to
           resolve the name.
+
+        :param return_radec: if true, radec coordinates are retruned
+          instead of image coordinates (pixel position).
         """
         object_found = False
         if not is_standard:
@@ -300,13 +303,13 @@ class Image(Frame2D):
                 print astropy.coordinates.get_icrs_coordinates(self.params.OBJECT)
                 object_found = True
             except NameResolveError:
-                warnings.warn('object name could not be resolved')
+                logging.debug('object name could not be resolved')
                 
         logging.info('looking in the standard table for {}'.format(self.params.OBJECT))
         try:
             std_name = ''.join(self.params.OBJECT.strip().split()).upper()
             std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
-                self.params.OBJECT, return_pm=True)
+                std_name, return_pm=True)
             object_found = True
         except StandardError:
             warnings.warn('object name not found in the standard table')
@@ -325,7 +328,11 @@ class Image(Frame2D):
         std_dec_str = '{:.0f}:{:.0f}:{:.3f}'.format(
             *utils.astrometry.deg2dec(std_dec))
         logging.info('Object {} RA/DEC: {} ({:.3f}) {} ({:.3f}) (corrected for proper motion)'.format(self.params.OBJECT, std_ra_str, std_ra, std_dec_str, std_dec))
-        return np.squeeze(self.world2pix([std_ra, std_dec]))
+        if not return_radec:
+            return np.squeeze(self.world2pix([std_ra, std_dec]))
+        else:
+            return [std_ra, std_dec]
+            
 
     
 
@@ -359,7 +366,7 @@ class Image(Frame2D):
           returned (sorted by intensity)
 
         :param path: (Optional) Path to the output star list file. If
-          None default path is used.
+          None, nothing is written.
 
         """
         DETECT_THRESHOLD = 5
@@ -693,11 +700,16 @@ class Image(Frame2D):
                 self.dimx, self.dimy, XY_HIST_BINS)
             
             max_list.append((max_corr, iangle, max_dx, max_dy))
-            logging.info('histogram check: correlation level {}, angle {}, dx {}, dy {}'.format(*max_list[-1]))
+            logging.info('histogram check: correlation level {}, angle {}, dx {}, dy {}'.format(
+                *max_list[-1]))
         max_list = sorted(max_list, key = lambda imax: imax[0], reverse=True)
-        self.target_x += max_list[0][2]
-        self.target_y += max_list[0][3]
-        self.wcs_rotation = max_list[0][1]
+        max_list = np.array(max_list)
+        if np.max(max_list[:,0]) < 2 * np.median(max_list[:,0]):
+            raise StandardError('maximum correlation is not high enough, check target_ra, target_dec')
+        
+        self.target_x += max_list[0, 2]
+        self.target_y += max_list[0, 3]
+        self.wcs_rotation = max_list[0, 1]
 
         # update wcs
         wcs = utils.astrometry.create_wcs(
@@ -1108,7 +1120,7 @@ class Image(Frame2D):
             see :meth:`utils.astrometry.fit_stars_in_frame` for more
             information.
 
-        :param star_list: Path tot alist of stars
+        :param star_list: Path to a list of stars
           
         :param kwargs: Same optional arguments as for
           :meth:`utils.astrometry.fit_stars_in_frame`.
@@ -1459,3 +1471,5 @@ class Image(Frame2D):
                 'star_list2': star_list2,
                 'fwhm_arc1': fwhm_arc,
                 'fwhm_arc2': fwhm_arc2}
+
+

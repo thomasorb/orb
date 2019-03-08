@@ -484,7 +484,8 @@ class Tools(object):
     Load instrument config file and give access to orb data files.
     """
     instruments = ['sitelle', 'spiomm']
-        
+    filters = ['SN1', 'SN2', 'SN3', 'C1', 'C2', 'C3', 'C4']
+                
     def __init__(self, instrument=None, config=None,
                  data_prefix="./temp/data."):
         """Initialize Tools class.
@@ -653,6 +654,14 @@ class Tools(object):
                  "Configuration file %s does not exist !"%config_file_path)
         return config_file_path
 
+    def _parse_filter_name(self, filter_name):
+        """Parse a filter name which can sometimes be a full filter file path
+        """
+        for ifilter in self.filters:
+            if ifilter in filter_name: return ifilter
+        raise StandardError('this name or path does not point to any known filter: {}'.format(
+            filter_name))
+
     def _get_filter_file_path(self, filter_name):
         """Return the full path to the filter file given the name of
         the filter.
@@ -662,6 +671,7 @@ class Tools(object):
 
         :param filter_name: Name of the filter.
         """
+        filter_name = self._parse_filter_name(filter_name)
         filter_file_path =  self._get_orb_data_file_path(
             "filter_" + filter_name + ".hdf5")
         if not os.path.exists(filter_file_path):
@@ -681,6 +691,7 @@ class Tools(object):
 
         :param filter_name: Name of the filter.
         """
+        filter_name = self._parse_filter_name(filter_name)
         phase_file_path =  self._get_orb_data_file_path(
             "phase_" + filter_name + ".hdf5")
         
@@ -727,6 +738,7 @@ class Tools(object):
 
         :param filter_name: Name of the filter.
         """
+        filter_name = self._parse_filter_name(filter_name)
         optics_file_path =  self._get_orb_data_file_path(
             "optics_" + filter_name + ".hdf5")
         if not os.path.exists(optics_file_path):
@@ -1752,6 +1764,7 @@ class Data(object):
     + mask (1d for 1d, 2d for 2d and 3d)
     """
     needed_params = ()
+    convert_params = {}
 
     def __init__(self, data, err=None, axis=None, params=None, mask=None, **kwargs):
         """Init method.
@@ -1889,8 +1902,10 @@ class Data(object):
             self.params.update(params)
         self.params.update(kwargs)
 
+        for iparam in self.convert_params:
+            self.copy_param(iparam, self.convert_params[iparam])
+            
         # check params
-
         if self.has_param('filter_file_path'):
             if not self.has_param('filter_name'):
                 self.set_param('filter_name', self.params['filter_file_path'])
@@ -1944,6 +1959,15 @@ class Data(object):
             else:
                 if not self.mask.__getitem__(key): _data = np.nan
         return _data
+
+    def copy_param(self, oldkey, newkey):
+        """Copy a parameter with a given key to a parameter with another
+           key. Do it only if the new key is not already set
+        """
+        if self.has_param(oldkey):
+            if not self.has_param(newkey):
+                self.params[newkey] = self.params[oldkey]
+            
 
     def is_pointer(self):
         """Return True if data is a pointer to an hdf dataset (or if there is no data) in which case
@@ -2215,7 +2239,11 @@ class Data(object):
         with utils.io.open_hdf5(path, 'w') as hdffile:
             if self.has_params():
                 for iparam in self.params:
-                    hdffile.attrs[iparam] = self.params[iparam]
+                    try:
+                        hdffile.attrs[iparam] = self.params[iparam]
+                    except TypeError:
+                        warnings.warn('{} ({}) could not be written'.format(
+                            iparam, type(self.params[iparam])))
 
             hdffile.create_dataset(
                 '/data',
@@ -2489,7 +2517,7 @@ class Cm1Vector1d(Vector1d):
                     self.axis = Axis(check_axis)
                 else:
                     if np.any(check_axis != self.axis.data):
-                        warnings.warn('provided axis is inconsistent with the given parameters')
+                        logging.debug('provided axis is inconsistent with the given parameters')
             #else:
                 #raise StandardError('{} must all be provided'.format(self.obs_params))
             
@@ -2500,7 +2528,7 @@ class Cm1Vector1d(Vector1d):
         if 'filter_cm1_min' not in self.params or 'filter_cm1_max' not in self.params:
             
             cm1_min, cm1_max = FilterFile(self.params.filter_name).get_filter_bandpass_cm1()
-            warnings.warn('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
+            logging.debug('Uneffective call to get filter bandpass. Please provide filter_cm1_min and filter_cm1_max in the parameters.')
             self.set_param('filter_cm1_min', cm1_min)
             self.set_param('filter_cm1_max', cm1_max)
             
@@ -2665,6 +2693,14 @@ class WCSData(Data, Tools):
                   'target_x':0,
                   'target_y':0}
 
+    convert_params = {'AIRMASS':'airmass',
+                      'EXPTIME':'exposure_time',
+                      'FILTER':'filter_name',
+                      'INSTRUME':'instrument',
+                      'camera_number':'camera',
+                      'CAMERA': 'camera',
+                      'BINNING': 'binning'}
+
     def __init__(self, data, instrument=None, config=None,
                  data_prefix="./", sip=None, **kwargs):
 
@@ -2698,24 +2734,10 @@ class WCSData(Data, Tools):
         # check params
         self.params.reset('instrument', self.instrument)
 
-        if not self.has_param('camera'):
-            if self.has_param('camera_number'):
-                self.params['camera'] = self.params.camera_number
-            elif self.has_param('CAMERA'):
-                self.params['camera'] = self.params.CAMERA
-                if self.params.camera == 'MERGED_DATA':
-                    self.params.reset('camera', 0)
-            else:
-                raise StandardError('parameter camera must be supplied')
-
-        if '1' in str(self.params.camera):
-            self.params.reset('camera', 1)
-        elif '2' in str(self.params.camera):
-            self.params.reset('camera', 2)
-        elif '0' in str(self.params.camera):
-            self.params.reset('camera', 0)
-        else:
-            raise ValueError('camera number not understood, must be 1, 2 or 0')
+        # convert camera param
+        self.params.reset(
+            'camera', utils.misc.convert_camera_parameter(
+                self.params.camera))
 
 
         # compute binning
@@ -2733,23 +2755,20 @@ class WCSData(Data, Tools):
                 self.params.reset('binning', self.params.bin_cam_2)
             
         if not self.has_param('binning'):
-            if self.has_param('BINNING'):
-                self.params['binning'] = self.params.BINNING
-            else:
-                if cropped:
-                    warnings.warn('data is cropped. computed binning might be inconsistent')
-                detector_shape = [self.config[cam + '_DETECTOR_SIZE_X'],
-                                  self.config[cam + '_DETECTOR_SIZE_Y']]
-        
-                binning = utils.image.compute_binning(
-                    (self.dimx, self.dimy), detector_shape)
+            if cropped:
+                warnings.warn('data is cropped. computed binning might be inconsistent')
+            detector_shape = [self.config[cam + '_DETECTOR_SIZE_X'],
+                              self.config[cam + '_DETECTOR_SIZE_Y']]
 
-                if binning[0] != binning[1]:
-                    raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
-                self.set_param('binning', binning[0])
-                
-                logging.debug('Computed binning of camera {}: {}x{}'.format(
-                    self.params.camera, self.params.binning, self.params.binning))
+            binning = utils.image.compute_binning(
+                (self.dimx, self.dimy), detector_shape)
+
+            if binning[0] != binning[1]:
+                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
+            self.set_param('binning', binning[0])
+
+            logging.debug('Computed binning of camera {}: {}x{}'.format(
+                self.params.camera, self.params.binning, self.params.binning))
 
             
         if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:

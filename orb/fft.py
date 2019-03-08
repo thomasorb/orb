@@ -621,7 +621,7 @@ class Spectrum(core.Cm1Vector1d):
                                   params=params, **kwargs)
             
         if not np.iscomplexobj(self.data):
-            warnings.warn('input spectrum is not complex')
+            logging.debug('input spectrum is not complex')
             self.data = self.data.astype(complex)
 
                    
@@ -751,26 +751,37 @@ class RealSpectrum(Spectrum):
         if 'pixels' not in self.params:
             self.params.reset('pixels', 1)
 
-        # compute photon noise
-        if not self.has_err():
-            raise StandardError('err vector (photon noise) must be supplied')
-
         # recompute counts in the original interferogram if needed
         if 'source_counts' not in self.params:
-            raise StandardError('source_counts must be supplied in the parameters')
-
+            logging.debug('source counts not supplied, computed from spectrum, me computation will be wrong')
+            self.params['source_counts'] = self.compute_counts_in_spectrum()
+            
+        # compute photon noise
+        if not self.has_err():
+            logging.debug('err vector not supplied: err vector computed from spectrum vector')
+            self.err = np.ones_like(self.data) * np.sqrt(self.params.source_counts)
+            
+    def compute_counts_in_spectrum(self):
+        """Return the number of counts in the spectrum
+        """
+        if self.err is not None:
+            _data = gvar.gvar(np.abs(self.data), np.abs(self.err))
+        else:
+            _data = np.abs(self.data)
+            
+        xmin, xmax = self.get_filter_bandpass_pix(border_ratio=-0.05)
+        _data[:xmin] = 0
+        _data[xmax:] = 0
+        return np.sum(_data)
+    
     def compute_me(self):
         """Return the modulation efficiency, computed from the ratio between
         the number of counts in the original interferogram and the
         number of counts in the spectrum.
         """
-        _data = gvar.gvar(np.abs(self.data), np.abs(self.err))
-        xmin, xmax = self.get_filter_bandpass_pix(border_ratio=-0.05)
-        _data[:xmin] = 0
-        _data[xmax:] = 0
         _source_counts = gvar.gvar(self.params.source_counts,
                                    np.sqrt(self.params.source_counts))
-        return np.sum(_data) / _source_counts
+        return  self.compute_counts_in_pectrum() / _source_counts
 
 
 #################################################

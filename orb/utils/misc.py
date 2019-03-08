@@ -346,3 +346,17 @@ def read_instrument_value_from_file(path):
         if 'INSTRUME' in _hdr:
             instrument = _hdr['INSTRUME'].lower()
     return instrument
+
+
+def convert_camera_parameter(param):
+    """Convert camera parameter to an integer value
+    """
+    if param == 'MERGED_DATA': return 0
+    elif '1' in str(param): return 1
+    elif '2' in str(param): return 2
+    elif '0' in str(param): return 0
+    else:
+        raise ValueError('camera parameter {} not understood'.format(param))
+
+    
+
