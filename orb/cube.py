@@ -1059,6 +1059,7 @@ class Cube(HDFCube):
           keyword arguments.
         """
         HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
+        
         # compute additional parameters
         self.filterfile = core.FilterFile(self.params.filter_name)
         self.set_param('filter_name', self.filterfile.basic_path)
@@ -2034,8 +2035,8 @@ class SpectralCube(Cube):
     def __init__(self, *args, **kwargs):
         """Init class"""
         Cube.__init__(self, *args, **kwargs)
-        self.reset_params()
 
+        self.reset_params()
         js, ncpus = self._init_pp_server(silent=True)
         self._close_pp_server(js)
         self.set_param('ncpus', int(ncpus))
@@ -2089,8 +2090,9 @@ class SpectralCube(Cube):
         self.filterfile = core.FilterFile(self.params.filter_name)
 
         self.set_param('flux_calibration', True)
+        
         if not self.has_param('flambda'):
-            logging.debug('FLAMBDA keyword not in cube header.')
+            logging.debug('flambda keyword not in cube header.')
             self.set_param('flux_calibration', False)
             self.set_param('flambda', 1.)
             
@@ -2124,14 +2126,6 @@ class SpectralCube(Cube):
 
         if not self.has_param('zpd_index'):
             raise KeyError('ZPDINDEX not in cube header. Please run again the last step of ORBS reduction process.')
-
-        # new data prefix
-        base_prefix = '{}_{}.{}'.format(self.params.object_name,
-                                        self.params.filter_name,
-                                        self.params.apodization)
-
-        self._data_prefix = base_prefix + '.ORCS' + os.sep + base_prefix + '.'
-        self._data_path_hdr = self._get_data_path_hdr()
 
         # resolution
         resolution = utils.spectrum.compute_resolution(
@@ -2668,12 +2662,17 @@ class SpectralCube(Cube):
         if std_im is None:
             try:
                 std_im = self.get_standard_image()
-                eps_mean = std_im.compute_flux_correction_factor()
                 logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
 
             except StandardError:
                 logging.debug('standard_image_path not set: no absolute vector correction computed')
+                std_im = None
 
+                
+        eps_mean = None
+        if std_im is not None:
+            eps_mean = std_im.compute_flux_correction_factor()
+                
         return photom.compute_flambda(eps=eps_vector.multiply(eps_mean))
 
         

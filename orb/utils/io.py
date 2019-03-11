@@ -912,7 +912,11 @@ def cast2hdf5(val):
         return 'None'
     elif isinstance(val, long):
         return str(val)
-    else: return val
+    elif isinstance(val, np.ndarray):
+        if val.dtype == np.float128:
+            return val.astype(np.float64)
+        
+    return val
 
 
 def save_dflist(dflist, path):

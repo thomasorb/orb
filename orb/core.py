@@ -1812,7 +1812,8 @@ class Data(object):
             if 'fits' in data:    
                 self.data, _header = utils.io.read_fits(data, return_header=True)
                 self.params = dict(_header)
-                self.params.pop('COMMENT')
+                if 'COMMENT' in self.params:
+                    self.params.pop('COMMENT')
 
             elif 'hdf' in data:    
                 self.hdffile = utils.io.open_hdf5(data, 'r')
@@ -1835,8 +1836,8 @@ class Data(object):
                 for iparam in self.hdffile.attrs:
                     try:
                         self.params[iparam] = self.hdffile.attrs[iparam]
-                    except TypeError:
-                        pass
+                    except TypeError, e:
+                        logging.debug('error reading param from attributes {}: {}'.format(iparam, e))
 
                 # load axis
                 if '/axis' in self.hdffile:
