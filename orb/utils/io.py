@@ -926,14 +926,16 @@ def save_dflist(dflist, path):
 
     :param path: path to the output file
     """
-    if os.path.exists(path): os.remove(path)
+    if os.path.exists(path):
+        os.remove(path)
 
     with open_hdf5(path, 'w') as f:
         f.attrs['len'] = len(dflist)
         
     for idf in range(len(dflist)):
         if dflist[idf] is not None:
-            dflist[idf].to_hdf(path, 'df{:06d}'.format(idf), table=True, mode='a')
+            dflist[idf].to_hdf(path, 'df{:06d}'.format(idf),
+                               format='table', mode='a')
             
 
 
