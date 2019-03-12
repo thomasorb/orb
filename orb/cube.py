@@ -180,7 +180,7 @@ class HDFCube(core.WCSData):
                      'STEPNB': ('step_nb', int),
                      'ZPDINDEX': ('zpd_index', int),
                      'WAVTYPE': ('wavetype', str),
-                     'WAVCALIB': ('wavelength_calibration', bool),
+                     'WAVCALIB': ('wavenumber_calibration', bool),
                      'DATE-OBS': ('obs_date', obs_date_f),
                      'HOUT_UT': ('hour_ut', hour_ut_f),
                      'INSTRUME': ('instrument', instrument_f)}
@@ -282,9 +282,9 @@ class HDFCube(core.WCSData):
           small enough to avoid filling the RAM (a 400x400 pixels box
           is generally a good limit).
 
-        :param region: A list of pixels having the same format as the
-          list returned by np.nonzero(), i.e. (x_positions_1d_array,
-          y_positions_1d_array).
+        :param region: A ds9-like region file or a list of pixels
+          having the same format as the list returned by np.nonzero(),
+          i.e. (x_positions_1d_array, y_positions_1d_array).
 
         """
         SIZE_LIMIT = 400*400
@@ -1104,7 +1104,7 @@ class Cube(HDFCube):
         return np.array(airmass)
                 
     def get_axis_corr(self):
-        """Return the reference wavelength correction"""
+        """Return the reference wavenumber correction"""
         if self.has_param('axis_corr'):
             return float(self.params.axis_corr)
         else:
@@ -2043,7 +2043,7 @@ class SpectralCube(Cube):
         self.validate()
 
         logging.info('shape: {}'.format(self.shape))
-        logging.info('wavelength calibration: {}'.format(self.has_wavelength_calibration()))
+        logging.info('wavenumber calibration: {}'.format(self.has_wavenumber_calibration()))
         logging.info('flux calibration: {}'.format(self.has_flux_calibration()))
         logging.info('wcs calibration: {}'.format(self.has_wcs_calibration()))
 
@@ -2072,16 +2072,16 @@ class SpectralCube(Cube):
             corr=self.get_calibration_coeff_map()[x, y])
         return core.Axis(np.copy(axis))
 
-    def has_wavelength_calibration(self):
-        """Return True if the cube is calibrated in wavelength"""
-        return bool(self.params.wavelength_calibration)
+    def has_wavenumber_calibration(self):
+        """Return True if the cube is calibrated in wavenumber"""
+        return bool(self.params.wavenumber_calibration)
 
     def has_flux_calibration(self):
-        """Return True if the cube is calibrated in wavelength"""
+        """Return True if the cube is calibrated in flux"""
         return bool(self.params.flux_calibration)
 
     def has_wcs_calibration(self):
-        """Return True if the cube is calibrated in wavelength"""
+        """Return True if the cube has valid wcs"""
         return bool(self.params.wcs_calibration)
     
     def reset_params(self):
@@ -2109,14 +2109,14 @@ class SpectralCube(Cube):
             self.set_param('wavetype', 'WAVENUMBER')
 
         if not self.has_param('axis_corr'):
-            if self.has_param('wavelength_calibration'):
-                if self.params.wavelength_calibration:
-                    raise StandardError('wavelength_calibration is True but axis_corr is not set')
-            logging.debug('axis_corr not set: cube is considered uncalibrated in wavelength')
-            self.set_param('wavelength_calibration', False)
+            if self.has_param('wavenumber_calibration'):
+                if self.params.wavenumber_calibration:
+                    raise StandardError('wavenumber_calibration is True but axis_corr is not set')
+            logging.debug('axis_corr not set: cube is considered uncalibrated in wavenumber')
+            self.set_param('wavenumber_calibration', False)
             self.set_param('axis_corr', self.get_axis_corr())
         else:
-            self.set_param('wavelength_calibration', True)
+            self.set_param('wavenumber_calibration', True)
 
         step_nb = self.params.step_nb
         if step_nb != self.dimz:
@@ -2183,7 +2183,6 @@ class SpectralCube(Cube):
         """Return the original calibration coeff map (not the version
         computed by :py:meth:`~HDFCube.get_calibration_coeff_map`)"""
         return self.get_calibration_laser_map_orig() / self.params.nm_laser
-
         
     def get_calibration_laser_map(self):
         """Return the calibration laser map of the cube"""
@@ -2194,7 +2193,7 @@ class SpectralCube(Cube):
         if calib_map is None:
             raise StandardError('No calibration laser map given. Please redo the last step of the data reduction')
 
-        if self.params.wavelength_calibration:
+        if self.has_wavenumber_calibration():
             calib_map = (np.ones((self.dimx, self.dimy), dtype=float)
                     * self.params.nm_laser * self.params.axis_corr)
 
@@ -2236,7 +2235,7 @@ class SpectralCube(Cube):
 
     def reset_calibration_laser_map(self):
         """Reset the compute calibration laser map (and also the
-        calibration coeff map). Must be called when the wavelength
+        calibration coeff map). Must be called when the wavenumber
         calibration has changed
 
         ..seealso :: :py:meth:`~HDFCube.correct_wavelength`
@@ -2255,280 +2254,341 @@ class SpectralCube(Cube):
         filter range"""
         return self.filterfile.get_sky_lines(self.dimz)
 
-    def _extract_spectrum_from_region(self, region,
-                                      subtract_spectrum=None,
-                                      median=False,
-                                      mean_flux=False,
-                                      silent=False,
-                                      return_spec_nb=False,
-                                      return_mean_theta=False,
-                                      return_gvar=False,
-                                      output_axis=None):
+    def get_spectrum_from_region(self, region):
+        """Return a list of spectra taken in a given region.
+
+        :param region: A ds9-like region file or a list of pixels
+          having the same format as the list returned by np.nonzero(),
+          i.e. (x_positions_1d_array, y_positions_1d_array).
+
+        .. note:: the region must not have a size greater than 400x400
+          pixels. If you really need a larger region, you can split
+          you region into smaller ones and combines the resulting
+          spectra.
         """
-        Extract the integrated spectrum from a region of the cube.
-
-        All extraction of spectral data must use this core function
-        because it makes sure that all the updated calibrations are
-        taken into account.
-
-        :param region: A list of the indices of the pixels integrated
-          in the returned spectrum.
-
-        :param subtract_spectrum: (Optional) Remove the given spectrum
-          from the extracted spectrum before fitting
-          parameters. Useful to remove sky spectrum. Both spectra must
-          have the same size.
-
-        :param median: (Optional) If True the integrated spectrum is computed
-          from the median of the spectra multiplied by the number of
-          pixels integrated. Else the integrated spectrum is the pure
-          sum of the spectra. In both cases the flux of the spectrum
-          is the total integrated flux (Default False).
-
-        :param mean_flux: (Optional) If True the flux of the spectrum
-          is the mean flux of the extracted region (default False).
-
-        :param return_spec_nb: (Optional) If True the number of
-          spectra integrated is returned (default False).
-
-        :param silent: (Optional) If True, nothing is printed (default
-          False).
-
-        :param return_mean_theta: (Optional) If True, the mean of the
-          theta values covered by the region is returned (default False).
-
-        :param return_gvar: (Optional) If True, returned spectrum will be a
-          gvar. i.e. a data vector with it's uncetainty (default False).
-
-        :param output_axis: (Optional) If not None, the spectrum is
-          projected on the output axis. Else a scipy.UnivariateSpline
-          object is returned (default None).
-
-        :return: A scipy.UnivariateSpline object or a spectrum
-          projected on the ouput_axis if it is not None.
-        """
-        raise NotImplementedError('check if HDFCube.extract_from_region can be used instead')
+        if not self.has_wavenumber_calibration():
+            warnings.warn('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
+            
+        if isinstance(region, str):
+            region = self.get_region(region)
         
-        def _interpolate_spectrum(spec, corr, wavenumber, step, order, base_axis):
-            import utils.spectrum
-            import utils.vector
-            if wavenumber:
-                corr_axis = utils.spectrum.create_cm1_axis(
-                    spec.shape[0], step, order, corr=corr)
-                return utils.vector.interpolate_axis(
-                    spec, base_axis, 5, old_axis=corr_axis)
-            else: raise NotImplementedError()
+        spectra = self.get_data_from_region(region)
+        spectrum = np.nansum(spectra, axis=0)
+
+        # calculate number of integrated pixels
+        params = dict(self.params)
+        params['pixels'] = len(spectra)
+
+        # compute axis
+        calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
+        axis = utils.spectrum.create_cm1_axis(
+            self.dimz, self.params.step, self.params.order,
+            corr=calib_coeff)
+        
+        # compute counts and err
+        counts = np.nansum(self.get_deep_frame().data[region])
+        err = np.ones(self.dimz, dtype=float) * np.sqrt(counts)
+        err = core.Cm1Vector1d(err, axis, params=params)
+        flambda = core.Cm1Vector1d(
+            self.params.flambda, self.get_base_axis(), params=params)
+        err = err.multiply(flambda)
+        
+        params['source_counts'] = counts
+
+        return fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
+                
+
+    def get_spectrum(self, x, y, r=0):
+        """Return a. orb.fft.RealSpectrum extracted at x, y and integrated
+        over a circular aperture or radius r.
+
+        :param x: x position 
+        
+        :param y: y position 
+
+        :param r: (Optional) If r > 0, vector is integrated over a
+          circular aperture of radius r. In this case the number of
+          pixels is returned as a parameter: pixels
+        """
+        x = self.validate_x_index(x, clip=False)
+        y = self.validate_y_index(y, clip=False)
+        region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
+        return self.get_spectrum_from_region(region)
+        
+    # def _extract_spectrum_from_region(self, region,
+    #                                   subtract_spectrum=None,
+    #                                   median=False,
+    #                                   mean_flux=False,
+    #                                   silent=False,
+    #                                   return_spec_nb=False,
+    #                                   return_mean_theta=False,
+    #                                   return_gvar=False,
+    #                                   output_axis=None):
+    #     """
+    #     Extract the integrated spectrum from a region of the cube.
+
+    #     All extraction of spectral data must use this core function
+    #     because it makes sure that all the updated calibrations are
+    #     taken into account.
+
+    #     :param region: A list of the indices of the pixels integrated
+    #       in the returned spectrum.
+
+    #     :param subtract_spectrum: (Optional) Remove the given spectrum
+    #       from the extracted spectrum before fitting
+    #       parameters. Useful to remove sky spectrum. Both spectra must
+    #       have the same size.
+
+    #     :param median: (Optional) If True the integrated spectrum is computed
+    #       from the median of the spectra multiplied by the number of
+    #       pixels integrated. Else the integrated spectrum is the pure
+    #       sum of the spectra. In both cases the flux of the spectrum
+    #       is the total integrated flux (Default False).
+
+    #     :param mean_flux: (Optional) If True the flux of the spectrum
+    #       is the mean flux of the extracted region (default False).
+
+    #     :param return_spec_nb: (Optional) If True the number of
+    #       spectra integrated is returned (default False).
+
+    #     :param silent: (Optional) If True, nothing is printed (default
+    #       False).
+
+    #     :param return_mean_theta: (Optional) If True, the mean of the
+    #       theta values covered by the region is returned (default False).
+
+    #     :param return_gvar: (Optional) If True, returned spectrum will be a
+    #       gvar. i.e. a data vector with it's uncetainty (default False).
+
+    #     :param output_axis: (Optional) If not None, the spectrum is
+    #       projected on the output axis. Else a scipy.UnivariateSpline
+    #       object is returned (default None).
+
+    #     :return: A scipy.UnivariateSpline object or a spectrum
+    #       projected on the ouput_axis if it is not None.
+    #     """
+    #     raise NotImplementedError('check if HDFCube.extract_from_region can be used instead')
+        
+    #     def _interpolate_spectrum(spec, corr, wavenumber, step, order, base_axis):
+    #         import utils.spectrum
+    #         import utils.vector
+    #         if wavenumber:
+    #             corr_axis = utils.spectrum.create_cm1_axis(
+    #                 spec.shape[0], step, order, corr=corr)
+    #             return utils.vector.interpolate_axis(
+    #                 spec, base_axis, 5, old_axis=corr_axis)
+    #         else: raise NotImplementedError()
 
 
-        def _extract_spectrum_in_column(data_col, calib_coeff_col, mask_col,
-                                        median,
-                                        wavenumber, base_axis, step, order,
-                                        base_axis_corr):
+    #     def _extract_spectrum_in_column(data_col, calib_coeff_col, mask_col,
+    #                                     median,
+    #                                     wavenumber, base_axis, step, order,
+    #                                     base_axis_corr):
 
-            for icol in range(data_col.shape[0]):
-                if mask_col[icol]:
-                    corr = calib_coeff_col[icol]
-                    if corr != base_axis_corr:
-                        data_col[icol, :] = _interpolate_spectrum(
-                            data_col[icol, :], corr, wavenumber, step, order, base_axis)
-                else:
-                    data_col[icol, :].fill(np.nan)
+    #         for icol in range(data_col.shape[0]):
+    #             if mask_col[icol]:
+    #                 corr = calib_coeff_col[icol]
+    #                 if corr != base_axis_corr:
+    #                     data_col[icol, :] = _interpolate_spectrum(
+    #                         data_col[icol, :], corr, wavenumber, step, order, base_axis)
+    #             else:
+    #                 data_col[icol, :].fill(np.nan)
 
-            if median:
-                with np.warnings.catch_warnings():
-                    np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                    return (np.nanmedian(data_col, axis=0) * np.nansum(mask_col),
-                            np.nansum(mask_col))
-            else:
-                return (np.nansum(data_col, axis=0),
-                        np.nansum(mask_col))
+    #         if median:
+    #             with np.warnings.catch_warnings():
+    #                 np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+    #                 return (np.nanmedian(data_col, axis=0) * np.nansum(mask_col),
+    #                         np.nansum(mask_col))
+    #         else:
+    #             return (np.nansum(data_col, axis=0),
+    #                     np.nansum(mask_col))
 
-        if median:
-            warnings.warn('Median integration')
-
-
-        calibration_coeff_map = self.get_calibration_coeff_map()
-
-        calibration_coeff_center = calibration_coeff_map[
-            calibration_coeff_map.shape[0]/2,
-            calibration_coeff_map.shape[1]/2]
-
-        mask = np.zeros((self.dimx, self.dimy), dtype=np.uint8)
-        mask[region] = 1
-        if not silent:
-            logging.info('Number of integrated pixels: {}'.format(np.sum(mask)))
-
-        if np.sum(mask) == 0: raise StandardError('A region must contain at least one valid pixel')
-
-        elif np.sum(mask) == 1:
-            ii = region[0][0] ; ij = region[1][0]
-            spectrum = _interpolate_spectrum(
-                self.get_data(ii, ii+1, ij, ij+1, 0, self.dimz, silent=silent),
-                calibration_coeff_map[ii, ij],
-                self.params.wavenumber, self.params.step, self.params.order,
-                self.params.base_axis)
-            counts = 1
-
-        else:
-            spectrum = np.zeros(self.dimz, dtype=float)
-            counts = 0
-
-            # get range to check if a quadrants extraction is necessary
-            mask_x_proj = np.nanmax(mask, axis=1).astype(float)
-            mask_x_proj[np.nonzero(mask_x_proj == 0)] = np.nan
-            mask_x_proj *= np.arange(self.dimx)
-            x_min = int(np.nanmin(mask_x_proj))
-            x_max = int(np.nanmax(mask_x_proj)) + 1
-
-            mask_y_proj = np.nanmax(mask, axis=0).astype(float)
-            mask_y_proj[np.nonzero(mask_y_proj == 0)] = np.nan
-            mask_y_proj *= np.arange(self.dimy)
-            y_min = int(np.nanmin(mask_y_proj))
-            y_max = int(np.nanmax(mask_y_proj)) + 1
-
-            if (x_max - x_min < self.dimx / float(self.config.DIV_NB)
-                and y_max - y_min < self.dimy / float(self.config.DIV_NB)):
-                quadrant_extraction = False
-                QUAD_NB = 1
-                DIV_NB = 1
-            else:
-                quadrant_extraction = True
-                QUAD_NB = self.config.QUAD_NB
-                DIV_NB = self.config.DIV_NB
-
-            # check if parallel extraction is necessary
-            parallel_extraction = True
-            # It takes roughly ncpus/4 s to initiate the parallel server
-            # The non-parallel algo runs at ~400 pixel/s
-            ncpus = self.params['ncpus']
-            if ncpus/4. > np.sum(mask)/400.:
-                parallel_extraction = False
-            for iquad in range(0, QUAD_NB):
-
-                if quadrant_extraction:
-                    # x_min, x_max, y_min, y_max are now used for quadrants boundaries
-                    x_min, x_max, y_min, y_max = self.get_quadrant_dims(iquad)
-
-                iquad_data = self.get_data(x_min, x_max, y_min, y_max,
-                                           0, self.dimz, silent=silent)
-                if parallel_extraction:
-                    logging.debug('Parallel extraction')
-                    # multi-processing server init
-                    job_server, ncpus = self._init_pp_server(silent=silent)
-                    if not silent: progress = core.ProgressBar(x_max - x_min)
-                    for ii in range(0, x_max - x_min, ncpus):
-                        # no more jobs than columns
-                        if (ii + ncpus >= x_max - x_min):
-                            ncpus = x_max - x_min - ii
-
-                        # jobs creation
-                        jobs = [(ijob, job_server.submit(
-                            _extract_spectrum_in_column,
-                            args=(iquad_data[ii+ijob,:,:],
-                                  calibration_coeff_map[x_min + ii + ijob,
-                                                        y_min:y_max],
-                                  mask[x_min + ii + ijob, y_min:y_max],
-                                  median, self.params.wavenumber,
-                                  self.params.base_axis, self.params.step,
-                                  self.params.order, self.params.axis_corr),
-                            modules=("import logging",
-                                     'import numpy as np',
-                                     'import orb.utils as utils'),
-                            depfuncs=(_interpolate_spectrum,)))
-                                for ijob in range(ncpus)]
-
-                        for ijob, job in jobs:
-                            spec_to_add, spec_nb = job()
-                            if not np.all(np.isnan(spec_to_add)):
-                                spectrum += spec_to_add
-                                counts += spec_nb
-
-                        if not silent:
-                            progress.update(ii, info="ext column : {}/{}".format(
-                                ii, int(self.dimx/float(DIV_NB))))
-                    self._close_pp_server(job_server)
-                    if not silent: progress.end()
-
-                else:
-                    logging.debug('Non Parallel extraction')
-                    local_mask = mask[x_min:x_max, y_min:y_max]
-                    local_calibration_coeff_map = calibration_coeff_map[x_min:x_max, y_min:y_max]
-                    if not silent:
-                        progress = core.ProgressBar(local_mask.size)
-                        k = 0
-                    for i,j in np.ndindex(iquad_data.shape[:-1]):
-                        if local_mask[i,j]:
-                            corr = local_calibration_coeff_map[i,j]
-                            if corr != self.params.axis_corr:
-                                iquad_data[i,j] = _interpolate_spectrum(
-                                    iquad_data[i,j], corr, self.params.wavenumber,
-                                    self.params.step, self.params.order, self.params.base_axis)
-                        else:
-                            iquad_data[i,j].fill(np.nan)
-                        if not silent:
-                            k+=1
-                            if not k%500: progress.update(k)
-                    if not silent: progress.end()
-                    if median:
-                        with np.warnings.catch_warnings():
-                            np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                            spec_to_add = np.nanmedian(iquad_data, axis=(0,1)) * np.nansum(local_mask)
-                            spec_nb = np.nansum(local_mask)
-                    else:
-                        spec_to_add = np.nansum(iquad_data, axis=(0,1))
-                        spec_nb = np.nansum(local_mask)
-                    if not np.all(np.isnan(spec_to_add)):
-                        spectrum += spec_to_add
-                        counts += spec_nb
+    #     if median:
+    #         warnings.warn('Median integration')
 
 
-        # add uncertainty on the spectrum
-        if return_gvar:
-            flux_uncertainty = self.get_flux_uncertainty()
+    #     calibration_coeff_map = self.get_calibration_coeff_map()
 
-            if flux_uncertainty is not None:
-                uncertainty = np.nansum(flux_uncertainty[np.nonzero(mask)])
-                logging.debug('computed mean flux uncertainty: {}'.format(uncertainty))
-                spectrum = gvar.gvar(spectrum, np.ones_like(spectrum) * uncertainty)
+    #     calibration_coeff_center = calibration_coeff_map[
+    #         calibration_coeff_map.shape[0]/2,
+    #         calibration_coeff_map.shape[1]/2]
+
+    #     mask = np.zeros((self.dimx, self.dimy), dtype=np.uint8)
+    #     mask[region] = 1
+    #     if not silent:
+    #         logging.info('Number of integrated pixels: {}'.format(np.sum(mask)))
+
+    #     if np.sum(mask) == 0: raise StandardError('A region must contain at least one valid pixel')
+
+    #     elif np.sum(mask) == 1:
+    #         ii = region[0][0] ; ij = region[1][0]
+    #         spectrum = _interpolate_spectrum(
+    #             self.get_data(ii, ii+1, ij, ij+1, 0, self.dimz, silent=silent),
+    #             calibration_coeff_map[ii, ij],
+    #             self.params.wavenumber, self.params.step, self.params.order,
+    #             self.params.base_axis)
+    #         counts = 1
+
+    #     else:
+    #         spectrum = np.zeros(self.dimz, dtype=float)
+    #         counts = 0
+
+    #         # get range to check if a quadrants extraction is necessary
+    #         mask_x_proj = np.nanmax(mask, axis=1).astype(float)
+    #         mask_x_proj[np.nonzero(mask_x_proj == 0)] = np.nan
+    #         mask_x_proj *= np.arange(self.dimx)
+    #         x_min = int(np.nanmin(mask_x_proj))
+    #         x_max = int(np.nanmax(mask_x_proj)) + 1
+
+    #         mask_y_proj = np.nanmax(mask, axis=0).astype(float)
+    #         mask_y_proj[np.nonzero(mask_y_proj == 0)] = np.nan
+    #         mask_y_proj *= np.arange(self.dimy)
+    #         y_min = int(np.nanmin(mask_y_proj))
+    #         y_max = int(np.nanmax(mask_y_proj)) + 1
+
+    #         if (x_max - x_min < self.dimx / float(self.config.DIV_NB)
+    #             and y_max - y_min < self.dimy / float(self.config.DIV_NB)):
+    #             quadrant_extraction = False
+    #             QUAD_NB = 1
+    #             DIV_NB = 1
+    #         else:
+    #             quadrant_extraction = True
+    #             QUAD_NB = self.config.QUAD_NB
+    #             DIV_NB = self.config.DIV_NB
+
+    #         # check if parallel extraction is necessary
+    #         parallel_extraction = True
+    #         # It takes roughly ncpus/4 s to initiate the parallel server
+    #         # The non-parallel algo runs at ~400 pixel/s
+    #         ncpus = self.params['ncpus']
+    #         if ncpus/4. > np.sum(mask)/400.:
+    #             parallel_extraction = False
+    #         for iquad in range(0, QUAD_NB):
+
+    #             if quadrant_extraction:
+    #                 # x_min, x_max, y_min, y_max are now used for quadrants boundaries
+    #                 x_min, x_max, y_min, y_max = self.get_quadrant_dims(iquad)
+
+    #             iquad_data = self.get_data(x_min, x_max, y_min, y_max,
+    #                                        0, self.dimz, silent=silent)
+    #             if parallel_extraction:
+    #                 logging.debug('Parallel extraction')
+    #                 # multi-processing server init
+    #                 job_server, ncpus = self._init_pp_server(silent=silent)
+    #                 if not silent: progress = core.ProgressBar(x_max - x_min)
+    #                 for ii in range(0, x_max - x_min, ncpus):
+    #                     # no more jobs than columns
+    #                     if (ii + ncpus >= x_max - x_min):
+    #                         ncpus = x_max - x_min - ii
+
+    #                     # jobs creation
+    #                     jobs = [(ijob, job_server.submit(
+    #                         _extract_spectrum_in_column,
+    #                         args=(iquad_data[ii+ijob,:,:],
+    #                               calibration_coeff_map[x_min + ii + ijob,
+    #                                                     y_min:y_max],
+    #                               mask[x_min + ii + ijob, y_min:y_max],
+    #                               median, self.params.wavenumber,
+    #                               self.params.base_axis, self.params.step,
+    #                               self.params.order, self.params.axis_corr),
+    #                         modules=("import logging",
+    #                                  'import numpy as np',
+    #                                  'import orb.utils as utils'),
+    #                         depfuncs=(_interpolate_spectrum,)))
+    #                             for ijob in range(ncpus)]
+
+    #                     for ijob, job in jobs:
+    #                         spec_to_add, spec_nb = job()
+    #                         if not np.all(np.isnan(spec_to_add)):
+    #                             spectrum += spec_to_add
+    #                             counts += spec_nb
+
+    #                     if not silent:
+    #                         progress.update(ii, info="ext column : {}/{}".format(
+    #                             ii, int(self.dimx/float(DIV_NB))))
+    #                 self._close_pp_server(job_server)
+    #                 if not silent: progress.end()
+
+    #             else:
+    #                 logging.debug('Non Parallel extraction')
+    #                 local_mask = mask[x_min:x_max, y_min:y_max]
+    #                 local_calibration_coeff_map = calibration_coeff_map[x_min:x_max, y_min:y_max]
+    #                 if not silent:
+    #                     progress = core.ProgressBar(local_mask.size)
+    #                     k = 0
+    #                 for i,j in np.ndindex(iquad_data.shape[:-1]):
+    #                     if local_mask[i,j]:
+    #                         corr = local_calibration_coeff_map[i,j]
+    #                         if corr != self.params.axis_corr:
+    #                             iquad_data[i,j] = _interpolate_spectrum(
+    #                                 iquad_data[i,j], corr, self.params.wavenumber,
+    #                                 self.params.step, self.params.order, self.params.base_axis)
+    #                     else:
+    #                         iquad_data[i,j].fill(np.nan)
+    #                     if not silent:
+    #                         k+=1
+    #                         if not k%500: progress.update(k)
+    #                 if not silent: progress.end()
+    #                 if median:
+    #                     with np.warnings.catch_warnings():
+    #                         np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+    #                         spec_to_add = np.nanmedian(iquad_data, axis=(0,1)) * np.nansum(local_mask)
+    #                         spec_nb = np.nansum(local_mask)
+    #                 else:
+    #                     spec_to_add = np.nansum(iquad_data, axis=(0,1))
+    #                     spec_nb = np.nansum(local_mask)
+    #                 if not np.all(np.isnan(spec_to_add)):
+    #                     spectrum += spec_to_add
+    #                     counts += spec_nb
 
 
-        if subtract_spectrum is not None:
-            spectrum -= subtract_spectrum * counts
+    #     # add uncertainty on the spectrum
+    #     if return_gvar:
+    #         flux_uncertainty = self.get_flux_uncertainty()
 
-        if mean_flux:
-            spectrum /= counts
+    #         if flux_uncertainty is not None:
+    #             uncertainty = np.nansum(flux_uncertainty[np.nonzero(mask)])
+    #             logging.debug('computed mean flux uncertainty: {}'.format(uncertainty))
+    #             spectrum = gvar.gvar(spectrum, np.ones_like(spectrum) * uncertainty)
 
-        returns = list()
-        if output_axis is not None and np.all(output_axis == self.params.base_axis):
-            spectrum[np.isnan(gvar.mean(spectrum))] = 0. # remove nans
-            returns.append(spectrum)
 
-        else:
-            nonans = ~np.isnan(gvar.mean(spectrum))
-            spectrum_function = scipy.interpolate.UnivariateSpline(
-                self.params.base_axis[nonans], gvar.mean(spectrum)[nonans],
-                s=0, k=1, ext=1)
-            if return_gvar:
-                spectrum_function_sdev = scipy.interpolate.UnivariateSpline(
-                    self.params.base_axis[nonans], gvar.sdev(spectrum)[nonans],
-                    s=0, k=1, ext=1)
-                raise Exception('now a tuple is returned with both functions for mean and sdev, this will raise an error somewhere and must be checked before')
-                spectrum_function = (spectrum_function, spectrum_function_sdev)
+    #     if subtract_spectrum is not None:
+    #         spectrum -= subtract_spectrum * counts
 
-            if output_axis is None:
-                returns.append(spectrum_function(gvar.mean(output_axis)))
-            else:
-                returns.append(spectrum_function)
+    #     if mean_flux:
+    #         spectrum /= counts
 
-        if return_spec_nb:
-            returns.append(counts)
-        if return_mean_theta:
-            theta_map = self.get_theta_map()
-            mean_theta = np.nanmean(theta_map[np.nonzero(mask)])
-            logging.debug('computed mean theta: {}'.format(mean_theta))
-            returns.append(mean_theta)
+    #     returns = list()
+    #     if output_axis is not None and np.all(output_axis == self.params.base_axis):
+    #         spectrum[np.isnan(gvar.mean(spectrum))] = 0. # remove nans
+    #         returns.append(spectrum)
 
-        return returns
+    #     else:
+    #         nonans = ~np.isnan(gvar.mean(spectrum))
+    #         spectrum_function = scipy.interpolate.UnivariateSpline(
+    #             self.params.base_axis[nonans], gvar.mean(spectrum)[nonans],
+    #             s=0, k=1, ext=1)
+    #         if return_gvar:
+    #             spectrum_function_sdev = scipy.interpolate.UnivariateSpline(
+    #                 self.params.base_axis[nonans], gvar.sdev(spectrum)[nonans],
+    #                 s=0, k=1, ext=1)
+    #             raise Exception('now a tuple is returned with both functions for mean and sdev, this will raise an error somewhere and must be checked before')
+    #             spectrum_function = (spectrum_function, spectrum_function_sdev)
+
+    #         if output_axis is None:
+    #             returns.append(spectrum_function(gvar.mean(output_axis)))
+    #         else:
+    #             returns.append(spectrum_function)
+
+    #     if return_spec_nb:
+    #         returns.append(counts)
+    #     if return_mean_theta:
+    #         theta_map = self.get_theta_map()
+    #         mean_theta = np.nanmean(theta_map[np.nonzero(mask)])
+    #         logging.debug('computed mean theta: {}'.format(mean_theta))
+    #         returns.append(mean_theta)
+
+    #     return returns
 
     def extract_spectrum_bin(self, x, y, b, **kwargs):
         """Extract a spectrum integrated over a binned region.

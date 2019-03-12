@@ -753,7 +753,7 @@ class RealSpectrum(Spectrum):
 
         # recompute counts in the original interferogram if needed
         if 'source_counts' not in self.params:
-            logging.debug('source counts not supplied, computed from spectrum, me computation will be wrong')
+            logging.debug('source_counts not set, computed from spectrum, me computation will be wrong')
             self.params['source_counts'] = self.compute_counts_in_spectrum()
             
         # compute photon noise
