@@ -1310,7 +1310,7 @@ class Image(Frame2D):
             raise StandardError('If the path to a list of stars is given (star_list1) the fwhm in arcsec(fwhm_arc) must also be given.')
 
         star_list1 = utils.astrometry.load_star_list(star_list1)
-
+        
         image2.reset_fwhm_arc(fwhm_arc)
         self.reset_fwhm_arc(fwhm_arc)
 
@@ -1344,6 +1344,9 @@ class Image(Frame2D):
             star_list2, no_aperture_photometry=True,
             multi_fit=True, enable_zoom=False,
             enable_rotation=True, fix_fwhm=True)
+        
+        if fit_results.empty:
+            raise StandardError('registration failed. check INIT_ANGLE.')
         
         [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
             guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
