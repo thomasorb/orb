@@ -617,9 +617,12 @@ class Tools(object):
         if not isinstance(config, dict):
             raise TypeError('config must be a dict')
         for ikey in config:
-            if ikey not in self.config:
-                raise ValueError('Unknown config key: {}'.format(ikey))
-            self.config[ikey] = type(self.config[ikey])(config[ikey])
+            if ikey in self.config:
+                self.config[ikey] = type(self.config[ikey])(config[ikey])
+            else:
+                logging.debug('Unknown config key: {}'.format(ikey))
+                self.config[ikey] = config[ikey]
+            
             
     def _get_data_path_hdr(self):
         """Return the header of the created files."""
