@@ -686,7 +686,7 @@ class Spectrum(core.Cm1Vector1d):
             axis = np.copy(axis.data)
         
         quality = int(quality)
-        if quality < 2: raise ValueError('quality must be an interger > 2')
+        if quality < 2: raise ValueError('quality must be an integer > 2')
    
         interf_complex = np.fft.ifft(self.data)
         zp_interf = np.zeros(self.dimx * quality, dtype=complex)
