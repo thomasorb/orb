@@ -2236,7 +2236,9 @@ class Data(object):
             _data = self.data.astype(complex)
         else:
             _data = self.data.astype(float)
-            
+
+        if os.path.exists(path):
+            os.remove(path)
         with utils.io.open_hdf5(path, 'w') as hdffile:
             if self.has_params():
                 for iparam in self.params:

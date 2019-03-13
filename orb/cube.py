@@ -2050,15 +2050,23 @@ class SpectralCube(Cube):
     def get_filter_range(self):
         """Return the range of the filter in the unit of the spectral
         cube as a tuple (min, max)"""
-        if 'filter_range' in self.params:
-            return self.params.filter_range
-        return self.filterfile.get_filter_bandpass_cm1()
+        if 'filter_range' not in self.params:
+            self.params.reset(
+                'filter_range', self.filterfile.get_filter_bandpass_cm1())
 
-    def get_filter_range_pix(self):
+        return self.params.filter_range
+
+
+    def get_filter_range_pix(self, xy=None, border_ratio=0.):
         """Return the range of the filter in channel index as a tuple
         (min, max)"""
+        if xy is None:
+            if not self.has_wavenumber_calibration():
+                raise StandardError('if the spectral cube is not calibrated, xy must be provided')
+            xy = [self.dimx//2, self.dimy//2]
+
         return utils.spectrum.cm12pix(
-            self.params.base_axis, self.get_filter_range())        
+            self.get_axis(xy[0], xy[1]), self.get_filter_range())
 
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
@@ -2715,7 +2723,8 @@ class SpectralCube(Cube):
                 np.nanmax(eps_vector.data), np.nanmin(eps_vector.data)))
         else:
             logging.debug('standard_path not set: no relative vector correction computed')
-            eps_vector = core.Cm1Vector1d(np.ones(self.dimz, dtype=float), params=params)
+            eps_vector = core.Cm1Vector1d(np.ones(self.dimz, dtype=float), params=self.params,
+                                          axis=self.get_base_axis())
         
 
         # compute the correction from a standard star calibration image
@@ -2727,13 +2736,12 @@ class SpectralCube(Cube):
             except StandardError:
                 logging.debug('standard_image_path not set: no absolute vector correction computed')
                 std_im = None
-
-                
-        eps_mean = None
+        
         if std_im is not None:
             eps_mean = std_im.compute_flux_correction_factor()
+            eps_vector = eps_vector.multiply(eps_mean)
                 
-        return photom.compute_flambda(eps=eps_vector.multiply(eps_mean))
+        return photom.compute_flambda(eps=eps_vector)
 
         
         
