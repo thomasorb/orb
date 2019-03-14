@@ -208,7 +208,9 @@ class Interferogram(core.Vector1d):
         zp_interf[:self.dimx] = np.copy(self.data)
 
         # dft
-        interf_fft = np.fft.fft(zp_interf)
+        #interf_fft = np.fft.fft(zp_interf)
+        interf_fft = scipy.fftpack.fft(zp_interf)
+        
         #interf_fft = interf_fft[:interf_fft.shape[0]/2+1]
         interf_fft = interf_fft[:self.dimx]
                                     
@@ -669,7 +671,7 @@ class Spectrum(core.Cm1Vector1d):
             
         self.data *= np.exp(-1j * phase)
 
-    def interpolate(self, axis, quality=10):
+    def interpolate(self, axis, quality=10, timing=False):
         """Resample spectrum by interpolation over the given axis
 
         :param quality: an integer from 2 to infinity which gives the
@@ -682,26 +684,45 @@ class Spectrum(core.Cm1Vector1d):
         .. warning:: Though much faster than pure resampling, this can
           be a little less precise.
         """
+        if timing:
+            import time
+            times = list()
+            times.append(time.time()) ###
+            
         if isinstance(axis, core.Axis):
             axis = np.copy(axis.data)
         
         quality = int(quality)
         if quality < 2: raise ValueError('quality must be an integer > 2')
-   
-        interf_complex = np.fft.ifft(self.data)
-        zp_interf = np.zeros(self.dimx * quality, dtype=complex)
+
+        if timing: times.append(time.time()) ####
+        #interf_complex = np.fft.ifft(self.data)
+        interf_complex = scipy.fftpack.ifft(self.data)
+        best_n = utils.fft.next_power_of_two(self.dimx * quality)
+        zp_interf = np.zeros(best_n, dtype=complex)
         center = interf_complex.shape[0] / 2
         zp_interf[:center] = interf_complex[:center]
         zp_interf[
             -center-int(interf_complex.shape[0]&1):] = interf_complex[
             -center-int(interf_complex.shape[0]&1):]
 
-        zp_spec = np.fft.fft(zp_interf)
+        if timing: times.append(time.time()) ####
+        #zp_spec = np.fft.fft(zp_interf)
+        zp_spec = scipy.fftpack.fft(zp_interf)
+        
         zp_axis = (np.arange(zp_spec.size)
                    * (self.axis.data[1] - self.axis.data[0])  / float(quality)
                    + self.axis.data[0])
+
+        if timing: times.append(time.time()) ####
         f = scipy.interpolate.interp1d(zp_axis, zp_spec, bounds_error=False)
-        return Spectrum(f(axis), axis=axis, params=self.params)
+        if timing: times.append(time.time()) ####
+        ret = Spectrum(f(axis), axis=axis, params=self.params)
+        if timing: times.append(time.time()) ####
+        if not timing:
+            return ret
+        else:
+            return ret, list([times[-1] - times[0]]) + list(np.diff(times))
 
 
     def fit(self, lines, fmodel='sinc', nofilter=True, **kwargs):
