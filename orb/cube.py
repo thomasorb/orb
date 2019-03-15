@@ -449,6 +449,20 @@ class HDFCube(core.WCSData):
         logging.info("Data resized to shape : ({}, {}, {})".format(dimx, dimy,dimz))
         return data
 
+    def get_gain(self):
+        """Return camera gain value
+        """
+        if self.params.camera == 0:
+            gain = (self.config['CAM1_GAIN'] + self.config['CAM1_GAIN']) / 2
+        elif self.params.camera == 1:
+            gain = self.config['CAM1_GAIN']
+        elif self.params.camera == 2:
+            gain = self.config['CAM2_GAIN']
+        else:
+            raise ValueError('camera parameter must be 0, 1 or 2')
+        return gain
+
+    
     def get_deep_frame(self, recompute=False):
         """Return the deep frame of a cube.
 
@@ -461,7 +475,7 @@ class HDFCube(core.WCSData):
             return image.Image(self.deep_frame, params=self.params)
         except AttributeError: pass
 
-        gain = float(self.config['CAM{}_GAIN'.format(self.params.camera)])
+        gain = self.get_gain()
         
         df = None
         if not recompute:
@@ -1357,8 +1371,10 @@ class InterferogramCube(Cube):
         vector.params['source_counts'] = np.nansum(self.get_deep_frame().data[region])
 
         vector.axis = None
+
         err = np.ones(self.dimz, dtype=float) * np.sqrt(
-            vector.params.source_counts / self.dimz)
+            vector.params.source_counts / self.dimz) * self.get_gain()
+        
         return fft.RealInterferogram(vector, err=err)
 
     def get_phase(self, x, y):
@@ -2297,7 +2313,7 @@ class SpectralCube(Cube):
         
         # compute counts and err
         counts = np.nansum(self.get_deep_frame().data[region])
-        err = np.ones(self.dimz, dtype=float) * np.sqrt(counts)
+        err = np.ones(self.dimz, dtype=float) * np.sqrt(counts) * self.get_gain()
         err = core.Cm1Vector1d(err, axis, params=params)
         flambda = core.Cm1Vector1d(
             self.params.flambda, self.get_base_axis(), params=params)
