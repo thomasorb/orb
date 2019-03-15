@@ -461,17 +461,19 @@ class HDFCube(core.WCSData):
             return image.Image(self.deep_frame, params=self.params)
         except AttributeError: pass
 
+        gain = float(self.config['CAM{}_GAIN'.format(self.params.camera)])
+        
         df = None
         if not recompute:
             if self.has_dataset('deep_frame'):
                 df = self.get_dataset('deep_frame', protect=False)
         
             elif self.is_old:
-                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
+                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz / gain
 
         if df is None:
-            df = self.compute_sum_image()
-            
+            df = self.compute_sum_image() / gain
+
         self.deep_frame = df
         return image.Image(self.deep_frame, params=self.params)
     
