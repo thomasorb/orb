@@ -75,7 +75,7 @@ class Interferogram(core.Vector1d):
 
         # opd axis (in cm) is automatically computed from the parameters
         opdaxis = 1e-7 * (np.arange(self.dimx) * self.params.step
-                - (self.params.step * self.params.zpd_index))
+                - (self.params.step * self.params.zpd_index)) * self.params.calib_coeff
         if self.axis is None:
             self.axis = core.Axis(opdaxis)
         elif np.any(opdaxis != self.axis.data):

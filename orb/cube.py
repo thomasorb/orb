@@ -1125,7 +1125,7 @@ class Cube(HDFCube):
             return float(self.params.axis_corr)
         else:
             calib_map = self.get_calibration_coeff_map()
-            return calib_map[calib_map.shape[0]/2, calib_map.shape[1]/2]
+            return calib_map[calib_map.shape[0]//2, calib_map.shape[1]//2]
                     
     def get_base_axis(self):
         """Return the spectral axis (in cm-1) at the center of the cube"""

@@ -76,11 +76,10 @@ class Simulator(object):
         #     self.spectrum_axis(sigma) / 2.,
         #     self.params.step_nb, symm=True,
         #     jitter = jitter / self.params.step)
-
-
+        
         RESOLV_COEFF = self.params.order * 10
         opd_axis = (np.arange(self.params.step_nb) * self.params.step
-                    - (self.params.step * self.params.zpd_index)) * 1e-7
+                    - (self.params.step * self.params.zpd_index)) * 1e-7 * self.params.calib_coeff
 
         if jitter == 0:
             interf = np.cos(2 * np.pi * sigma * opd_axis) / 2. + 0.5
@@ -98,10 +97,6 @@ class Simulator(object):
                 jitter_range / jitter * 1e7, 0., 1., 0,
                 orb.constants.FWHM_COEFF))
             kernel /= np.sum(kernel)
-
-            print jitter_range / jitter * 3e7
-            print kernel
-
 
             interf = np.array([np.sum(sub * kernel)
                                for sub in np.split(highres_interf, self.params.step_nb)])
