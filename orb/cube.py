@@ -741,7 +741,7 @@ class HDFCube(core.WCSData):
         """Return the axis at x, y"""
         return None
 
-    def get_zvector(self, x, y, r=0):
+    def get_zvector(self, x, y, r=0, return_region=False):
         """Return an orb.fft.Vector1d instance taken at a given position in x, y.
         
         :param x: x position 
@@ -751,6 +751,9 @@ class HDFCube(core.WCSData):
         :param r: (Optional) If r > 0, vector is integrated over a
           circular aperture of radius r. In this case the number of
           pixels is returned as a parameter: pixels
+
+        :param return_region: (Optional) If True, region is returned
+          also (default False)
 
         """
         x = self.validate_x_index(x, clip=False)
@@ -763,11 +766,14 @@ class HDFCube(core.WCSData):
         params = dict(self.params)
         params['pixels'] = len(interfs)
 
-        return core.Vector1d(interf, params=params,
-                             zpd_index=self.params.zpd_index,
-                             calib_coeff=calib_coeff,
-                             axis=np.arange(self.dimz))
-
+        vec = core.Vector1d(interf, params=params,
+                            zpd_index=self.params.zpd_index,
+                            calib_coeff=calib_coeff,
+                            axis=np.arange(self.dimz))
+        if not return_region:
+            return vec
+        else:
+            return vec, region
     
 #################################################
 #### CLASS RWHDFCube ############################
@@ -1367,7 +1373,7 @@ class InterferogramCube(Cube):
 
         See Cube.get_zvector for the parameters.        
         """
-        vector = Cube.get_zvector(self, x, y, r=r)
+        vector, region = Cube.get_zvector(self, x, y, r=r, return_region=True)
         vector.params['source_counts'] = np.nansum(self.get_deep_frame().data[region])
 
         vector.axis = None

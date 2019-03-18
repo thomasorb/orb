@@ -645,11 +645,11 @@ def fit_map_theta(data_map, err_map, theta_map):
         dist = orb.utils.stats.sigmacut(dist)
         med = np.nanmedian(dist)
         std = np.nanstd(dist)
-        if not np.isnan(med) and not np.isnan(std):
+        if not np.isnan(med) and not np.isnan(std) and not np.isclose(std, 0):
             means.append(med)
             sdevs.append(std)
             okthetas.append(np.nanmedian(theta_map[ipix]))
-    
+
     w = 1. / np.array(sdevs)
     w /= np.nanmax(w)
     model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=None)

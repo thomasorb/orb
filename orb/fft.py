@@ -709,9 +709,9 @@ class Spectrum(core.Cm1Vector1d):
         if timing: times.append(time.time()) ####
         #zp_spec = np.fft.fft(zp_interf)
         zp_spec = scipy.fftpack.fft(zp_interf)
-        
+        ax_ratio = float(self.axis.data.size) / float(zp_spec.size)
         zp_axis = (np.arange(zp_spec.size)
-                   * (self.axis.data[1] - self.axis.data[0])  / float(quality)
+                   * (self.axis.data[1] - self.axis.data[0]) * ax_ratio
                    + self.axis.data[0])
 
         if timing: times.append(time.time()) ####
@@ -719,6 +719,7 @@ class Spectrum(core.Cm1Vector1d):
         if timing: times.append(time.time()) ####
         ret = Spectrum(f(axis), axis=axis, params=self.params)
         if timing: times.append(time.time()) ####
+
         if not timing:
             return ret
         else:
