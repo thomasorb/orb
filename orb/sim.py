@@ -65,7 +65,7 @@ class Simulator(object):
     def get_interferogram(self):
         return orb.fft.Interferogram(np.copy(self.data), params=self.params, exposure_time=1)
 
-    def add_line(self, sigma, vel=0, jitter=0):
+    def add_line(self, sigma, vel=0, flux=1, jitter=0):
         """
 
         :param vel: Velocity in km/s
@@ -99,6 +99,18 @@ class Simulator(object):
             interf = np.array([np.sum(sub * kernel)
                                for sub in np.split(highres_interf, self.params.step_nb)])
 
+        # compute line flux for normalization
+        fwhm = orb.utils.spectrum.compute_line_fwhm(
+            self.params.step_nb - self.params.zpd_index,
+            self.params.step, self.params.order,
+            self.params.calib_coeff, wavenumber=True)
+        fwhm = orb.utils.spectrum.fwhm_cm12nm(fwhm, sigma) * 10
+        
+        line_flux = orb.utils.spectrum.sinc1d_flux(
+            self.params.step_nb / 2./ 1.25, fwhm)
+
+        interf /= line_flux / flux
+        
         self.data += interf
         
     def add_background(self):
