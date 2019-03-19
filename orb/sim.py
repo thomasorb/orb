@@ -65,21 +65,24 @@ class Simulator(object):
     def get_interferogram(self):
         return orb.fft.Interferogram(np.copy(self.data), params=self.params, exposure_time=1)
 
-    def add_line(self, sigma, jitter=0):
+    def add_line(self, sigma, vel=0, jitter=0):
         """
+
+        :param vel: Velocity in km/s
+
         :param jitter: Std of an OPD jitter. Must be given in nm.
         """
         if isinstance(sigma, str):
             sigma = orb.core.Lines().get_line_cm1(sigma)
 
-        # line_interf = orb.utils.sim.line_interf(
-        #     self.spectrum_axis(sigma) / 2.,
-        #     self.params.step_nb, symm=True,
-        #     jitter = jitter / self.params.step)
-        
+        if vel != 0:
+            sigma += orb.utils.spectrum.line_shift(
+                vel, sigma, wavenumber=True)
+
+            
         RESOLV_COEFF = self.params.order * 10
         opd_axis = (np.arange(self.params.step_nb) * self.params.step
-                    - (self.params.step * self.params.zpd_index)) * 1e-7 * self.params.calib_coeff
+                    - (self.params.step * self.params.zpd_index)) * 1e-7 / self.params.calib_coeff
 
         if jitter == 0:
             interf = np.cos(2 * np.pi * sigma * opd_axis) / 2. + 0.5
@@ -88,11 +91,6 @@ class Simulator(object):
             highres_opd_axis = np.concatenate([iopd + jitter_range for iopd in opd_axis])
             highres_interf = np.cos(2 * np.pi * sigma * highres_opd_axis) / 2. + 0.5
             
-            # import pylab as pl
-            # pl.scatter(highres_opd_axis, highres_interf, label='test')
-            # pure_interf = np.cos(2 * np.pi * sigma * opd_axis) / 2. + 0.5
-            # pl.plot(opd_axis, pure_interf, label='pure')
-
             kernel = np.array(orb.utils.spectrum.gaussian1d(
                 jitter_range / jitter * 1e7, 0., 1., 0,
                 orb.constants.FWHM_COEFF))
@@ -100,9 +98,6 @@ class Simulator(object):
 
             interf = np.array([np.sum(sub * kernel)
                                for sub in np.split(highres_interf, self.params.step_nb)])
-            # pl.plot(opd_axis, interf, label='sim')
-            # pl.legend()
-        
 
         self.data += interf
         
