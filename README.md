@@ -1,6 +1,28 @@
-# installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)
+# ORB
 
-## 1. download Miniconda for your OS and python 2.7.
+[ORB](https://github.com/thomasorb/orb) is the kernel module for the
+whole suite of data reduction and analysis tools for
+[SITELLE](http://www.cfht.hawaii.edu/Instruments/Sitelle):
+[ORBS](https://github.com/thomasorb/orbs),
+[ORCS](https://github.com/thomasorb/orcs).
+
+It provides basic access to the data cubes as long as the fitting
+engine of ORCS and numerous utilitary functions for the analysis of
+interferometric and spectral data, imaging data, astrometry,
+photometry.
+
+
+## Documentation
+
+You can find the up-to-date documentation here:
+
+http://celeste.phy.ulaval.ca/orb-doc/index.html
+
+
+
+## installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)
+
+### 1. download Miniconda for your OS and python 2.7.
 
 **If you already have [Anaconda](https://www.anaconda.com/) installed go to step 2**
 
@@ -10,19 +32,19 @@ instructions are here: [Miniconda — Conda](https://conda.io/miniconda.html)
 ```bash
 bash Miniconda*.sh
 ```
-## 2. install `conda-build` tools
+### 2. install `conda-build` tools
 ```bash
 conda install conda-build
 ```
 
-## 3. create orb environment
-### automatic procedure if you have a `*.yml*` file:
+### 3. create orb environment
+#### automatic procedure if you have a `*.yml*` file:
 create an environment automatically
 ```bash
 conda env create -f orb-env.yml
 ```
 
-### manual installation of the librairies
+#### manual installation of the librairies
 create an environment and install needed modules manually
 ```bash
 conda create -n orb python=2.7 
@@ -38,7 +60,7 @@ pip install lsqfit --no-deps
 pip install pp --no-deps
 ```
 
-## 4. add orb module
+### 4. add orb module
 
 clone [ORB](https://github.com/thomasorb/orb)
 ```bash
@@ -60,7 +82,7 @@ Test it:
 conda activate orb # you don't need to do it if you are already in the orb environment
 python -c 'import orb.core'
 ```
-## 5. add orcs module
+### 5. add orcs module
 
 clone [ORCS](https://github.com/thomasorb/orcs)
 ```bash
@@ -82,7 +104,7 @@ conda activate orb # you don't need to do it if you are already in the orb envir
 python -c 'import orcs.process'
 ```
 
-## 6. Install jupyter
+### 6. Install jupyter
 
 ```bash
 conda install -n orb -c conda-forge jupyterlab
@@ -94,3 +116,5 @@ conda activate orb # you don't need to do it if you are already in the orb envir
 jupyter lab
 ```
 You should now have your web browser opened and showing the jupyter lab interface !
+
+	  
