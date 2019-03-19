@@ -60,8 +60,6 @@ class Simulator(object):
 
         self.spectrum_axis = orb.core.Axis(cm1_axis, params=self.params)
         
-
-
     def get_interferogram(self):
         return orb.fft.Interferogram(np.copy(self.data), params=self.params, exposure_time=1)
 
@@ -85,11 +83,11 @@ class Simulator(object):
                     - (self.params.step * self.params.zpd_index)) * 1e-7 / self.params.calib_coeff
 
         if jitter == 0:
-            interf = np.cos(2 * np.pi * sigma * opd_axis) / 2. + 0.5
+            interf = np.cos(2 * np.pi * sigma * opd_axis)
         else:
             jitter_range = np.linspace(-jitter * 3, jitter * 3, RESOLV_COEFF) * 1e-7
             highres_opd_axis = np.concatenate([iopd + jitter_range for iopd in opd_axis])
-            highres_interf = np.cos(2 * np.pi * sigma * highres_opd_axis) / 2. + 0.5
+            highres_interf = np.cos(2 * np.pi * sigma * highres_opd_axis) 
             
             kernel = np.array(orb.utils.spectrum.gaussian1d(
                 jitter_range / jitter * 1e7, 0., 1., 0,
@@ -107,7 +105,7 @@ class Simulator(object):
         fwhm = orb.utils.spectrum.fwhm_cm12nm(fwhm, sigma) * 10
         
         line_flux = orb.utils.spectrum.sinc1d_flux(
-            self.params.step_nb / 2./ 1.25, fwhm)
+            self.params.step_nb / 1.25, fwhm)
 
         interf /= line_flux / flux
         
@@ -137,5 +135,7 @@ class Simulator(object):
         a_interf = np.concatenate(
             (a_ifft[-self.params.zpd_index:], 
              a_ifft[:self.params.step_nb - self.params.zpd_index]))
+
+        a_interf = a_interf.real.astype(float)
+        self.data += a_interf
         
-        self.data += a_interf.real.astype(float)
