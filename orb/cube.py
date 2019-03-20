@@ -499,6 +499,13 @@ class HDFCube(core.WCSData):
         except StandardError:
             return None
 
+    def get_high_order_phase(self):
+        """Return high order phase.
+
+        This is just the config high order phase
+        """
+        return fft.Phase(self._get_phase_file_path(self.params.filter_name))
+        
 
     def compute_sum_image(self):
         """compute the sum along z axis

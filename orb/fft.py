@@ -262,6 +262,7 @@ class Interferogram(core.Vector1d):
         new_interf = self.copy()
         new_interf = new_interf.symmetric()
         new_interf.subtract_mean()
+        new_interf.apodize('1.5')
         new_spectrum = new_interf.transform()
         return new_spectrum.get_phase().cleaned()
 

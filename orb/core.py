@@ -2565,7 +2565,7 @@ class Cm1Vector1d(Vector1d):
     def mean_in_filter(self):
         ff = FilterFile(self.params.filter_name)
         ftrans = ff.get_transmission(self.dimx)
-        return np.nansum(self.multiply(ftrans).data) / ftrans.sum() 
+        return np.nansum(self.multiply(ftrans).data) / ftrans.sum()
     
 #################################################
 #### CLASS FilterFile ###########################
