@@ -866,86 +866,87 @@ class Image(Frame2D):
             ##            facecolor=(0,0,0,0))
             
         # computing distortion maps
-        logging.info('Computing distortion maps')
-        r_coeff = 1./np.sqrt(2)
-        rmax = max(self.dimx, self.dimy) * r_coeff
+        if return_error_maps:
+            logging.info('Computing distortion maps')
+            r_coeff = 1./np.sqrt(2)
+            rmax = max(self.dimx, self.dimy) * r_coeff
 
-        star_list_pix = radius_filter(
-            world2pix(wcs, star_list_query), rmax, borders=[
-                0, self.dimx, 0, self.dimy])
+            star_list_pix = radius_filter(
+                world2pix(wcs, star_list_query), rmax, borders=[
+                    0, self.dimx, 0, self.dimy])
 
-        # fit based on SIP corrected parameters
-        fit_params = self.fit_stars(
-            star_list_pix,
-            local_background=False,
-            multi_fit=False, fix_fwhm=True,
-            no_aperture_photometry=True)
+            # fit based on SIP corrected parameters
+            fit_params = self.fit_stars(
+                star_list_pix,
+                local_background=False,
+                multi_fit=False, fix_fwhm=True,
+                no_aperture_photometry=True)
 
-        _x = fit_params['x'].values
-        _y = fit_params['y'].values
-        _r = np.sqrt((_x - self.dimx / 2.)**2.
-                     + (_y - self.dimy / 2.)**2.)
+            _x = fit_params['x'].values
+            _y = fit_params['y'].values
+            _r = np.sqrt((_x - self.dimx / 2.)**2.
+                         + (_y - self.dimy / 2.)**2.)
 
-        _dx = fit_params['dx'].values
-        _dy = fit_params['dy'].values
+            _dx = fit_params['dx'].values
+            _dy = fit_params['dy'].values
 
-        # filtering badly fitted stars (jumping stars)
-        ## _x[np.nonzero(np.abs(_dx) > 5.)] = np.nan
-        ## _x[np.nonzero(np.abs(_dy) > 5.)] = np.nan
-        _x[np.nonzero(_r > rmax)] = np.nan
+            # filtering badly fitted stars (jumping stars)
+            ## _x[np.nonzero(np.abs(_dx) > 5.)] = np.nan
+            ## _x[np.nonzero(np.abs(_dy) > 5.)] = np.nan
+            _x[np.nonzero(_r > rmax)] = np.nan
 
-        # avoids duplicate of the same star (singular matrix error
-        # with RBF)
-        for ix in range(_x.size):
-            if np.nansum(_x == _x[ix]) > 1:
-                 _x[ix] = np.nan
+            # avoids duplicate of the same star (singular matrix error
+            # with RBF)
+            for ix in range(_x.size):
+                if np.nansum(_x == _x[ix]) > 1:
+                     _x[ix] = np.nan
 
-        nonans = np.nonzero(~np.isnan(_x))
-        _w = 1./fit_params['x_err'].values[nonans]
-        _x = fit_params['x'].values[nonans]
-        _y = fit_params['y'].values[nonans]
-        _dx = fit_params['dx'].values[nonans]
-        _dy = fit_params['dy'].values[nonans]
+            nonans = np.nonzero(~np.isnan(_x))
+            _w = 1./fit_params['x_err'].values[nonans]
+            _x = fit_params['x'].values[nonans]
+            _y = fit_params['y'].values[nonans]
+            _dx = fit_params['dx'].values[nonans]
+            _dy = fit_params['dy'].values[nonans]
 
-        dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
-        dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
+            dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
+            dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
 
-        # RBF models are converted to pixel maps and fitted with
-        # Zernike polynomials
-        X, Y = np.mgrid[:self.dimx:200j,:self.dimy:200j]
-        dxmap = dxrbf(X, Y)
-        dymap = dyrbf(X, Y)
+            # RBF models are converted to pixel maps and fitted with
+            # Zernike polynomials
+            X, Y = np.mgrid[:self.dimx:200j,:self.dimy:200j]
+            dxmap = dxrbf(X, Y)
+            dymap = dyrbf(X, Y)
 
-        dxmap_fit, dxmap_res, fit_error = utils.image.fit_map_zernike(
-            dxmap, np.ones_like(dxmap), 20)
-        dymap_fit, dymap_res, fit_error = utils.image.fit_map_zernike(
-            dymap, np.ones_like(dymap), 20)
+            dxmap_fit, dxmap_res, fit_error = utils.image.fit_map_zernike(
+                dxmap, np.ones_like(dxmap), 20)
+            dymap_fit, dymap_res, fit_error = utils.image.fit_map_zernike(
+                dymap, np.ones_like(dymap), 20)
 
-        # error maps are converted to a RectBivariateSpline instance
-        dxspl = interpolate.RectBivariateSpline(
-            np.linspace(0, self.dimx, dxmap.shape[0]),
-            np.linspace(0, self.dimy, dxmap.shape[1]),
-            dxmap_fit, kx=3, ky=3)
-        
-        dyspl = interpolate.RectBivariateSpline(
-            np.linspace(0, self.dimx, dymap.shape[0]),
-            np.linspace(0, self.dimy, dymap.shape[1]),
-            dymap_fit, kx=3, ky=3)
+            # error maps are converted to a RectBivariateSpline instance
+            dxspl = interpolate.RectBivariateSpline(
+                np.linspace(0, self.dimx, dxmap.shape[0]),
+                np.linspace(0, self.dimy, dxmap.shape[1]),
+                dxmap_fit, kx=3, ky=3)
 
-        ## import pylab as pl
-        ## pl.figure(1)
-        ## pl.imshow(dxmap.T, interpolation='none')
-        ## pl.colorbar()
-        ## pl.scatter(_x/10., _y/10.,
-        ##            edgecolor='red', linewidth=2., alpha=1.,
-        ##            facecolor=(0,0,0,0))
-        ## pl.figure(2)
-        ## pl.imshow(dymap.T, interpolation='none')
-        ## pl.colorbar()            
-        ## pl.scatter(_x/10., _y/10.,
-        ##            edgecolor='red', linewidth=2., alpha=1.,
-        ##            facecolor=(0,0,0,0))
-        ## pl.show()
+            dyspl = interpolate.RectBivariateSpline(
+                np.linspace(0, self.dimx, dymap.shape[0]),
+                np.linspace(0, self.dimy, dymap.shape[1]),
+                dymap_fit, kx=3, ky=3)
+
+            ## import pylab as pl
+            ## pl.figure(1)
+            ## pl.imshow(dxmap.T, interpolation='none')
+            ## pl.colorbar()
+            ## pl.scatter(_x/10., _y/10.,
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.figure(2)
+            ## pl.imshow(dymap.T, interpolation='none')
+            ## pl.colorbar()            
+            ## pl.scatter(_x/10., _y/10.,
+            ##            edgecolor='red', linewidth=2., alpha=1.,
+            ##            facecolor=(0,0,0,0))
+            ## pl.show()
 
             
         ## COMPUTE PRECISION

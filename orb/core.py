@@ -2852,9 +2852,11 @@ class WCSData(Data, Tools):
                 self.sip = sip
             else:
                 raise StandardError('sip must be an astropy.wcs.WCS instance')
-        #else:
-            #self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
-
+        else:
+            self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+        logging.debug('SIP Loaded from{}\n{}'.format(
+            self._get_sip_file_path(self.params.camera),
+            self.sip))
             
     def is_cam1(self):
         """Return true is image comes from camera 1 or is a merged frame
