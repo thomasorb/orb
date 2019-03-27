@@ -449,9 +449,12 @@ class ROParams(Params):
         :param value: Item value.
         """
         if key in self:
-            if np.all(self[key] != value):
-                logging.debug('Parameter {} already defined'.format(key))
-                logging.debug('Old value={} / new_value={}'.format(self[key], value))
+            try:
+                if not np.all(np.isclose(self[key] - value, 0.)):
+                    logging.debug('Parameter {} already defined'.format(key))
+                    logging.debug('Old value={} / new_value={}'.format(self[key], value))
+            except TypeError:
+                pass
         dict.__setitem__(self, key, value)
     
     def reset(self, key, value):
@@ -2779,9 +2782,14 @@ class WCSData(Data, Tools):
             
         if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:
             warnings.warn('image might be cropped, target_x, target_y and other parameters might be wrong')
-            
-        target_x = float(self.dimx / 2.)
-        target_y = float(self.dimy / 2.)
+
+        if 'target_x' not in self.params:
+            target_x = float(self.dimx / 2.)
+        else: target_x = self.params.target_x
+        if 'target_y' not in self.params:
+            target_y = float(self.dimy / 2.)
+        else: target_y = self.params.target_y
+
         if self.is_cam2():
             coeffs = self.get_initial_alignment_parameters()
             
@@ -2821,31 +2829,25 @@ class WCSData(Data, Tools):
             else:
                 self.params['wcs_rotation'] = (float(self.config.WCS_ROTATION)
                                                - float(self.config.INIT_ANGLE))
+            logging.debug('wcs_rotation computed from config parameters: {}'.format(
+                self.params.wcs_rotation))
         
-        ## load astrometry params
-
-        # load wcs (reset loaded parameters)
-        try:
-            wcs = self.get_wcs()
-            (target_x, target_y,
-             scale, _,
-             target_ra, target_dec,
-             wcs_rotation) = utils.astrometry.get_wcs_parameters(wcs)
-            self.params.reset('target_x', target_x)
-            self.params.reset('target_y', target_y)
-            self.params.reset('target_ra', target_ra)
-            self.params.reset('target_dec', target_dec)
-            self.params.reset('wcs_rotation', wcs_rotation)
-            self.params.reset('scale', scale * 3600.)
-                        
-        except Exception, e:
-            logging.debug('error loading WCS: {}'.format(e))
-
+        if 'scale' not in self.params:
+            if self.is_cam1():
+                self.params['scale'] = (self.config.FIELD_OF_VIEW_1
+                                        / self.config.CAM1_DETECTOR_SIZE_X * 60.)
+            else:
+                self.params['scale'] = (self.config.FIELD_OF_VIEW_2
+                                        / self.config.CAM2_DETECTOR_SIZE_X * 60.)
+            logging.debug('scale computed from config parameters: {}'.format(
+                self.params.scale))
+            
         # check if all needed parameters are present
         for iparam in self.wcs_params:
             if iparam not in self.params:
                 raise StandardError('param {} must be set'.format(iparam))
 
+        # load sip
         self.sip = None
         if sip is not None:
             if isinstance(sip, pywcs.WCS):
@@ -2853,10 +2855,27 @@ class WCSData(Data, Tools):
             else:
                 raise StandardError('sip must be an astropy.wcs.WCS instance')
         else:
-            self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
-        logging.debug('SIP Loaded from{}\n{}'.format(
-            self._get_sip_file_path(self.params.camera),
-            self.sip))
+            if self.get_wcs().sip is None:
+                self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+                logging.debug('SIP Loaded from{}\n{}'.format(
+                    self._get_sip_file_path(self.params.camera),
+                    self.sip))
+            else:
+                self.sip = self.get_wcs()
+                logging.debug('SIP already defined\n{}'.format(self.sip.sip))
+
+        # reset wcs
+        wcs = utils.astrometry.create_wcs(
+            self.params.target_x, self.params.target_y,
+            self.params.scale / 3600., self.params.scale / 3600.,
+            self.params.target_ra, self.params.target_dec,
+            self.params.wcs_rotation, sip=self.sip)
+
+        self.set_wcs(wcs)
+
+        logging.debug(self.get_wcs())
+        self.validate_wcs()
+        
             
     def is_cam1(self):
         """Return true is image comes from camera 1 or is a merged frame
@@ -2875,7 +2894,7 @@ class WCSData(Data, Tools):
         return False
 
     def set_wcs(self, wcs):
-        """Set WCS from w WCS instance or a FITS image
+        """Set WCS from a WCS instance or a FITS image
 
         :param wcs: Must be an astropy.wcs.WCS instance or a path to a FITS image
         """
@@ -2883,16 +2902,58 @@ class WCSData(Data, Tools):
             warnings.simplefilter('ignore', category=VerifyWarning)
             warnings.simplefilter('ignore', category=AstropyUserWarning)
             wcs = pywcs.WCS(
-                orb.utils.io.read_fits(wcs_path, return_hdu_only=True)[0].header,
+                utils.io.read_fits(wcs_path, return_hdu_only=True)[0].header,
                 naxis=2, relax=True)
+
+        # remove old sip params if they exist
+        for ipar in self.params.keys():
+            if ('A_' == ipar[:2]
+                or 'B_' == ipar[:2]
+                or 'AP_' == ipar[:3]
+                or 'BP_' == ipar[:3]):
+                del self.params[ipar]
+                
         self.update_params(wcs.to_header(relax=True))
 
-    def get_wcs(self):
+        # convert wcs to parameters so that FITS keywords and
+        # comprehensive parameters are coherent.
+        _params = utils.astrometry.get_wcs_parameters(wcs)
+        
+        self.params['target_x'] = _params[0]
+        self.params['target_y'] = _params[1]
+        self.params['scale'] = _params[2] * 3600
+        self.params['target_ra'] = _params[4]
+        self.params['target_dec'] = _params[5]
+        self.params['wcs_rotation'] = _params[6]
+        
+        self.validate_wcs()
+
+    def get_wcs(self, validate=True):
         """Return the WCS of the cube as an astropy.wcs.WCS instance """
+        if validate: self.validate_wcs()
         warnings.simplefilter('ignore', category=VerifyWarning)
         warnings.simplefilter('ignore', category=AstropyUserWarning)
         return pywcs.WCS(self.get_header(), naxis=2, relax=True)
+    
+    def validate_wcs(self):
+        """Verify the internal coherence between comprehensive wcs parameters
+        and FITS keywords.
+        """
+        _fits_params = np.array(utils.astrometry.get_wcs_parameters(
+            self.get_wcs(validate=False)))
+        _wcs_params = np.array([self.params['target_x'],
+                                self.params['target_y'],
+                                self.params['scale'] / 3600.,
+                                self.params['scale'] / 3600.,
+                                self.params['target_ra'],
+                                self.params['target_dec'],
+                                self.params['wcs_rotation']])
 
+        if not np.all(np.isclose(_wcs_params - _fits_params, 0)):
+            warnings.warn('WCS FITS keywords and parameters are different:\n{}\n{}'.format(
+                _wcs_params, _fits_params))
+        
+        
     def get_wcs_header(self):
         """Return the WCS of the cube as a astropy.io.fits.Header instance """
         return self.get_wcs().to_header(relax=True)
@@ -2982,8 +3043,8 @@ class WCSData(Data, Tools):
 
         :param x: a value or a vector in pixel
         """
-        if self.scale is not None:
-            return np.array(x).astype(float) / self.scale
+        if self.has_param('scale'):
+            return np.array(x).astype(float) / self.params.scale
         else:
             raise StandardError("Scale not defined")
 
@@ -2992,8 +3053,8 @@ class WCSData(Data, Tools):
 
         :param x: a value or a vector in arcsec
         """
-        if self.scale is not None:
-            return np.array(x).astype(float) * self.scale
+        if self.has_param('scale'):
+            return np.array(x).astype(float) * self.params.scale
         else:
             raise StandardError("Scale not defined")
 
@@ -3010,12 +3071,10 @@ class WCSData(Data, Tools):
 
         .. seealso:: :py:meth:`orb.utils.web.query_vizier`
         """
-        radius = self.fov / np.sqrt(2)
-        if self.target_ra is None or self.target_dec is None:
-            raise StandardError('No catalogue query can be done. Please make sure to give target_radec and target_xy parameter at class init')
-        
+        radius = self.config['FIELD_OF_VIEW_1'] / np.sqrt(2)
+        center_radec = self.pix2world([self.dimx/2., self.dimy/2])
         return utils.web.query_vizier(
-            radius, self.target_ra, self.target_dec,
+            radius, center_radec[0][0], center_radec[0][1],
             catalog=catalog, max_stars=max_stars)
 
     def get_initial_alignment_parameters(self):

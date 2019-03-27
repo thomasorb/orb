@@ -31,7 +31,9 @@ import astropy.wcs as pywcs
 from astropy.coordinates import SkyCoord
 import pandas
 import os
+import emcee
 
+    
 import orb.cutils
 import orb.utils.stats
 import orb.utils.image
@@ -1251,9 +1253,6 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        enable_rotation=False, saturation=None,
                        fix_pos=False, nozero=False, silent=True,
                        sip=None, background_value=None):
-
-    ## WARNING : DO NOT CHANGE THE ORDER OF THE ARGUMENTS OR TAKE CARE
-    ## OF THE CALL IN astrometry.Astrometry.fit_stars_in_cube()
   
     """Fit stars in a frame.
 
@@ -1710,7 +1709,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
 
 def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=None,
-            err=None, sip_order=4, crpix=None, crval=None):
+            err=None, sip_order=4, crpix=None, crval=None, plot=False):
     """FIT the distortion correction polynomial to match two lists
     of stars (the list of stars 2 is distorded to match the list
     of stars 1).
@@ -1797,11 +1796,11 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
 
             result = np.array(list(dx/err) + list(dy/err))
             if not np.all(np.isnan(result)):
-                return math.sqrt(np.nanmean(result**2.))
+                return np.sqrt(np.nanmean(result**2.))
             else: return 1e9
         except Exception, e:
-            import warnings
-            warnings.warn(str(e))
+            #logging.debug(str(e))
+            pass
             return 1e9
 
     def add_sip(wcs):
@@ -1831,10 +1830,14 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
         init_sipt = pywcs.WCS(init_sip.to_header(relax=True))
         init_sipt.sip = copy.copy(init_sip.sip)
         init_sip = init_sipt
-        
+
+    if len(sip2p(init_sip, True)) != len(sip2p(add_sip(init_sip), True)):
+        logging.debug('initial sip order is different from the fitted sip order. initial sip cannot be used.')
+        init_sip.sip = None
+
     if init_sip.sip is None:
         init_sip = add_sip(init_sip)
-
+    
     # computation of a reference ra/dec list of stars from the
     # reference list of pixels (star_list1)
     star_list_deg1 = init_sip.all_pix2world(star_list1, 0)
@@ -1848,7 +1851,13 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
 
     guess = np.array(sip2p(init_sip, True))
 
+    logging.debug('initial guess: {} (average error: {})'.format(
+        guess, diff(guess, star_list2, star_list_deg1, params,
+                    init_sip, err, True)))
+    
     # look for direct transformation parameters (A, B matrices)
+    logging.debug('gradient optimization started')
+    
     fit = optimize.fmin(diff, guess,
                         args=(star_list2, star_list_deg1, params,
                               init_sip, err, True),
@@ -1862,6 +1871,8 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
         raise Exception('SIP direct transformation fit failed')
 
     # look for reverse transformation parameters (AP, BP matrices)
+    logging.debug('reverse transformation optimization started')
+    
     fit = optimize.fmin(diff, -fit[0],
                         args=(star_list2, star_list_deg1, params,
                               init_sip, err, False),
@@ -1941,12 +1952,12 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 
     _wcs = pywcs.WCS(naxis=2) # a new WCS must be created. Never update
                              # an old WCS!
-        
+
     _wcs.wcs.crpix = [target_x, target_y]
     _wcs.wcs.cdelt = np.array([-deltax, deltay])
     _wcs.wcs.crval = [target_ra, target_dec]
     # !! must stay here because get_pc does not work with RA---TAN-SIP type
-    _wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"] 
+    _wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
     _wcs.wcs.crota = [rotation, rotation]
     # force wcs to CD definition (for SIP)
     _wcs.wcs.cd = np.dot(
@@ -1956,8 +1967,10 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
     _wcs.wcs.radesys = 'FK5'
     _wcs.wcs.equinox = 2000.
     del _wcs.wcs.crota
+
     if sip is not None:
         _wcs.sip = sip.sip
+
     return _wcs
 
 def get_wcs_parameters(_wcs):
@@ -1970,13 +1983,15 @@ def get_wcs_parameters(_wcs):
     :return: target_x, target_y, deltax, deltay, target_ra,
       target_dec, rotation
     """
-    target_x, target_y = _wcs.wcs.crpix
-    target_ra, target_dec = _wcs.wcs.crval
-    deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(_wcs)
-    vec10 = np.array(_wcs.all_world2pix(_wcs.wcs.crval[0] - deltax, _wcs.wcs.crval[1], 1)) - _wcs.wcs.crpix
+    _wcs2 = _wcs.copy()
+    _wcs2.sip = None
+    target_x, target_y = _wcs2.wcs.crpix
+    target_ra, target_dec = _wcs2.wcs.crval
+    deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(_wcs2)
+    vec10 = np.array(_wcs2.all_world2pix(_wcs2.wcs.crval[0] - deltax, _wcs2.wcs.crval[1], 1)) - _wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-    if abs(rotation) > 90. : raise StandardError('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
+    if abs(rotation) > 90. : warnings.warn('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
     if not np.allclose(deltax, deltay): raise StandardError('deltax ({}) must be equal to deltay ({})'.format(deltax, deltay))
     
     return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
@@ -1997,7 +2012,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     :param r_range: range of angle values to check
 
     :param rc: rotation center (rc, ry). If a WCS is given the
-      rotation center is obtaind from the wcs itself and must be set to
+      rotation center is obtained from the wcs itself and must be set to
       None.
 
     :param zoom_factor: zoom_factor
@@ -2058,17 +2073,18 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
                     np.copy(star_list), guess, rc, zoom_factor)
 
             total_flux = orb.cutils.brute_photometry(
-                image, star_list2, kernel, box_size)
+                image, star_list2, kernel, box_size) / float(len(star_list2))
+            
             result[ik, 0] = total_flux
             result[ik, 1:] = guess_list[ik]
         return result
     
     if init_wcs is not None and rc is not None:
-        warnings.warn('rc must be set to None if a wcs is given. rc automatically set to None.')
+        logging.debug('rc must be set to None if a wcs is given. rc automatically set to None.')
         rc = None
 
     if init_wcs is None and rc is None:
-        warnings.warn('rc automatically set.')
+        logging.debug('rc automatically set.')
         rc = (image.shape[0]/2., image.shape[1]/2.)
 
     if verbose:
@@ -2107,7 +2123,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
 
     guess_list = np.array(guess_list)
     # Init of the multiprocessing server
-    job_server, ncpus = orb.utils.parallel.init_pp_server()
+    job_server, ncpus = orb.utils.parallel.init_pp_server(silent=True)
     ncpus_max = ncpus
 
     # divide guess list in smaller lists for parallelization
@@ -2160,7 +2176,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
 
     # maximum value of the guess matrix is the best estimate
     rough_dx, rough_dy, rough_dr =  np.unravel_index(
-        np.argmax(guess_matrix), guess_matrix.shape)
+        np.nanargmax(guess_matrix), guess_matrix.shape)
 
     index1d = np.ravel_multi_index((rough_dx, rough_dy, rough_dr),
                                    guess_matrix.shape)
@@ -2174,15 +2190,14 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
             dx, dy, dr))
 
     if raise_border_error:
-        if (dx == np.min(x_range)
-            or dx == np.max(x_range)
-            or dy == np.min(y_range)
-            or dy == np.max(y_range)
-            or dr == np.min(r_range)
-            or dr == np.max(r_range)):
+        if ((dx == np.min(x_range) and len(x_range) > 3)
+            or (dx == np.max(x_range) and len(x_range) > 3)
+            or (dy == np.min(y_range) and len(y_range) > 3)
+            or (dy == np.max(y_range) and len(y_range) > 3)
+            or (dr == np.min(r_range) and len(r_range) > 3)
+            or (dr == np.max(r_range) and len(r_range) > 3)):
             raise Exception('Brute force maximum found on grid border !')
         
-
     return dx, dy, dr, np.squeeze(guess_matrix)
 
 
@@ -2345,12 +2360,18 @@ def fit2df(fit):
     """
     df = dict()
     keys = None
+
+    # get keys and init dataframe
     for istar in fit:
         if keys is None:
             if istar is None: continue
             keys = istar.keys()
             for ikey in keys:
                 df[ikey] = list()
+            break
+
+    # load dataframe
+    for istar in fit:            
         for ikey in keys:
             if istar is not None:
                 if ikey in istar:
@@ -2366,9 +2387,12 @@ def fit2df(fit):
 def df2list(sources):
     """Convert a sources pandas.DataFrame instance to a list of positions
     """
-    if 'x' in sources and 'y' in sources:
+    if not isinstance(sources, pandas.DataFrame):
+        raise TypeError('sources is a {} but must be a pandas.DataFrame instance'.format(
+            type(sources)))
+    if ('x' in sources and 'y' in sources):
         return np.array([sources['x'].values, sources['y'].values]).T
-    elif 'xcentroid' in sources and 'ycentroid' in sources:
+    elif ('xcentroid' in sources and 'ycentroid' in sources):
         return np.array([sources['xcentroid'].values, sources['ycentroid'].values]).T
     else:
         raise TypeError('Badly formatted stars params')

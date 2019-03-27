@@ -50,7 +50,11 @@ class HDFCube(core.WCSData):
     """ This class implements the use of an HDF5 cube."""        
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis', 'calib_map', 'phase_map', 'phase_map_err', 'phase_maps_coeff_map', 'phase_maps_cm1_axis', 'standard_image'
-    
+
+    optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
+                       'dark_time', 'flat_time', 'camera', 'wcs_rotation',
+                       'calibration_laser_map_path')
+
     def __init__(self, path, indexer=None,
                  instrument=None, config=None, data_prefix='./',
                  **kwargs):
@@ -167,7 +171,7 @@ class HDFCube(core.WCSData):
             if x != 'None':
                 return float(x)
             else: return 1.
-            
+
         translate = {'STEP': ('step', float),
                      'ORDER': ('order', int),
                      'AXISCORR': ('axis_corr', float),
@@ -781,7 +785,284 @@ class HDFCube(core.WCSData):
             return vec
         else:
             return vec, region
+
+
+    def get_airmass(self):
+        """Return the airmass"""
+        if self.has_param('airmass'):
+            if np.size(self.params.airmass) == self.dimz:
+                return self.params.airmass
+            elif not self.has_dataset('frame_header_0'):
+                logging.debug('airmass size is {} but cube dimz is {}. no frame header present so the airmass is returned as is'.format(np.size(self.params.airmass), self.dimz))
+                return self.params.airmass
+        elif not self.has_dataset('frame_header_0'):
+            raise StandardError('airmass not set and no frame headers')
+
+        airmass = list()
+        for i in range(self.dimz):
+            try:
+                airmass.append(float(self.get_frame_header(i)['AIRMASS']))
+            except KeyError:
+                raise StandardError('frame_header_{} not present'.format(i))
+        self.params['airmass'] = np.array(airmass)
+        return self.params.airmass
+
+    def detect_stars(self, **kwargs):
+        """Detect valid stars in the image
+
+        :param kwargs: image.Image.detect_stars kwargs.
+        """
+        if self.has_dataset('deep_frame'):
+            logging.debug('detecting stars using the deep frame')
+            df = self.get_deep_frame().data
+        else:
+            logging.debug('detecting stars using a stack of the first {}'.format(
+                self.config.DETECT_STACK))
+            _stack = self[:,:,:self.config.DETECT_STACK]
+            df = np.nanmedian(_stack, axis=2)
+        df = image.Image(df, params=self.params)
+        return df.detect_stars(**kwargs)
+
+    def fit_stars_in_frame(self, star_list, index, **kwargs):
+        """Fit stars in frame
+
+        :param star_list: Path to a list of stars
+
+        :param index: frame index
+
+        :param kwargs: image.Image.fit_stars kwargs.
+        """
+        im = image.Image(self[:,:,index], params=self.params)
+        return im.fit_stars(star_list, **kwargs)
+
+    def fit_stars_in_cube(self, star_list,
+                          correct_alignment=False,
+                          alignment_vectors=None,
+                          add_cube=None, **kwargs):
+        
+        """Fit stars in the cube.
+
+        Frames must not be too disaligned. Disalignment can be
+        corrected as the cube is fitted by setting correct_alignment
+        option to True.
+
+        .. note:: 2 fitting modes are possible::
+        
+            * Individual fit mode [multi_fit=False]
+            * Multi fit mode [multi_fit=True]
+
+            see :meth:`astrometry.utils.fit_stars_in_frame` for more
+            information.
     
+        :param correct_alignment: (Optional) If True, the initial star
+          positions from the star list are corrected by their last
+          recorded deviation. Useful when the cube is smoothly
+          disaligned from one frame to the next.
+
+        :param alignment_vectors: (Optional) If not None, must be a
+          tuple of 2 vectors (dx, dy), each one having the same length
+          as the numebr of frames in the cube. It is used as a guess
+          for the alignement of the stars.
+
+        :param add_cube: (Optional) A tuple [Cube instance,
+          coeff]. This cube is added to the data before the fit so
+          that the fitted data is self.data[] + coeff * Cube[].
+
+        :param kwargs: (Optional) utils.astrometry.fit_stars_in_frame
+          kwargs.
+
+        """
+        def _fit_stars_in_frame(frame, star_list, fwhm_pix, params, kwargs):
+
+            import warnings
+            warnings.simplefilter('ignore')
+            
+            im = orb.image.Image(frame, params=params)
+            if fwhm_pix is not None:
+                im.reset_fwhm_pix(fwhm_pix)
+            return im.fit_stars(star_list, **kwargs)
+
+        FOLLOW_NB = 5 # Number of deviation value to get to follow the
+                      # stars
+
+        if alignment_vectors is not None:
+            if len(alignment_vectors) != 2:
+                raise TypeError('alignment_vectors must be a tuple of 2 vectors')
+            if len(alignment_vectors[0]) != self.dimz or len(alignment_vectors[1]) != self.dimz:
+                raise TypeError('each vector of alignment_vectors must have the same len as the number of frames in the cube ({} or {} != {})'.format(len(alignment_vectors[0]), len(alignment_vectors[1]), self.dimz))
+            
+            correct_alignment = False
+                
+        star_list = utils.astrometry.load_star_list(star_list)
+                
+        logging.info("Fitting stars in cube")
+
+        fit_results = list([None] * self.dimz)
+        dx_mean = list([np.nan] * self.dimz)
+        dy_mean = list([np.nan] * self.dimz)
+        fwhm_mean = list([np.nan] * self.dimz)
+        
+        if self.dimz < 2: raise StandardError(
+            "Data must have 3 dimensions. Use fit_stars_in_frame method instead")
+        
+        if add_cube is not None:
+            if np.size(add_cube) >= 2:
+                added_cube = add_cube[0]
+                added_cube_scale = add_cube[1]
+                if not isinstance(added_cube, Cube):
+                    raise StandardError('Added cube must be a Cube instance. Check add_cube option')
+                if np.size(added_cube_scale) != 1:
+                    raise StandardError('Bad added cube scale. Check add_cube option.')
+
+        # Init of the multiprocessing server
+        job_server, ncpus = self._init_pp_server()
+        
+        progress = core.ProgressBar(int(self.dimz))
+        x_corr = 0.
+        y_corr = 0.
+        for ik in range(0, self.dimz, ncpus):
+            # no more jobs than frames to compute
+            if (ik + ncpus >= self.dimz):
+                ncpus = self.dimz - ik
+    
+            if correct_alignment:
+                if ik > 0:
+                    old_x_corr = float(x_corr)
+                    old_y_corr = float(y_corr)
+
+                    if ik > FOLLOW_NB - 1:
+                        # try to get the mean deviation over the
+                        # last fitted frames
+                        x_corr = np.nanmedian(dx_mean[ik-FOLLOW_NB:ik])
+                        y_corr = np.nanmedian(dy_mean[ik-FOLLOW_NB:ik])
+                    else:
+                        x_corr = np.nan
+                        y_corr = np.nan
+                        if dx_mean[-1] is not None:
+                            x_corr = dx_mean[ik-1]
+                        if dy_mean[-1] is not None:
+                            y_corr = dy_mean[ik-1]
+                                       
+                    if np.isnan(x_corr):
+                        x_corr = float(old_x_corr)
+                    if np.isnan(y_corr):
+                        y_corr = float(old_y_corr)
+                    
+                star_list[:,0] += x_corr
+                star_list[:,1] += y_corr
+
+            if alignment_vectors is None:
+                star_lists = list(star_list) * ncpus
+            else:
+                star_lists = list()
+                for ijob in range(ncpus):
+                    istar_list = np.copy(star_list)
+                    istar_list[:,0] += alignment_vectors[0][ik+ijob]
+                    istar_list[:,1] += alignment_vectors[1][ik+ijob]
+                    star_lists.append(istar_list)                    
+    
+                
+            # follow FWHM variations
+            fwhm_pix = None
+            if ik > FOLLOW_NB - 1:
+                fwhm_pix = np.nanmean(utils.stats.sigmacut(fwhm_mean[ik-FOLLOW_NB:ik]))
+                if np.isnan(fwhm_pix): fwhm_pix = None
+          
+            # load data
+            progress.update(ik, info="loading: " + str(ik))
+            frames = self[:,:,ik:ik+ncpus]
+            if add_cube is not None:
+                frames += added_cube[:,:,ik:ik+ncpus] * added_cube_scale
+                
+            # get stars photometry for each frame
+            params = self.params.convert()
+
+            progress.update(ik, info="computing photometry: " + str(ik))
+            jobs = [(ijob, job_server.submit(
+                _fit_stars_in_frame,
+                args=(frames[:,:,ijob], star_lists[ijob], fwhm_pix, params, kwargs),
+                modules=("import logging",
+                         "import orb.utils.stats",
+                         "import orb.utils.image",
+                         'import orb.image',
+                         "import numpy as np",
+                         "import math",
+                         "import orb.cutils",
+                         "import bottleneck as bn",
+                         "import warnings",
+                         "from orb.utils.astrometry import *")))
+                    for ijob in range(ncpus)]
+
+            for ijob, job in jobs:
+                res = job()
+                fit_results[ik+ijob] = res
+                if res is not None:
+                    if not res.empty:
+                        if 'dx' in res and 'dy' in res:
+                            dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
+                            dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
+                        if 'fwhm_pix' in res:
+                            fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
+            
+            
+        self._close_pp_server(job_server)
+        
+        progress.end()
+  
+        return fit_results
+
+    def get_raw_alignement_vectors(self, star_number=60, searched_size=80):
+        """Return raw alignment vectors based on brute force.
+
+        Slow but useful when alignment between frames is very bad.
+
+        :return: dx, dy vectors
+        """
+        star_list_init, fwhm = image.Image(
+            self[:,:,0], instrument=self.instrument).detect_stars(
+                min_star_number=star_number)
+        star_list_init = utils.astrometry.df2list(star_list_init)
+        dxs = list()
+        dys = list()
+        progress = core.ProgressBar(self.dimz-1)
+        dxs.append(0)
+        dys.append(0)
+        for iframe in range(1, self.dimz):
+            x_range = np.linspace(-searched_size,searched_size,searched_size)
+            y_range = np.linspace(-searched_size,searched_size,searched_size)
+            r_range = [0]
+            dx, dy, _, _ = utils.astrometry.brute_force_guess(
+                self[:,:,iframe], star_list_init, x_range, y_range,r_range,
+                [self.dimx/2., self.dimy/2.], 1, 15, verbose=False)
+            
+            progress.update(iframe-1, info='{:.2f}, {:.2f}'.format(dx, dy))
+            dxs.append(dx)
+            dys.append(dy)
+        progress.end()
+        return np.array(dxs), np.array(dys)
+            
+    
+    def get_alignment_vectors(self, star_list, min_coeff=0.2,
+                              alignment_vectors=None):
+        """Return alignement vectors
+
+        :param star_list: list of stars
+
+        :param min_coeff: The minimum proportion of stars correctly
+            fitted to assume a good enough calculated disalignment
+            (default 0.2).
+
+        :return: alignment_vector_x, alignment_vector_y, alignment_error
+        """
+        star_list = utils.astrometry.load_star_list(star_list)
+        fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
+                                             alignment_vectors=alignment_vectors,
+                                             no_aperture_photometry=True,
+                                             multi_fit=False, # sure ???
+                                             fix_height=False)
+        return utils.astrometry.compute_alignment_vectors(fit_results)
+    
+
 #################################################
 #### CLASS RWHDFCube ############################
 #################################################
@@ -1068,9 +1349,6 @@ class Cube(HDFCube):
     needed_params = ('step', 'order', 'filter_name', 'exposure_time',
                      'step_nb', 'zpd_index')
 
-    optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
-                       'dark_time', 'flat_time', 'camera', 'wcs_rotation',
-                       'calibration_laser_map_path')
     
     def __init__(self, path, params=None, instrument=None, **kwargs):
         """Initialize Cube class.
@@ -1116,21 +1394,6 @@ class Cube(HDFCube):
             if iparam not in self.params:
                 raise ValueError('parameter {} must be defined in params'.format(iparam))
 
-
-    def get_airmass(self):
-        """Return the airmass"""
-        if self.has_param('airmass'):
-            return self.params.airmass
-        elif not self.has_dataset('frame_header_0'):
-            raise StandardError('airmass not set and no frame headers')
-
-        airmass = list()
-        for i in range(self.dimz):
-            try:
-                airmass.append(float(self.get_frame_header(i)['AIRMASS']))
-            except KeyError:
-                raise StandardError('frame_header_{} not present'.format(i))
-        return np.array(airmass)
                 
     def get_axis_corr(self):
         """Return the reference wavenumber correction"""
@@ -1168,201 +1431,6 @@ class Cube(HDFCube):
         filter_max_pix_map = (filter_max_cm1 - cm1_axis_min_map) / cm1_axis_step_map
         
         return filter_min_pix_map, filter_max_pix_map
-
-    
-    def detect_stars(self, **kwargs):
-        """Detect valid stars in the image
-
-        :param kwargs: image.Image.detect_stars kwargs.
-        """
-        if self.has_dataset('deep_frame'):
-            df = self.get_deep_frame().data
-        else:
-            _stack = self[:,:,:self.config.DETECT_STACK]
-            df = np.nanmedian(_stack, axis=2)
-        df = image.Image(df, params=self.params)
-        return df.detect_stars(**kwargs)
-
-    def fit_stars_in_frame(self, star_list, index, **kwargs):
-        """Fit stars in frame
-
-        :param star_list: Path to a list of stars
-
-        :param index: frame index
-
-        :param kwargs: image.Image.fit_stars kwargs.
-        """
-        im = image.Image(self[:,:,index], params=self.params)
-        return im.fit_stars(star_list, **kwargs)
-
-    def fit_stars_in_cube(self, star_list,
-                          correct_alignment=False,
-                          add_cube=None, **kwargs):
-        
-        """Fit stars in the cube.
-
-        Frames must not be too disaligned. Disalignment can be
-        corrected as the cube is fitted by setting correct_alignment
-        option to True.
-
-        .. note:: 2 fitting modes are possible::
-        
-            * Individual fit mode [multi_fit=False]
-            * Multi fit mode [multi_fit=True]
-
-            see :meth:`astrometry.utils.fit_stars_in_frame` for more
-            information.
-    
-        :param correct_alignment: (Optional) If True, the initial star
-          positions from the star list are corrected by their last
-          recorded deviation. Useful when the cube is smoothly
-          disaligned from one frame to the next.
-
-        :param add_cube: (Optional) A tuple [Cube instance,
-          coeff]. This cube is added to the data before the fit so
-          that the fitted data is self.data[] + coeff * Cube[].
-
-        :param kwargs: (Optional) utils.astrometry.fit_stars_in_frame
-          kwargs.
-
-        """
-        def _fit_stars_in_frame(frame, star_list, fwhm_pix, params, kwargs):
-
-            import warnings
-            warnings.simplefilter('ignore')
-            
-            im = orb.image.Image(frame, params=params)
-            if fwhm_pix is not None:
-                im.reset_fwhm_pix(fwhm_pix)
-            return im.fit_stars(star_list, **kwargs)
-
-        FOLLOW_NB = 5 # Number of deviation value to get to follow the
-                      # stars
-
-        star_list = utils.astrometry.load_star_list(star_list)
-                
-        logging.info("Fitting stars in cube")
-
-        fit_results = list([None] * self.dimz)
-        dx_mean = list([np.nan] * self.dimz)
-        dy_mean = list([np.nan] * self.dimz)
-        fwhm_mean = list([np.nan] * self.dimz)
-        
-        if self.dimz < 2: raise StandardError(
-            "Data must have 3 dimensions. Use fit_stars_in_frame method instead")
-        
-        if add_cube is not None:
-            if np.size(add_cube) >= 2:
-                added_cube = add_cube[0]
-                added_cube_scale = add_cube[1]
-                if not isinstance(added_cube, Cube):
-                    raise StandardError('Added cube must be a Cube instance. Check add_cube option')
-                if np.size(added_cube_scale) != 1:
-                    raise StandardError('Bad added cube scale. Check add_cube option.')
-
-        # Init of the multiprocessing server
-        job_server, ncpus = self._init_pp_server()
-        
-        progress = core.ProgressBar(int(self.dimz))
-        x_corr = 0.
-        y_corr = 0.
-        for ik in range(0, self.dimz, ncpus):
-            # no more jobs than frames to compute
-            if (ik + ncpus >= self.dimz):
-                ncpus = self.dimz - ik
-    
-            if correct_alignment:
-                if ik > 0:
-                    old_x_corr = float(x_corr)
-                    old_y_corr = float(y_corr)
-
-                    if ik > FOLLOW_NB - 1:
-                        # try to get the mean deviation over the
-                        # last fitted frames
-                        x_corr = np.nanmedian(dx_mean[ik-FOLLOW_NB:ik])
-                        y_corr = np.nanmedian(dy_mean[ik-FOLLOW_NB:ik])
-                    else:
-                        x_corr = np.nan
-                        y_corr = np.nan
-                        if dx_mean[-1] is not None:
-                            x_corr = dx_mean[ik-1]
-                        if dy_mean[-1] is not None:
-                            y_corr = dy_mean[ik-1]
-                                       
-                    if np.isnan(x_corr):
-                        x_corr = float(old_x_corr)
-                    if np.isnan(y_corr):
-                        y_corr = float(old_y_corr)
-                    
-                star_list[:,0] += x_corr
-                star_list[:,1] += y_corr
-
-
-            # follow FWHM variations
-            fwhm_pix = None
-            if ik > FOLLOW_NB - 1:
-                fwhm_pix = np.nanmean(utils.stats.sigmacut(fwhm_mean[ik-FOLLOW_NB:ik]))
-                if np.isnan(fwhm_pix): fwhm_pix = None
-          
-            # load data
-            progress.update(ik, info="loading: " + str(ik))
-            frames = self[:,:,ik:ik+ncpus]
-            if add_cube is not None:
-                frames += added_cube[:,:,ik:ik+ncpus] * added_cube_scale
-                
-            # get stars photometry for each frame
-            params = self.params.convert()
-
-            progress.update(ik, info="computing photometry: " + str(ik))
-            jobs = [(ijob, job_server.submit(
-                _fit_stars_in_frame,
-                args=(frames[:,:,ijob], star_list, fwhm_pix, params, kwargs),
-                modules=("import logging",
-                         "import orb.utils.stats",
-                         "import orb.utils.image",
-                         'import orb.image',
-                         "import numpy as np",
-                         "import math",
-                         "import orb.cutils",
-                         "import bottleneck as bn",
-                         "import warnings",
-                         "from orb.utils.astrometry import *")))
-                    for ijob in range(ncpus)]
-
-            for ijob, job in jobs:
-                res = job()
-                fit_results[ik+ijob] = res
-                if res is not None:
-                    if not res.empty:
-                        if 'dx' in res and 'dy' in res:
-                            dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
-                            dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
-                        if 'fwhm_pix' in res:
-                            fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
-            
-            
-        self._close_pp_server(job_server)
-        
-        progress.end()
-  
-        return fit_results
-
-    def get_alignment_vectors(self, star_list, min_coeff=0.2):
-        """Return alignement vectors
-
-        :param star_list: list of stars
-
-        :param min_coeff: The minimum proportion of stars correctly
-            fitted to assume a good enough calculated disalignment
-            (default 0.2).
-
-        :return: alignment_vector_x, alignment_vector_y, alignment_error
-        """
-        star_list = utils.astrometry.load_star_list(star_list)
-        fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
-                                             no_aperture_photometry=True,
-                                             multi_fit=False, fix_height=False)
-        return utils.astrometry.compute_alignment_vectors(fit_results)
     
 
         
@@ -1798,263 +1866,6 @@ class FDCube(core.Tools):
             cube.set_frame_header(iframe, self.get_frame_header(iframe))
         progress.end()
             
-            
-        
-# ##################################################
-# #### CLASS OutHDFCube ############################
-# ##################################################
-# class OutHDFCube(core.Tools):
-#     """Output HDF5 Cube class.
-
-#     This class must be used to output a valid HDF5 cube.
-    
-#     .. warning:: The underlying dataset is not readonly and might be
-#       overwritten.
-
-#     .. note:: This class has been created because
-#       :py:class:`orb.core.HDFCube` must not be able to change its
-#       underlying dataset (the HDF5 cube is always read-only).
-#     """    
-#     def __init__(self, export_path, shape, overwrite=False,
-#                  reset=False, **kwargs):
-#         """Init OutHDFCube class.
-
-#         :param export_path: Path ot the output HDF5 cube to create.
-
-#         :param shape: Data shape. Must be a 3-Tuple (dimx, dimy, dimz)
-
-#         :param overwrite: (Optional) If True data will be overwritten
-#           but existing data will not be removed (default True).
-
-#         :param reset: (Optional) If True and if the file already
-#           exists, it is deleted (default False).
-        
-#         :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
-#         """
-#         raise NotImplementedError()
-#         core.Tools.__init__(self, **kwargs)
-        
-#         # change path if file exists and must not be overwritten
-#         self.export_path = str(export_path)
-#         if reset and os.path.exists(self.export_path):
-#             os.remove(self.export_path)
-        
-#         if not overwrite and os.path.exists(self.export_path):
-#             index = 0
-#             while os.path.exists(self.export_path):
-#                 self.export_path = (os.path.splitext(export_path)[0] + 
-#                                    "_" + str(index) + 
-#                                    os.path.splitext(export_path)[1])
-#                 index += 1
-#         if self.export_path != export_path:
-#             warnings.warn('Cube path changed to {} to avoid overwritting an already existing file'.format(self.export_path))
-
-#         if len(shape) == 3: self.shape = shape
-#         else: raise StandardError('An HDF5 cube shape must be a tuple (dimx, dimy, dimz)')
-
-#         try:
-#             self.f = self.open_hdf5(self.export_path, 'a')
-#         except IOError, e:
-#             if overwrite:
-#                 os.remove(self.export_path)
-#                 self.f = self.open_hdf5(self.export_path, 'a')
-#             else:
-#                 raise StandardError(
-#                     'IOError while opening HDF5 cube: {}'.format(e))
-                
-#         logging.info('Opening OutHDFCube {} ({},{},{})'.format(
-#             self.export_path, *self.shape))
-        
-#         # add attributes
-#         self.f.attrs['dimx'] = self.shape[0]
-#         self.f.attrs['dimy'] = self.shape[1]
-#         self.f.attrs['dimz'] = self.shape[2]
-
-#         self.imshape = (self.shape[0], self.shape[1])
-
-#     def write_frame_attribute(self, index, attr, value):
-#         """Write a frame attribute
-
-#         :param index: Index of the frame
-
-#         :param attr: Attribute name
-
-#         :param value: Value of the attribute to write
-#         """
-#         self.f[self._get_hdf5_frame_path(index)].attrs[attr] = value
-
-            
-
-#     def append_image_list(self, image_list):
-#         """Append an image list to the HDF5 cube.
-
-#         :param image_list: Image list to append.
-#         """
-#         if 'image_list' in self.f:
-#             del self.f['image_list']
-
-#         if image_list is not None:
-#             self.f['image_list'] = np.array(image_list)
-#         else:
-#             warnings.warn('empty image list')
-        
-
-
-#     def append_energy_map(self, energy_map):
-#         """Append an energy map to the HDF5 cube.
-
-#         :param energy_map: Energy map to append.
-#         """
-#         if 'energy_map' in self.f:
-#             del self.f['energy_map']
-            
-#         self.f['energy_map'] = energy_map
-
-    
-#     def append_calibration_laser_map(self, calib_map, header=None):
-#         """Append a calibration laser map to the HDF5 cube.
-
-#         :param calib_map: Calibration laser map to append.
-
-#         :param header: (Optional) Header to append (default None)
-#         """
-#         if 'calib_map' in self.f:
-#             del self.f['calib_map']
-            
-#         self.f['calib_map'] = calib_map
-#         if header is not None:
-#             self.f['calib_map_hdr'] = self._header_fits2hdf5(header)
-
-#     def append_header(self, header):
-#         """Append a header to the HDF5 cube.
-
-#         :param header: header to append.
-#         """
-#         if 'header' in self.f:
-#             del self.f['header']
-            
-#         self.f['header'] = self._header_fits2hdf5(header)
-        
-#     def close(self):
-#         """Close the HDF5 cube. Class cannot work properly once this
-#         method is called so delete it. e.g.::
-        
-#           outhdfcube.close()
-#           del outhdfcube
-#         """
-#         try:
-#             self.f.close()
-#         except Exception:
-#             pass
-
-
-# ##################################################
-# #### CLASS OutHDFQuadCube ########################
-# ##################################################           
-
-# class OutHDFQuadCube(OutHDFCube):
-#     """Output HDF5 Cube class saved in quadrants.
-
-#     This class can be used to output a valid HDF5 cube.
-#     """
-
-#     def __init__(self, export_path, shape, quad_nb, overwrite=False,
-#                  reset=False, **kwargs):
-#         """Init OutHDFQuadCube class.
-
-#         :param export_path: Path ot the output HDF5 cube to create.
-
-#         :param shape: Data shape. Must be a 3-Tuple (dimx, dimy, dimz)
-
-#         :param quad_nb: Number of quadrants in the cube.
-
-#         :param overwrite: (Optional) If True data will be overwritten
-#           but existing data will not be removed (default False).
-
-#         :param reset: (Optional) If True and if the file already
-#           exists, it is deleted (default False).
-        
-#         :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
-#         """
-#         raise NotImplementedError()
-#         OutHDFCube.__init__(self, export_path, shape, overwrite=overwrite,
-#                             reset=reset, **kwargs)
-
-#         self.f.attrs['quad_nb'] = quad_nb
-
-#     def write_quad(self, index, data=None, header=None, force_float32=True,
-#                    force_complex64=False,
-#                    compress=False):
-#         """"Write a quadrant
-
-#         :param index: Index of the quadrant
-        
-#         :param data: (Optional) Frame data (default None).
-        
-#         :param header: (Optional) Frame header (default None).
-        
-#         :param mask: (Optional) Frame mask (default None).
-        
-#         :param record_stats: (Optional) If True Mean and Median of the
-#           frame are appended as attributes (data must be set) (defaut
-#           False).
-
-#         :param force_float32: (Optional) If True, data type is forced
-#           to numpy.float32 type (default True).
-
-#         :param section: (Optional) If not None, must be a 4-tuple
-#           [xmin, xmax, ymin, ymax] giving the section to write instead
-#           of the whole frame. Useful to modify only a part of the
-#           frame (deafult None).
-
-#         :param force_complex64: (Optional) If True, data type is
-#           forced to numpy.complex64 type (default False).
-
-#         :param compress: (Optional) If True, data is lossely
-#           compressed using a gzip algorithm (default False).
-#         """
-        
-#         if force_float32 and force_complex64:
-#             raise StandardError('force_float32 and force_complex64 cannot be both set to True')
-
-            
-#         if data is None and header is None:
-#             warnings.warn('Nothing to write in the frame {}').format(
-#                 index)
-#             return
-        
-#         if data is not None:
-#             if force_complex64: data = data.astype(np.complex64)
-#             elif force_float32: data = data.astype(np.float32)
-#             dat_path = self._get_hdf5_quad_data_path(index)
-
-#             if dat_path in self.f:
-#                 del self.f[dat_path]
-
-#             if compress:
-                
-#                 #szip_types = (np.float32, np.float64, np.int16, np.int32, np.int64,
-#                 #              np.uint8, np.uint16)
-#                 ## if data.dtype in szip_types:
-#                 ##     compression = 'szip'
-#                 ##     compression_opts = ('nn', 32)
-#                 ## else:
-#                 ##     compression = 'gzip'
-#                 ##     compression_opts = 4
-#                 compression = 'lzf'
-#                 compression_opts = None
-#             else:
-#                 compression = None
-#                 compression_opts = None
-                
-#             self.f.create_dataset(
-#                 dat_path, data=data,
-#                 compression=compression,
-#                 compression_opts=compression_opts)
-
-#             return data
-        
-        
 #################################################
 #### CLASS SpectralCube #########################
 #################################################

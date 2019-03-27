@@ -172,18 +172,7 @@ class Image(Frame2D):
         else:
             self.fwhm_arc = self.config.INIT_FWHM
 
-        if 'scale' in self.params:
-            self.scale = self.params.scale
-        else:
-            self.scale = self.config.FIELD_OF_VIEW_1 / self.config.CAM1_DETECTOR_SIZE_X * 60.
-            
-        self.reset_scale(self.scale)
-
-        self.target_ra = self.params.target_ra
-        self.target_dec = self.params.target_dec
-        self.target_x = self.params.target_x
-        self.target_y = self.params.target_y
-        self.wcs_rotation = self.params.wcs_rotation
+        self.reset_scale(self.params.scale)
 
     def _get_fit_results_path(self):
         """Return the default path to the file containing all fit
@@ -199,8 +188,7 @@ class Image(Frame2D):
         
         :param scale: Frame scale in arcsec/pixel
         """
-        self.scale = float(scale)
-        self.fov = self.dimx * self.scale / 60.
+        self.params['scale'] = float(scale)
         self.reset_fwhm_arc(self.fwhm_arc)
 
     def reset_fwhm_arc(self, fwhm_arc):
@@ -357,7 +345,8 @@ class Image(Frame2D):
                     profile_name, str(self.profiles)))
         
 
-    def detect_stars(self, min_star_number=30, path=None):
+    def detect_stars(self, min_star_number=30, max_roundness=0.1,
+                     max_radius_coeff=1., path=None):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
@@ -370,7 +359,6 @@ class Image(Frame2D):
 
         """
         DETECT_THRESHOLD = 5
-        MAX_ROUNDNESS = 0.1
         FWHM_STARS_NB = 30
         
         mean, median, std = self.get_stats()
@@ -378,15 +366,21 @@ class Image(Frame2D):
                                           threshold=DETECT_THRESHOLD * std)
         sources = daofind(self.data.T - median).to_pandas()
         if len(sources) == 0: raise StandardError('no star detected, check input image')
+        logging.debug('initial number of stars: {}'.format(len(sources)))
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
         saturation_threshold = np.nanmax(self.data) * 0.45 
         sources = sources[sources.peak < saturation_threshold]
+        logging.debug('number of stars after peak filter: {}'.format(len(sources)))
         # filter by roundness
-        sources = sources[np.abs(sources.roundness2) < MAX_ROUNDNESS]
+        sources = sources[np.abs(sources.roundness2) < max_roundness]
+        logging.debug('number of stars after roundness filter: {}'.format(len(sources)))
+        
         # filter by radius from center to avoid using distorded stars
         sources['radius'] = np.sqrt((sources.xcentroid - self.dimx/2.)**2
                                     + (sources.ycentroid - self.dimy/2.)**2)
-        sources = sources[sources.radius < min(self.dimx, self.dimy) / 2.]
+        sources = sources[sources.radius < max_radius_coeff * min(self.dimx, self.dimy) / 2.]
+        logging.debug('number of stars after radius filter: {}'.format(len(sources)))
+        # sort by flux
         sources = sources.sort_values(by=['flux'], ascending=False)
         logging.info("%d stars detected" %(len(sources)))
         sources = sources[:min_star_number]
@@ -467,6 +461,11 @@ class Image(Frame2D):
         return phot_table
     
     def register(self, max_stars_detect=60,
+                 max_roundness=0.2,
+                 max_radius_coeff=np.sqrt(2),
+                 recompute_init=True,
+                 refine_scale=True,
+                 sip_order=3,
                  return_fit_params=False, rscale_coeff=1.,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
@@ -487,6 +486,14 @@ class Image(Frame2D):
         :param max_stars_detect: (Optional) Number of detected stars
           in the frame for the initial wcs parameters (default 60).
           
+        :param recompute_init: (Optional) If True, the initial
+          parameters are not considered good enough (more than 20
+          pixels errors on x and y, more than 1 degree error on the
+          rotation angle) and a histogram registration is performed.
+
+        :param refine_scale: (Optional) If True, plate scale (zoom) is
+          refined but registration takes a longer time.
+
         :param return_fit_params: (Optional) If True return final fit
           parameters instead of wcs (default False).
 
@@ -509,6 +516,7 @@ class Image(Frame2D):
           registration are returned as
           scipy.interpolate.RectBivariateSpline instances (default
           False).
+
         """
         def get_transformation_error(guess, deg_list, fit_list,
                                      target_ra, target_dec):
@@ -569,7 +577,9 @@ class Image(Frame2D):
             snr = fit_params['snr']
             
             if snr_min is None:
-                snr_min = max(utils.stats.robust_median(snr), 3.)
+                snr_min = max(utils.stats.robust_median(snr), 5.)
+                snr_min = min(snr_min, 15)
+                logging.debug('star filter snr min: {}'.format(snr_min))
             
             if return_index:
                 index = np.zeros(param_list.shape[0])
@@ -605,32 +615,30 @@ class Image(Frame2D):
         ANGLE_RANGE = 12
         ZOOM_RANGE_COEFF = 0.015
 
-        if not (self.target_ra is not None and self.target_dec is not None
-                and self.target_x is not None and self.target_y is not None
-                and self.wcs_rotation is not None):
+        if not (self.params.target_ra is not None and self.params.target_dec is not None
+                and self.params.target_x is not None and self.params.target_y is not None
+                and self.params.wcs_rotation is not None):
             raise StandardError("Not enough parameters to register data. Please set target_xy, target_radec and wcs_rotation parameters at Astrometry init")
 
         if return_error_maps and return_error_spl: raise StandardError('return_error_maps and return_error_spl cannot be both set to True, choose one of them')
         
         logging.info('Computing WCS')
 
-        logging.info("Initial scale: {} arcsec/pixel".format(self.scale))
-        logging.info("Initial rotation: {} degrees".format(self.wcs_rotation))
+        logging.info("Initial scale: {} arcsec/pixel".format(self.params.scale))
+        logging.info("Initial rotation: {} degrees".format(self.params.wcs_rotation))
         logging.info("Initial target position in the image (X, Y): {} {}".format(
-            self.target_x, self.target_y))
+            self.params.target_x, self.params.target_y))
         logging.info("Initial target position in the image (RA, DEC): {} {}".format(
-            self.target_ra, self.target_dec))
-        deltax = self.scale / 3600. # arcdeg per pixel
+            self.params.target_ra, self.params.target_dec))
+        deltax = self.params.scale / 3600. # arcdeg per pixel
         deltay = float(deltax)
 
         # get FWHM
         star_list_fit_init_path, fwhm_arc = self.detect_stars(
-            min_star_number=max_stars_detect)
+            min_star_number=max_stars_detect, max_roundness=max_roundness,
+            max_radius_coeff=max_radius_coeff)
         star_list_fit_init = utils.astrometry.load_star_list(
             star_list_fit_init_path, remove_nans=True)
-        ## star_list_fit_init = self.load_star_list(
-        ##     './temp/data.Astrometry.star_list)'
-        ## fwhm_arc= 1.
         
         self.box_size_coeff = 5.
         self.reset_fwhm_arc(fwhm_arc)
@@ -652,20 +660,20 @@ class Image(Frame2D):
         
         # Query to get reference star positions in degrees
         star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
-        ## utils.io.write_fits('star_list_query.fits', star_list_query, overwrite=True)
-        ## star_list_query = utils.io.read_fits('star_list_query.fits')
         
         if len(star_list_query) < MIN_STAR_NB:
-            raise StandardError("Not enough stars found in the field (%d < %d)"%(len(star_list_query), MIN_STAR_NB))
+            raise StandardError("Not enough stars found in the field (%d < %d)"%(
+                len(star_list_query), MIN_STAR_NB))
             
         # reference star position list in degrees
         star_list_deg = star_list_query[:max_stars_detect*20]
         
         ## Define a basic WCS        
         wcs = utils.astrometry.create_wcs(
-            self.target_x, self.target_y,
-            deltax, deltay, self.target_ra, self.target_dec,
-            self.wcs_rotation, sip=self.sip)
+            self.params.target_x, self.params.target_y,
+            deltax, deltay, self.params.target_ra, self.params.target_dec,
+            self.params.wcs_rotation, sip=self.sip)
+        
        
         # Compute initial star positions from initial transformation
         # parameters
@@ -674,57 +682,59 @@ class Image(Frame2D):
             world2pix(wcs, star_list_deg), rmax)
 
         ## Plot star lists #####
-        ## import pylab as pl
-        ## pl.imshow(
-        ##     deep_frame.T,
-        ##     vmin=cutils.part_value(deep_frame.flatten(), 0.02),
-        ##     vmax=cutils.part_value(deep_frame.flatten(), 0.995),
-        ##     cmap=pl.gray())
-        ## pl.scatter(star_list_fit_init[:,0], star_list_fit_init[:,1])
-        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1], c='red')
-        ## pl.show()
-        ## quit()
+        # import pylab as pl
+        # pl.figure(figsize=(25,25))
+        # pl.imshow(
+        #     self.data.T,
+        #     vmin=cutils.part_value(self.data.flatten(), 0.02),
+        #     vmax=cutils.part_value(self.data.flatten(), 0.995),
+        #     cmap=pl.gray())
+        # pl.scatter(star_list_fit_init[:,0], star_list_fit_init[:,1])
+        # pl.scatter(star_list_pix[:,0], star_list_pix[:,1], c='red')
+        # pl.show()
+        # return
 
-        # fast histogram determination of the inital parameters
-        max_list = list()
-        for iangle in np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2., ANGLE_STEPS):
-            iwcs = utils.astrometry.create_wcs(
-                self.target_x, self.target_y,
-                deltax, deltay, self.target_ra, self.target_dec,
-                self.wcs_rotation + iangle, sip=self.sip)
-            istar_list_pix = radius_filter(
-                world2pix(iwcs, star_list_deg), rmax)
+        # histogram determination of the inital parameters
+        if recompute_init:
+            max_list = list()
+            for iangle in np.linspace(-ANGLE_RANGE/2., ANGLE_RANGE/2., ANGLE_STEPS):
+                iwcs = utils.astrometry.create_wcs(
+                    self.params.target_x, self.params.target_y,
+                    deltax, deltay, self.params.target_ra, self.params.target_dec,
+                    self.params.wcs_rotation + iangle, sip=self.sip)
+                istar_list_pix = radius_filter(
+                    world2pix(iwcs, star_list_deg), rmax)
 
-            max_corr, max_dx, max_dy = utils.astrometry.histogram_registration(
-                star_list_fit_init, istar_list_pix,
-                self.dimx, self.dimy, XY_HIST_BINS)
-            
-            max_list.append((max_corr, iangle, max_dx, max_dy))
-            logging.info('histogram check: correlation level {}, angle {}, dx {}, dy {}'.format(
-                *max_list[-1]))
-        max_list = sorted(max_list, key = lambda imax: imax[0], reverse=True)
-        max_list = np.array(max_list)
-        if np.max(max_list[:,0]) < 2 * np.median(max_list[:,0]):
-            raise StandardError('maximum correlation is not high enough, check target_ra, target_dec')
-        
-        self.target_x += max_list[0, 2]
-        self.target_y += max_list[0, 3]
-        self.wcs_rotation = max_list[0, 1]
+                max_corr, max_dx, max_dy = utils.astrometry.histogram_registration(
+                    star_list_fit_init, istar_list_pix,
+                    self.dimx, self.dimy, XY_HIST_BINS)
 
-        # update wcs
-        wcs = utils.astrometry.create_wcs(
-            self.target_x, self.target_y,
-            deltax, deltay, self.target_ra, self.target_dec,
-            self.wcs_rotation, sip=self.sip)
+                max_list.append((max_corr, iangle, max_dx, max_dy))
+                logging.info('histogram check: correlation level {}, angle {}, dx {}, dy {}'.format(
+                    *max_list[-1]))
+            max_list = sorted(max_list, key = lambda imax: imax[0], reverse=True)
+            max_list = np.array(max_list)
+            if np.max(max_list[:,0]) < 2 * np.median(max_list[:,0]):
+                raise StandardError('maximum correlation is not high enough, check target_ra, target_dec')
 
-        star_list_pix = radius_filter(
-            world2pix(wcs, star_list_deg), rmax)
+            self.params['target_x'] += max_list[0, 2]
+            self.params['target_y'] += max_list[0, 3]
+            self.params['wcs_rotation'] = max_list[0, 1]
 
-        logging.info(
-            "Histogram guess of the parameters:\n"
-            + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
-            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
-                self.target_x, self.target_y))
+            # update wcs
+            wcs = utils.astrometry.create_wcs(
+                self.params.target_x, self.params.target_y,
+                deltax, deltay, self.params.target_ra, self.params.target_dec,
+                self.params.wcs_rotation, sip=self.sip)
+
+            star_list_pix = radius_filter(
+                world2pix(wcs, star_list_deg), rmax)
+
+            logging.info(
+                "Histogram guess of the parameters:\n"
+                + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
+                + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                    self.params.target_x, self.params.target_y))
 
         ## brute force guess ####
         x_range_len = max(self.dimx, self.dimy) / float(XY_HIST_BINS) * 4
@@ -757,44 +767,45 @@ class Image(Frame2D):
         r_range = np.linspace(dr-finer_angle_range/2., dr+finer_angle_range/2.,
                               ANGLE_STEPS * 2)
 
-        zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
-                                 1.+ZOOM_RANGE_COEFF/2., 20)
-        zoom_guesses = list()
-        for izoom in zoom_range:
-            dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
-                self.data,
-                star_list_deg, x_range, y_range, r_range,
-                None, izoom, self.fwhm_pix * 3.,
-                verbose=False, init_wcs=wcs, raise_border_error=False)
+        if refine_scale:
+            zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
+                                     1.+ZOOM_RANGE_COEFF/2., 20)
+            zoom_guesses = list()
+            for izoom in zoom_range:
+                dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
+                    self.data,
+                    star_list_deg, x_range, y_range, r_range,
+                    None, izoom, self.fwhm_pix * 3.,
+                    verbose=False, init_wcs=wcs, raise_border_error=False)
 
-            zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
-            logging.info('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
+                zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
+                logging.info('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
 
-        # sort brute force guesses to get the best one
-        best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
+            # sort brute force guesses to get the best one
+            best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
 
-        self.wcs_rotation -= best_guess[3]
-        self.target_x -= best_guess[1]
-        self.target_y -= best_guess[2]
-    
-        deltax *= best_guess[0]
-        deltay *= best_guess[0]
-        
-        logging.info(
-            "Brute force guess of the parameters:\n"
-            + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
-            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
-                self.target_x, self.target_y)
-            + "> Scale X (arcsec/pixel): {:.5f}\n".format(
-                deltax * 3600.)
-            + "> Scale Y (arcsec/pixel): {:.5f}".format(
-                deltay * 3600.))
+            self.params['wcs_rotation'] -= best_guess[3]
+            self.params['target_x'] -= best_guess[1]
+            self.params['target_y'] -= best_guess[2]
+
+            deltax *= best_guess[0]
+            deltay *= best_guess[0]
+
+            logging.info(
+                "Brute force guess of the parameters:\n"
+                + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
+                + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                    self.params.target_x, self.params.target_y)
+                + "> Scale X (arcsec/pixel): {:.5f}\n".format(
+                    deltax * 3600.)
+                + "> Scale Y (arcsec/pixel): {:.5f}".format(
+                    deltay * 3600.))
 
         # update wcs
         wcs = utils.astrometry.create_wcs(
-            self.target_x, self.target_y,
-            deltax, deltay, self.target_ra, self.target_dec,
-            self.wcs_rotation, sip=self.sip)
+            self.params.target_x, self.params.target_y,
+            deltax, deltay, self.params.target_ra, self.params.target_dec,
+            self.params.wcs_rotation, sip=self.sip)
         
         ############################
         ### plot stars positions ###
@@ -827,8 +838,11 @@ class Image(Frame2D):
             star_list_pix = radius_filter(
                 world2pix(wcs, star_list_query), rmax,
                 borders=[0, self.dimx, 0, self.dimy])
+
+            logging.debug('detecting {} stars from catalog'.format(star_list_pix.shape[0]))
             
             fit_params = self.fit_stars(
+                star_list_pix,
                 local_background=True,
                 multi_fit=False, fix_fwhm=True,
                 no_aperture_photometry=True)
@@ -839,6 +853,9 @@ class Image(Frame2D):
                 return_index=True)
             
             star_list_pix = star_list_pix[np.nonzero(index)]
+
+            logging.debug('{} stars fitted'.format(star_list_pix.shape[0]))
+            
             
             ############################
             ### plot stars positions ###
@@ -858,7 +875,7 @@ class Image(Frame2D):
             wcs = self.fit_sip(star_list_pix,
                                star_list_fit,
                                params=None, init_sip=wcs,
-                               err=None, sip_order=4)
+                               err=None, sip_order=sip_order)
 
             ## star_list_pix = wcs.all_world2pix(star_list_query[:,:2], 0)
             ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
@@ -1044,9 +1061,9 @@ class Image(Frame2D):
        
         logging.info(
             "Optimization parameters:\n"
-            + "> Rotation angle [in degree]: {:.3f}\n".format(self.wcs_rotation)
+            + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
             + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
-                self.target_x, self.target_y)
+                self.params.target_x, self.params.target_y)
             + "> Scale X (arcsec/pixel): {:.5f}\n".format(
                 deltax * 3600.)
             + "> Scale Y (arcsec/pixel): {:.5f}".format(
@@ -1090,7 +1107,7 @@ class Image(Frame2D):
         :param err: (Optional) error on the star positions of the star
           list 2 (default None).
           
-        :param sip_order: (Optional) SIP order (default 3).
+        :param sip_order: (Optional) SIP order (default 2).
 
         :param crpix: (Optional) If an initial wcs is not given (init_sip
           set to None) this header value must be given.
@@ -1100,7 +1117,7 @@ class Image(Frame2D):
 
         """
         return utils.astrometry.fit_sip(
-            self.dimx, self.dimy, self.scale, star_list1, star_list2,
+            self.dimx, self.dimy, self.params.scale, star_list1, star_list2,
             params=params, init_sip=init_sip, err=err, sip_order=sip_order,
             crpix=crpix, crval=crval)
 
@@ -1144,7 +1161,7 @@ class Image(Frame2D):
                 raise StandardError('{} should not be passed in kwargs'.format(ik))
         
         kwargs['profile_name'] = self.profile_name
-        kwargs['scale'] = self.scale
+        kwargs['scale'] = self.params.scale
         kwargs['fwhm_pix'] = self.fwhm_pix
         kwargs['beta'] = self.default_beta
         kwargs['fit_tol'] = self.fit_tol
