@@ -114,9 +114,10 @@ class Frame2D(core.WCSData):
             size=size, wcs=self.get_wcs())
         
         newim = self.copy(data=cutout.data.T)
-        newim.update_params(cutout.wcs.to_header())
+        newim.update_params(cutout.wcs.to_header(relax=True))
         ((ymin, ymax), (xmin, xmax)) = cutout.bbox_original
         newim.params['cropped_bbox'] = (xmin, xmax+1, ymin, ymax+1)
+        newim.set_wcs(cutout.wcs)
         return newim
         
 
@@ -614,7 +615,7 @@ class Image(Frame2D):
         ANGLE_STEPS = 40 
         ANGLE_RANGE = 12
         ZOOM_RANGE_COEFF = 0.015
-
+        
         if not (self.params.target_ra is not None and self.params.target_dec is not None
                 and self.params.target_x is not None and self.params.target_y is not None
                 and self.params.wcs_rotation is not None):
@@ -674,7 +675,6 @@ class Image(Frame2D):
             deltax, deltay, self.params.target_ra, self.params.target_dec,
             self.params.wcs_rotation, sip=self.sip)
         
-       
         # Compute initial star positions from initial transformation
         # parameters
         rmax = max(self.dimx, self.dimy) / np.sqrt(2)
@@ -770,36 +770,38 @@ class Image(Frame2D):
         if refine_scale:
             zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
                                      1.+ZOOM_RANGE_COEFF/2., 20)
-            zoom_guesses = list()
-            for izoom in zoom_range:
-                dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
-                    self.data,
-                    star_list_deg, x_range, y_range, r_range,
-                    None, izoom, self.fwhm_pix * 3.,
-                    verbose=False, init_wcs=wcs, raise_border_error=False)
+        else:
+            zoom_range = [1.]
+        zoom_guesses = list()    
+        for izoom in zoom_range:
+            dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
+                self.data,
+                star_list_deg, x_range, y_range, r_range,
+                None, izoom, self.fwhm_pix * 3.,
+                verbose=False, init_wcs=wcs, raise_border_error=False)
 
-                zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
-                logging.info('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
+            zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
+            logging.info('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
 
-            # sort brute force guesses to get the best one
-            best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
+        # sort brute force guesses to get the best one
+        best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
 
-            self.params['wcs_rotation'] -= best_guess[3]
-            self.params['target_x'] -= best_guess[1]
-            self.params['target_y'] -= best_guess[2]
+        self.params['wcs_rotation'] -= best_guess[3]
+        self.params['target_x'] -= best_guess[1]
+        self.params['target_y'] -= best_guess[2]
 
-            deltax *= best_guess[0]
-            deltay *= best_guess[0]
+        deltax *= best_guess[0]
+        deltay *= best_guess[0]
 
-            logging.info(
-                "Brute force guess of the parameters:\n"
-                + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
-                + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
-                    self.params.target_x, self.params.target_y)
-                + "> Scale X (arcsec/pixel): {:.5f}\n".format(
-                    deltax * 3600.)
-                + "> Scale Y (arcsec/pixel): {:.5f}".format(
-                    deltay * 3600.))
+        logging.info(
+            "Brute force guess of the parameters:\n"
+            + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
+            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                self.params.target_x, self.params.target_y)
+            + "> Scale X (arcsec/pixel): {:.5f}\n".format(
+                deltax * 3600.)
+            + "> Scale Y (arcsec/pixel): {:.5f}".format(
+                deltay * 3600.))
 
         # update wcs
         wcs = utils.astrometry.create_wcs(
@@ -827,10 +829,12 @@ class Image(Frame2D):
         if compute_distortion:
             logging.info('Computing SIP coefficients')
             if self.sip is None:
-                warnings.warn('As no prior SIP has been given, this initial SIP is computed over the field inner circle. To cover the whole field the result of this registration must be passed at the definition of the class')
-                r_coeff = 0.5
+                warnings.warn('As no prior SIP has been given, this initial SIP is computed over the field inner circle. To cover the whole field the result of this registration must be passed at the definition of the class. max_radius_coeff is set to 0.5 unless a smaller coeff has been set.')
+                r_coeff = min(0.5, max_radius_coeff / 2.)
             else:
-                r_coeff = 1./np.sqrt(2)
+                r_coeff = max_radius_coeff / 2.
+                
+            logging.debug('distorsion computed on a radius of: {:.3f} * dimx'.format(r_coeff))
                 
             # compute optical distortion with a greater list of stars
             rmax = max(self.dimx, self.dimy) * r_coeff

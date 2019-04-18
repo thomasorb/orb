@@ -31,7 +31,6 @@ import astropy.wcs as pywcs
 from astropy.coordinates import SkyCoord
 import pandas
 import os
-import emcee
 
     
 import orb.cutils
@@ -1973,7 +1972,7 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 
     return _wcs
 
-def get_wcs_parameters(_wcs):
+def get_wcs_parameters(wcs):
     """Return comprehensive parameters from a simple WCS as created
     with orb.utils.astrometry.create_wcs.
 
@@ -1983,18 +1982,46 @@ def get_wcs_parameters(_wcs):
     :return: target_x, target_y, deltax, deltay, target_ra,
       target_dec, rotation
     """
-    _wcs2 = _wcs.copy()
-    _wcs2.sip = None
-    target_x, target_y = _wcs2.wcs.crpix
-    target_ra, target_dec = _wcs2.wcs.crval
-    deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(_wcs2)
-    vec10 = np.array(_wcs2.all_world2pix(_wcs2.wcs.crval[0] - deltax, _wcs2.wcs.crval[1], 1)) - _wcs2.wcs.crpix
+    wcs2 = wcs.copy()
+    target_x, target_y = wcs2.wcs.crpix
+    target_ra, target_dec = wcs2.wcs.crval
+    deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(wcs2)
+    vec10 = np.array(wcs2.all_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 1)) - wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-    if abs(rotation) > 90. : warnings.warn('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
-    if not np.allclose(deltax, deltay): raise StandardError('deltax ({}) must be equal to deltay ({})'.format(deltax, deltay))
+    random_star_list_pix = np.random.randint(-100, 100, size=(50,2)).astype(float)
+    random_star_list_deg = wcs2.all_pix2world(random_star_list_pix, 0)
     
-    return target_x, target_y, deltax, deltay, target_ra, target_dec, rotation
+    
+    def diff(p, wcsref, sld, allp):
+        p2 = np.copy(allp)
+        p2[2:4] = p[0:2]
+        p2[-1] = p[2]
+        d = create_wcs(*p2, sip=wcsref).all_world2pix(sld, 0) - wcsref.all_world2pix(sld, 0)
+        return d.flatten()
+
+    allp = [target_x, target_y, deltax, deltay, target_ra, target_dec, rotation]
+    guess = [deltax, deltay, rotation]
+
+    logging.debug('median err before parameters optimization {}'.format(
+        np.nanmedian(diff(guess, wcs2, random_star_list_deg, allp).reshape(
+            random_star_list_deg.shape), axis=0)))
+    
+    fit = optimize.leastsq(diff, guess,
+                           args=(wcs2, random_star_list_deg, allp),
+                           maxfev=100, full_output=True)
+
+    logging.debug('median err after parameters optimization {}'.format(
+        np.nanmedian(diff(fit[0], wcs2, random_star_list_deg, allp).reshape(
+            random_star_list_deg.shape), axis=0)))
+
+    allp[2:4] = fit[0][0:2]
+    allp[-1] = fit[0][2]
+        
+    if np.max(np.abs(rotation)) > 90. : warnings.warn('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
+    if not np.allclose(deltax, deltay): logging.debug('deltax ({}) != deltay ({})'.format(deltax, deltay))
+    
+    return allp
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
                       rc, zoom_factor, box_size, verbose=True, init_wcs=None,
@@ -2476,4 +2503,41 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
 
             
         
+
+
+
+def fit_wcs(star_list_pix, star_list_deg, wcs):
+
+
+    def wcs2p(_wcs):
+        return list(_wcs.wcs.cd.flatten()) + list(_wcs.wcs.crpix) + list(_wcs.wcs.crval)
+    
+    def p2wcs(p, allp):
+        _wcs = pywcs.WCS(naxis=2)
+        _wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        _wcs.wcs.cd = np.array(p[:4]).reshape((2,2))
+        _wcs.wcs.crpix = p[4:6]
+        _wcs.wcs.crval = allp[6:]
+        return _wcs
+
+    def diff(p, star_list_pix, allp):
+        rdiff = p2wcs(p, allp).all_world2pix(star_list_deg, 0) - star_list_pix
+        rdiff = np.sum((rdiff)**2, axis=1)
+        return rdiff
+
+    allp = wcs2p(wcs)
+    guess = allp[:-2]
+    print guess
+    
+    print np.sum(diff(guess, star_list_pix, allp))
+    
+    fit = optimize.leastsq(diff, guess,
+                           args=(star_list_pix, allp),
+                           full_output=True,
+                           maxfev=1000) 
+
+    print fit[0]
+    print np.sum(diff(fit[0], star_list_pix, allp))
+
+    return p2wcs(fit[0], allp)
     

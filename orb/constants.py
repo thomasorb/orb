@@ -44,8 +44,8 @@ LIGHT_VEL_AAS = 2.99792458e18
 FITS_CARD_MAX_STR_LENGTH = 18
 """Max length of a FITS string card"""
 
-#SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/SNVA?"
-SESAME_URL = "http://vizier.cfa.harvard.edu/viz-bin/nph-sesame/-oxp/SNVA?"
+SESAME_URL = "http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oxp/SNVA?"
+#SESAME_URL = "http://vizier.cfa.harvard.edu/viz-bin/nph-sesame/-oxp/SNVA?"
 """Sesame URL """
 
 VIZIER_URL_CA = "http://vizier.hia.nrc.ca/viz-bin/"
