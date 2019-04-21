@@ -53,6 +53,7 @@ import utils.web
 import utils.misc
 import utils.io
 
+import pylab as pl
 
 #################################################
 #### CLASS Frame2D ##############################
@@ -119,6 +120,14 @@ class Frame2D(core.WCSData):
         newim.params['cropped_bbox'] = (xmin, xmax+1, ymin, ymax+1)
         newim.set_wcs(cutout.wcs)
         return newim
+
+    def imshow(self, figscale=15, perc=99, cmap=None):
+        perc = np.clip(perc, 50, 100)
+        vmin, vmax = np.nanpercentile(self.data, [100-perc, perc])
+        ratio = self.dimy / float(self.dimx)
+        fig = pl.figure(figsize=(figscale, figscale*ratio))
+        ax = fig.add_subplot(111, projection=self.get_wcs())
+        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left')
         
 
 #################################################
