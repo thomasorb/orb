@@ -241,7 +241,7 @@ class Cube(core.Tools):
             mean_im = np.zeros((self.dimx, self.dimy), dtype=self.dtype)
             progress = ProgressBar(self.dimz)
             for _ik in range(self.dimz):
-                frame = self.get_data_frame(_ik)
+                frame = self[:,:,_ik]
                 non_nans = np.nonzero(~np.isnan(frame))
                 mean_im[non_nans] += frame[non_nans]
                 progress.update(_ik, info="Creating mean image")
