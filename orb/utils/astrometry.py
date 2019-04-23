@@ -1986,7 +1986,7 @@ def get_wcs_parameters(wcs):
     target_x, target_y = wcs2.wcs.crpix
     target_ra, target_dec = wcs2.wcs.crval
     deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(wcs2)
-    vec10 = np.array(wcs2.all_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 1)) - wcs2.wcs.crpix
+    vec10 = np.array(wcs2.all_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 0)) - wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
     random_star_list_pix = np.random.randint(-100, 100, size=(50,2)).astype(float)
@@ -2527,17 +2527,16 @@ def fit_wcs(star_list_pix, star_list_deg, wcs):
 
     allp = wcs2p(wcs)
     guess = allp[:-2]
-    print guess
     
-    print np.sum(diff(guess, star_list_pix, allp))
+    logging.debug('diff before fit: {}'.format(np.sum(diff(guess, star_list_pix, allp))))
     
     fit = optimize.leastsq(diff, guess,
                            args=(star_list_pix, allp),
                            full_output=True,
                            maxfev=1000) 
 
-    print fit[0]
-    print np.sum(diff(fit[0], star_list_pix, allp))
-
+    logging.debug('best fit parameters: {}'.format(fit[0]))
+    logging.debug('diff before fit: {}'.format(np.sum(diff(fit[0], star_list_pix, allp))))
+    
     return p2wcs(fit[0], allp)
     
