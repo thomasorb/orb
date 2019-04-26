@@ -1707,17 +1707,14 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
 
 
-def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=None,
+def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
             err=None, sip_order=4, crpix=None, crval=None, plot=False):
     """FIT the distortion correction polynomial to match two lists
     of stars (the list of stars 2 is distorded to match the list
     of stars 1).
 
-    :param dimx: X dimension of the image
-
-    :param dimy: Y dimension of the image
-
-    :param scale: Plate scale of the image in arcseconds
+    :param scale: Plate scale of the image in arcseconds (can be a
+      tuple (scalex, scaley) or a single float)
 
     :param star_list1: list of stars 1
 
@@ -1740,6 +1737,7 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
 
     :param crval: (Optional) If an initial wcs is not given (init_sip
       set to None) this header value must be given.
+
     """
     def p2sip(p, sip, direct):
         if direct:
@@ -1816,23 +1814,28 @@ def fit_sip(dimx, dimy, scale, star_list1, star_list2, params=None, init_sip=Non
     if params is not None:
         raise Exception('Not implemented')
 
-
+    if isinstance(scale, float):
+        scale = (scale, scale)
+    elif len(scale) != 2:
+        raise TypeError('scale must a float or a tuple (scalex, scaley)')
+        
     # initialize WCS and SIP if not given
     if init_sip is None:
         if crpix is None or crval is None:
             raise Exception('If an initial wcs is not given (init_sip set to None) CRPIX and CRVAL must be given.')
         
         init_sip = create_wcs(crpix[0], crpix[1],
-                              scale / 3600., scale / 3600.,
+                              scale[0] / 3600., scale[1] / 3600.,
                               crval[0], crval[1], 0.)
     else: # WCS copy to avoid modifing the original WCS
         init_sipt = pywcs.WCS(init_sip.to_header(relax=True))
         init_sipt.sip = copy.copy(init_sip.sip)
         init_sip = init_sipt
 
-    if len(sip2p(init_sip, True)) != len(sip2p(add_sip(init_sip), True)):
-        logging.debug('initial sip order is different from the fitted sip order. initial sip cannot be used.')
-        init_sip.sip = None
+    if init_sip.sip is not None:
+        if len(sip2p(init_sip, True)) != len(sip2p(add_sip(init_sip), True)):
+            logging.debug('initial sip order is different from the fitted sip order. initial sip cannot be used.')
+            init_sip.sip = None
 
     if init_sip.sip is None:
         init_sip = add_sip(init_sip)
@@ -1972,15 +1975,8 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 
     return _wcs
 
-def get_wcs_parameters(wcs):
-    """Return comprehensive parameters from a simple WCS as created
-    with orb.utils.astrometry.create_wcs.
-
-    :param wcs: An astropy.wcs.WCS instance created with
-      orb.utils.astrometry.create_wcs.
-
-    :return: target_x, target_y, deltax, deltay, target_ra,
-      target_dec, rotation
+def _get_wcs_parameters(wcs):
+    """see get_wcs_parameters
     """
     wcs2 = wcs.copy()
     target_x, target_y = wcs2.wcs.crpix
@@ -2018,10 +2014,29 @@ def get_wcs_parameters(wcs):
     allp[2:4] = fit[0][0:2]
     allp[-1] = fit[0][2]
         
-    if np.max(np.abs(rotation)) > 90. : warnings.warn('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
+    if np.max(np.abs(rotation)) > 90. : logging.debug('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
     if not np.allclose(deltax, deltay): logging.debug('deltax ({}) != deltay ({})'.format(deltax, deltay))
     
     return allp
+
+def get_wcs_parameters(wcs):
+    """Return comprehensive parameters from a simple WCS as created
+    with orb.utils.astrometry.create_wcs.
+
+    :param wcs: An astropy.wcs.WCS instance created with
+      orb.utils.astrometry.create_wcs.
+
+    :return: target_x, target_y, deltax, deltay, target_ra,
+      target_dec, rotation
+    """
+
+    trials = 0
+    while trials < 5:
+        try:
+            return _get_wcs_parameters(wcs)
+        except Exception:
+            trials += 1
+    raise StandardError('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
                       rc, zoom_factor, box_size, verbose=True, init_wcs=None,
@@ -2506,7 +2521,7 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
 
 
 
-def fit_wcs(star_list_pix, star_list_deg, wcs):
+def fit_wcs(star_list_pix, star_list_deg, wcs, fitsip=False):
 
 
     def wcs2p(_wcs):
@@ -2536,7 +2551,20 @@ def fit_wcs(star_list_pix, star_list_deg, wcs):
                            maxfev=1000) 
 
     logging.debug('best fit parameters: {}'.format(fit[0]))
-    logging.debug('diff before fit: {}'.format(np.sum(diff(fit[0], star_list_pix, allp))))
+    logging.debug('diff after fit: {}'.format(np.sum(diff(fit[0], star_list_pix, allp))))
+
+    wcs = p2wcs(fit[0], allp)
+    params = get_wcs_parameters(wcs)
+    logging.debug('wcs parameters: {}'.format(params))
+    if fit_sip:
+        logging.debug('sip before fit: {}'.format(repr(wcs.sip)))
+        wcs = fit_sip(params[2:4], wcs.all_world2pix(star_list_deg, 0), star_list_pix, init_sip=wcs,
+                      sip_order=2)
+        logging.debug('sip after fit: {}'.format(repr(wcs.sip)))
+        diff = np.sum((wcs.all_world2pix(star_list_deg, 0) - star_list_pix)**2, axis=1)
+        logging.debug('diff after sip fit: {}'.format(np.sum(diff)))
+
+        
     
-    return p2wcs(fit[0], allp)
+    return wcs
     
