@@ -2138,8 +2138,12 @@ class SpectralCube(Cube):
         counts = np.nansum(self.get_deep_frame().data[region])
         err = np.ones(self.dimz, dtype=float) * np.sqrt(counts) * self.get_gain()
         err = core.Cm1Vector1d(err, axis, params=params)
+        if isinstance(self.params.flambda, float):
+            flambda = np.ones(self.dimz, dtype=float) * self.params.flambda
+        else:
+            flambda = np.copy(self.params.flambda)
         flambda = core.Cm1Vector1d(
-            self.params.flambda, self.get_base_axis(), params=params)
+            flambda, self.get_base_axis(), params=params)
         err = err.multiply(flambda)
         
         params['source_counts'] = counts
