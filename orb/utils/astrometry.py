@@ -2481,7 +2481,6 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
 
     """
     star_nb = len(fit_results[0])
-        
     if star_nb < 4: 
         raise StandardError("Not enough stars to align properly : %d (must be >= 3)"%star_nb)
 

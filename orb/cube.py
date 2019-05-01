@@ -952,7 +952,7 @@ class HDFCube(core.WCSData):
                 star_list[:,1] += y_corr
 
             if alignment_vectors is None:
-                star_lists = list(star_list) * ncpus
+                star_lists = list([np.array(star_list)]) * ncpus
             else:
                 star_lists = list()
                 for ijob in range(ncpus):
@@ -976,7 +976,6 @@ class HDFCube(core.WCSData):
                 
             # get stars photometry for each frame
             params = self.params.convert()
-
             progress.update(ik, info="computing photometry: " + str(ik))
             jobs = [(ijob, job_server.submit(
                 _fit_stars_in_frame,
