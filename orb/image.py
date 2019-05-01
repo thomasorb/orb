@@ -1373,9 +1373,9 @@ class Image(Frame2D):
 
         fit_results = image2.fit_stars(
             star_list2, no_aperture_photometry=True,
-            multi_fit=True, enable_zoom=False,
+            multi_fit=False, enable_zoom=False,
             enable_rotation=True, fix_fwhm=True)
-        
+
         if fit_results.empty:
             raise StandardError('registration failed. check INIT_ANGLE.')
         

@@ -1196,10 +1196,10 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
         star_list_A.astype(float)
 
     wcsA = orb.utils.astrometry.create_wcs(rc[0], rc[1], 1, 1, 0., 0., 0., sip=sip_A)
-    deltax = zoom_factor[0] * np.cos(np.deg2rad(params[3]))
-    deltay = zoom_factor[1] * np.cos(np.deg2rad(params[4]))
+    deltax = zx * np.cos(np.deg2rad(params[3]))
+    deltay = zy * np.cos(np.deg2rad(params[4]))
     wcsB = orb.utils.astrometry.create_wcs(rc[0] + params[0], rc[1] + params[1], deltax, deltay, 0., 0., params[2], sip=sip_B)
-    return wcsB.all_world2pix(wcsA.all_pix2world(star_list_A, 0), 0)
+    return np.squeeze(wcsB.all_world2pix(wcsA.all_pix2world(star_list_A, 0), 0))
 
 
 def get_profile(profile_name):
