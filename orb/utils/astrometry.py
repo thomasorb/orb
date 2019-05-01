@@ -1195,31 +1195,11 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
     if star_list_A.dtype != np.dtype(float):
         star_list_A.astype(float)
 
-    star_list_B = np.empty((star_list_A.shape[0], 2), dtype=float)
-
-    # dist_pix_camA -> perf_pix_camA
-    if sip_A is not None:
-        #star_list_A = sip_pix2im(star_list_A, sip_A)
-        ## star_list_A = sip_A.sip.pix2foc(star_list_A) + sip_A.wcs.crpix
-        raise Exception('must be checked')
-        
-        
-    # geometric transformation_A2B
-    if np.any(params):
-        for istar in range(star_list_A.shape[0]):
-            star_list_B[istar,:] = orb.cutils.transform_A_to_B(
-                star_list_A[istar,0], star_list_A[istar,1],
-                params[0], params[1], params[2], params[3], params[4],
-                rc[0], rc[1], zx, zy)
-    else:
-        star_list_B = np.copy(star_list_A)
-        
-    # perf_pix_camB -> dist_pix_camB
-    if sip_B is not None:
-        ## star_list_B = sip_im2pix(star_list_B, sip_B)
-        raise Exception('must be checked')
-        
-    return star_list_B
+    wcsA = orb.utils.astrometry.create_wcs(rc[0], rc[1], 1, 1, 0., 0., 0., sip=sip_A)
+    deltax = zoom_factor[0] * np.cos(np.deg2rad(params[3]))
+    deltay = zoom_factor[1] * np.cos(np.deg2rad(params[4]))
+    wcsB = orb.utils.astrometry.create_wcs(rc[0] + params[0], rc[1] + params[1], deltax, deltay, 0., 0., params[2], sip=sip_B)
+    return wcsB.all_world2pix(wcsA.all_pix2world(star_list_A, 0), 0)
 
 
 def get_profile(profile_name):
