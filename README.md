@@ -75,7 +75,7 @@ git clone https://github.com/thomasorb/orb.git
 in the downloaded folder
 ```bash
 conda activate orb # you don't need to do it if you are already in the orb environment
-cd path/to/orb-stable
+cd path/to/orb-stable/orb
 python setup.py build_ext --inplace
 python setup.py install
 ```
@@ -97,7 +97,7 @@ git clone https://github.com/thomasorb/orcs.git
 in the downloaded folder
 ```bash
 conda activate orb # you don't need to do it if you are already in the orb environment
-cd path/to/orcs-stable
+cd path/to/orcs-stable/orcs
 python setup.py install
 ```
 
