@@ -54,6 +54,9 @@ conda install -n orb -c astropy photutils
 conda activate orb
 ```
 now your prompt should be something like `(orb) $`.
+
+note: you may now have to install `gcc` on Mac OSX if you want to be able to execute the following with no error (see https://discussions.apple.com/thread/8336714). To check that you have gcc installed type `gcc --help` in a terminal. You should see the usage informations displayed.
+
 ```bash
 pip install gvar --no-deps
 pip install lsqfit --no-deps
