@@ -54,6 +54,7 @@ import utils.err
 import cutils
 
 from core import Lines, FilterFile, Axis
+import core
 
 class FitVector(object):
     """
@@ -2014,12 +2015,12 @@ class NmLinesModel(Cm1LinesModel):
 ################################################
 #### CLASS Params ##############################
 ################################################
-class Params(dict):
+class Params(core.Params):
     """Manage a set of parameters as a special dictionary which
     elements can be accessed like attributes.
     """
-    __getattr__ = dict.__getitem__
-    __delattr__ = dict.__delitem__
+    #__getattr__ = dict.__getitem__
+    #__delattr__ = dict.__delitem__
 
     # parameters cannot be modified when accessed by attribute
     def __setattr__(self, key, value):

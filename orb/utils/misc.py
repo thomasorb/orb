@@ -163,8 +163,9 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
     mask = np.zeros(shape, dtype=float)
     hdu = pyfits.PrimaryHDU(mask)
     mask_list = list()
-    for _region in _regions:        
-        sys.stdout.write('\r loading region: {}'.format(_region))
+    for _region in _regions:
+        if len(_regions) > 1:
+            sys.stdout.write('\r loading region: {}'.format(_region))
         imask2d = pyregion.get_mask([_region], hdu)
         imask2d[:np.min(x_range), :] = 0
         imask2d[:, :np.min(y_range)] = 0
@@ -176,8 +177,11 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
         else:
             mask_list.append([imask[1], imask[0]]) # transposed to
                                                    # return
-        sys.stdout.flush()
-    print '\n'
+        if len(_regions) > 1:
+            sys.stdout.flush()
+            
+    if len(_regions) > 1:
+        print '\n'
     if integrate:
         return np.nonzero(mask.T) # transposed to return
     else:

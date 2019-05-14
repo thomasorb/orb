@@ -27,6 +27,7 @@ import time
 import warnings
 import astropy.io.fits as pyfits
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
+import astropy.io.votable
 import pandas as pd
 
 import bottleneck as bn
@@ -384,7 +385,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
     hdulist.close
 
     if binning is not None:
-        fits_data = bin_image(fits_data, binning)
+        fits_data = utils.image.bin_image(fits_data, binning)
 
     if (nan_filter):
         fits_data = np.nan_to_num(fits_data)
@@ -538,40 +539,6 @@ def read_spiomm_data(hdu, image_path, substract_bias=True):
                 'Bias level (moment, at the center of the frame)')
 
     return frame, hdr
-
-
-
-def bin_image(a, binning):
-    """Return mean binned image. 
-
-    :param image: 2d array to bin.
-
-    :param binning: binning (must be an integer >= 1).
-
-    .. note:: Only the complete sets of rows or columns are binned
-      so that depending on the bin size and the image size the
-      last columns or rows can be ignored. This ensures that the
-      binning surface is the same for every pixel in the binned
-      array.
-    """
-    binning = int(binning)
-
-    if binning < 1: raise Exception('binning must be an integer >= 1')
-    if binning == 1: return a
-
-    if a.dtype is not np.float:
-        a = a.astype(np.float)
-
-    # x_bin
-    xslices = np.arange(0, a.shape[0]+1, binning).astype(np.int)
-    a = np.add.reduceat(a[0:xslices[-1],:], xslices[:-1], axis=0)
-
-    # y_bin
-    yslices = np.arange(0, a.shape[1]+1, binning).astype(np.int)
-    a = np.add.reduceat(a[:,0:yslices[-1]], yslices[:-1], axis=1)
-
-    return a / (binning**2.)
-
 
 
 def open_hdf5(file_path, mode):
@@ -768,9 +735,12 @@ def write_hdf5(file_path, data, header=None,
 
     return new_file_path
 
+
+castables = [int, float, bool, str, unicode,
+             np.int64, np.float64, long, np.float128]
+    
 def cast(a, t_str):
-    for _t in [int, float, bool, str, unicode,
-               np.int64, np.float64, long, np.float128]:
+    for _t in castables:
         if t_str == repr(_t):
             return _t(a)
     raise StandardError('Bad type string {}'.format(t_str))
@@ -783,9 +753,12 @@ def dict2array(data):
     if not isinstance(data, dict): raise TypeError('data must be a dict')
     arr = list()
     for key in data:
-        _tstr = str(type(data[key]))
-        arr.append(np.array(
-            (key, data[key], _tstr)))
+        if type(data[key]) in castables: 
+            _tstr = str(type(data[key]))
+            arr.append(np.array(
+                (key, data[key], _tstr)))
+        else:
+            logging.debug('{} of type {} not passed to array'.format(key, type(data[key])))
     return np.array(arr)
 
 def array2dict(data):
@@ -918,6 +891,20 @@ def cast2hdf5(val):
         
     return val
 
+def get_storing_dtype(arr):
+    if not isinstance(arr, np.ndarray):
+        raise TypeError('arr must be a numpy.ndarray instance')
+    if arr.dtype == np.float64:
+        return np.float32
+    if arr.dtype == np.complex128:
+        return np.complex64
+    else: return arr.dtype
+
+def cast_storing_dtype(arr):
+    if not isinstance(arr, np.ndarray):
+        raise TypeError('arr must be a numpy.ndarray instance')
+    return arr.astype(get_storing_dtype(arr))
+
 
 def save_dflist(dflist, path):
     """Save a list of dataframes
@@ -936,9 +923,7 @@ def save_dflist(dflist, path):
         if dflist[idf] is not None:
             dflist[idf].to_hdf(path, 'df{:06d}'.format(idf),
                                format='table', mode='a')
-            
-
-
+        
 def load_dflist(path):
     """Save a list of dataframes
 
@@ -956,3 +941,24 @@ def load_dflist(path):
         except KeyError:
             dflist.append(None)
     return dflist
+
+def read_votable(votable_file):
+    """read a votable and transfer it as as pandas dataframe.
+
+    taken from https://gist.github.com/icshih/52ca49eb218a2d5b660ee4a653301b2b
+    """
+    votable = astropy.io.votable.parse(votable_file)
+    table = votable.get_first_table().to_table(use_names_over_ids=True)
+    return table.to_pandas()
+
+def save_starlist(path, starlist):
+    """Save a star list as a two columnfile X, Y readable by ds9
+    """
+    orb.utils.validate.is_2darray(starlist, object_name='starlist')
+    if starlist.shape[1] != 2:
+        raise TypeError('starlist must be of shape (n,2)')
+
+    with open_file(path, 'w') as f:
+        for i in range(starlist.shape[0]):
+            f.write('{} {}\n'.format(starlist[i,0], starlist[i,1]))
+        f.flush()

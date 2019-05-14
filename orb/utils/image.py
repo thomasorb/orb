@@ -992,6 +992,38 @@ def simulate_calibration_laser_map(nx, ny, pixel_size,
         nx, ny, pixel_size, mirror_distance,
         theta_cx, theta_cy, phi_x, phi_y, phi_r)))
 
+def bin_image(a, binning):
+    """Return mean binned image. 
+
+    :param image: 2d array to bin.
+
+    :param binning: binning (must be an integer >= 1).
+
+    .. note:: Only the complete sets of rows or columns are binned
+      so that depending on the bin size and the image size the
+      last columns or rows can be ignored. This ensures that the
+      binning surface is the same for every pixel in the binned
+      array.
+    """
+    binning = int(binning)
+
+    if binning < 1: raise Exception('binning must be an integer >= 1')
+    if binning == 1: return a
+
+    if a.dtype is not np.float:
+        a = a.astype(np.float)
+
+    # x_bin
+    xslices = np.arange(0, a.shape[0]+1, binning).astype(np.int)
+    a = np.add.reduceat(a[0:xslices[-1],:], xslices[:-1], axis=0)
+
+    # y_bin
+    yslices = np.arange(0, a.shape[1]+1, binning).astype(np.int)
+    a = np.add.reduceat(a[:,0:yslices[-1]], yslices[:-1], axis=1)
+
+    return a / (binning**2.)
+
+
 def nanbin_image(im, binning):
     """Mean image (or cube) binning robust to NaNs.
 
@@ -1012,7 +1044,6 @@ def nanbin_image(im, binning):
         return np.squeeze(np.nanmean(np.nanmean(im_view, axis=3), axis=1))
     else:
         return np.nanmean(im).reshape((1,1))
-    #return orb.cutils.nanbin_image(im.astype(np.float64), int(binning))
 
 
 def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,

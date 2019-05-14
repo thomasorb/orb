@@ -394,7 +394,7 @@ class Logger(object):
 
 
 ################################################
-#### CLASS ROParams ############################
+#### CLASS Params ############################
 ################################################
 class Params(dict):
     """Special dictionary which elements can be accessed like
@@ -420,6 +420,30 @@ class Params(dict):
         conv.update(self)
         return conv
 
+    def save(self, path):
+        """Try to save data in an HDF5 format.
+
+        .. warning:: All elements might not be saved
+        """
+        data = self.convert()
+        with utils.io.open_hdf5(path, 'w') as f:
+            for ikey in data:
+                try:
+                    f.create_dataset(ikey, data=data[ikey])
+                except TypeError:
+                    print 'error saving {} of type {}'.format(ikey, type(data[ikey]))
+                    
+    def load(self, path):
+        """Load data from an HDF5 file saved with save method.
+        """
+        with utils.io.open_hdf5(path, 'r') as f:
+            for ikey in f:
+                val = f[ikey]
+                if val.shape == ():
+                    self[ikey] = val[()]
+                else:
+                    self[ikey] = val[:]
+        return self
     
 ################################################
 #### CLASS ROParams ############################
@@ -1850,6 +1874,7 @@ class Data(object):
                     if axis is None:
                         self.axis = Axis(self.hdffile['/axis'][:])
 
+                # load err
                 if '/err' in self.hdffile:
                     if err is None:
                         self.err = self.hdffile['/err'][:]
@@ -1903,7 +1928,13 @@ class Data(object):
             if self.data.ndim > 2:
                 self.dimz = self.data.shape[2]
         self.shape = self.data.shape
-        
+
+
+        # reduce complex data to real data if imaginary part is null
+        if np.iscomplexobj(self.data):
+            if not np.any(np.iscomplex(self.data)):
+                self.data = self.data.astype(float)
+
         # load params
         if params is not None:
             self.params.update(params)
@@ -2092,7 +2123,6 @@ class Data(object):
             header['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
                                           # inconsistency
         
-
         return header
 
     def get_wcs(self):
@@ -2363,6 +2393,37 @@ class Vector1d(Data):
         :param arg: If None, no argument is supplied. Else, can be a
           float or a Vector1d instance.
         """
+        # check if complex
+        iscomplex = False
+        if np.any(np.iscomplex(self.data)):
+            iscomplex = True
+        if isinstance(arg, Vector1d):
+            if np.any(np.iscomplex(arg.data)) or iscomplex:
+                iscomplex = True
+                arg_real = arg.copy()
+                arg_real.data = arg.data.real.astype(float)
+                arg_imag = arg.copy()
+                arg_imag.data = arg.data.imag.astype(float)
+        elif np.size(arg) <= 1:
+            if np.iscomplex(arg) or iscomplex:
+                iscomplex = True
+                arg_real = float(arg.real)
+                arg_imag = float(arg.imag)
+        else:
+            raise TypeError('arg must be a float or a Vector1d instance')
+
+        if iscomplex:
+            data_real = self.copy()
+            data_imag = self.copy()
+            data_real.data = data_real.data.real.astype(float)
+            data_imag.data = data_imag.data.imag.astype(float)
+
+            data_real = data_real.math(opname, arg=arg_real)
+            data_imag = data_imag.math(opname, arg=arg_imag)
+            data_real.data = data_real.data.astype(complex)
+            data_real.data.imag = data_imag.data
+            return data_real
+        
         self.assert_axis()
 
         out = self.copy()
@@ -2375,7 +2436,7 @@ class Vector1d(Data):
         # project arg on self axis
         if arg is not None:
             if isinstance(arg, Vector1d):
-                arg = arg.project(out.axis).data
+                arg = arg.project(out.axis)
 
             elif np.size(arg) != 1:
                 raise TypeError('arg must be a float or a Vector1d instance')
@@ -2392,6 +2453,8 @@ class Vector1d(Data):
             if isinstance(_arg, Vector1d):
                 if arg.has_err():
                     _arg = gvar.gvar(arg.data, arg.err)
+                else:
+                    _arg = _arg.data
 
         # do the math
         if arg is None:
@@ -2695,12 +2758,12 @@ class FilterFile(Vector1d):
 class WCSData(Data, Tools):
     """Add WCS functionalities to a Data instance.
     """
-    wcs_params = {'instrument':'sitelle',
-                  'camera':1,
-                  'target_ra':0.,
-                  'target_dec':0.,
-                  'target_x':0,
-                  'target_y':0}
+    default_params = {'instrument':'sitelle',
+                      'camera':1,
+                      'target_ra':0.,
+                      'target_dec':0.,
+                      'target_x':0,
+                      'target_y':0}
 
     convert_params = {'AIRMASS':'airmass',
                       'EXPTIME':'exposure_time',
@@ -2713,13 +2776,18 @@ class WCSData(Data, Tools):
     def __init__(self, data, instrument=None, config=None,
                  data_prefix="./", sip=None, **kwargs):
 
+        if isinstance(data, str):
+            data_path = str(data)
+        else:
+            data_path = None
+            
         # try to read instrument parameter from file
         if instrument is None:
-            if isinstance(data, str):
-                if os.path.exists(data):
-                    instrument = utils.misc.read_instrument_value_from_file(data)
+            if data_path is not None:
+                if os.path.exists(data_path):
+                    instrument = utils.misc.read_instrument_value_from_file(data_path)
         
-        if instrument is None: # important even if seems duplicated ;)
+        if instrument is None: # important even if it seems duplicated ;)
             if 'params' in kwargs:
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
@@ -2728,26 +2796,35 @@ class WCSData(Data, Tools):
                        data_prefix=data_prefix,
                        config=config)
 
-        Data.__init__(self, data, **kwargs)
+        Data.__init__(self, data, **kwargs) # note that this init may change the value of data
+
+        # load dxdymaps
+        self.dxdymaps = None
+        if data_path is not None:
+            if 'hdf' in data_path:    
+                self.hdffile = utils.io.open_hdf5(data_path, 'r')
+              
+                if '/dxmap' in self.hdffile and '/dymap' in self.hdffile:
+                    self.dxdymaps= (self.hdffile['/dxmap'][:], self.hdffile['/dymap'][:])
 
         # checking
         if self.data.ndim < 2:
             raise TypeError('A dataset must have at least 2 dimensions to support WCS')
 
-        for iparam in self.wcs_params:
+        for iparam in ['instrument', 'camera']:
             if iparam not in self.params:
-                self.params.reset(iparam, self.wcs_params[iparam])
+                self.params.reset(iparam, self.default_params[iparam])
                 logging.debug('{} set to default value: {}'.format(
-                    iparam, self.wcs_params[iparam]))
+                    iparam, self.default_params[iparam]))
                 
         # check params
+        
         self.params.reset('instrument', self.instrument)
 
         # convert camera param
         self.params.reset(
             'camera', utils.misc.convert_camera_parameter(
                 self.params.camera))
-
 
         # compute binning
         if self.is_cam1(): cam = 'CAM1'
@@ -2794,25 +2871,39 @@ class WCSData(Data, Tools):
             coeffs = self.get_initial_alignment_parameters()
             
             logging.debug('target_x, target_y initially at {}, {}'.format(target_x, target_y))
-            target_x, target_y = cutils.transform_A_to_B(
-                self.params.target_x, self.params.target_y,
-                coeffs.dx, coeffs.dy,
-                coeffs.dr,
-                0., 0., coeffs.rc[0], coeffs.rc[1], coeffs.zoom, coeffs.zoom)
+            target_x, target_y = utils.astrometry.transform_star_position_A_to_B(
+                [self.params.target_x, self.params.target_y],
+                [coeffs.dx, coeffs.dy, coeffs.dr, 0., 0.],
+                [coeffs.rc[0], coeffs.rc[1]],
+                [coeffs.zoom, coeffs.zoom])
             logging.debug('target_x, target_y recomputed to {}, {}'.format(target_x, target_y))
 
         self.params.reset('target_x', target_x)
         self.params.reset('target_y', target_y)
 
+        if 'target_ra' in self.params:
+            if self.params.target_ra == self.default_params['target_ra']:
+                del self.params['target_ra']
+
+        if 'target_dec' in self.params:
+            if self.params.target_dec == self.default_params['target_dec']:
+                del self.params['target_dec']
+        
+        
         if 'target_ra' not in self.params:
             if 'TARGETR' in self.params:
                 self.params['target_ra'] = utils.astrometry.ra2deg(
                     self.params['TARGETR'].split(':'))
+            else:
+                self.params['target_ra'] = self.default_params['target_ra']
+
         if 'target_dec' not in self.params:
             if 'TARGETD' in self.params:
                 self.params['target_dec'] = utils.astrometry.dec2deg(
                     self.params['TARGETD'].split(':'))
-        
+            else:
+                self.params['target_dec'] = self.default_params['target_dec']
+
         if 'target_ra' in self.params:
             if not isinstance(self.params.target_ra, float):
                 raise TypeError('target_ra must be a float')
@@ -2831,52 +2922,71 @@ class WCSData(Data, Tools):
                                                - float(self.config.INIT_ANGLE))
             logging.debug('wcs_rotation computed from config parameters: {}'.format(
                 self.params.wcs_rotation))
-        
-        if 'scale' not in self.params:
-            if self.is_cam1():
-                self.params['scale'] = (self.config.FIELD_OF_VIEW_1
-                                        / self.config.CAM1_DETECTOR_SIZE_X * 60.)
-            else:
-                self.params['scale'] = (self.config.FIELD_OF_VIEW_2
-                                        / self.config.CAM2_DETECTOR_SIZE_X * 60.)
-            logging.debug('scale computed from config parameters: {}'.format(
-                self.params.scale))
+
+        # define platescale
+        if 'delta_x' not in self.params:
+            self.params['delta_x'] = self.get_scale() / 3600.
             
+        if 'delta_y' not in self.params:
+            self.params['delta_y'] = self.get_scale() / 3600.
+                
         # check if all needed parameters are present
-        for iparam in self.wcs_params:
+        for iparam in self.default_params:
             if iparam not in self.params:
                 raise StandardError('param {} must be set'.format(iparam))
 
         # load sip
-        self.sip = None
         if sip is not None:
-            if isinstance(sip, pywcs.WCS):
-                self.sip = sip
-            else:
+            if not isinstance(sip, pywcs.WCS):
                 raise StandardError('sip must be an astropy.wcs.WCS instance')
         else:
             if self.get_wcs().sip is None:
-                self.sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+                sip = self.load_sip(self._get_sip_file_path(self.params.camera))
                 logging.debug('SIP Loaded from{}\n{}'.format(
-                    self._get_sip_file_path(self.params.camera),
-                    self.sip))
+                    self._get_sip_file_path(self.params.camera), sip))
             else:
-                self.sip = self.get_wcs()
-                logging.debug('SIP already defined\n{}'.format(self.sip.sip))
+                sip = self.get_wcs()
+                logging.debug('SIP already defined\n{}'.format(sip))
 
         # reset wcs
         wcs = utils.astrometry.create_wcs(
             self.params.target_x, self.params.target_y,
-            self.params.scale / 3600., self.params.scale / 3600.,
+            self.params.delta_x, self.params.delta_y,
             self.params.target_ra, self.params.target_dec,
-            self.params.wcs_rotation, sip=self.sip)
+            self.params.wcs_rotation, sip=sip)
 
         self.set_wcs(wcs)
 
         logging.debug(self.get_wcs())
         self.validate_wcs()
         
-            
+    def has_dxdymaps(self):
+        """Return True is self.dxmap and self.dymap exist"""
+        if self.dxdymaps is None: return False
+        return True
+
+    def assert_dxdymaps(self):
+        """Raise an exception if dxdymaps are not loaded"""
+        if not self.has_dxdymaps():
+            raise StandardError('no dxdymaps loaded')
+
+    def set_dxdymaps(self, dxmap, dymap):
+        """Set dxmap and dymap. Must have the same shape as the image shape.
+
+        :param dxmap: Path to a dxmap or a numpy.ndarray
+        :param dymap: Path to a dymap or a numpy.ndarray
+        """
+        if isinstance(dxmap, str):
+            dxmap = utils.io.read_fits(dxmap)
+        if isinstance(dymap, str):
+            dymap = utils.io.read_fits(dymap)
+        if dxmap.shape != self.shape:
+            raise TypeError('dxmap must have same shape as image')
+        if dymap.shape != self.shape:
+            raise TypeError('dymap must have same shape as image')
+        self.dxdymaps = (dxmap, dymap)
+
+        
     def is_cam1(self):
         """Return true is image comes from camera 1 or is a merged frame
         """
@@ -2921,7 +3031,8 @@ class WCSData(Data, Tools):
         
         self.params['target_x'] = _params[0]
         self.params['target_y'] = _params[1]
-        self.params['scale'] = _params[2] * 3600
+        self.params['delta_x'] = _params[2]
+        self.params['delta_y'] = _params[3]
         self.params['target_ra'] = _params[4]
         self.params['target_dec'] = _params[5]
         self.params['wcs_rotation'] = _params[6]
@@ -2941,10 +3052,11 @@ class WCSData(Data, Tools):
         """
         _fits_params = np.array(utils.astrometry.get_wcs_parameters(
             self.get_wcs(validate=False)))
+        
         _wcs_params = np.array([self.params['target_x'],
                                 self.params['target_y'],
-                                self.params['scale'] / 3600.,
-                                self.params['scale'] / 3600.,
+                                self.params['delta_x'],
+                                self.params['delta_y'],
                                 self.params['target_ra'],
                                 self.params['target_dec'],
                                 self.params['wcs_rotation']])
@@ -2967,7 +3079,7 @@ class WCSData(Data, Tools):
         :param deg: (Optional) If true, celestial coordinates are
           returned in sexagesimal format (default False).
 
-        .. note:: it is much more effficient to pass a list of
+        .. note:: it is much more efficient to pass a list of
           coordinates than run the function for each couple of
           coordinates you want to transform.
         """
@@ -2983,7 +3095,7 @@ class WCSData(Data, Tools):
         else:
             raise StandardError('xy must be a tuple (x,y) of coordinates or a list of tuples ((x0,y0), (x1,y1), ...)')
 
-        if not self.has_param('dxmap') or not self.has_param('dymap'):
+        if not self.has_dxdymaps():
             coords = np.array(
                 self.get_wcs().all_pix2world(
                     x, y, 0)).T
@@ -2994,7 +3106,7 @@ class WCSData(Data, Tools):
                 xyarr = xy
             coords = utils.astrometry.pix2world(
                 self.get_wcs_header(), self.dimx, self.dimy, xyarr,
-                self.params.dxmap, self.params.dymap)
+                self.dxdymaps[0], self.dxdymaps[1])
         if deg:
             return coords
         else: return np.array(
@@ -3024,7 +3136,7 @@ class WCSData(Data, Tools):
         else:
             raise StandardError('radec must be a tuple (ra,dec) of coordinates or a list of tuples ((ra0,dec0), (ra1,dec1), ...)')
 
-        if not self.has_param('dxmap') or not self.has_param('dymap'):
+        if not self.has_dxdymaps():
             coords = np.array(
                 self.get_wcs().all_world2pix(
                     ra, dec, 0,
@@ -3034,29 +3146,53 @@ class WCSData(Data, Tools):
             radecarr = np.atleast_2d([ra, dec]).T
             coords = utils.astrometry.world2pix(
                 self.get_wcs_header(), self.dimx, self.dimy, radecarr,
-                self.params.dxmap, self.params.dymap)
+                self.dxdymaps[0], self.dxdymaps[1])
 
         return coords
+
+
+    def get_scale(self):
+        """Return mean platescale in arcsec/pixel"""
+        if self.is_cam1():
+            basic_scale = (self.config.FIELD_OF_VIEW_1
+                           / self.config.CAM1_DETECTOR_SIZE_X * 60.)
+        else:
+            basic_scale = (self.config.FIELD_OF_VIEW_2
+                           / self.config.CAM2_DETECTOR_SIZE_X * 60.)
+
+        if not self.has_param('deltax') or not self.has_param('deltay'):
+            logging.debug('scale computed from config parameters')
+            return basic_scale
+
+        # check platescale
+        platescale_ok = True
+        if np.abs(((basic_scale / 3600.) / self.params.delta_x) - 1) > 0.05:
+            platescale_ok = False
+            warnings.warn('wcs platescale along X ({}) seems incoherent with known platescale ({})'.format(self.params.delta_x, basic_scale/3600.))
+        if np.abs(((basic_scale / 3600.) / self.params.delta_y) - 1) > 0.05:
+            platescale_ok = False
+            warnings.warn('wcs platescale along Y ({}) seems incoherent with known platescale ({})'.format(self.params.delta_y, basic_scale/3600.))
+
+        if platescale_ok:
+            return np.mean([self.params.delta_x, self.params.delta_y]) * 3600.
+        else:
+            logging.debug('scale computed from config parameters')
+            return basic_scale
+
     
     def arc2pix(self, x):
         """Convert pixels to arcseconds
 
         :param x: a value or a vector in pixel
         """
-        if self.has_param('scale'):
-            return np.array(x).astype(float) / self.params.scale
-        else:
-            raise StandardError("Scale not defined")
+        return np.array(x).astype(float) / self.get_scale()
 
     def pix2arc(self, x):
         """Convert arcseconds to pixels
 
         :param x: a value or a vector in arcsec
         """
-        if self.has_param('scale'):
-            return np.array(x).astype(float) * self.params.scale
-        else:
-            raise StandardError("Scale not defined")
+        return np.array(x).astype(float) * self.get_scale()
 
     def query_vizier(self, catalog='gaia', max_stars=100):
         """Return a list of star coordinates around an object in a
@@ -3103,5 +3239,22 @@ class WCSData(Data, Tools):
         coeffs.zoom = float(zoom)
 
         return coeffs
+
+
+    def writeto(self, path):
+        """Write data to an hdf file
+
+        :param path: hdf file path.
+        """
+        Data.writeto(self, path)
+        with utils.io.open_hdf5(path, 'a') as hdffile:
+            if self.has_dxdymaps():
+                hdffile.create_dataset(
+                    '/dxmap',
+                    data=self.dxdymaps[0].astype(float))
+                hdffile.create_dataset(
+                    '/dymap',
+                    data=self.dxdymaps[1].astype(float))
+                
 
 

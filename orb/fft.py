@@ -806,6 +806,16 @@ class RealSpectrum(Spectrum):
                                    np.sqrt(self.params.source_counts))
         return  self.compute_counts_in_pectrum() / _source_counts
 
+    def subtract_sky(self, sky):
+        """Subtract sky interferogram. 
+        
+        The values of the parameter 'pixels' in both this
+        interferogram and the sky interferogram should be set to the
+        number of integrated pixels.
+        """
+        sky = sky.copy()
+        sky.data *= self.params.pixels / sky.params.pixels
+        self = self.math('subtract', sky)
 
 #################################################
 #### CLASS PhaseMaps ############################

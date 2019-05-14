@@ -177,53 +177,29 @@ class Image(Frame2D):
         self.fit_tol = self.FIT_TOL
 
         # define astrometry parameters        
-        if 'fwhm_arc' in self.params:
-            self.fwhm_arc = self.params.fwhm_arc
-        else:
-            self.fwhm_arc = self.config.INIT_FWHM
+        if not self.has_param('fwhm_arc'):
+            self.params['fwhm_arc'] = self.config.INIT_FWHM
 
-        self.reset_scale(self.params.scale)
 
     def _get_fit_results_path(self):
         """Return the default path to the file containing all fit
         results."""
         return self._data_path_hdr + "fit_results.hdf5"
-
-    def _get_guess_matrix_path(self):
-        """Return path to the guess matrix"""
-        return self._data_path_hdr + "guess_matrix.fits"
-
-    def reset_scale(self, scale):
-        """Reset scale attribute.
         
-        :param scale: Frame scale in arcsec/pixel
-        """
-        self.params['scale'] = float(scale)
-        self.reset_fwhm_arc(self.fwhm_arc)
-
     def reset_fwhm_arc(self, fwhm_arc):
         """Reset FWHM of stars in arcsec
 
         :param fwhm_arc: FWHM of stars in arcsec
         """
-        self.fwhm_arc = float(fwhm_arc)
-        self.reset_fwhm_pix(self.arc2pix(self.fwhm_arc))
+        self.params['fwhm_arc'] = float(fwhm_arc)
 
-    def reset_fwhm_pix(self, fwhm_pix):
-        """Reset FWHM of stars in pixels
+    def get_fwhm_pix(self):
+        return self.arc2pix(self.params.fwhm_arc)
 
-        :param fwhm_arc: FWHM of stars in pixels
-        """
-        self.fwhm_pix = float(fwhm_pix)
-        self.reset_box_size()
-
-    def reset_box_size(self):
-        """Reset box size attribute. Useful if FWHM or scale has been
-        modified after class init.
-        """
-        self.box_size = int(np.ceil(self.box_size_coeff *  self.fwhm_pix))
-        self.box_size += int(~self.box_size%2) # make it odd
-
+    def get_box_size(self):
+        box_size = int(np.ceil(self.box_size_coeff *  self.get_fwhm_pix()))
+        box_size += int(~box_size%2) # make it odd
+        return box_size
     
     def copy(self, data=None):
         """Return a copy of the instance
@@ -232,7 +208,7 @@ class Image(Frame2D):
         """
         return Frame2D.copy(self, data=data, instrument=self.instrument,
                             config=self.config, data_prefix=self._data_prefix,
-                            sip=self.sip)
+                            sip=self.get_wcs())
     
 
     def detrend(self, bias=None, dark=None, flat=None, shift=None, cr_map=None):
@@ -332,8 +308,6 @@ class Image(Frame2D):
             return [std_ra, std_dec]
             
 
-    
-
     def load_fit_results(self, fit_results_path=None):
         """Load a file containing the fit results"""
         if fit_results_path is None:
@@ -372,7 +346,7 @@ class Image(Frame2D):
         FWHM_STARS_NB = 30
         
         mean, median, std = self.get_stats()
-        daofind = photutils.DAOStarFinder(fwhm=self.fwhm_pix,
+        daofind = photutils.DAOStarFinder(fwhm=self.get_fwhm_pix(),
                                           threshold=DETECT_THRESHOLD * std)
         sources = daofind(self.data.T - median).to_pandas()
         if len(sources) == 0: raise StandardError('no star detected, check input image')
@@ -415,11 +389,11 @@ class Image(Frame2D):
         
         mean_fwhm, mean_fwhm_err = utils.astrometry.detect_fwhm_in_frame(
             self.data, star_list,
-            self.fwhm_pix)
+            self.get_fwhm_pix())
         
         logging.info("Detected stars FWHM : {:.2f}({:.2f}) pixels, {:.2f}({:.2f}) arc-seconds".format(mean_fwhm[0], mean_fwhm_err[0], self.pix2arc(mean_fwhm[0]), self.pix2arc(mean_fwhm_err[0])))
 
-        self.reset_fwhm_pix(mean_fwhm[0])
+        self.reset_fwhm_arc(self.pix2arc(mean_fwhm[0]))
         return mean_fwhm[0], mean_fwhm_err[0]
 
     def aperture_photometry(self, star_list, aper_coeff=3., silent=False):
@@ -441,10 +415,10 @@ class Image(Frame2D):
 
         star_list = utils.astrometry.load_star_list(star_list)
         aper = photutils.CircularAperture(star_list,
-                                          r=C_AP * self.fwhm_pix)
+                                          r=C_AP * self.get_fwhm_pix())
         aper_ann = photutils.CircularAnnulus(star_list,
-                                             r_in=C_IN * self.fwhm_pix,
-                                             r_out=C_OUT * self.fwhm_pix)
+                                             r_in=C_IN * self.get_fwhm_pix(),
+                                             r_out=C_OUT * self.get_fwhm_pix())
 
         ann_masks = aper_ann.to_mask(method='center')
         ann_medians = list()
@@ -475,11 +449,12 @@ class Image(Frame2D):
                  max_radius_coeff=np.sqrt(2),
                  recompute_init=True,
                  refine_scale=True,
+                 brute_force=True,
                  sip_order=3,
                  return_fit_params=False, rscale_coeff=1.,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
-                 return_error_spl=False):
+                 return_error_spl=False, star_list_query=None, fwhm_arc=None):
         """Register data and return a corrected pywcs.WCS
         object.
 
@@ -504,6 +479,9 @@ class Image(Frame2D):
         :param refine_scale: (Optional) If True, plate scale (zoom) is
           refined but registration takes a longer time.
 
+        :param brute_force: (Optional) If True initial parameters are
+          refined via brute force (default True).
+
         :param return_fit_params: (Optional) If True return final fit
           parameters instead of wcs (default False).
 
@@ -526,6 +504,12 @@ class Image(Frame2D):
           registration are returned as
           scipy.interpolate.RectBivariateSpline instances (default
           False).
+
+        :param star_list_query: (Optional) A list of star positions in
+          degree to perform registration. fwhm_arc must also be set.
+
+        :param fwhm_arc: (Optional) must be set if star_list_query is
+          not None.
 
         """
         def get_transformation_error(guess, deg_list, fit_list,
@@ -553,6 +537,7 @@ class Image(Frame2D):
             final_star_list = list()
             for istar in star_list:
                 posx = istar[0] ; posy = istar[1]
+                if np.isnan(posx) or np.isnan(posy): continue
                 r = np.sqrt((posx - self.dimx/2.)**2.
                               + (posy - self.dimy/2)**2.)
                 if r <= rmax:
@@ -588,7 +573,7 @@ class Image(Frame2D):
             
             if snr_min is None:
                 snr_min = max(utils.stats.robust_median(snr), 5.)
-                snr_min = min(snr_min, 15)
+                snr_min = min(snr_min, 10)
                 logging.debug('star filter snr min: {}'.format(snr_min))
             
             if return_index:
@@ -634,43 +619,25 @@ class Image(Frame2D):
         
         logging.info('Computing WCS')
 
-        logging.info("Initial scale: {} arcsec/pixel".format(self.params.scale))
+        logging.info("Initial scale: {} arcsec/pixel".format(self.get_scale()))
         logging.info("Initial rotation: {} degrees".format(self.params.wcs_rotation))
         logging.info("Initial target position in the image (X, Y): {} {}".format(
             self.params.target_x, self.params.target_y))
         logging.info("Initial target position in the image (RA, DEC): {} {}".format(
             self.params.target_ra, self.params.target_dec))
-        deltax = self.params.scale / 3600. # arcdeg per pixel
-        deltay = float(deltax)
+        deltax = self.params.delta_x # arcdeg per pixel
+        deltay = self.params.delta_y
 
-        # get FWHM
-        star_list_fit_init_path, fwhm_arc = self.detect_stars(
-            min_star_number=max_stars_detect, max_roundness=max_roundness,
-            max_radius_coeff=max_radius_coeff)
-        star_list_fit_init = utils.astrometry.load_star_list(
-            star_list_fit_init_path, remove_nans=True)
-        
-        self.box_size_coeff = 5.
-        self.reset_fwhm_arc(fwhm_arc)
-
-        # clean deep frame by keeping only the pixels around the
-        # detected stars to avoid strong saturated stars.
-        deep_frame_corr = np.empty_like(self.data)
-        deep_frame_corr.fill(np.nan)
-        for istar in range(star_list_fit_init.shape[0]):
-            x_min, x_max, y_min, y_max = utils.image.get_box_coords(
-                star_list_fit_init[istar, 0],
-                star_list_fit_init[istar, 1],
-                self.fwhm_pix*7,
-                0, self.dimx,
-                0, self.dimy)
-            deep_frame_corr[x_min:x_max,
-                            y_min:y_max] = self.data[x_min:x_max,
-                                                     y_min:y_max]
-        
         # Query to get reference star positions in degrees
-        star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
-        
+        if star_list_query is None:
+            star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
+        else:
+            star_list_query = np.copy(star_list_query)
+            if fwhm_arc is None:
+                warnings.warn('fwhm_arc is kept to its default value: {}'.format(self.params.fwhm_arc))
+            else:
+                self.reset_fwhm_arc(fwhm_arc)
+                
         if len(star_list_query) < MIN_STAR_NB:
             raise StandardError("Not enough stars found in the field (%d < %d)"%(
                 len(star_list_query), MIN_STAR_NB))
@@ -682,7 +649,7 @@ class Image(Frame2D):
         wcs = utils.astrometry.create_wcs(
             self.params.target_x, self.params.target_y,
             deltax, deltay, self.params.target_ra, self.params.target_dec,
-            self.params.wcs_rotation, sip=self.sip)
+            self.params.wcs_rotation, sip=self.get_wcs())
         
         # Compute initial star positions from initial transformation
         # parameters
@@ -690,6 +657,23 @@ class Image(Frame2D):
         star_list_pix = radius_filter(
             world2pix(wcs, star_list_deg), rmax)
 
+        
+        # get FWHM
+        if recompute_init:
+            star_list_fit_init_path, fwhm_arc = self.detect_stars(
+                min_star_number=max_stars_detect, max_roundness=max_roundness,
+                max_radius_coeff=max_radius_coeff)
+            star_list_fit_init = utils.astrometry.load_star_list(
+                star_list_fit_init_path, remove_nans=True)
+            self.reset_fwhm_arc(fwhm_arc)
+
+        elif brute_force:
+            star_list_fit_init = utils.astrometry.df2list(
+                self.fit_stars(star_list_pix[:50,], no_aperture_photometry=True))
+            
+        self.box_size_coeff = 5.
+
+        
         ## Plot star lists #####
         # import pylab as pl
         # pl.figure(figsize=(25,25))
@@ -710,7 +694,7 @@ class Image(Frame2D):
                 iwcs = utils.astrometry.create_wcs(
                     self.params.target_x, self.params.target_y,
                     deltax, deltay, self.params.target_ra, self.params.target_dec,
-                    self.params.wcs_rotation + iangle, sip=self.sip)
+                    self.params.wcs_rotation + iangle, sip=self.get_wcs())
                 istar_list_pix = radius_filter(
                     world2pix(iwcs, star_list_deg), rmax)
 
@@ -734,7 +718,7 @@ class Image(Frame2D):
             wcs = utils.astrometry.create_wcs(
                 self.params.target_x, self.params.target_y,
                 deltax, deltay, self.params.target_ra, self.params.target_dec,
-                self.params.wcs_rotation, sip=self.sip)
+                self.params.wcs_rotation, sip=self.get_wcs())
 
             star_list_pix = radius_filter(
                 world2pix(wcs, star_list_deg), rmax)
@@ -746,77 +730,93 @@ class Image(Frame2D):
                     self.params.target_x, self.params.target_y))
 
         ## brute force guess ####
-        x_range_len = max(self.dimx, self.dimy) / float(XY_HIST_BINS) * 4
-        y_range_len = x_range_len
-        r_range_len = ANGLE_RANGE / float(ANGLE_STEPS) * 8
-        x_range = np.linspace(-x_range_len/2, x_range_len/2,
-                              XYRANGE_STEP_NB)
-        y_range = np.linspace(-y_range_len/2, y_range_len/2,
-                              XYRANGE_STEP_NB)
-        r_range = np.linspace(-r_range_len, r_range_len,
-                              ANGLE_STEPS)
+        if brute_force:
+            # clean deep frame by keeping only the pixels around the
+            # detected stars to avoid strong saturated stars.
+            deep_frame_corr = np.empty_like(self.data)
+            deep_frame_corr.fill(np.nan)
+            for istar in range(star_list_fit_init.shape[0]):
+                x_min, x_max, y_min, y_max = utils.image.get_box_coords(
+                    star_list_fit_init[istar, 0],
+                    star_list_fit_init[istar, 1],
+                    self.get_fwhm_pix()*7,
+                    0, self.dimx,
+                    0, self.dimy)
+                deep_frame_corr[x_min:x_max,
+                                y_min:y_max] = self.data[x_min:x_max,
+                                                         y_min:y_max]
 
-        dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
-            deep_frame_corr,
-            star_list_deg, x_range, y_range, r_range,
-            None, 1., self.fwhm_pix * 3., init_wcs=wcs)
-            
-        # refined brute force guess
-        x_range_len = max(np.diff(x_range)[0] * 4, self.fwhm_pix * 3) # 3 FWHM min
-        y_range_len = x_range_len
-        finer_angle_range = np.diff(r_range)[0] * 4.
-        finer_xy_step = min(XYRANGE_STEP_NB / 4,
-                            int(x_range_len) + 1) # avoid xystep < 1 pixel
+            x_range_len = max(self.dimx, self.dimy) / float(XY_HIST_BINS) * 4
+            y_range_len = x_range_len
+            r_range_len = ANGLE_RANGE / float(ANGLE_STEPS) * 8
+            x_range = np.linspace(-x_range_len/2, x_range_len/2,
+                                  XYRANGE_STEP_NB)
+            y_range = np.linspace(-y_range_len/2, y_range_len/2,
+                                  XYRANGE_STEP_NB)
+            r_range = np.linspace(-r_range_len, r_range_len,
+                                  ANGLE_STEPS)
 
-        
-        x_range = np.linspace(dx-x_range_len/2, dx+x_range_len/2,
-                              finer_xy_step)
-        y_range = np.linspace(dy-y_range_len/2, dy+y_range_len/2,
-                              finer_xy_step)
-        r_range = np.linspace(dr-finer_angle_range/2., dr+finer_angle_range/2.,
-                              ANGLE_STEPS * 2)
-
-        if refine_scale:
-            zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
-                                     1.+ZOOM_RANGE_COEFF/2., 20)
-        else:
-            zoom_range = [1.]
-        zoom_guesses = list()    
-        for izoom in zoom_range:
             dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
-                self.data,
+                deep_frame_corr,
                 star_list_deg, x_range, y_range, r_range,
-                None, izoom, self.fwhm_pix * 3.,
-                verbose=False, init_wcs=wcs, raise_border_error=False)
+                None, 1., self.get_fwhm_pix() * 3., init_wcs=wcs)
 
-            zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
-            logging.info('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
+            # refined brute force guess
+            x_range_len = max(np.diff(x_range)[0] * 4, self.get_fwhm_pix() * 3) # 3 FWHM min
+            y_range_len = x_range_len
+            finer_angle_range = np.diff(r_range)[0] * 4.
+            finer_xy_step = min(XYRANGE_STEP_NB / 4,
+                                int(x_range_len) + 1) # avoid xystep < 1 pixel
 
-        # sort brute force guesses to get the best one
-        best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
 
-        self.params['wcs_rotation'] -= best_guess[3]
-        self.params['target_x'] -= best_guess[1]
-        self.params['target_y'] -= best_guess[2]
+            x_range = np.linspace(dx-x_range_len/2, dx+x_range_len/2,
+                                  finer_xy_step)
+            y_range = np.linspace(dy-y_range_len/2, dy+y_range_len/2,
+                                  finer_xy_step)
+            r_range = np.linspace(dr-finer_angle_range/2., dr+finer_angle_range/2.,
+                                  ANGLE_STEPS * 2)
 
-        deltax *= best_guess[0]
-        deltay *= best_guess[0]
+            if refine_scale:
+                zoom_range = np.linspace(1.-ZOOM_RANGE_COEFF/2.,
+                                         1.+ZOOM_RANGE_COEFF/2., 20)
+            else:
+                zoom_range = [1.]
+            zoom_guesses = list()    
+            for izoom in zoom_range:
+                dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
+                    self.data,
+                    star_list_deg, x_range, y_range, r_range,
+                    None, izoom, self.get_fwhm_pix() * 3.,
+                    verbose=False, init_wcs=wcs, raise_border_error=False)
 
-        logging.info(
-            "Brute force guess of the parameters:\n"
-            + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
-            + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
-                self.params.target_x, self.params.target_y)
-            + "> Scale X (arcsec/pixel): {:.5f}\n".format(
-                deltax * 3600.)
-            + "> Scale Y (arcsec/pixel): {:.5f}".format(
-                deltay * 3600.))
+                zoom_guesses.append((izoom, dx, dy, dr, np.nanmax(guess_matrix)))
+                logging.info('Checking with zoom {}: dx={}, dy={}, dr={}, score={}'.format(*zoom_guesses[-1]))
+
+            # sort brute force guesses to get the best one
+            best_guess = sorted(zoom_guesses, key=lambda zoomp: zoomp[4])[-1]
+
+            self.params['wcs_rotation'] -= best_guess[3]
+            self.params['target_x'] -= best_guess[1]
+            self.params['target_y'] -= best_guess[2]
+
+            deltax *= best_guess[0]
+            deltay *= best_guess[0]
+
+            logging.info(
+                "Brute force guess of the parameters:\n"
+                + "> Rotation angle [in degree]: {:.3f}\n".format(self.params.wcs_rotation)
+                + "> Target position [in pixel]: ({:.3f}, {:.3f})\n".format(
+                    self.params.target_x, self.params.target_y)
+                + "> Scale X (arcsec/pixel): {:.5f}\n".format(
+                    deltax * 3600.)
+                + "> Scale Y (arcsec/pixel): {:.5f}".format(
+                    deltay * 3600.))
 
         # update wcs
         wcs = utils.astrometry.create_wcs(
             self.params.target_x, self.params.target_y,
             deltax, deltay, self.params.target_ra, self.params.target_dec,
-            self.params.wcs_rotation, sip=self.sip)
+            self.params.wcs_rotation, sip=self.get_wcs())
         
         ############################
         ### plot stars positions ###
@@ -837,7 +837,7 @@ class Image(Frame2D):
         ## COMPUTE SIP
         if compute_distortion:
             logging.info('Computing SIP coefficients')
-            if self.sip is None:
+            if self.get_wcs() is None:
                 warnings.warn('As no prior SIP has been given, this initial SIP is computed over the field inner circle. To cover the whole field the result of this registration must be passed at the definition of the class. max_radius_coeff is set to 0.5 unless a smaller coeff has been set.')
                 r_coeff = min(0.5, max_radius_coeff / 2.)
             else:
@@ -852,8 +852,7 @@ class Image(Frame2D):
                 world2pix(wcs, star_list_query), rmax,
                 borders=[0, self.dimx, 0, self.dimy])
 
-            logging.debug('detecting {} stars from catalog'.format(star_list_pix.shape[0]))
-            
+            logging.debug('using {} stars'.format(star_list_pix.shape[0]))
             fit_params = self.fit_stars(
                 star_list_pix,
                 local_background=True,
@@ -896,7 +895,7 @@ class Image(Frame2D):
             ##            facecolor=(0,0,0,0))
             
         # computing distortion maps
-        if return_error_maps:
+        if return_error_maps or return_error_spl:
             logging.info('Computing distortion maps')
             r_coeff = 1./np.sqrt(2)
             rmax = max(self.dimx, self.dimy) * r_coeff
@@ -1033,16 +1032,16 @@ class Image(Frame2D):
             # center of it. 
             dx = get_filtered_params(
                 fit_params, param='dx',
-                dist_min=self.fwhm_pix*2.)
+                dist_min=self.get_fwhm_pix()*2.)
             dy = get_filtered_params(
                 fit_params, param='dy',
-                dist_min=self.fwhm_pix*2.)
+                dist_min=self.get_fwhm_pix()*2.)
             x_err = get_filtered_params(
                 fit_params, param='x_err',
-                dist_min=self.fwhm_pix*2.)
+                dist_min=self.get_fwhm_pix()*2.)
             y_err = get_filtered_params(
                 fit_params, param='y_err',
-                dist_min=self.fwhm_pix*2.)
+                dist_min=self.get_fwhm_pix()*2.)
 
             precision = np.sqrt(dx**2. + dy**2.)
             precision_mean = np.sqrt(np.nanmedian(np.abs(dx))**2.
@@ -1081,8 +1080,6 @@ class Image(Frame2D):
                 deltax * 3600.)
             + "> Scale Y (arcsec/pixel): {:.5f}".format(
                 deltay * 3600.))
-
-        self.reset_scale(np.mean((deltax, deltay)) * 3600.)
         
         logging.info('corrected WCS computed')
         self.set_wcs(wcs)
@@ -1091,7 +1088,9 @@ class Image(Frame2D):
         
         if not return_fit_params:
             if return_error_maps:
-                return wcs, dxmap_fit, dymap_fit
+                X = np.arange(self.dimx)
+                Y = np.arange(self.dimy)
+                return wcs, dxspl(X, Y, grid=True), dyspl(X, Y, grid=True)
             elif return_error_spl:
                 return wcs, dxspl, dyspl
             else:
@@ -1130,7 +1129,7 @@ class Image(Frame2D):
 
         """
         return utils.astrometry.fit_sip(
-            self.dimx, self.dimy, self.params.scale, star_list1, star_list2,
+            self.get_scale(), star_list1, star_list2,
             params=params, init_sip=init_sip, err=err, sip_order=sip_order,
             crpix=crpix, crval=crval)
 
@@ -1174,24 +1173,38 @@ class Image(Frame2D):
                 raise StandardError('{} should not be passed in kwargs'.format(ik))
         
         kwargs['profile_name'] = self.profile_name
-        kwargs['scale'] = self.params.scale
-        kwargs['fwhm_pix'] = self.fwhm_pix
+        kwargs['scale'] = self.get_scale()
+        kwargs['fwhm_pix'] = self.get_fwhm_pix()
         kwargs['beta'] = self.default_beta
         kwargs['fit_tol'] = self.fit_tol
 
         # fit
         fit_results = utils.astrometry.fit_stars_in_frame(
-            frame, star_list, self.box_size, **kwargs)
+            frame, star_list, self.get_box_size(), **kwargs)
         
         return utils.astrometry.fit2df(fit_results)
     
-    def compute_alignment_parameters(self, image2, correct_distortion=False,
+    def compute_alignment_parameters(self, image2, xy_range, r_range,
+                                     correct_distortion=False,
                                      star_list1=None, fwhm_arc=None,
-                                     brute_force=True):
+                                     brute_force=True, coeffs=(0,0,0,0,0,1),
+                                     skip_check=False):
         """Return the alignment coefficients that match the stars of this
         image to the stars of the image 2.
 
         :param image2: Image instance.
+
+        :param xy_range: Range of x, y values to brute force around
+          the initial parameters passed in coeffs. if two ranges are
+          given (e.g. (np.linspace(-5,5,10), np.linspace(-1,1,10))) a
+          second brute force pass is done centered on the values of
+          the first pass.
+
+        :param r_range: Range of angles to brute force around the
+          initial parameters passed in coeffs. if two ranges are given
+          (e.g. (np.linspace(-5,5,10), np.linspace(-1,1,10))) a second
+          brute force pass is done centered on the values of the first
+          pass.
 
         :param correct_distortion: (Optional) If True, a SIP is computed to
           match stars from frame 2 onto the stars from frame 1. But it
@@ -1207,6 +1220,10 @@ class Image(Frame2D):
         :param brute_force: (Optional) If True the first step is a
           brute force guess. This is very useful if the initial
           parameters are not well known (default True).
+
+        :param coeffs: (Optional) initial alignement parameters (dx,
+          dy, dr, da, db, zoom). If aligning camera 2 on camera 1,
+          use self.get_initial_alignment_parameters() to set coeffs.
 
         .. note:: The alignement coefficients are:
         
@@ -1265,42 +1282,29 @@ class Image(Frame2D):
             if fit[-1] <= 4:
                 match = np.sqrt(np.mean(fit[2]['fvec']**2.))
                 if match > 1e-3:
-                    warnings.warn('Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
+                    warnings.warn(
+                        'Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
                 return fit[0]
             
             else:
                 raise Exception('No matching parameters found')
 
-        def brute_force_alignment(xystep_size, angle_range, angle_steps, range_coeff):
-            # define the ranges in x and y for the rough optimization
-            x_range_len = range_coeff * float(image2.dimx)
-            y_range_len = range_coeff * float(image2.dimy)
 
-            x_hrange = np.arange(xystep_size, x_range_len/2, xystep_size)
-            x_range = np.hstack((-x_hrange[::-1], 0, x_hrange)) + coeffs.dx
             
-            y_hrange = np.arange(xystep_size, y_range_len/2, xystep_size)
-            y_range = np.hstack((-y_hrange[::-1], 0, y_hrange)) + coeffs.dy
+        def brute_force_alignment(coeffs, xy_range, r_range):
             
-          
-            r_range = np.linspace(-angle_range/2.,
-                                  angle_range/2.,
-                                  angle_steps) + coeffs.dr
-
             (coeffs.dx, coeffs.dy, coeffs.dr, guess_matrix) = (
                 utils.astrometry.brute_force_guess(
                     image2.data.astype(np.float64), star_list1,
-                    x_range, y_range, r_range,
+                    xy_range + coeffs.dx,
+                    xy_range + coeffs.dy,
+                    r_range + coeffs.dr,
                     coeffs.rc, coeffs.zoom,
                     image2.fwhm_pix * 3.))
             coeffs.da = 0.
             coeffs.db = 0.
 
-            # Save guess matrix
-            utils.io.write_fits(self._get_guess_matrix_path(),
-                                guess_matrix)
-
-        
+            return coeffs
             
         ERROR_RATIO = 0.2 # Minimum ratio of fitted stars once the
                           # optimization pass has been done. If
@@ -1321,24 +1325,56 @@ class Image(Frame2D):
         MIN_STAR_NB = 30 # Target number of star to detect to find the
                          # transformation parameters
 
-        XYSTEP_SIZE = 0.5 # Pixel step size of the search range
-
-        ANGLE_STEPS = 10 # Angle steps for brute force guess
-        ANGLE_RANGE = 1. # Angle range for brute force guess
-        
         # Skip fit checking
-        SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', 0)))
+        SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', int(skip_check))))
 
-        RANGE_COEFF = float(self._get_tuning_parameter(
-            'RANGE_COEFF', self.config.ALIGNER_RANGE_COEFF))
+        if len(coeffs) != 6:
+            raise TypeError('coeffs must be a tuple (dx, dy, dr, da, db, zoom)')
 
-        coeffs = self.get_initial_alignment_parameters()
+        if not isinstance(coeffs, core.Params):
+            pcoeffs = core.Params()
+            pcoeffs.dx = float(coeffs[0])
+            pcoeffs.dy = float(coeffs[1])
+            pcoeffs.dr = float(coeffs[2])
+            pcoeffs.da = float(coeffs[3])
+            pcoeffs.db = float(coeffs[4])
+            pcoeffs.zoom = float(coeffs[5])
+            pcoeffs.rc = [self.dimx/2., self.dimy/2.]
+            coeffs = pcoeffs
+
+        # check brute force ranges
+        if len(xy_range) < 2:
+            raise TypeError('xy_range must be an array of more than 5 values or a tuple of 2 arrays each one containing more than 5 values')
+        if len(r_range) < 2:
+            raise TypeError('r_range must be an array of more than 5 values or a tuple of 2 arrays each one containing more than 5 values')
+        
+        if len(xy_range) != 2:
+            xy_range = (xy_range, None)
+        if np.size(xy_range[0]) < 5:
+            raise ValueError('xy_range must have a size of minimum 5 values')
+        if xy_range[1] is not None:
+            if np.size(xy_range[1]) < 5:
+                raise ValueError('xy_range must have a size of minimum 5 values')
+        
+        
+        if len(r_range) != 2:
+            r_range = (r_range, None)
+        if np.size(r_range[0]) < 5:
+            raise ValueError('r_range must have a size of minimum 5 values')
+        if r_range[1] is not None:
+            if np.size(r_range[1]) < 5:
+                raise ValueError('r_range must have a size of minimum 5 values')
+
+        if ((xy_range[1] is None and r_range[1] is not None)
+            or (xy_range[1] is not None and r_range[1] is None)):
+            raise StandardError('both xy_range and r_range must have two ranges')
+                
         
         if star_list1 is None:
             star_list1, fwhm_arc = self.detect_stars(
                 min_star_number=MIN_STAR_NB)
         elif fwhm_arc is None:
-            raise StandardError('If the path to a list of stars is given (star_list1) the fwhm in arcsec(fwhm_arc) must also be given.')
+            raise StandardError('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
 
         star_list1 = utils.astrometry.load_star_list(star_list1)
         
@@ -1349,43 +1385,44 @@ class Image(Frame2D):
         ### BRUTE FORCE GUESS (only dx and dy) ###
         ##########################################
         if brute_force:
-            logging.info("Brute force guess on large field")
-            brute_force_alignment(4*XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS/2, RANGE_COEFF*10)
-            logging.info("Brute force guess:") 
+            logging.info("1st brute force pass")
+            coeffs = brute_force_alignment(coeffs, xy_range[0], r_range[0])
+            logging.info("1st brute force guess:") 
             print_alignment_coeffs()
 
-            logging.info("Finer brute force guess")
-            brute_force_alignment(XYSTEP_SIZE, ANGLE_RANGE, ANGLE_STEPS, RANGE_COEFF)
-            logging.info("Brute force guess:") 
-            print_alignment_coeffs()
+            if xy_range[1] is not None and r_range[1] is not None:
+                logging.info("2nd brute force pass")
+                coeffs = brute_force_alignment(coeffs, xy_range[1], r_range[1])
+                logging.info("2nd brute force guess:") 
+                print_alignment_coeffs()
 
 
-        guess = [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db]
-        
-        ##########################
-        ## FINE ALIGNMENT STEP ###
-        ##########################
-        
-        # create sip corrected and transformed list
-        star_list2 = utils.astrometry.transform_star_position_A_to_B(
-            np.copy(star_list1), guess, coeffs.rc, coeffs.zoom,
-            sip_A=self.sip)
+            
+        # ##########################
+        # ## FINE ALIGNMENT STEP ###
+        # ##########################
+        # guess = [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db]
 
-        fit_results = image2.fit_stars(
-            star_list2, no_aperture_photometry=True,
-            multi_fit=False, enable_zoom=False,
-            enable_rotation=True, fix_fwhm=True)
+        # # create sip corrected and transformed list
+        # star_list2 = utils.astrometry.transform_star_position_A_to_B(
+        #     np.copy(star_list1), guess, coeffs.rc, coeffs.zoom,
+        #     sip_A=self.get_wcs())
 
-        if fit_results.empty:
-            raise StandardError('registration failed. check INIT_ANGLE.')
-        
-        [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
-            guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
-            coeffs.rc, coeffs.zoom, sip1=self.sip, sip2=image2.sip)
+        # fit_results = image2.fit_stars(
+        #     star_list2, no_aperture_photometry=True,
+        #     multi_fit=False, enable_zoom=False,
+        #     enable_rotation=True, fix_fwhm=True)
 
-        logging.info("Fine alignment parameters:") 
-        print_alignment_coeffs()
-                
+        # if fit_results.empty:
+        #     raise StandardError('registration failed. check INIT_ANGLE.')
+
+        # [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
+        #     guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
+        #     coeffs.rc, coeffs.zoom, sip1=self.get_wcs(), sip2=image2.get_wcs())
+
+        # logging.info("Fine alignment parameters:") 
+        # print_alignment_coeffs()
+
 
         #####################################
         ### COMPUTE DISTORTION CORRECTION ###
@@ -1393,10 +1430,6 @@ class Image(Frame2D):
 
         if correct_distortion:
             logging.info('Computing distortion correction polynomial (SIP)')
-            raise Exception('Must be checked. using transformation parameters with sip may not be implemented properly.')
-            # try to detect a maximum number of stars in frame 1
-            star_list1_path1, fwhm_arc = self.detect_stars(
-                min_star_number=400)
 
             ############################
             ### plot stars positions ###
@@ -1413,7 +1446,7 @@ class Image(Frame2D):
                 np.copy(star_list1),
                 [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
                 coeffs.rc, coeffs.zoom,
-                sip_A=self.sip, sip_B=image2.sip)
+                sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
             # fit stars
             fit_results = image2.fit_stars(
@@ -1427,15 +1460,17 @@ class Image(Frame2D):
             ## FIT SIP 
             ## SIP 1 and SIP 2 are replaced by only one SIP that matches the
             ## stars of the frame 2 onto the stars of the frame 1
-            self.sip = self.fit_sip(
-                np.copy(star_list1),
+            sip = self.fit_sip(
+                np.copy(star_list2),
                 utils.astrometry.df2list(fit_results),
-                params=[coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db,
-                        coeffs.rc[0], coeffs.rc[1], coeffs.zoom],
-                init_sip=None, err=None, crpix=self.sip.wcs.crpix,
-                crval=self.sip.wcs.crval)
-            image2.sip = None
-
+                init_sip=self.get_wcs(),
+                crpix=self.get_wcs().wcs.crpix,
+                crval=self.get_wcs().wcs.crval)
+            self.set_wcs(sip)
+            im2wcs = image2.get_wcs()
+            im2wcs.sip = None
+            image2.set_wcs(im2wcs)
+            
 
         else:
             # fit stars
@@ -1461,7 +1496,7 @@ class Image(Frame2D):
         np.copy(star_list1),
             [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
             coeffs.rc, coeffs.zoom,
-            sip_A=self.sip, sip_B=image2.sip)
+            sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
         fwhm_arc2 = utils.stats.robust_mean(
             utils.stats.sigmacut(fit_results['fwhm_arc'].values))
@@ -1499,8 +1534,8 @@ class Image(Frame2D):
         return {'coeffs':[coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
                 'rc': coeffs.rc,
                 'zoom_factor': coeffs.zoom,
-                'sip1': self.sip,
-                'sip2': image2.sip,
+                'sip1': self.get_wcs(),
+                'sip2': image2.get_wcs(),
                 'star_list1': star_list1,
                 'star_list2': star_list2,
                 'fwhm_arc1': fwhm_arc,

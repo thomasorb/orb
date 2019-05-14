@@ -42,7 +42,9 @@ import gvar
 import pyregion
 
 import photometry
-
+import gc
+import h5py
+        
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
@@ -54,7 +56,8 @@ class HDFCube(core.WCSData):
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
                        'dark_time', 'flat_time', 'camera', 'wcs_rotation',
                        'calibration_laser_map_path')
-
+    writeable = False
+    
     def __init__(self, path, indexer=None,
                  instrument=None, config=None, data_prefix='./',
                  **kwargs):
@@ -74,7 +77,6 @@ class HDFCube(core.WCSData):
         :param kwargs: (Optional) :py:class:`~orb.core.Data` kwargs.
         """
         self.cube_path = str(path)
-        self.writeable = False
 
         # create file if it does not exists
         if not os.path.exists(self.cube_path):
@@ -215,18 +217,38 @@ class HDFCube(core.WCSData):
           self.writeable is manually set to True.
         """
         if mode is None:
-            mode = 'r'
+            if self.is_writeable():
+                mode = 'r+'
+            else:
+                mode = 'r'
         else:
-            if mode not in ['r', 'a']:
-                raise ValueError('mode must be r or a')
+            if mode not in ['r', 'a', 'r+']:
+                raise ValueError('mode must be r, r+ or a')
             if not self.is_writeable() and mode != 'r':
                 raise IOError('HDF5 file is not writeable.')
+
+        # try first to return an already opened file
+        if hasattr(self, 'hdffile'):
+            if self.hdffile is not None:
+                if "Closed HDF5 file" not in str(self.hdffile):
+                    if self.hdffile.mode == mode:
+                        return self.hdffile
 
         # if a handle already exists try first to close the file
         # before opening it again
         try:
-            self.hdffile.close()
+            self.hdffile.close()            
         except Exception: pass
+
+        # then close all other instances of the file
+        for obj in gc.get_objects():   # Browse through ALL objects
+            if isinstance(obj, h5py.File):   # Just HDF5 files
+                if "Closed HDF5 file" in str(obj):
+                    continue
+                elif self.cube_path in obj.filename:
+                    try:
+                        obj.close()
+                    except: pass
 
         self.hdffile = utils.io.open_hdf5(self.cube_path, mode)
         
@@ -476,7 +498,11 @@ class HDFCube(core.WCSData):
         .. note:: In this process NaNs are handled correctly
         """
         try:
-            return image.Image(self.deep_frame, params=self.params)
+            im = image.Image(self.deep_frame, params=self.params)
+            if self.has_dataset('dxmap') and self.has_dataset('dymap'):
+                im.set_dxdymaps(self.get_dxdymaps()[0], self.get_dxdymaps()[1])
+            return im
+        
         except AttributeError: pass
 
         gain = self.get_gain()
@@ -493,7 +519,11 @@ class HDFCube(core.WCSData):
             df = self.compute_sum_image() / gain
 
         self.deep_frame = df
-        return image.Image(self.deep_frame, params=self.params)
+        df = image.Image(self.deep_frame, params=self.params)
+        if self.has_dataset('dxmap') and self.has_dataset('dymap'):
+            df.set_dxdymaps(self.get_dxdymaps()[0], self.get_dxdymaps()[1])
+        return df
+            
     
     def get_phase_maps(self):
         """Return a PhaseMaps instance if phase maps are set
@@ -511,6 +541,12 @@ class HDFCube(core.WCSData):
         return fft.Phase(self._get_phase_file_path(self.params.filter_name))
         
 
+    def get_dxdymaps(self):
+        """Return dxdymaps.
+        """
+        return (self.get_dataset('dxmap'),
+                self.get_dataset('dymap'))
+    
     def compute_sum_image(self):
         """compute the sum along z axis
         """
@@ -554,12 +590,18 @@ class HDFCube(core.WCSData):
         return core.Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
 
-    def writeto(self, path):
+    def writeto(self, path, div_nb=4):
         """Write data to an hdf file
 
         :param path: hdf file path.
+
+        :param div_nb: cube is extracted by quadrant to avoid feeling
+          the RAM. In case of memory error just use a higher number of
+          divisions.
         """
-        old_keys = 'quad', 'frame'
+        quad_nb = int(div_nb)**2
+            
+        old_keys = 'quad', 'frame', 'data'
         def is_exportable(key):
             for iold in old_keys:
                 if iold in key:
@@ -577,25 +619,25 @@ class HDFCube(core.WCSData):
             for ikey in f:
                 if is_exportable(ikey):
                     logging.info('adding {}'.format(ikey))
-                    fout.create_dataset(ikey, data=f[ikey], chunks=True)
+                    ikeyval = f[ikey]
+                    if isinstance(ikeyval, np.ndarray):
+                        ikeyval = utils.io.cast_storing_dtype(ikeyval)
+                    fout.create_dataset(ikey, data=ikeyval, chunks=True)
                     
             # write data
-            dtype = self[0,0,0].dtype
+            dtype = utils.io.get_storing_dtype(self[0,0,0])
             fout.create_dataset('data', shape=self.shape, dtype=dtype, chunks=True)
-
-            DIV_NB = 6
-            QUAD_NB = DIV_NB**2
             
-            for iquad in range(QUAD_NB):
-                xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad, div_nb=DIV_NB)
+            for iquad in range(quad_nb):
+                xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad, div_nb=div_nb)
                 logging.info('loading quad {}/{}'.format(
-                    iquad, QUAD_NB))
+                    iquad+1, quad_nb))
 
                 data = self.get_data(
                     xmin, xmax, ymin, ymax, 0, self.dimz, silent=False)
-                
+                data = utils.io.cast_storing_dtype(data)
                 logging.info('writing quad {}/{}'.format(
-                    iquad, QUAD_NB))
+                    iquad+1, quad_nb))
                 fout['data'][xmin:xmax, ymin:ymax, :] = data
         
 
@@ -776,7 +818,6 @@ class HDFCube(core.WCSData):
         interf = np.nansum(interfs, axis=0)
         params = dict(self.params)
         params['pixels'] = len(interfs)
-
         vec = core.Vector1d(interf, params=params,
                             zpd_index=self.params.zpd_index,
                             calib_coeff=calib_coeff,
@@ -1067,6 +1108,8 @@ class HDFCube(core.WCSData):
 #################################################
 class RWHDFCube(HDFCube):
 
+    writeable = True
+    
     def __init__(self, path, shape=None, instrument=None, reset=False, **kwargs):
         """:param path: Path to an HDF5 cube
 
@@ -1153,7 +1196,7 @@ class RWHDFCube(HDFCube):
         :param value: parameter value
         """
         self.params[key] = value
-        f = self.open_hdf5('a')
+        f = self.open_hdf5('r+')
         _update = True
         value = utils.io.cast2hdf5(value)
         if key in f.attrs:
@@ -1297,7 +1340,21 @@ class RWHDFCube(HDFCube):
         f = self.open_hdf5('a')
         for iparam in std_im.params:
             f['standard_image'].attrs[iparam] = std_im.params[iparam]
-            
+
+    def set_dxdymaps(self, dxmap, dymap):
+        """Set dxdymaps
+
+        :param dxmap: dxmap
+        :param dymap: dymap
+        """
+        utils.validate.is_2darray(dxmap, object_name='dxmap')
+        utils.validate.is_2darray(dymap, object_name='dymap')
+        if dxmap.shape != (self.dimx, self.dimy) or dymap.shape != (self.dimx, self.dimy):
+            raise TypeError('dxmap and dymap must have shape ({},{})'.format(
+                self.dimx, self.dimy))
+        self.set_dataset('dxmap', dxmap, protect=False)
+        self.set_dataset('dymap', dymap, protect=False)
+        
             
     def write_frame(self, index, data=None, header=None, section=None,
                     record_stats=False):
@@ -1907,7 +1964,7 @@ class SpectralCube(Cube):
             xy = [self.dimx//2, self.dimy//2]
 
         return utils.spectrum.cm12pix(
-            self.get_axis(xy[0], xy[1]), self.get_filter_range())
+            self.get_axis(xy[0], xy[1]).data, self.get_filter_range())
 
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
@@ -2147,6 +2204,7 @@ class SpectralCube(Cube):
         err = err.multiply(flambda)
         
         params['source_counts'] = counts
+        params['calib_coeff'] = calib_coeff
 
         return fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
                 
@@ -2167,7 +2225,50 @@ class SpectralCube(Cube):
         y = self.validate_y_index(y, clip=False)
         region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
         return self.get_spectrum_from_region(region)
+
+    def get_spectrum_in_annulus(self, x, y, rmin, rmax):
+        """Return a. orb.fft.RealSpectrum extracted at x, y and integrated
+        over a circular annulus of min radius rmin and max radius rmax.
+
+        :param x: x position 
         
+        :param y: y position 
+
+        :param rmin: rmin of the annulus
+
+        :param rmax: rmax of the annulus
+        """
+        x = self.validate_x_index(x, clip=False)
+        y = self.validate_y_index(y, clip=False)
+        if rmin <= 0: raise ValueError('rmin must be > 0, use get_spectrum to extract spectrum in a circular aperture')
+        if rmax <= rmin: raise ValueError('rmax must be greater than rmin')
+        region = self.get_region('annulus({},{},{},{})'.format(x+1, y+1, float(rmin), float(rmax)))
+        return self.get_spectrum_from_region(region)
+
+    def get_spectrum_bin(self, x, y, b, **kwargs):
+        """Return a spectrum integrated over a binned region.
+
+        :param x: X position of the bottom-left pixel
+
+        :param y: Y position of the bottom-left pixel
+
+        :param b: Binning. If 1, only the central pixel is extracted
+
+        :param kwargs: Keyword arguments of the function
+          :py:meth:`~SpectralCube.get_spectrum_from_region`.
+
+        :returns: (axis, spectrum)
+        """
+        if not isinstance(b, int):
+            raise TypeError('b must be an int')
+        if b < 1: raise StandardError('Binning must be at least 1')
+        
+        x = self.validate_x_index(x, clip=False)
+        y = self.validate_y_index(y, clip=False)
+        region = self.get_region('box({},{},{},{},0)'.format(
+            x+float(b)/2.+0.5, y+float(b)/2.+0.5, b, b))
+        return self.get_spectrum_from_region(region)
+
     # def _extract_spectrum_from_region(self, region,
     #                                   subtract_spectrum=None,
     #                                   median=False,
@@ -2443,69 +2544,6 @@ class SpectralCube(Cube):
 
     #     return returns
 
-    def extract_spectrum_bin(self, x, y, b, **kwargs):
-        """Extract a spectrum integrated over a binned region.
-
-        :param x: X position of the bottom-left pixel
-
-        :param y: Y position of the bottom-left pixel
-
-        :param b: Binning. If 1, only the central pixel is extracted
-
-        :param kwargs: Keyword arguments of the function
-          :py:meth:`~HDFCube._extract_spectrum_from_region`.
-
-        :returns: (axis, spectrum)
-        """
-        if b < 1: raise StandardError('Binning must be at least 1')
-
-        mask = np.zeros((self.dimx, self.dimy), dtype=bool)
-        mask[int(x):int(x+b), int(y):int(y+b)] = True
-        region = np.nonzero(mask)
-
-        return self.extract_integrated_spectrum(region, **kwargs)
-
-    def extract_spectrum(self, x, y, r, **kwargs):
-        """Extract a spectrum integrated over a circular region of a
-        given radius.
-
-        :param x: X position of the center
-
-        :param y: Y position of the center
-
-        :param r: Radius. If 0, only the central pixel is extracted.
-
-        :param kwargs: Keyword arguments of the function
-          :py:meth:`~HDFCube._extract_spectrum_from_region`.
-
-        :returns: (axis, spectrum)
-        """
-        if r < 0: r = 0.001
-        X, Y = np.mgrid[0:self.dimx, 0:self.dimy]
-        R = np.sqrt(((X-x)**2 + (Y-y)**2))
-        region = np.nonzero(R <= r)
-
-        return self.extract_integrated_spectrum(region, **kwargs)
-
-
-    def extract_integrated_spectrum(self, region, **kwargs):
-        """Extract a spectrum integrated over a given region (can be a
-        list of pixels as returned by the function
-        :py:meth:`numpy.nonzero` or a ds9 region file).
-
-        :param region: Region to integrate (can be a list of pixel
-          coordinates as returned by the function
-          :py:meth:`numpy.nonzero` or the path to a ds9 region
-          file). If it is a ds9 region file, multiple regions can be
-          defined and all will be integrated into one spectrum.
-        """
-        region = self.get_mask_from_ds9_region_file(region)
-
-        returns = list()
-        returns.append(self.params.base_axis.astype(float))
-        returns += list(self._extract_spectrum_from_region(
-            region, output_axis=self.params.base_axis.astype(float), **kwargs))
-        return returns
 
 
     def get_mask_from_ds9_region_file(self, region, integrate=True):
