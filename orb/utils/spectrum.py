@@ -477,6 +477,18 @@ def sinc1d_phased(x, h, a, dx, fwhm, alpha):
     _sinc_re, _sinc_im = sinc1d_complex(x, h, a, dx, fwhm)
     return _sinc_re * np.cos(alpha) + _sinc_im * np.sin(alpha)
 
+def dsinc1d(x, h, a, dx, fwhm, sigma):
+    """Return a 1D double sinc 
+
+    :param x: Array giving the positions where the function is evaluated
+    :param h: Height
+    :param a: Amplitude
+    :param dx: Position of the center
+    :param fwhm: FWHM
+    :param sigma: broadening
+    """
+    return sinc1d(x, h, a/2., dx - sigma, fwhm) + sinc1d(x, h, a/2., dx + sigma, fwhm)
+
 def sincgauss1d(x, h, a, dx, fwhm, sigma):
     """Return a 1D sinc convoluted with a gaussian of parameter sigma.
 
