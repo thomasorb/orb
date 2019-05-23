@@ -1991,7 +1991,9 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 def _get_wcs_parameters(wcs):
     """see get_wcs_parameters
     """
-    wcs2 = wcs.copy()
+    if not isinstance(wcs, pywcs.WCS):
+        raise TypeError('wcs is a {} but it must be an astropy.wcs.WCS instance.'.format(type(wcs)))
+    wcs2 = copy.copy(wcs)
     target_x, target_y = wcs2.wcs.crpix
     target_ra, target_dec = wcs2.wcs.crval
     deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(wcs2)
@@ -2009,20 +2011,26 @@ def _get_wcs_parameters(wcs):
         d = create_wcs(*p2, sip=wcsref).all_world2pix(sld, 0) - wcsref.all_world2pix(sld, 0)
         return d.flatten()
 
+    def compute_median_err(p, allp):
+        return np.nanmedian(diff(p, wcs2, random_star_list_deg, allp).reshape(
+            random_star_list_deg.shape), axis=0)
+        
     allp = [target_x, target_y, deltax, deltay, target_ra, target_dec, rotation]
     guess = [deltax, deltay, rotation]
 
     logging.debug('median err before parameters optimization {}'.format(
-        np.nanmedian(diff(guess, wcs2, random_star_list_deg, allp).reshape(
-            random_star_list_deg.shape), axis=0)))
+        compute_median_err(guess, allp)))
     
     fit = optimize.leastsq(diff, guess,
                            args=(wcs2, random_star_list_deg, allp),
                            maxfev=100, full_output=True)
 
     logging.debug('median err after parameters optimization {}'.format(
-        np.nanmedian(diff(fit[0], wcs2, random_star_list_deg, allp).reshape(
-            random_star_list_deg.shape), axis=0)))
+        compute_median_err(fit[0], allp)))
+
+    if np.any(compute_median_err(fit[0], allp) > 1e-5):
+        raise StandardError('optimization error, please retry: {}'.format(
+            compute_median_err(fit[0], allp)))
 
     allp[2:4] = fit[0][0:2]
     allp[-1] = fit[0][2]
@@ -2042,13 +2050,13 @@ def get_wcs_parameters(wcs):
     :return: target_x, target_y, deltax, deltay, target_ra,
       target_dec, rotation
     """
-
     trials = 0
     while trials < 5:
         try:
             return _get_wcs_parameters(wcs)
-        except Exception:
+        except Exception, e:
             trials += 1
+            logging.debug(e)
     raise StandardError('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,

@@ -2811,7 +2811,7 @@ class WCSData(Data, Tools):
               
                 if '/dxmap' in self.hdffile and '/dymap' in self.hdffile:
                     self.dxdymaps= (self.hdffile['/dxmap'][:], self.hdffile['/dymap'][:])
-        
+
         # checking
         if self.data.ndim < 2:
             raise TypeError('A dataset must have at least 2 dimensions to support WCS')
@@ -2966,6 +2966,7 @@ class WCSData(Data, Tools):
         
     def has_dxdymaps(self):
         """Return True is self.dxmap and self.dymap exist"""
+        if not hasattr(self, 'dxdymaps'): return False
         if self.dxdymaps is None: return False
         return True
 
@@ -3019,8 +3020,7 @@ class WCSData(Data, Tools):
                 utils.io.read_fits(wcs, return_hdu_only=True)[0].header,
                 naxis=2, relax=True)
 
-        self.update_params(wcs.to_header(relax=True))
-
+            
         # remove old sip params if they exist
         for ipar in self.params.keys():
             if ('A_' == ipar[:2]
@@ -3028,7 +3028,9 @@ class WCSData(Data, Tools):
                 or 'AP_' == ipar[:3]
                 or 'BP_' == ipar[:3]):
                 del self.params[ipar]
-                
+
+        self.update_params(wcs.to_header(relax=True))
+        
         # convert wcs to parameters so that FITS keywords and
         # comprehensive parameters are coherent.
         _params = utils.astrometry.get_wcs_parameters(wcs)
@@ -3066,9 +3068,6 @@ class WCSData(Data, Tools):
                                 self.params['wcs_rotation']])
 
         if not np.all(np.isclose(_wcs_params - _fits_params, 0)):
-            print utils.astrometry.create_wcs(*_fits_params).all_pix2world([[500,500]], 0)
-            print utils.astrometry.create_wcs(*_wcs_params).all_pix2world([[500,500]], 0)
-            
             warnings.warn('WCS FITS keywords and parameters are different:\n{}\n{}'.format(
                 _wcs_params, _fits_params))
         
