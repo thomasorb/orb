@@ -1907,6 +1907,39 @@ def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
     return max_corr, max_dx, max_dy    
 
 
+def get_cd(wcs):
+    """Return CD matrix from a header with PC matrix.
+
+    :param wcs: astropy.wcs.WCS instance.
+
+    :return: CD matrix
+    """
+    return np.dot(np.diag(wcs.wcs.get_cdelt()), wcs.wcs.get_pc())
+
+def pc2cd(hdr):
+    """Convert header PC definition to CD definition 
+    
+    :param hdr: A FITS header
+
+    :return: converted FITS header
+    """
+    wcs = astropy.wcs.WCS(hdr, relax=True)
+    cd = get_cd(wcs)
+
+    # remove PC definition and replace it with CD definition the hard
+    # way since astropy.wcs.WCS.to_header() always convert any
+    # definition to PC definition
+    newhdr = wcs.to_header(relax=True)
+    for ikey in ['PC1_1', 'PC1_2', 'PC2_1', 'PC2_2']:
+        del newhdr[ikey]
+    del newhdr['CDELT1']
+    del newhdr['CDELT2']
+    newhdr['CD1_1'] = cd[0,0]
+    newhdr['CD1_2'] = cd[0,1]
+    newhdr['CD2_1'] = cd[1,0]
+    newhdr['CD2_2'] = cd[1,1]
+    return newhdr
+
 def create_wcs(target_x, target_y, deltax, deltay, target_ra,
                target_dec, rotation, sip=None):
     """Create a WCS with an optional SIP distortion model.
