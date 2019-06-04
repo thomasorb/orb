@@ -13,9 +13,17 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 # import os
-# import sys
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from mock import Mock as MagicMock
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['pygtk', 'gtk', 'gobject', 'argparse', 'numpy', 'pandas', 'scipy', 'astropy.wcs', 'astropy', 'gvar', 'lsqfit', 'bottleneck', 'astropy.io.fits', 'astropy.io', 'h5py', 'scipy.optimize', 'scipy.interpolate', 'scipy.special', 'astropy.coordinates', 'scipy.misc', 'astropy.wcs.utils', 'orb.cutils', 'orb.cgvar']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 
