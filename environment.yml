@@ -224,6 +224,7 @@ dependencies:
   - specviz=0.5.0=py27_0
   - spherical-geometry=1.2.10=py27_0
   - sphinx=1.8.5=py27_0
+  - sphinx_rtd_theme=0.4.3=py_0
   - sphinxcontrib=1.0=py27_1
   - sphinxcontrib-websupport=1.1.0=py27_1
   - sqlite=3.27.2=h7b6447c_0
