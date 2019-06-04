@@ -42,13 +42,13 @@ You can install the required packages with::
   apt-get install libatlas-base-dev gfortran
   apt-get install libhdf5-dev libhdf5-8 hdf5-tools
   apt-get install cmake
-  
+
 .. note:: For Debian Stretch the hdf5 library that must be used is: libhdf5-100
 
 You also need to install libgit2 by following the instrunctions given
 here: http://www.pygit2.org/install.html ::
 
-  wget https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz
+  wget https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz # note that the version may have changed, use the latest version
   tar xzf v0.26.0.tar.gz
   cd libgit2-0.26.0/
   cmake .
