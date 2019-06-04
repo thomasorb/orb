@@ -2160,17 +2160,23 @@ class SpectralCube(Cube):
         filter range"""
         return self.filterfile.get_sky_lines(self.dimz)
 
-    def get_spectrum_from_region(self, region):
-        """Return a list of spectra taken in a given region.
+    def get_spectrum_from_region(self, region, median=False):
+        """Return the integrated spectrum of a given region.
 
         :param region: A ds9-like region file or a list of pixels
           having the same format as the list returned by np.nonzero(),
           i.e. (x_positions_1d_array, y_positions_1d_array).
 
+        :param median: If True, a median is used instead of a mean to
+          combine spectra. As the resulting spectrum is integrated,
+          the median value of the combined spectra is then scaled to
+          the number of integrated pixels.
+
         .. note:: the region must not have a size greater than 400x400
           pixels. If you really need a larger region, you can split
           you region into smaller ones and combines the resulting
           spectra.
+
         """
         if not self.has_wavenumber_calibration():
             warnings.warn('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
@@ -2179,7 +2185,11 @@ class SpectralCube(Cube):
             region = self.get_region(region)
         
         spectra = self.get_data_from_region(region)
-        spectrum = np.nansum(spectra, axis=0)
+        if not median:
+            spectrum = np.nansum(spectra, axis=0)
+        else:
+            spectrum = np.nanmedian(spectra, axis=0)
+            spectrum *= len(spectra)
 
         # calculate number of integrated pixels
         params = dict(self.params)
@@ -2209,7 +2219,7 @@ class SpectralCube(Cube):
         return fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
                 
 
-    def get_spectrum(self, x, y, r=0):
+    def get_spectrum(self, x, y, r=0, median=False):
         """Return a. orb.fft.RealSpectrum extracted at x, y and integrated
         over a circular aperture or radius r.
 
@@ -2220,13 +2230,18 @@ class SpectralCube(Cube):
         :param r: (Optional) If r > 0, vector is integrated over a
           circular aperture of radius r. In this case the number of
           pixels is returned as a parameter: pixels
+
+        :param median: If True, a median is used instead of a mean to
+          combine spectra. As the resulting spectrum is integrated,
+          the median value of the combined spectra is then scaled to
+          the number of integrated pixels.
         """
         x = self.validate_x_index(x, clip=False)
         y = self.validate_y_index(y, clip=False)
         region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
-        return self.get_spectrum_from_region(region)
+        return self.get_spectrum_from_region(region, median=median)
 
-    def get_spectrum_in_annulus(self, x, y, rmin, rmax):
+    def get_spectrum_in_annulus(self, x, y, rmin, rmax, median=False):
         """Return a. orb.fft.RealSpectrum extracted at x, y and integrated
         over a circular annulus of min radius rmin and max radius rmax.
 
@@ -2237,15 +2252,20 @@ class SpectralCube(Cube):
         :param rmin: rmin of the annulus
 
         :param rmax: rmax of the annulus
+
+        :param median: If True, a median is used instead of a mean to
+          combine spectra. As the resulting spectrum is integrated,
+          the median value of the combined spectra is then scaled to
+          the number of integrated pixels.
         """
         x = self.validate_x_index(x, clip=False)
         y = self.validate_y_index(y, clip=False)
         if rmin <= 0: raise ValueError('rmin must be > 0, use get_spectrum to extract spectrum in a circular aperture')
         if rmax <= rmin: raise ValueError('rmax must be greater than rmin')
         region = self.get_region('annulus({},{},{},{})'.format(x+1, y+1, float(rmin), float(rmax)))
-        return self.get_spectrum_from_region(region)
+        return self.get_spectrum_from_region(region, median=median)
 
-    def get_spectrum_bin(self, x, y, b, **kwargs):
+    def get_spectrum_bin(self, x, y, b, median=False):
         """Return a spectrum integrated over a binned region.
 
         :param x: X position of the bottom-left pixel
@@ -2254,8 +2274,10 @@ class SpectralCube(Cube):
 
         :param b: Binning. If 1, only the central pixel is extracted
 
-        :param kwargs: Keyword arguments of the function
-          :py:meth:`~SpectralCube.get_spectrum_from_region`.
+        :param median: If True, a median is used instead of a mean to
+          combine spectra. As the resulting spectrum is integrated,
+          the median value of the combined spectra is then scaled to
+          the number of integrated pixels.
 
         :returns: (axis, spectrum)
         """
@@ -2267,7 +2289,7 @@ class SpectralCube(Cube):
         y = self.validate_y_index(y, clip=False)
         region = self.get_region('box({},{},{},{},0)'.format(
             x+float(b)/2.+0.5, y+float(b)/2.+0.5, b, b))
-        return self.get_spectrum_from_region(region)
+        return self.get_spectrum_from_region(region, median=median)
 
     # def _extract_spectrum_from_region(self, region,
     #                                   subtract_spectrum=None,

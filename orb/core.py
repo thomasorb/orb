@@ -2465,7 +2465,7 @@ class Vector1d(Data):
         # transform gvar to data and err
         out.data = gvar.mean(_out)
         out.err = gvar.sdev(_out)
-            
+
         out.set_writeable(writeable)
         return out
 
@@ -2798,6 +2798,11 @@ class WCSData(Data, Tools):
 
         Data.__init__(self, data, **kwargs) # note that this init may change the value of data
 
+        # try to load wcs from fits keywords if a FITS file
+        if data_path is not None:
+            if 'fits' in data_path:
+                self.set_wcs(data_path)
+                
         # load dxdymaps
         self.dxdymaps = None
         if data_path is not None:
@@ -2818,7 +2823,6 @@ class WCSData(Data, Tools):
                     iparam, self.default_params[iparam]))
                 
         # check params
-        
         self.params.reset('instrument', self.instrument)
 
         # convert camera param
@@ -2859,7 +2863,7 @@ class WCSData(Data, Tools):
             
         if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:
             warnings.warn('image might be cropped, target_x, target_y and other parameters might be wrong')
-
+            
         if 'target_x' not in self.params:
             target_x = float(self.dimx / 2.)
         else: target_x = self.params.target_x
@@ -2962,6 +2966,7 @@ class WCSData(Data, Tools):
         
     def has_dxdymaps(self):
         """Return True is self.dxmap and self.dymap exist"""
+        if not hasattr(self, 'dxdymaps'): return False
         if self.dxdymaps is None: return False
         return True
 
@@ -3012,9 +3017,10 @@ class WCSData(Data, Tools):
             warnings.simplefilter('ignore', category=VerifyWarning)
             warnings.simplefilter('ignore', category=AstropyUserWarning)
             wcs = pywcs.WCS(
-                utils.io.read_fits(wcs_path, return_hdu_only=True)[0].header,
+                utils.io.read_fits(wcs, return_hdu_only=True)[0].header,
                 naxis=2, relax=True)
 
+            
         # remove old sip params if they exist
         for ipar in self.params.keys():
             if ('A_' == ipar[:2]
@@ -3022,9 +3028,9 @@ class WCSData(Data, Tools):
                 or 'AP_' == ipar[:3]
                 or 'BP_' == ipar[:3]):
                 del self.params[ipar]
-                
-        self.update_params(wcs.to_header(relax=True))
 
+        self.update_params(wcs.to_header(relax=True))
+        
         # convert wcs to parameters so that FITS keywords and
         # comprehensive parameters are coherent.
         _params = utils.astrometry.get_wcs_parameters(wcs)

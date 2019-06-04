@@ -356,8 +356,8 @@ class RealInterferogram(Interferogram):
         number of integrated pixels.
         """
         sky = sky.copy()
-        sky.data *= self.params.pixels / sky.params.pixels
-        self = self.math('subtract', sky)
+        sky.data *= float(self.params.pixels) / float(sky.params.pixels)
+        return self.subtract(sky)
         
         
     def combine(self, interf, transmission=None, ratio=None):
@@ -814,8 +814,8 @@ class RealSpectrum(Spectrum):
         number of integrated pixels.
         """
         sky = sky.copy()
-        sky.data *= self.params.pixels / sky.params.pixels
-        self = self.math('subtract', sky)
+        sky.data *= float(self.params.pixels) / float(sky.params.pixels)
+        return self.subtract(sky)
 
 #################################################
 #### CLASS PhaseMaps ############################

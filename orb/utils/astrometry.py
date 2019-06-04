@@ -1907,6 +1907,39 @@ def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
     return max_corr, max_dx, max_dy    
 
 
+def get_cd(wcs):
+    """Return CD matrix from a header with PC matrix.
+
+    :param wcs: astropy.wcs.WCS instance.
+
+    :return: CD matrix
+    """
+    return np.dot(np.diag(wcs.wcs.get_cdelt()), wcs.wcs.get_pc())
+
+def pc2cd(hdr):
+    """Convert header PC definition to CD definition 
+    
+    :param hdr: A FITS header
+
+    :return: converted FITS header
+    """
+    wcs = astropy.wcs.WCS(hdr, relax=True)
+    cd = get_cd(wcs)
+
+    # remove PC definition and replace it with CD definition the hard
+    # way since astropy.wcs.WCS.to_header() always convert any
+    # definition to PC definition
+    newhdr = wcs.to_header(relax=True)
+    for ikey in ['PC1_1', 'PC1_2', 'PC2_1', 'PC2_2']:
+        del newhdr[ikey]
+    del newhdr['CDELT1']
+    del newhdr['CDELT2']
+    newhdr['CD1_1'] = cd[0,0]
+    newhdr['CD1_2'] = cd[0,1]
+    newhdr['CD2_1'] = cd[1,0]
+    newhdr['CD2_2'] = cd[1,1]
+    return newhdr
+
 def create_wcs(target_x, target_y, deltax, deltay, target_ra,
                target_dec, rotation, sip=None):
     """Create a WCS with an optional SIP distortion model.
@@ -1958,7 +1991,9 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 def _get_wcs_parameters(wcs):
     """see get_wcs_parameters
     """
-    wcs2 = wcs.copy()
+    if not isinstance(wcs, pywcs.WCS):
+        raise TypeError('wcs is a {} but it must be an astropy.wcs.WCS instance.'.format(type(wcs)))
+    wcs2 = copy.copy(wcs)
     target_x, target_y = wcs2.wcs.crpix
     target_ra, target_dec = wcs2.wcs.crval
     deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(wcs2)
@@ -1976,20 +2011,26 @@ def _get_wcs_parameters(wcs):
         d = create_wcs(*p2, sip=wcsref).all_world2pix(sld, 0) - wcsref.all_world2pix(sld, 0)
         return d.flatten()
 
+    def compute_median_err(p, allp):
+        return np.nanmedian(diff(p, wcs2, random_star_list_deg, allp).reshape(
+            random_star_list_deg.shape), axis=0)
+        
     allp = [target_x, target_y, deltax, deltay, target_ra, target_dec, rotation]
     guess = [deltax, deltay, rotation]
 
     logging.debug('median err before parameters optimization {}'.format(
-        np.nanmedian(diff(guess, wcs2, random_star_list_deg, allp).reshape(
-            random_star_list_deg.shape), axis=0)))
+        compute_median_err(guess, allp)))
     
     fit = optimize.leastsq(diff, guess,
                            args=(wcs2, random_star_list_deg, allp),
                            maxfev=100, full_output=True)
 
     logging.debug('median err after parameters optimization {}'.format(
-        np.nanmedian(diff(fit[0], wcs2, random_star_list_deg, allp).reshape(
-            random_star_list_deg.shape), axis=0)))
+        compute_median_err(fit[0], allp)))
+
+    if np.any(compute_median_err(fit[0], allp) > 1e-5):
+        raise StandardError('optimization error, please retry: {}'.format(
+            compute_median_err(fit[0], allp)))
 
     allp[2:4] = fit[0][0:2]
     allp[-1] = fit[0][2]
@@ -2009,13 +2050,13 @@ def get_wcs_parameters(wcs):
     :return: target_x, target_y, deltax, deltay, target_ra,
       target_dec, rotation
     """
-
     trials = 0
     while trials < 5:
         try:
             return _get_wcs_parameters(wcs)
-        except Exception:
+        except Exception, e:
             trials += 1
+            logging.debug(e)
     raise StandardError('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
