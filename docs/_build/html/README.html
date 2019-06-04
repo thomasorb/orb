@@ -1,0 +1,332 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Introduction &mdash; orb  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code documentation: core modules" href="code.html" />
+    <link rel="prev" title="ORB Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> orb
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation-instructions-with-anaconda-should-work-on-linux-mac-osx-windows">installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#download-miniconda-for-your-os-and-python-2-7">1. download Miniconda for your OS and python 2.7.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-conda-build-tools">2. install <code class="docutils literal notranslate"><span class="pre">conda-build</span></code> tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-orb-environment">3. create orb environment</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#automatic-procedure-if-you-have-a-yml-file">automatic procedure if you have a <code class="docutils literal notranslate"><span class="pre">*.yml*</span></code> file:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#manual-installation-of-the-librairies">manual installation of the librairies</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#add-orb-module">4. add orb module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-orcs-module">5. add orcs module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-jupyter">6. Install jupyter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">Code documentation: core modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_utils.html">Code documentation: utils modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">orb</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Introduction</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://github.com/thomasorb/orb">ORB</a> is the kernel module for the
+whole suite of data reduction and analysis tools for
+<a class="reference external" href="http://www.cfht.hawaii.edu/Instruments/Sitelle">SITELLE</a>:
+<a class="reference external" href="https://github.com/thomasorb/orbs">ORBS</a>,
+<a class="reference external" href="https://github.com/thomasorb/orcs">ORCS</a>.</p>
+<p>It provides basic access to the data cubes as long as the fitting
+engine of ORCS and numerous utilitary functions for the analysis of
+interferometric and spectral data, imaging data, astrometry,
+photometry.</p>
+<p>You can find the up-to-date documentation here:</p>
+<p>http://celeste.phy.ulaval.ca/orb-doc/index.html</p>
+<div class="section" id="installation-instructions-with-anaconda-should-work-on-linux-mac-osx-windows">
+<h2>installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)<a class="headerlink" href="#installation-instructions-with-anaconda-should-work-on-linux-mac-osx-windows" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="download-miniconda-for-your-os-and-python-2-7">
+<h3>1. download Miniconda for your OS and python 2.7.<a class="headerlink" href="#download-miniconda-for-your-os-and-python-2-7" title="Permalink to this headline">¶</a></h3>
+<p><strong>If you already have <a class="reference external" href="https://www.anaconda.com/">Anaconda</a> installed go to step 2</strong></p>
+<p>instructions are here: <a class="reference external" href="https://conda.io/miniconda.html">Miniconda — Conda</a></p>
+<ol class="simple">
+<li>place the downloaded file on your home directory</li>
+<li>install it (use the real file name instead of <code class="docutils literal notranslate"><span class="pre">Miniconda*.sh</span></code>)</li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>bash Miniconda*.sh
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-conda-build-tools">
+<h3>2. install <code class="docutils literal notranslate"><span class="pre">conda-build</span></code> tools<a class="headerlink" href="#install-conda-build-tools" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install conda-build
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-orb-environment">
+<h3>3. create orb environment<a class="headerlink" href="#create-orb-environment" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="automatic-procedure-if-you-have-a-yml-file">
+<h4>automatic procedure if you have a <code class="docutils literal notranslate"><span class="pre">*.yml*</span></code> file:<a class="headerlink" href="#automatic-procedure-if-you-have-a-yml-file" title="Permalink to this headline">¶</a></h4>
+<p>create an environment automatically</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f orb-env.yml
+</pre></div>
+</div>
+</div>
+<div class="section" id="manual-installation-of-the-librairies">
+<h4>manual installation of the librairies<a class="headerlink" href="#manual-installation-of-the-librairies" title="Permalink to this headline">¶</a></h4>
+<p>create an environment and install needed modules manually</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create -n orb <span class="nv">python</span><span class="o">=</span><span class="m">2</span>.7 
+conda install -n orb numpy scipy bottleneck matplotlib astropy cython h5py dill pandas
+conda install -n orb -c conda-forge pyregion
+conda install -n orb -c astropy photutils
+conda activate orb
+</pre></div>
+</div>
+<p>now your prompt should be something like <code class="docutils literal notranslate"><span class="pre">(orb)</span> <span class="pre">$</span></code>.</p>
+<p>note: you may now have to install <code class="docutils literal notranslate"><span class="pre">gcc</span></code> on Mac OSX if you want to be able to execute the following with no error (see https://discussions.apple.com/thread/8336714). To check that you have gcc installed type <code class="docutils literal notranslate"><span class="pre">gcc</span> <span class="pre">--help</span></code> in a terminal. You should see the usage informations displayed.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install gvar --no-deps
+pip install lsqfit --no-deps
+pip install pp --no-deps
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="add-orb-module">
+<h3>4. add orb module<a class="headerlink" href="#add-orb-module" title="Permalink to this headline">¶</a></h3>
+<p>clone <a class="reference external" href="https://github.com/thomasorb/orb">ORB</a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir orb-stable <span class="c1"># do it where you want to put orb files</span>
+<span class="nb">cd</span> orb-stable
+git clone https://github.com/thomasorb/orb.git
+</pre></div>
+</div>
+<p>in the downloaded folder</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
+<span class="nb">cd</span> path/to/orb-stable/orb
+python setup.py build_ext --inplace
+python setup.py install
+</pre></div>
+</div>
+<p>Test it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
+python -c <span class="s1">&#39;import orb.core&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="add-orcs-module">
+<h3>5. add orcs module<a class="headerlink" href="#add-orcs-module" title="Permalink to this headline">¶</a></h3>
+<p>clone <a class="reference external" href="https://github.com/thomasorb/orcs">ORCS</a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir orcs-stable <span class="c1"># do it where you want to put orcs files</span>
+<span class="nb">cd</span> orcs-stable
+git clone https://github.com/thomasorb/orcs.git
+</pre></div>
+</div>
+<p>in the downloaded folder</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
+<span class="nb">cd</span> path/to/orcs-stable/orcs
+python setup.py install
+</pre></div>
+</div>
+<p>Test it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
+python -c <span class="s1">&#39;import orcs.process&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-jupyter">
+<h3>6. Install jupyter<a class="headerlink" href="#install-jupyter" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -n orb -c conda-forge jupyterlab
+</pre></div>
+</div>
+<p>Run it</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
+jupyter lab
+</pre></div>
+</div>
+<p>You should now have your web browser opened and showing the jupyter lab interface !</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="code.html" class="btn btn-neutral float-right" title="Code documentation: core modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="ORB Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Thomas Martin
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
