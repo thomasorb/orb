@@ -558,7 +558,6 @@ def write_cube_as_fits(path, cube, overwrite=False, slice_size=3e9):
 
     """
     MIN_SLICE_NB = 3
-    SLICE_SIZE = 1e9 # in bytes
     
     fake_shape = np.array(cube.shape)
     fake_shape.fill(10.)
@@ -585,7 +584,7 @@ def write_cube_as_fits(path, cube, overwrite=False, slice_size=3e9):
         
     shdu = pyfits.StreamingHDU(path, hdr)
     total_size = np.prod(cube.shape) * np.zeros(2, cube.dtype).itemsize
-    slicenb = max(MIN_SLICE_NB, total_size // SLICE_SIZE)
+    slicenb = max(MIN_SLICE_NB, total_size // slice_size)
     if slicenb > cube.shape[-1]:
         raise StandardError('data size is small, please use write_fits instead')
     slices = np.linspace(0, cube.shape[-1], slicenb).astype(int)
