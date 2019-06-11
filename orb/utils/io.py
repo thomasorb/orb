@@ -21,6 +21,7 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import sys
 import os
 import numpy as np
 import time
@@ -93,6 +94,9 @@ def write_fits(fits_path, fits_data, fits_header=None,
                     'NAXIS2', 'NAXIS3', 'EXTEND', 'INHERIT',
                     'BZERO', 'BSCALE']
 
+    if mask: warnings.warn('mask creation is deprecated. Please do not use it anymore', DeprecationWarning)
+    if replace: warnings.warn('replace option is deprecated. Please do not use it anymore', DeprecationWarning)
+    
     if not isinstance(fits_data, np.ndarray):
         raise ValueError('Data type must be numpy.ndarray')
 
@@ -129,6 +133,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
         fits_data = fits_data.real.astype(np.float32)
         warnings.warn('Complex data cast to float32 (FITS format do not support complex data)')
 
+        
     base_fits_path = fits_path
 
     dirname = os.path.dirname(fits_path)
@@ -136,105 +141,106 @@ def write_fits(fits_path, fits_data, fits_header=None,
         if not os.path.exists(dirname): 
             os.makedirs(dirname)
 
-    index=0
-    file_written = False
-    while not file_written:
-        if ((not (os.path.exists(fits_path))) or overwrite):
+    if len(fits_data.shape) > 1:
+        hdu = pyfits.PrimaryHDU(fits_data.transpose())
+    elif len(fits_data.shape) == 1:
+        hdu = pyfits.PrimaryHDU(fits_data[np.newaxis, :])
+    else: # 1 number only
+        hdu = pyfits.PrimaryHDU(np.array([fits_data]))
 
-            if len(fits_data.shape) > 1:
-                hdu = pyfits.PrimaryHDU(fits_data.transpose())
-            elif len(fits_data.shape) == 1:
-                hdu = pyfits.PrimaryHDU(fits_data[np.newaxis, :])
-            else: # 1 number only
-                hdu = pyfits.PrimaryHDU(np.array([fits_data]))
+    if mask is not None:
+        
+        # mask conversion to only zeros or ones
+        mask = mask.astype(float)
+        mask[np.nonzero(np.isnan(mask))] = 1.
+        mask[np.nonzero(np.isinf(mask))] = 1.
+        mask[np.nonzero(mask)] = 1.
+        mask = mask.astype(np.uint8) # UINT8 is the
+                                     # smallest allowed
+                                     # type
+        hdu_mask = pyfits.PrimaryHDU(mask.transpose())
+        
+    # add header optional keywords
+    if fits_header is not None:
+        ## remove keys of the passed header which corresponds
+        ## to the description of the data set
+        for ikey in SECURED_KEYS:
+            if ikey in fits_header: fits_header.pop(ikey)
+        hdu.header.extend(fits_header, strip=False,
+                          update=True, end=True)
 
-            if mask is not None:
-                # mask conversion to only zeros or ones
-                mask = mask.astype(float)
-                mask[np.nonzero(np.isnan(mask))] = 1.
-                mask[np.nonzero(np.isinf(mask))] = 1.
-                mask[np.nonzero(mask)] = 1.
-                mask = mask.astype(np.uint8) # UINT8 is the
-                                             # smallest allowed
-                                             # type
-                hdu_mask = pyfits.PrimaryHDU(mask.transpose())
-            # add header optional keywords
-            if fits_header is not None:
-                ## remove keys of the passed header which corresponds
-                ## to the description of the data set
-                for ikey in SECURED_KEYS:
-                    if ikey in fits_header: fits_header.pop(ikey)
-                hdu.header.extend(fits_header, strip=False,
-                                  update=True, end=True)
-                
-                # Remove 3rd axis related keywords if there is no
-                # 3rd axis
-                if len(fits_data.shape) <= 2:
-                    for ikey in range(len(hdu.header)):
-                        if isinstance(hdu.header[ikey], str):
-                            if ('Wavelength axis' in hdu.header[ikey]):
-                                del hdu.header[ikey]
-                                del hdu.header[ikey]
-                                break
-                    if 'CTYPE3' in hdu.header:
-                        del hdu.header['CTYPE3']
-                    if 'CRVAL3' in hdu.header:
-                        del hdu.header['CRVAL3']
-                    if 'CRPIX3' in hdu.header:
-                        del hdu.header['CRPIX3']
-                    if 'CDELT3' in hdu.header:
-                        del hdu.header['CDELT3']
-                    if 'CROTA3' in hdu.header:
-                        del hdu.header['CROTA3']
-                    if 'CUNIT3' in hdu.header:
-                        del hdu.header['CUNIT3']
+        # Remove 3rd axis related keywords if there is no
+        # 3rd axis
+        if len(fits_data.shape) <= 2:
+            for ikey in range(len(hdu.header)):
+                if isinstance(hdu.header[ikey], str):
+                    if ('Wavelength axis' in hdu.header[ikey]):
+                        del hdu.header[ikey]
+                        del hdu.header[ikey]
+                        break
+            if 'CTYPE3' in hdu.header:
+                del hdu.header['CTYPE3']
+            if 'CRVAL3' in hdu.header:
+                del hdu.header['CRVAL3']
+            if 'CRPIX3' in hdu.header:
+                del hdu.header['CRPIX3']
+            if 'CDELT3' in hdu.header:
+                del hdu.header['CDELT3']
+            if 'CROTA3' in hdu.header:
+                del hdu.header['CROTA3']
+            if 'CUNIT3' in hdu.header:
+                del hdu.header['CUNIT3']
 
-            # add median and mean of the image in the header
-            # data is nan filtered before
-            if record_stats:
-                fdata = fits_data[np.nonzero(~np.isnan(fits_data))]
-                if np.size(fdata) > 0:
-                    data_mean = bn.nanmean(fdata)
-                    data_median = bn.nanmedian(fdata)
-                else:
-                    data_mean = np.nan
-                    data_median = np.nan
-                hdu.header.set('MEAN', str(data_mean),
-                               'Mean of data (NaNs filtered)',
-                               after=5)
-                hdu.header.set('MEDIAN', str(data_median),
-                               'Median of data (NaNs filtered)',
-                               after=5)
+    # add median and mean of the data in the header
+    # data is nan filtered before
+    if record_stats:
+        fdata = fits_data[np.nonzero(~np.isnan(fits_data))]
+        if np.size(fdata) > 0:
+            data_mean = bn.nanmean(fdata)
+            data_median = bn.nanmedian(fdata)
+        else:
+            data_mean = np.nan
+            data_median = np.nan
+        hdu.header.set('MEAN', str(data_mean),
+                       'Mean of data (NaNs filtered)',
+                       after=5)
+        hdu.header.set('MEDIAN', str(data_median),
+                       'Median of data (NaNs filtered)',
+                       after=5)
 
-            # add some basic keywords in the header
-            date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-            hdu.header.set('MASK', 'False', '', after=5)
-            hdu.header.set('DATE', date, 'Creation date', after=5)
-            hdu.header.set('PROGRAM', "ORB v%s"%__version__, 
-                           'Thomas Martin: thomas.martin.1@ulaval.ca',
-                           after=5)
+    # add some basic keywords in the header
+    date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+    hdu.header.set('MASK', 'False', '', after=5)
+    hdu.header.set('DATE', date, 'Creation date', after=5)
+    hdu.header.set('PROGRAM', "ORB v%s"%__version__, 
+                   'Thomas Martin: thomas.martin.1@ulaval.ca',
+                   after=5)
 
-            # write FITS file
-            hdu.writeto(fits_path, overwrite=overwrite)
 
-            if mask is not None:
-                hdu_mask.header = hdu.header
-                hdu_mask.header.set('MASK', 'True', '', after=6)
-                if mask_path is None:
-                    mask_path = os.path.splitext(fits_path)[0] + '_mask.fits'
-                    
-                hdu_mask.writeto(mask_path, overwrite=overwrite)
-
-            if not (silent):
-                logging.info("Data written as {} in {:.2f} s ".format(
-                    fits_path, time.time() - start_time))
-
-            return fits_path
-        else :
+    if not overwrite: 
+        index=0
+        while os.path.exists(fits_path):
             fits_path = (os.path.splitext(base_fits_path)[0] + 
                          "_" + str(index) + 
                          os.path.splitext(base_fits_path)[1])
             index += 1
+
+    # write FITS file
+    hdu.writeto(fits_path, overwrite=overwrite)
+    
+    if mask is not None:
+        hdu_mask.header = hdu.header
+        hdu_mask.header.set('MASK', 'True', '', after=6)
+        if mask_path is None:
+            mask_path = os.path.splitext(fits_path)[0] + '_mask.fits'
+
+        hdu_mask.writeto(mask_path, overwrite=overwrite)
+
+    if not (silent):
+        logging.info("Data written as {} in {:.2f} s ".format(
+            fits_path, time.time() - start_time))
+
+    return fits_path
 
 
 def read_fits(fits_path, no_error=False, nan_filter=False, 
@@ -538,3 +544,56 @@ def bin_image(a, binning):
     a = np.add.reduceat(a[:,0:yslices[-1]], yslices[:-1], axis=1)
 
     return a / (binning**2.)
+
+def write_cube_as_fits(path, cube, overwrite=False, slice_size=3e9):
+    """Write data in a streaming fashion so that the impact on the RAM is minimized
+
+    :param path: Path to the output fits file
+
+    :param overwrite: Overwrite file if it already exists.
+
+    :param slice_size: Size of a slice in bytes (default 3e9 = 3
+      Gb). You may want to reduce it if you do not have much RAM
+      left. You may want to increase it if it takes too much time.
+
+    """
+    MIN_SLICE_NB = 3
+    SLICE_SIZE = 1e9 # in bytes
+    
+    fake_shape = np.array(cube.shape)
+    fake_shape.fill(10.)
+    fake_data = np.zeros(fake_shape, dtype=cube.dtype)
+    
+    hdu = pyfits.PrimaryHDU(fake_data)
+    hdr = hdu.header
+    
+    if hasattr(cube, 'get_cube_header'):
+        hdr.update(cube.get_cube_header())
+
+    hdr['NAXIS'] = len(cube.shape)
+    for i in range(len(cube.shape)):
+        hdr['NAXIS{}'.format(i+1)] = cube.shape[i]
+    
+    dirname = os.path.dirname(path)
+    if (dirname != []) and (dirname != ''):
+        if not os.path.exists(dirname): 
+            os.makedirs(dirname)
+
+    if os.path.exists(path):
+        if overwrite: os.remove(path)
+        else: raise IOError('file already exists')
+        
+    shdu = pyfits.StreamingHDU(path, hdr)
+    total_size = np.prod(cube.shape) * np.zeros(2, cube.dtype).itemsize
+    slicenb = max(MIN_SLICE_NB, total_size // SLICE_SIZE)
+    if slicenb > cube.shape[-1]:
+        raise StandardError('data size is small, please use write_fits instead')
+    slices = np.linspace(0, cube.shape[-1], slicenb).astype(int)
+
+    for i in range(len(slices[:-1])):
+        print('writing slice {}/{}'.format(i+1, len(slices[:-1])))
+        sl = [slice(0, j) for j in cube.shape[:-1]]
+        sl += [slice(slices[i],slices[i+1])]
+        shdu.write(cube[tuple(sl)].T)
+
+    shdu.close()

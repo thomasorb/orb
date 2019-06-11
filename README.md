@@ -82,29 +82,8 @@ Test it:
 conda activate orb # you don't need to do it if you are already in the orb environment
 python -c 'import orb.core'
 ```
-### 5. add orcs module
 
-clone [ORCS](https://github.com/thomasorb/orcs)
-```bash
-mkdir orcs-stable # do it where you want to put orcs files
-cd orcs-stable
-git clone https://github.com/thomasorb/orcs.git
-```
-
-in the downloaded folder
-```bash
-conda activate orb # you don't need to do it if you are already in the orb environment
-cd path/to/orcs-stable/orcs
-python setup.py install
-```
-
-Test it:
-```bash
-conda activate orb # you don't need to do it if you are already in the orb environment
-python -c 'import orcs.process'
-```
-
-### 6. Install jupyter
+### 5. Install jupyter
 
 ```bash
 conda install -n orb -c conda-forge jupyterlab

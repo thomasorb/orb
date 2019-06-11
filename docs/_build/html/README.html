@@ -91,8 +91,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#add-orb-module">4. add orb module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#add-orcs-module">5. add orcs module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#install-jupyter">6. Install jupyter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-jupyter">5. Install jupyter</a></li>
 </ul>
 </li>
 </ul>
@@ -175,7 +174,7 @@ engine of ORCS and numerous utilitary functions for the analysis of
 interferometric and spectral data, imaging data, astrometry,
 photometry.</p>
 <p>You can find the up-to-date documentation here:</p>
-<p>http://celeste.phy.ulaval.ca/orb-doc/index.html</p>
+<p>https://orb.readthedocs.io</p>
 <div class="section" id="installation-instructions-with-anaconda-should-work-on-linux-mac-osx-windows">
 <h2>installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)<a class="headerlink" href="#installation-instructions-with-anaconda-should-work-on-linux-mac-osx-windows" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="download-miniconda-for-your-os-and-python-2-7">
@@ -245,28 +244,8 @@ python -c <span class="s1">&#39;import orb.core&#39;</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="add-orcs-module">
-<h3>5. add orcs module<a class="headerlink" href="#add-orcs-module" title="Permalink to this headline">¶</a></h3>
-<p>clone <a class="reference external" href="https://github.com/thomasorb/orcs">ORCS</a></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir orcs-stable <span class="c1"># do it where you want to put orcs files</span>
-<span class="nb">cd</span> orcs-stable
-git clone https://github.com/thomasorb/orcs.git
-</pre></div>
-</div>
-<p>in the downloaded folder</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
-<span class="nb">cd</span> path/to/orcs-stable/orcs
-python setup.py install
-</pre></div>
-</div>
-<p>Test it:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate orb <span class="c1"># you don&#39;t need to do it if you are already in the orb environment</span>
-python -c <span class="s1">&#39;import orcs.process&#39;</span>
-</pre></div>
-</div>
-</div>
 <div class="section" id="install-jupyter">
-<h3>6. Install jupyter<a class="headerlink" href="#install-jupyter" title="Permalink to this headline">¶</a></h3>
+<h3>5. Install jupyter<a class="headerlink" href="#install-jupyter" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -n orb -c conda-forge jupyterlab
 </pre></div>
 </div>
