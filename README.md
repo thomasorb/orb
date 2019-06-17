@@ -48,15 +48,27 @@ conda create -n orb python=2.7
 conda install -n orb numpy scipy bottleneck matplotlib astropy cython h5py dill pandas
 conda install -n orb -c conda-forge pyregion
 conda install -n orb -c astropy photutils
+```
+if your shell is bash, which is now generally the case for OSX and most linux distributions please do
+```
+conda init bash
+```
+If you have a different shell replace bash with the name of your shell.
+
+Now if you have Scisoft installed (which does not goes well with Anaconda/Python... but still you may want to have it)
+then please add `export PYTHONPATH=''` at the end of your profile file where some environment variables are defined (e.g. `.bashrc`, `.profile`, `.bash_profile`).
+
+You may then activate your environment with
+```
 conda activate orb
 ```
-now your prompt should be something like `(orb) $`. If `conda activate orb` does not work. Please do the following `conda init bash` (if bash is your shell, which is generally the case for OSX and major linux distributions)
+now your prompt should be something like `(orb) $`. If `conda activate orb` does not work. Please do the following `conda init bash` (if bash is your shell
 
 note: you may now have to install `gcc` on Mac OSX if you want to be able to execute the following with no error (see https://discussions.apple.com/thread/8336714). To check that you have gcc installed type `gcc --help` in a terminal. You should see the usage informations displayed.
 
 ```bash
-pip install gvar==9.0.3 --no-deps
-pip install lsqfit=11.1 --no-deps
+pip install gvar --no-deps
+pip install lsqfit --no-deps
 pip install pp --no-deps
 ```
 
