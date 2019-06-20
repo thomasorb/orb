@@ -649,6 +649,57 @@ class Spectrum(core.Cm1Vector1d):
         """Return the imaginary part"""
         return np.copy(self.data.imag)
 
+    def apodize(self, coeff):
+        """Return an apodized spectrum"""
+        spec = self.copy()
+        spec.data[np.isnan(spec.data)] = 0.
+        zp_spec = np.concatenate([spec.data, spec.data[::-1]])
+        spec_ifft = scipy.fftpack.ifft(zp_spec)
+        x = np.linspace(0, 1, spec.dimx)
+        x = np.concatenate([x, x[::-1]])
+        w = utils.fft.gaussian_window(coeff, x)
+        spec.data = scipy.fftpack.fft(spec_ifft * w)[:spec.dimx]
+        if not np.any(np.iscomplex(self.data)):
+            spec.data.imag.fill(0.)
+        return spec
+
+    
+    def inverse_transform(self):
+        """Return the inverse transform of the spectrum. This should be the
+        exact inverse transform of Interferogram.transform()
+        """
+        raise NotImplementedError()
+        notcomplex = False
+        if not np.any(np.iscomplex(self.data)):
+            logging.debug('input spectrum is not complex. therefore its inverse transform will not be a real interferogram.')
+            notcomplex = True
+        
+        spec = self.copy()
+        spec.data[np.isnan(spec.data)] = 0.
+        # uncorrect phase. The sign depends on even or odd order.
+        if self.has_params():
+            if int(self.params.order)&1:
+                spec.zpd_shift(self.params.zpd_index)
+            else:
+                spec.zpd_shift(-self.params.zpd_index)
+
+        # spectrum is flipped if order is even
+        if self.has_params():
+            if int(self.params.order)&1:
+                spec.reverse()
+
+        spec = spec.data
+        if not notcomplex:
+            spec = np.concatenate([spec, spec[::-1]])
+            raise NotImplementedError()
+            
+        print spec.shape
+        print self.dimx
+        spec_ifft = scipy.fftpack.ifft(spec)
+
+        interf = Interferogram(spec_ifft, params=self.params)
+        return interf 
+        
     def zpd_shift(self, shift):
         """correct spectrum phase from shifted zpd"""
         self.correct_phase(

@@ -2065,3 +2065,39 @@ def crop_pixel_positions(pixs, xmin, xmax, ymin, ymax):
     pixs[0] -= bounds[0]
     pixs[1] -= bounds[2]
     return pixs
+
+def get_quadrant_dims(quad_number, dimx, dimy, div_nb):
+    """Return the indices of a quadrant along x and y axes.
+
+    :param quad_number: Quadrant number
+
+    :param dimx: X axis dimension.
+
+    :param dimy: Y axis dimension.
+
+    :param div_nb: Number of divisions along x and y axes. (e.g. if
+      div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
+      number of quadrant is 16)
+    """
+    quad_nb = div_nb**2
+
+    if (quad_number < 0) or (quad_number > quad_nb - 1L):
+        raise StandardError("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
+        return None
+
+    index_x = quad_number % div_nb
+    index_y = (quad_number - index_x) / div_nb
+
+    x_min = long(index_x * math.ceil(dimx / div_nb))
+    if (index_x != div_nb - 1L):            
+        x_max = long((index_x  + 1L) * math.ceil(dimx / div_nb))
+    else:
+        x_max = dimx
+
+    y_min = long(index_y * math.ceil(dimy / div_nb))
+    if (index_y != div_nb - 1L):            
+        y_max = long((index_y  + 1L) * math.ceil(dimy / div_nb))
+    else:
+        y_max = dimy
+
+    return x_min, x_max, y_min, y_max

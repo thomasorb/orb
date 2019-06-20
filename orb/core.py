@@ -431,7 +431,7 @@ class Params(dict):
                 try:
                     f.create_dataset(ikey, data=data[ikey])
                 except TypeError:
-                    print 'error saving {} of type {}'.format(ikey, type(data[ikey]))
+                    logging.debug('error saving {} of type {}'.format(ikey, type(data[ikey])))
                     
     def load(self, path):
         """Load data from an HDF5 file saved with save method.
@@ -1040,29 +1040,8 @@ class Tools(object):
           div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
           number of quadrant is 16)
         """
-        quad_nb = div_nb**2
-        
-        if (quad_number < 0) or (quad_number > quad_nb - 1L):
-            raise StandardError("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
-            return None
-
-        index_x = quad_number % div_nb
-        index_y = (quad_number - index_x) / div_nb
-
-        x_min = long(index_x * math.ceil(dimx / div_nb))
-        if (index_x != div_nb - 1L):            
-            x_max = long((index_x  + 1L) * math.ceil(dimx / div_nb))
-        else:
-            x_max = dimx
-
-        y_min = long(index_y * math.ceil(dimy / div_nb))
-        if (index_y != div_nb - 1L):            
-            y_max = long((index_y  + 1L) * math.ceil(dimy / div_nb))
-        else:
-            y_max = dimy
-
-        return x_min, x_max, y_min, y_max
-        
+        return utils.image.get_quadrant_dims(quad_number, dimx, dimy, div_nb)
+    
 ##################################################
 #### CLASS ProgressBar ###########################
 ##################################################
@@ -2366,8 +2345,8 @@ class Vector1d(Data):
 
         if self.has_err():
             ferr = interpolate.interp1d(self.axis.data.astype(np.float128),
-                                     self.err.astype(np.float128),
-                                     bounds_error=False)
+                                        self.err.astype(np.float128),
+                                        bounds_error=False)
             new_err = ferr(new_axis.data)
         else:
             new_err = None
@@ -3120,7 +3099,7 @@ class WCSData(Data, Tools):
              utils.astrometry.deg2dec(coords[:,1])])
 
 
-    def world2pix(self, radec, deg=True):
+    def world2pix(self, radec):
         """Convert celestial coordinates to pixel coordinates
 
         :param xy: A tuple (x,y) of celestial coordinates or a list of

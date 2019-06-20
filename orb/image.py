@@ -321,8 +321,7 @@ class Image(Frame2D):
           fitting. Can be 'moffat' or 'gaussian'.
         """
         if profile_name in self.profiles:
-            self.profile_name = profile_name
-            self.profile = utils.astrometry.get_profile(self.profile_name)
+            self.params['profile_name'] = profile_name
         else:
             raise StandardError(
                 "Bad profile name (%s) please choose it in: %s"%(
@@ -423,7 +422,7 @@ class Image(Frame2D):
         ann_masks = aper_ann.to_mask(method='center')
         ann_medians = list()
         for imask in ann_masks:
-            ivalues = imask.multiply(self.data)            
+            ivalues = imask.multiply(self.data.T)            
             ivalues = ivalues[ivalues > 0]
             if ivalues.size > aper.area() * MIN_BACK_COEFF:
                 ann_medians.append(utils.astrometry.sky_background_level(
@@ -432,7 +431,7 @@ class Image(Frame2D):
                 ann_medians.append((np.nan, np.nan))
         
         ann_medians = np.array(ann_medians)
-        phot_table = photutils.aperture_photometry(self.data, aper,
+        phot_table = photutils.aperture_photometry(self.data.T, aper,
                                                    method='subpixel',
                                                    subpixels=10)
         phot_table['background'] = ann_medians[:,0] * aper.area()
@@ -1172,7 +1171,7 @@ class Image(Frame2D):
             if ik in kwargs:
                 raise StandardError('{} should not be passed in kwargs'.format(ik))
         
-        kwargs['profile_name'] = self.profile_name
+        kwargs['profile_name'] = self.params.profile_name
         kwargs['scale'] = self.get_scale()
         kwargs['fwhm_pix'] = self.get_fwhm_pix()
         kwargs['beta'] = self.default_beta

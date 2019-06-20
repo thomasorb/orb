@@ -230,9 +230,11 @@ class HDFCube(core.WCSData):
         # try first to return an already opened file
         if hasattr(self, 'hdffile'):
             if self.hdffile is not None:
-                if "Closed HDF5 file" not in str(self.hdffile):
-                    if self.hdffile.mode == mode:
-                        return self.hdffile
+                try:
+                    if "Closed HDF5 file" not in str(self.hdffile):
+                        if self.hdffile.mode == mode:
+                            return self.hdffile
+                except AttributeError: pass
 
         # if a handle already exists try first to close the file
         # before opening it again

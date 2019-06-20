@@ -278,8 +278,8 @@ class Gaussian(PSF):
         
         # 2-D PSF function
         self.psf2d = lambda x, y: (
-            self.psf(math.sqrt((x-self.params['x'])**2.
-                               +(y-self.params['y'])**2.)))
+            self.psf(np.sqrt((x-self.params['x'])**2.
+                             +(y-self.params['y'])**2.)))
         
 
     def flux(self):

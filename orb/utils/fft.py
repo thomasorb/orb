@@ -222,7 +222,7 @@ def gaussian_window(coeff, x):
 
     :param coeff: FWHM relative to the sinc function. Must be a float > 1.
 
-    :param x: Must be an axis defnined between -1 and 1 inclusively.
+    :param x: Must be an axis defined between -1 and 1 inclusively.
       x = np.linspace(-1., 1., n) for a symmetrical window.
     """
     coeff = float(coeff)
