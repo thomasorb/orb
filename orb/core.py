@@ -3035,8 +3035,12 @@ class WCSData(Data, Tools):
         """Verify the internal coherence between comprehensive wcs parameters
         and FITS keywords.
         """
-        _fits_params = np.array(utils.astrometry.get_wcs_parameters(
-            self.get_wcs(validate=False)))
+        try:
+            _fits_params = np.array(utils.astrometry.get_wcs_parameters(
+                self.get_wcs(validate=False)))
+        except StandardError:
+            warnings.warn('bad WCS in header')
+            return
         
         _wcs_params = np.array([self.params['target_x'],
                                 self.params['target_y'],
