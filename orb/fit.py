@@ -34,7 +34,6 @@ __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"
 
 import numpy as np
 import warnings
-import math
 import copy
 import scipy.optimize
 import scipy.interpolate
@@ -2076,7 +2075,7 @@ class InputParams(object):
             self.axis_min, self.axis_step)
         minx = max(1, int(np.min(signal_range_pix)))
         maxx = min(self.base_params.step_nb - 1,
-                   int(math.ceil(np.max(signal_range_pix))))
+                   int(np.ceil(np.max(signal_range_pix))))
         self.signal_range = (minx, maxx)
         self.check_signal_range()
 
