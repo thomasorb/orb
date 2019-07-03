@@ -192,6 +192,7 @@ class Image(Frame2D):
         :param fwhm_arc: FWHM of stars in arcsec
         """
         self.params['fwhm_arc'] = float(fwhm_arc)
+        logging.info('fwhm reset to {} arcseconds, i.e. {} pixels'.format(self.params.fwhm_arc, self.get_fwhm_pix()))
 
     def get_fwhm_pix(self):
         return self.arc2pix(self.params.fwhm_arc)
@@ -376,10 +377,12 @@ class Image(Frame2D):
             utils.io.open_file(path, 'w') # used to create the folder tree
             sources.to_hdf(path, 'data', mode='w')
             logging.info('sources written to {}'.format(path))
-        return sources, mean_fwhm
+        return sources, mean_fwhm # be careful this is returned in pixels
 
     def detect_fwhm(self, star_list):
-        """Return fwhm of a list of stars
+        """Return fwhm of a list of stars (in pixels)
+
+        can be converted to arcseconds with self.pix2arc()
 
         :param star_list: list of stars (can be an np.ndarray or a path
           to a star list).
@@ -393,7 +396,7 @@ class Image(Frame2D):
         logging.info("Detected stars FWHM : {:.2f}({:.2f}) pixels, {:.2f}({:.2f}) arc-seconds".format(mean_fwhm[0], mean_fwhm_err[0], self.pix2arc(mean_fwhm[0]), self.pix2arc(mean_fwhm_err[0])))
 
         self.reset_fwhm_arc(self.pix2arc(mean_fwhm[0]))
-        return mean_fwhm[0], mean_fwhm_err[0]
+        return mean_fwhm[0], mean_fwhm_err[0] # return in pixels
 
     def aperture_photometry(self, star_list, aper_coeff=3., silent=False):
         """Perform aperture photometry.
@@ -1327,6 +1330,17 @@ class Image(Frame2D):
         # Skip fit checking
         SKIP_CHECK = bool(int(self._get_tuning_parameter('SKIP_CHECK', int(skip_check))))
 
+        COEFF_KEYS = 'dx', 'dy', 'dr', 'da', 'db', 'zoom'
+
+        if isinstance(coeffs, dict):
+            _coeffs = list()
+            for ikey in COEFF_KEYS:
+                if ikey in coeffs:
+                    _coeffs.append(coeffs[ikey])
+                else:
+                    raise TypeError('if coeffs is a dict, it must contain {}'.format(ikey))
+            coeffs = _coeffs
+        
         if len(coeffs) != 6:
             raise TypeError('coeffs must be a tuple (dx, dy, dr, da, db, zoom)')
 
@@ -1370,13 +1384,13 @@ class Image(Frame2D):
                 
         
         if star_list1 is None:
-            star_list1, fwhm_arc = self.detect_stars(
+            star_list1, fwhm_pix = self.detect_stars(
                 min_star_number=MIN_STAR_NB)
+            fwhm_arc = self.pix2arc(fwhm_pix)
         elif fwhm_arc is None:
             raise StandardError('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
 
         star_list1 = utils.astrometry.load_star_list(star_list1)
-        
         image2.reset_fwhm_arc(fwhm_arc)
         self.reset_fwhm_arc(fwhm_arc)
 
@@ -1426,6 +1440,11 @@ class Image(Frame2D):
         #####################################
         ### COMPUTE DISTORTION CORRECTION ###
         #####################################
+        star_list2 = utils.astrometry.transform_star_position_A_to_B(
+            np.copy(star_list1),
+            [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
+            coeffs.rc, coeffs.zoom,
+            sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
         if correct_distortion:
             logging.info('Computing distortion correction polynomial (SIP)')
@@ -1441,11 +1460,6 @@ class Image(Frame2D):
             ##            facecolor=(0,0,0,0))
             ## pl.show()
 
-            star_list2 = utils.astrometry.transform_star_position_A_to_B(
-                np.copy(star_list1),
-                [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
-                coeffs.rc, coeffs.zoom,
-                sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
             # fit stars
             fit_results = image2.fit_stars(
@@ -1469,7 +1483,12 @@ class Image(Frame2D):
             im2wcs = image2.get_wcs()
             im2wcs.sip = None
             image2.set_wcs(im2wcs)
-            
+
+            star_list2 = utils.astrometry.transform_star_position_A_to_B(
+                np.copy(star_list1),
+                [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
+                coeffs.rc, coeffs.zoom,
+                sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
         else:
             # fit stars
@@ -1491,12 +1510,7 @@ class Image(Frame2D):
             
             err = fit_results['x_err'].values
             
-        star_list2 = utils.astrometry.transform_star_position_A_to_B(
-        np.copy(star_list1),
-            [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
-            coeffs.rc, coeffs.zoom,
-            sip_A=self.get_wcs(), sip_B=image2.get_wcs())
-
+        
         fwhm_arc2 = utils.stats.robust_mean(
             utils.stats.sigmacut(fit_results['fwhm_arc'].values))
         
@@ -1505,7 +1519,7 @@ class Image(Frame2D):
         dy_fit = (star_list2[:,1]
                   - utils.astrometry.df2list(fit_results)[:,1])
         dr_fit = np.sqrt(dx_fit**2. + dy_fit**2.)
-        final_err = np.mean(utils.stats.sigmacut(dr_fit))
+        final_err = np.median(utils.stats.sigmacut(dr_fit))
 
         if not SKIP_CHECK:
             if final_err < self.arc2pix(WARNING_DIST):
