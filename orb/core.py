@@ -2855,7 +2855,7 @@ class WCSData(Data, Tools):
             
             logging.debug('target_x, target_y initially at {}, {}'.format(target_x, target_y))
             target_x, target_y = utils.astrometry.transform_star_position_A_to_B(
-                [self.params.target_x, self.params.target_y],
+                [[self.params.target_x, self.params.target_y]],
                 [coeffs.dx, coeffs.dy, coeffs.dr, 0., 0.],
                 [coeffs.rc[0], coeffs.rc[1]],
                 [coeffs.zoom, coeffs.zoom])

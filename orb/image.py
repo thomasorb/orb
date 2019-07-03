@@ -1299,7 +1299,7 @@ class Image(Frame2D):
                     xy_range + coeffs.dy,
                     r_range + coeffs.dr,
                     coeffs.rc, coeffs.zoom,
-                    image2.fwhm_pix * 3.))
+                    image2.get_fwhm_pix() * 3.))
             coeffs.da = 0.
             coeffs.db = 0.
 

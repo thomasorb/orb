@@ -922,7 +922,7 @@ class HDFCube(core.WCSData):
             
             im = orb.image.Image(frame, params=params)
             if fwhm_pix is not None:
-                im.reset_fwhm_pix(fwhm_pix)
+                im.reset_fwhm_arc(im.pix2arc(fwhm_pix))
             return im.fit_stars(star_list, **kwargs)
 
         FOLLOW_NB = 5 # Number of deviation value to get to follow the
