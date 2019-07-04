@@ -2051,7 +2051,7 @@ def get_wcs_parameters(wcs):
       target_dec, rotation
     """
     trials = 0
-    while trials < 5:
+    while trials < 50:
         try:
             return _get_wcs_parameters(wcs)
         except Exception, e:
