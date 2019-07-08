@@ -55,6 +55,8 @@ import utils.io
 
 import pylab as pl
 
+import copy
+
 #################################################
 #### CLASS Frame2D ##############################
 #################################################
@@ -1263,38 +1265,36 @@ class Image(Frame2D):
                          "> da : " + str(coeffs.da) + "\n" +
                          "> db : " + str(coeffs.db))
 
-        def match_star_lists(p, slin, slout, rc, zf, sip1, sip2):
-            """return the transformation parameters given two list of
-            star positions.
-            """
-            def diff(p, slin, slout, rc, zf, sip1, sip2):
-                slin_t = utils.astrometry.transform_star_position_A_to_B(
-                    slin, p, rc, zf,
-                    sip_A=sip1, sip_B=sip2)
-                result = (slin_t - slout).flatten()
-                return result[np.nonzero(~np.isnan(result))]
+        # def match_star_lists(p, slin, slout, rc, zf, sip1, sip2):
+        #     """return the transformation parameters given two list of
+        #     star positions.
+        #     """
+        #     def diff(p, slin, slout, rc, zf, sip1, sip2):
+        #         slin_t = utils.astrometry.transform_star_position_A_to_B(
+        #             slin, p, rc, zf,
+        #             sip_A=sip1, sip_B=sip2)
+        #         result = (slin_t - slout).flatten()
+        #         return result[np.nonzero(~np.isnan(result))]
 
-            try:
-                fit = optimize.leastsq(diff, p,
-                                       args=(slin, slout, rc, zf, sip1, sip2),
-                                       full_output=True, xtol=1e-6)
-            except Exception, e:
-                raise Exception('No matching parameters found: {}'.format(e))
+        #     try:
+        #         fit = optimize.leastsq(diff, p,
+        #                                args=(slin, slout, rc, zf, sip1, sip2),
+        #                                full_output=True, xtol=1e-6)
+        #     except Exception, e:
+        #         raise Exception('No matching parameters found: {}'.format(e))
             
-            if fit[-1] <= 4:
-                match = np.sqrt(np.mean(fit[2]['fvec']**2.))
-                if match > 1e-3:
-                    warnings.warn(
-                        'Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
-                return fit[0]
+        #     if fit[-1] <= 4:
+        #         match = np.sqrt(np.mean(fit[2]['fvec']**2.))
+        #         if match > 1e-3:
+        #             warnings.warn(
+        #                 'Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
+        #         return fit[0]
             
-            else:
-                raise Exception('No matching parameters found')
-
-
+        #     else:
+        #         raise Exception('No matching parameters found')
             
         def brute_force_alignment(coeffs, xy_range, r_range):
-            
+
             (coeffs.dx, coeffs.dy, coeffs.dr, guess_matrix) = (
                 utils.astrometry.brute_force_guess(
                     image2.data.astype(np.float64), star_list1,
@@ -1302,7 +1302,9 @@ class Image(Frame2D):
                     xy_range + coeffs.dy,
                     r_range + coeffs.dr,
                     coeffs.rc, coeffs.zoom,
-                    image2.get_fwhm_pix() * 3.))
+                    image2.get_fwhm_pix() * 3.,
+                    init_wcs=self.get_wcs(),
+                    out_wcs=image2.get_wcs()))
             coeffs.da = 0.
             coeffs.db = 0.
 
@@ -1391,24 +1393,28 @@ class Image(Frame2D):
             raise StandardError('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
 
         star_list1 = utils.astrometry.load_star_list(star_list1)
+        star_list1_deg = self.pix2world(star_list1)        
+        
         image2.reset_fwhm_arc(fwhm_arc)
         self.reset_fwhm_arc(fwhm_arc)
-
+        
+        
         ##########################################
         ### BRUTE FORCE GUESS (only dx and dy) ###
         ##########################################
         if brute_force:
             logging.info("1st brute force pass")
-            coeffs = brute_force_alignment(coeffs, xy_range[0], r_range[0])
+            coeffs = brute_force_alignment(
+                coeffs, xy_range[0], r_range[0])
             logging.info("1st brute force guess:") 
             print_alignment_coeffs()
 
             if xy_range[1] is not None and r_range[1] is not None:
                 logging.info("2nd brute force pass")
-                coeffs = brute_force_alignment(coeffs, xy_range[1], r_range[1])
+                coeffs = brute_force_alignment(
+                    coeffs, xy_range[1], r_range[1])
                 logging.info("2nd brute force guess:") 
                 print_alignment_coeffs()
-
 
             
         # ##########################
@@ -1492,11 +1498,7 @@ class Image(Frame2D):
 
         else:
             # fit stars
-            fit_results = image2.fit_stars(
-                star_list2, no_aperture_photometry=True,
-                multi_fit=False, enable_zoom=False,
-                enable_rotation=False, 
-                fix_fwhm=False)
+            fit_results = image2.fit_stars(star_list2)
 
             fitted_star_nb = float(np.sum(~np.isnan(
                 utils.astrometry.df2list(fit_results)[:,0])))
@@ -1555,3 +1557,41 @@ class Image(Frame2D):
                 'fwhm_arc2': fwhm_arc2}
 
 
+    def transform(self, params, order=1):
+        """Return a transformed image.
+
+        :param params: A dictionary containing the keys 'coeffs'=[dx,
+          dy, dr, da, db], 'rc', 'zoom_factor'. This is exactly the
+          dictionary returned by self.compute_alignment_coeffs(). may
+          optionally contain 'sip1' and 'sip2' where sip1 is the sip
+          of the image to transform and sip2 is the sip of the image
+          it is aligned to.
+
+        :param order: Interpolation order (default 1)
+        """
+        keys = 'coeffs', 'rc', 'zoom_factor'
+        sip1 = None
+        sip2 = None
+        if 'sip1' in params: sip1 = params['sip1']
+        if 'sip2' in params: sip2 = params['sip2']
+        
+        if not isinstance(params, dict):
+            raise TypeError('params must be a dict')
+        for key in keys:
+            if key not in params:
+                raise TypeError('malformed params dict')
+
+        wcsB = utils.astrometry.transform_wcs(
+            self.get_wcs(), params['coeffs'], params['rc'], params['zoom_factor'],
+            sip=sip2)
+
+        data_t = utils.image.transform_frame(
+            np.copy(self.data), 0, self.dimx, 0, self.dimy,
+            params['coeffs'], params['rc'], params['zoom_factor'],
+            order, sip_A=sip1, sip_B=sip2)
+
+        out = self.copy()
+        out.data = data_t
+        out.set_wcs(wcsB)
+        
+        return out

@@ -1182,6 +1182,38 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
       
     :param sip_B: (Optional) pywcs.WCS instance containing SIP
       parameters of the frame B (default None).
+    """    
+    if not isinstance(star_list_A, np.ndarray):
+        star_list_A = np.array(star_list_A)
+    if star_list_A.dtype != np.dtype(float):
+        star_list_A.astype(float)
+
+    if rc is None: raise ValueError('rc must be tuple (x,y)')
+    # targetx, targety, deltax, deltay, targetra, targetdec, rotation
+    wcsA_params = [rc[0], rc[1], 1e-4, 1e-4, 0., 0., 0.]
+    wcsA = orb.utils.astrometry.create_wcs(*wcsA_params, sip=sip_A)
+    wcsB = transform_wcs(wcsA, params, rc, zoom_factor, sip=sip_B, wcs_params=wcsA_params)
+    
+    # pixel def set to 1 here (like in transform_wcs())
+    return np.squeeze(wcsB.all_world2pix(wcsA.all_pix2world(star_list_A, 1), 1))
+
+def transform_wcs(wcs, params, rc, zoom_factor, sip=None, wcs_params=None):
+    """Gometric transformation of a wcs
+
+    :param wcs: wcs.
+
+    :param params: Transformation parameters [dx, dy, dr, da, db].
+        
+    :param rc: Rotation center coordinates.
+    
+    :param zoom_factor: Zooming factor between the two cameras. Can be
+      a couple (zx, zy).
+    
+    :param sip: (Optional) pywcs.WCS instance containing SIP
+      parameters of the output wcs (default None).
+
+    :param wcs_params: If already computed, accelerate the
+      process. Must be obtained with compute_wcs_parameters(wcs).
     """
     if np.size(zoom_factor) == 2:
         zx = zoom_factor[0]
@@ -1189,18 +1221,29 @@ def transform_star_position_A_to_B(star_list_A, params, rc, zoom_factor,
     else:
         zx = float(zoom_factor)
         zy = float(zoom_factor)
+
+    # the 1 here is very important ;) and the wcs_pix2world instead of
+    # all_pix2world also !! because the sip must not be used to create
+    # the new wcs. SIP is added later on.
+    rcdeg = np.squeeze(wcs.wcs_pix2world([rc], 1)) 
+
+    if wcs_params is None:
+        wcs_params = orb.utils.astrometry.get_wcs_parameters(wcs)
         
-    if not isinstance(star_list_A, np.ndarray):
-        star_list_A = np.array(star_list_A)
-    if star_list_A.dtype != np.dtype(float):
-        star_list_A.astype(float)
+    deltax = zx * np.cos(np.deg2rad(params[3])) * wcs_params[2]
+    deltay = zy * np.cos(np.deg2rad(params[4])) * wcs_params[3]
 
-    wcsA = orb.utils.astrometry.create_wcs(rc[0], rc[1], 1, 1, 0., 0., 0., sip=sip_A)
-    deltax = zx * np.cos(np.deg2rad(params[3]))
-    deltay = zy * np.cos(np.deg2rad(params[4]))
-    wcsB = orb.utils.astrometry.create_wcs(rc[0] + params[0], rc[1] + params[1], deltax, deltay, 0., 0., params[2], sip=sip_B)
-    return np.squeeze(wcsB.all_world2pix(wcsA.all_pix2world(star_list_A, 0), 0))
+    if sip is None:
+        sip = copy.copy(wcs)
 
+    wcsB = orb.utils.astrometry.create_wcs(
+        np.array(rc[0]) + params[0],
+        np.array(rc[1]) + params[1],
+        deltax, deltay, rcdeg[0], rcdeg[1],
+        wcs_params[6] + params[2], sip=sip)
+
+    return wcsB
+       
 
 def get_profile(profile_name):
     """Return the PSF profile class corresponding to the given profile name.
@@ -1966,7 +2009,7 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
     """
 
     _wcs = pywcs.WCS(naxis=2) # a new WCS must be created. Never update
-                             # an old WCS!
+                              # an old WCS!
 
     _wcs.wcs.crpix = [target_x, target_y]
     _wcs.wcs.cdelt = np.array([-deltax, deltay])
@@ -1984,7 +2027,7 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
     del _wcs.wcs.crota
 
     if sip is not None:
-        _wcs.sip = sip.sip
+        _wcs.sip = copy.copy(sip.sip)
 
     return _wcs
 
@@ -2061,12 +2104,11 @@ def get_wcs_parameters(wcs):
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
                       rc, zoom_factor, box_size, verbose=True, init_wcs=None,
+                      out_wcs=None,
                       raise_border_error=True):
     """Determine a precise alignment guess by brute force.
 
-    :param star_list: List of star position. Must be given in pixels
-      if no wcs is given (wcs set to None). If a wcs is given must be a
-      list of ra/dec coordinates.
+    :param star_list: List of star position. Must be given in pixels.
 
     :param x_range: range of x values to check
 
@@ -2083,57 +2125,59 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     :param verbose: (Optional) If True, print some informations
       (default True).
 
-    :param init_wcs: (Optional) WCS instance (can contain an SIP distortion
-      model, default None).
+    :param init_wcs: (Optional) WCS instance (can contain an SIP
+      distortion model, default None). Must be the SIP of the frame in
+      which the star position have computed.
+
+    :param out_wcs: (Optional)  WCS instance (can contain an SIP
+      distortion model, default None). Must be the SIP of the frame in
+      which the stars are looked for.
 
     :param raise_border_error: (Optional) if True raise an exception
       if the returned guess is on the border of the brute force grid
       (defaut True).
+
     """    
     def get_total_flux(guess_list, image, star_list,
-                       rc, zoom_factor, box_size, kernel, _wcs_str, _wcsp):
+                       rc, zoom_factor, box_size, kernel, _wcs_str, _wcsp, _wcs2_str):
         """Return the sum of the flux around a transformed list of
         star positions for a list of parameters.        
         """
         if _wcs_str is None:
             _wcs = None
+            _wcs2 = None
         else:
-            _wcs = pywcs.WCS(_wcs_str)
+            _wcs = pywcs.WCS(_wcs_str, relax=True)
+            _wcs2 = pywcs.WCS(_wcs2_str, relax=True)
+            
         result = np.empty((guess_list.shape[0], 4))
         result.fill(np.nan)
         if _wcsp is not None and _wcs is not None:
             (target_x, target_y, deltax, deltay,
              target_ra, target_dec, rotation) = _wcsp
-                
+
         for ik in range(guess_list.shape[0]):
             guess = (guess_list[ik, 0],
                      guess_list[ik, 1],
                      guess_list[ik, 2], 0., 0.)
 
-            if _wcs is not None:
-                iwcs = create_wcs(
-                    target_x - guess[0],
-                    target_y - guess[1],
-                    deltax * zoom_factor,
-                    deltay * zoom_factor,
-                    target_ra, target_dec,
-                    rotation - guess[2], sip=_wcs)
-                star_list = np.array(star_list)
-                star_list_t = np.array(iwcs.all_world2pix(
-                    star_list[:,0],
-                    star_list[:,1], 0, quiet=True)).T
-                star_list2 = list()
-                # removing stars not in the image
-                for istar in range(star_list_t.shape[0]):
-                    if (star_list_t[istar,0] > 0.
-                        and star_list_t[istar,0] < image.shape[0]
-                        and star_list_t[istar,1] > 0.
-                        and star_list_t[istar,1] < image.shape[1]):
-                        star_list2.append(star_list_t[istar,:])
-                star_list2 = np.array(star_list2)
-            else:
-                star_list2 = transform_star_position_A_to_B(
-                    np.copy(star_list), guess, rc, zoom_factor)
+            if rc is None:
+                rc = (target_x, target_y)
+    
+            star_list_t = orb.utils.astrometry.transform_star_position_A_to_B(
+                np.copy(star_list), guess, rc, zoom_factor,
+                sip_A=_wcs, sip_B=_wcs2)
+
+            # removing stars not in the image
+            star_list2 = list()
+            for istar in star_list_t:
+                if (istar[0] > 0.
+                    and istar[0] < image.shape[0]
+                    and istar[1] > 0.
+                    and istar[1] < image.shape[1]):
+                    star_list2.append(istar)
+            star_list2 = np.array(star_list2)
+            
 
             total_flux = orb.cutils.brute_photometry(
                 image, star_list2, kernel, box_size) / float(len(star_list2))
@@ -2149,6 +2193,12 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     if init_wcs is None and rc is None:
         logging.debug('rc automatically set.')
         rc = (image.shape[0]/2., image.shape[1]/2.)
+
+    if init_wcs is not None and out_wcs is None:
+        out_wcs = copy.copy(init_wcs)
+
+    if out_wcs is not None and init_wcs is None:
+        raise StandardError('if out_wcs is set, init_wcs must also be set')
 
     if verbose:
         logging.info('Brute force range:')
@@ -2201,22 +2251,24 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
     if init_wcs is not None:
         wcs_params = get_wcs_parameters(init_wcs)
         init_wcs_str = init_wcs.to_header_string(relax=True)
+        out_wcs_str = out_wcs.to_header_string(relax=True)
     else:
         wcs_params = None
         init_wcs_str = None
-
+        out_wcs_str = None
+    
     # parallel processing of each guess list part
     jobs = [(ijob, job_server.submit(
         get_total_flux, 
         args=(pguess_lists[ijob], image,
               star_list, rc, zoom_factor,
-              box_size, kernel, init_wcs_str, wcs_params),
+              box_size, kernel, init_wcs_str, wcs_params, out_wcs_str),
         modules=("import logging",
                  "import numpy as np",
                  "import astropy.wcs as pywcs",
                  "import orb.cutils",
                  "import warnings",
-                 "from orb.utils.astrometry import *",
+                 "import orb.utils.astrometry",
                  "import astropy.io.fits as pyfits")))
             for ijob in range(ncpus)]
 
