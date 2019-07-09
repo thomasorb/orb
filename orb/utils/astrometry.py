@@ -1212,7 +1212,7 @@ def transform_wcs(wcs, params, rc, zoom_factor, sip=None, wcs_params=None):
     :param sip: (Optional) pywcs.WCS instance containing SIP
       parameters of the output wcs (default None).
 
-    :param wcs_params: If already computed, accelerate the
+    :param wcs_params: If already computed, accelerates the
       process. Must be obtained with compute_wcs_parameters(wcs).
     """
     if np.size(zoom_factor) == 2:
@@ -1228,7 +1228,7 @@ def transform_wcs(wcs, params, rc, zoom_factor, sip=None, wcs_params=None):
     rcdeg = np.squeeze(wcs.wcs_pix2world([rc], 1)) 
 
     if wcs_params is None:
-        wcs_params = orb.utils.astrometry.get_wcs_parameters(wcs)
+        wcs_params = get_wcs_parameters(wcs)
         
     deltax = zx * np.cos(np.deg2rad(params[3])) * wcs_params[2]
     deltay = zy * np.cos(np.deg2rad(params[4])) * wcs_params[3]
@@ -1236,12 +1236,16 @@ def transform_wcs(wcs, params, rc, zoom_factor, sip=None, wcs_params=None):
     if sip is None:
         sip = copy.copy(wcs)
 
-    wcsB = orb.utils.astrometry.create_wcs(
+    wcsB = create_wcs(
         np.array(rc[0]) + params[0],
         np.array(rc[1]) + params[1],
         deltax, deltay, rcdeg[0], rcdeg[1],
         wcs_params[6] + params[2], sip=sip)
 
+    if rc[0] != wcs_params[0] or rc[1] != wcs_params[1]:
+        wcsBp = get_wcs_parameters(wcsB, fix_rc=wcs_params[0:2])
+        wcsB = create_wcs(*wcsBp, sip=sip)
+    
     return wcsB
        
 
@@ -2031,7 +2035,7 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 
     return _wcs
 
-def _get_wcs_parameters(wcs):
+def _get_wcs_parameters(wcs, fix_rc=None):
     """see get_wcs_parameters
     """
     if not isinstance(wcs, pywcs.WCS):
@@ -2039,19 +2043,29 @@ def _get_wcs_parameters(wcs):
     wcs2 = copy.copy(wcs)
     target_x, target_y = wcs2.wcs.crpix
     target_ra, target_dec = wcs2.wcs.crval
+    
+    if fix_rc is not None:
+        target_x, target_y = fix_rc
+        [[target_ra, target_dec]] = wcs.wcs_pix2world([[target_x, target_y]], 0)
+        
     deltax, deltay = astropy.wcs.utils.proj_plane_pixel_scales(wcs2)
-    vec10 = np.array(wcs2.all_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 0)) - wcs2.wcs.crpix
+    vec10 = np.array(wcs2.wcs_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 0)) - wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-    random_star_list_pix = np.random.randint(-100, 100, size=(50,2)).astype(float)
-    random_star_list_deg = wcs2.all_pix2world(random_star_list_pix, 0)
+    RANDSIZE = 1e5
+    randa = np.random.uniform(size=50) * 2. * np.pi
+    randl = np.random.uniform(size=randa.size) * RANDSIZE * 0.1 + RANDSIZE
+    randy = np.sin(randa) * randl
+    randx = np.cos(randa) * randl
+    random_star_list_pix = np.array([randx, randy]).T
+    random_star_list_deg = wcs2.wcs_pix2world(random_star_list_pix, 0)
     
     
     def diff(p, wcsref, sld, allp):
         p2 = np.copy(allp)
         p2[2:4] = p[0:2]
         p2[-1] = p[2]
-        d = create_wcs(*p2, sip=wcsref).all_world2pix(sld, 0) - wcsref.all_world2pix(sld, 0)
+        d = create_wcs(*p2, sip=wcsref).wcs_world2pix(sld, 0) - wcsref.wcs_world2pix(sld, 0)
         return d.flatten()
 
     def compute_median_err(p, allp):
@@ -2063,43 +2077,47 @@ def _get_wcs_parameters(wcs):
 
     logging.debug('median err before parameters optimization {}'.format(
         compute_median_err(guess, allp)))
-    
-    fit = optimize.leastsq(diff, guess,
-                           args=(wcs2, random_star_list_deg, allp),
-                           maxfev=100, full_output=True)
 
+    fit = optimize.least_squares(diff, guess,
+                                 args=(wcs2, random_star_list_deg, allp),
+                                 max_nfev=10000)
     logging.debug('median err after parameters optimization {}'.format(
-        compute_median_err(fit[0], allp)))
+        compute_median_err(fit['x'], allp)))
 
-    if np.any(compute_median_err(fit[0], allp) > 1e-5):
+    if np.any(compute_median_err(fit['x'], allp) > 1e-5):
         raise StandardError('optimization error, please retry: {}'.format(
-            compute_median_err(fit[0], allp)))
+            compute_median_err(fit['x'], allp)))
 
-    allp[2:4] = fit[0][0:2]
-    allp[-1] = fit[0][2]
+    allp[2:4] = fit['x'][0:2]
+    allp[-1] = fit['x'][2]
         
-    if np.max(np.abs(rotation)) > 90. : logging.debug('rotation angle is {} must be < 90. There must be an error.'.format(rotation))
+    if np.max(np.abs(rotation)) > 90.: logging.debug('rotation angle is {}'.format(rotation))
     if not np.allclose(deltax, deltay): logging.debug('deltax ({}) != deltay ({})'.format(deltax, deltay))
-    
+
     return allp
 
-def get_wcs_parameters(wcs):
+def get_wcs_parameters(wcs, fix_rc=None):
     """Return comprehensive parameters from a simple WCS as created
     with orb.utils.astrometry.create_wcs.
 
     :param wcs: An astropy.wcs.WCS instance created with
       orb.utils.astrometry.create_wcs.
 
+    :param fix_rc: Fix the rotation center of the returned parameters
+      to a given value. Must be atuple (target_x, target_y)
+
     :return: target_x, target_y, deltax, deltay, target_ra,
       target_dec, rotation
+
     """
     trials = 0
     while trials < 50:
         try:
-            return _get_wcs_parameters(wcs)
+            return _get_wcs_parameters(wcs, fix_rc=fix_rc)
         except Exception, e:
             trials += 1
             logging.debug(e)
+            print e
     raise StandardError('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
@@ -2177,7 +2195,6 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
                     and istar[1] < image.shape[1]):
                     star_list2.append(istar)
             star_list2 = np.array(star_list2)
-            
 
             total_flux = orb.cutils.brute_photometry(
                 image, star_list2, kernel, box_size) / float(len(star_list2))

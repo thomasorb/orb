@@ -2110,7 +2110,7 @@ class Data(object):
         
         warnings.simplefilter('ignore', category=VerifyWarning)
         warnings.simplefilter('ignore', category=AstropyUserWarning)
-        return pywcs.WCS(self.get_header(), relax=True, naxis=naxis)
+        return copy.copy(pywcs.WCS(self.get_header(), relax=True, naxis=naxis))
 
     def get_wcs_header(self):
         hdr = self.get_wcs().to_header(relax=True)

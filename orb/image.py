@@ -1265,33 +1265,33 @@ class Image(Frame2D):
                          "> da : " + str(coeffs.da) + "\n" +
                          "> db : " + str(coeffs.db))
 
-        # def match_star_lists(p, slin, slout, rc, zf, sip1, sip2):
-        #     """return the transformation parameters given two list of
-        #     star positions.
-        #     """
-        #     def diff(p, slin, slout, rc, zf, sip1, sip2):
-        #         slin_t = utils.astrometry.transform_star_position_A_to_B(
-        #             slin, p, rc, zf,
-        #             sip_A=sip1, sip_B=sip2)
-        #         result = (slin_t - slout).flatten()
-        #         return result[np.nonzero(~np.isnan(result))]
+        def match_star_lists(p, slin, slout, rc, zf, sip1, sip2):
+            """return the transformation parameters given two list of
+            star positions.
+            """
+            def diff(p, slin, slout, rc, zf, sip1, sip2):
+                slin_t = utils.astrometry.transform_star_position_A_to_B(
+                    slin, p, rc, zf,
+                    sip_A=sip1, sip_B=sip2)
+                result = (slin_t - slout).flatten()
+                return result[np.nonzero(~np.isnan(result))]
 
-        #     try:
-        #         fit = optimize.leastsq(diff, p,
-        #                                args=(slin, slout, rc, zf, sip1, sip2),
-        #                                full_output=True, xtol=1e-6)
-        #     except Exception, e:
-        #         raise Exception('No matching parameters found: {}'.format(e))
+            try:
+                fit = optimize.least_squares(
+                    diff, p,
+                    args=(slin, slout, rc, zf, sip1, sip2),
+                    loss='soft_l1')
+            except Exception, e:
+                raise Exception('No matching parameters found: {}'.format(e))
             
-        #     if fit[-1] <= 4:
-        #         match = np.sqrt(np.mean(fit[2]['fvec']**2.))
-        #         if match > 1e-3:
-        #             warnings.warn(
-        #                 'Star lists not perfectly matched (residual {} > 1e-3)'.format(match))
-        #         return fit[0]
+            if fit['status'] > 0:
+                if fit['cost'] > 10:
+                    warnings.warn(
+                        'Star lists not well matched (residual {} > 10)'.format(fit['cost']))
+                return fit['x']
             
-        #     else:
-        #         raise Exception('No matching parameters found')
+            else:
+                raise Exception('No matching parameters found (fit status {})'.format(fit['status']))
             
         def brute_force_alignment(coeffs, xy_range, r_range):
 
@@ -1417,30 +1417,30 @@ class Image(Frame2D):
                 print_alignment_coeffs()
 
             
-        # ##########################
-        # ## FINE ALIGNMENT STEP ###
-        # ##########################
-        # guess = [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db]
+        ##########################
+        ## FINE ALIGNMENT STEP ###
+        ##########################
+        guess = [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db]
 
-        # # create sip corrected and transformed list
-        # star_list2 = utils.astrometry.transform_star_position_A_to_B(
-        #     np.copy(star_list1), guess, coeffs.rc, coeffs.zoom,
-        #     sip_A=self.get_wcs())
+        # create sip corrected and transformed list
+        star_list2 = utils.astrometry.transform_star_position_A_to_B(
+            np.copy(star_list1), guess, coeffs.rc, coeffs.zoom,
+            sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
-        # fit_results = image2.fit_stars(
-        #     star_list2, no_aperture_photometry=True,
-        #     multi_fit=False, enable_zoom=False,
-        #     enable_rotation=True, fix_fwhm=True)
+        fit_results = image2.fit_stars(
+            star_list2, no_aperture_photometry=True,
+            multi_fit=False, enable_zoom=False,
+            enable_rotation=True, fix_fwhm=True)
 
-        # if fit_results.empty:
-        #     raise StandardError('registration failed. check INIT_ANGLE.')
+        if fit_results.empty:
+            raise StandardError('fit failed. check initial parameters.')
 
-        # [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
-        #     guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
-        #     coeffs.rc, coeffs.zoom, sip1=self.get_wcs(), sip2=image2.get_wcs())
+        [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
+            guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
+            coeffs.rc, coeffs.zoom, sip1=self.get_wcs(), sip2=image2.get_wcs())
 
-        # logging.info("Fine alignment parameters:") 
-        # print_alignment_coeffs()
+        logging.info("Fine alignment parameters:") 
+        print_alignment_coeffs()
 
 
         #####################################
@@ -1584,7 +1584,7 @@ class Image(Frame2D):
         wcsB = utils.astrometry.transform_wcs(
             self.get_wcs(), params['coeffs'], params['rc'], params['zoom_factor'],
             sip=sip2)
-
+        
         data_t = utils.image.transform_frame(
             np.copy(self.data), 0, self.dimx, 0, self.dimy,
             params['coeffs'], params['rc'], params['zoom_factor'],
