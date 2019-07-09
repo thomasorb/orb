@@ -1214,8 +1214,8 @@ class Image(Frame2D):
           match stars from frame 2 onto the stars from frame 1. But it
           needs a lot of stars to run correctly (default False).
 
-        :param star_list1: (Optional) Path to a list of stars in
-          the image 1. If given the fwhm_arc must also be set (default None).
+        :param star_list1: (Optional) Path to a list of stars in the
+          cube. If given the fwhm_arc must also be set (default None).
 
         :param fwhm_arc: (Optional) mean FWHM of the stars in
           arcseconds. Must be given if star_list1 is not None

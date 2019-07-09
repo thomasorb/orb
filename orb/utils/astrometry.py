@@ -2052,7 +2052,7 @@ def _get_wcs_parameters(wcs, fix_rc=None):
     vec10 = np.array(wcs2.wcs_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 0)) - wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-    RANDSIZE = 1e5
+    RANDSIZE = 1e4
     randa = np.random.uniform(size=50) * 2. * np.pi
     randl = np.random.uniform(size=randa.size) * RANDSIZE * 0.1 + RANDSIZE
     randy = np.sin(randa) * randl
@@ -2117,7 +2117,6 @@ def get_wcs_parameters(wcs, fix_rc=None):
         except Exception, e:
             trials += 1
             logging.debug(e)
-            print e
     raise StandardError('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
