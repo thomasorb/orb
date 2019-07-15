@@ -60,7 +60,6 @@ class RayJobServer(object):
             if not 'import' in imod:
                 imod = 'import ' + imod
             parsed_modules.append(imod)
-        logging.info(parsed_modules)
             
         return RayJob(ray.remote(wrapped_f).remote(func, args, parsed_modules))
 

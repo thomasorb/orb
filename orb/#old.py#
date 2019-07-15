@@ -35,7 +35,6 @@ import utils.spectrum, utils.parallel, utils.io, utils.filters
 import utils.photometry
 from core import ProgressBar
 
-    
 
 
 ##################################################

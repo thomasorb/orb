@@ -44,7 +44,16 @@ import pyregion
 import photometry
 import gc
 import h5py
-        
+
+
+class MockArray(object):
+
+    def __init__(self, shape, dtype, ndim):
+
+        self.shape = shape
+        self.dtype = dtype
+        self.ndim = int(ndim)
+
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
@@ -91,8 +100,8 @@ class HDFCube(core.WCSData):
                     warnings.warn('old cube architecture. IO performances could be reduced.')
                     self.is_old = True
                     self.oldcube = old.HDFCube(self.cube_path, silent_init=True)
-                    self.data = old.FakeData(self.oldcube.shape,
-                                             self.oldcube.dtype, 3)
+                    self.data = old.MockArray(self.oldcube.shape,
+                                              self.oldcube.dtype, 3)
                     self.axis = None
                     self.mask = None
                     self.params = core.ROParams()
