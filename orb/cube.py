@@ -46,13 +46,30 @@ import gc
 import h5py
 
 
+
+
 class MockArray(object):
 
-    def __init__(self, shape, dtype, ndim):
+    def __init__(self, path=None):
 
-        self.shape = shape
-        self.dtype = dtype
-        self.ndim = int(ndim)
+        if path is None: return
+        
+        if not isinstance(path, str):
+            raise TypeError('path must be a string')
+
+        if not os.path.exists(path):
+            raise IOError('File does not exist')
+
+        with utils.io.open_hdf5(path, 'r') as f:
+            if 'data' not in f:
+                raise StandardError('badly formatted hdf5 file')
+
+            self.shape = f['data'].shape
+            self.ndim = f['data'].ndim
+            self.dtype = f['data'].dtype
+                
+    def __getitem__(self, key):
+        raise StandardError('you are using a MockArray :)')
 
 #################################################
 #### CLASS HDFCube ##############################
@@ -87,7 +104,6 @@ class HDFCube(core.WCSData):
         """
         self.cube_path = str(path)
 
-        # create file if it does not exists
         if not os.path.exists(self.cube_path):
             raise IOError('File does not exist')
                                 
@@ -100,8 +116,12 @@ class HDFCube(core.WCSData):
                     warnings.warn('old cube architecture. IO performances could be reduced.')
                     self.is_old = True
                     self.oldcube = old.HDFCube(self.cube_path, silent_init=True)
-                    self.data = old.MockArray(self.oldcube.shape,
-                                              self.oldcube.dtype, 3)
+                    
+                    self.data = MockArray()
+                    self.data.shape = self.oldcube.shape
+                    self.data.dtype = self.oldcube.dtype
+                    self.data.ndim = 3
+                    
                     self.axis = None
                     self.mask = None
                     self.params = core.ROParams()
@@ -132,14 +152,9 @@ class HDFCube(core.WCSData):
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
         
-        if self.is_old:
-            core.WCSData.__init__(self, self, instrument=instrument,
-                                  data_prefix=data_prefix,
-                                  config=config, **kwargs)
-        else:
-            core.WCSData.__init__(self, self.cube_path, instrument=instrument,
-                                  data_prefix=data_prefix,
-                                  config=config, **kwargs)
+        core.WCSData.__init__(self, self, instrument=instrument,
+                              data_prefix=data_prefix,
+                              config=config, **kwargs)
 
         # checking dims
         if self.data.ndim != 3:
@@ -157,10 +172,11 @@ class HDFCube(core.WCSData):
                 warnings.warn('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
-        f = self.open_hdf5()
-        _data = np.copy(f['data'].__getitem__(key))
-        if self.has_dataset('mask'):
-            _data *= self.get_dataset('mask').__getitem__((key[0], key[1]))
+        with self.open_hdf5() as f:
+            _data = np.copy(f['data'].__getitem__(key))
+            
+            if 'mask' in f:
+                _data *= f['mask'].__getitem__((key[0], key[1]))
 
         # increase representation in case of complex or floats
         if _data.dtype == np.float32:
@@ -216,7 +232,7 @@ class HDFCube(core.WCSData):
     def copy(self):
         raise NotImplementedError('HDFCube instance cannot be copied')
     
-    def open_hdf5(self, mode=None):
+    def open_hdf5(self, mode='r'):
         """Return a handle on the hdf5 file.
 
         :param mode: opening mode. can be 'r' or 'a'. If None, opening
@@ -225,48 +241,11 @@ class HDFCube(core.WCSData):
           cube cannot be forced to a mode different from 'r' unless
           self.writeable is manually set to True.
         """
-        if mode is None:
-            if self.is_writeable():
-                mode = 'r+'
-            else:
-                mode = 'r'
-        else:
-            if mode not in ['r', 'a', 'r+']:
-                raise ValueError('mode must be r, r+ or a')
-            if not self.is_writeable() and mode != 'r':
-                raise IOError('HDF5 file is not writeable.')
+        if mode not in ['r', 'a', 'r+']:
+            raise ValueError('mode is {} and must be r, r+ or a'.format(mode))
 
-        # try first to return an already opened file
-        if hasattr(self, 'hdffile'):
-            if self.hdffile is not None:
-                try:
-                    if "Closed HDF5 file" not in str(self.hdffile):
-                        if self.hdffile.mode == mode:
-                            return self.hdffile
-                except AttributeError: pass
-
-        # if a handle already exists try first to close the file
-        # before opening it again
-        try:
-            self.hdffile.close()            
-        except Exception: pass
-
-        # then close all other instances of the file
-        for obj in gc.get_objects():   # Browse through ALL objects
-            if isinstance(obj, h5py.File):   # Just HDF5 files
-                if "Closed HDF5 file" in str(obj):
-                    continue
-                elif self.cube_path in obj.filename:
-                    try:
-                        obj.close()
-                    except: pass
-
-        self.hdffile = utils.io.open_hdf5(self.cube_path, mode)
+        return utils.io.open_hdf5(self.cube_path, mode)
         
-        try:
-            self.data = self.hdffile['data']
-        except Exception: pass
-        return self.hdffile
     
     def get_data(self, x_min, x_max, y_min, y_max, z_min, z_max, silent=False):
         """Return a part of the data cube.
@@ -382,10 +361,11 @@ class HDFCube(core.WCSData):
 
         if path == 'data':
             raise ValueError('to get data please use your cube as a classic 3d numpy array. e.g. arr = cube[:,:,:].')
-        f = self.open_hdf5()
-        if path not in f:
-            raise AttributeError('{} dataset not in the hdf5 file'.format(path))
-        return f[path][:]
+        
+        with self.open_hdf5() as f:
+            if path not in f:
+                raise AttributeError('{} dataset not in the hdf5 file'.format(path))
+            return f[path][:]
 
 
     def get_dataset_attrs(self, path):
@@ -714,7 +694,7 @@ class HDFCube(core.WCSData):
                 calib_path = self.params.calibration_laser_map_path
                 if not os.path.exists(calib_path):
                     if not os.path.isabs(calib_path):
-                        calib_path = os.path.join(os.path.dirname(self.hdffile.filename), calib_path)
+                        calib_path = os.path.join(os.path.dirname(self.cube_path), calib_path)
                 
                 self.calibration_laser_map = utils.io.read_fits(calib_path)
                 if 'cropped_bbox' in self.params:
@@ -1156,15 +1136,6 @@ class RWHDFCube(HDFCube):
 
         HDFCube.__init__(self, path, instrument=instrument, **kwargs)
         if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
-
-        # reopening in rw mode            
-        if self.hdffile is not None:
-            _dataname = self.data.name
-            del self.hdffile
-            del self.data
-            self.set_writeable(True)
-            self.hdffile = self.open_hdf5('a')
-            self.data = self.hdffile[_dataname]
 
         if self.has_params:
             self.set_params(self.params)

@@ -1810,7 +1810,6 @@ class Data(object):
         self.params = dict()
         self.mask = None
         self.err = None
-        self.hdffile = None
         
         # load from file
         if isinstance(data, str):
@@ -1824,44 +1823,43 @@ class Data(object):
                 if 'COMMENT' in self.params:
                     self.params.pop('COMMENT')
 
-            elif 'hdf' in data:    
-                self.hdffile = utils.io.open_hdf5(data, 'r')
-                _data_path = 'data'
+            elif 'hdf' in data:
+                with utils.io.open_hdf5(data, 'r') as hdffile:
+                    _data_path = 'data'
 
-                # backward compatibility issue
-                if 'vector' in self.hdffile and not 'data' in self.hdffile:
-                    _data_path = 'vector'
+                    # backward compatibility issue
+                    if 'vector' in hdffile and not 'data' in hdffile:
+                        _data_path = 'vector'
 
-                # load data
-                if (self.hdffile[_data_path].ndim > 2
-                    and np.any(self.hdffile[_data_path].shape > LIMIT_SIZE)):
-                    self.data = self.hdffile[_data_path] # data is not loaded,
-                                                         # a pointer to the
-                                                         # dataset is returned
+                    # load data
+                    if (hdffile[_data_path].ndim > 2
+                        and np.any(hdffile[_data_path].shape > LIMIT_SIZE)):
+                        raise StandardError('file too big to be opened this way')
+                    else:
+                        self.data = hdffile[_data_path][:]
 
-                else:
-                    self.data = self.hdffile[_data_path][:]
-                # load params
-                for iparam in self.hdffile.attrs:
-                    try:
-                        self.params[iparam] = self.hdffile.attrs[iparam]
-                    except TypeError, e:
-                        logging.debug('error reading param from attributes {}: {}'.format(iparam, e))
+                    # load params
+                    for iparam in hdffile.attrs:
+                        try:
+                            self.params[iparam] = hdffile.attrs[iparam]
+                        except TypeError, e:
+                            logging.debug('error reading param from attributes {}: {}'.format(
+                                iparam, e))
 
-                # load axis
-                if '/axis' in self.hdffile:
-                    if axis is None:
-                        self.axis = Axis(self.hdffile['/axis'][:])
+                    # load axis
+                    if '/axis' in hdffile:
+                        if axis is None:
+                            self.axis = Axis(hdffile['/axis'][:])
 
-                # load err
-                if '/err' in self.hdffile:
-                    if err is None:
-                        self.err = self.hdffile['/err'][:]
+                    # load err
+                    if '/err' in hdffile:
+                        if err is None:
+                            self.err = hdffile['/err'][:]
 
-                # load mask
-                if '/mask' in self.hdffile:
-                    if mask is None:
-                        self.mask = self.hdffile['/mask'][:]
+                    # load mask
+                    if '/mask' in hdffile:
+                        if mask is None:
+                            self.mask = hdffile['/mask'][:]
             else:
                 raise ValueError('extension not recognized, must be fits or hdf5')
 
@@ -1964,10 +1962,7 @@ class Data(object):
             self.mask = mask
                
         self.params = ROParams(self.params) # self.params must always be an ROParams instance
-        
-        if self.is_pointer(): self.set_writeable(False)
-        else: self.set_writeable(True)
-        
+                
     def __getitem__(self, key):
         _data = self.data.__getitem__(key)
         if self.has_mask():
@@ -1984,44 +1979,7 @@ class Data(object):
         if self.has_param(oldkey):
             if not self.has_param(newkey):
                 self.params[newkey] = self.params[oldkey]
-            
-
-    def is_pointer(self):
-        """Return True if data is a pointer to an hdf dataset (or if there is no data) in which case
-        some operations are impossible.
-        """
-        if not hasattr(self, 'data'): return True
-        return isinstance(self.data, h5py.Dataset)
-
-    def assert_no_pointer(self):
-        """Raise an exception if If data is a pointer to an hdf dataset"""
-        if self.is_pointer():
-            raise IOError('Data is a pointer on an HDF5 dataset. HDF5 file may be a large file. Operation may be illegal.')
-    
-    def set_writeable(self, write):
-        """Set writeability of the data.
-        """
-        if not isinstance(write, bool):
-            raise TypeError('write must be a boolean')
-        
-        self.writeable = write
-        
-        try:
-            self.data.flags.writeable = write
-        except AttributeError: pass
-
-    def is_writeable(self):
-        """Return False if data is read-only.
-        """
-        try:
-            write = bool(self.data.flags.writeable)
-            if write != self.writeable:
-                raise StandardError('unconsistency between self.writeable and self.data.flags.writeable')
-        except AttributeError:
-            pass
-
-        return bool(self.writeable)
-        
+                   
     def has_params(self):
         """Check the presence of observation parameters"""
         if self.params is None:
@@ -2193,7 +2151,6 @@ class Data(object):
 
     def get_gvar(self):
         """Return data and err as a gvar.GVar instance"""
-        self.assert_no_pointer()
         if self.has_err():
             return gvar.gvar(self.data, self.err)
         else:
@@ -2207,8 +2164,6 @@ class Data(object):
         :param kwargs: Addition kwargs (useful to copy child classes
           with more kwargs at init)
         """
-        self.assert_no_pointer()
-        
         if self.has_params():
             _params = self.params.convert()
         else:
@@ -2245,8 +2200,6 @@ class Data(object):
 
         :param path: hdf file path.
         """
-        self.assert_no_pointer()
-        
         if np.iscomplexobj(self.data):
             _data = self.data.astype(complex)
         else:
@@ -2293,8 +2246,6 @@ class Data(object):
         :param path: Path to the FITS file
 
         """
-        self.assert_no_pointer()
-        
         utils.io.write_fits(path, self.data, fits_header=self.get_header())
         
 #################################################
@@ -2406,8 +2357,6 @@ class Vector1d(Data):
         self.assert_axis()
 
         out = self.copy()
-        writeable = out.is_writeable()
-        out.set_writeable(True)
         
         if not hasattr(np, opname):
             raise AttributeError('unknown operation: {}'.format(e))
@@ -2445,7 +2394,6 @@ class Vector1d(Data):
         out.data = gvar.mean(_out)
         out.err = gvar.sdev(_out)
 
-        out.set_writeable(writeable)
         return out
 
     def add(self, vector):
@@ -2785,11 +2733,10 @@ class WCSData(Data, Tools):
         # load dxdymaps
         self.dxdymaps = None
         if data_path is not None:
-            if 'hdf' in data_path:    
-                self.hdffile = utils.io.open_hdf5(data_path, 'r')
-              
-                if '/dxmap' in self.hdffile and '/dymap' in self.hdffile:
-                    self.dxdymaps= (self.hdffile['/dxmap'][:], self.hdffile['/dymap'][:])
+            if 'hdf' in data_path:
+                with utils.io.open_hdf5(data_path, 'r') as hdffile:
+                    if '/dxmap' in hdffile and '/dymap' in hdffile:
+                        self.dxdymaps= (hdffile['/dxmap'][:], hdffile['/dymap'][:])
 
         # checking
         if self.data.ndim < 2:
