@@ -25,6 +25,45 @@ import os
 import pp
 import getpass
 import multiprocessing
+import ray
+
+
+
+class RayJob(object):
+
+    def __init__(self, job):
+        self.job = job
+    
+    def __call__(self):
+        return ray.get(self.job)
+
+class RayJobServer(object):
+
+    def submit(self, func, args=(), modules=()):
+
+        def wrapped_f(func, args, modules):
+            for imod in modules:
+                exec(imod)
+            #import orb.fft
+            return func(*args)
+
+        if not isinstance(args, tuple):
+            raise TypeError('args must be a tuple')
+
+        if not isinstance(modules, tuple):
+            raise TypeError('modules must be a tuple')
+
+        parsed_modules = list()
+        for imod in modules:
+            if not isinstance(imod, str):
+                raise TypeError('each module must be a string')
+            if not 'import' in imod:
+                imod = 'import ' + imod
+            parsed_modules.append(imod)
+        logging.info(parsed_modules)
+            
+        return RayJob(ray.remote(wrapped_f).remote(func, args, parsed_modules))
+
 
 def init_pp_server(ncpus=0, silent=False):
     """Initialize a server for parallel processing.
@@ -62,17 +101,27 @@ def init_pp_server(ncpus=0, silent=False):
         ncpus = max_cpus
         logging.debug('max cpus limited to {} because of machine hard limit configuration'.format(max_cpus))
 
-    ppservers = ()
+    
+    # ppservers = ()
 
-    if ncpus == 0:
-        job_server = pp.Server(ppservers=ppservers)
-    else:
-        job_server = pp.Server(ncpus, ppservers=ppservers)
+    # if ncpus == 0:
+    #     job_server = pp.Server(ppservers=ppservers)
+    # else:
+    #     job_server = pp.Server(ncpus, ppservers=ppservers)
 
-    ncpus = job_server.get_ncpus()
+    # ncpus = job_server.get_ncpus()
+
+    ray.shutdown()
+    ray.init(configure_logging=False)
+    job_server = RayJobServer()
+    ncpus = int(ray.available_resources()['CPU'])
+    
     if not silent:
         logging.info("Init of the parallel processing server with %d threads"%ncpus)
+
     return job_server, ncpus
+
+    
 
 def close_pp_server(js):
     """
@@ -84,25 +133,26 @@ def close_pp_server(js):
     .. note:: Please refer to http://www.parallelpython.com/ for
         sources and information on Parallel Python software.
     """
-    logging.debug(get_stats_str(js))
-    # First shut down the normal way
-    js.destroy()
-    # access job server methods for shutting down cleanly
-    js._Server__exiting = True
-    js._Server__queue_lock.acquire()
-    js._Server__queue = []
-    js._Server__queue_lock.release()
-    for worker in js._Server__workers:
-        worker.t.exiting = True
-        try:
-            # add worker close()
-            worker.t.close()
-            os.kill(worker.pid, 0)
-            os.waitpid(worker.pid, os.WNOHANG)
-        except OSError:
-            # PID does not exist
-            pass
-        except IOError: pass
+    ray.shutdown()
+    # logging.debug(get_stats_str(js))
+    # # First shut down the normal way
+    # js.destroy()
+    # # access job server methods for shutting down cleanly
+    # js._Server__exiting = True
+    # js._Server__queue_lock.acquire()
+    # js._Server__queue = []
+    # js._Server__queue_lock.release()
+    # for worker in js._Server__workers:
+    #     worker.t.exiting = True
+    #     try:
+    #         # add worker close()
+    #         worker.t.close()
+    #         os.kill(worker.pid, 0)
+    #         os.waitpid(worker.pid, os.WNOHANG)
+    #     except OSError:
+    #         # PID does not exist
+    #         pass
+    #     except IOError: pass
 
 
 def get_stats_str(js):
