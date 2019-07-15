@@ -82,7 +82,6 @@ class HDFCube(core.WCSData):
     optional_params = ('target_ra', 'target_dec', 'target_x', 'target_y',
                        'dark_time', 'flat_time', 'camera', 'wcs_rotation',
                        'calibration_laser_map_path')
-    writeable = False
     
     def __init__(self, path, indexer=None,
                  instrument=None, config=None, data_prefix='./',
@@ -235,11 +234,7 @@ class HDFCube(core.WCSData):
     def open_hdf5(self, mode='r'):
         """Return a handle on the hdf5 file.
 
-        :param mode: opening mode. can be 'r' or 'a'. If None, opening
-          mode is set to the same as the writeability of the class
-          (use is_writeable() to check it). Note that an unwriteable
-          cube cannot be forced to a mode different from 'r' unless
-          self.writeable is manually set to True.
+        :param mode: opening mode. can be 'r' or 'a'. 
         """
         if mode not in ['r', 'a', 'r+']:
             raise ValueError('mode is {} and must be r, r+ or a'.format(mode))
@@ -342,9 +337,9 @@ class HDFCube(core.WCSData):
         
     def has_dataset(self, path):
         """Check if a dataset is present"""
-        f = self.open_hdf5()
-        if path not in f: return False
-        else: return True
+        with self.open_hdf5() as f: 
+            if path not in f: return False
+            else: return True
     
     def get_dataset(self, path, protect=True):
         """Return a dataset (but not 'data', instead use get_data).
@@ -371,20 +366,20 @@ class HDFCube(core.WCSData):
     def get_dataset_attrs(self, path):
         """Return the attributes attached to a dataset
         """
-        f = self.open_hdf5()
-        if path not in f:
-            raise AttributeError('{} dataset not in the hdf5 file'.format(path))
-        return f[path].attrs
+        with self.open_hdf5() as f:
+            if path not in f:
+                raise AttributeError('{} dataset not in the hdf5 file'.format(path))
+            return f[path].attrs
 
 
     def get_datasets(self):
         """Return all datasets contained in the cube
         """
         ds = list()
-        f = self.open_hdf5()
-        for path in f:
-            ds.append(path)
-        return ds
+        with self.open_hdf5() as f:
+            for path in f:
+                ds.append(path)
+            return ds
         
     def has_same_2D_size(self, cube_test):
         """Check if another cube has the same dimensions along x and y
@@ -602,35 +597,35 @@ class HDFCube(core.WCSData):
         with utils.io.open_hdf5(path, 'w') as fout:
             fout.attrs['level2'] = True
             
-            f = self.open_hdf5()
-            for iattr in f.attrs:
-                fout.attrs[iattr] = f.attrs[iattr]
+            with self.open_hdf5() as f:
+                for iattr in f.attrs:
+                    fout.attrs[iattr] = f.attrs[iattr]
 
-            # write datasets
-            for ikey in f:
-                if is_exportable(ikey):
-                    logging.info('adding {}'.format(ikey))
-                    ikeyval = f[ikey]
-                    if isinstance(ikeyval, np.ndarray):
-                        ikeyval = utils.io.cast_storing_dtype(ikeyval)
-                    fout.create_dataset(ikey, data=ikeyval, chunks=True)
-                    
-            # write data
-            dtype = utils.io.get_storing_dtype(self[0,0,0])
-            fout.create_dataset('data', shape=self.shape, dtype=dtype, chunks=True)
-            
-            for iquad in range(quad_nb):
-                xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad, div_nb=div_nb)
-                logging.info('loading quad {}/{}'.format(
-                    iquad+1, quad_nb))
+                # write datasets
+                for ikey in f:
+                    if is_exportable(ikey):
+                        logging.info('adding {}'.format(ikey))
+                        ikeyval = f[ikey]
+                        if isinstance(ikeyval, np.ndarray):
+                            ikeyval = utils.io.cast_storing_dtype(ikeyval)
+                        fout.create_dataset(ikey, data=ikeyval, chunks=True)
 
-                data = self.get_data(
-                    xmin, xmax, ymin, ymax, 0, self.dimz, silent=False)
-                data = utils.io.cast_storing_dtype(data)
-                logging.info('writing quad {}/{}'.format(
-                    iquad+1, quad_nb))
-                fout['data'][xmin:xmax, ymin:ymax, :] = data
-        
+                # write data
+                dtype = utils.io.get_storing_dtype(self[0,0,0])
+                fout.create_dataset('data', shape=self.shape, dtype=dtype, chunks=True)
+
+                for iquad in range(quad_nb):
+                    xmin, xmax, ymin, ymax = self.get_quadrant_dims(iquad, div_nb=div_nb)
+                    logging.info('loading quad {}/{}'.format(
+                        iquad+1, quad_nb))
+
+                    data = self.get_data(
+                        xmin, xmax, ymin, ymax, 0, self.dimz, silent=False)
+                    data = utils.io.cast_storing_dtype(data)
+                    logging.info('writing quad {}/{}'.format(
+                        iquad+1, quad_nb))
+                    fout['data'][xmin:xmax, ymin:ymax, :] = data
+
 
     def crop(self, path, cx, cy, size):
         """Extract a part of the file and write it to a new hdf file
@@ -1098,8 +1093,6 @@ class HDFCube(core.WCSData):
 #### CLASS RWHDFCube ############################
 #################################################
 class RWHDFCube(HDFCube):
-
-    writeable = True
     
     def __init__(self, path, shape=None, instrument=None, reset=False, **kwargs):
         """:param path: Path to an HDF5 cube
@@ -1151,19 +1144,13 @@ class RWHDFCube(HDFCube):
         elif value.dtype == np.complex128:
             value = value.astype(np.complex64)
 
-        f = self.open_hdf5('a')
-        if self.is_empty():
-            del f['data']
-            f.create_dataset('data', shape=self.shape, chunks=True, dtype=value.dtype)
-            self.empty = False
+        with self.open_hdf5('a') as f:
+            if self.is_empty():
+                del f['data']
+                f.create_dataset('data', shape=self.shape, chunks=True, dtype=value.dtype)
+                self.empty = False
 
-        f['data'].__setitem__(key, value)
-
-    def open_hdf5(self, mode=None):
-        """Return a handle on the hdf5 file."""
-        self.set_writeable(True)
-        return HDFCube.open_hdf5(self, mode=mode)
-
+            f['data'].__setitem__(key, value)
 
     def is_empty(self):
         """return True if data is empty
@@ -1178,14 +1165,14 @@ class RWHDFCube(HDFCube):
         :param value: parameter value
         """
         self.params[key] = value
-        f = self.open_hdf5('r+')
-        _update = True
-        value = utils.io.cast2hdf5(value)
-        if key in f.attrs:
-            if np.all(f.attrs[key] == value):
-                _update = False
-        if _update:
-            f.attrs[key] = value
+        with self.open_hdf5('r+') as f:
+            _update = True
+            value = utils.io.cast2hdf5(value)
+            if key in f.attrs:
+                if np.all(f.attrs[key] == value):
+                    _update = False
+            if _update:
+                f.attrs[key] = value
 
     def set_params(self, params):
         """Set class parameters
@@ -1226,14 +1213,14 @@ class RWHDFCube(HDFCube):
 
         if path == 'data':
             raise ValueError('to set data please use your cube as a classic 3d numpy array. e.g. cube[:,:,:] = value.')
-        f = self.open_hdf5('a')
-        if path in f:
-            del f[path]
-            warnings.warn('{} dataset changed'.format(path))
+        with self.open_hdf5('a') as f:
+            if path in f:
+                del f[path]
+                warnings.warn('{} dataset changed'.format(path))
 
-        if isinstance(data, dict):
-            data = utils.io.dict2array(data)
-        f.create_dataset(path, data=data, chunks=True)
+            if isinstance(data, dict):
+                data = utils.io.dict2array(data)
+            f.create_dataset(path, data=data, chunks=True)
 
     def set_deep_frame(self, deep_frame):
         """Append a deep frame to the HDF5 cube.
@@ -1319,9 +1306,9 @@ class RWHDFCube(HDFCube):
             raise TypeError('std_im must be an orb.image.Image instance or a path to valid hdf5 image')
         self.set_dataset('standard_image', std_im.data, protect=False)
 
-        f = self.open_hdf5('a')
-        for iparam in std_im.params:
-            f['standard_image'].attrs[iparam] = std_im.params[iparam]
+        with self.open_hdf5('a') as f:
+            for iparam in std_im.params:
+                f['standard_image'].attrs[iparam] = std_im.params[iparam]
 
     def set_dxdymaps(self, dxmap, dymap):
         """Set dxdymaps
