@@ -2301,20 +2301,29 @@ class Vector1d(Data):
         if np.all(np.isclose(self.axis.data - new_axis.data, 0)):
             return self.copy()
         
-        f = interpolate.interp1d(self.axis.data.astype(np.float128),
-                                 self.data.astype(np.float128),
-                                 bounds_error=False)
+        
+        data = interpolate.interp1d(self.axis.data.astype(np.float128),
+                                    self.data.real.astype(np.float128),
+                                    bounds_error=False)(new_axis.data)
+        
+        
+        if np.any(np.iscomplex(self.data)):
+            data = data.astype(complex)
+            data.imag = interpolate.interp1d(self.axis.data.astype(np.float128),
+                                             self.data.imag.astype(np.float128),
+                                             bounds_error=False)(new_axis.data)
+            
+        
 
         if self.has_err():
-            ferr = interpolate.interp1d(self.axis.data.astype(np.float128),
-                                        self.err.astype(np.float128),
-                                        bounds_error=False)
-            new_err = ferr(new_axis.data)
+            new_err = interpolate.interp1d(self.axis.data.astype(np.float128),
+                                           self.err.astype(np.float128),
+                                           bounds_error=False)(new_axis.data)
         else:
             new_err = None
 
         return returned_class(
-            f(new_axis.data), err=new_err, axis=new_axis.data, params=self.params)
+            data, err=new_err, axis=new_axis.data, params=self.params)
 
 
     def crop(self, xmin, xmax, returned_class=None):
@@ -2375,7 +2384,7 @@ class Vector1d(Data):
         # project arg on self axis
         if arg is not None:
             if isinstance(arg, Vector1d):
-                if not np.all(np.isclose(out.axis.data - self.axis.data, 0)):
+                if not np.all(np.isclose(out.axis.data - arg.axis.data, 0)):
                     arg = arg.project(out.axis)
 
             elif np.size(arg) != 1:
