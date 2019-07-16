@@ -1914,7 +1914,7 @@ class Data(object):
         if np.iscomplexobj(self.data):
             if not np.any(np.iscomplex(self.data)):
                 try:
-                    self.data = self.data.astype(float)
+                    self.data = self.data.real
                 except AttributeError:
                     pass
 
@@ -1943,14 +1943,14 @@ class Data(object):
             if err.shape != self.data.shape:
                 raise TypeError('err must have the same shape as data')
             self.err = err
-            
+
         # load axis
         if axis is not None:
             axis = Axis(axis)
             if axis.dimx != self.dimx:
                 raise TypeError('axis must have the same length as data first axis')
             self.axis = axis
-
+            
         # load mask
         if mask is not None:
             if not isinstance(mask, np.ndarray):
@@ -1968,7 +1968,8 @@ class Data(object):
             self.mask = mask
                
         self.params = ROParams(self.params) # self.params must always be an ROParams instance
-                
+        
+        
     def __getitem__(self, key):
         _data = self.data.__getitem__(key)
         if self.has_mask():
@@ -2192,7 +2193,7 @@ class Data(object):
 
         if data is None:
             data = np.copy(self.data)
-            
+
         return self.__class__(
             data,
             err=_err,
@@ -2200,7 +2201,7 @@ class Data(object):
             params=_params,
             mask=_mask,
             **kwargs)
-
+        
     def writeto(self, path):
         """Write data to an hdf file
 
@@ -2296,6 +2297,10 @@ class Vector1d(Data):
             
         if not isinstance(new_axis, Axis):
             raise TypeError('axis must be an orb.core.Axis instance')
+
+        if np.all(np.isclose(self.axis.data - new_axis.data, 0)):
+            return self.copy()
+        
         f = interpolate.interp1d(self.axis.data.astype(np.float128),
                                  self.data.astype(np.float128),
                                  bounds_error=False)
@@ -2359,7 +2364,7 @@ class Vector1d(Data):
             data_real.data = data_real.data.astype(complex)
             data_real.data.imag = data_imag.data
             return data_real
-        
+
         self.assert_axis()
 
         out = self.copy()
@@ -2370,36 +2375,40 @@ class Vector1d(Data):
         # project arg on self axis
         if arg is not None:
             if isinstance(arg, Vector1d):
-                arg = arg.project(out.axis)
+                if not np.all(np.isclose(out.axis.data - self.axis.data, 0)):
+                    arg = arg.project(out.axis)
 
             elif np.size(arg) != 1:
                 raise TypeError('arg must be a float or a Vector1d instance')
 
         # transform self in gvar
         if out.has_err():
-            _out = gvar.gvar(out.data, out.err)
+            _out = gvar.gvar(out.data.real, out.err.real)
         else:
-            _out = gvar.gvar(out.data)
+            _out = out.data.real
 
         # transform arg in gvar
         if arg is not None:
-            _arg = arg
-            if isinstance(_arg, Vector1d):
+            if isinstance(arg, Vector1d):
                 if arg.has_err():
-                    _arg = gvar.gvar(arg.data, arg.err)
+                    _arg = gvar.gvar(arg.data.real, arg.err.real)
                 else:
-                    _arg = _arg.data
+                    _arg = np.copy(arg.data.real)
+            else: _arg = arg
 
         # do the math
         if arg is None:
             _out = getattr(np, opname)(_out)
-        else:
+        else:            
             _out = getattr(np, opname)(_out, _arg)
 
         # transform gvar to data and err
-        out.data = gvar.mean(_out)
-        out.err = gvar.sdev(_out)
-
+        if isinstance(_out[0], gvar._gvarcore.GVar):
+            out.data = gvar.mean(_out)
+            out.err = gvar.sdev(_out)
+        else:
+            out.data = _out
+            out.err = None
         return out
 
     def add(self, vector):

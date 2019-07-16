@@ -693,8 +693,6 @@ class Spectrum(core.Cm1Vector1d):
             spec = np.concatenate([spec, spec[::-1]])
             raise NotImplementedError()
             
-        print spec.shape
-        print self.dimx
         spec_ifft = scipy.fftpack.ifft(spec)
 
         interf = Interferogram(spec_ifft, params=self.params)
@@ -832,13 +830,13 @@ class RealSpectrum(Spectrum):
             
         # compute photon noise
         if not self.has_err():
-            logging.debug('err vector not supplied: err vector computed from spectrum vector')
-            self.err = np.ones_like(self.data) * np.sqrt(self.params.source_counts)
+            logging.debug('err vector not supplied, this RealSpectrum, is not real :)')
+            #np.ones_like(self.data) * np.sqrt(self.params.source_counts)
             
     def compute_counts_in_spectrum(self):
         """Return the number of counts in the spectrum
         """
-        if self.err is not None:
+        if self.has_err():
             _data = gvar.gvar(np.abs(self.data), np.abs(self.err))
         else:
             _data = np.abs(self.data)
