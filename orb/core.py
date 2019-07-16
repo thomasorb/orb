@@ -2298,9 +2298,9 @@ class Vector1d(Data):
         if not isinstance(new_axis, Axis):
             raise TypeError('axis must be an orb.core.Axis instance')
 
-        if np.all(np.isclose(self.axis.data - new_axis.data, 0)):
-            return self.copy()
-        
+        if len(self.axis.data) == len(new_axis.data):
+            if np.all(np.isclose(self.axis.data - new_axis.data, 0)):
+                return self.copy()
         
         data = interpolate.interp1d(self.axis.data.astype(np.float128),
                                     self.data.real.astype(np.float128),
@@ -2384,7 +2384,11 @@ class Vector1d(Data):
         # project arg on self axis
         if arg is not None:
             if isinstance(arg, Vector1d):
-                if not np.all(np.isclose(out.axis.data - arg.axis.data, 0)):
+                project = True
+                if len(out.axis.data) == len(arg.axis.data):
+                    if np.all(np.isclose(out.axis.data - arg.axis.data, 0)):
+                        project = False
+                if project:
                     arg = arg.project(out.axis)
 
             elif np.size(arg) != 1:
