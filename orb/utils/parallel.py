@@ -43,8 +43,7 @@ class RayJobServer(object):
 
         def wrapped_f(func, args, modules):
             for imod in modules:
-                exec(imod)
-            #import orb.fft
+                exec(imod) in locals()
             return func(*args)
 
         if not isinstance(args, tuple):
@@ -64,18 +63,9 @@ class RayJobServer(object):
         return RayJob(ray.remote(wrapped_f).remote(func, args, parsed_modules))
 
 
-def init_pp_server(ncpus=0, silent=False):
-    """Initialize a server for parallel processing.
-
-    :param ncpus: (Optional) Number of cpus to use. 0 means use all
-      available cpus (default 0)
+def get_ncpus(ncpus):
+    """Return ncpus considering the target ncpus and the hard limits setting"""
     
-    :param silent: (Optional) If silent no message is printed
-      (Default False).
-
-    .. note:: Please refer to http://www.parallelpython.com/ for
-      sources and information on Parallel Python software
-    """
     WL_PATH = '/etc/orb-kernels-wl' # user white list
     NCPUS_PATH = '/etc/orb-kernels-ncpus' # ncpus limit
 
@@ -99,21 +89,38 @@ def init_pp_server(ncpus=0, silent=False):
     if ncpus == 0 and not in_wl and max_cpus is not None:
         ncpus = max_cpus
         logging.debug('max cpus limited to {} because of machine hard limit configuration'.format(max_cpus))
+    return ncpus
 
     
-    # ppservers = ()
+    
+def init_pp_server(ncpus=0, silent=False, use_ray=False):
+    """Initialize a server for parallel processing.
 
-    # if ncpus == 0:
-    #     job_server = pp.Server(ppservers=ppservers)
-    # else:
-    #     job_server = pp.Server(ncpus, ppservers=ppservers)
+    :param ncpus: (Optional) Number of cpus to use. 0 means use all
+      available cpus (default 0)
+    
+    :param silent: (Optional) If silent no message is printed
+      (Default False).
 
-    # ncpus = job_server.get_ncpus()
+    .. note:: Please refer to http://www.parallelpython.com/ for
+      sources and information on Parallel Python software
+    """
+    ncpus = get_ncpus(ncpus)
 
-    ray.shutdown()
-    ray.init(configure_logging=False)
-    job_server = RayJobServer()
-    ncpus = int(ray.available_resources()['CPU'])
+    if not use_ray:
+        ppservers = ()
+
+        if ncpus == 0:
+            job_server = pp.Server(ppservers=ppservers)
+        else:
+            job_server = pp.Server(ncpus, ppservers=ppservers)
+
+        ncpus = job_server.get_ncpus()
+    else:
+        ray.shutdown()
+        ray.init(num_cpus=int(ncpus), configure_logging=False, object_store_memory=int(3e9))
+        job_server = RayJobServer()
+        ncpus = int(ray.available_resources()['CPU'])
     
     if not silent:
         logging.info("Init of the parallel processing server with %d threads"%ncpus)
@@ -132,26 +139,28 @@ def close_pp_server(js):
     .. note:: Please refer to http://www.parallelpython.com/ for
         sources and information on Parallel Python software.
     """
-    ray.shutdown()
-    # logging.debug(get_stats_str(js))
-    # # First shut down the normal way
-    # js.destroy()
-    # # access job server methods for shutting down cleanly
-    # js._Server__exiting = True
-    # js._Server__queue_lock.acquire()
-    # js._Server__queue = []
-    # js._Server__queue_lock.release()
-    # for worker in js._Server__workers:
-    #     worker.t.exiting = True
-    #     try:
-    #         # add worker close()
-    #         worker.t.close()
-    #         os.kill(worker.pid, 0)
-    #         os.waitpid(worker.pid, os.WNOHANG)
-    #     except OSError:
-    #         # PID does not exist
-    #         pass
-    #     except IOError: pass
+    if isinstance(js, RayJobServer):
+        ray.shutdown()
+    else:
+        logging.debug(get_stats_str(js))
+        # First shut down the normal way
+        js.destroy()
+        # access job server methods for shutting down cleanly
+        js._Server__exiting = True
+        js._Server__queue_lock.acquire()
+        js._Server__queue = []
+        js._Server__queue_lock.release()
+        for worker in js._Server__workers:
+            worker.t.exiting = True
+            try:
+                # add worker close()
+                worker.t.close()
+                os.kill(worker.pid, 0)
+                os.waitpid(worker.pid, os.WNOHANG)
+            except OSError:
+                # PID does not exist
+                pass
+            except IOError: pass
 
 
 def get_stats_str(js):

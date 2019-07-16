@@ -950,6 +950,10 @@ class Tools(object):
                 param_key, self.config_file_name))
             return None
 
+    def _get_ncpus(self):
+        """Return the number of CPUS available
+        """
+        return utils.parallel.get_ncpus(int(self.config.NCPUS))
         
     def _init_pp_server(self, silent=False):
         """Initialize a server for parallel processing.
@@ -1865,7 +1869,6 @@ class Data(object):
 
         # load from another instance
         elif isinstance(data, self.__class__) or isinstance(self, data.__class__):
-
             if data.data.ndim < 3:
                 _data = data.copy()
             else: _data = data
@@ -1910,7 +1913,10 @@ class Data(object):
         # reduce complex data to real data if imaginary part is null
         if np.iscomplexobj(self.data):
             if not np.any(np.iscomplex(self.data)):
-                self.data = self.data.astype(float)
+                try:
+                    self.data = self.data.astype(float)
+                except AttributeError:
+                    pass
 
         # load params
         if params is not None:

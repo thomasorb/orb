@@ -128,6 +128,8 @@ class HDFCube(core.WCSData):
                         self.params[param] = f.attrs[param]
                     if 'instrument' in self.params and instrument is None:
                         instrument = self.params['instrument']
+                else:
+                    self.data = MockArray(self.cube_path)
 
         # init Tools and Data
         if not self.is_old:
@@ -1112,20 +1114,19 @@ class RWHDFCube(HDFCube):
             if os.path.exists(path):
                 os.remove(path)
 
-        self.empty = False
         # create file if it does not exists
         if not os.path.exists(path):
             if shape is None:
                 raise ValueError('cube does not exist. If you want to create one, shape must be set.')
+            
             with utils.io.open_hdf5(path, 'w') as f:
                 utils.validate.has_len(shape, 3, object_name='shape')
                 f.create_dataset('data', shape=shape, chunks=True)
-                self.empty = True
                 f.attrs['level2'] = True
                 f.attrs['instrument'] = instrument
 
         elif shape is not None:
-            raise ValueError('shape must be set only when creating a new HDFCube')
+            raise ValueError('shape or dtype must be set only when creating a new HDFCube')
 
         HDFCube.__init__(self, path, instrument=instrument, **kwargs)
         if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
@@ -1145,18 +1146,11 @@ class RWHDFCube(HDFCube):
             value = value.astype(np.complex64)
 
         with self.open_hdf5('a') as f:
-            if self.is_empty():
+            if f['data'].dtype != value.dtype:
                 del f['data']
-                f.create_dataset('data', shape=self.shape, chunks=True, dtype=value.dtype)
-                self.empty = False
-
+                f.create_dataset('data', shape=self.data.shape, dtype=value.dtype, chunks=True)
             f['data'].__setitem__(key, value)
 
-    def is_empty(self):
-        """return True if data is empty
-        """
-        return bool(self.empty)
-        
     def set_param(self, key, value):
         """Set class parameter
 
