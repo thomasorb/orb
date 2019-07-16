@@ -2757,7 +2757,7 @@ class WCSData(Data, Tools):
         if data_path is not None:
             if 'fits' in data_path:
                 self.set_wcs(data_path)
-                
+                    
         # load dxdymaps
         self.dxdymaps = None
         if data_path is not None:
@@ -2973,8 +2973,13 @@ class WCSData(Data, Tools):
             wcs = pywcs.WCS(
                 utils.io.read_fits(wcs, return_hdu_only=True)[0].header,
                 naxis=2, relax=True)
-
+        try:        
+            _params = utils.astrometry.get_wcs_parameters(wcs)
+        except StandardError:
+            logging.debug('wcs could not be loaded')
+            return
             
+        
         # remove old sip params if they exist
         for ipar in self.params.keys():
             if ('A_' == ipar[:2]
@@ -2987,7 +2992,6 @@ class WCSData(Data, Tools):
         
         # convert wcs to parameters so that FITS keywords and
         # comprehensive parameters are coherent.
-        _params = utils.astrometry.get_wcs_parameters(wcs)
         
         self.params['target_x'] = _params[0]
         self.params['target_y'] = _params[1]

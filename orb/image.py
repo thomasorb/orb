@@ -740,6 +740,7 @@ class Image(Frame2D):
             deep_frame_corr = np.empty_like(self.data)
             deep_frame_corr.fill(np.nan)
             for istar in range(star_list_fit_init.shape[0]):
+                if np.isnan(star_list_fit_init[istar, 0]): continue
                 x_min, x_max, y_min, y_max = utils.image.get_box_coords(
                     star_list_fit_init[istar, 0],
                     star_list_fit_init[istar, 1],
@@ -760,9 +761,12 @@ class Image(Frame2D):
             r_range = np.linspace(-r_range_len, r_range_len,
                                   ANGLE_STEPS)
 
+            star_list_pix = radius_filter(
+                world2pix(wcs, star_list_deg), rmax)
+
             dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
                 deep_frame_corr,
-                star_list_deg, x_range, y_range, r_range,
+                star_list_pix, x_range, y_range, r_range,
                 None, 1., self.get_fwhm_pix() * 3., init_wcs=wcs)
 
             # refined brute force guess
@@ -789,7 +793,7 @@ class Image(Frame2D):
             for izoom in zoom_range:
                 dx, dy, dr, guess_matrix = utils.astrometry.brute_force_guess(
                     self.data,
-                    star_list_deg, x_range, y_range, r_range,
+                    star_list_pix, x_range, y_range, r_range,
                     None, izoom, self.get_fwhm_pix() * 3.,
                     verbose=False, init_wcs=wcs, raise_border_error=False)
 
