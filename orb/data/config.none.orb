@@ -10,3 +10,10 @@ BIG_DATA 1 # Some processes can be optimized for big data set (> 1000
 DIV_NB 3 # Number of "Quadrants" division along one axis of a cube
 	 # (the total number of quadrants is thus DIV_NB^2)
 
+## Astrometry parameters
+DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
+INIT_FWHM 1. # Rough estimate of the usual stars FWHM [in arcsecond]
+PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
+MOFFAT_BETA 3.5 # default beta parameter for the Moffat PSF
+DETECT_STACK 5 # Number of frames to combine for star detection
+ALIGNER_RANGE_COEFF 0.01 # Range coefficient for the aligner search

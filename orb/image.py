@@ -262,8 +262,6 @@ class Image(Frame2D):
             
         return frame
         
-            
-
     def find_object(self, is_standard=False, return_radec=False):
         """Try to find the object given the name in the header
 
@@ -819,12 +817,19 @@ class Image(Frame2D):
                     deltax * 3600.)
                 + "> Scale Y (arcsec/pixel): {:.5f}".format(
                     deltay * 3600.))
-
+            
         # update wcs
         wcs = utils.astrometry.create_wcs(
             self.params.target_x, self.params.target_y,
             deltax, deltay, self.params.target_ra, self.params.target_dec,
             self.params.wcs_rotation, sip=self.get_wcs())
+
+        # optimize wcs
+        star_list_pix = radius_filter(
+            world2pix(wcs, star_list_deg), rmax)
+
+        wcs = utils.astrometry.fit_wcs(star_list_pix, star_list_deg[:,:2], wcs)
+        self.set_wcs(wcs)
         
         ############################
         ### plot stars positions ###

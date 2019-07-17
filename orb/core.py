@@ -544,7 +544,13 @@ class Tools(object):
         self.set_config('DIV_NB', int)
         self.config['QUAD_NB'] = self.config.DIV_NB**2L
         self.set_config('BIG_DATA', bool)
-        
+        self.set_config('DETECT_STAR_NB', int)
+        self.set_config('INIT_FWHM', float)
+        self.set_config('PSF_PROFILE', str)
+        self.set_config('MOFFAT_BETA', float)
+        self.set_config('DETECT_STACK', int)
+        self.set_config('ALIGNER_RANGE_COEFF', float)
+            
         if self.instrument is not None:
             # load instrument configuration
             self.set_config('OBSERVATORY_NAME', str)
@@ -596,12 +602,6 @@ class Tools(object):
             self.set_config('OPTIM_DARK_CAM2', bool)
             self.set_config('EXT_ILLUMINATION', bool)
 
-            self.set_config('DETECT_STAR_NB', int)
-            self.set_config('INIT_FWHM', float)
-            self.set_config('PSF_PROFILE', str)
-            self.set_config('MOFFAT_BETA', float)
-            self.set_config('DETECT_STACK', int)
-            self.set_config('ALIGNER_RANGE_COEFF', float)
             self.set_config('SATURATION_THRESHOLD', float)
             self.set_config('WCS_ROTATION', float)
             
@@ -2713,8 +2713,7 @@ class FilterFile(Vector1d):
 class WCSData(Data, Tools):
     """Add WCS functionalities to a Data instance.
     """
-    default_params = {'instrument':'sitelle',
-                      'camera':1,
+    default_params = {'camera':1,
                       'target_ra':0.,
                       'target_dec':0.,
                       'target_x':0,
@@ -2770,7 +2769,7 @@ class WCSData(Data, Tools):
         if self.data.ndim < 2:
             raise TypeError('A dataset must have at least 2 dimensions to support WCS')
 
-        for iparam in ['instrument', 'camera']:
+        for iparam in ['camera']:
             if iparam not in self.params:
                 self.params.reset(iparam, self.default_params[iparam])
                 logging.debug('{} set to default value: {}'.format(
@@ -2778,7 +2777,15 @@ class WCSData(Data, Tools):
                 
         # check params
         self.params.reset('instrument', self.instrument)
-
+        if self.instrument is None:
+            warnings.warn('Instrument set to None: some parameters will be automatically defined')
+            self.config['CAM1_DETECTOR_SIZE_X'] = self.dimx
+            self.config['CAM1_DETECTOR_SIZE_Y'] = self.dimy
+            if not self.has_param('delta_x'): # wcs not loaded properly
+                raise StandardError('instrument set to None, wcs not loaded properly. Please set a corect WCS to your file or choose one of the available instrument configurations')
+            self.config['FIELD_OF_VIEW_1'] = (self.params.delta_x * 60.
+                                              * self.config.CAM1_DETECTOR_SIZE_X)
+        
         # convert camera param
         self.params.reset(
             'camera', utils.misc.convert_camera_parameter(
@@ -2817,7 +2824,8 @@ class WCSData(Data, Tools):
             
         if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:
             warnings.warn('image might be cropped, target_x, target_y and other parameters might be wrong')
-            
+
+        # load wcs parameters
         if 'target_x' not in self.params:
             target_x = float(self.dimx / 2.)
         else: target_x = self.params.target_x
@@ -2992,7 +3000,6 @@ class WCSData(Data, Tools):
         
         # convert wcs to parameters so that FITS keywords and
         # comprehensive parameters are coherent.
-        
         self.params['target_x'] = _params[0]
         self.params['target_y'] = _params[1]
         self.params['delta_x'] = _params[2]
