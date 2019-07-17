@@ -119,17 +119,23 @@ class HDFCube(core.WCSData):
                     self.data = MockArray()
                     self.data.shape = self.oldcube.shape
                     self.data.dtype = self.oldcube.dtype
-                    self.data.ndim = 3
-                    
-                    self.axis = None
-                    self.mask = None
-                    self.params = core.ROParams()
-                    for param in f.attrs:
-                        self.params[param] = f.attrs[param]
-                    if 'instrument' in self.params and instrument is None:
-                        instrument = self.params['instrument']
+                    self.data.ndim = 3                    
                 else:
                     self.data = MockArray(self.cube_path)
+                    
+                self.axis = None
+                self.mask = None
+                self.err = None
+                self.params = core.ROParams()
+                for param in f.attrs:
+                    try:
+                        self.params[param] = f.attrs[param]
+                    except TypeError, e:
+                        logging.debug('error reading param from attributes {}: {}'.format(
+                            param, e))
+
+                if 'instrument' in self.params and instrument is None:
+                    instrument = self.params['instrument']
 
         # init Tools and Data
         if not self.is_old:
@@ -152,7 +158,7 @@ class HDFCube(core.WCSData):
             if 'params' in kwargs:
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
-        
+
         core.WCSData.__init__(self, self, instrument=instrument,
                               data_prefix=data_prefix,
                               config=config, **kwargs)
@@ -1159,7 +1165,7 @@ class RWHDFCube(HDFCube):
         :param value: parameter value
         """
         self.params[key] = value
-        with self.open_hdf5('r+') as f:
+        with self.open_hdf5('a') as f:
             _update = True
             value = utils.io.cast2hdf5(value)
             if key in f.attrs:

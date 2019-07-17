@@ -883,6 +883,8 @@ def read_hdf5(file_path, return_header=False, dtype=float):
 def cast2hdf5(val):
     if val is None:
         return 'None'
+    elif isinstance(val, np.float128):
+        return val.astype(np.float64)
     elif isinstance(val, long):
         return str(val)
     elif isinstance(val, np.ndarray):

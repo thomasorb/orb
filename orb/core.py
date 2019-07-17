@@ -1809,14 +1809,14 @@ class Data(object):
 
         """
         LIMIT_SIZE = 100
-        
-        self.axis = None
-        self.params = dict()
-        self.mask = None
-        self.err = None
-        
+                
         # load from file
         if isinstance(data, str):
+            self.axis = None
+            self.params = dict()
+            self.mask = None
+            self.err = None
+
             if params is not None:
                 # params are transformed into kwargs
                 kwargs.update(params)
@@ -1872,7 +1872,7 @@ class Data(object):
             if data.data.ndim < 3:
                 _data = data.copy()
             else: _data = data
-            
+
             self.data = _data.data
 
             # load error
@@ -1896,6 +1896,11 @@ class Data(object):
             
         # load from np.ndarray
         else:
+            self.axis = None
+            self.params = dict()
+            self.mask = None
+            self.err = None
+
             if not isinstance(data, np.ndarray):
                 raise TypeError('input data is a {} but must be a numpy.ndarray'.format(type(data)))
             data = np.squeeze(np.copy(data))
@@ -2745,13 +2750,14 @@ class WCSData(Data, Tools):
             if 'params' in kwargs:
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
-                
+
         Tools.__init__(self, instrument=instrument,
                        data_prefix=data_prefix,
                        config=config)
 
         Data.__init__(self, data, **kwargs) # note that this init may change the value of data
 
+        
         # try to load wcs from fits keywords if a FITS file
         if data_path is not None:
             if 'fits' in data_path:
