@@ -2608,49 +2608,40 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
 def fit_wcs(star_list_pix, star_list_deg, wcs, fitsip=False):
 
 
-    def wcs2p(_wcs):
-        return list(_wcs.wcs.cd.flatten()) + list(_wcs.wcs.crpix) + list(_wcs.wcs.crval)
-    
-    def p2wcs(p, allp):
-        _wcs = pywcs.WCS(naxis=2)
-        _wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-        _wcs.wcs.cd = np.array(p[:4]).reshape((2,2))
-        _wcs.wcs.crpix = p[4:6]
-        _wcs.wcs.crval = allp[6:]
-        return _wcs
-
-    def diff(p, star_list_pix, allp):
-        rdiff = p2wcs(p, allp).all_world2pix(star_list_deg, 0) - star_list_pix
-        rdiff = np.sum((rdiff)**2, axis=1)
+    def diff(p):
+        p_ = list(allp[:2]) + list(p)
+        rdiff = create_wcs(*p_, sip=wcs).all_world2pix(star_list_deg, 0) - star_list_pix
+        rdiff =  np.sqrt(np.sum((rdiff)**2, axis=1))
         return rdiff
 
-    allp = wcs2p(wcs)
-    guess = allp[:-2]
+    allp = get_wcs_parameters(wcs)
+    guess = allp[2:]
     
-    logging.debug('diff before fit: {}'.format(np.sum(diff(guess, star_list_pix, allp))))
-    
+    logging.info('input parameters: {}'.format(allp))
+    logging.info('diff before fit: {}'.format(np.mean(diff(guess))))
+
     fit = optimize.leastsq(diff, guess,
-                           args=(star_list_pix, allp),
                            full_output=True,
-                           maxfev=1000) 
+                           maxfev=100000) 
 
-    logging.debug('best fit parameters: {}'.format(fit[0]))
-    logging.debug('diff after fit: {}'.format(np.sum(diff(fit[0], star_list_pix, allp))))
+    logging.info('best fit parameters: {}'.format(fit[0]))
+    logging.info('diff after fit: {}'.format(np.mean(diff(fit[0]))))
 
-    wcs = p2wcs(fit[0], allp)
-    params = get_wcs_parameters(wcs)
-    logging.debug('wcs parameters: {}'.format(params))
-    if fit_sip:
-        logging.debug('sip before fit: {}'.format(repr(wcs.sip)))
-        wcs = fit_sip(params[2:4], wcs.all_world2pix(star_list_deg, 0), star_list_pix, init_sip=wcs,
-                      sip_order=2)
-        logging.debug('sip after fit: {}'.format(repr(wcs.sip)))
-        diff = np.sum((wcs.all_world2pix(star_list_deg, 0) - star_list_pix)**2, axis=1)
-        logging.debug('diff after sip fit: {}'.format(np.sum(diff)))
-
-        
+    bestp = list(allp[:2]) + list(fit[0])
+    bestwcs = create_wcs(*bestp, sip=wcs)
+    params = get_wcs_parameters(bestwcs)
+    logging.info('wcs parameters: {}'.format(params))
     
-    return wcs
+    if fit_sip:
+        return NotImplementedError()
+        # logging.debug('sip before fit: {}'.format(repr(wcs.sip)))
+        # wcs = fit_sip(params[2:4], wcs.all_world2pix(star_list_deg, 0), star_list_pix, init_sip=wcs,
+        #               sip_order=2)
+        # logging.debug('sip after fit: {}'.format(repr(wcs.sip)))
+        # diff = np.sqrt(np.sum((wcs.all_world2pix(star_list_deg, 0) - star_list_pix)**2, axis=1))
+        # logging.debug('diff after sip fit: {}'.format(np.mean(diff)))
+    
+    return bestwcs
     
 
 def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
@@ -2663,12 +2654,17 @@ def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
         d = np.array(d)
         return np.sum(d[d < np.nanmedian(d)])
     
-    def match(big, small):
+    def match(big, small, maxr=30):
         bigm = list()
+        smallm = list()
+        index = 0
         for istar in small:
             r = np.sum((big - istar)**2, axis=1)
-            bigm.append(big[np.nanargmin(r),:])
-        return bigm
+            if np.nanmin(r) < maxr:
+                bigm.append(np.arange(r.size)[np.nanargmin(r)])
+                smallm.append(index)
+            index += 1
+        return bigm, smallm
 
     def brute(big, small, xran, yran, rran, zran):
         index = 0
@@ -2728,9 +2724,9 @@ def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
         big, small, best, x_range, y_range, r_range, z_range)
     
     smallt = transform_star_position_A_to_B(small, [best[0], best[1], best[2], 0, 0], rc, best[3])
-    bigm = match(big, smallt)
+    matched_big, matched_small = match(big, smallt)
 
     if not inverted:
-        return np.array(best)[:4]
+        return np.array(best)[:4], matched_small, matched_big
     else:
-        return np.array([-best[0], -best[1], -best[2], 1./best[3]])
+        return np.array([-best[0], -best[1], -best[2], 1./best[3]]), matched_big, matched_small
