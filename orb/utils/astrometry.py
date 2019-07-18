@@ -31,7 +31,7 @@ import astropy.wcs as pywcs
 from astropy.coordinates import SkyCoord
 import pandas
 import os
-
+import sys
     
 import orb.cutils
 import orb.utils.stats
@@ -2605,10 +2605,6 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
     return alignment_vector_x, alignment_vector_y, alignment_error
 
             
-        
-
-
-
 def fit_wcs(star_list_pix, star_list_deg, wcs, fitsip=False):
 
 
@@ -2656,3 +2652,85 @@ def fit_wcs(star_list_pix, star_list_deg, wcs, fitsip=False):
     
     return wcs
     
+
+def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
+
+    def dist(big, small):
+        d = list()
+        for istar in small:
+            r = np.sqrt(np.sum((big - istar)**2, axis=1))
+            d.append(np.nanmin(r))
+        d = np.array(d)
+        return np.sum(d[d < np.nanmedian(d)])
+    
+    def match(big, small):
+        bigm = list()
+        for istar in small:
+            r = np.sum((big - istar)**2, axis=1)
+            bigm.append(big[np.nanargmin(r),:])
+        return bigm
+
+    def brute(big, small, xran, yran, rran, zran):
+        index = 0
+        dists = list()
+        for ix in xran:
+            index += 1
+            sys.stdout.write('\r {}/{}'.format(index, len(xran)))
+            sys.stdout.flush()
+            for iy in yran:
+                for ir in rran:
+                    for iz in zran:
+                        smallt = transform_star_position_A_to_B(small, [ix, iy, ir, 0, 0], rc, iz)
+                        dists.append([ix, iy, ir, iz, dist(big, smallt)])
+        sys.stdout.write('\n')
+        best = sorted(dists, key=lambda x: x[-1])[0]
+        logging.info('best matched rough parameters: dx:{:.1f}, dy:{:.1f}, dr:{:.2f}, dz:{:.2f}, dist:{:.1f}'.format(*best))
+        return best
+
+    def rebrute(big, small, best, xran, yran, rran, zran, factor=2):
+        xstep = xran[1] - xran[0]
+        ystep = yran[1] - yran[0]
+        rstep = rran[1] - rran[0]
+        zstep = zran[1] - zran[0]
+        
+        xran = np.linspace(-2 * xstep, 2 * xstep, int(4.*factor) + 1) + best[0]
+        yran = np.linspace(-2 * ystep, 2 * ystep, int(4.*factor) + 1) + best[1]
+        rran = np.linspace(-2 * rstep, 2 * rstep, int(4.*factor) + 1) + best[2]
+        zran = np.linspace(-2 * zstep, 2 * zstep, int(4.*factor) + 1) + best[3]
+        
+        best = brute(big, small, xran, yran, rran, zran)
+    
+        return best, xran, yran, rran, zran
+        
+        
+    XYSTEP = 10
+    RSTEP = 1
+    ZSTEP = 0.01
+    
+    x_range = np.linspace(-xymax, xymax, (2*xymax)//XYSTEP + 1)
+    y_range = np.copy(x_range)
+    r_range = np.linspace(-rmax, rmax, (2*rmax)//RSTEP + 1)
+    z_range = np.linspace(-zmax, zmax, (2*zmax)//ZSTEP + 1) + 1.
+
+    if len(sl1) < len(sl2):
+        inverted = False
+        big = sl2
+        small = sl1
+    else:
+        inverted = True
+        big = sl1
+        small = sl2
+
+    best = brute(big, small, x_range, y_range, r_range, z_range)
+    best, x_range, y_range, r_range, z_range = rebrute(
+        big, small, best, x_range, y_range, r_range, z_range)
+    best, x_range, y_range, r_range, z_range = rebrute(
+        big, small, best, x_range, y_range, r_range, z_range)
+    
+    smallt = transform_star_position_A_to_B(small, [best[0], best[1], best[2], 0, 0], rc, best[3])
+    bigm = match(big, smallt)
+
+    if not inverted:
+        return np.array(best)[:4]
+    else:
+        return np.array([-best[0], -best[1], -best[2], 1./best[3]])

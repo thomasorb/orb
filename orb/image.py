@@ -555,11 +555,11 @@ class Image(Frame2D):
                     final_star_list.append((np.nan, np.nan))
             return np.array(final_star_list)
 
-        def world2pix(wcs, star_list):
-            star_list = np.array(star_list)
-            return np.array(wcs.all_world2pix(
-                star_list[:,0],
-                star_list[:,1], 0, quiet=True)).T
+        # def world2pix(wcs, star_list):
+        #     star_list = np.array(star_list)
+        #     return np.array(wcs.all_world2pix(
+        #         star_list[:,0],
+        #         star_list[:,1], 0, quiet=True)).T
 
         
         def get_filtered_params(fit_params, snr_min=None,
@@ -662,12 +662,11 @@ class Image(Frame2D):
         
         # get FWHM
         if recompute_init:
-            star_list_fit_init_path, fwhm_arc = self.detect_stars(
+            star_list_fit_init_path, fwhm_pix = self.detect_stars(
                 min_star_number=max_stars_detect, max_roundness=max_roundness,
                 max_radius_coeff=max_radius_coeff)
             star_list_fit_init = utils.astrometry.load_star_list(
                 star_list_fit_init_path, remove_nans=True)
-            self.reset_fwhm_arc(fwhm_arc)
 
         elif brute_force:
             star_list_fit_init = utils.astrometry.df2list(
@@ -714,8 +713,8 @@ class Image(Frame2D):
 
             self.params['target_x'] += max_list[0, 2]
             self.params['target_y'] += max_list[0, 3]
-            self.params['wcs_rotation'] = max_list[0, 1]
-
+            self.params['wcs_rotation'] += max_list[0, 1]
+            
             # update wcs
             wcs = utils.astrometry.create_wcs(
                 self.params.target_x, self.params.target_y,
@@ -771,7 +770,7 @@ class Image(Frame2D):
             x_range_len = max(np.diff(x_range)[0] * 4, self.get_fwhm_pix() * 3) # 3 FWHM min
             y_range_len = x_range_len
             finer_angle_range = np.diff(r_range)[0] * 4.
-            finer_xy_step = min(XYRANGE_STEP_NB / 4,
+            finer_xy_step = min(XYRANGE_STEP_NB / 2,
                                 int(x_range_len) + 1) # avoid xystep < 1 pixel
 
 
@@ -805,8 +804,8 @@ class Image(Frame2D):
             self.params['target_x'] -= best_guess[1]
             self.params['target_y'] -= best_guess[2]
 
-            deltax *= best_guess[0]
-            deltay *= best_guess[0]
+            deltax /= best_guess[0]
+            deltay /= best_guess[0]
 
             logging.info(
                 "Brute force guess of the parameters:\n"
@@ -824,26 +823,21 @@ class Image(Frame2D):
             deltax, deltay, self.params.target_ra, self.params.target_dec,
             self.params.wcs_rotation, sip=self.get_wcs())
 
-        # optimize wcs
-        star_list_pix = radius_filter(
-            world2pix(wcs, star_list_deg), rmax)
-
-        wcs = utils.astrometry.fit_wcs(star_list_pix, star_list_deg[:,:2], wcs)
         self.set_wcs(wcs)
-        
+
         ############################
         ### plot stars positions ###
         ############################
-        ## import pylab as pl
-        ## im = pl.imshow(deep_frame.T,
-        ##                vmin=np.nanmedian(deep_frame),
-        ##                vmax=np.nanmedian(deep_frame)+50)
-        ## im.set_cmap('gray')
-        ## star_list_pix = radius_filter(
-        ##     world2pix(wcs, star_list_deg), rmax)
-        ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
-        ##            edgecolor='blue', linewidth=2., alpha=1.,
-        ##            facecolor=(0,0,0,0))
+        # import pylab as pl
+        # im = pl.imshow(deep_frame.T,
+        #                vmin=np.nanmedian(deep_frame),
+        #                vmax=np.nanmedian(deep_frame)+50)
+        # im.set_cmap('gray')
+        # star_list_pix = radius_filter(
+        #     world2pix(wcs, star_list_deg), rmax)
+        # pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
+        #            edgecolor='blue', linewidth=2., alpha=1.,
+        #            facecolor=(0,0,0,0))
         ## pl.show()
                     
 
@@ -1014,8 +1008,8 @@ class Image(Frame2D):
 
             fit_params = self.fit_stars(
                 star_list_pix,
-                local_background=False,
-                multi_fit=False, fix_fwhm=True,
+                #local_background=True,
+                #multi_fit=False, fix_fwhm=False,
                 no_aperture_photometry=True)
             
             ############################

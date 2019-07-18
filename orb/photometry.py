@@ -28,6 +28,7 @@ import utils.filters
 import utils.spectrum
 import utils.vector
 import utils.io
+import utils.err
 
 import numpy as np
 import logging
@@ -446,11 +447,10 @@ class StandardImage(image.Image):
         try:
             utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
             utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
-        except orb.utils.err.ValidationError:
+        except utils.err.ValidationError:
             raise StandardError('standard star not in the image, check image registration')
 
         star_list, fwhm = self.detect_stars(min_star_number=30)
-        self.reset_fwhm_pix(fwhm)
         std_fit = self.fit_stars([std_xy], aper_coeff=6)
         std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
 
