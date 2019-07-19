@@ -448,7 +448,7 @@ class Image(Frame2D):
     
     def register(self, max_stars_detect=60,
                  max_roundness=0.2,
-                 max_radius_coeff=np.sqrt(2),
+                 max_radius_coeff=1.,
                  sip_order=3,
                  return_fit_params=False, rscale_coeff=1.,
                  compute_precision=True, compute_distortion=False,
@@ -539,7 +539,7 @@ class Image(Frame2D):
       
         MIN_STAR_NB = 4 # Minimum number of stars to get a correct WCS
 
-        XYMAX = 200 
+        XYMAX = 500
         RMAX = 6
         ZMAX = 0.03
         
@@ -592,16 +592,16 @@ class Image(Frame2D):
         self.box_size_coeff = 5.
 
         # match lists
-        best, sl_cat_matched, sl_im_matched = utils.astrometry.match_star_lists(
-            self.world2pix(sl_cat_deg),
-            sl_im_pix, [self.params.target_x, self.params.target_y],
-            xymax=XYMAX, rmax=RMAX, zmax=ZMAX)
-
-        self.set_wcs(utils.astrometry.transform_wcs(
+        wcs, sl_cat_matched, sl_im_matched = utils.astrometry.match_star_lists(
             self.get_wcs(),
-            [best[0], best[1], best[2], 0 , 0],
-            [self.params.target_x, self.params.target_y],
-            best[3], sip=self.get_wcs()))
+            sl_cat_deg[:,:2],
+            sl_im_pix, [self.params.target_x, self.params.target_y],
+            xyrange=(XYMAX, XYMAX/10.), #10
+            rrange=(RMAX, RMAX/3),
+            zrange=(ZMAX, ZMAX/1),
+            nsteps=7)
+
+        self.set_wcs(wcs)
 
         logging.info('wcs after lists matching')
         logging.info(str(self.get_wcs()))

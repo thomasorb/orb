@@ -40,6 +40,7 @@ import orb.utils.vector
 import orb.utils.parallel
 import orb.utils.misc
 import orb.utils.io
+import orb.utils.validate
 
 import copy
 
@@ -2644,7 +2645,7 @@ def fit_wcs(star_list_pix, star_list_deg, wcs, fitsip=False):
     return bestwcs
     
 
-def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
+def match_star_lists(wcs, sl1deg, sl2pix, rc, xyrange=(500, 50), rrange=(6,1), zrange=(0.03, 0.015), nsteps=7):
 
     def dist(big, small):
         d = list()
@@ -2667,6 +2668,12 @@ def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
         return bigm, smallm
 
     def brute(big, small, xran, yran, rran, zran):
+        logging.info('starting brute force matching')
+        print_range(xran, 'x')
+        print_range(yran, 'y')
+        print_range(rran, 'r')
+        print_range(zran, 'z')
+        
         index = 0
         dists = list()
         for ix in xran:
@@ -2680,53 +2687,78 @@ def match_star_lists(sl1, sl2, rc, xymax=200, rmax=10, zmax=0.05):
                         dists.append([ix, iy, ir, iz, dist(big, smallt)])
         sys.stdout.write('\n')
         best = sorted(dists, key=lambda x: x[-1])[0]
-        logging.info('best matched rough parameters: dx:{:.1f}, dy:{:.1f}, dr:{:.2f}, dz:{:.2f}, dist:{:.1f}'.format(*best))
-        return best
+        logging.info('best matched parameters: dx:{:.1f}, dy:{:.1f}, dr:{:.2f}, dz:{:.2f}, dist:{:.1f}'.format(*best))
+        return np.array(best)
 
-    def rebrute(big, small, best, xran, yran, rran, zran, factor=2):
+    def rebrute(best, wcs, xran, yran, rran, zran, factor=2):
         xstep = xran[1] - xran[0]
         ystep = yran[1] - yran[0]
         rstep = rran[1] - rran[0]
         zstep = zran[1] - zran[0]
         
-        xran = np.linspace(-2 * xstep, 2 * xstep, int(4.*factor) + 1) + best[0]
-        yran = np.linspace(-2 * ystep, 2 * ystep, int(4.*factor) + 1) + best[1]
-        rran = np.linspace(-2 * rstep, 2 * rstep, int(4.*factor) + 1) + best[2]
-        zran = np.linspace(-2 * zstep, 2 * zstep, int(4.*factor) + 1) + best[3]
-        
-        best = brute(big, small, xran, yran, rran, zran)
-    
-        return best, xran, yran, rran, zran
-        
-        
-    XYSTEP = 10
-    RSTEP = 1
-    ZSTEP = 0.01
-    
-    x_range = np.linspace(-xymax, xymax, (2*xymax)//XYSTEP + 1)
-    y_range = np.copy(x_range)
-    r_range = np.linspace(-rmax, rmax, (2*rmax)//RSTEP + 1)
-    z_range = np.linspace(-zmax, zmax, (2*zmax)//ZSTEP + 1) + 1.
+        xran = np.linspace(-2 * xstep, 2 * xstep, int(4.*factor) + 1) #+ best[0]
+        yran = np.linspace(-2 * ystep, 2 * ystep, int(4.*factor) + 1) #+ best[1]
+        rran = np.linspace(-2 * rstep, 2 * rstep, int(4.*factor) + 1) #+ best[2]
+        zran = np.linspace(-2 * zstep, 2 * zstep, int(4.*factor) + 1) + 1.#+ best[3]
 
-    if len(sl1) < len(sl2):
+        big, small, wcs = get_lists(best, wcs)
+        best = brute(big, small, xran, yran, rran, zran)
+
+        return best, wcs, xran, yran, rran, zran
+
+    def print_range(ran, dim):
+        logging.info('   {}range: {}:{}:{}'.format(dim, ran[0], ran[-1], ran[1] - ran[0]))
+
+    def get_lists(best, wcs):
+        if best is not None:
+            if not inverted:
+                wcs = transform_wcs(
+                    wcs, [best[0], best[1], best[2], 0 , 0],
+                rc, best[3], sip=wcs)
+            else:
+                wcs = transform_wcs(
+                    wcs, [-best[0], -best[1], -best[2], 0 , 0],
+                rc, 1./best[3], sip=wcs)
+                
+        sl1 = wcs.all_world2pix(np.copy(sl1deg), 0)
+        sl2 = np.copy(sl2pix)
+        if inverted:
+            big = sl1
+            small = sl2
+        else:
+            big = sl2
+            small = sl1
+        return big, small, wcs
+        
+    orb.utils.validate.has_len(xyrange, 2, object_name='xyrange')
+    orb.utils.validate.has_len(rrange, 2, object_name='rrange')
+    orb.utils.validate.has_len(zrange, 2, object_name='zrange')
+
+    xymax, xystep = xyrange
+    rmax, rstep = rrange
+    zmax, zstep = zrange
+    
+    x_range = np.linspace(-xymax, xymax, (2*xymax)//xystep + 1)
+    y_range = np.copy(x_range)
+    r_range = np.linspace(-rmax, rmax, (2*rmax)//rstep + 1)
+    z_range = np.linspace(-zmax, zmax, (2*zmax)//zstep + 1) + 1.    
+
+    if len(sl1deg) < len(sl2pix):
         inverted = False
-        big = sl2
-        small = sl1
     else:
         inverted = True
-        big = sl1
-        small = sl2
 
-    best = brute(big, small, x_range, y_range, r_range, z_range)
-    best, x_range, y_range, r_range, z_range = rebrute(
-        big, small, best, x_range, y_range, r_range, z_range)
-    best, x_range, y_range, r_range, z_range = rebrute(
-        big, small, best, x_range, y_range, r_range, z_range)
+    biglist, smalllist, wcs = get_lists(None, wcs)    
+    best = brute(biglist, smalllist, x_range, y_range, r_range, z_range)
     
-    smallt = transform_star_position_A_to_B(small, [best[0], best[1], best[2], 0, 0], rc, best[3])
-    matched_big, matched_small = match(big, smallt)
+    for istep in range(nsteps - 1):
+        best, wcs, x_range, y_range, r_range, z_range = rebrute(
+            best, wcs, x_range, y_range, r_range, z_range)
+        
+    biglist, smalllist, wcs = get_lists(None, wcs)    
+    matched_big, matched_small = match(biglist, smalllist)
 
     if not inverted:
-        return np.array(best)[:4], matched_small, matched_big
+        return wcs, matched_small, matched_big
     else:
-        return np.array([-best[0], -best[1], -best[2], 1./best[3]]), matched_big, matched_small
+        return wcs, matched_big, matched_small
