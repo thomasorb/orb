@@ -1876,23 +1876,16 @@ class Data(object):
             self.data = _data.data
 
             # load error
-            if _data.err is not None:
-                if err is None:
-                    self.err = _data.err
+            self.err = _data.err
 
             # load params
-            if _data.params is not None:
-                self.params = _data.params
+            self.params = _data.params
 
             # load axis
-            if _data.axis is not None:
-                if axis is None:
-                    self.axis = _data.axis
+            self.axis = _data.axis
 
             # load mask
-            if _data.mask is not None:
-                if mask is None:
-                    self.mask = _data.mask
+            self.mask = _data.mask
             
         # load from np.ndarray
         else:
