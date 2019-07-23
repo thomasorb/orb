@@ -171,7 +171,15 @@ class HDFCube(core.WCSData):
             if not isinstance(indexer, core.Indexer):
                 raise TypeError('indexer must be an orb.core.Indexer instance')
         self.indexer = indexer
-    
+
+    def __del__(self):
+        try:
+            f = self.open_hdf5('r')
+            f.flush()
+            f.close()
+        except Exception, e:
+            warnings.warn('error while deleting object: {}'.format(e))
+        
     def __getitem__(self, key):
         """Implement getitem special method"""
         if self.is_old:
