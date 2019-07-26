@@ -34,24 +34,35 @@ import orb.constants
 
 class Simulator(object):
 
-    def __init__(self, step_nb, filter_name, instrument='sitelle'):
-
+    def __init__(self, step_nb, params, instrument='sitelle'):
+        """
+        :param params: Can be a parameters dict or the name of a filter.
+        """
         self.tools = orb.core.Tools(instrument=instrument)
+
+        if isinstance(params, str):
+            filter_name = params
+            self.params = orb.core.ROParams()
+            if step_nb <= 0: raise ValueError('step_nb must be > 0')
         
-        self.params = orb.core.ROParams()
-        if step_nb <= 0: raise ValueError('step_nb must be > 0')
-        
-        self.params['step_nb'] = int(step_nb)
-        self.params['filter_name'] = str(filter_name)
-        self.filterfile = orb.core.FilterFile(self.params.filter_name)
-        self.params['filter_file_path'] = self.filterfile.basic_path
-        self.params['step'] = self.filterfile.params.step
-        self.params['order'] = self.filterfile.params.order
-        self.params['zpd_index'] = self.params.step_nb // 5
-        self.params['calib_coeff'] = orb.utils.spectrum.theta2corr(
-            self.tools.config['OFF_AXIS_ANGLE_CENTER'])
-        self.params['nm_laser'] = self.tools.config['CALIB_NM_LASER']
-        
+            self.params['step_nb'] = int(step_nb)
+            self.params['filter_name'] = str(filter_name)
+            self.filterfile = orb.core.FilterFile(self.params.filter_name)
+            self.params['filter_file_path'] = self.filterfile.basic_path
+            self.params['step'] = self.filterfile.params.step
+            self.params['order'] = self.filterfile.params.order
+            self.params['zpd_index'] = self.params.step_nb // 5
+            self.params['calib_coeff'] = orb.utils.spectrum.theta2corr(
+                self.tools.config['OFF_AXIS_ANGLE_CENTER'])
+            self.params['nm_laser'] = self.tools.config['CALIB_NM_LASER']
+        elif isinstance(params, dict):
+            self.params = params
+            if 'calib_coeff' not in self.params:
+                if 'axis_corr' in self.params:
+                    self.params['calib_coeff'] = self.params['axis_corr']
+        else:
+            raise TypeError('params must be a filter name (str) or a parameter dictionary')
+            
         self.data = np.zeros(self.params.step_nb)
 
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
@@ -63,31 +74,33 @@ class Simulator(object):
     def get_interferogram(self):
         return orb.fft.Interferogram(np.copy(self.data), params=self.params, exposure_time=1)
 
-    def add_line(self, sigma, vel=0, flux=1, jitter=0):
+    def add_line(self, wave, vel=0, flux=1, sigma=0, jitter=0):
         """
 
         :param vel: Velocity in km/s
 
         :param jitter: Std of an OPD jitter. Must be given in nm.
         """
-        if isinstance(sigma, str):
-            sigma = orb.core.Lines().get_line_cm1(sigma)
+        if isinstance(wave, str):
+            wave = orb.core.Lines().get_line_cm1(wave)
 
         if vel != 0:
-            sigma += orb.utils.spectrum.line_shift(
-                vel, sigma, wavenumber=True)
+            wave += orb.utils.spectrum.line_shift(
+                vel, wave, wavenumber=True)
 
             
         RESOLV_COEFF = self.params.order * 10
         opd_axis = (np.arange(self.params.step_nb) * self.params.step
                     - (self.params.step * self.params.zpd_index)) * 1e-7 / self.params.calib_coeff
 
+        ratio = self.params.step_nb / float(self.params.step_nb - self.params.zpd_index)
+
         if jitter == 0:
-            interf = np.cos(2 * np.pi * sigma * opd_axis)
+            interf = np.cos(2. * np.pi * wave * opd_axis)
         else:
             jitter_range = np.linspace(-jitter * 3, jitter * 3, RESOLV_COEFF) * 1e-7
             highres_opd_axis = np.concatenate([iopd + jitter_range for iopd in opd_axis])
-            highres_interf = np.cos(2 * np.pi * sigma * highres_opd_axis) 
+            highres_interf = np.cos(2 * np.pi * wave * highres_opd_axis) 
             
             kernel = np.array(orb.utils.spectrum.gaussian1d(
                 jitter_range / jitter * 1e7, 0., 1., 0,
@@ -96,16 +109,27 @@ class Simulator(object):
 
             interf = np.array([np.sum(sub * kernel)
                                for sub in np.split(highres_interf, self.params.step_nb)])
+            
+        if sigma != 0:
+            sigma_pix = orb.utils.fit.vel2sigma(sigma, wave, orb.cutils.get_cm1_axis_step(
+                self.params.step_nb, self.params.step, self.params.calib_coeff))
+            fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(oversampling_ratio=ratio)
+        
+            window = orb.utils.fft.gaussian_window(
+                orb.utils.fft.sigma2apod(sigma_pix, fwhm_pix),
+                opd_axis/np.max(opd_axis))
+
+            interf *= window
 
         # compute line flux for normalization
-        fwhm = orb.utils.spectrum.compute_line_fwhm(
+        fwhm_cm1 = orb.utils.spectrum.compute_line_fwhm(
             self.params.step_nb - self.params.zpd_index,
             self.params.step, self.params.order,
             self.params.calib_coeff, wavenumber=True)
-        fwhm = orb.utils.spectrum.fwhm_cm12nm(fwhm, sigma) * 10
-        
+        fwhm_nm = orb.utils.spectrum.fwhm_cm12nm(fwhm_cm1, wave) * 10.
+
         line_flux = orb.utils.spectrum.sinc1d_flux(
-            self.params.step_nb / 1.25, fwhm)
+            self.params.step_nb / ratio, fwhm_nm)
 
         interf /= line_flux / flux
         

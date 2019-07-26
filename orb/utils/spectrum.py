@@ -287,13 +287,10 @@ def compute_step_nb(resolution, step, order):
     
     :param order: Folding order
     """
-    cm1_axis = create_cm1_axis(100, step, order)
-    mean_sigma = (cm1_axis[-1] + cm1_axis[0])/2.
-    return math.ceil(orb.constants.FWHM_SINC_COEFF
-            * resolution
-            / (2 * mean_sigma * step * 1e-7))
+    med_cm1 = (order + 0.5) / (2.* step) * 1e7
+    return orb.constants.FWHM_SINC_COEFF * resolution / (2 * med_cm1 * step * 1e-7)
 
-def compute_resolution(step_nb, step, order, corr):
+def compute_resolution(step_nb, step, order, corr=1, sigma=None):
     """Return the theoretical resolution of a given scan
 
     :param step_nb: Number of steps of the longest side of the
@@ -304,13 +301,18 @@ def compute_resolution(step_nb, step, order, corr):
     :param order: Folding order
 
     :param corr: Correction coefficient for the incident angle.
+
+    :param sigma: Wavenumber at whcih the resolution is computed. If
+      None given, the central wavenumber in the bandpass is used. Note
+      that, when the incident angle changes, the bandpass is shifted
+      so that the computed resolution is the same at any inceident
+      angle if sigma is not fixed.
     """
     fwhm_cm1 = compute_line_fwhm(
         step_nb, step, order, wavenumber=True, corr=corr)
-    min_cm1 = orb.cutils.get_cm1_axis_min(step_nb, step, order, corr=corr)
-    max_cm1 = orb.cutils.get_cm1_axis_max(step_nb, step, order, corr=corr)
-    med_cm1 = (min_cm1 + max_cm1) / 2.
-    return med_cm1 / fwhm_cm1
+    if sigma is None:
+        sigma = (order + 0.5) / (2.* step) * corr * 1e7
+    return sigma / fwhm_cm1
 
 def compute_radial_velocity(line, rest_line, wavenumber=False):
     """
@@ -430,8 +432,8 @@ def sinc1d_complex(x, h, a, dx, fwhm):
     s1dc_re = h + a * np.sin(X) / (X)
     s1dc_re[X == 0] = h + a
     
-    s1dc_im = - h + a * (np.cos(X) - 1) / (X)
-    s1dc_re[X == 0] = 0
+    s1dc_im = - h + a * (np.cos(X) - 1.) / (X)
+    s1dc_im[X == 0] = 0
     return (s1dc_re, s1dc_im)
 
 def mertz1d(x, h, a, dx, fwhm, ratio):
@@ -786,3 +788,75 @@ def amp_ratio_from_flux_ratio(line0_cm1, line1_cm1, flux_ratio):
     """
     return line0_cm1**2 / line1_cm1**2 * flux_ratio
 
+def detect_velocity(spec, axis_cm1, lines_cm1, ncomps=1, vrange=1000):
+    """Detect velocity of different components in a spectrum.
+
+    :param ncomps: maximum velocity components
+    """
+
+    FWHM = 2
+    THRESHOLD = 2
+    FINE_FACTOR = 3
+    
+    if spec.size != axis_cm1.size:
+        raise TypeError('spec and axis must have same size')
+
+    spec = np.copy(spec.real)
+    spec /= np.nanstd(spec[spec < np.nanpercentile(spec, 90)])
+    lines_cm1 = np.array(lines_cm1)
+    
+    axis_cm1_diff = np.diff(axis_cm1)
+    if not np.all(np.isclose(axis_cm1_diff - axis_cm1_diff[0], 0)):
+        raise TypeError('axis must be equally sampled')
+
+    lines_pix = fast_w2pix(lines_cm1, axis_cm1[0], axis_cm1_diff[0])
+
+    channel_step_cm1 = axis_cm1_diff[0]
+    channel_step_kms = np.abs(
+        compute_radial_velocity(np.mean(lines_cm1) + channel_step_cm1,
+                                np.mean(lines_cm1), wavenumber=True))
+    #pix_range = vrange/channel_step_kms
+    #kernel_hr = np.linspace(-pix_range, vrange/channel_step_kms, )
+    x_hr = np.linspace(0, axis_cm1.size - 1, axis_cm1.size * 10)
+
+    kernel_hr = np.zeros_like(x_hr)
+    total_flux = 0
+    for iline in lines_pix:
+        kernel_hr += gaussian1d(x_hr, 0, 1, iline, FWHM)
+        total_flux += gaussian1d_flux(1, FWHM)
+    kernel_hr /= total_flux
+    kernel_hr_f = interpolate.interp1d(x_hr, kernel_hr, bounds_error=False)
+
+    vels = np.linspace(-vrange, vrange, 2*vrange/channel_step_kms)
+    x = np.arange(spec.size)
+
+    large_conv = list()
+    for ivel in vels:
+        iker = kernel_hr_f(x + ivel / channel_step_kms)
+        large_conv.append(np.nansum(iker * spec))
+    large_conv = np.array(large_conv)
+
+    comps = list()
+    
+    while True:
+        _argmax = np.nanargmax(large_conv)
+        _max = large_conv[_argmax]
+        if _max < THRESHOLD:
+            break
+        if len(comps) >= ncomps:
+            break
+        comps.append(vels[_argmax])
+        large_conv -= gaussian1d(np.arange(large_conv.size), 0, _max, _argmax, FWHM)
+
+    vels = np.linspace(-FINE_FACTOR * channel_step_kms,
+                       FINE_FACTOR * channel_step_kms, 4*FINE_FACTOR)
+
+    fine_comps = list()
+    for icomp in comps:
+        fine_conv = list()
+        for ivel in vels:
+            iker = kernel_hr_f(x + (ivel + icomp)/channel_step_kms)
+            fine_conv.append(np.nansum(iker * spec))
+        fine_comps.append((vels + icomp)[np.nanargmax(fine_conv)])
+
+    return fine_comps

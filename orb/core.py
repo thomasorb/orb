@@ -59,7 +59,8 @@ from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarnin
 import gvar
 import h5py
 
-from scipy import interpolate
+import scipy.fftpack
+import scipy.interpolate
 import pandas
 
 try: import pygit2
@@ -2277,14 +2278,30 @@ class Vector1d(Data):
         if self.has_err():
             self.err = self.err[::-1]
 
-    def project(self, new_axis, returned_class=None):
+    def project(self, new_axis, returned_class=None, quality=10, timing=False):
         """Project vector on a new axis
 
         :param new_axis: Axis. Must be an orb.core.Axis instance.
 
         :param returned_class: (Optional) If not None, set the
           returned class. Must be a subclass of Vector1d.
+
+        :param quality: an integer from 2 to infinity which gives the
+          zero padding factor before interpolation. The more zero
+          padding, the better will be the interpolation, but the
+          slower too.
+
+        :return: A new Spectrum instance
+
+        .. warning:: Though much (much!) faster than pure resampling, this can
+          be a little less precise for complex data. For non complex
+          data, its nothing more than a linear interpolation.
         """
+        if timing:
+            import time
+            times = list()
+            times.append(time.time()) ###
+
         self.assert_axis()
 
         if returned_class is None:
@@ -2294,35 +2311,64 @@ class Vector1d(Data):
                 raise TypeError('Returned class must be a subclass of Vector1d')
             
         if not isinstance(new_axis, Axis):
-            raise TypeError('axis must be an orb.core.Axis instance')
-
+            try:
+                new_axis = Axis(new_axis)
+            except Exception:
+                raise TypeError('axis must be compatible with an orb.core.Axis instance: {}'.format(e))
+            
         if len(self.axis.data) == len(new_axis.data):
             if np.all(np.isclose(self.axis.data - new_axis.data, 0)):
                 return self.copy()
-        
-        data = interpolate.interp1d(self.axis.data.astype(np.float128),
-                                    self.data.real.astype(np.float128),
-                                    bounds_error=False)(new_axis.data)
-        
-        
-        if np.any(np.iscomplex(self.data)):
-            data = data.astype(complex)
-            data.imag = interpolate.interp1d(self.axis.data.astype(np.float128),
-                                             self.data.imag.astype(np.float128),
-                                             bounds_error=False)(new_axis.data)
-            
-        
 
+        if timing: times.append(time.time()) ####
+        if np.any(np.iscomplex(self.data)):
+            quality = int(quality)
+            if quality < 2: raise ValueError('quality must be an integer > 2')
+            interf_complex = scipy.fftpack.ifft(self.data)
+            best_n = utils.fft.next_power_of_two(self.dimx * quality)
+            zp_interf = np.zeros(best_n, dtype=complex)
+            center = interf_complex.shape[0] / 2
+            zp_interf[:center] = interf_complex[:center]
+            zp_interf[
+                -center-int(interf_complex.shape[0]&1):] = interf_complex[
+                -center-int(interf_complex.shape[0]&1):]
+
+            if timing: times.append(time.time()) ####
+            zp_spec = scipy.fftpack.fft(zp_interf)
+            ax_ratio = float(self.axis.data.size) / float(zp_spec.size)
+            zp_axis = (np.arange(zp_spec.size)
+                       * (self.axis.data[1] - self.axis.data[0]) * ax_ratio
+                       + self.axis.data[0])
+            if timing: times.append(time.time()) ####
+            f = scipy.interpolate.interp1d(zp_axis,
+                                           zp_spec,
+                                           bounds_error=False)
+
+        else:
+            logging.debug('data is not complex and is interpolated the bad way')
+            if timing: times.append(time.time()) ####
+            f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
+                                           self.data.real.astype(np.float128),
+                                           bounds_error=False)
+            
+        if timing: times.append(time.time()) ####
+        data  = f(new_axis.data)
+        if timing: times.append(time.time()) ####
+            
         if self.has_err():
-            new_err = interpolate.interp1d(self.axis.data.astype(np.float128),
-                                           self.err.astype(np.float128),
-                                           bounds_error=False)(new_axis.data)
+            new_err = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
+                                                 self.err.astype(np.float128),
+                                                 bounds_error=False)(new_axis.data)
         else:
             new_err = None
 
-        return returned_class(
+        ret = returned_class(
             data, err=new_err, axis=new_axis.data, params=self.params)
 
+        if not timing:
+            return ret
+        else:
+            return ret, list([times[-1] - times[0]]) + list(np.diff(times))        
 
     def crop(self, xmin, xmax, returned_class=None):
         """Crop data. 
@@ -2585,6 +2631,19 @@ class Cm1Vector1d(Vector1d):
         ff = FilterFile(self.params.filter_name)
         ftrans = ff.get_transmission(self.dimx)
         return np.nansum(self.multiply(ftrans).data) / ftrans.sum()
+
+    def velocity_shift(self, velocity):
+        """Return a vector with its axis shifted by a given velocity.
+
+        :param velocity: Velocity in km/s
+        """
+        new_axis = self.axis.copy()
+        new_axis.data -= utils.spectrum.line_shift(
+            velocity, new_axis.data, wavenumber=True)
+        spec = self.project(new_axis)
+        spec.axis = self.axis
+        return spec
+        
     
 #################################################
 #### CLASS FilterFile ###########################
@@ -2631,8 +2690,8 @@ class FilterFile(Vector1d):
                     self.params.bandpass_min_pix,
                     self.params.bandpass_max_pix)
         else:
-            return interpolate.UnivariateSpline(
-            self.axis.data, self.data, k=3, s=0, ext=0)
+            return scipy.interpolate.UnivariateSpline(
+                self.axis.data, self.data, k=3, s=0, ext=0)
 
 
     def project(self, new_axis):

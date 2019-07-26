@@ -2312,7 +2312,7 @@ class SpectralCube(Cube):
                 region,
                 [0, self.dimx],
                 [0, self.dimy],
-                header=self.header,
+                header=self.get_header(),
                 integrate=integrate)
         else: return region
 

@@ -99,24 +99,35 @@ class Interferogram(core.Vector1d):
         return self.__class__(out)
         
         
-    def subtract_mean(self):
+    def subtract_mean(self, inplace=False):
         """substraction of the mean of the interferogram where the
         interferogram is not nan
         """
-        self.data[~np.isnan(self.data)] -= np.nanmean(self.data)
+        if not inplace:
+            spec = self.copy()
+        else:
+            spec = self
+        spec.data[~np.isnan(spec.data)] -= np.nanmean(spec.data)
+        return spec
 
-    def subtract_low_order_poly(self, order=3):
+    def subtract_low_order_poly(self, order=3, inplace=False):
         """ low order polynomial substraction to suppress low
         frequency noise
 
         :param order: (Optional) Polynomial order (beware of high
           order polynomials, default 3).
         """
-        self.data[~np.isnan(self.data)] -= utils.vector.polyfit1d(
-            self.data, order)[~np.isnan(self.data)]
+        if not inplace:
+            spec = self.copy()
+        else:
+            spec = self
+        
+        spec.data[~np.isnan(spec.data)] -= utils.vector.polyfit1d(
+            spec.data, order)[~np.isnan(spec.data)]
+        return spec
 
 
-    def apodize(self, window_type):
+    def apodize(self, window_type, inplace=False):
         """Apodization of the interferogram
 
         :param window_type: Name of the apodization function (can be
@@ -129,7 +140,7 @@ class Interferogram(core.Vector1d):
         
         x = np.arange(self.dimx, dtype=float) - self.params.zpd_index
         x /= max(np.abs(x[0]), np.abs(x[-1]))
-        
+
         if window_type is None: return
         elif window_type == '1.0' : return
         elif window_type == 'learner95':
@@ -137,9 +148,16 @@ class Interferogram(core.Vector1d):
         else:
             window = utils.fft.gaussian_window(window_type, x)
 
-        self.data *= window
-        if self.has_err():
-            self.err *= window
+        if not inplace:
+            spec = self.copy()
+        else:
+            spec = self
+        
+        spec.data *= window
+        if spec.has_err():
+            spec.err *= window
+
+        return spec
 
 
     def is_right_sided(self):
@@ -157,12 +175,10 @@ class Interferogram(core.Vector1d):
             shortlen = self.dimx - self.params.zpd_index
             return self.crop(max(self.params.zpd_index - shortlen, 0), self.dimx)
 
-    def multiply_by_mertz_ramp(self):
+    def multiply_by_mertz_ramp(self, inplace=False):
         """Multiply by Mertz (1976) ramp function to avoid counting
         symmetric samples twice and reduce emission lines contrast wrt
         the background.
-
-        :return: Mertz ramp as a 1d np.ndarray
         """
         # create ramp
         zeros_vector = np.zeros(self.dimx, dtype=self.data.dtype)
@@ -178,12 +194,17 @@ class Interferogram(core.Vector1d):
 
         if sym_len > self.dimx / 2.:
             warnings.warn('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
-            
-        self.data *= zeros_vector
-        if self.has_err():
-            self.err *= zeros_vector
 
-        return zeros_vector
+        if not inplace:
+            spec = self.copy()
+        else:
+            spec = self
+        
+        spec.data *= zeros_vector
+        if spec.has_err():
+            spec.err *= zeros_vector
+
+        return spec
 
     def transform(self):
         """zero padded fft.
@@ -252,17 +273,17 @@ class Interferogram(core.Vector1d):
         :param mertz: If True, multiply by Mertz ramp. Must be used for assymetric interferograms.
         """
         new_interf = self.copy()
-        new_interf.subtract_mean()
+        new_interf.subtract_mean(inplace=True)
         if mertz:
-            new_interf.multiply_by_mertz_ramp()
+            new_interf.multiply_by_mertz_ramp(inplace=True)
         return new_interf.transform()
 
     def get_phase(self):
         """Classical phase computation method. Returns a Phase instance."""
         new_interf = self.copy()
         new_interf = new_interf.symmetric()
-        new_interf.subtract_mean()
-        new_interf.apodize('1.5')
+        new_interf.subtract_mean(inplace=True)
+        new_interf.apodize('1.5', inplace=True)
         new_spectrum = new_interf.transform()
         return new_spectrum.get_phase().cleaned()
 
@@ -724,57 +745,14 @@ class Spectrum(core.Cm1Vector1d):
     def interpolate(self, axis, quality=10, timing=False):
         """Resample spectrum by interpolation over the given axis
 
-        :param quality: an integer from 2 to infinity which gives the
-          zero padding factor before interpolation. The more zero
-          padding, the better will be the interpolation, but the
-          slower too.
+        This is a simple wrapper around core.Vector1d.project which
+        now integrates all the fft interpolation method when data is
+        complex.
 
-        :return: A new Spectrum instance
-
-        .. warning:: Though much faster than pure resampling, this can
-          be a little less precise.
+        It has been kept for backward compatibility. Please use the
+        project method.
         """
-        if timing:
-            import time
-            times = list()
-            times.append(time.time()) ###
-            
-        if isinstance(axis, core.Axis):
-            axis = np.copy(axis.data)
-        
-        quality = int(quality)
-        if quality < 2: raise ValueError('quality must be an integer > 2')
-
-        if timing: times.append(time.time()) ####
-        #interf_complex = np.fft.ifft(self.data)
-        interf_complex = scipy.fftpack.ifft(self.data)
-        best_n = utils.fft.next_power_of_two(self.dimx * quality)
-        zp_interf = np.zeros(best_n, dtype=complex)
-        center = interf_complex.shape[0] / 2
-        zp_interf[:center] = interf_complex[:center]
-        zp_interf[
-            -center-int(interf_complex.shape[0]&1):] = interf_complex[
-            -center-int(interf_complex.shape[0]&1):]
-
-        if timing: times.append(time.time()) ####
-        #zp_spec = np.fft.fft(zp_interf)
-        zp_spec = scipy.fftpack.fft(zp_interf)
-        ax_ratio = float(self.axis.data.size) / float(zp_spec.size)
-        zp_axis = (np.arange(zp_spec.size)
-                   * (self.axis.data[1] - self.axis.data[0]) * ax_ratio
-                   + self.axis.data[0])
-
-        if timing: times.append(time.time()) ####
-        f = scipy.interpolate.interp1d(zp_axis, zp_spec, bounds_error=False)
-        if timing: times.append(time.time()) ####
-        ret = Spectrum(f(axis), axis=axis, params=self.params)
-        if timing: times.append(time.time()) ####
-
-        if not timing:
-            return ret
-        else:
-            return ret, list([times[-1] - times[0]]) + list(np.diff(times))
-
+        return self.project(axis, quality=quality, timing=timing)        
 
     def fit(self, lines, fmodel='sinc', nofilter=True, **kwargs):
         """Fit lines in a spectrum

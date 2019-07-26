@@ -82,9 +82,8 @@ class FitVector(object):
     
     def __init__(self, vector, models, params, snr_guess=None,
                  fit_tol=1e-8, signal_range=None, classic=False,
-                 max_iter=None):
-        """
-        Init class.
+                 max_iter=None, docomplex=False):
+        """Init class.
 
         :param vector: Vector to fit
         
@@ -109,6 +108,10 @@ class FitVector(object):
 
         :param classic: (Optional) If True, fit is forced to be
           classic. i.e. It makes no use of the priors std (default False).
+
+        :param docomplex: (Optional) If data is complex and docomplex
+          is True, tries a complex fit. If False, always fit the real
+          part only.
         """       
         if not isinstance(models, tuple) and not isinstance(models, list) :
             raise ValueError('models must be a tuple of (model, model_operation).')
@@ -127,7 +130,10 @@ class FitVector(object):
         self.max_iter = max_iter
 
         if np.any(np.iscomplex(vector)):
-            self.vector_imag = np.copy(vector.imag)
+            if docomplex:
+                self.vector_imag = np.copy(vector.imag)
+            else:
+                self.vector_imag = None
         else:
             self.vector_imag = None
         vector = vector.real
@@ -3015,7 +3021,7 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
 
 def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
                            theta, vel=0., sigma=0., alpha=0.,
-                           fmodel='sincgauss'):
+                           fmodel='sincgauss', ratio=0.25):
     """Return a simple emission-line spectrum model in cm-1
 
     :param lines: lines in cm-1
@@ -3054,9 +3060,10 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     fwhm_guess = utils.spectrum.compute_line_fwhm(
         step_nb, step, order, nm_laser_obs / nm_laser, wavenumber=True)
 
-
+    total_step_nb = step_nb * (1. + ratio)
+    
     model_params = {
-        'step_nb':step_nb,
+        'step_nb':total_step_nb,
         'step':step,
         'order':order,
         'nm_laser':nm_laser,
@@ -3068,7 +3075,8 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
         'pos_cov':[gvar.mean(vel)],
         'pos_def':['1'] * np.size(lines_cm1),
         'fmodel':fmodel,
-        'amp_def':['free'] * np.size(lines_cm1)
+        'amp_def':['free'] * np.size(lines_cm1),
+        'ratio':ratio
     }
     
     if fmodel in ['sincgauss', 'sincgaussphased']:
@@ -3095,7 +3103,7 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
         p_free[lines_model._get_ikey('amp', iline)] = amp[iline]
         
     lines_model.set_p_free(p_free)
-    spectrum = lines_model.get_model(np.arange(step_nb))
+    spectrum = lines_model.get_model(np.arange(total_step_nb))
     
     #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
     return gvar.mean(spectrum)

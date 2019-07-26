@@ -204,6 +204,23 @@ def apod2width(apod):
     return apod - 1. + (gvar.erf(math.pi / 2. * gvar.sqrt(apod - 1.))
                         * orb.constants.FWHM_SINC_COEFF)
 
+def width2apod(width):
+    """This is the inverse of apod2width.  
+
+    As the inverse is at least complicated to compute. This is done via
+    minimization.
+    """
+    def diff(apod, width):
+        return apod2width(apod) - width
+
+    if width < 0: raise ValueError('width must be a positive float')
+
+    fit = optimize.least_squares(diff, 1, args=(width, ))
+    if fit.success:
+        return fit.x[0]
+    else:
+        raise StandardError('error when inverting apod2width: {}'.format(fit.message))
+
 def apod2sigma(apod, fwhm):
     """Return the broadening of the gaussian-sinc function in the
     spectrum for a given apodization level. Unit is that of the fwhm.
@@ -216,6 +233,24 @@ def apod2sigma(apod, fwhm):
 
     return broadening * fwhm
 
+def sigma2apod(sigma, fwhm):
+    """This is the inverse of apod2sigma.
+
+    As the inverse is at least complicated to compute. This is done via
+    minimization.
+    """
+    def diff(apod, sigma, fwhm):
+        return apod2sigma(apod, fwhm) - sigma
+
+    if sigma < 0: raise ValueError('sigma must be a positive float')
+    if fwhm <= 0: raise ValueError('fwhm must be a strictly positive float')
+
+    fit = optimize.least_squares(diff, 1, args=(sigma, fwhm))
+    if fit.success:
+        return fit.x[0]
+    else:
+        raise StandardError('error when inverting apod2sigma: {}'.format(fit.message))
+    
 def gaussian_window(coeff, x):
     """Return a Gaussian apodization function for a given broadening
     factor.
