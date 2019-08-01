@@ -1149,7 +1149,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         calib_laser_map[int(cx-0.5):int(np.ceil(cx-0.5+1)),
                         int(cy-0.5):int(np.ceil(cy-0.5+1))])
     
-    theta_c = np.acos(calib_laser_nm/center_calib_nm) / np.pi * 180.
+    theta_c = np.arccos(calib_laser_nm/center_calib_nm) / np.pi * 180.
     logging.info('Angle at the center of the frame: {}'.format(theta_c))
 
     # filter calibration laser map
@@ -2101,3 +2101,17 @@ def get_quadrant_dims(quad_number, dimx, dimy, div_nb):
         y_max = dimy
 
     return x_min, x_max, y_min, y_max
+
+def bilinear_interpolation(c, x, y):
+    """Bilinear interpolation in a 2x2xN cube
+
+    :param c: 2x2xN cube
+    :param x: position in the cube along x between 0 and 1
+    :param y: position in the cube along y between 0 and 1
+    """
+    if not isinstance(c, np.ndarray): raise TypeError('c must be a numpy.ndarray')
+    if len(c.shape) != 3: raise TypeError('c must be a cube')
+    if c.shape[:2] != (2,2): raise TypeError('c must have shape (2,2,N)') 
+    if not 0 <= x <= 1: raise ValueError('x must be between 0 and 1')
+    if not 0 <= y <= 1: raise ValueError('y must be between 0 and 1')
+    return c[0,0,:] + (c[1,0,:] - c[0,0,:]) * x + (c[0,1,:] - c[0,0,:]) * y + (c[0,0,:] + c[1,1,:] - c[1,0,:] - c[0,1,:]) * x * y

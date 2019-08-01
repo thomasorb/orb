@@ -284,15 +284,22 @@ class HDFCube(core.WCSData):
         
         return self[x_min:x_max, y_min:y_max, z_min:z_max]
 
-    def get_region(self, region):
+    def get_region(self, region, integrate=True):
         """Return a list of valid pixels from a ds9 region file or a ds9-style
         region definition
 
         e.g. for a circle defined in celestial coordinates:
           "fk5;circle(290.96388,14.019167,843.31194")"
+
+        :param region: a ds9 region file path or a ds9-style
+          region definition as a string.
+
+        :param integrate: Used when multiple regions are defined. If
+          True, all regions are integrated. If False, a list of
+          individual regions is returned.
         """
         return utils.misc.get_mask_from_ds9_region_file(
-            region, [0, self.dimx], [0, self.dimy], integrate=True,
+            region, [0, self.dimx], [0, self.dimy], integrate=integrate,
             header=self.get_header())
     
 
@@ -2047,11 +2054,6 @@ class SpectralCube(Cube):
             self.params.axis_corr)
         self.set_param('resolution', resolution)
 
-        # incident angle of reference (in degrees)
-        self.set_param(
-            'theta_proj',
-            utils.spectrum.corr2theta(self.params.axis_corr))
-
         # wavenumber
         if self.params.wavetype == 'WAVELENGTH':
             raise Exception('ORCS cannot handle wavelength cubes')
@@ -2167,7 +2169,7 @@ class SpectralCube(Cube):
         filter range"""
         return self.filterfile.get_sky_lines(self.dimz)
 
-    def get_spectrum_from_region(self, region, median=False):
+    def get_spectrum_from_region(self, region, median=False, mean_flux=False):
         """Return the integrated spectrum of a given region.
 
         :param region: A ds9-like region file or a list of pixels
@@ -2179,11 +2181,13 @@ class SpectralCube(Cube):
           the median value of the combined spectra is then scaled to
           the number of integrated pixels.
 
+        :param mean_flux: If True, the mean spectrum (ie per pixel
+          flux) is returned.
+
         .. note:: the region must not have a size greater than 400x400
           pixels. If you really need a larger region, you can split
           you region into smaller ones and combines the resulting
           spectra.
-
         """
         if not self.has_wavenumber_calibration():
             warnings.warn('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
@@ -2203,13 +2207,14 @@ class SpectralCube(Cube):
         params['pixels'] = len(spectra)
 
         # compute axis
-        calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
+        calib_coeff = np.nanmean(self.get_calibration_coeff_map()[tuple(region)])
+        calib_coeff_orig = np.nanmean(self.get_calibration_coeff_map_orig()[tuple(region)])
         axis = utils.spectrum.create_cm1_axis(
             self.dimz, self.params.step, self.params.order,
             corr=calib_coeff)
         
         # compute counts and err
-        counts = np.nansum(self.get_deep_frame().data[region])
+        counts = np.nansum(self.get_deep_frame().data[tuple(region)])
         err = np.ones(self.dimz, dtype=float) * np.sqrt(counts) * self.get_gain()
         err = core.Cm1Vector1d(err, axis, params=params)
         if isinstance(self.params.flambda, float):
@@ -2222,12 +2227,18 @@ class SpectralCube(Cube):
         
         params['source_counts'] = counts
         params['calib_coeff'] = calib_coeff
+        params['calib_coeff_orig'] = calib_coeff_orig
 
+        if mean_flux:
+            spectrum /= params['pixels']
+            err.data /= params['pixels']
+            params['pixels'] = 1
+            
         return fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
                 
 
-    def get_spectrum(self, x, y, r=0, median=False):
-        """Return a. orb.fft.RealSpectrum extracted at x, y and integrated
+    def get_spectrum(self, x, y, r=0, median=False, mean_flux=False):
+        """Return a orb.fft.RealSpectrum extracted at x, y and integrated
         over a circular aperture or radius r.
 
         :param x: x position 
@@ -2242,13 +2253,16 @@ class SpectralCube(Cube):
           combine spectra. As the resulting spectrum is integrated,
           the median value of the combined spectra is then scaled to
           the number of integrated pixels.
+
+        :param mean_flux: If True, the mean spectrum (ie per pixel
+          flux) is returned.
         """
         x = self.validate_x_index(x, clip=False)
         y = self.validate_y_index(y, clip=False)
         region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
-        return self.get_spectrum_from_region(region, median=median)
+        return self.get_spectrum_from_region(region, median=median, mean_flux=mean_flux)
 
-    def get_spectrum_in_annulus(self, x, y, rmin, rmax, median=False):
+    def get_spectrum_in_annulus(self, x, y, rmin, rmax, median=False, mean_flux=False):
         """Return a. orb.fft.RealSpectrum extracted at x, y and integrated
         over a circular annulus of min radius rmin and max radius rmax.
 
@@ -2264,15 +2278,18 @@ class SpectralCube(Cube):
           combine spectra. As the resulting spectrum is integrated,
           the median value of the combined spectra is then scaled to
           the number of integrated pixels.
+
+        :param mean_flux: If True, the mean spectrum (ie per pixel
+          flux) is returned.
         """
         x = self.validate_x_index(x, clip=False)
         y = self.validate_y_index(y, clip=False)
         if rmin <= 0: raise ValueError('rmin must be > 0, use get_spectrum to extract spectrum in a circular aperture')
         if rmax <= rmin: raise ValueError('rmax must be greater than rmin')
         region = self.get_region('annulus({},{},{},{})'.format(x+1, y+1, float(rmin), float(rmax)))
-        return self.get_spectrum_from_region(region, median=median)
+        return self.get_spectrum_from_region(region, median=median, mean_flux=mean_flux)
 
-    def get_spectrum_bin(self, x, y, b, median=False):
+    def get_spectrum_bin(self, x, y, b, median=False, mean_flux=False):
         """Return a spectrum integrated over a binned region.
 
         :param x: X position of the bottom-left pixel
@@ -2286,6 +2303,9 @@ class SpectralCube(Cube):
           the median value of the combined spectra is then scaled to
           the number of integrated pixels.
 
+        :param mean_flux: If True, the mean spectrum (ie per pixel
+          flux) is returned.
+
         :returns: (axis, spectrum)
         """
         if not isinstance(b, int):
@@ -2296,7 +2316,7 @@ class SpectralCube(Cube):
         y = self.validate_y_index(y, clip=False)
         region = self.get_region('box({},{},{},{},0)'.format(
             x+float(b)/2.+0.5, y+float(b)/2.+0.5, b, b))
-        return self.get_spectrum_from_region(region, median=median)
+        return self.get_spectrum_from_region(region, median=median, mean_flux=mean_flux)
 
     def get_mask_from_ds9_region_file(self, region, integrate=True):
         """Return a mask from a ds9 region file.

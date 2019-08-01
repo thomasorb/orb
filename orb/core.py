@@ -1887,7 +1887,20 @@ class Data(object):
 
             # load mask
             self.mask = _data.mask
-            
+
+        # load from a bundle (created with to_bundle())
+        elif isinstance(data, dict):
+            if 'DataBundle' not in data or 'data' not in data or 'class' not in data:
+                raise TypeError('if a dict is passed it must be a bundle created with to_bundle()')
+            if self.__class__.__name__ != data['class']:
+                warnings.warn('bundle was loaded with {} but its original class is {}'.format(
+                    self.__class__.__name__, data['class']))
+            self.data = data['data']
+            self.params = data['params']
+            self.err = data['err']
+            self.mask = data['mask']
+            self.axis = Axis(data['axis'])
+        
         # load from np.ndarray
         else:
             self.axis = None
@@ -2111,7 +2124,7 @@ class Data(object):
 
     def get_axis(self):
         """Return a copy of self.axis"""
-        return np.copy(self.axis)
+        return np.copy(self.axis.data)
 
     def has_mask(self):
         if self.mask is None: return False
@@ -2246,14 +2259,40 @@ class Data(object):
         """write data to a FITS file. 
 
         Note that most of the information will be lost in the
-        process. The only output guaranteed format is hdf5 (usr
-        writeto() method instead)
+        process. The only output guaranteed format is hdf5 (use
+        writeto() method)
 
         :param path: Path to the FITS file
 
         """
         utils.io.write_fits(path, self.data, fits_header=self.get_header())
+
+    def to_bundle(self):
+        """Return a bundle of picleable objects that can be passed to a
+        parallelized process and recreate the Data object.
+        """
+        bundle = dict()
+        bundle['DataBundle'] = True
+        bundle['class'] = self.__class__.__name__
+        bundle['data'] = np.copy(self.data)
+        if self.has_params():
+            bundle['params'] = self.params.convert()
+        else:
+            bundle['params'] = None
+        if self.has_err():
+            bundle['err'] = self.get_err()
+        else:
+            bundle['err'] = None
+        if self.has_axis():
+            bundle['axis'] = self.get_axis()
+        else:
+            bundle['axis'] = None
+        if self.has_mask():
+            bundle['mask'] = self.get_mask()
+        else:
+            bundle['mask'] = None
         
+        return bundle
 #################################################
 #### CLASS Vector1d #############################
 #################################################
