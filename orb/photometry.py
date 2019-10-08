@@ -315,9 +315,9 @@ class Standard(core.Tools):
         :param file_path: Path to the Massey dat file (generally
           'spXX.dat').
         """
-        hdu = utils.io.read_fits(file_path, return_hdu_only=True)
-        hdr = hdu[1].header
-        data = hdu[1].data
+        hdu = utils.io.read_fits(file_path, return_hdu_only=True, data_index=1)
+        hdr = hdu.header
+        data = hdu.data
 
         logging.info('Calspec file flux unit: %s'%hdr['TUNIT2'])
         

@@ -274,7 +274,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
 def read_fits(fits_path, no_error=False, nan_filter=False, 
               return_header=False, return_hdu_only=False,
               return_mask=False, silent=False, delete_after=False,
-              data_index=0, image_mode='classic', chip_index=None,
+              data_index=None, image_mode='classic', chip_index=None,
               binning=None, fix_header=True, dtype=float,
               mask_path=None):
     """Read a FITS data file and returns its data.
@@ -305,7 +305,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
       reading (default False).
 
     :param data_index: (Optional) Index of data in the header data
-      unit (Default 0).
+      unit (Default None).
 
     :param image_mode: (Optional) Can be 'sitelle', 'spiomm' or
       'classic'. In 'sitelle' mode, the parameter
@@ -336,6 +336,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
       http://fits.gsfc.nasa.gov/ for more information on FITS
       files.
     """
+    # avoid bugs fits with no data in the first hdu
     fits_path = ((fits_path.splitlines())[0]).strip()
     if return_mask:
         if mask_path is None:
@@ -344,6 +345,9 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
 
     try:
         hdulist = pyfits.open(fits_path)
+        if data_index is None:
+            data_index = get_hdu_data_index(hdulist)
+
         fits_header = hdulist[data_index].header
     except Exception, e:
         if not no_error:
@@ -366,16 +370,13 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
             if 'CROTA3' in fits_header: del fits_header['CROTA3']
 
     if return_hdu_only:
-        return hdulist
+        return hdulist[data_index]
     else:
         if image_mode == 'classic':
-            # avoid bugs fits with no data in the first hdu
-            data_index = get_hdu_data_index(hdulist)
-
             fits_data = np.array(
                 hdulist[data_index].data.transpose()).astype(dtype)
         elif image_mode == 'sitelle':
-            fits_data = read_sitelle_chip(hdulist, chip_index)
+            fits_data = read_sitelle_chip(hdulist[data_index], chip_index)
         elif image_mode == 'spiomm':
             fits_data, fits_header = read_spiomm_data(
                 hdulist, fits_path)
@@ -426,12 +427,12 @@ def read_sitelle_chip(hdu, chip_index, substract_bias=True):
 
     :param substract_bias: If True bias is automatically
       substracted by using the overscan area (default True).
-    """
+    """    
     def get_slice(key, index):
         key = '{}{}'.format(key, index)
-        if key not in hdu[0].header: raise Exception(
+        if key not in hdu.header: raise Exception(
             'Bad SITELLE image header')
-        chip_section = hdu[0].header[key]
+        chip_section = hdu.header[key]
         return get_sitelle_slice(chip_section)
 
     def get_data(key, index, frame):
@@ -441,7 +442,7 @@ def read_sitelle_chip(hdu, chip_index, substract_bias=True):
     if int(chip_index) not in (1,2): raise Exception(
         'Chip index must be 1 or 2')
 
-    frame = hdu[0].data.astype(np.float)
+    frame = hdu.data.astype(np.float)
 
     # get data without bias substraction
     if not substract_bias:

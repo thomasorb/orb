@@ -1029,7 +1029,7 @@ class Tools(object):
     
         :param fits_path: Path to the FITS file    
         """
-        hdr = utils.io.read_fits(fits_path, return_hdu_only=True)[0].header
+        hdr = utils.io.read_fits(fits_path, return_hdu_only=True).header
         return pywcs.WCS(hdr)
                     
     def _get_quadrant_dims(self, quad_number, dimx, dimy, div_nb):
@@ -3076,7 +3076,7 @@ class WCSData(Data, Tools):
             warnings.simplefilter('ignore', category=VerifyWarning)
             warnings.simplefilter('ignore', category=AstropyUserWarning)
             wcs = pywcs.WCS(
-                utils.io.read_fits(wcs, return_hdu_only=True)[0].header,
+                utils.io.read_fits(wcs, return_hdu_only=True).header,
                 naxis=2, relax=True)
         try:        
             _params = utils.astrometry.get_wcs_parameters(wcs)

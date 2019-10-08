@@ -1855,9 +1855,9 @@ class FDCube(core.Tools):
           files.
         """
         hdu = utils.io.read_fits(self.image_list[index],
-                             return_hdu_only=True)
+                                 return_hdu_only=True)
         hdu.verify('silentfix')
-        return hdu[0].header
+        return hdu.header
 
     def get_cube_header(self):
         """

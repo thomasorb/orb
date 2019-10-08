@@ -310,7 +310,7 @@ def sort_image_list(file_list, image_mode, cube=True):
             if '.fits' in path:
                 try:
                     hdr = orb.utils.io.read_fits(
-                        path, return_hdu_only=True)[0].header
+                        path, return_hdu_only=True).header
                     if 'SITSTEP' in hdr:
                         steplist.append(int(hdr['SITSTEP']))
                 except Exception: pass
@@ -346,7 +346,7 @@ def read_instrument_value_from_file(path):
 
     elif 'fit' in path:
         hdu = orb.utils.io.read_fits(path, return_hdu_only=True)
-        _hdr = hdu[0].header
+        _hdr = hdu.header
         if 'INSTRUME' in _hdr:
             instrument = _hdr['INSTRUME'].lower()
     return instrument
