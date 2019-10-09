@@ -2720,7 +2720,7 @@ def match_star_lists(wcs, sl1deg, sl2pix, rc, xyrange=(500, 50), rrange=(6,1), z
                     wcs, [-best[0], -best[1], -best[2], 0 , 0],
                 rc, 1./best[3], sip=wcs)
                 
-        sl1 = wcs.all_world2pix(np.copy(sl1deg), 0)
+        sl1 = wcs.all_world2pix(np.copy(sl1deg), 0, quiet=True)
         sl2 = np.copy(sl2pix)
         if inverted:
             big = sl1

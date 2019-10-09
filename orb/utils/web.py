@@ -28,6 +28,9 @@ import numpy as np
 import socket
 import orb.constants
 import warnings
+import astroquery.vizier
+import astropy.coordinates
+import astropy.units
 
 def query_sesame(object_name, verbose=True, degree=False, pm=False):
     """Query the SESAME Database to get RA/DEC given the name of an
@@ -106,8 +109,15 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
         return ra, dec, pm_ra, pm_dec
 
 
+class Catalog(object):
+    def __init__(self, name, out, sort):
+        self.name = name
+        self.out = out
+        self.sort = sort
+    
 def query_vizier(radius, target_ra, target_dec,
-                 catalog='gaia', max_stars=100, return_all_columns=False):
+                 catalog='gaia', max_stars=100, return_all_columns=False,
+                 as_pandas=False):
     """Return a list of star coordinates around an object in a
     given radius based on a query to VizieR Services
     (http://vizier.u-strasbg.fr/viz-bin/VizieR)
@@ -131,82 +141,80 @@ def query_vizier(radius, target_ra, target_dec,
 
     :param return_all_columns: (Optional) If True, return all
       columns. Else only ra, dec and Mag are returned (default False).
-    """
-    MAX_RETRY = 5
-    if catalog == 'usno':
-        catalog_id = 'USNO-B1.0'
-        out = '_RAJ2000,_DEJ2000,e_RAJ2000,e_DEJ2000,R2mag'
-        sort = '-R2mag'
-    elif catalog == 'gaia':
-        catalog_id = 'I/337/gaia'
-        out = 'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,<Gmag>'
-        sort='-<Gmag>'
-    elif catalog == '2mass':
-        catalog_id = 'II/246/out'
-        out = 'RAJ2000,DEJ2000,errMaj,errMin,Jmag,e_Jmag,Hmag,e_Hmag,Kmag,e_Kmag'
-        sort='-Jmag'
 
-    else: raise Exception("Bad catalog name. Can be 'usno', 'gaia' or '2mass'")
+    :param as_pandas: (Optional) If True, results are returned as a
+      pandas.DataFrame instance. Else a numpy.ndarray instance is
+      returned (default False).
+    """    
+    catalogs = {
+        'usno': Catalog('USNO-B1.0',
+                        '_RAJ2000,_DEJ2000,e_RAJ2000,e_DEJ2000,R2mag',
+                        '-R2mag'),
+    
+        'gaia1': Catalog('I/337/gaia',
+                        'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,<Gmag>',
+                        '-<Gmag>'),
+        
+        'gaia2': Catalog('I/345/gaia2',
+                         'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,Gmag',
+                         '-Gmag'),
+        
+        '2mass': Catalog('II/246/out',
+                         'RAJ2000,DEJ2000,errMaj,errMin,Jmag,e_Jmag,Hmag,e_Hmag,Kmag,e_Kmag',
+                         '-Jmag'),
+        
+        'pan-starrs': Catalog('II/349/ps1',
+                              'RAJ2000,DEJ2000,e_RAJ2000,e_DEJ2000,gmag,e_gmag,rmag,e_rmag,imag,e_imag,zmag,e_zmag,ymag,e_ymag',
+                         '-rmag')}
 
-    params_number = len(out.split(','))
+    # shortcuts
+    catalogs['gaia'] = catalogs['gaia2']
+
+    if catalog not in catalogs:
+        raise Exception("Bad catalog name. Can be {}".format(catalogs.keys()))
+    else:
+        cat = catalogs[catalog]
 
     logging.info("Sending query to VizieR server (catalog: {})".format(catalog))
     logging.info("Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec))
 
-    URL = (orb.constants.VIZIER_URL + "asu-tsv/?-source=" + catalog
-           + "&-c.ra=%f"%target_ra + '&-c.dec=%f'%target_dec
-           + "&-c.rm=%d"%int(radius)
-           + '&-out.max=unlimited&-out.meta=-huD'
-           + '&-out={}&-sort={}'.format(out, sort))
+    coords = astropy.coordinates.SkyCoord(ra=target_ra, dec=target_dec,
+                                          unit=(astropy.units.deg, astropy.units.deg),
+                                          frame='icrs')
+    if not return_all_columns:
+        vizier = astroquery.vizier.Vizier(columns=cat.out.split(','))
+    else:
+        vizier = astroquery.vizier.Vizier()
+    vizier.ROW_LIMIT = -1
+    result = vizier.query_region(coords, radius=radius/60.*astropy.units.deg, catalog=cat.name)
+    if len(result) == 0: raise StandardError('Query returned nothing')
+    else: result = result[0]
 
-    logging.info('Vizier URL: {}'.format(URL))
+    sorting_key = cat.sort
+    reverse_sort = True
+    if sorting_key[0] == '-':
+        sorting_key = sorting_key[1:]
+        reverse_sort = False
 
-    retry = 0
-    while retry <= MAX_RETRY:
-        try:
-            query_result = urllib2.urlopen(URL, timeout=5)
-            break
-
-        except urllib2.URLError:
-            retry += 1
-            warnings.warn(
-                'Vizier timeout, retrying ... {}/{}'.format(
-                    retry, MAX_RETRY))
-        except socket.timeout:
-            retry += 1
-            warnings.warn(
-                'Vizier timeout, retrying ... {}/{}'.format(
-                    retry, MAX_RETRY))
-
-    if retry > MAX_RETRY:
-        raise Exception(
-            'Vizier server unreachable, try again later')
-
-    query_result = query_result.read()
-    output = StringIO.StringIO(query_result)
-    star_list = list()
-    for iline in output:
-        if iline[0] != '#' and iline[0] != '-' and len(iline) > 3:
-            iline = iline.split()
-            if len(iline) == params_number:
-                if ((float(iline[2])/1000.) < 0.5
-                    and (float(iline[3])/1000.) < 0.5):
-                    if not return_all_columns:
-                        star_list.append((float(iline[0]),
-                                          float(iline[1]),
-                                          float(iline[4])))
-                    else:
-                        star_list.append(
-                            list((float(iline[0]),
-                                  float(iline[1]),
-                                  float(iline[4])))
-                            + list(np.array(iline[5:], dtype=float)))
-                        
-
-    # sorting list to get the brightest stars first
-    star_list = np.array(sorted(star_list, key=lambda istar: istar[2]))
+    result = result.to_pandas()
     
-    logging.info("%d stars recorded in the given field"%len(star_list))
+    result = result.sort_values(by=[sorting_key])
+    if reverse_sort:
+        result = result[::-1]
+
+    result = result.dropna()
+    result = result[:max_stars]
+    result = result.reset_index(drop=True)
+    
+    logging.info("%d stars recorded in the given field"%len(result))
     logging.info("Magnitude min: {}, max:{}".format(
-        np.min(star_list[:,2]), np.max(star_list[:,2])))
-    return star_list[:max_stars,:]
+        np.min(result[sorting_key].values), np.max(result[sorting_key].values)))
+
+    if not as_pandas:
+        return result.to_numpy()
+    else:
+        result['ra'] = result[cat.out.split(',')[0]]
+        result['dec'] = result[cat.out.split(',')[1]]
+    
+        return result
+

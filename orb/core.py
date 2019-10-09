@@ -2848,11 +2848,14 @@ class WCSData(Data, Tools):
 
         Data.__init__(self, data, **kwargs) # note that this init may change the value of data
 
-        
         # try to load wcs from fits keywords if a FITS file
         if data_path is not None:
             if 'fits' in data_path:
                 self.set_wcs(data_path)
+
+                # reingest kwargs in this case, because wcs params were forced
+                self.params.update(kwargs)
+                
                     
         # load dxdymaps
         self.dxdymaps = None
@@ -3066,7 +3069,7 @@ class WCSData(Data, Tools):
         if self.params.camera == 2:
             return True
         return False
-
+    
     def set_wcs(self, wcs):
         """Set WCS from a WCS instance or a FITS image
 
@@ -3266,7 +3269,7 @@ class WCSData(Data, Tools):
         """
         return np.array(x).astype(float) * self.get_scale()
 
-    def query_vizier(self, catalog='gaia', max_stars=100):
+    def query_vizier(self, catalog='gaia', max_stars=100, as_pandas=False):
         """Return a list of star coordinates around an object in a
         given radius based on a query to VizieR Services
         (http://vizier.u-strasbg.fr/viz-bin/VizieR)    
@@ -3277,13 +3280,17 @@ class WCSData(Data, Tools):
         :param max_stars: (Optional) Maximum number of row to retrieve
           (default 100)
 
+        :param as_pandas: (Optional) If True, results are returned as a
+          pandas.DataFrame instance. Else a numpy.ndarray instance is
+          returned (default False).
+
         .. seealso:: :py:meth:`orb.utils.web.query_vizier`
         """
         radius = self.config['FIELD_OF_VIEW_1'] / np.sqrt(2)
         center_radec = self.pix2world([self.dimx/2., self.dimy/2])
         return utils.web.query_vizier(
             radius, center_radec[0][0], center_radec[0][1],
-            catalog=catalog, max_stars=max_stars)
+            catalog=catalog, max_stars=max_stars, as_pandas=as_pandas)
 
     def get_initial_alignment_parameters(self):
         """Return initial alignemnt coefficients for camera 2 as a core.Params instance"""

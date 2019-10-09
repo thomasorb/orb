@@ -450,6 +450,7 @@ class Image(Frame2D):
                  max_roundness=0.2,
                  max_radius_coeff=1.,
                  sip_order=3,
+                 rrange=None, xyrange=None,
                  return_fit_params=False, rscale_coeff=1.,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
@@ -469,6 +470,14 @@ class Image(Frame2D):
         
         :param max_stars_detect: (Optional) Number of detected stars
           in the frame for the initial wcs parameters (default 60).
+
+        :param rrange: (Optional) initial brute force range for the
+          angle, must be a tuple (rmax, step_size).
+
+        :param rrange: (Optional) initial brute force range for the
+          x/y shift, must be a tuple (xymax, step_size).
+
+        :param sip_order: (Optional) SIP order (default 3)
 
         :param return_fit_params: (Optional) If True return final fit
           parameters instead of wcs (default False).
@@ -537,7 +546,7 @@ class Image(Frame2D):
                 return np.array(param_list_f), index
         
       
-        MIN_STAR_NB = 4 # Minimum number of stars to get a correct WCS
+        MIN_STAR_NB = 10 # Minimum number of stars to get a correct WCS
 
         XYMAX = 500
         RMAX = 6
@@ -592,12 +601,18 @@ class Image(Frame2D):
         self.box_size_coeff = 5.
 
         # match lists
+        if rrange is None:
+            rrange = (RMAX, RMAX/6)
+
+        if xyrange is None:
+            xyrange = (XYMAX, XYMAX/10.)
+
         wcs, sl_cat_matched, sl_im_matched = utils.astrometry.match_star_lists(
             self.get_wcs(),
             sl_cat_deg[:,:2],
             sl_im_pix, [self.params.target_x, self.params.target_y],
-            xyrange=(XYMAX, XYMAX/10.), #10
-            rrange=(RMAX, RMAX/3),
+            xyrange=xyrange,
+            rrange=rrange,
             zrange=(ZMAX, ZMAX/1),
             nsteps=7)
 

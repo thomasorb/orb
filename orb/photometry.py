@@ -94,9 +94,12 @@ class Photometry(object):
         trans = trans.multiply(self.get_qe())
         if self.camera_index != 0:
             trans = trans.math('divide', 2)
-        if eps is not None:
+        if eps is not None:    
             if not isinstance(eps, core.Cm1Vector1d):
-                raise TypeError('eps must be a core.Cm1Vector1d instance')
+                try:
+                    eps = float(eps)
+                except Exception:
+                    raise TypeError('eps must be a core.Cm1Vector1d instance or a float')
             trans = trans.math('divide', eps)
             
 
@@ -197,7 +200,7 @@ class Photometry(object):
         else:
             return flux.mean_in_filter()
 
-    def compute_flambda(self, eps=None):
+    def compute_flambda(self, eps=None, modulated=True):
         """Compute the flambda calibration function from the correction vector.
 
         It can be computed with
@@ -210,7 +213,7 @@ class Photometry(object):
             axis=self.cm1_axis, filter_name=self.filter_name)
         # flux must be in erg/cm2/s/A
         
-        f2c = self.flux2counts(flux, eps=eps, modulated=True)
+        f2c = self.flux2counts(flux, eps=eps, modulated=modulated)
         f2c = f2c.math('power', -1)
         xmin, xmax = f2c.get_filter_bandpass_pix()
         f2c.data[:xmin] = f2c.data[xmin]
@@ -450,7 +453,7 @@ class StandardImage(image.Image):
         except utils.err.ValidationError:
             raise StandardError('standard star not in the image, check image registration')
 
-        star_list, fwhm = self.detect_stars(min_star_number=30)
+        star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
         std_fit = self.fit_stars([std_xy], aper_coeff=6)
         std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
 
