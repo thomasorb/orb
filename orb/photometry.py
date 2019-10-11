@@ -21,8 +21,6 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 import core
-import image
-import fft
 import utils.photometry
 import utils.filters
 import utils.spectrum
@@ -205,7 +203,7 @@ class Photometry(object):
 
         It can be computed with
         cube.SpectralCube.compute_flux_calibration() or
-        StandardImage.compute_flux_correction_factor() and
+        image.StandardImage.compute_flux_correction_factor() and
         StandardSpectrum.compute_flux_calibration_vector().
         """
         flux = core.Cm1Vector1d(
@@ -421,137 +419,4 @@ class Standard(core.Tools):
             plate_scale,
             saturation=saturation)
 
-#################################################
-#### CLASS StandardImage ########################
-#################################################
 
-class StandardImage(image.Image):
-
-    def __init__(self, data, **kwargs):
-
-        image.Image.__init__(self, data, **kwargs)
-
-        radec = self.find_object(is_standard=True, return_radec=True)
-        self.params.reset('target_ra', radec[0])
-        self.params.reset('target_dec', radec[1])
-        self.target_ra = self.params.target_ra
-        self.target_dec = self.params.target_dec
-        self.params.reset('object_name', ''.join(
-            self.params.OBJECT.strip().split()).upper())
-        self.params.reset('exposure_time', self.params.EXPTIME) # must be forced
-        self.params.reset('airmass', self.params.AIRMASS) # must be forced
-        
-        
-    def compute_flux_correction_factor(self):
-        """Compute the flux correction factor that can be used by
-        photometry.Photometry.get_flambda()"""
-        
-        std_xy = self.find_object()
-        try:
-            utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
-            utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
-        except utils.err.ValidationError:
-            raise StandardError('standard star not in the image, check image registration')
-
-        star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
-        std_fit = self.fit_stars([std_xy], aper_coeff=6)
-        std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
-
-        std = Standard(self.params.object_name,
-                       instrument=self.instrument)
-
-        std_flux_sim = std.simulate_measured_flux(
-            self.params.filter_name, 1000,
-            camera_index=self.params.camera,
-            modulated=False, airmass=self.params.airmass) 
-
-        eps_mean = std_flux_im / np.nansum(std_flux_sim.data)
-        return eps_mean
-
-#################################################
-#### CLASS StandardSpectrum #####################
-#################################################
-
-class StandardSpectrum(fft.RealSpectrum):
-    """Spectrum class computed from real interferograms (in counts)
-    """
-
-    convert_params = {'AIRMASS':'airmass',
-                      'EXPTIME':'exposure_time',
-                      'FILTER':'filter_name',
-                      'INSTRUME':'instrument',
-                      'CAMERA': 'camera'}
-    
-    def __init__(self, *args, **kwargs):
-        fft.RealSpectrum.__init__(self, *args, **kwargs)
-        self.params.reset('object_name', ''.join(
-            self.params.OBJECT.strip().split()).upper())
-        self.params.reset('instrument', self.params.instrument.lower())
-        
-        self.params.reset(
-            'camera', utils.misc.convert_camera_parameter(
-                self.params.camera))
-
-        if not self.has_param('airmass'):
-            logging.debug('airmass not set, automatically set to 1')
-            self.params['airmass'] = 1.
-    
-    
-    def compute_flux_correction_vector(self, deg=2):
-        """Compute flux correction vector by fitting a simulated model of the
-        standard star on the observed spectrum.
-        """
-        def model(_sim, *p):
-            m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
-            return np.array(m, dtype=float)
-
-        std = Standard(self.params.object_name,
-                       instrument=self.params.instrument)
-
-        sim = std.simulate_measured_flux(
-            self.params.filter_name, self.dimx,
-            camera_index=self.params.camera,
-            modulated=False, airmass=self.params.airmass) 
-
-        sim = sim.project(self.axis)
-        sim.data[np.isnan(sim.data)] = 0
-
-        spe_data = np.copy(self.data).astype(float)
-        spe_data[np.isnan(spe_data)] = 0
-
-        xmin, xmax = self.get_filter_bandpass_pix(
-            border_ratio=0.05)
-        sim.data[:xmin] = 0
-        sim.data[xmax:] = 0
-        spe_data[:xmin] = 0
-        spe_data[xmax:] = 0
-
-
-        fit = scipy.optimize.curve_fit(
-            model, sim.data, spe_data,
-            p0=np.ones(deg+1, dtype=float)/10.)
-        
-        sim_fit = core.Cm1Vector1d(
-            model(sim.data, *fit[0]),
-            axis=self.axis, params=self.params)
-
-        poly = np.polynomial.polynomial.polyval(
-            np.arange(sim.dimx), fit[0])
-        
-        xmin, xmax = self.get_filter_bandpass_pix(
-            border_ratio=-0.1)
-        
-        poly[:xmin] = np.nan
-        poly[xmax:] = np.nan
-        poly /= np.nanmean(poly)
-        poly[np.isnan(poly)] = 1.
-        
-        eps = core.Cm1Vector1d(
-            poly, axis=self.axis, params=self.params)
-                
-        # import pylab as pl
-        # pl.figure()
-        # pl.plot(sim_fit.axis.data, sim_fit.data)
-        # pl.plot(self.axis.data, spe_data)
-        
-        return eps

@@ -44,6 +44,7 @@ import pandas
 
 import core
 import cutils
+import photometry
 
 import utils.astrometry
 import utils.image
@@ -261,7 +262,43 @@ class Image(Frame2D):
                                                 0, self.dimy, 1)
             
         return frame
+
+    def reset_wcs(self, target_ra, target_dec, fov=None, wcs_rotation=None):
+        """Reset WCS to a raw WCS that can be registered without error with
+        register().
         
+        :param target_ra: RA at the center of the field
+
+        :param target_dec: DEC at the center of the field
+
+        :param fov: (Optional) If the instrument is unknown (not
+          sitelle/spiomm) the field of view must be set in arcminutes
+          (default None).
+
+        :param fov: (Optional) If the instrument is unknown (not
+          sitelle/spiomm) the wcs_rotation must be set in degrees
+          (default None).
+        
+        """
+        if fov is None:
+            if 'FIELD_OF_VIEW_1' not in self.config:
+                raise StandardError('instrument config not loaded. Please set fov.')
+            if self.is_cam1():
+                fov = self.config['FIELD_OF_VIEW_1']
+            else:
+                fov = self.config['FIELD_OF_VIEW_2']
+        if wcs_rotation is None:
+            if 'WCS_ROTATION' not in self.config:
+                raise StandardError('instrument config not loaded. Please set wcs_rotation.')
+            wcs_rotation = self.config['WCS_ROTATION']
+            
+        wcs = utils.astrometry.create_wcs(
+            self.dimx/2, self.dimy/2, fov/self.dimx/60., fov/self.dimx/60.,
+            target_ra, target_dec, wcs_rotation)
+
+        self.set_wcs(wcs)
+
+    
     def find_object(self, is_standard=False, return_radec=False):
         """Try to find the object given the name in the header
 
@@ -1343,3 +1380,95 @@ class Image(Frame2D):
         out.set_wcs(wcsB)
         
         return out
+
+
+    def compute_panstarrs_photometry(self, register=True, star_number=1000, max_xmatch_radius=10):
+
+        if register:
+            self.register()
+
+        # compute flambda
+        photom = photometry.Photometry(
+            self.params.filter_name, self.params.camera,
+            airmass=self.params.airmass)
+        
+        flam = photom.compute_flambda(modulated=False)
+            
+        # fit stars in image
+        starlist, fwhm = self.detect_stars(min_star_number=star_number)
+        starfit = self.fit_stars(starlist)
+
+        # convert measured flux to AB magnitude
+        filter_file = core.FilterFile(self.params.filter_name)
+        
+        starfit['aperture_erg'] = starfit.aperture_flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
+        starfit['aperture_mag'] = utils.photometry.flambda2ABmag(
+            starfit.aperture_erg.values,
+            filter_file.get_mean_nm() * 10.)
+        
+        # get catalogue
+        cat = self.query_vizier(catalog='pan-starrs', as_pandas=True, max_stars=star_number*10)
+
+        # cross-match
+        cat['x'], cat['y'] = self.world2pix([cat['ra'], cat['dec']]).T
+        starfit['xmatch_radius'] = np.nan
+        starfit['xmatch_index'] = 0
+        for i in range(len(starfit)):
+            r = (np.sqrt((cat.x.values - starfit.x.values[i])**2
+                         + (cat.y.values - starfit.y.values[i])**2))
+            starfit['xmatch_index'].values[i] = np.nanargmin(r)
+            starfit['xmatch_radius'].values[i] = r[starfit['xmatch_index'].values[i]]
+            
+        starfit = starfit[starfit['xmatch_radius'] < max_xmatch_radius]
+
+        for ifilter_name in ['g', 'r', 'i', 'z', 'y']:
+            starfit['ps1_{}'.format(ifilter_name)] = cat['{}mag'.format(ifilter_name)].values[starfit['xmatch_index'].values]
+            
+        return starfit
+        
+#################################################
+#### CLASS StandardImage ########################
+#################################################
+
+class StandardImage(Image):
+
+    def __init__(self, data, **kwargs):
+
+        Image.__init__(self, data, **kwargs)
+
+        radec = self.find_object(is_standard=True, return_radec=True)
+        self.params.reset('target_ra', radec[0])
+        self.params.reset('target_dec', radec[1])
+        self.target_ra = self.params.target_ra
+        self.target_dec = self.params.target_dec
+        self.params.reset('object_name', ''.join(
+            self.params.OBJECT.strip().split()).upper())
+        self.params.reset('exposure_time', self.params.EXPTIME) # must be forced
+        self.params.reset('airmass', self.params.AIRMASS) # must be forced
+        
+        
+    def compute_flux_correction_factor(self):
+        """Compute the flux correction factor that can be used by
+        photometry.Photometry.get_flambda()"""
+        
+        std_xy = self.find_object()
+        try:
+            utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
+            utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
+        except utils.err.ValidationError:
+            raise StandardError('standard star not in the image, check image registration')
+
+        star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
+        std_fit = self.fit_stars([std_xy], aper_coeff=6)
+        std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
+
+        std = photometry.Standard(self.params.object_name,
+                                  instrument=self.instrument)
+
+        std_flux_sim = std.simulate_measured_flux(
+            self.params.filter_name, 1000,
+            camera_index=self.params.camera,
+            modulated=False, airmass=self.params.airmass) 
+
+        eps_mean = std_flux_im / np.nansum(std_flux_sim.data)
+        return eps_mean

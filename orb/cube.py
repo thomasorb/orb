@@ -503,7 +503,7 @@ class HDFCube(core.WCSData):
 
     
     def get_deep_frame(self, recompute=False):
-        """Return the deep frame of a cube.
+        """Return the deep frame of a cube (in counts, i.e. e- x gain).
 
         :param recompute: (Optional) Force to recompute deep frame
           even if it is already present in the cube (default False).
@@ -526,10 +526,10 @@ class HDFCube(core.WCSData):
                 df = self.get_dataset('deep_frame', protect=False)
         
             elif self.is_old:
-                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz / gain
+                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
 
         if df is None:
-            df = self.compute_sum_image() / gain
+            df = self.compute_sum_image()
 
         self.deep_frame = df
         df = image.Image(self.deep_frame, params=self.params)
@@ -1524,7 +1524,7 @@ class InterferogramCube(Cube):
         vector.axis = None
 
         err = np.ones(self.dimz, dtype=float) * np.sqrt(
-            vector.params.source_counts / self.dimz) * self.get_gain()
+            vector.params.source_counts / self.dimz * self.get_gain())
         
         return fft.RealInterferogram(vector, err=err)
 
@@ -2215,7 +2215,7 @@ class SpectralCube(Cube):
         
         # compute counts and err
         counts = np.nansum(self.get_deep_frame().data[tuple(region)])
-        err = np.ones(self.dimz, dtype=float) * np.sqrt(counts) * self.get_gain()
+        err = np.ones(self.dimz, dtype=float) * np.sqrt(counts  * self.get_gain())
         err = core.Cm1Vector1d(err, axis, params=params)
         if isinstance(self.params.flambda, float):
             flambda = np.ones(self.dimz, dtype=float) * self.params.flambda
@@ -2366,10 +2366,10 @@ class SpectralCube(Cube):
                 std_cube = HDFCube(self.params.standard_image_path)
                 std_im = std_cube.compute_sum_image() / std_cube.dimz 
             else: raise StandardError('if no standard image can be found in the archive, standard_image_path must be set')
-            return photometry.StandardImage(
+            return image.StandardImage(
                 std_im, params=std_cube.params)
         else:
-            return photometry.StandardImage(
+            return image.StandardImage(
                 self.get_dataset('standard_image', protect=False),
                 params=self.get_dataset_attrs('standard_image'),
                 instrument=self.params.instrument)

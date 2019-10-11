@@ -512,7 +512,7 @@ class Tools(object):
     Load instrument config file and give access to orb data files.
     """
     instruments = ['sitelle', 'spiomm']
-    filters = ['SN1', 'SN2', 'SN3', 'C1', 'C2', 'C3', 'C4', 'FULL']
+    filters = ['SN1', 'SN2', 'SN3', 'C1', 'C2', 'C3', 'C4', 'FULL', 'PS1_r', 'PS1_i', 'PS1_g', 'PS1_y', 'PS1_z']
                 
     def __init__(self, instrument=None, config=None,
                  data_prefix="./temp/data."):
@@ -2775,6 +2775,15 @@ class FilterFile(Vector1d):
         """Return filter bandpass in cm-1"""
         return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
 
+    def get_mean_cm1(self):
+        """Return mean wavenumber """
+        filter_trans = self.get_transmission(1000)
+        return np.sum(filter_trans.axis.data * filter_trans.data) / np.sum(filter_trans.data)
+
+    def get_mean_nm(self):
+        """Return mean wavelength"""
+        return utils.spectrum.cm12nm(self.get_mean_cm1())
+        
     def get_sky_lines(self, step_nb):
         """Return the sky lines in a given filter
         """
@@ -3116,7 +3125,7 @@ class WCSData(Data, Tools):
         warnings.simplefilter('ignore', category=VerifyWarning)
         warnings.simplefilter('ignore', category=AstropyUserWarning)
         return pywcs.WCS(self.get_header(), naxis=2, relax=True)
-    
+
     def validate_wcs(self):
         """Verify the internal coherence between comprehensive wcs parameters
         and FITS keywords.

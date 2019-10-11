@@ -25,8 +25,8 @@ CAM1_DETECTOR_SIZE_X 2048 # Camera 1 detector size along X
 CAM1_DETECTOR_SIZE_Y 2064 # Camera 1 detector size along Y
 CAM2_DETECTOR_SIZE_X 2048 # Camera 2 detector size along X
 CAM2_DETECTOR_SIZE_Y 2064 # Camera 2 detector size along Y
-CAM1_GAIN 1.37 # Camera 1 gain
-CAM2_GAIN 1.37 # Camera 2 gain
+CAM1_GAIN 1.37 # Camera 1 gain (ADU/e-)
+CAM2_GAIN 1.37 # Camera 2 gain (ADU/e-)
 CAM1_QE_FILE SITELLE.cam1.QE.hdf5 # Camera 1 Quantum efficiency file path
 CAM2_QE_FILE SITELLE.cam2.QE.hdf5 # Camera 2 Quantum efficiency file path
 OFF_AXIS_ANGLE_MIN 11.6 # Min off-axis angle
