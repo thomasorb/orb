@@ -1414,15 +1414,18 @@ class Image(Frame2D):
         starfit['xmatch_radius'] = np.nan
         starfit['xmatch_index'] = 0
         for i in range(len(starfit)):
-            r = (np.sqrt((cat.x.values - starfit.x.values[i])**2
-                         + (cat.y.values - starfit.y.values[i])**2))
-            starfit['xmatch_index'].values[i] = np.nanargmin(r)
-            starfit['xmatch_radius'].values[i] = r[starfit['xmatch_index'].values[i]]
+            try:
+                r = (np.sqrt((cat.x.values - starfit.x.values[i])**2
+                             + (cat.y.values - starfit.y.values[i])**2))
+                starfit['xmatch_index'].values[i] = np.nanargmin(r)
+                starfit['xmatch_radius'].values[i] = r[starfit['xmatch_index'].values[i]]
+            except ValueError:
+                pass
             
         starfit = starfit[starfit['xmatch_radius'] < max_xmatch_radius]
 
         for ifilter_name in ['g', 'r', 'i', 'z', 'y']:
-            starfit['ps1_{}'.format(ifilter_name)] = cat['{}mag'.format(ifilter_name)].values[starfit['xmatch_index'].values]
+            starfit['PS1_{}'.format(ifilter_name)] = cat['{}mag'.format(ifilter_name)].values[starfit['xmatch_index'].values]
             
         return starfit
         
