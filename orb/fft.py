@@ -526,7 +526,7 @@ class Phase(core.Cm1Vector1d):
         weights[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1] = 1.
         
         
-        phase = np.copy(self.data)
+        phase = np.copy(self.data).astype(float)
         ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1]
         if np.any(np.isnan(ok_phase)):
             raise utils.err.FitError('phase contains nans in the filter passband')
@@ -588,9 +588,8 @@ class Phase(core.Cm1Vector1d):
             perr = np.sqrt(np.diag(pcov) * np.std(_fit[2]['fvec'])**2)
             
         except Exception, e:
-            logging.debug('Exception occured during phase fit: {}'.format(e))
-            return None
-
+            raise utils.err.FitError('Exception occured during phase fit: {}'.format(e))
+        
         all_pfit = format_guess(pfit)
         all_perr = format_guess(perr)
         if coeffs is not None:
