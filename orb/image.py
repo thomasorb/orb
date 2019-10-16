@@ -1405,6 +1405,11 @@ class Image(Frame2D):
         starfit['aperture_mag'] = utils.photometry.flambda2ABmag(
             starfit.aperture_erg.values,
             filter_file.get_mean_nm() * 10.)
+
+        starfit['flux_erg'] = starfit.flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
+        starfit['flux_mag'] = utils.photometry.flambda2ABmag(
+            starfit.flux_erg.values,
+            filter_file.get_mean_nm() * 10.)
         
         # get catalogue
         cat = self.query_vizier(catalog='pan-starrs', as_pandas=True, max_stars=star_number*10)
