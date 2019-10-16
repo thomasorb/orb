@@ -2357,8 +2357,11 @@ class Vector1d(Data):
             
         if len(self.axis.data) == len(new_axis.data):
             if np.all(np.isclose(self.axis.data - new_axis.data, 0)):
-                return self.copy()
-
+                if timing:
+                    return self.copy(), None
+                else:
+                    return self.copy()
+                
         if timing: times.append(time.time()) ####
         if np.any(np.iscomplex(self.data)):
             quality = int(quality)
