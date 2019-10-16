@@ -2382,13 +2382,16 @@ class Vector1d(Data):
             f = scipy.interpolate.interp1d(zp_axis,
                                            zp_spec,
                                            bounds_error=False)
-
+            
         else:
             logging.debug('data is not complex and is interpolated the bad way')
             if timing: times.append(time.time()) ####
             f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
                                            self.data.real.astype(np.float128),
                                            bounds_error=False)
+            # (added to get the same number of timings as if data is
+            # complex)
+            if timing: times.append(time.time()) 
             
         if timing: times.append(time.time()) ####
         data  = f(new_axis.data)

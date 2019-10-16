@@ -211,7 +211,7 @@ def query_vizier(radius, target_ra, target_dec,
         np.min(result[sorting_key].values), np.max(result[sorting_key].values)))
 
     if not as_pandas:
-        return result.to_numpy()
+        return result.values
     else:
         result['ra'] = result[cat.out.split(',')[0]]
         result['dec'] = result[cat.out.split(',')[1]]
