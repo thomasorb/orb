@@ -1097,6 +1097,8 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
 
     :param yr: Number of years
     """
+    warnings.warn('this conversion is naive and might be wrong, or at least unprecise. astropy.coordinates.SkyCoord.apply_space_motion should be used instead. A version adapted for python 2 is written in orb.image.Image.get_stars_from_catalog.')
+    
     ra = ra_deg + (pm_ra_mas * yr) * 1e-3 / 3600.
     dec = dec_deg + (pm_dec_mas * yr) * 1e-3 / 3600.
     if ra > 360. : ra -= 360.
@@ -2053,9 +2055,9 @@ def _get_wcs_parameters(wcs, fix_rc=None):
     vec10 = np.array(wcs2.wcs_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 0)) - wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-    RANDSIZE = 1e4
+    RANDSIZE = 1e5
     randa = np.random.uniform(size=50) * 2. * np.pi
-    randl = np.random.uniform(size=randa.size) * RANDSIZE * 0.1 + RANDSIZE
+    randl = np.random.uniform(size=randa.size) * RANDSIZE * 0.2 + RANDSIZE
     randy = np.sin(randa) * randl
     randx = np.cos(randa) * randl
     random_star_list_pix = np.array([randx, randy]).T
@@ -2633,7 +2635,7 @@ def fit_wcs(star_list_pix, star_list_deg, wcs, fitsip=False):
     params = get_wcs_parameters(bestwcs)
     logging.info('wcs parameters: {}'.format(params))
     
-    if fit_sip:
+    if fitsip:
         return NotImplementedError()
         # logging.debug('sip before fit: {}'.format(repr(wcs.sip)))
         # wcs = fit_sip(params[2:4], wcs.all_world2pix(star_list_deg, 0), star_list_pix, init_sip=wcs,

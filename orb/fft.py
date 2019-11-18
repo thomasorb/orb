@@ -854,9 +854,6 @@ class Spectrum(core.Cm1Vector1d):
         logging.debug('SNR guess: {}'.format(snr_guess))
         
         # recompute the fwhm guess
-        if 'fwhm_guess' in kwargs:
-            raise ValueError('fwhm_guess must not be in kwargs. It must be set via theta_orig parameter.')
-
         if 'calib_coeff_orig' not in self.params:
             self.params['calib_coeff_orig'] = self.params['calib_coeff']
             
@@ -866,9 +863,20 @@ class Spectrum(core.Cm1Vector1d):
             self.params['calib_coeff_orig'],
             wavenumber=self.params['wavenumber'])
 
-        kwargs['fwhm_guess'] = [fwhm_guess_cm1] * inputparams['allparams']['line_nb']
+        fwhm_guess = [fwhm_guess_cm1] * inputparams['allparams']['line_nb']
+
+        if not 'fwhm_guess' in kwargs:
+            kwargs['fwhm_guess'] = fwhm_guess
+        else:
+            if 'sinc' in kwargs['fmodel']:
+                raise ValueError('fwhm_guess must not be in kwargs. It must be set via theta_orig parameter.')
+            if isinstance(kwargs['fwhm_def'], str):
+                kwargs['fwhm_def'] = list([kwargs['fwhm_def']]) * inputparams['allparams']['line_nb']
+            if np.size(np.squeeze(kwargs['fwhm_guess'])) <= 1:
+                kwargs['fwhm_guess'] = np.squeeze(list([np.squeeze(kwargs['fwhm_guess'])]) * inputparams['allparams']['line_nb'])
+                
         logging.debug('recomputed fwhm guess: {}'.format(kwargs['fwhm_guess']))
-    
+        
         if max_iter is None:
             max_iter = max(100 * inputparams['allparams']['line_nb'], 1000)
 

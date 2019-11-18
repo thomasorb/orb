@@ -1822,13 +1822,13 @@ class Data(object):
                 # params are transformed into kwargs
                 kwargs.update(params)
             
-            if 'fits' in data:    
+            if 'fit' in os.path.splitext(data)[1]:
                 self.data, _header = utils.io.read_fits(data, return_header=True)
                 self.params = dict(_header)
                 if 'COMMENT' in self.params:
                     self.params.pop('COMMENT')
 
-            elif 'hdf' in data:
+            elif 'hdf' in os.path.splitext(data)[1]:
                 with utils.io.open_hdf5(data, 'r') as hdffile:
                     _data_path = 'data'
 
@@ -2865,9 +2865,8 @@ class WCSData(Data, Tools):
 
         # try to load wcs from fits keywords if a FITS file
         if data_path is not None:
-            if 'fits' in data_path:
+            if 'fit' in os.path.splitext(data_path)[1]:
                 self.set_wcs(data_path)
-
                 # reingest kwargs in this case, because wcs params were forced
                 self.params.update(kwargs)
                 
@@ -2897,9 +2896,10 @@ class WCSData(Data, Tools):
             self.config['CAM1_DETECTOR_SIZE_X'] = self.dimx
             self.config['CAM1_DETECTOR_SIZE_Y'] = self.dimy
             if not self.has_param('delta_x'): # wcs not loaded properly
-                raise StandardError('instrument set to None, wcs not loaded properly. Please set a corect WCS to your file or choose one of the available instrument configurations')
+                raise StandardError('instrument set to None, wcs not loaded properly. Please set a correct WCS to your file or choose one of the available instrument configurations')
             self.config['FIELD_OF_VIEW_1'] = (self.params.delta_x * 60.
-                                              * self.config.CAM1_DETECTOR_SIZE_X)
+                                              * max(self.config.CAM1_DETECTOR_SIZE_X,
+                                                    self.config.CAM1_DETECTOR_SIZE_Y))
         
         # convert camera param
         self.params.reset(
@@ -3098,11 +3098,10 @@ class WCSData(Data, Tools):
                 naxis=2, relax=True)
         try:        
             _params = utils.astrometry.get_wcs_parameters(wcs)
-        except StandardError:
-            logging.debug('wcs could not be loaded')
+        except StandardError, e:
+            logging.debug('wcs could not be loaded:', e)
             return
             
-        
         # remove old sip params if they exist
         for ipar in self.params.keys():
             if ('A_' == ipar[:2]
@@ -3152,7 +3151,7 @@ class WCSData(Data, Tools):
                                 self.params['wcs_rotation']])
 
         if not np.all(np.isclose(_wcs_params - _fits_params, 0)):
-            warnings.warn('WCS FITS keywords and parameters are different:\n{}\n{}'.format(
+            logging.debug('WCS FITS keywords and parameters are different:\n{}\n{}'.format(
                 _wcs_params, _fits_params))
         
         
@@ -3245,12 +3244,14 @@ class WCSData(Data, Tools):
         """Return mean platescale in arcsec/pixel"""
         if self.is_cam1():
             basic_scale = (self.config.FIELD_OF_VIEW_1
-                           / self.config.CAM1_DETECTOR_SIZE_X * 60.)
+                           / max(self.config.CAM1_DETECTOR_SIZE_X,
+                                 self.config.CAM1_DETECTOR_SIZE_Y) * 60.)
         else:
             basic_scale = (self.config.FIELD_OF_VIEW_2
-                           / self.config.CAM2_DETECTOR_SIZE_X * 60.)
+                           / max(self.config.CAM2_DETECTOR_SIZE_X,
+                                 self.config.CAM1_DETECTOR_SIZE_Y) * 60.)
 
-        if not self.has_param('deltax') or not self.has_param('deltay'):
+        if not self.has_param('delta_x') or not self.has_param('delta_y'):
             logging.debug('scale computed from config parameters')
             return basic_scale
 

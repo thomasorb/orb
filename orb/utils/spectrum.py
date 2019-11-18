@@ -302,7 +302,7 @@ def compute_resolution(step_nb, step, order, corr=1, sigma=None):
 
     :param corr: Correction coefficient for the incident angle.
 
-    :param sigma: Wavenumber at whcih the resolution is computed. If
+    :param sigma: Wavenumber at which the resolution is computed. If
       None given, the central wavenumber in the bandpass is used. Note
       that, when the incident angle changes, the bandpass is shifted
       so that the computed resolution is the same at any inceident

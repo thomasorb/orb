@@ -36,6 +36,9 @@ import astropy.stats
 import astropy.nddata
 from  astropy.coordinates.name_resolve import NameResolveError
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
+import astropy.time
+import astropy.coordinates
+import astropy.units
 
 import photutils
 
@@ -124,12 +127,13 @@ class Frame2D(core.WCSData):
         newim.set_wcs(cutout.wcs)
         return newim
 
-    def imshow(self, figscale=15, perc=99, cmap=None):
+    def imshow(self, figscale=15, perc=99, cmap=None, wcs=True):
         perc = np.clip(perc, 50, 100)
         vmin, vmax = np.nanpercentile(self.data, [100-perc, perc])
         ratio = self.dimy / float(self.dimx)
         fig = pl.figure(figsize=(figscale, figscale*ratio))
-        ax = fig.add_subplot(111, projection=self.get_wcs())
+        if wcs:
+            ax = fig.add_subplot(111, projection=self.get_wcs())
         pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left')
         
 
@@ -298,7 +302,14 @@ class Image(Frame2D):
 
         self.set_wcs(wcs)
 
-    
+    def reset_sip(self):
+        """Remove sip informations"""
+        wcs = self.get_wcs()
+        wcs.sip = None
+        self.set_wcs(wcs)
+        self.params['CTYPE1'] = 'RA---TAN'
+        self.params['CTYPE2'] = 'DEC--TAN'
+            
     def find_object(self, is_standard=False, return_radec=False):
         """Try to find the object given the name in the header
 
@@ -365,9 +376,67 @@ class Image(Frame2D):
                 "Bad profile name (%s) please choose it in: %s"%(
                     profile_name, str(self.profiles)))
         
+    def get_stars_from_catalog(self, max_stars=5000):
+        """Return star positions, corrected for proper motion from Gaia DR2
+        """
 
+        cat = self.query_vizier(as_pandas=True, max_stars=max_stars, catalog='gaia2')
+
+        obsdate = astropy.time.Time(self.params['DATE-OBS'])
+        epoch = astropy.time.Time(cat.Epoch.values[0], format='decimalyear')
+        pm_unit = astropy.units.mas/astropy.units.yr
+
+        # everything below was adapted from
+        # astropy.coordinates.SkyCoord.apply_space_motion. When ORB
+        # will be adapted to python 3 this function should be directly
+        # used
+        cat_frame = astropy.coordinates.ICRS(
+            cat.ra.values * astropy.units.deg, 
+            cat.dec.values * astropy.units.deg, 
+            pm_ra_cosdec=cat.pmRA.values*pm_unit, 
+            pm_dec=cat.pmRA.values*pm_unit)
+
+        t1 = epoch.tdb
+        t2 = obsdate.tdb
+
+        icrsrep = cat_frame.represent_as(
+            astropy.coordinates.SphericalRepresentation,
+            astropy.coordinates.SphericalDifferential)
+        icrsvel = icrsrep.differentials['s']
+
+        starpm = astropy._erfa.starpm(
+            icrsrep.lon.radian, icrsrep.lat.radian,
+            icrsvel.d_lon.to_value(astropy.units.radian/astropy.units.yr),
+            icrsvel.d_lat.to_value(astropy.units.radian/astropy.units.yr),
+            0, 0, t1.jd1, t1.jd2, t2.jd1, t2.jd2)
+
+        icrs2 = astropy.coordinates.ICRS(
+            starpm[0]* astropy.units.radian, 
+            starpm[1]* astropy.units.radian, 
+            pm_ra_cosdec=starpm[2]* astropy.units.radian/astropy.units.yr * np.cos(starpm[1]),
+            pm_dec=starpm[3]* astropy.units.radian/astropy.units.yr)
+
+        sld = np.array([icrs2.ra.to('deg').value, icrs2.dec.to('deg').value])
+        slp = self.world2pix(sld)
+        slp = np.array([istar for istar in slp 
+                        if istar[0] > 0 
+                        and istar[0] < self.dimx 
+                        and istar[1] > 0 
+                        and istar[1] < self.dimy])
+
+        sld = self.pix2world(slp)
+        sources = pandas.DataFrame({
+            'x':slp[:,0],
+            'y':slp[:,1],
+            'ra':sld[:,0],
+            'dec':sld[:,1]
+        })
+        
+        return sources
+
+        
     def detect_stars(self, min_star_number=30, max_roundness=0.1,
-                     max_radius_coeff=1., path=None):
+                     max_radius_coeff=1., path=None, saturation_threshold=None):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
@@ -388,10 +457,13 @@ class Image(Frame2D):
         sources = daofind(self.data.T - median).to_pandas()
         if len(sources) == 0: raise StandardError('no star detected, check input image')
         logging.debug('initial number of stars: {}'.format(len(sources)))
+        
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
-        saturation_threshold = np.nanmax(self.data) * 0.45 
+        if saturation_threshold is None:
+            saturation_threshold = np.nanmax(self.data) * 0.45 
         sources = sources[sources.peak < saturation_threshold]
         logging.debug('number of stars after peak filter: {}'.format(len(sources)))
+            
         # filter by roundness
         sources = sources[np.abs(sources.roundness2) < max_roundness]
         logging.debug('number of stars after roundness filter: {}'.format(len(sources)))
@@ -408,7 +480,7 @@ class Image(Frame2D):
         logging.info("star list reduced to %d stars" %(len(sources)))
         sources = utils.astrometry.df2list(sources)
         sources = self.fit_stars(sources, no_aperture_photometry=True)
-        mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])
+        mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])    
 
         if path is not None:         
             utils.io.open_file(path, 'w') # used to create the folder tree
@@ -429,11 +501,17 @@ class Image(Frame2D):
         mean_fwhm, mean_fwhm_err = utils.astrometry.detect_fwhm_in_frame(
             self.data, star_list,
             self.get_fwhm_pix())
-        
-        logging.info("Detected stars FWHM : {:.2f}({:.2f}) pixels, {:.2f}({:.2f}) arc-seconds".format(mean_fwhm[0], mean_fwhm_err[0], self.pix2arc(mean_fwhm[0]), self.pix2arc(mean_fwhm_err[0])))
 
-        self.reset_fwhm_arc(self.pix2arc(mean_fwhm[0]))
-        return mean_fwhm[0], mean_fwhm_err[0] # return in pixels
+        mean_fwhm = np.nanmedian(mean_fwhm)
+        mean_fwhm_err = np.nanmedian(mean_fwhm_err)
+        
+        if np.isnan(mean_fwhm):
+            warnings.warn('detected FWHM is nan')
+            return self.get_fwhm_pix(), 0
+        else:
+            logging.info("Detected stars FWHM : {:.2f}({:.2f}) pixels, {:.2f}({:.2f}) arc-seconds".format(mean_fwhm, mean_fwhm_err, self.pix2arc(mean_fwhm), self.pix2arc(mean_fwhm_err)))
+            self.reset_fwhm_arc(self.pix2arc(mean_fwhm))
+            return mean_fwhm, mean_fwhm_err # return in pixels
 
     def aperture_photometry(self, star_list, aper_coeff=3., silent=False):
         """Perform aperture photometry.
@@ -486,8 +564,10 @@ class Image(Frame2D):
     def register(self, max_stars_detect=60,
                  max_roundness=0.2,
                  max_radius_coeff=1.,
+                 saturation_threshold=None,
                  sip_order=3,
                  rrange=None, xyrange=None,
+                 nsteps=7,
                  return_fit_params=False, rscale_coeff=1.,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
@@ -513,6 +593,8 @@ class Image(Frame2D):
 
         :param rrange: (Optional) initial brute force range for the
           x/y shift, must be a tuple (xymax, step_size).
+
+        :param nsteps: (Optional) Number of refinement steps (default 7).
 
         :param sip_order: (Optional) SIP order (default 3)
 
@@ -602,7 +684,9 @@ class Image(Frame2D):
         
         # Query to get reference star positions in degrees
         if star_list_query is None:
-            star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
+            #star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
+            star_list_query = self.get_stars_from_catalog(max_stars=100 * max_stars_detect)
+            star_list_query = np.array([star_list_query.ra.values, star_list_query.dec.values]).T
         else:
             star_list_query = np.copy(star_list_query)
             if fwhm_arc is None:
@@ -631,7 +715,7 @@ class Image(Frame2D):
         # get FWHM
         sl_im_pix_path, fwhm_pix = self.detect_stars(
             min_star_number=max_stars_detect, max_roundness=max_roundness,
-            max_radius_coeff=max_radius_coeff)
+            max_radius_coeff=max_radius_coeff, saturation_threshold=saturation_threshold)
         sl_im_pix = utils.astrometry.load_star_list(
             sl_im_pix_path, remove_nans=True)
 
@@ -651,7 +735,7 @@ class Image(Frame2D):
             xyrange=xyrange,
             rrange=rrange,
             zrange=(ZMAX, ZMAX/1),
-            nsteps=7)
+            nsteps=nsteps)
 
         self.set_wcs(wcs)
 
@@ -663,12 +747,13 @@ class Image(Frame2D):
             sl_im_pix[sl_im_matched],
             sl_cat_deg[sl_cat_matched][:,:2],
             self.get_wcs())
-        
+
         # update wcs
+        
         self.set_wcs(wcs)
         logging.info('wcs after fit')
         logging.info(str(self.get_wcs()))
-
+        
         ############################
         ### plot stars positions ###
         ############################
@@ -872,6 +957,10 @@ class Image(Frame2D):
                     precision_mean * self.get_scale(),
                     precision_mean_err * self.get_scale(), np.size(dx)))
 
+            fit_params['registration_precision_arcsec'] = precision_mean * self.get_scale()
+            fit_params['registration_precision_arcsec_err'] = precision_mean_err * self.get_scale()
+            fit_params['registration_precision_starnb'] = np.size(dx)
+
         logging.info('corrected WCS computed')
         logging.info('internal WCS updated (to update the file use self.writeto function)')
         
@@ -970,7 +1059,7 @@ class Image(Frame2D):
         # fit
         fit_results = utils.astrometry.fit_stars_in_frame(
             frame, star_list, self.get_box_size(), **kwargs)
-        
+       
         return utils.astrometry.fit2df(fit_results)
     
     def compute_alignment_parameters(self, image2, xy_range, r_range,

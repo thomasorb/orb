@@ -152,11 +152,11 @@ def query_vizier(radius, target_ra, target_dec,
                         '-R2mag'),
     
         'gaia1': Catalog('I/337/gaia',
-                        'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,<Gmag>',
+                        'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,<Gmag>,pmRA,pmDE,e_pmRA,e_pmDE,Epoch',
                         '-<Gmag>'),
         
         'gaia2': Catalog('I/345/gaia2',
-                         'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,Gmag',
+                         'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,Gmag,pmRA,pmDE,e_pmRA,e_pmDE,Epoch',
                          '-Gmag'),
         
         '2mass': Catalog('II/246/out',
