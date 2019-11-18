@@ -1,6 +1,3 @@
-from . import core
-from . import utils.io
-
 import os
 import sys
 import time
@@ -30,18 +27,20 @@ try: import pygit2
 except ImportError: pass
 
 ## MODULES IMPORTS
-from . import cutils
-from . import utils.spectrum, utils.parallel, utils.io, utils.filters
-from . import utils.photometry
-from .core import ProgressBar
-
+import orb.utils.spectrum
+import orb.utils.parallel
+import orb.utils.io
+import orb.utils.filters
+import orb.utils.photometry
+from orb.core import ProgressBar
+import orb.core
     
 
 
 ##################################################
 #### CLASS Cube ##################################
 ##################################################
-class Cube(core.Tools):
+class Cube(orb.core.Tools):
     """3d numpy data cube handling. Base class for all Cube classes"""
     def __init__(self, data, **kwargs):
         """
@@ -53,7 +52,7 @@ class Cube(core.Tools):
 
         :param kwargs: (Optional) :py:class:`~orb.core.Tools` kwargs.
         """
-        core.Tools.__init__(self, **kwargs)
+        orb.core.Tools.__init__(self, **kwargs)
 
         self.star_list = None
         self.z_median = None
@@ -83,10 +82,10 @@ class Cube(core.Tools):
         
         # check data
         if isinstance(data, str):
-            data = utils.io.read_fits(data)
+            data = orb.utils.io.read_fits(data)
 
-        utils.validate.is_3darray(data)
-        utils.validate.has_dtype(data, float)
+        orb.utils.validate.is_3darray(data)
+        orb.utils.validate.has_dtype(data, float)
         
         self._data = np.copy(data)
         self.dimx = self._data.shape[0]
@@ -321,7 +320,7 @@ class HDFCube(Cube):
 
         if cube_path is None or cube_path == '': return
         
-        with utils.io.open_hdf5(cube_path, 'r') as f:
+        with orb.utils.io.open_hdf5(cube_path, 'r') as f:
             self.cube_path = cube_path
             self.dimz = self._get_attribute('dimz')
             self.dimx = self._get_attribute('dimx')
@@ -449,7 +448,7 @@ class HDFCube(Cube):
             else:
                 only_one_frame = False
 
-            with utils.io.open_hdf5(self.cube_path, 'r') as f:
+            with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if not self._silent_load and not only_one_frame:
                     progress = ProgressBar(z_slice.stop - z_slice.start - 1)
 
@@ -461,7 +460,7 @@ class HDFCube(Cube):
                     if self._prebinning is not None:
                         data[0:x_slice.stop - x_slice.start,
                              0:y_slice.stop - y_slice.start,
-                             ik - z_slice.start] = utils.image.nanbin_image(
+                             ik - z_slice.start] = orb.utils.image.nanbin_image(
                             unbin_data, self._prebinning)
                     else:
                         data[0:x_slice.stop - x_slice.start,
@@ -476,7 +475,7 @@ class HDFCube(Cube):
 
         # quad based cube
         else:
-            with utils.io.open_hdf5(self.cube_path, 'r') as f:
+            with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if not self._silent_load:
                     progress = ProgressBar(self.quad_nb)
 
@@ -509,7 +508,7 @@ class HDFCube(Cube):
           only a warning is raised. If False the HDF5 cube is
           considered as invalid and an exception is raised.
         """
-        with utils.io.open_hdf5(self.cube_path, 'r') as f:
+        with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
             if attr in f.attrs:
                 return f.attrs[attr]
             else:

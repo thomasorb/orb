@@ -45,17 +45,16 @@ import photutils
 from scipy import optimize, interpolate, signal
 import pandas
 
-from . import core
-from . import cutils
-from . import photometry
+import orb.core
+import orb.photometry
 
-from . import utils.astrometry
-from . import utils.image
-from . import utils.stats
-from . import utils.vector
-from . import utils.web
-from . import utils.misc
-from . import utils.io
+import orb.utils.astrometry
+import orb.utils.image
+import orb.utils.stats
+import orb.utils.vector
+import orb.utils.web
+import orb.utils.misc
+import orb.utils.io
 
 import pylab as pl
 
@@ -64,11 +63,11 @@ import copy
 #################################################
 #### CLASS Frame2D ##############################
 #################################################
-class Frame2D(core.WCSData):
+class Frame2D(orb.core.WCSData):
 
     def __init__(self, *args, **kwargs):
         
-        core.WCSData.__init__(self, *args, **kwargs)
+        orb.core.WCSData.__init__(self, *args, **kwargs)
 
         # checking
         if self.data.ndim != 2:
@@ -255,13 +254,13 @@ class Image(Frame2D):
     
             if cr_map.dtype != np.bool: raise TypeError('cr_map must have type bool')
 
-            frame = utils.image.correct_cosmic_rays(frame, cr_map)
+            frame = orb.utils.image.correct_cosmic_rays(frame, cr_map)
             
         if shift is not None:
-            utils.validate.has_len(shift, 2, object_name='shift')
+            orb.utils.validate.has_len(shift, 2, object_name='shift')
             dx, dy = shift
             if (dx != 0.) and (dy != 0.):
-                frame = utils.image.shift_frame(frame, dx, dy, 
+                frame = orb.utils.image.shift_frame(frame, dx, dy, 
                                                 0, self.dimx, 
                                                 0, self.dimy, 1)
             
@@ -296,7 +295,7 @@ class Image(Frame2D):
                 raise Exception('instrument config not loaded. Please set wcs_rotation.')
             wcs_rotation = self.config['WCS_ROTATION']
             
-        wcs = utils.astrometry.create_wcs(
+        wcs = orb.utils.astrometry.create_wcs(
             self.dimx/2, self.dimy/2, fov/self.dimx/60., fov/self.dimx/60.,
             target_ra, target_dec, wcs_rotation)
 
@@ -343,13 +342,13 @@ class Image(Frame2D):
         std_yr_obs = float(self.params['DATE-OBS'].split('-')[0])
         pm_orig_yr = 2000 # radec are considered to be J2000
         # compute ra/dec with proper motion
-        std_ra, std_dec = utils.astrometry.compute_radec_pm(
+        std_ra, std_dec = orb.utils.astrometry.compute_radec_pm(
             std_ra, std_dec, std_pm_ra, std_pm_dec,
             std_yr_obs - pm_orig_yr)
         std_ra_str = '{:.0f}:{:.0f}:{:.3f}'.format(
-            *utils.astrometry.deg2ra(std_ra))
+            *orb.utils.astrometry.deg2ra(std_ra))
         std_dec_str = '{:.0f}:{:.0f}:{:.3f}'.format(
-            *utils.astrometry.deg2dec(std_dec))
+            *orb.utils.astrometry.deg2dec(std_dec))
         logging.info('Object {} RA/DEC: {} ({:.3f}) {} ({:.3f}) (corrected for proper motion)'.format(self.params.OBJECT, std_ra_str, std_ra, std_dec_str, std_dec))
         if not return_radec:
             return np.squeeze(self.world2pix([std_ra, std_dec]))
@@ -478,12 +477,12 @@ class Image(Frame2D):
         logging.info("%d stars detected" %(len(sources)))
         sources = sources[:min_star_number]
         logging.info("star list reduced to %d stars" %(len(sources)))
-        sources = utils.astrometry.df2list(sources)
+        sources = orb.utils.astrometry.df2list(sources)
         sources = self.fit_stars(sources, no_aperture_photometry=True)
         mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])    
 
         if path is not None:         
-            utils.io.open_file(path, 'w') # used to create the folder tree
+            orb.utils.io.open_file(path, 'w') # used to create the folder tree
             sources.to_hdf(path, 'data', mode='w')
             logging.info('sources written to {}'.format(path))
         return sources, mean_fwhm # be careful this is returned in pixels
@@ -496,9 +495,9 @@ class Image(Frame2D):
         :param star_list: list of stars (can be an np.ndarray or a path
           to a star list).
         """
-        star_list = utils.astrometry.load_star_list(star_list)
+        star_list = orb.utils.astrometry.load_star_list(star_list)
         
-        mean_fwhm, mean_fwhm_err = utils.astrometry.detect_fwhm_in_frame(
+        mean_fwhm, mean_fwhm_err = orb.utils.astrometry.detect_fwhm_in_frame(
             self.data, star_list,
             self.get_fwhm_pix())
 
@@ -530,7 +529,7 @@ class Image(Frame2D):
                             # annulus to estimate the background
         C_OUT = np.sqrt((MIN_BACK_COEFF * 1.5 * C_AP**2.) + C_IN**2.)
 
-        star_list = utils.astrometry.load_star_list(star_list)
+        star_list = orb.utils.astrometry.load_star_list(star_list)
         aper = photutils.CircularAperture(star_list,
                                           r=C_AP * self.get_fwhm_pix())
         aper_ann = photutils.CircularAnnulus(star_list,
@@ -543,7 +542,7 @@ class Image(Frame2D):
             ivalues = imask.multiply(self.data.T)            
             ivalues = ivalues[ivalues > 0]
             if ivalues.size > aper.area() * MIN_BACK_COEFF:
-                ann_medians.append(utils.astrometry.sky_background_level(
+                ann_medians.append(orb.utils.astrometry.sky_background_level(
                     ivalues, return_error=True))
             else:
                 ann_medians.append((np.nan, np.nan))
@@ -634,13 +633,13 @@ class Image(Frame2D):
                                 return_index=False):
 
             if param == 'star_list':
-                param_list = utils.astrometry.df2list(fit_params)
+                param_list = orb.utils.astrometry.df2list(fit_params)
             else:
                 param_list = fit_params[param]
             snr = fit_params['snr']
             
             if snr_min is None:
-                snr_min = max(utils.stats.robust_median(snr), 5.)
+                snr_min = max(orb.utils.stats.robust_median(snr), 5.)
                 snr_min = min(snr_min, 10)
                 logging.debug('star filter snr min: {}'.format(snr_min))
             
@@ -702,7 +701,7 @@ class Image(Frame2D):
         sl_cat_deg = star_list_query[:max_stars_detect*20]
         
         # ## Define a basic WCS        
-        # wcs = utils.astrometry.create_wcs(
+        # wcs = orb.utils.astrometry.create_wcs(
         #     self.params.target_x, self.params.target_y,
         #     deltax, deltay, self.params.target_ra, self.params.target_dec,
         #     self.params.wcs_rotation, sip=self.get_wcs())
@@ -716,7 +715,7 @@ class Image(Frame2D):
         sl_im_pix_path, fwhm_pix = self.detect_stars(
             min_star_number=max_stars_detect, max_roundness=max_roundness,
             max_radius_coeff=max_radius_coeff, saturation_threshold=saturation_threshold)
-        sl_im_pix = utils.astrometry.load_star_list(
+        sl_im_pix = orb.utils.astrometry.load_star_list(
             sl_im_pix_path, remove_nans=True)
 
         self.box_size_coeff = 5.
@@ -728,7 +727,7 @@ class Image(Frame2D):
         if xyrange is None:
             xyrange = (XYMAX, XYMAX/10.)
 
-        wcs, sl_cat_matched, sl_im_matched = utils.astrometry.match_star_lists(
+        wcs, sl_cat_matched, sl_im_matched = orb.utils.astrometry.match_star_lists(
             self.get_wcs(),
             sl_cat_deg[:,:2],
             sl_im_pix, [self.params.target_x, self.params.target_y],
@@ -743,7 +742,7 @@ class Image(Frame2D):
         logging.info(str(self.get_wcs()))
 
         # refine registration
-        wcs = utils.astrometry.fit_wcs(
+        wcs = orb.utils.astrometry.fit_wcs(
             sl_im_pix[sl_im_matched],
             sl_cat_deg[sl_cat_matched][:,:2],
             self.get_wcs())
@@ -885,9 +884,9 @@ class Image(Frame2D):
             # dxmap = dxrbf(X, Y)
             # dymap = dyrbf(X, Y)
 
-            # dxmap_fit, dxmap_res, fit_error = utils.image.fit_map_zernike(
+            # dxmap_fit, dxmap_res, fit_error = orb.utils.image.fit_map_zernike(
             #     dxmap, np.ones_like(dxmap), 20)
-            # dymap_fit, dymap_res, fit_error = utils.image.fit_map_zernike(
+            # dymap_fit, dymap_res, fit_error = orb.utils.image.fit_map_zernike(
             #     dymap, np.ones_like(dymap), 20)
 
             # # error maps are converted to a RectBivariateSpline instance
@@ -1006,7 +1005,7 @@ class Image(Frame2D):
           set to None) this header value must be given.
 
         """
-        return utils.astrometry.fit_sip(
+        return orb.utils.astrometry.fit_sip(
             self.get_scale(), star_list1, star_list2,
             params=params, init_sip=init_sip, err=err, sip_order=sip_order,
             crpix=crpix, crval=crval)
@@ -1018,20 +1017,20 @@ class Image(Frame2D):
         Fit stars in one frame.
 
         This function is basically a wrapper around
-        :meth:`utils.astrometry.fit_stars_in_frame`.
+        :meth:`orb.utils.astrometry.fit_stars_in_frame`.
 
         .. note:: 2 fitting modes are possible::
         
             * Individual fit mode [multi_fit=False]
             * Multi fit mode [multi_fit=True]
 
-            see :meth:`utils.astrometry.fit_stars_in_frame` for more
+            see :meth:`orb.utils.astrometry.fit_stars_in_frame` for more
             information.
 
         :param star_list: Path to a list of stars
           
         :param kwargs: Same optional arguments as for
-          :meth:`utils.astrometry.fit_stars_in_frame`.
+          :meth:`orb.utils.astrometry.fit_stars_in_frame`.
 
         .. warning:: Some optional arguments are taken directly from the
           values computed at the init of the Class. The following
@@ -1044,7 +1043,7 @@ class Image(Frame2D):
             * fit_tol          
         """        
         frame = np.copy(self.data)
-        star_list = utils.astrometry.load_star_list(star_list)
+        star_list = orb.utils.astrometry.load_star_list(star_list)
         protected_kwargs =['profile_name', 'scale', 'fwhm_pix', 'beta', 'fit_tol']
         for ik in protected_kwargs:
             if ik in kwargs:
@@ -1057,10 +1056,10 @@ class Image(Frame2D):
         kwargs['fit_tol'] = self.fit_tol
 
         # fit
-        fit_results = utils.astrometry.fit_stars_in_frame(
+        fit_results = orb.utils.astrometry.fit_stars_in_frame(
             frame, star_list, self.get_box_size(), **kwargs)
        
-        return utils.astrometry.fit2df(fit_results)
+        return orb.utils.astrometry.fit2df(fit_results)
     
     def compute_alignment_parameters(self, image2, xy_range, r_range,
                                      correct_distortion=False,
@@ -1144,7 +1143,7 @@ class Image(Frame2D):
             star positions.
             """
             def diff(p, slin, slout, rc, zf, sip1, sip2):
-                slin_t = utils.astrometry.transform_star_position_A_to_B(
+                slin_t = orb.utils.astrometry.transform_star_position_A_to_B(
                     slin, p, rc, zf,
                     sip_A=sip1, sip_B=sip2)
                 result = (slin_t - slout).flatten()
@@ -1170,7 +1169,7 @@ class Image(Frame2D):
         def brute_force_alignment(coeffs, xy_range, r_range):
 
             (coeffs.dx, coeffs.dy, coeffs.dr, guess_matrix) = (
-                utils.astrometry.brute_force_guess(
+                orb.utils.astrometry.brute_force_guess(
                     image2.data.astype(np.float64), star_list1,
                     xy_range + coeffs.dx,
                     xy_range + coeffs.dy,
@@ -1220,8 +1219,8 @@ class Image(Frame2D):
         if len(coeffs) != 6:
             raise TypeError('coeffs must be a tuple (dx, dy, dr, da, db, zoom)')
 
-        if not isinstance(coeffs, core.Params):
-            pcoeffs = core.Params()
+        if not isinstance(coeffs, orb.core.Params):
+            pcoeffs = orb.core.Params()
             pcoeffs.dx = float(coeffs[0])
             pcoeffs.dy = float(coeffs[1])
             pcoeffs.dr = float(coeffs[2])
@@ -1266,7 +1265,7 @@ class Image(Frame2D):
         elif fwhm_arc is None:
             raise Exception('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
 
-        star_list1 = utils.astrometry.load_star_list(star_list1)
+        star_list1 = orb.utils.astrometry.load_star_list(star_list1)
         star_list1_deg = self.pix2world(star_list1)        
         
         image2.reset_fwhm_arc(fwhm_arc)
@@ -1297,7 +1296,7 @@ class Image(Frame2D):
         guess = [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db]
 
         # create sip corrected and transformed list
-        star_list2 = utils.astrometry.transform_star_position_A_to_B(
+        star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(
             np.copy(star_list1), guess, coeffs.rc, coeffs.zoom,
             sip_A=self.get_wcs(), sip_B=image2.get_wcs())
 
@@ -1310,7 +1309,7 @@ class Image(Frame2D):
             raise Exception('fit failed. check initial parameters.')
 
         [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
-            guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
+            guess, np.copy(star_list1), orb.utils.astrometry.df2list(fit_results),
             coeffs.rc, coeffs.zoom, sip1=self.get_wcs(), sip2=image2.get_wcs())
 
         logging.info("Fine alignment parameters:") 
@@ -1320,7 +1319,7 @@ class Image(Frame2D):
         #####################################
         ### COMPUTE DISTORTION CORRECTION ###
         #####################################
-        star_list2 = utils.astrometry.transform_star_position_A_to_B(
+        star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(
             np.copy(star_list1),
             [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
             coeffs.rc, coeffs.zoom,
@@ -1355,7 +1354,7 @@ class Image(Frame2D):
             ## stars of the frame 2 onto the stars of the frame 1
             sip = self.fit_sip(
                 np.copy(star_list2),
-                utils.astrometry.df2list(fit_results),
+                orb.utils.astrometry.df2list(fit_results),
                 init_sip=self.get_wcs(),
                 crpix=self.get_wcs().wcs.crpix,
                 crval=self.get_wcs().wcs.crval)
@@ -1364,7 +1363,7 @@ class Image(Frame2D):
             im2wcs.sip = None
             image2.set_wcs(im2wcs)
 
-            star_list2 = utils.astrometry.transform_star_position_A_to_B(
+            star_list2 = orb.utils.astrometry.transform_star_position_A_to_B(
                 np.copy(star_list1),
                 [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db],
                 coeffs.rc, coeffs.zoom,
@@ -1375,7 +1374,7 @@ class Image(Frame2D):
             fit_results = image2.fit_stars(star_list2)
 
             fitted_star_nb = float(np.sum(~np.isnan(
-                utils.astrometry.df2list(fit_results)[:,0])))
+                orb.utils.astrometry.df2list(fit_results)[:,0])))
             
             if (fitted_star_nb < ERROR_RATIO * MIN_STAR_NB):
                 raise Exception("Not enough fitted stars in both cubes (%d%%). Alignment parameters might be wrong."%int(fitted_star_nb / MIN_STAR_NB * 100.))
@@ -1387,15 +1386,15 @@ class Image(Frame2D):
             err = fit_results['x_err'].values
             
         
-        fwhm_arc2 = utils.stats.robust_mean(
-            utils.stats.sigmacut(fit_results['fwhm_arc'].values))
+        fwhm_arc2 = orb.utils.stats.robust_mean(
+            orb.utils.stats.sigmacut(fit_results['fwhm_arc'].values))
         
         dx_fit = (star_list2[:,0]
-                  - utils.astrometry.df2list(fit_results)[:,0])
+                  - orb.utils.astrometry.df2list(fit_results)[:,0])
         dy_fit = (star_list2[:,1]
-                  - utils.astrometry.df2list(fit_results)[:,1])
+                  - orb.utils.astrometry.df2list(fit_results)[:,1])
         dr_fit = np.sqrt(dx_fit**2. + dy_fit**2.)
-        final_err = np.median(utils.stats.sigmacut(dr_fit))
+        final_err = np.median(orb.utils.stats.sigmacut(dr_fit))
 
         if not SKIP_CHECK:
             if final_err < self.arc2pix(WARNING_DIST):
@@ -1455,11 +1454,11 @@ class Image(Frame2D):
             if key not in params:
                 raise TypeError('malformed params dict')
 
-        wcsB = utils.astrometry.transform_wcs(
+        wcsB = orb.utils.astrometry.transform_wcs(
             self.get_wcs(), params['coeffs'], params['rc'], params['zoom_factor'],
             sip=sip2)
         
-        data_t = utils.image.transform_frame(
+        data_t = orb.utils.image.transform_frame(
             np.copy(self.data), 0, self.dimx, 0, self.dimy,
             params['coeffs'], params['rc'], params['zoom_factor'],
             order, sip_A=sip1, sip_B=sip2)
@@ -1477,7 +1476,7 @@ class Image(Frame2D):
             self.register()
 
         # compute flambda
-        photom = photometry.Photometry(
+        photom = orb.photometry.Photometry(
             self.params.filter_name, self.params.camera,
             airmass=self.params.airmass)
         
@@ -1488,15 +1487,15 @@ class Image(Frame2D):
         starfit = self.fit_stars(starlist)
 
         # convert measured flux to AB magnitude
-        filter_file = core.FilterFile(self.params.filter_name)
+        filter_file = orb.core.FilterFile(self.params.filter_name)
         
         starfit['aperture_erg'] = starfit.aperture_flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
-        starfit['aperture_mag'] = utils.photometry.flambda2ABmag(
+        starfit['aperture_mag'] = orb.utils.orb.photometry.flambda2ABmag(
             starfit.aperture_erg.values,
             filter_file.get_mean_nm() * 10.)
 
         starfit['flux_erg'] = starfit.flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
-        starfit['flux_mag'] = utils.photometry.flambda2ABmag(
+        starfit['flux_mag'] = orb.utils.orb.photometry.flambda2ABmag(
             starfit.flux_erg.values,
             filter_file.get_mean_nm() * 10.)
         
@@ -1546,21 +1545,21 @@ class StandardImage(Image):
         
     def compute_flux_correction_factor(self):
         """Compute the flux correction factor that can be used by
-        photometry.Photometry.get_flambda()"""
+        orb.photometry.Photometry.get_flambda()"""
         
         std_xy = self.find_object()
         try:
-            utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
-            utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
-        except utils.err.ValidationError:
+            orb.utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
+            orb.utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
+        except orb.utils.err.ValidationError:
             raise Exception('standard star not in the image, check image registration')
 
         star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
         std_fit = self.fit_stars([std_xy], aper_coeff=6)
         std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
 
-        std = photometry.Standard(self.params.object_name,
-                                  instrument=self.instrument)
+        std = orb.photometry.Standard(self.params.object_name,
+                                      instrument=self.instrument)
 
         std_flux_sim = std.simulate_measured_flux(
             self.params.filter_name, 1000,

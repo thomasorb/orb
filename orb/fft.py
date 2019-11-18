@@ -27,14 +27,14 @@ import time
 import scipy
 import gvar
 
-from . import utils.validate
-from . import utils.fft
-from . import utils.vector
-from . import utils.err
-from . import core
-from . import cutils
-from . import fit
-from . import photometry
+import orb.utils.validate
+import orb.utils.fft
+import orb.utils.vector
+import orb.utils.err
+import orb.core
+import orb.cutils
+import orb.fit
+import orb.photometry
 
 
 
@@ -42,7 +42,7 @@ from . import photometry
 #### CLASS Interferogram ########################
 #################################################
 
-class Interferogram(core.Vector1d):
+class Interferogram(orb.core.Vector1d):
 
     """Interferogram class.
     """
@@ -69,7 +69,7 @@ class Interferogram(core.Vector1d):
           supplied in the params dictionnary.
 
         """       
-        core.Vector1d.__init__(self, interf, axis=axis, err=err, params=params, **kwargs)
+        orb.core.Vector1d.__init__(self, interf, axis=axis, err=err, params=params, **kwargs)
 
         if self.params.zpd_index < 0 or self.params.zpd_index >= self.dimx:
             raise ValueError('zpd must be in the interferogram')
@@ -78,7 +78,7 @@ class Interferogram(core.Vector1d):
         opdaxis = 1e-7 * (np.arange(self.dimx) * self.params.step
                 - (self.params.step * self.params.zpd_index)) * self.params.calib_coeff
         if self.axis is None:
-            self.axis = core.Axis(opdaxis)
+            self.axis = orb.core.Axis(opdaxis)
         elif np.any(opdaxis != self.axis.data):
             raise Exception('provided axis is inconsistent with the opd axis computed from the observation parameters')
         
@@ -87,7 +87,7 @@ class Interferogram(core.Vector1d):
         
     def crop(self, xmin, xmax):
         """Crop data. see Vector1d.crop()"""
-        out = core.Vector1d.crop(self, xmin, xmax, returned_class=core.Vector1d)
+        out = orb.core.Vector1d.crop(self, xmin, xmax, returned_class=orb.core.Vector1d)
         
         if out.axis.data.size <= 1:
             raise ValueError('cropping cannot return an interferogram with less than 2 samples. Use self.data[index] instead.')
@@ -123,7 +123,7 @@ class Interferogram(core.Vector1d):
         else:
             spec = self
         
-        spec.data[~np.isnan(spec.data)] -= utils.vector.polyfit1d(
+        spec.data[~np.isnan(spec.data)] -= orb.utils.vector.polyfit1d(
             spec.data, order)[~np.isnan(spec.data)]
         return spec
 
@@ -145,9 +145,9 @@ class Interferogram(core.Vector1d):
         if window_type is None: return
         elif window_type == '1.0' : return
         elif window_type == 'learner95':
-            window = utils.fft.learner95_window(x)
+            window = orb.utils.fft.learner95_window(x)
         else:
-            window = utils.fft.gaussian_window(window_type, x)
+            window = orb.utils.fft.gaussian_window(window_type, x)
 
         if not inplace:
             spec = self.copy()
@@ -217,11 +217,11 @@ class Interferogram(core.Vector1d):
         """
         if np.any(np.isnan(self.data)):
             logging.debug('Nan detected in interferogram')
-            return core.Vector1d(np.zeros(
+            return orb.core.Vector1d(np.zeros(
                 self.dimx, dtype=self.data.dtype) * np.nan)
         if len(np.nonzero(self.data)[0]) == 0:
             logging.debug('interferogram is filled with zeros')
-            return core.Vector1d(np.zeros(
+            return orb.core.Vector1d(np.zeros(
                 self.dimx, dtype=self.data.dtype))
         
         # zero padding
@@ -238,14 +238,14 @@ class Interferogram(core.Vector1d):
                                     
         # create axis
         if self.has_params():
-            axis = core.Axis(utils.spectrum.create_cm1_axis(
+            axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
                 self.dimx, self.params.step, self.params.order,
                 corr=self.params.calib_coeff))
 
         else:
             axis_step = (self.dimx - 1) / 2. / self.dimx
             axis_max = (self.dimx - 1) * axis_step
-            axis = core.Axis(np.linspace(0, axis_max, self.dimx))
+            axis = orb.core.Axis(np.linspace(0, axis_max, self.dimx))
 
         # compute err (photon noise)
         if self.has_err():
@@ -450,7 +450,7 @@ class RealInterferogram(Interferogram):
 #### CLASS Phase ################################
 #################################################
 
-class Phase(core.Cm1Vector1d):
+class Phase(orb.core.Cm1Vector1d):
     """Phase class
     """
     def cleaned(self, border_ratio=0.):
@@ -466,7 +466,7 @@ class Phase(core.Cm1Vector1d):
         zmin, zmax = self.get_filter_bandpass_pix(border_ratio=border_ratio)
         data = np.empty_like(self.data)
         data.fill(np.nan)
-        ph = utils.vector.robust_unwrap(self.data[zmin:zmax], 2*np.pi)
+        ph = orb.utils.vector.robust_unwrap(self.data[zmin:zmax], 2*np.pi)
         if np.any(np.isnan(ph)):
             ph.fill(np.nan)
         else:
@@ -529,7 +529,7 @@ class Phase(core.Cm1Vector1d):
         phase = np.copy(self.data).astype(float)
         ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1]
         if np.any(np.isnan(ok_phase)):
-            raise utils.err.FitError('phase contains nans in the filter passband')
+            raise orb.utils.err.FitError('phase contains nans in the filter passband')
         
         phase[np.isnan(phase)] = 0.
         
@@ -545,7 +545,7 @@ class Phase(core.Cm1Vector1d):
         guesses = np.array(guesses)
         
         if coeffs is not None:
-            utils.validate.has_len(coeffs, deg + 1)
+            orb.utils.validate.has_len(coeffs, deg + 1)
             coeffs = np.array(coeffs, dtype=float) # change None by nan
             new_guesses = list()
             for i in range(guesses.size):
@@ -588,7 +588,7 @@ class Phase(core.Cm1Vector1d):
             perr = np.sqrt(np.diag(pcov) * np.std(_fit[2]['fvec'])**2)
             
         except Exception as e:
-            raise utils.err.FitError('Exception occured during phase fit: {}'.format(e))
+            raise orb.utils.err.FitError('Exception occured during phase fit: {}'.format(e))
         
         all_pfit = format_guess(pfit)
         all_perr = format_guess(perr)
@@ -618,7 +618,7 @@ class Phase(core.Cm1Vector1d):
 #### CLASS Spectrum #############################
 #################################################
 
-class Spectrum(core.Cm1Vector1d):
+class Spectrum(orb.core.Cm1Vector1d):
     """Spectrum class
     """
     def __init__(self, spectrum, err=None, axis=None, params=None, **kwargs):
@@ -639,7 +639,7 @@ class Spectrum(core.Cm1Vector1d):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.    
         """
-        core.Cm1Vector1d.__init__(self, spectrum, err=err, axis=axis,
+        orb.core.Cm1Vector1d.__init__(self, spectrum, err=err, axis=axis,
                                   params=params, **kwargs)
             
         if not np.iscomplexobj(self.data):
@@ -676,7 +676,7 @@ class Spectrum(core.Cm1Vector1d):
         spec_ifft = scipy.fftpack.ifft(zp_spec)
         x = np.linspace(0, 1, spec.dimx)
         x = np.concatenate([x, x[::-1]])
-        w = utils.fft.gaussian_window(coeff, x)
+        w = orb.utils.fft.gaussian_window(coeff, x)
         spec.data = scipy.fftpack.fft(spec_ifft * w)[:spec.dimx]
         if not np.any(np.iscomplex(self.data)):
             spec.data.imag.fill(0.)
@@ -731,12 +731,12 @@ class Spectrum(core.Cm1Vector1d):
         if isinstance(phase, Phase):
             phase = phase.project(self.axis).data
         else:
-            utils.validate.is_1darray(phase, object_name='phase')
-            phase = core.Vector1d(phase, axis=self.axis).data
+            orb.utils.validate.is_1darray(phase, object_name='phase')
+            phase = orb.core.Vector1d(phase, axis=self.axis).data
             
         if phase.shape[0] != self.dimx:
             warnings.warn('phase does not have the same size as spectrum. It will be interpolated.')
-            phase = utils.vector.interpolate_size(phase, self.dimx, 1)
+            phase = orb.utils.vector.interpolate_size(phase, self.dimx, 1)
             
         self.data *= np.exp(-1j * phase)
 
@@ -764,10 +764,10 @@ class Spectrum(core.Cm1Vector1d):
             raise TypeError("lines should be a list of lines, e.g. ['Halpha'] or [15534.25] but has type {}".format(type(lines)))
 
         # compute incident angle theta
-        theta = utils.spectrum.corr2theta(
+        theta = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff'])
 
-        theta_orig = utils.spectrum.corr2theta(
+        theta_orig = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff_orig'])
 
         # fmodel
@@ -790,7 +790,7 @@ class Spectrum(core.Cm1Vector1d):
             else:
                 signal_range = None
 
-        inputparams = fit._prepare_input_params(
+        inputparams = orb.fit._prepare_input_params(
             self.params.step_nb,
             lines,
             self.params.step,
@@ -816,10 +816,10 @@ class Spectrum(core.Cm1Vector1d):
         kwargs_orig = dict(kwargs)
         
         # compute incident angle theta
-        theta = utils.spectrum.corr2theta(
+        theta = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff'])
 
-        theta_orig = utils.spectrum.corr2theta(
+        theta_orig = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff_orig'])
 
         # check snr guess param
@@ -857,7 +857,7 @@ class Spectrum(core.Cm1Vector1d):
         if 'calib_coeff_orig' not in self.params:
             self.params['calib_coeff_orig'] = self.params['calib_coeff']
             
-        fwhm_guess_cm1 = utils.spectrum.compute_line_fwhm(
+        fwhm_guess_cm1 = orb.utils.spectrum.compute_line_fwhm(
             self.dimx - self.params['zpd_index'],
             self.params['step'], self.params['order'],
             self.params['calib_coeff_orig'],
@@ -889,7 +889,7 @@ class Spectrum(core.Cm1Vector1d):
             spectrum = gvar.gvar(spectrum, err)
         try:
             warnings.simplefilter('ignore')
-            _fit = fit._fit_lines_in_spectrum(
+            _fit = orb.fit._fit_lines_in_spectrum(
                 spectrum, inputparams,
                 fit_tol=1e-10,
                 compute_mcmc_error=False,
@@ -1031,7 +1031,7 @@ class StandardSpectrum(RealSpectrum):
         self.params.reset('instrument', self.params.instrument.lower())
         
         self.params.reset(
-            'camera', utils.misc.convert_camera_parameter(
+            'camera', orb.utils.misc.convert_camera_parameter(
                 self.params.camera))
 
         if not self.has_param('airmass'):
@@ -1047,7 +1047,7 @@ class StandardSpectrum(RealSpectrum):
             m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
             return np.array(m, dtype=float)
 
-        std = photometry.Standard(self.params.object_name,
+        std = orb.photometry.Standard(self.params.object_name,
                                   instrument=self.params.instrument)
 
         sim = std.simulate_measured_flux(
@@ -1073,7 +1073,7 @@ class StandardSpectrum(RealSpectrum):
             model, sim.data, spe_data,
             p0=np.ones(deg+1, dtype=float)/10.)
         
-        sim_fit = core.Cm1Vector1d(
+        sim_fit = orb.core.Cm1Vector1d(
             model(sim.data, *fit[0]),
             axis=self.axis, params=self.params)
 
@@ -1088,7 +1088,7 @@ class StandardSpectrum(RealSpectrum):
         poly /= np.nanmean(poly)
         poly[np.isnan(poly)] = 1.
         
-        eps = core.Cm1Vector1d(
+        eps = orb.core.Cm1Vector1d(
             poly, axis=self.axis, params=self.params)
                 
         # import pylab as pl
@@ -1101,7 +1101,7 @@ class StandardSpectrum(RealSpectrum):
 #################################################
 #### CLASS PhaseMaps ############################
 #################################################
-class PhaseMaps(core.Tools):
+class PhaseMaps(orb.core.Tools):
 
     phase_maps = None
 
@@ -1121,11 +1121,11 @@ class PhaseMaps(core.Tools):
 
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
-        with utils.io.open_hdf5(phase_maps_path, 'r') as f:
+        with orb.utils.io.open_hdf5(phase_maps_path, 'r') as f:
             kwargs['instrument'] = f.attrs['instrument']
     
-        core.Tools.__init__(self, **kwargs)
-        self.params = core.ROParams()
+        orb.core.Tools.__init__(self, **kwargs)
+        self.params = orb.core.ROParams()
         
         self.overwrite = overwrite
         self.indexer = indexer
@@ -1135,7 +1135,7 @@ class PhaseMaps(core.Tools):
 
         self.phase_maps = list()
         self.phase_maps_err = list()
-        with utils.io.open_hdf5(phase_maps_path, 'r') as f:
+        with orb.utils.io.open_hdf5(phase_maps_path, 'r') as f:
             self.phase_maps_path = phase_maps_path
             if 'calibration_coeff_map' in f:
                 self.calibration_coeff_map = f['calibration_coeff_map'][:]
@@ -1146,7 +1146,7 @@ class PhaseMaps(core.Tools):
             else:
                 self.axis = f['phase_maps_cm1_axis'][:]
                 
-            self.theta_map = utils.spectrum.corr2theta(
+            self.theta_map = orb.utils.spectrum.corr2theta(
                 self.calibration_coeff_map)
             
             loaded = False
@@ -1195,14 +1195,14 @@ class PhaseMaps(core.Tools):
         self.unbinned_maps_err = list()
         
         for iorder in range(len(self.phase_maps)):
-            self.unbinned_maps.append(cutils.unbin_image(
+            self.unbinned_maps.append(orb.cutils.unbin_image(
                 gvar.mean(self.phase_maps[iorder]),
                 self.dimx_unbinned, self.dimy_unbinned))
-            self.unbinned_maps_err.append(cutils.unbin_image(
+            self.unbinned_maps_err.append(orb.cutils.unbin_image(
                 gvar.sdev(self.phase_maps[iorder]),
                 self.dimx_unbinned, self.dimy_unbinned))
 
-        self.unbinned_calibration_coeff_map = cutils.unbin_image(
+        self.unbinned_calibration_coeff_map = orb.cutils.unbin_image(
             self.calibration_coeff_map,
             self.dimx_unbinned, self.dimy_unbinned)
         
@@ -1244,7 +1244,7 @@ class PhaseMaps(core.Tools):
         _phase_map = self.get_map(0)
         _phase_map_err = self.get_map_err(0)
         
-        thetas, model, err = utils.image.fit_map_theta(
+        thetas, model, err = orb.utils.image.fit_map_theta(
             _phase_map,
             _phase_map_err,
             #np.cos(np.deg2rad(self.theta_map)), model is linear with
@@ -1285,11 +1285,11 @@ class PhaseMaps(core.Tools):
           (i.e. real positions on the detector) (default False).
         """
         if unbin:
-            utils.validate.index(x, 0, self.dimx_unbinned, clip=False)
-            utils.validate.index(y, 0, self.dimy_unbinned, clip=False)
+            orb.utils.validate.index(x, 0, self.dimx_unbinned, clip=False)
+            orb.utils.validate.index(y, 0, self.dimy_unbinned, clip=False)
         else:
-            utils.validate.index(x, 0, self.dimx, clip=False)
-            utils.validate.index(y, 0, self.dimy, clip=False)
+            orb.utils.validate.index(x, 0, self.dimx, clip=False)
+            orb.utils.validate.index(y, 0, self.dimy, clip=False)
         coeffs = list()
         for iorder in range(len(self.phase_maps)):
             if unbin:
@@ -1316,7 +1316,7 @@ class PhaseMaps(core.Tools):
         """
         _coeffs = self.get_coeffs(x, y, unbin=unbin)
         if coeffs is not None:
-            utils.validate.has_len(coeffs, len(self.phase_maps))
+            orb.utils.validate.has_len(coeffs, len(self.phase_maps))
             for i in range(len(coeffs)):
                 if coeffs[i] is not None:
                     if not np.isnan(coeffs[i]):
@@ -1339,7 +1339,7 @@ class PhaseMaps(core.Tools):
         phase_cube = np.empty((self.dimx, self.dimy, self.axis.size), dtype=float)
         phase_cube.fill(np.nan)
         
-        progress = core.ProgressBar(self.dimx)
+        progress = orb.core.ProgressBar(self.dimx)
         for ii in range(self.dimx):
             progress.update(
                 ii, info="computing column {}/{}".format(
@@ -1350,7 +1350,7 @@ class PhaseMaps(core.Tools):
                 
         progress.end()
 
-        utils.io.write_fits(path, phase_cube, overwrite=True)
+        orb.utils.io.write_fits(path, phase_cube, overwrite=True)
         
     
     def unwrap_phase_map_0(self):
@@ -1366,14 +1366,14 @@ class PhaseMaps(core.Tools):
         possibly very noisy map, where a naive 2d unwrapping cannot be
         done.
         """
-        self.phase_map_order_0_unwraped = utils.image.unwrap_phase_map0(
+        self.phase_map_order_0_unwraped = orb.utils.image.unwrap_phase_map0(
             np.copy(self.phase_maps[0]))
         
         # Save unwraped map
         phase_map_path = self._get_phase_map_path(0, phase_map_type='unwraped')
 
-        utils.io.write_fits(phase_map_path,
-                            cutils.unbin_image(
+        orb.utils.io.write_fits(phase_map_path,
+                            orb.cutils.unbin_image(
                                 np.copy(self.phase_map_order_0_unwraped),
                                 self.dimx_unbinned,
                                 self.dimy_unbinned), 

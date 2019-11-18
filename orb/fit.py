@@ -43,17 +43,17 @@ import logging
 import gvar
 import lsqfit
 
-from . import utils.fft
-from . import constants
-from . import utils.spectrum
-from . import utils.fit
-from . import utils.stats
-from . import utils.validate
-from . import utils.err
-from . import cutils
+import orb.utils.fft
+import orb.constants
+import orb.utils.spectrum
+import orb.utils.fit
+import orb.utils.stats
+import orb.utils.validate
+import orb.utils.err
+import orb.cutils
 
-from .core import Lines, FilterFile, Axis
-from . import core
+from orb.core import Lines, FilterFile, Axis
+import orb.core
 
 class FitVector(object):
     """
@@ -167,7 +167,7 @@ class FitVector(object):
         self.models_operation = list()
         self.priors_list = list()
         self.priors_keys_list = list()
-        params = utils.fit.pick2paramslist(params)
+        params = orb.utils.fit.pick2paramslist(params)
         
         for i in range(len(models)):
             # init each model
@@ -399,8 +399,8 @@ class FitVector(object):
         if self.vector_imag is None:
             return out[np.min(self.signal_range):np.max(self.signal_range)]
         else:
-            out = utils.vector.float2complex(out)
-            return utils.vector.complex2float((
+            out = orb.utils.vector.float2complex(out)
+            return orb.utils.vector.complex2float((
                 out[0][np.min(self.signal_range):np.max(self.signal_range)],
                 out[1][np.min(self.signal_range):np.max(self.signal_range)]))
             
@@ -419,7 +419,7 @@ class FitVector(object):
         else:
             out_imag = self.vector_imag[
                 np.min(self.signal_range):np.max(self.signal_range)]
-            return utils.vector.complex2float((out, out_imag))
+            return orb.utils.vector.complex2float((out, out_imag))
         
 
     def _get_sigma_onrange(self):
@@ -563,15 +563,15 @@ class FitVector(object):
                 fit_p,
                 return_models=True)
             if self.vector_imag is not None:
-                _model = utils.vector.float2complex(_model)
+                _model = orb.utils.vector.float2complex(_model)
                 for ikey in _models:
                     if isinstance(_models[ikey], list):
                         _new_model = list()
                         for imod in _models[ikey]:
-                            _new_model.append(utils.vector.float2complex(imod))
+                            _new_model.append(orb.utils.vector.float2complex(imod))
                         _models[ikey] = _new_model
                     else:
-                        _models[ikey] = utils.vector.float2complex(_models[ikey])
+                        _models[ikey] = orb.utils.vector.float2complex(_models[ikey])
                             
                     
             (returned_data['fitted_vector_gvar'],
@@ -616,7 +616,7 @@ class FitVector(object):
             returned_data['residual'] = residual
             # kolmogorov smirnov test: if p_value < 0.05 residual is not normal
             returned_data['ks_pvalue'] = scipy.stats.kstest(
-                residual / np.std(utils.stats.sigmacut(residual)), 'norm')[1]
+                residual / np.std(orb.utils.stats.sigmacut(residual)), 'norm')[1]
 
 
             # compute MCMC uncertainty estimates
@@ -779,7 +779,7 @@ class Model(object):
         # create free and fixed vectors
         self.val2free()
         if len(self.unused_keys) != 0:
-            raise utils.err.FitInitError('Some input keys where not used during fit init: {}'.format(list(self.unused_keys.keys())))
+            raise orb.utils.err.FitInitError('Some input keys where not used during fit init: {}'.format(list(self.unused_keys.keys())))
 
     def parse_dict(self):
         """Parse input dictionary to create :py:attr:`fit.Model.p_def`, :py:attr:`fit.Model.p_val` and
@@ -1011,7 +1011,7 @@ class FilterModel(Model):
                 + gvar.mean(self.p_free['filter_shift'])))
 
         if return_complex:
-            mod = utils.vector.complex2float((mod, np.zeros_like(mod)))
+            mod = orb.utils.vector.complex2float((mod, np.zeros_like(mod)))
 
         if return_models:
             return mod, (mod)
@@ -1164,7 +1164,7 @@ class ContinuumModel(Model):
             warnings.warn('Nan in model')
 
         if return_complex:
-            mod = utils.vector.complex2float((mod, np.zeros_like(mod)))
+            mod = orb.utils.vector.complex2float((mod, np.zeros_like(mod)))
 
         if return_models:
             return mod, (mod)
@@ -1448,7 +1448,7 @@ class LinesModel(Model):
             ## parse guess
             p_guess = dict()
             if key_guess in self.p_dict:
-                utils.validate.has_len(self.p_dict[key_guess], line_nb,
+                orb.utils.validate.has_len(self.p_dict[key_guess], line_nb,
                                        object_name=key_guess)
 
                 self.p_dict[key_guess] = np.atleast_1d(self.p_dict[key_guess])
@@ -1460,7 +1460,7 @@ class LinesModel(Model):
                                                 
             ## parse cov  
             if key_cov in self.p_dict:
-                utils.validate.is_iterable(self.p_dict[key_cov], object_name=key_cov)
+                orb.utils.validate.is_iterable(self.p_dict[key_cov], object_name=key_cov)
                 p_cov = np.atleast_1d(self.p_dict[key_cov])
             else:
                 p_cov = None
@@ -1469,7 +1469,7 @@ class LinesModel(Model):
             p_cov_dict = dict()
             p_def = dict()
             if key_def in self.p_dict: # gives the definition of the parameter
-                utils.validate.has_len(self.p_dict[key_def], line_nb,
+                orb.utils.validate.has_len(self.p_dict[key_def], line_nb,
                                        object_name=key_def)
 
                 for iline in range(line_nb):
@@ -1589,7 +1589,7 @@ class LinesModel(Model):
 
         :param v: Data vector from which the guess is made.
         """
-        FWHM_INIT = 2. * constants.FWHM_SINC_COEFF
+        FWHM_INIT = 2. * orb.constants.FWHM_SINC_COEFF
         FWHM_COEFF = 6.
 
         self._p_val2array()
@@ -1732,9 +1732,9 @@ class LinesModel(Model):
             
             if fmodel == 'sinc':
                 if return_complex:
-                    model_function = utils.spectrum.sinc1d_complex
+                    model_function = orb.utils.spectrum.sinc1d_complex
                 else:
-                    model_function = utils.spectrum.sinc1d
+                    model_function = orb.utils.spectrum.sinc1d
                     
                 line_mod = model_function(
                     x, 0.,
@@ -1743,7 +1743,7 @@ class LinesModel(Model):
                     self.p_array[self._get_ikey('fwhm', iline)])
                 
             elif fmodel == 'mertz':
-                line_mod = utils.spectrum.mertz1d(
+                line_mod = orb.utils.spectrum.mertz1d(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
@@ -1754,9 +1754,9 @@ class LinesModel(Model):
                 
             elif fmodel == 'sincgauss':
                 if return_complex:
-                    model_function = utils.spectrum.sincgauss1d_complex
+                    model_function = orb.utils.spectrum.sincgauss1d_complex
                 else:
-                    model_function = utils.spectrum.sincgauss1d
+                    model_function = orb.utils.spectrum.sincgauss1d
                     
                 line_mod = model_function(
                     x, 0.,
@@ -1768,7 +1768,7 @@ class LinesModel(Model):
             elif fmodel == 'sincphased':
                 if return_complex:
                     raise NotImplementedError('sincphased model not implemeted for complex vector')
-                line_mod = utils.spectrum.sinc1d_phased(
+                line_mod = orb.utils.spectrum.sinc1d_phased(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
@@ -1778,7 +1778,7 @@ class LinesModel(Model):
             elif fmodel == 'sincgaussphased':
                 if return_complex:
                     raise NotImplementedError('sincgaussphased model not implemeted for complex vector')
-                line_mod = utils.spectrum.sincgauss1d_phased(
+                line_mod = orb.utils.spectrum.sincgauss1d_phased(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
@@ -1793,7 +1793,7 @@ class LinesModel(Model):
                 ##     p_array[iline, 1], p_array[iline, 2])**2.)
                 
             elif fmodel == 'gaussian':
-                line_mod = utils.spectrum.gaussian1d(
+                line_mod = orb.utils.spectrum.gaussian1d(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
                     self.p_array[self._get_ikey('pos', iline)],
@@ -1803,7 +1803,7 @@ class LinesModel(Model):
 
 
             if return_complex:
-                line_mod = utils.vector.complex2float(line_mod)
+                line_mod = orb.utils.vector.complex2float(line_mod)
                 
             line_mod *= mult_amp
             
@@ -1841,17 +1841,17 @@ class Cm1LinesModel(LinesModel):
 
     def _w2pix(self, w):
         """Translate wavenumber to pixels"""        
-        return utils.spectrum.fast_w2pix(w, self.axis_min, self.axis_step)
+        return orb.utils.spectrum.fast_w2pix(w, self.axis_min, self.axis_step)
 
 
     def _pix2w(self, pix):
         """Translate pixel to wavenumber"""
-        return utils.spectrum.fast_pix2w(pix, self.axis_min, self.axis_step)
+        return orb.utils.spectrum.fast_pix2w(pix, self.axis_min, self.axis_step)
 
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
-        return lambda lines, vel: lines * gvar.sqrt((1. - vel / constants.LIGHT_VEL_KMS)
-                                                    / (1. + vel / constants.LIGHT_VEL_KMS))
+        return lambda lines, vel: lines * gvar.sqrt((1. - vel / orb.constants.LIGHT_VEL_KMS)
+                                                    / (1. + vel / orb.constants.LIGHT_VEL_KMS))
          
     def _p_val2array(self):
         """Transform :py:attr:`fit.Model.p_val` to :py:attr:`fit.LinesModel.p_array`"""
@@ -1869,7 +1869,7 @@ class Cm1LinesModel(LinesModel):
         lines_pix = self._w2pix(np.array(lines_cm1))
         fwhm_pix = np.array(fwhm_cm1) / self.axis_step
         if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
-            sigma_pix = utils.fit.vel2sigma(
+            sigma_pix = orb.utils.fit.vel2sigma(
                 np.array(sigma_kms), lines_cm1, self.axis_step)
                         
         self.p_array = dict(self.p_val)
@@ -1902,7 +1902,7 @@ class Cm1LinesModel(LinesModel):
         lines_cm1 = self._pix2w(np.array(lines_pix))
         fwhm_cm1 = np.array(fwhm_pix) * self.axis_step
         if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
-            sigma_kms = utils.fit.sigma2vel(
+            sigma_kms = orb.utils.fit.sigma2vel(
                 np.array(sigma_pix), gvar.mean(lines_cm1), self.axis_step)
 
         self.p_val = dict(p_array)
@@ -1940,7 +1940,7 @@ class Cm1LinesModel(LinesModel):
             return gvar.gvar(np.squeeze(mean), max(mean, fwhm_sdev_cm1))
         elif 'sigma' in idef:
             lines_cm1 = gvar.mean(self.p_val[self._get_ikey('pos', iline)])
-            sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
+            sigma_sdev_kms = np.nanmean(orb.utils.fit.sigma2vel(
                 SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
             return gvar.gvar(mean, max(mean, gvar.mean(sigma_sdev_kms)))
         elif 'alpha' in idef:
@@ -1954,37 +1954,37 @@ class Cm1LinesModel(LinesModel):
         LinesModel.parse_dict(self)
 
         if 'step_nb' not in self.p_dict:
-            raise utils.err.FitInitError('step_nb keyword must be set' )
+            raise orb.utils.err.FitInitError('step_nb keyword must be set' )
         self.step_nb = float(self.p_dict['step_nb'])
         self.unused_keys.pop('step_nb')
         
         if 'step' not in self.p_dict:
-            raise utils.err.FitInitError('step keyword must be set' )
+            raise orb.utils.err.FitInitError('step keyword must be set' )
         self.step = float(self.p_dict['step'])
         self.unused_keys.pop('step')
         
         if 'order' not in self.p_dict:
-            raise utils.err.FitInitError('order keyword must be set' )
+            raise orb.utils.err.FitInitError('order keyword must be set' )
         self.order = int(self.p_dict['order'])
         self.unused_keys.pop('order')
         
         if 'nm_laser' not in self.p_dict:
-            raise utils.err.FitInitError('nm_laser keyword must be set' )
+            raise orb.utils.err.FitInitError('nm_laser keyword must be set' )
         self.nm_laser = float(self.p_dict['nm_laser'])
         self.unused_keys.pop('nm_laser')
     
         if 'nm_laser_obs' not in self.p_dict:
-            raise utils.err.FitInitError('nm_laser_obs keyword must be set' )
+            raise orb.utils.err.FitInitError('nm_laser_obs keyword must be set' )
         self.nm_laser_obs = float(self.p_dict['nm_laser_obs'])
         self.unused_keys.pop('nm_laser_obs')
         
         self.correction_coeff = self.nm_laser_obs / self.nm_laser
 
-        self.axis_min = cutils.get_cm1_axis_min(
+        self.axis_min = orb.cutils.get_cm1_axis_min(
             self.step_nb, self.step, self.order,
             corr=self.correction_coeff)
     
-        self.axis_step = cutils.get_cm1_axis_step(
+        self.axis_step = orb.cutils.get_cm1_axis_step(
             self.step_nb, self.step, corr=self.correction_coeff)
 
 
@@ -2001,8 +2001,8 @@ class NmLinesModel(Cm1LinesModel):
     """
     def _get_pos_cov_operation(self):
         """Return covarying position operation for an input velocity in km/s"""
-        return lambda lines, vel: lines * np.sqrt((1. + vel / constants.LIGHT_VEL_KMS)
-                                                  / (1. - vel / constants.LIGHT_VEL_KMS))
+        return lambda lines, vel: lines * np.sqrt((1. + vel / orb.constants.LIGHT_VEL_KMS)
+                                                  / (1. - vel / orb.constants.LIGHT_VEL_KMS))
 
     
     def parse_dict(self):
@@ -2010,17 +2010,17 @@ class NmLinesModel(Cm1LinesModel):
         raise Exception('Not re-implemented')
         Cm1LinesModel.parse_dict(self)
         
-        self.axis_min = cutils.get_nm_axis_min(
+        self.axis_min = orb.cutils.get_nm_axis_min(
             self.step_nb, self.step, self.order,
             corr=self.correction_coeff)
-        self.axis_step = cutils.get_nm_axis_step(
+        self.axis_step = orb.cutils.get_nm_axis_step(
             self.step_nb, self.step, self.order,
             corr=self.correction_coeff)
 
 ################################################
 #### CLASS Params ##############################
 ################################################
-class Params(core.Params):
+class Params(orb.core.Params):
     """Manage a set of parameters as a special dictionary which
     elements can be accessed like attributes.
     """
@@ -2062,7 +2062,7 @@ class InputParams(object):
         
     def append_model(self, model, operation, params):
         if self.has_model(model):
-            raise utils.err.FitInputError('{} already added'.format(model))
+            raise orb.utils.err.FitInputError('{} already added'.format(model))
         self.models.append([model, operation])
         self.params.append(params)
         self.check_signal_range()
@@ -2071,9 +2071,9 @@ class InputParams(object):
     def set_signal_range(self, rmin, rmax):    
         if (not (self.axis_min <= rmin < rmax)
             or not (rmin < rmax <= self.axis_max)):
-            raise utils.err.FitInputError('Check rmin and rmax values. Must be between {} and {}'.format(self.axis_min, self.axis_max))
+            raise orb.utils.err.FitInputError('Check rmin and rmax values. Must be between {} and {}'.format(self.axis_min, self.axis_max))
         
-        signal_range_pix = utils.spectrum.fast_w2pix(
+        signal_range_pix = orb.utils.spectrum.fast_w2pix(
             np.array([rmin, rmax], dtype=float),
             self.axis_min, self.axis_step)
         minx = max(1, int(np.min(signal_range_pix)))
@@ -2107,7 +2107,7 @@ class InputParams(object):
         # here we convert all gvars convertible arrays or values to a
         # _mean / _sdev couple to avoid pickling gvars. These couples
         # must then be merged again as gvars in FitVector.__init__()
-        raw['params'] = utils.fit.paramslist2pick(self.params)
+        raw['params'] = orb.utils.fit.paramslist2pick(self.params)
         
         raw['signal_range'] = list(self.signal_range)
         raw['base_params'] = dict(self.base_params)
@@ -2140,7 +2140,7 @@ class InputParams(object):
         params.update(kwargs)
 
         if not 'fmodel' in params:
-            raise utils.err.FitInputError('fmodel must be set')
+            raise orb.utils.err.FitInputError('fmodel must be set')
 
         # check single valued params
         for iparam in params:
@@ -2166,11 +2166,11 @@ class InputParams(object):
                 sigma_cov_vel = self._get_sigma_cov_vel(fwhm_guess, lines)
 
                 params['sigma_def'] = np.array(params.sigma_def, dtype=str)
-                utils.validate.has_len(params.sigma_def, np.size(lines), object_name='sigma_def')
-                utils.validate.has_len(sigma_cov_vel, np.size(lines), object_name='sigma_cov_vel')
+                orb.utils.validate.has_len(params.sigma_def, np.size(lines), object_name='sigma_def')
+                orb.utils.validate.has_len(sigma_cov_vel, np.size(lines), object_name='sigma_cov_vel')
                 
                 if 'sigma_guess' in params:
-                    utils.validate.has_len(params.sigma_guess, np.size(lines), object_name='sigma_guess')
+                    orb.utils.validate.has_len(params.sigma_guess, np.size(lines), object_name='sigma_guess')
                     
                     # sigma cov vel is adjusted to the initial guess + apodization
                     sqroots = list()
@@ -2213,7 +2213,7 @@ class InputParams(object):
             del params.line_nb # this parameter cannot be changed
 
         if 'pos_guess' in params:
-            raise utils.err.FitInputError("Line position must be defined with the 'lines' parameter")
+            raise orb.utils.err.FitInputError("Line position must be defined with the 'lines' parameter")
 
         return params
     
@@ -2244,7 +2244,7 @@ class InputParams(object):
         params = self._check_lines_params(kwargs, fwhm_guess, lines)
         
         if 'fwhm_guess' in params:
-            raise utils.err.FitInputError('This parameter must be defined with the non-keyword parameter fwhm_guess')
+            raise orb.utils.err.FitInputError('This parameter must be defined with the non-keyword parameter fwhm_guess')
         
         default_params.update(params)
         all_params = Params()
@@ -2299,8 +2299,8 @@ class Cm1InputParams(InputParams):
         self.base_params['theta_orig'] = float(theta_orig)
         self.base_params['zpd_index'] = int(zpd_index)        
 
-        self.base_params['axis_corr_proj'] = utils.spectrum.theta2corr(theta_proj)
-        self.base_params['axis_corr_orig'] = utils.spectrum.theta2corr(theta_orig)
+        self.base_params['axis_corr_proj'] = orb.utils.spectrum.theta2corr(theta_proj)
+        self.base_params['axis_corr_orig'] = orb.utils.spectrum.theta2corr(theta_orig)
 
         self.base_params['nm_laser_obs'] = (self.base_params.nm_laser
                                             * self.base_params.axis_corr_proj)
@@ -2310,11 +2310,11 @@ class Cm1InputParams(InputParams):
         self.allparams = Params()
         self.allparams.update(self.base_params)
         
-        self.axis_min = cutils.get_cm1_axis_min(self.base_params.step_nb,
+        self.axis_min = orb.cutils.get_cm1_axis_min(self.base_params.step_nb,
                                                 self.base_params.step,
                                                 self.base_params.order,
                                                 corr=self.base_params.axis_corr_proj)
-        self.axis_step = cutils.get_cm1_axis_step(self.base_params.step_nb,
+        self.axis_step = orb.cutils.get_cm1_axis_step(self.base_params.step_nb,
                                                    self.base_params.step,
                                                    corr=self.base_params.axis_corr_proj)
         self.axis_max = self.axis_min + (self.base_params.step_nb - 1) * self.axis_step
@@ -2329,8 +2329,8 @@ class Cm1InputParams(InputParams):
         if self.base_params.apodization == 1.:
             sigma_cov_vel = [0] * np.size(lines_cm1) # km/s
         else:
-            sigma_cov_vel = utils.fit.sigma2vel(
-                utils.fft.apod2sigma(self.base_params.apodization,
+            sigma_cov_vel = orb.utils.fit.sigma2vel(
+                orb.utils.fft.apod2sigma(self.base_params.apodization,
                                      fwhm_guess_cm1.mean) / self.axis_step,
                 gvar.mean(lines_cm1), self.axis_step)
         return np.atleast_1d(sigma_cov_vel).astype(float)
@@ -2352,7 +2352,7 @@ class Cm1InputParams(InputParams):
             lines_cm1 = gvar.gvar(lines_cm1, np.ones_like(lines_cm1) * lines_cm1_sdev)
 
         # guess fwhm
-        fwhm_guess_cm1 = utils.spectrum.compute_line_fwhm(
+        fwhm_guess_cm1 = orb.utils.spectrum.compute_line_fwhm(
             self.base_params.step_nb - self.base_params.zpd_index,
             self.base_params.step,
             self.base_params.order,
@@ -2367,7 +2367,7 @@ class Cm1InputParams(InputParams):
         # guess sigma from apodization
         sigma_cov_vel = self._get_sigma_cov_vel(fwhm_guess_cm1, lines_cm1)
 
-        sigma_sdev_kms = utils.fit.sigma2vel(
+        sigma_sdev_kms = orb.utils.fit.sigma2vel(
             self.SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step)
         sigma_sdev_kms = np.atleast_1d(sigma_sdev_kms)
 
@@ -2414,7 +2414,7 @@ class Cm1InputParams(InputParams):
     def add_filter_model(self, **kwargs):
 
         if self.base_params.filter_name is None:
-            raise utils.err.FitInputError('filter_name is None')
+            raise orb.utils.err.FitInputError('filter_name is None')
 
         filter_function = self.filterfile.project(Axis(self.axis)).data
         
@@ -2428,7 +2428,7 @@ class Cm1InputParams(InputParams):
         params.update(kwargs)
 
         if 'filter_function' in params:
-            raise utils.err.FitInputError('filter function must be defined via the filter file path at the init of the class')
+            raise orb.utils.err.FitInputError('filter function must be defined via the filter file path at the init of the class')
 
         default_params.update(params)
 
@@ -2479,7 +2479,7 @@ class OutputParams(Params):
         if isinstance(inputparams, InputParams):
             inputparams = inputparams.convert()
             
-        inputparams['params'] = utils.fit.pick2paramslist(inputparams['params'])
+        inputparams['params'] = orb.utils.fit.pick2paramslist(inputparams['params'])
         
         all_inputparams = Params()
 
@@ -2524,7 +2524,7 @@ class OutputParams(Params):
         if wavenumber is None:
             pos_pix = line_params[:,1]
         else:
-            pos_pix = utils.spectrum.fast_w2pix(
+            pos_pix = orb.utils.spectrum.fast_w2pix(
                 line_params[:,1],
                 inputparams['axis_min'],
                 inputparams['axis_step'])
@@ -2578,7 +2578,7 @@ class OutputParams(Params):
         if wavenumber is not None:
             # compute velocity
             pos_wave = line_params[:,2]
-            velocity = utils.spectrum.compute_radial_velocity(
+            velocity = orb.utils.spectrum.compute_radial_velocity(
                 pos_wave, gvar.mean(all_inputparams.pos_guess),
                 wavenumber=wavenumber)
 
@@ -2588,8 +2588,8 @@ class OutputParams(Params):
 
             # compute broadening
             sigma_total_kms = line_params[:,4]
-            sigma_apod_kms = utils.fit.sigma2vel(
-                utils.fft.apod2sigma(
+            sigma_apod_kms = orb.utils.fit.sigma2vel(
+                orb.utils.fft.apod2sigma(
                     all_inputparams.apodization, line_params[:,3]) / inputparams['axis_step'],
                 pos_wave, inputparams['axis_step'])
 
@@ -2604,14 +2604,14 @@ class OutputParams(Params):
             # If calibrated, amplitude unit must be in erg/cm2/s/A, then
             # fwhm/width units must be in Angströms
             if wavenumber:                
-                fwhm = utils.spectrum.fwhm_cm12nm(
+                fwhm = orb.utils.spectrum.fwhm_cm12nm(
                     line_params[:,3], line_params[:,2]) * 10.
             else:
                 fwhm = line_params[:,3] * 10.
 
             # compute sigma in Angstroms to get flux
-            sigma = utils.spectrum.fwhm_cm12nm(
-                utils.fit.vel2sigma(
+            sigma = orb.utils.spectrum.fwhm_cm12nm(
+                orb.utils.fit.vel2sigma(
                     line_params[:,4], line_params[:,2],
                     inputparams['axis_step']) * inputparams['axis_step'],
                 line_params[:,2]) * 10.
@@ -2622,16 +2622,16 @@ class OutputParams(Params):
 
         ## compute flux
         if all_inputparams.fmodel in ['sincgauss', 'sincgaussphased']:
-            flux = utils.spectrum.sincgauss1d_flux(
+            flux = orb.utils.spectrum.sincgauss1d_flux(
                 line_params[:,1], fwhm, sigma)
         elif all_inputparams.fmodel == 'gaussian':
-            flux = utils.spectrum.gaussian1d_flux(
+            flux = orb.utils.spectrum.gaussian1d_flux(
                 line_params[:,1],fwhm)
         elif all_inputparams.fmodel == 'sinc':
-            flux = utils.spectrum.sinc1d_flux(
+            flux = orb.utils.spectrum.sinc1d_flux(
                 line_params[:,1], fwhm)
         elif all_inputparams.fmodel == 'sincphased':
-            flux = utils.spectrum.sinc1d_flux(
+            flux = orb.utils.spectrum.sinc1d_flux(
                 line_params[:,1], fwhm)
 
         else:
@@ -2659,7 +2659,7 @@ class OutputParams(Params):
         raw = dict()
         for ipar in list(self.keys()):
             raw[ipar] = self[ipar]
-        raw = utils.fit.gvardict2pickdict(raw)
+        raw = orb.utils.fit.gvardict2pickdict(raw)
         return raw
 
         
@@ -2700,7 +2700,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
         rawip = ip.convert()
     else: rawip = ip
 
-    rawip['params'] = utils.fit.pick2paramslist(rawip['params'])
+    rawip['params'] = orb.utils.fit.pick2paramslist(rawip['params'])
 
     for iparams in rawip['params']:
         for key in iparams:
@@ -2712,7 +2712,7 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
     logging.debug('fwhm guess: {}'.format(
         gvar.mean(rawip['params'][0]['fwhm_guess'])))
 
-    rawip['params'] = utils.fit.paramslist2pick(rawip['params'])
+    rawip['params'] = orb.utils.fit.paramslist2pick(rawip['params'])
     fv = FitVector(spectrum,
                    rawip['models'], rawip['params'],
                    signal_range=rawip['signal_range'],
@@ -3053,8 +3053,8 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     nm_laser = 543.5 # can be anything
     nm_laser_obs = nm_laser / np.cos(np.deg2rad(theta))
     
-    step_nb = utils.spectrum.compute_step_nb(resolution, step, order)
-    fwhm_guess = utils.spectrum.compute_line_fwhm(
+    step_nb = orb.utils.spectrum.compute_step_nb(resolution, step, order)
+    fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
         step_nb, step, order, nm_laser_obs / nm_laser, wavenumber=True)
 
     total_step_nb = step_nb * (1. + ratio)
@@ -3207,10 +3207,10 @@ def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
 
     step_nb = spectrum.shape[0]
 
-    cm1_axis = utils.spectrum.create_cm1_axis(step_nb, step, order)
+    cm1_axis = orb.utils.spectrum.create_cm1_axis(step_nb, step, order)
     cm1_axis_step = cm1_axis[1] - cm1_axis[0]
     fwhm_sdev_cm1 = cm1_axis_step * FWHM_SDEV
-    sigma_sdev_kms = np.nanmean(utils.fit.sigma2vel(
+    sigma_sdev_kms = np.nanmean(orb.utils.fit.sigma2vel(
         SIGMA_SDEV, lines_cm1, cm1_axis_step))
     lines_cm1_sdev = SHIFT_SDEV * cm1_axis_step
 

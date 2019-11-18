@@ -13,7 +13,7 @@ packages = find_packages(where=".")
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
     
 extensions = [
@@ -51,7 +51,7 @@ setup(
     package_dir={"": "."},
     include_package_data=True,
     package_data={
-        '':['LICENSE.txt', '*.rst', '*.txt', 'docs/*', '*.pyx'],
+        '':['LICENSE.txt', '*.rst', '*.txt', 'docs/*', '*.pyx', 'README.md'],
         'orb':['data/*', '*.pyx']},
     exclude_package_data={
         '': ['*~', '*.so', '*.pyc', '*.c', 'orb/cgvar.c'],

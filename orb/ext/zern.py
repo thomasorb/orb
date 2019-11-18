@@ -12,7 +12,7 @@ Construct and analyze Zernike basis functions
 """
 
 import numpy as np
-from scipy.misc import factorial as fac
+from scipy.special import factorial as fac
 from functools import reduce
 
 

@@ -20,13 +20,13 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import core
-from . import utils.photometry
-from . import utils.filters
-from . import utils.spectrum
-from . import utils.vector
-from . import utils.io
-from . import utils.err
+import orb.core
+import orb.utils.photometry
+import orb.utils.filters
+import orb.utils.spectrum
+import orb.utils.vector
+import orb.utils.io
+import orb.utils.err
 
 import numpy as np
 import logging
@@ -42,19 +42,19 @@ class Photometry(object):
     cameras = [0,1,2]
     def __init__(self, filter_name, camera_index, instrument='sitelle', airmass=1):
         
-        self.tools = core.Tools(instrument=instrument)
+        self.tools = orb.core.Tools(instrument=instrument)
         self.filter_name = filter_name
         if not camera_index in self.cameras:
             raise ValueError('camera_index must be in {}'.format(self.cameras))
         self.camera_index = camera_index
-        self.filter_file = core.FilterFile(self.filter_name)
+        self.filter_file = orb.core.FilterFile(self.filter_name)
         self.order = self.filter_file.params.order
         self.step = self.filter_file.params.step
 
         self.airmass = float(airmass)
 
-        self.corr = utils.spectrum.theta2corr(self.tools.config['OFF_AXIS_ANGLE_CENTER'])
-        self.cm1_axis = core.Axis(utils.spectrum.create_cm1_axis(
+        self.corr = orb.utils.spectrum.theta2corr(self.tools.config['OFF_AXIS_ANGLE_CENTER'])
+        self.cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
             self.STEP_NB, self.step, self.order, corr=self.corr))
         self.filter_trans = self.filter_file.project(self.cm1_axis)
 
@@ -65,15 +65,15 @@ class Photometry(object):
         if not tterm in self.transmission_terms:
             raise ValueError('tterm must be in {}'.format(self.transmission_terms))
         if tterm == 'atmosphere':
-            atm = core.Cm1Vector1d(self.tools._get_atmospheric_extinction_file_path(),
+            atm = orb.core.Cm1Vector1d(self.tools._get_atmospheric_extinction_file_path(),
                                    params=self.params).project(self.cm1_axis)
-            atm.data = utils.photometry.ext2trans(atm.data, self.airmass)
+            atm.data = orb.utils.photometry.ext2trans(atm.data, self.airmass)
             return atm
         elif tterm == 'mirror':
-            return core.Cm1Vector1d(self.tools._get_mirror_transmission_file_path(),
+            return orb.core.Cm1Vector1d(self.tools._get_mirror_transmission_file_path(),
                                    params=self.params).project(self.cm1_axis)
         elif tterm == 'optics':
-            return core.Cm1Vector1d(self.tools._get_optics_file_path(self.filter_name),
+            return orb.core.Cm1Vector1d(self.tools._get_optics_file_path(self.filter_name),
                                     params=self.params).project(self.cm1_axis)
         elif tterm == 'filter':
             return self.filter_trans.copy()
@@ -93,11 +93,11 @@ class Photometry(object):
         if self.camera_index != 0:
             trans = trans.math('divide', 2)
         if eps is not None:    
-            if not isinstance(eps, core.Cm1Vector1d):
+            if not isinstance(eps, orb.core.Cm1Vector1d):
                 try:
                     eps = float(eps)
                 except Exception:
-                    raise TypeError('eps must be a core.Cm1Vector1d instance or a float')
+                    raise TypeError('eps must be a orb.core.Cm1Vector1d instance or a float')
             trans = trans.math('divide', eps)
             
 
@@ -111,7 +111,7 @@ class Photometry(object):
     
     def get_qe(self):
         def qe(cam_index):
-            return core.Cm1Vector1d(self.tools._get_quantum_efficiency_file_path(cam_index),
+            return orb.core.Cm1Vector1d(self.tools._get_quantum_efficiency_file_path(cam_index),
                                     params=self.params).project(self.cm1_axis) 
         if self.camera_index == 0:
             qe1 = qe(1)
@@ -136,12 +136,12 @@ class Photometry(object):
         
         if opd_jitter is None: opd_jitter = self.tools.config['OPD_JITTER']
         if wf_error is None: wf_error = self.tools.config['WF_ERROR']
-        rt4 = core.Cm1Vector1d(self.tools._get_4rt_file_path(),
+        rt4 = orb.core.Cm1Vector1d(self.tools._get_4rt_file_path(),
                                params=self.params).project(self.cm1_axis)
 
-        me_opd_jitter= utils.photometry.modulation_efficiency_opd_jitter(
+        me_opd_jitter= orb.utils.photometry.modulation_efficiency_opd_jitter(
             self.cm1_axis.data, opd_jitter)
-        me_wf= utils.photometry.modulation_efficiency_wavefront_error(
+        me_wf= orb.utils.photometry.modulation_efficiency_wavefront_error(
             self.cm1_axis.data, wf_error)
 
         # opd jitter me is squared because tip-tilt jitter gives the same me loss
@@ -160,7 +160,7 @@ class Photometry(object):
             if opd_jitter is not None or wf_error is not None:
                 warnings.warn('opd_jitter and wf_error have no effect when computing unmodulated flux')
                 
-        if isinstance(flux, core.Cm1Vector1d):
+        if isinstance(flux, orb.core.Cm1Vector1d):
             cm1_axis = flux.axis.data
             params = flux.params
             flux = flux.data
@@ -175,23 +175,23 @@ class Photometry(object):
             is_float=True
 
         flux = np.atleast_1d(np.copy(flux))
-        flux = flux / utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
+        flux = flux / orb.utils.photometry.compute_photon_energy(1e7/cm1_axis) # photons/cm2/s/A
         flux *= self.tools.config.MIR_SURFACE # photons/s/A
         if modulated:
             flux *= self.get_modulated_transmission(
                 eps=eps, opd_jitter=opd_jitter, wf_error=wf_error).project(
-                    core.Axis(cm1_axis)).data # electrons/s/A
+                    orb.core.Axis(cm1_axis)).data # electrons/s/A
         else:
             flux *= self.get_unmodulated_transmission(eps=eps).project(
-                core.Axis(cm1_axis)).data # electrons/s/A
+                orb.core.Axis(cm1_axis)).data # electrons/s/A
         flux *= self.get_ccd_gain() # counts/s/A
 
         delta_cm1 = np.diff(cm1_axis)[0] # in cm-1, channels have the same width
-        nm_bins = utils.spectrum.fwhm_cm12nm(delta_cm1, cm1_axis) # bins in nm
+        nm_bins = orb.utils.spectrum.fwhm_cm12nm(delta_cm1, cm1_axis) # bins in nm
 
         flux *= nm_bins * 10. # counts/s in each channel
 
-        flux = core.Cm1Vector1d(flux, axis=cm1_axis, params=params)
+        flux = orb.core.Cm1Vector1d(flux, axis=cm1_axis, params=params)
         
         if not is_float:
             return flux
@@ -206,7 +206,7 @@ class Photometry(object):
         image.StandardImage.compute_flux_correction_factor() and
         StandardSpectrum.compute_flux_calibration_vector().
         """
-        flux = core.Cm1Vector1d(
+        flux = orb.core.Cm1Vector1d(
             np.ones_like(self.cm1_axis.data, dtype=float),
             axis=self.cm1_axis, filter_name=self.filter_name)
         # flux must be in erg/cm2/s/A
@@ -223,7 +223,7 @@ class Photometry(object):
 #################################################
 #### CLASS Standard #############################
 #################################################
-class Standard(core.Tools):
+class Standard(orb.core.Tools):
     """Manage standard files and photometrical calibration"""
 
     ang = None # Angstrom axis of the standard file
@@ -234,9 +234,9 @@ class Standard(core.Tools):
 
         :param std_name: Name of the standard.
 
-        :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
+        :param kwargs: Kwargs are :py:class:`~orb.core.Tools` properties.
         """
-        core.Tools.__init__(self, **kwargs)
+        orb.core.Tools.__init__(self, **kwargs)
              
         std_file_path, std_type = self._get_standard_file_path(std_name)
         if std_type == 'MASSEY' or std_type == 'MISC':
@@ -264,7 +264,7 @@ class Standard(core.Tools):
 
         :param file_path: Path to the Oke dat file ('fXX.dat').
         """
-        std_file = utils.io.open_file(file_path, 'r')
+        std_file = orb.utils.io.open_file(file_path, 'r')
         
         spec_ang = list()
         spec_flux = list()
@@ -289,7 +289,7 @@ class Standard(core.Tools):
         :param file_path: Path to the Massey dat file (generally
           'spXX.dat').
         """
-        std_file = utils.io.open_file(file_path, 'r')
+        std_file = orb.utils.io.open_file(file_path, 'r')
         
         spec_ang = list()
         spec_mag = list()
@@ -302,7 +302,7 @@ class Standard(core.Tools):
         spec_mag = np.array(spec_mag, dtype=float)
         
         # convert mag to flux in erg/cm^2/s/A
-        spec_flux = utils.photometry.ABmag2flambda(spec_mag, spec_ang)
+        spec_flux = orb.utils.photometry.ABmag2flambda(spec_mag, spec_ang)
 
         return spec_ang, spec_flux
 
@@ -316,7 +316,7 @@ class Standard(core.Tools):
         :param file_path: Path to the Massey dat file (generally
           'spXX.dat').
         """
-        hdu = utils.io.read_fits(file_path, return_hdu_only=True, data_index=1)
+        hdu = orb.utils.io.read_fits(file_path, return_hdu_only=True, data_index=1)
         hdr = hdu.header
         data = hdu.data
 
@@ -343,17 +343,17 @@ class Standard(core.Tools):
         :param corr: (Optional) Correction coefficient related to the incident
           angle (default None, taken at the center of the field).
         """
-        ff = core.FilterFile(filter_name)
-        if corr is None: corr = utils.spectrum.theta2corr(
+        ff = orb.core.FilterFile(filter_name)
+        if corr is None: corr = orb.utils.spectrum.theta2corr(
                 self.config['OFF_AXIS_ANGLE_CENTER'])
-        axis = utils.spectrum.create_cm1_axis(
+        axis = orb.utils.spectrum.create_cm1_axis(
             n, ff.params.step, ff.params.order, corr=corr)
-        old_axis = utils.spectrum.nm2cm1(self.ang / 10.)
+        old_axis = orb.utils.spectrum.nm2cm1(self.ang / 10.)
         
         params = {'step': ff.params.step, 'order':ff.params.order, 'calib_coeff':corr,
                   'filter_file_path':ff.basic_path}
 
-        return core.Cm1Vector1d(utils.vector.interpolate_axis(
+        return orb.core.Cm1Vector1d(orb.utils.vector.interpolate_axis(
             self.flux, axis, 3, old_axis=old_axis), axis=axis, params=params)
 
     def simulate_measured_flux(self, filter_name, n, airmass=1, corr=None, camera_index=1,
@@ -414,7 +414,7 @@ class Standard(core.Tools):
         dimy = self.config['CAM{}_DETECTOR_SIZE_Y'.format(camera_number)]
         fov = self.config['FIELD_OF_VIEW_{}'.format(camera_number)]
         plate_scale = fov / max(dimx, dimy) * 60 # arcsec
-        return utils.photometry.compute_optimal_texp(
+        return orb.utils.photometry.compute_optimal_texp(
             star_flux, seeing,
             plate_scale,
             saturation=saturation)

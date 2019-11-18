@@ -524,7 +524,7 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
         return sinc1d(x, h, a, dx, fwhm)
 
     if max_broadening_ratio > 7:
-	return gaussian1d(x, h, a, dx, sigma * (2. * gvar.sqrt(2. * gvar.log(2.))))
+        return gaussian1d(x, h, a, dx, sigma * (2. * gvar.sqrt(2. * gvar.log(2.))))
     
     width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi ###    

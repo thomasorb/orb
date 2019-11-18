@@ -29,19 +29,20 @@ import warnings
 import os
 import logging
 
-from . import core
-from . import old
-from . import utils.io
-from . import utils.misc
-from . import utils.astrometry
-from . import fft
-from . import image
+import orb.core
+import orb.old
+import orb.utils.io
+import orb.utils.misc
+import orb.utils.astrometry
+import orb.fft
+import orb.image
+import orb.cutils
 
 import scipy.interpolate
 import gvar
 import pyregion
 
-from . import photometry
+import orb.photometry
 import gc
 import h5py
 
@@ -60,7 +61,7 @@ class MockArray(object):
         if not os.path.exists(path):
             raise IOError('File does not exist')
 
-        with utils.io.open_hdf5(path, 'r') as f:
+        with orb.utils.io.open_hdf5(path, 'r') as f:
             if 'data' not in f:
                 raise Exception('badly formatted hdf5 file')
 
@@ -74,7 +75,7 @@ class MockArray(object):
 #################################################
 #### CLASS HDFCube ##############################
 #################################################
-class HDFCube(core.WCSData):
+class HDFCube(orb.core.WCSData):
     """ This class implements the use of an HDF5 cube."""        
 
     protected_datasets = 'data', 'mask', 'header', 'deep_frame', 'params', 'axis', 'calib_map', 'phase_map', 'phase_map_err', 'phase_maps_coeff_map', 'phase_maps_cm1_axis', 'standard_image', 'standard_spectrum'
@@ -91,7 +92,7 @@ class HDFCube(core.WCSData):
 
         :param path: Path to an HDF5 cube
 
-        :param indexer: (Optional) Must be a :py:class:`core.Indexer`
+        :param indexer: (Optional) Must be a :py:class:`orb.core.Indexer`
           instance. If not None created files can be indexed by this
           instance.
 
@@ -99,7 +100,7 @@ class HDFCube(core.WCSData):
           'spiomm'). If it cannot be read from the file itself (in
           attributes) it must be set.
 
-        :param kwargs: (Optional) :py:class:`~orb.core.Data` kwargs.
+        :param kwargs: (Optional) :py:class:`~orb.orb.core.Data` kwargs.
         """
         self.cube_path = str(path)
 
@@ -110,11 +111,11 @@ class HDFCube(core.WCSData):
         # loaded before and passed as an instance to Data.
         self.is_old = False
         if isinstance(self.cube_path, str):
-            with utils.io.open_hdf5(self.cube_path, 'r') as f:
+            with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if 'level2' not in f.attrs:
                     warnings.warn('old cube architecture. IO performances could be reduced.')
                     self.is_old = True
-                    self.oldcube = old.HDFCube(self.cube_path, silent_init=True)
+                    self.oldcube = orb.old.HDFCube(self.cube_path, silent_init=True)
                     
                     self.data = MockArray()
                     self.data.shape = self.oldcube.shape
@@ -126,7 +127,7 @@ class HDFCube(core.WCSData):
                 self.axis = None
                 self.mask = None
                 self.err = None
-                self.params = core.ROParams()
+                self.params = orb.core.ROParams()
                 for param in f.attrs:
                     try:
                         self.params[param] = f.attrs[param]
@@ -139,7 +140,7 @@ class HDFCube(core.WCSData):
 
         # init Tools and Data
         if not self.is_old:
-            instrument = utils.misc.read_instrument_value_from_file(self.cube_path)
+            instrument = orb.utils.misc.read_instrument_value_from_file(self.cube_path)
 
         # load header if present and update params
         header = self._read_old_header()
@@ -159,7 +160,7 @@ class HDFCube(core.WCSData):
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
 
-        core.WCSData.__init__(self, self, instrument=instrument,
+        orb.core.WCSData.__init__(self, self, instrument=instrument,
                               data_prefix=data_prefix,
                               config=config, **kwargs)
 
@@ -168,8 +169,8 @@ class HDFCube(core.WCSData):
             raise TypeError('input cube has {} dims but must have exactly 3 dimensions'.format(self.data.ndim))
         
         if indexer is not None:
-            if not isinstance(indexer, core.Indexer):
-                raise TypeError('indexer must be an orb.core.Indexer instance')
+            if not isinstance(indexer, orb.core.Indexer):
+                raise TypeError('indexer must be an orb.orb.core.Indexer instance')
         self.indexer = indexer
 
     def __del__(self):
@@ -232,7 +233,7 @@ class HDFCube(core.WCSData):
                      'INSTRUME': ('instrument', instrument_f)}
         
         if not self.has_dataset('header'): return dict()
-        header = utils.io.header_hdf52fits(self.get_dataset('header', protect=False))
+        header = orb.utils.io.header_hdf52fits(self.get_dataset('header', protect=False))
         params = dict()
         for ikey in header:
             if ikey in translate:
@@ -255,7 +256,7 @@ class HDFCube(core.WCSData):
         if mode not in ['r', 'a', 'r+']:
             raise ValueError('mode is {} and must be r, r+ or a'.format(mode))
 
-        return utils.io.open_hdf5(self.cube_path, mode)
+        return orb.utils.io.open_hdf5(self.cube_path, mode)
         
     
     def get_data(self, x_min, x_max, y_min, y_max, z_min, z_max, silent=False):
@@ -298,7 +299,7 @@ class HDFCube(core.WCSData):
           True, all regions are integrated. If False, a list of
           individual regions is returned.
         """
-        return utils.misc.get_mask_from_ds9_region_file(
+        return orb.utils.misc.get_mask_from_ds9_region_file(
             region, [0, self.dimx], [0, self.dimy], integrate=integrate,
             header=self.get_header())
     
@@ -326,9 +327,9 @@ class HDFCube(core.WCSData):
             region = self.get_region(region)
 
         if len(region) != 2: raise TypeError('badly formatted region.')
-        if not utils.validate.is_iterable(region[0], raise_exception=False):
+        if not orb.utils.validate.is_iterable(region[0], raise_exception=False):
             raise TypeError('badly formatted region.')
-        if not utils.validate.is_iterable(region[1], raise_exception=False):
+        if not orb.utils.validate.is_iterable(region[1], raise_exception=False):
             raise TypeError('badly formatted region.')
         if not len(region[0]) == len(region[1]):
             raise TypeError('badly formatted region.')
@@ -438,7 +439,7 @@ class HDFCube(core.WCSData):
         if binning < 2:
             raise ValueError('Bad binning value')
         logging.info('Binning interferogram cube')
-        image0_bin = utils.image.nanbin_image(
+        image0_bin = orb.utils.image.nanbin_image(
             self.get_data_frame(0), binning)
 
         cube_bin = np.empty((image0_bin.shape[0],
@@ -446,10 +447,10 @@ class HDFCube(core.WCSData):
                              self.dimz), dtype=float)
         cube_bin.fill(np.nan)
         cube_bin[:,:,0] = image0_bin
-        progress = core.ProgressBar(self.dimz-1)
+        progress = orb.core.ProgressBar(self.dimz-1)
         for ik in range(1, self.dimz):
             progress.update(ik, info='Binning cube')
-            cube_bin[:,:,ik] = utils.image.nanbin_image(
+            cube_bin[:,:,ik] = orb.utils.image.nanbin_image(
                 self.get_data_frame(ik), binning)
         progress.end()
         return cube_bin
@@ -474,7 +475,7 @@ class HDFCube(core.WCSData):
         y = np.arange(self.dimy)
         x_new = np.linspace(0, self.dimx, num=size_x)
         y_new = np.linspace(0, self.dimy, num=size_y)
-        progress = core.ProgressBar(self.dimz)
+        progress = orb.core.ProgressBar(self.dimz)
         for _ik in range(self.dimz):
             z = self.get_data_frame(_ik)
             interp = scipy.interpolate.RectBivariateSpline(x, y, z)
@@ -511,7 +512,7 @@ class HDFCube(core.WCSData):
         .. note:: In this process NaNs are handled correctly
         """
         try:
-            im = image.Image(self.deep_frame, params=self.params)
+            im = orb.image.Image(self.deep_frame, params=self.params)
             if self.has_dataset('dxmap') and self.has_dataset('dymap'):
                 im.set_dxdymaps(self.get_dxdymaps()[0], self.get_dxdymaps()[1])
             return im
@@ -532,7 +533,7 @@ class HDFCube(core.WCSData):
             df = self.compute_sum_image()
 
         self.deep_frame = df
-        df = image.Image(self.deep_frame, params=self.params)
+        df = orb.image.Image(self.deep_frame, params=self.params)
         if self.has_dataset('dxmap') and self.has_dataset('dymap'):
             df.set_dxdymaps(self.get_dxdymaps()[0], self.get_dxdymaps()[1])
         return df
@@ -542,7 +543,7 @@ class HDFCube(core.WCSData):
         """Return a PhaseMaps instance if phase maps are set
         """
         try:
-            return fft.PhaseMaps(self.cube_path)
+            return orb.fft.PhaseMaps(self.cube_path)
         except Exception:
             return None
 
@@ -551,7 +552,7 @@ class HDFCube(core.WCSData):
 
         This is just the config high order phase
         """
-        return fft.Phase(self._get_phase_file_path(self.params.filter_name))
+        return orb.fft.Phase(self._get_phase_file_path(self.params.filter_name))
         
 
     def get_dxdymaps(self):
@@ -565,7 +566,7 @@ class HDFCube(core.WCSData):
         """
         SIZE = 30
         sum_im = None
-        progress = core.ProgressBar(self.dimz)
+        progress = orb.core.ProgressBar(self.dimz)
         for ik in range(0, self.dimz, SIZE):
             frames = self[:,:,ik:ik+SIZE]
             if sum_im is None: # avoid creating a zeros frame with a
@@ -600,7 +601,7 @@ class HDFCube(core.WCSData):
         if dimx is None: dimx = self.dimx
         if dimy is None: dimy = self.dimy
 
-        return core.Tools._get_quadrant_dims(
+        return orb.core.Tools._get_quadrant_dims(
             self, quad_number, dimx, dimy, div_nb)
 
     def writeto(self, path, div_nb=4):
@@ -621,7 +622,7 @@ class HDFCube(core.WCSData):
                     return False
             return True
 
-        with utils.io.open_hdf5(path, 'w') as fout:
+        with orb.utils.io.open_hdf5(path, 'w') as fout:
             fout.attrs['level2'] = True
             
             with self.open_hdf5() as f:
@@ -634,11 +635,11 @@ class HDFCube(core.WCSData):
                         logging.info('adding {}'.format(ikey))
                         ikeyval = f[ikey]
                         if isinstance(ikeyval, np.ndarray):
-                            ikeyval = utils.io.cast_storing_dtype(ikeyval)
+                            ikeyval = orb.utils.io.cast_storing_dtype(ikeyval)
                         fout.create_dataset(ikey, data=ikeyval, chunks=True)
 
                 # write data
-                dtype = utils.io.get_storing_dtype(self[0,0,0])
+                dtype = orb.utils.io.get_storing_dtype(self[0,0,0])
                 fout.create_dataset('data', shape=self.shape, dtype=dtype, chunks=True)
 
                 for iquad in range(quad_nb):
@@ -648,7 +649,7 @@ class HDFCube(core.WCSData):
 
                     data = self.get_data(
                         xmin, xmax, ymin, ymax, 0, self.dimz, silent=False)
-                    data = utils.io.cast_storing_dtype(data)
+                    data = orb.utils.io.cast_storing_dtype(data)
                     logging.info('writing quad {}/{}'.format(
                         iquad+1, quad_nb))
                     fout['data'][xmin:xmax, ymin:ymax, :] = data
@@ -671,7 +672,7 @@ class HDFCube(core.WCSData):
           and cy are on the border of the image.
         """
         # a fake image is used to compute the cropped wcs
-        df = image.Image(np.empty((self.dimx, self.dimy), dtype=float),
+        df = orb.image.Image(np.empty((self.dimx, self.dimy), dtype=float),
                          params=self.params)
         df = df.crop(cx, cy, size)
         xmin, xmax, ymin, ymax = df.params.cropped_bbox
@@ -700,7 +701,7 @@ class HDFCube(core.WCSData):
 
         :param index: Index of the frame
         """
-        return utils.io.header_hdf52fits(
+        return orb.utils.io.header_hdf52fits(
             self.get_dataset('frame_header_{}'.format(index)))
     
     def get_calibration_laser_map(self):
@@ -718,13 +719,13 @@ class HDFCube(core.WCSData):
                     if not os.path.isabs(calib_path):
                         calib_path = os.path.join(os.path.dirname(self.cube_path), calib_path)
                 
-                self.calibration_laser_map = utils.io.read_fits(calib_path)
+                self.calibration_laser_map = orb.utils.io.read_fits(calib_path)
                 if 'cropped_bbox' in self.params:
                     xmin, xmax, ymin, ymax = self.params.cropped_bbox
                     self.calibration_laser_map = self.calibration_laser_map[xmin:xmax, ymin:ymax]
                     
         if (self.calibration_laser_map.shape[0] != self.dimx):
-            self.calibration_laser_map = utils.image.interpolate_map(
+            self.calibration_laser_map = orb.utils.image.interpolate_map(
                 self.calibration_laser_map, self.dimx, self.dimy)
         if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
             raise Exception('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
@@ -744,7 +745,7 @@ class HDFCube(core.WCSData):
         try:
             return np.copy(self.theta_map)
         except AttributeError:
-            self.theta_map = utils.spectrum.corr2theta(self.get_calibration_coeff_map())
+            self.theta_map = orb.utils.spectrum.corr2theta(self.get_calibration_coeff_map())
 
     def validate_x_index(self, x, clip=True):
         """validate an x index, return an integer inside the boundaries or
@@ -755,7 +756,7 @@ class HDFCube(core.WCSData):
         :param clip: (Optional) If True return an index inside the
           boundaries, else: raise an exception (default True).
         """
-        return utils.validate.index(x, 0, self.dimx, clip=clip)
+        return orb.utils.validate.index(x, 0, self.dimx, clip=clip)
     
     def validate_y_index(self, y, clip=True):
         """validate an y index, return an integer inside the boundaries or
@@ -766,7 +767,7 @@ class HDFCube(core.WCSData):
         :param clip: (Optional) If True return an index inside the
           boundaries, else: raise an exception (default True).
         """
-        return utils.validate.index(y, 0, self.dimy, clip=clip)
+        return orb.utils.validate.index(y, 0, self.dimy, clip=clip)
 
 
     def get_master_frame(self, combine=None, reject=None):
@@ -793,10 +794,10 @@ class HDFCube(core.WCSData):
             reject='avsigclip'
 
         if not self.config.BIG_DATA:
-            master = utils.image.create_master_frame(
+            master = orb.utils.image.create_master_frame(
                 self[:,:,:], combine=combine, reject=reject)
         else:
-            master = utils.image.pp_create_master_frame(
+            master = orb.utils.image.pp_create_master_frame(
                 self[:,:,:], combine=combine, reject=reject,
                 ncpus=self.config.NCPUS)
 
@@ -831,7 +832,7 @@ class HDFCube(core.WCSData):
         interf = np.nansum(interfs, axis=0)
         params = dict(self.params)
         params['pixels'] = len(interfs)
-        vec = core.Vector1d(interf, params=params,
+        vec = orb.core.Vector1d(interf, params=params,
                             zpd_index=self.params.zpd_index,
                             calib_coeff=calib_coeff,
                             axis=np.arange(self.dimz))
@@ -864,7 +865,7 @@ class HDFCube(core.WCSData):
     def detect_stars(self, **kwargs):
         """Detect valid stars in the image
 
-        :param kwargs: image.Image.detect_stars kwargs.
+        :param kwargs: orb.image.Image.detect_stars kwargs.
         """
         if self.has_dataset('deep_frame'):
             logging.debug('detecting stars using the deep frame')
@@ -874,7 +875,7 @@ class HDFCube(core.WCSData):
                 self.config.DETECT_STACK))
             _stack = self[:,:,:self.config.DETECT_STACK]
             df = np.nanmedian(_stack, axis=2)
-        df = image.Image(df, params=self.params)
+        df = orb.image.Image(df, params=self.params)
         return df.detect_stars(**kwargs)
 
     def fit_stars_in_frame(self, star_list, index, **kwargs):
@@ -884,9 +885,9 @@ class HDFCube(core.WCSData):
 
         :param index: frame index
 
-        :param kwargs: image.Image.fit_stars kwargs.
+        :param kwargs: orb.image.Image.fit_stars kwargs.
         """
-        im = image.Image(self[:,:,index], params=self.params)
+        im = orb.image.Image(self[:,:,index], params=self.params)
         return im.fit_stars(star_list, **kwargs)
 
     def fit_stars_in_cube(self, star_list,
@@ -922,7 +923,7 @@ class HDFCube(core.WCSData):
           coeff]. This cube is added to the data before the fit so
           that the fitted data is self.data[] + coeff * Cube[].
 
-        :param kwargs: (Optional) utils.astrometry.fit_stars_in_frame
+        :param kwargs: (Optional) orb.utils.astrometry.fit_stars_in_frame
           kwargs.
 
         """
@@ -947,7 +948,7 @@ class HDFCube(core.WCSData):
             
             correct_alignment = False
                 
-        star_list = utils.astrometry.load_star_list(star_list)
+        star_list = orb.utils.astrometry.load_star_list(star_list)
                 
         logging.info("Fitting stars in cube")
 
@@ -971,7 +972,7 @@ class HDFCube(core.WCSData):
         # Init of the multiprocessing server
         job_server, ncpus = self._init_pp_server()
         
-        progress = core.ProgressBar(int(self.dimz))
+        progress = orb.core.ProgressBar(int(self.dimz))
         x_corr = 0.
         y_corr = 0.
         for ik in range(0, self.dimz, ncpus):
@@ -1019,7 +1020,7 @@ class HDFCube(core.WCSData):
             # follow FWHM variations
             fwhm_pix = None
             if ik > FOLLOW_NB - 1:
-                fwhm_pix = np.nanmean(utils.stats.sigmacut(fwhm_mean[ik-FOLLOW_NB:ik]))
+                fwhm_pix = np.nanmean(orb.utils.stats.sigmacut(fwhm_mean[ik-FOLLOW_NB:ik]))
                 if np.isnan(fwhm_pix): fwhm_pix = None
           
             # load data
@@ -1052,10 +1053,10 @@ class HDFCube(core.WCSData):
                 if res is not None:
                     if not res.empty:
                         if 'dx' in res and 'dy' in res:
-                            dx_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dx'].values))
-                            dy_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['dy'].values))
+                            dx_mean[ik+ijob] = np.nanmean(orb.utils.stats.sigmacut(res['dx'].values))
+                            dy_mean[ik+ijob] = np.nanmean(orb.utils.stats.sigmacut(res['dy'].values))
                         if 'fwhm_pix' in res:
-                            fwhm_mean[ik+ijob] = np.nanmean(utils.stats.sigmacut(res['fwhm_pix'].values))
+                            fwhm_mean[ik+ijob] = np.nanmean(orb.utils.stats.sigmacut(res['fwhm_pix'].values))
             
             
         self._close_pp_server(job_server)
@@ -1071,20 +1072,20 @@ class HDFCube(core.WCSData):
 
         :return: dx, dy vectors
         """
-        star_list_init, fwhm = image.Image(
+        star_list_init, fwhm = orb.image.Image(
             self[:,:,0], instrument=self.instrument).detect_stars(
                 min_star_number=star_number)
-        star_list_init = utils.astrometry.df2list(star_list_init)
+        star_list_init = orb.utils.astrometry.df2list(star_list_init)
         dxs = list()
         dys = list()
-        progress = core.ProgressBar(self.dimz-1)
+        progress = orb.core.ProgressBar(self.dimz-1)
         dxs.append(0)
         dys.append(0)
         for iframe in range(1, self.dimz):
             x_range = np.linspace(-searched_size,searched_size,searched_size)
             y_range = np.linspace(-searched_size,searched_size,searched_size)
             r_range = [0]
-            dx, dy, _, _ = utils.astrometry.brute_force_guess(
+            dx, dy, _, _ = orb.utils.astrometry.brute_force_guess(
                 self[:,:,iframe], star_list_init, x_range, y_range,r_range,
                 [self.dimx/2., self.dimy/2.], 1, 15, verbose=False)
             
@@ -1107,13 +1108,13 @@ class HDFCube(core.WCSData):
 
         :return: alignment_vector_x, alignment_vector_y, alignment_error
         """
-        star_list = utils.astrometry.load_star_list(star_list)
+        star_list = orb.utils.astrometry.load_star_list(star_list)
         fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
                                              alignment_vectors=alignment_vectors,
                                              no_aperture_photometry=True,
                                              multi_fit=False, # sure ???
                                              fix_height=False)
-        return utils.astrometry.compute_alignment_vectors(fit_results)
+        return orb.utils.astrometry.compute_alignment_vectors(fit_results)
     
 
 #################################################
@@ -1144,8 +1145,8 @@ class RWHDFCube(HDFCube):
             if shape is None:
                 raise ValueError('cube does not exist. If you want to create one, shape must be set.')
             
-            with utils.io.open_hdf5(path, 'w') as f:
-                utils.validate.has_len(shape, 3, object_name='shape')
+            with orb.utils.io.open_hdf5(path, 'w') as f:
+                orb.utils.validate.has_len(shape, 3, object_name='shape')
                 f.create_dataset('data', shape=shape, chunks=True)
                 f.attrs['level2'] = True
                 f.attrs['instrument'] = instrument
@@ -1186,7 +1187,7 @@ class RWHDFCube(HDFCube):
         self.params[key] = value
         with self.open_hdf5('a') as f:
             _update = True
-            value = utils.io.cast2hdf5(value)
+            value = orb.utils.io.cast2hdf5(value)
             if key in f.attrs:
                 if np.all(f.attrs[key] == value):
                     _update = False
@@ -1238,7 +1239,7 @@ class RWHDFCube(HDFCube):
                 warnings.warn('{} dataset changed'.format(path))
 
             if isinstance(data, dict):
-                data = utils.io.dict2array(data)
+                data = orb.utils.io.dict2array(data)
             f.create_dataset(path, data=data, chunks=True)
 
     def set_deep_frame(self, deep_frame):
@@ -1263,7 +1264,7 @@ class RWHDFCube(HDFCube):
         :param header: Header as a pyfits.Header instance.
         """
         self.set_dataset('frame_header_{}'.format(index),
-                         utils.io.header_fits2hdf5(header))
+                         orb.utils.io.header_fits2hdf5(header))
 
     def set_calibration_laser_map(self, calib_map):
         """Set calibration map.
@@ -1280,7 +1281,7 @@ class RWHDFCube(HDFCube):
         """
         check_params = ['order', 'step', 'filter_name']
 
-        if not isinstance(phase_maps, fft.PhaseMaps):
+        if not isinstance(phase_maps, orb.fft.PhaseMaps):
             raise TypeError('phase_maps must be a PhaseMaps instance')
 
         for ipar in check_params:
@@ -1327,7 +1328,7 @@ class RWHDFCube(HDFCube):
 
         """
         try:
-            std_im = image.Image(std_im, instrument=self.instrument)
+            std_im = orb.image.Image(std_im, instrument=self.instrument)
         except ValueError:
             raise TypeError('std_im must be an orb.image.Image instance or a path to valid hdf5 image')
         self.set_dataset('standard_image', std_im.data, protect=False)
@@ -1339,12 +1340,12 @@ class RWHDFCube(HDFCube):
     def set_standard_spectrum(self, std_sp):
         """Set standard spectrum
 
-        :param std_sp: a photometry.StandardSpectrum instance or a
+        :param std_sp: a orb.photometry.StandardSpectrum instance or a
           path to an hdf5 spectrum.
         """
-        std_sp = photometry.StandardSpectrum(std_sp, instrument=self.instrument)
+        std_sp = orb.photometry.StandardSpectrum(std_sp, instrument=self.instrument)
         try:
-            std_sp = photometry.StandardSpectrum(std_sp, instrument=self.instrument)
+            std_sp = orb.photometry.StandardSpectrum(std_sp, instrument=self.instrument)
         except Exception as e:
             raise TypeError('std_sp must be a StandardSpectrum instance or a path to a valid hdf5 spectrum: {}'.format(e))
 
@@ -1361,8 +1362,8 @@ class RWHDFCube(HDFCube):
         :param dxmap: dxmap
         :param dymap: dymap
         """
-        utils.validate.is_2darray(dxmap, object_name='dxmap')
-        utils.validate.is_2darray(dymap, object_name='dymap')
+        orb.utils.validate.is_2darray(dxmap, object_name='dxmap')
+        orb.utils.validate.is_2darray(dymap, object_name='dymap')
         if dxmap.shape != (self.dimx, self.dimy) or dymap.shape != (self.dimx, self.dimy):
             raise TypeError('dxmap and dymap must have shape ({},{})'.format(
                 self.dimx, self.dimy))
@@ -1438,7 +1439,7 @@ class Cube(HDFCube):
         HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
         
         # compute additional parameters
-        self.filterfile = core.FilterFile(self.params.filter_name)
+        self.filterfile = orb.core.FilterFile(self.params.filter_name)
         self.set_param('filter_name', self.filterfile.basic_path)
         self.set_param('filter_nm_min', self.filterfile.get_filter_bandpass()[0])
         self.set_param('filter_nm_max', self.filterfile.get_filter_bandpass()[1])
@@ -1476,21 +1477,21 @@ class Cube(HDFCube):
     def get_base_axis(self):
         """Return the spectral axis (in cm-1) at the center of the cube"""
         if not self.has_param('base_axis'):
-            base_axis = utils.spectrum.create_cm1_axis(
+            base_axis = orb.utils.spectrum.create_cm1_axis(
                 self.dimz, self.params.step, self.params.order,
                 corr=self.get_axis_corr())
         else:
             base_axis = self.params.base_axis
             
-        return core.Axis(base_axis)
+        return orb.core.Axis(base_axis)
 
     def get_uncalibrated_filter_bandpass(self):
         """Return filter bandpass as two 2d matrices (min, max) in pixels"""
         filterfile = FilterFile(self.get_param('filter_name'))
-        filter_min_cm1, filter_max_cm1 = utils.spectrum.nm2cm1(
+        filter_min_cm1, filter_max_cm1 = orb.utils.spectrum.nm2cm1(
             filterfile.get_filter_bandpass())[::-1]
         
-        cm1_axis_step_map = cutils.get_cm1_axis_step(
+        cm1_axis_step_map = orb.cutils.get_cm1_axis_step(
             self.dimz, self.params.step) * self.get_calibration_coeff_map()
 
         cm1_axis_min_map = (self.params.order / (2 * self.params.step)
@@ -1526,7 +1527,7 @@ class InterferogramCube(Cube):
         err = np.ones(self.dimz, dtype=float) * np.sqrt(
             vector.params.source_counts / self.dimz * self.get_gain())
         
-        return fft.RealInterferogram(vector, err=err)
+        return orb.fft.RealInterferogram(vector, err=err)
 
     def get_phase(self, x, y):
         """If phase maps are set, return the phase at x, y
@@ -1565,7 +1566,7 @@ class InterferogramCube(Cube):
         
         calib_coeff = np.nanmean(self.get_calibration_coeff_map()[xmin:xmax, ymin:ymax])
         interf = np.nanmean(np.nanmean(self[xmin:xmax, ymin:ymax, :], axis=0), axis=0)
-        return fft.RealInterferogram(interf, params=self.params,
+        return orb.fft.RealInterferogram(interf, params=self.params,
                                      zpd_index=self.params.zpd_index,
                                      calib_coeff=calib_coeff)
 
@@ -1573,7 +1574,7 @@ class InterferogramCube(Cube):
 #################################################
 #### CLASS FDCube ###############################
 #################################################
-class FDCube(core.Tools):
+class FDCube(orb.core.Tools):
     """Basic handling class for a set of frames grouped into one virtual
     cube.
 
@@ -1618,7 +1619,7 @@ class FDCube(core.Tools):
 
         :param kwargs: (Optional) :py:class:`~orb.core.Cube` kwargs.
         """
-        core.Tools.__init__(self, **kwargs)
+        orb.core.Tools.__init__(self, **kwargs)
 
         self.image_list_path = image_list_path
 
@@ -1627,7 +1628,7 @@ class FDCube(core.Tools):
 
         if (self.image_list_path != ""):
             # read image list and get cube dimensions  
-            image_list_file = utils.io.open_file(self.image_list_path, "r")
+            image_list_file = orb.utils.io.open_file(self.image_list_path, "r")
             image_name_list = image_list_file.readlines()
             if len(image_name_list) == 0:
                 raise Exception('No image path in the given image list')
@@ -1653,7 +1654,7 @@ class FDCube(core.Tools):
                     elif not spiomm_bias_frame:
                         self.image_list = [image_name]
 
-                        image_data = utils.io.read_fits(
+                        image_data = orb.utils.io.read_fits(
                             image_name,
                             image_mode=self._image_mode,
                             chip_index=self._chip_index)
@@ -1669,7 +1670,7 @@ class FDCube(core.Tools):
 
             # image list is sorted
             if not no_sort:
-                self.image_list = utils.misc.sort_image_list(self.image_list,
+                self.image_list = orb.utils.misc.sort_image_list(self.image_list,
                                                              self._image_mode)
             
             self.image_list = np.array(self.image_list)
@@ -1710,7 +1711,7 @@ class FDCube(core.Tools):
             job_server, ncpus = self._init_pp_server(silent=self._silent_load) 
 
             if not self._silent_load:
-                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1)
+                progress = orb.core.ProgressBar(z_slice.stop - z_slice.start - 1)
             
             for ik in range(z_slice.start + 1, z_slice.stop, ncpus):
                 # No more jobs than frames to compute
@@ -1739,7 +1740,7 @@ class FDCube(core.Tools):
             self._close_pp_server(job_server)
         else:
             if not self._silent_load:
-                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1)
+                progress = orb.core.ProgressBar(z_slice.stop - z_slice.start - 1)
             
             for ik in range(z_slice.start + 1, z_slice.stop):
 
@@ -1810,19 +1811,19 @@ class FDCube(core.Tools):
            :py:meth:`orb.core.get_data_frame` or
            :py:meth:`orb.core.get_data`.
         """
-        hdu = utils.io.read_fits(self.image_list[frame_index],
+        hdu = orb.utils.io.read_fits(self.image_list[frame_index],
                                  return_hdu_only=True)
         image = None
         stored_file_path = None
 
         if self._image_mode == 'sitelle': 
             if image is None:
-                image = utils.io.read_sitelle_chip(hdu, self._chip_index)
+                image = orb.utils.io.read_sitelle_chip(hdu, self._chip_index)
             section = image[x_slice, y_slice]
 
         elif self._image_mode == 'spiomm': 
             if image is None:
-                image, header = utils.io.read_spiomm_data(
+                image, header = orb.utils.io.read_spiomm_data(
                     hdu, self.image_list[frame_index])
             section = image[x_slice, y_slice]
 
@@ -1836,7 +1837,7 @@ class FDCube(core.Tools):
 
          # FITS only
         if stored_file_path is not None and image is not None:
-            utils.io.write_fits(stored_file_path, image, overwrite=True,
+            orb.utils.io.write_fits(stored_file_path, image, overwrite=True,
                             silent=True)
 
         return section
@@ -1854,7 +1855,7 @@ class FDCube(core.Tools):
           http://fits.gsfc.nasa.gov/ for more information on FITS
           files.
         """
-        hdu = utils.io.read_fits(self.image_list[index],
+        hdu = orb.utils.io.read_fits(self.image_list[index],
                                  return_hdu_only=True)
         hdu.verify('silentfix')
         return hdu.header
@@ -1928,7 +1929,7 @@ class FDCube(core.Tools):
 
         cube.set_header(self.get_cube_header())
 
-        progress = core.ProgressBar(self.dimz)
+        progress = orb.core.ProgressBar(self.dimz)
         for iframe in range(self.dimz):
             progress.update(iframe, info='writing frame {}/{}'.format(
                 iframe + 1, self.dimz))
@@ -1977,20 +1978,20 @@ class SpectralCube(Cube):
                 raise Exception('if the spectral cube is not calibrated, xy must be provided')
             xy = [self.dimx//2, self.dimy//2]
 
-        return utils.spectrum.cm12pix(
+        return orb.utils.spectrum.cm12pix(
             self.get_axis(xy[0], xy[1]).data, self.get_filter_range())
 
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
         """
         self.validate()
-        utils.validate.index(x, 0, self.dimx, clip=False)
-        utils.validate.index(y, 0, self.dimy, clip=False)
+        orb.utils.validate.index(x, 0, self.dimx, clip=False)
+        orb.utils.validate.index(y, 0, self.dimy, clip=False)
         
-        axis = utils.spectrum.create_cm1_axis(
+        axis = orb.utils.spectrum.create_cm1_axis(
             self.dimz, self.params.step, self.params.order,
             corr=self.get_calibration_coeff_map()[x, y])
-        return core.Axis(np.copy(axis))
+        return orb.core.Axis(np.copy(axis))
 
     def has_wavenumber_calibration(self):
         """Return True if the cube is calibrated in wavenumber"""
@@ -2007,7 +2008,7 @@ class SpectralCube(Cube):
     def reset_params(self):
         """Reset parameters"""
 
-        self.filterfile = core.FilterFile(self.params.filter_name)
+        self.filterfile = orb.core.FilterFile(self.params.filter_name)
 
         self.set_param('flux_calibration', True)
         
@@ -2048,7 +2049,7 @@ class SpectralCube(Cube):
             raise KeyError('ZPDINDEX not in cube header. Please run again the last step of ORBS reduction process.')
 
         # resolution
-        resolution = utils.spectrum.compute_resolution(
+        resolution = orb.utils.spectrum.compute_resolution(
             self.dimz - self.params.zpd_index,
             self.params.step, self.params.order,
             self.params.axis_corr)
@@ -2077,7 +2078,7 @@ class SpectralCube(Cube):
         self.set_param('axis_min', np.min(self.params.base_axis))
         self.set_param('axis_max', np.max(self.params.base_axis))
         self.set_param('axis_step', np.min(self.params.base_axis[1] - self.params.base_axis[0]))
-        self.set_param('line_fwhm', utils.spectrum.compute_line_fwhm(
+        self.set_param('line_fwhm', orb.utils.spectrum.compute_line_fwhm(
             self.params.step_nb - self.params.zpd_index, self.params.step, self.params.order,
             apod_coeff=self.params.apodization,
             corr=self.params.axis_corr,
@@ -2113,7 +2114,7 @@ class SpectralCube(Cube):
                     * self.params.nm_laser * self.params.axis_corr)
 
         elif (calib_map.shape[0] != self.dimx):
-            calib_map = utils.image.interpolate_map(
+            calib_map = orb.utils.image.interpolate_map(
                 calib_map, self.dimx, self.dimy)
 
         # calibration correction
@@ -2139,14 +2140,14 @@ class SpectralCube(Cube):
     def get_fwhm_map(self):
         """Return the theoretical FWHM map in cm-1 based only on the angle
         and the theoretical attained resolution."""
-        return utils.spectrum.compute_line_fwhm(
+        return orb.utils.spectrum.compute_line_fwhm(
             self.params.step_nb - self.params.zpd_index, self.params.step, self.params.order,
             self.params.apodization, self.get_calibration_coeff_map_orig(),
             wavenumber=self.params.wavenumber)
 
     def get_theta_map(self):
         """Return the incident angle map (in degree)"""
-        return utils.spectrum.corr2theta(self.get_calibration_coeff_map_orig())
+        return orb.utils.spectrum.corr2theta(self.get_calibration_coeff_map_orig())
 
     def reset_calibration_laser_map(self):
         """Reset the compute calibration laser map (and also the
@@ -2209,19 +2210,19 @@ class SpectralCube(Cube):
         # compute axis
         calib_coeff = np.nanmean(self.get_calibration_coeff_map()[tuple(region)])
         calib_coeff_orig = np.nanmean(self.get_calibration_coeff_map_orig()[tuple(region)])
-        axis = utils.spectrum.create_cm1_axis(
+        axis = orb.utils.spectrum.create_cm1_axis(
             self.dimz, self.params.step, self.params.order,
             corr=calib_coeff)
         
         # compute counts and err
         counts = np.nansum(self.get_deep_frame().data[tuple(region)])
         err = np.ones(self.dimz, dtype=float) * np.sqrt(counts  * self.get_gain())
-        err = core.Cm1Vector1d(err, axis, params=params)
+        err = orb.core.Cm1Vector1d(err, axis, params=params)
         if isinstance(self.params.flambda, float):
             flambda = np.ones(self.dimz, dtype=float) * self.params.flambda
         else:
             flambda = np.copy(self.params.flambda)
-        flambda = core.Cm1Vector1d(
+        flambda = orb.core.Cm1Vector1d(
             flambda, self.get_base_axis(), params=params)
         err = err.multiply(flambda)
         
@@ -2234,7 +2235,7 @@ class SpectralCube(Cube):
             err.data /= params['pixels']
             params['pixels'] = 1
             
-        return fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
+        return orb.fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
                 
 
     def get_spectrum(self, x, y, r=0, median=False, mean_flux=False):
@@ -2328,7 +2329,7 @@ class SpectralCube(Cube):
           True)
         """
         if isinstance(region, str):
-            return utils.misc.get_mask_from_ds9_region_file(
+            return orb.utils.misc.get_mask_from_ds9_region_file(
                 region,
                 [0, self.dimx],
                 [0, self.dimy],
@@ -2342,14 +2343,14 @@ class SpectralCube(Cube):
         if self.has_dataset('standard_spectrum'):
            std_sp = self.get_dataset('standard_spectrum', protect=False)
            hdr = self.get_dataset_attrs('standard_spectrum')
-           return photometry.StandardSpectrum(std_sp, axis=hdr['axis'],
+           return orb.photometry.StandardSpectrum(std_sp, axis=hdr['axis'],
                                               params=hdr, instrument=self.instrument)
         
         if self.has_param('standard_path'):
-            data, hdr = utils.io.read_fits(self.params.standard_path, return_header=True)
+            data, hdr = orb.utils.io.read_fits(self.params.standard_path, return_header=True)
             std_flux_sp, wav = data.T
             wav = np.linspace(wav[0], wav[-1], wav.size) # avoids rounding errors due to float32 conversion
-            std_flux_sp = photometry.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
+            std_flux_sp = orb.photometry.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
             return std_flux_sp
         
         else: raise Exception('standard spectrum dataset or standard_path parameter are not defined')
@@ -2366,10 +2367,10 @@ class SpectralCube(Cube):
                 std_cube = HDFCube(self.params.standard_image_path)
                 std_im = std_cube.compute_sum_image() / std_cube.dimz 
             else: raise Exception('if no standard image can be found in the archive, standard_image_path must be set')
-            return image.StandardImage(
+            return orb.image.StandardImage(
                 std_im, params=std_cube.params)
         else:
-            return image.StandardImage(
+            return orb.image.StandardImage(
                 self.get_dataset('standard_image', protect=False),
                 params=self.get_dataset_attrs('standard_image'),
                 instrument=self.params.instrument)
@@ -2379,7 +2380,7 @@ class SpectralCube(Cube):
         """Return flamba calibration function
         """
         # compute flambda from configuration curves
-        photom = photometry.Photometry(self.params.filter_name, self.params.camera,
+        photom = orb.photometry.Photometry(self.params.filter_name, self.params.camera,
                                        instrument=self.params.instrument)
         flam_config = photom.compute_flambda()
         logging.info('mean flambda config: {}'.format(np.nanmean(flam_config.data)))
@@ -2399,8 +2400,8 @@ class SpectralCube(Cube):
                 np.nanmax(eps_vector.data), np.nanmin(eps_vector.data)))
         else:
             logging.info('standard_path not set: no relative vector correction computed')
-            eps_vector = core.Cm1Vector1d(np.ones(self.dimz, dtype=float), params=self.params,
-                                          axis=self.get_base_axis())
+            eps_vector = orb.core.Cm1Vector1d(np.ones(self.dimz, dtype=float), params=self.params,
+                                              axis=self.get_base_axis())
         
         # compute the correction from a standard star calibration image
         if std_im is None:

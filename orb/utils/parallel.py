@@ -25,8 +25,7 @@ import os
 import pp
 import getpass
 import multiprocessing
-import ray
-
+# import ray
 
 
 class RayJob(object):

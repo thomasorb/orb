@@ -51,7 +51,6 @@ import select
 import socket
 
 import numpy as np
-import bottleneck as bn
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
@@ -67,9 +66,9 @@ try: import pygit2
 except ImportError: pass
 
 ## MODULES IMPORTS
-from . import cutils
-from . import utils.spectrum, utils.parallel, utils.io, utils.filters
-from . import utils.photometry
+import orb.cutils
+import orb.utils.spectrum, orb.utils.parallel, orb.utils.io, orb.utils.filters
+import orb.utils.photometry
 
 #################################################
 #### CLASS TextColor ############################
@@ -427,7 +426,7 @@ class Params(dict):
         .. warning:: All elements might not be saved
         """
         data = self.convert()
-        with utils.io.open_hdf5(path, 'w') as f:
+        with orb.utils.io.open_hdf5(path, 'w') as f:
             for ikey in data:
                 try:
                     f.create_dataset(ikey, data=data[ikey])
@@ -437,7 +436,7 @@ class Params(dict):
     def load(self, path):
         """Load data from an HDF5 file saved with save method.
         """
-        with utils.io.open_hdf5(path, 'r') as f:
+        with orb.utils.io.open_hdf5(path, 'r') as f:
             for ikey in f:
                 val = f[ikey]
                 if val.shape == ():
@@ -803,7 +802,7 @@ class Tools(object):
         groups = ['MASSEY', 'MISC', 'CALSPEC', 'OKE', None]
         if group not in groups:
             raise Exception('Group must be in %s'%str(groups))
-        std_table = utils.io.open_file(self._get_standard_table_path(
+        std_table = orb.utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
         std_list = list()
         for iline in std_table:
@@ -831,7 +830,7 @@ class Tools(object):
         :return: A tuple [standard file path, standard type]. Standard type
           can be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'.
         """
-        std_table = utils.io.open_file(self._get_standard_table_path(
+        std_table = orb.utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
 
         for iline in std_table:
@@ -859,7 +858,7 @@ class Tools(object):
         :param return_pm: (Optional) Returns also proper motion if
           recorded (in mas/yr), else returns 0.
         """
-        std_table = utils.io.open_file(self._get_standard_table_path(
+        std_table = orb.utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
 
         for iline in std_table:
@@ -937,7 +936,7 @@ class Tools(object):
              PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
              PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
         """ 
-        f = utils.io.open_file(
+        f = orb.utils.io.open_file(
             self._get_config_file_path(), 'r')
         for line in f:
             if len(line) > 2:
@@ -954,7 +953,7 @@ class Tools(object):
     def _get_ncpus(self):
         """Return the number of CPUS available
         """
-        return utils.parallel.get_ncpus(int(self.config.NCPUS))
+        return orb.utils.parallel.get_ncpus(int(self.config.NCPUS))
         
     def _init_pp_server(self, silent=False):
         """Initialize a server for parallel processing.
@@ -965,7 +964,7 @@ class Tools(object):
         .. note:: Please refer to http://www.parallelpython.com/ for
           sources and information on Parallel Python software
         """
-        return utils.parallel.init_pp_server(ncpus=int(self.config.NCPUS),
+        return orb.utils.parallel.init_pp_server(ncpus=int(self.config.NCPUS),
                                              silent=silent)
 
     def _close_pp_server(self, js):
@@ -978,7 +977,7 @@ class Tools(object):
         .. note:: Please refer to http://www.parallelpython.com/ for
             sources and information on Parallel Python software.
         """
-        return utils.parallel.close_pp_server(js)
+        return orb.utils.parallel.close_pp_server(js)
         
 
     def _get_tuning_parameter(self, parameter_name, default_value):
@@ -1020,7 +1019,7 @@ class Tools(object):
         clean_hdr = self._clean_sip(hdr)
         data = np.empty((1,1))
         data.fill(np.nan)
-        utils.io.write_fits(
+        orb.utils.io.write_fits(
             fits_path, data, fits_header=clean_hdr, overwrite=overwrite)
 
     def load_sip(self, fits_path):
@@ -1029,7 +1028,7 @@ class Tools(object):
     
         :param fits_path: Path to the FITS file    
         """
-        hdr = utils.io.read_fits(fits_path, return_hdu_only=True).header
+        hdr = orb.utils.io.read_fits(fits_path, return_hdu_only=True).header
         return pywcs.WCS(hdr)
                     
     def _get_quadrant_dims(self, quad_number, dimx, dimy, div_nb):
@@ -1045,7 +1044,7 @@ class Tools(object):
           div_nb = 3, the number of quadrant is 9 ; if div_nb = 4, the
           number of quadrant is 16)
         """
-        return utils.image.get_quadrant_dims(quad_number, dimx, dimy, div_nb)
+        return orb.utils.image.get_quadrant_dims(quad_number, dimx, dimy, div_nb)
     
 ##################################################
 #### CLASS ProgressBar ###########################
@@ -1306,7 +1305,7 @@ class Indexer(Tools):
         """Load index file and rebuild index of already located files"""
         self.index = dict()
         if os.path.exists(self._get_index_path()):
-            f = utils.io.open_file(self._get_index_path(), 'r')
+            f = orb.utils.io.open_file(self._get_index_path(), 'r')
             for iline in f:
                 if len(iline) > 2:
                     iline = iline.split()
@@ -1315,7 +1314,7 @@ class Indexer(Tools):
 
     def update_index(self):
         """Update index files with data in the virtual index"""
-        f = utils.io.open_file(self._get_index_path(), 'w')
+        f = orb.utils.io.open_file(self._get_index_path(), 'w')
         for ikey in self.index:
             f.write('%s %s\n'%(ikey, self.index[ikey]))
         f.close()
@@ -1435,7 +1434,7 @@ class Lines(Tools):
         """
         sky_lines_file_path = self._get_orb_data_file_path(
             self.sky_lines_file_name)
-        f = utils.io.open_file(sky_lines_file_path, 'r')
+        f = orb.utils.io.open_file(sky_lines_file_path, 'r')
         self.air_sky_lines_nm = dict()
         try:
             for line in f:
@@ -1570,7 +1569,7 @@ class Lines(Tools):
 
         :param lines_name: List of line names
         """
-        return utils.spectrum.nm2cm1(
+        return orb.utils.spectrum.nm2cm1(
             self.get_line_nm(lines_name))
 
     def get_line_name(self, lines):
@@ -1636,7 +1635,7 @@ class ParamsFile(Tools):
         
         self._params_list = list()
         if not reset and os.path.exists(file_path):
-            self.f = utils.io.open_file(file_path, 'r')
+            self.f = orb.utils.io.open_file(file_path, 'r')
             for iline in self.f:
                 if '##' not in iline and len(iline) > 3:
                     if '# KEYS' in iline:
@@ -1651,10 +1650,10 @@ class ParamsFile(Tools):
                         raise Exception(
                             'Wrong file format: {:s}'.format(file_path))
             self.f.close()
-            self.f = utils.io.open_file(file_path, 'a')
+            self.f = orb.utils.io.open_file(file_path, 'a')
 
         else:
-            self.f = utils.io.open_file(file_path, 'w')
+            self.f = orb.utils.io.open_file(file_path, 'w')
             self.f.write("## PARAMS FILE\n## created by {:s}\n".format(
                 self.__class__.__name__))
             self.f.flush()
@@ -1749,13 +1748,13 @@ class Waves(object):
 
     def get_nm(self):
         """Return wavelength of waves in nm (taking velocity into account)"""
-        return self.nm + utils.spectrum.line_shift(
+        return self.nm + orb.utils.spectrum.line_shift(
             self.velocity, self.nm, wavenumber=False)
 
     def get_cm1(self):
         """Return wavenumber of waves in cm-1 (taking velocity into account)"""
         cm1 = self.get_cm1_rest()
-        return cm1 + utils.spectrum.line_shift(
+        return cm1 + orb.utils.spectrum.line_shift(
             self.velocity, cm1, wavenumber=True)
 
     def get_nm_rest(self):
@@ -1764,7 +1763,7 @@ class Waves(object):
 
     def get_cm1_rest(self):
         """Return restframe wavelength of waves in cm-1"""
-        return utils.spectrum.nm2cm1(self.nm)
+        return orb.utils.spectrum.nm2cm1(self.nm)
 
 #################################################
 #### CLASS Data #################################
@@ -1823,13 +1822,13 @@ class Data(object):
                 kwargs.update(params)
             
             if 'fit' in os.path.splitext(data)[1]:
-                self.data, _header = utils.io.read_fits(data, return_header=True)
+                self.data, _header = orb.utils.io.read_fits(data, return_header=True)
                 self.params = dict(_header)
                 if 'COMMENT' in self.params:
                     self.params.pop('COMMENT')
 
             elif 'hdf' in os.path.splitext(data)[1]:
-                with utils.io.open_hdf5(data, 'r') as hdffile:
+                with orb.utils.io.open_hdf5(data, 'r') as hdffile:
                     _data_path = 'data'
 
                     # backward compatibility issue
@@ -2059,7 +2058,7 @@ class Data(object):
         warnings.simplefilter('ignore', category=VerifyWarning)
         warnings.simplefilter('ignore', category=AstropyUserWarning)
 
-        header = utils.io.dict2header(dict(self.params))
+        header = orb.utils.io.dict2header(dict(self.params))
         if self.data.ndim >= 1:
             header['NAXIS1'] = self.dimx
 
@@ -2144,13 +2143,13 @@ class Data(object):
         :param data: mask. Must be a boolean array
         """
         if self.data.ndim >= 2:
-            utils.validate.is_2darray(data, object_name='data')
+            orb.utils.validate.is_2darray(data, object_name='data')
             if data.shape != (self.dimx, self.dimy):
                 raise TypeError('data must have shape ({}, {}) but has shape {}'.format(
                     self.dimx, self.dimy, data.shape))
 
         else:
-            utils.validata.is_1darray(data, object_name='data')
+            orb.utils.validata.is_1darray(data, object_name='data')
             if data.shape != self.dimx:
                 raise TypeError('data must have shape ({}) but has shape'.format(
                     self.dimx, data.shape))
@@ -2226,7 +2225,7 @@ class Data(object):
 
         if os.path.exists(path):
             os.remove(path)
-        with utils.io.open_hdf5(path, 'w') as hdffile:
+        with orb.utils.io.open_hdf5(path, 'w') as hdffile:
             if self.has_params():
                 for iparam in self.params:
                     try:
@@ -2265,7 +2264,7 @@ class Data(object):
         :param path: Path to the FITS file
 
         """
-        utils.io.write_fits(path, self.data, fits_header=self.get_header())
+        orb.utils.io.write_fits(path, self.data, fits_header=self.get_header())
 
     def to_bundle(self):
         """Return a bundle of picleable objects that can be passed to a
@@ -2367,7 +2366,7 @@ class Vector1d(Data):
             quality = int(quality)
             if quality < 2: raise ValueError('quality must be an integer > 2')
             interf_complex = scipy.fftpack.ifft(self.data)
-            best_n = utils.fft.next_power_of_two(self.dimx * quality)
+            best_n = orb.utils.fft.next_power_of_two(self.dimx * quality)
             zp_interf = np.zeros(best_n, dtype=complex)
             center = interf_complex.shape[0] / 2
             zp_interf[:center] = interf_complex[:center]
@@ -2627,7 +2626,7 @@ class Cm1Vector1d(Vector1d):
 
         if self.has_params():
             if len(set(self.obs_params).intersection(self.params)) == len(self.obs_params):
-                check_axis = utils.spectrum.create_cm1_axis(
+                check_axis = orb.utils.spectrum.create_cm1_axis(
                     self.dimx, self.params.step, self.params.order, corr=self.params.calib_coeff)
                 if self.axis is None:
                     self.axis = Axis(check_axis)
@@ -2683,7 +2682,7 @@ class Cm1Vector1d(Vector1d):
         :param velocity: Velocity in km/s
         """
         new_axis = self.axis.copy()
-        new_axis.data -= utils.spectrum.line_shift(
+        new_axis.data -= orb.utils.spectrum.line_shift(
             velocity, new_axis.data, wavenumber=True)
         spec = self.project(new_axis)
         spec.axis = self.axis
@@ -2753,9 +2752,9 @@ class FilterFile(Vector1d):
         :param corr: calibration coeff (at center if None)
         """
         if corr is None:
-            corr = utils.spectrum.theta2corr(
+            corr = orb.utils.spectrum.theta2corr(
                 self.tools.config['OFF_AXIS_ANGLE_CENTER'])
-        cm1_axis = Axis(utils.spectrum.create_cm1_axis(
+        cm1_axis = Axis(orb.utils.spectrum.create_cm1_axis(
             step_nb, self.params.step, self.params.order,
             corr=corr))
     
@@ -2779,7 +2778,7 @@ class FilterFile(Vector1d):
 
     def get_filter_bandpass_cm1(self):
         """Return filter bandpass in cm-1"""
-        return utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
+        return orb.utils.spectrum.nm2cm1(self.get_filter_bandpass())[::-1]
 
     def get_mean_cm1(self):
         """Return mean wavenumber """
@@ -2788,18 +2787,18 @@ class FilterFile(Vector1d):
 
     def get_mean_nm(self):
         """Return mean wavelength"""
-        return utils.spectrum.cm12nm(self.get_mean_cm1())
+        return orb.utils.spectrum.cm12nm(self.get_mean_cm1())
         
     def get_sky_lines(self, step_nb):
         """Return the sky lines in a given filter
         """
-        corr = utils.spectrum.theta2corr(
+        corr = orb.utils.spectrum.theta2corr(
             self.tools.config['OFF_AXIS_ANGLE_CENTER'])
-        axis = utils.spectrum.create_cm1_axis(
+        axis = orb.utils.spectrum.create_cm1_axis(
             step_nb, self.params.step, self.params.order,
             corr=corr)
 
-        _delta_nm = utils.spectrum.fwhm_cm12nm(
+        _delta_nm = orb.utils.spectrum.fwhm_cm12nm(
             axis[1] - axis[0],
             (np.min(axis) + np.max(axis)) / 2.)
 
@@ -2813,7 +2812,7 @@ class FilterFile(Vector1d):
         _lines_nm = Lines().get_sky_lines(
             _nm_min, _nm_max, _delta_nm)
 
-        return utils.spectrum.nm2cm1(_lines_nm)
+        return orb.utils.spectrum.nm2cm1(_lines_nm)
 
 
 
@@ -2850,7 +2849,7 @@ class WCSData(Data, Tools):
         if instrument is None:
             if data_path is not None:
                 if os.path.exists(data_path):
-                    instrument = utils.misc.read_instrument_value_from_file(data_path)
+                    instrument = orb.utils.misc.read_instrument_value_from_file(data_path)
         
         if instrument is None: # important even if it seems duplicated ;)
             if 'params' in kwargs:
@@ -2875,7 +2874,7 @@ class WCSData(Data, Tools):
         self.dxdymaps = None
         if data_path is not None:
             if 'hdf' in data_path:
-                with utils.io.open_hdf5(data_path, 'r') as hdffile:
+                with orb.utils.io.open_hdf5(data_path, 'r') as hdffile:
                     if '/dxmap' in hdffile and '/dymap' in hdffile:
                         self.dxdymaps= (hdffile['/dxmap'][:], hdffile['/dymap'][:])
 
@@ -2903,7 +2902,7 @@ class WCSData(Data, Tools):
         
         # convert camera param
         self.params.reset(
-            'camera', utils.misc.convert_camera_parameter(
+            'camera', orb.utils.misc.convert_camera_parameter(
                 self.params.camera))
 
         # compute binning
@@ -2926,7 +2925,7 @@ class WCSData(Data, Tools):
             detector_shape = [self.config[cam + '_DETECTOR_SIZE_X'],
                               self.config[cam + '_DETECTOR_SIZE_Y']]
 
-            binning = utils.image.compute_binning(
+            binning = orb.utils.image.compute_binning(
                 (self.dimx, self.dimy), detector_shape)
 
             if binning[0] != binning[1]:
@@ -2952,7 +2951,7 @@ class WCSData(Data, Tools):
             coeffs = self.get_initial_alignment_parameters()
             
             logging.debug('target_x, target_y initially at {}, {}'.format(target_x, target_y))
-            target_x, target_y = utils.astrometry.transform_star_position_A_to_B(
+            target_x, target_y = orb.utils.astrometry.transform_star_position_A_to_B(
                 [[self.params.target_x, self.params.target_y]],
                 [coeffs.dx, coeffs.dy, coeffs.dr, 0., 0.],
                 [coeffs.rc[0], coeffs.rc[1]],
@@ -2973,14 +2972,14 @@ class WCSData(Data, Tools):
         
         if 'target_ra' not in self.params:
             if 'TARGETR' in self.params:
-                self.params['target_ra'] = utils.astrometry.ra2deg(
+                self.params['target_ra'] = orb.utils.astrometry.ra2deg(
                     self.params['TARGETR'].split(':'))
             else:
                 self.params['target_ra'] = self.default_params['target_ra']
 
         if 'target_dec' not in self.params:
             if 'TARGETD' in self.params:
-                self.params['target_dec'] = utils.astrometry.dec2deg(
+                self.params['target_dec'] = orb.utils.astrometry.dec2deg(
                     self.params['TARGETD'].split(':'))
             else:
                 self.params['target_dec'] = self.default_params['target_dec']
@@ -3030,7 +3029,7 @@ class WCSData(Data, Tools):
                 logging.debug('SIP already defined\n{}'.format(sip))
 
         # reset wcs
-        wcs = utils.astrometry.create_wcs(
+        wcs = orb.utils.astrometry.create_wcs(
             self.params.target_x, self.params.target_y,
             self.params.delta_x, self.params.delta_y,
             self.params.target_ra, self.params.target_dec,
@@ -3059,9 +3058,9 @@ class WCSData(Data, Tools):
         :param dymap: Path to a dymap or a numpy.ndarray
         """
         if isinstance(dxmap, str):
-            dxmap = utils.io.read_fits(dxmap)
+            dxmap = orb.utils.io.read_fits(dxmap)
         if isinstance(dymap, str):
-            dymap = utils.io.read_fits(dymap)
+            dymap = orb.utils.io.read_fits(dymap)
         if dxmap.shape != self.shape:
             raise TypeError('dxmap must have same shape as image')
         if dymap.shape != self.shape:
@@ -3094,10 +3093,10 @@ class WCSData(Data, Tools):
             warnings.simplefilter('ignore', category=VerifyWarning)
             warnings.simplefilter('ignore', category=AstropyUserWarning)
             wcs = pywcs.WCS(
-                utils.io.read_fits(wcs, return_hdu_only=True).header,
+                orb.utils.io.read_fits(wcs, return_hdu_only=True).header,
                 naxis=2, relax=True)
         try:        
-            _params = utils.astrometry.get_wcs_parameters(wcs)
+            _params = orb.utils.astrometry.get_wcs_parameters(wcs)
         except Exception as e:
             logging.debug('wcs could not be loaded:', e)
             return
@@ -3136,7 +3135,7 @@ class WCSData(Data, Tools):
         and FITS keywords.
         """
         try:
-            _fits_params = np.array(utils.astrometry.get_wcs_parameters(
+            _fits_params = np.array(orb.utils.astrometry.get_wcs_parameters(
                 self.get_wcs(validate=False)))
         except Exception:
             warnings.warn('bad WCS in header')
@@ -3193,14 +3192,14 @@ class WCSData(Data, Tools):
                 xyarr = np.atleast_2d([x, y]).T
             else:
                 xyarr = xy
-            coords = utils.astrometry.pix2world(
+            coords = orb.utils.astrometry.pix2world(
                 self.get_wcs_header(), self.dimx, self.dimy, xyarr,
                 self.dxdymaps[0], self.dxdymaps[1])
         if deg:
             return coords
         else: return np.array(
-            [utils.astrometry.deg2ra(coords[:,0]),
-             utils.astrometry.deg2dec(coords[:,1])])
+            [orb.utils.astrometry.deg2ra(coords[:,0]),
+             orb.utils.astrometry.deg2dec(coords[:,1])])
 
 
     def world2pix(self, radec):
@@ -3233,7 +3232,7 @@ class WCSData(Data, Tools):
                     quiet=True)).T
         else:
             radecarr = np.atleast_2d([ra, dec]).T
-            coords = utils.astrometry.world2pix(
+            coords = orb.utils.astrometry.world2pix(
                 self.get_wcs_header(), self.dimx, self.dimy, radecarr,
                 self.dxdymaps[0], self.dxdymaps[1])
 
@@ -3300,11 +3299,11 @@ class WCSData(Data, Tools):
           pandas.DataFrame instance. Else a numpy.ndarray instance is
           returned (default False).
 
-        .. seealso:: :py:meth:`orb.utils.web.query_vizier`
+        .. seealso:: :py:meth:`orb.orb.utils.web.query_vizier`
         """
         radius = self.config['FIELD_OF_VIEW_1'] / np.sqrt(2)
         center_radec = self.pix2world([self.dimx/2., self.dimy/2])
-        return utils.web.query_vizier(
+        return orb.utils.web.query_vizier(
             radius, center_radec[0][0], center_radec[0][1],
             catalog=catalog, max_stars=max_stars, as_pandas=as_pandas)
 
@@ -3342,7 +3341,7 @@ class WCSData(Data, Tools):
         :param path: hdf file path.
         """
         Data.writeto(self, path)
-        with utils.io.open_hdf5(path, 'a') as hdffile:
+        with orb.utils.io.open_hdf5(path, 'a') as hdffile:
             if self.has_dxdymaps():
                 hdffile.create_dataset(
                     '/dxmap',
