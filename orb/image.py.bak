@@ -45,17 +45,17 @@ import photutils
 from scipy import optimize, interpolate, signal
 import pandas
 
-from . import core
-from . import cutils
-from . import photometry
+import core
+import cutils
+import photometry
 
-from . import utils.astrometry
-from . import utils.image
-from . import utils.stats
-from . import utils.vector
-from . import utils.web
-from . import utils.misc
-from . import utils.io
+import utils.astrometry
+import utils.image
+import utils.stats
+import utils.vector
+import utils.web
+import utils.misc
+import utils.io
 
 import pylab as pl
 
@@ -286,14 +286,14 @@ class Image(Frame2D):
         """
         if fov is None:
             if 'FIELD_OF_VIEW_1' not in self.config:
-                raise Exception('instrument config not loaded. Please set fov.')
+                raise StandardError('instrument config not loaded. Please set fov.')
             if self.is_cam1():
                 fov = self.config['FIELD_OF_VIEW_1']
             else:
                 fov = self.config['FIELD_OF_VIEW_2']
         if wcs_rotation is None:
             if 'WCS_ROTATION' not in self.config:
-                raise Exception('instrument config not loaded. Please set wcs_rotation.')
+                raise StandardError('instrument config not loaded. Please set wcs_rotation.')
             wcs_rotation = self.config['WCS_ROTATION']
             
         wcs = utils.astrometry.create_wcs(
@@ -323,7 +323,7 @@ class Image(Frame2D):
         if not is_standard:
             logging.info('resolving coordinates of {}'.format(self.params.OBJECT))
             try:
-                print(astropy.coordinates.get_icrs_coordinates(self.params.OBJECT))
+                print astropy.coordinates.get_icrs_coordinates(self.params.OBJECT)
                 object_found = True
             except NameResolveError:
                 logging.debug('object name could not be resolved')
@@ -334,11 +334,11 @@ class Image(Frame2D):
             std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
                 std_name, return_pm=True)
             object_found = True
-        except Exception:
+        except StandardError:
             warnings.warn('object name not found in the standard table')
 
         if not object_found:
-            raise Exception('object coordinates could not be resolved')
+            raise StandardError('object coordinates could not be resolved')
 
         std_yr_obs = float(self.params['DATE-OBS'].split('-')[0])
         pm_orig_yr = 2000 # radec are considered to be J2000
@@ -372,7 +372,7 @@ class Image(Frame2D):
         if profile_name in self.profiles:
             self.params['profile_name'] = profile_name
         else:
-            raise Exception(
+            raise StandardError(
                 "Bad profile name (%s) please choose it in: %s"%(
                     profile_name, str(self.profiles)))
         
@@ -455,7 +455,7 @@ class Image(Frame2D):
         daofind = photutils.DAOStarFinder(fwhm=self.get_fwhm_pix(),
                                           threshold=DETECT_THRESHOLD * std)
         sources = daofind(self.data.T - median).to_pandas()
-        if len(sources) == 0: raise Exception('no star detected, check input image')
+        if len(sources) == 0: raise StandardError('no star detected, check input image')
         logging.debug('initial number of stars: {}'.format(len(sources)))
         
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
@@ -674,9 +674,9 @@ class Image(Frame2D):
         if not (self.params.target_ra is not None and self.params.target_dec is not None
                 and self.params.target_x is not None and self.params.target_y is not None
                 and self.params.wcs_rotation is not None):
-            raise Exception("Not enough parameters to register data. Please set target_xy, target_radec and wcs_rotation parameters at Astrometry init")
+            raise StandardError("Not enough parameters to register data. Please set target_xy, target_radec and wcs_rotation parameters at Astrometry init")
 
-        if return_error_maps and return_error_spl: raise Exception('return_error_maps and return_error_spl cannot be both set to True, choose only one of them')
+        if return_error_maps and return_error_spl: raise StandardError('return_error_maps and return_error_spl cannot be both set to True, choose only one of them')
         
         logging.info('Computing WCS')
         logging.info('initial wcs')
@@ -695,7 +695,7 @@ class Image(Frame2D):
                 self.reset_fwhm_arc(fwhm_arc)
                 
         if len(star_list_query) < MIN_STAR_NB:
-            raise Exception("Not enough stars found in the field (%d < %d)"%(
+            raise StandardError("Not enough stars found in the field (%d < %d)"%(
                 len(star_list_query), MIN_STAR_NB))
             
         # reference star position list in degrees
@@ -1048,7 +1048,7 @@ class Image(Frame2D):
         protected_kwargs =['profile_name', 'scale', 'fwhm_pix', 'beta', 'fit_tol']
         for ik in protected_kwargs:
             if ik in kwargs:
-                raise Exception('{} should not be passed in kwargs'.format(ik))
+                raise StandardError('{} should not be passed in kwargs'.format(ik))
         
         kwargs['profile_name'] = self.params.profile_name
         kwargs['scale'] = self.get_scale()
@@ -1155,7 +1155,7 @@ class Image(Frame2D):
                     diff, p,
                     args=(slin, slout, rc, zf, sip1, sip2),
                     loss='soft_l1')
-            except Exception as e:
+            except Exception, e:
                 raise Exception('No matching parameters found: {}'.format(e))
             
             if fit['status'] > 0:
@@ -1256,7 +1256,7 @@ class Image(Frame2D):
 
         if ((xy_range[1] is None and r_range[1] is not None)
             or (xy_range[1] is not None and r_range[1] is None)):
-            raise Exception('both xy_range and r_range must have two ranges')
+            raise StandardError('both xy_range and r_range must have two ranges')
                 
         
         if star_list1 is None:
@@ -1264,7 +1264,7 @@ class Image(Frame2D):
                 min_star_number=MIN_STAR_NB)
             fwhm_arc = self.pix2arc(fwhm_pix)
         elif fwhm_arc is None:
-            raise Exception('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
+            raise StandardError('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
 
         star_list1 = utils.astrometry.load_star_list(star_list1)
         star_list1_deg = self.pix2world(star_list1)        
@@ -1307,7 +1307,7 @@ class Image(Frame2D):
             enable_rotation=True, fix_fwhm=True)
 
         if fit_results.empty:
-            raise Exception('fit failed. check initial parameters.')
+            raise StandardError('fit failed. check initial parameters.')
 
         [coeffs.dx, coeffs.dy, coeffs.dr, coeffs.da, coeffs.db] = match_star_lists(
             guess, np.copy(star_list1), utils.astrometry.df2list(fit_results),
@@ -1378,7 +1378,7 @@ class Image(Frame2D):
                 utils.astrometry.df2list(fit_results)[:,0])))
             
             if (fitted_star_nb < ERROR_RATIO * MIN_STAR_NB):
-                raise Exception("Not enough fitted stars in both cubes (%d%%). Alignment parameters might be wrong."%int(fitted_star_nb / MIN_STAR_NB * 100.))
+                raise StandardError("Not enough fitted stars in both cubes (%d%%). Alignment parameters might be wrong."%int(fitted_star_nb / MIN_STAR_NB * 100.))
                 
             if (fitted_star_nb < WARNING_RATIO * MIN_STAR_NB):
                 warnings.warn("Poor ratio of fitted stars in both cubes (%d%%). Check alignment parameters."%int(fitted_star_nb / MIN_STAR_NB * 100.))
@@ -1403,7 +1403,7 @@ class Image(Frame2D):
             elif final_err < self.arc2pix(ERROR_DIST):
                 warnings.warn('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
             else:
-                raise Exception('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
+                raise StandardError('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
         
 
         ### PLOT ERROR ON STAR POSITIONS ###
@@ -1553,7 +1553,7 @@ class StandardImage(Image):
             utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
             utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
         except utils.err.ValidationError:
-            raise Exception('standard star not in the image, check image registration')
+            raise StandardError('standard star not in the image, check image registration')
 
         star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
         std_fit = self.fit_stars([std_xy], aper_coeff=6)

@@ -219,7 +219,7 @@ def width2apod(width):
     if fit.success:
         return fit.x[0]
     else:
-        raise Exception('error when inverting apod2width: {}'.format(fit.message))
+        raise StandardError('error when inverting apod2width: {}'.format(fit.message))
 
 def apod2sigma(apod, fwhm):
     """Return the broadening of the gaussian-sinc function in the
@@ -249,7 +249,7 @@ def sigma2apod(sigma, fwhm):
     if fit.success:
         return fit.x[0]
     else:
-        raise Exception('error when inverting apod2sigma: {}'.format(fit.message))
+        raise StandardError('error when inverting apod2sigma: {}'.format(fit.message))
     
 def gaussian_window(coeff, x):
     """Return a Gaussian apodization function for a given broadening

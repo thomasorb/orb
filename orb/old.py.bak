@@ -1,5 +1,5 @@
-from . import core
-from . import utils.io
+import core
+import utils.io
 
 import os
 import sys
@@ -13,7 +13,7 @@ import logging
 import warnings
 
 import threading
-import socketserver
+import SocketServer
 import logging.handlers
 import struct
 import pickle
@@ -30,10 +30,10 @@ try: import pygit2
 except ImportError: pass
 
 ## MODULES IMPORTS
-from . import cutils
-from . import utils.spectrum, utils.parallel, utils.io, utils.filters
-from . import utils.photometry
-from .core import ProgressBar
+import cutils
+import utils.spectrum, utils.parallel, utils.io, utils.filters
+import utils.photometry
+from core import ProgressBar
 
     
 
@@ -108,19 +108,19 @@ class Cube(core.Tools):
         if isinstance(_slice, slice):
             if _slice.start is not None:
                 if (isinstance(_slice.start, int)
-                    or isinstance(_slice.start, int)):
+                    or isinstance(_slice.start, long)):
                     if (_slice.start >= 0) and (_slice.start <= _max):
                         slice_min = int(_slice.start)
                     else:
-                        raise Exception(
+                        raise StandardError(
                             "Index error: list index out of range")
                 else:
-                    raise Exception("Type error: list indices of slice must be integers")
+                    raise StandardError("Type error: list indices of slice must be integers")
             else: slice_min = 0
 
             if _slice.stop is not None:
                 if (isinstance(_slice.stop, int)
-                    or isinstance(_slice.stop, int)):
+                    or isinstance(_slice.stop, long)):
                     if _slice.stop < 0: # transform negative index to real index
                         slice_stop = _max + _slice.stop
                     else:  slice_stop = _slice.stop
@@ -128,18 +128,18 @@ class Cube(core.Tools):
                         and slice_stop > slice_min):
                         slice_max = int(slice_stop)
                     else:
-                        raise Exception(
+                        raise StandardError(
                             "Index error: list index out of range")
 
                 else:
-                    raise Exception("Type error: list indices of slice must be integers")
+                    raise StandardError("Type error: list indices of slice must be integers")
             else: slice_max = _max
 
-        elif isinstance(_slice, int) or isinstance(_slice, int):
+        elif isinstance(_slice, int) or isinstance(_slice, long):
             slice_min = _slice
             slice_max = slice_min + 1
         else:
-            raise Exception("Type error: list indices must be integers or slices")
+            raise StandardError("Type error: list indices must be integers or slices")
         return slice(slice_min, slice_max, 1)
 
 
@@ -342,7 +342,7 @@ class HDFCube(Cube):
                     [igrp for igrp in f
                      if 'quad' == igrp[:4]])
                 if quad_nb != self.quad_nb:
-                    raise Exception("Corrupted HDF5 cube: 'quad_nb' attribute ([]) does not correspond to the real number of quads ({})".format(self.quad_nb, quad_nb))
+                    raise StandardError("Corrupted HDF5 cube: 'quad_nb' attribute ([]) does not correspond to the real number of quads ({})".format(self.quad_nb, quad_nb))
 
                 if self._get_hdf5_quad_path(0) in f:
                     # test whether data is complex
@@ -354,7 +354,7 @@ class HDFCube(Cube):
                         self.dtype = float
                 
                 else:
-                    raise Exception('{} is missing. A valid HDF5 cube must contain at least one quadrant'.format(
+                    raise StandardError('{} is missing. A valid HDF5 cube must contain at least one quadrant'.format(
                         self._get_hdf5_quad_path(0)))
                     
 
@@ -364,13 +364,13 @@ class HDFCube(Cube):
                      if 'frame' == igrp[:5]])
 
                 if frame_nb != self.dimz:
-                    raise Exception("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
+                    raise StandardError("Corrupted HDF5 cube: 'dimz' attribute ({}) does not correspond to the real number of frames ({})".format(self.dimz, frame_nb))
                 
             
                 if self._get_hdf5_frame_path(0) in f:                
                     if ((self.dimx, self.dimy)
                         != f[self._get_hdf5_data_path(0)].shape):
-                        raise Exception('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
+                        raise StandardError('Corrupted HDF5 cube: frame shape {} does not correspond to the attributes of the file {}x{}'.format(f[self._get_hdf5_data_path(0)].shape, self.dimx, self.dimy))
 
                     if self._get_hdf5_data_path(0, mask=True) in f:
                         self._mask_exists = True
@@ -385,7 +385,7 @@ class HDFCube(Cube):
                         self.is_complex = False
                         self.dtype = float
                 else:
-                    raise Exception('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
+                    raise StandardError('{} is missing. A valid HDF5 cube must contain at least one frame'.format(
                         self._get_hdf5_frame_path(0)))
                 
 
@@ -400,7 +400,7 @@ class HDFCube(Cube):
                                 + ", " + str(self.dimy) + ", " 
                                 + str(self.dimz) + ")")
         else:
-            raise Exception("Incorrect data shape : (" 
+            raise StandardError("Incorrect data shape : (" 
                             + str(self.dimx) + ", " + str(self.dimy) 
                               + ", " +str(self.dimz) + ")")
 
@@ -417,14 +417,14 @@ class HDFCube(Cube):
           Cube()._silent_load to True.
         """
         def slice_in_quad(ax_slice, ax_min, ax_max):
-            ax_range = list(range(ax_min, ax_max))
+            ax_range = range(ax_min, ax_max)
             for ii in range(ax_slice.start, ax_slice.stop):
                 if ii in ax_range:
                     return True
             return False
         # check return mask possibility
         if self._return_mask and not self._mask_exists:
-            raise Exception("No mask found with data, cannot return mask")
+            raise StandardError("No mask found with data, cannot return mask")
         
         # produce default values for slices
         x_slice = self._get_default_slice(key[0], self.dimx)
@@ -451,7 +451,7 @@ class HDFCube(Cube):
 
             with utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if not self._silent_load and not only_one_frame:
-                    progress = ProgressBar(z_slice.stop - z_slice.start - 1)
+                    progress = ProgressBar(z_slice.stop - z_slice.start - 1L)
 
                 for ik in range(z_slice.start, z_slice.stop):
                     unbin_data = f[
@@ -514,7 +514,7 @@ class HDFCube(Cube):
                 return f.attrs[attr]
             else:
                 if not optional:
-                    raise Exception('Attribute {} is missing. The HDF5 cube seems badly formatted. Try to create it again with the last version of ORB.'.format(attr))
+                    raise StandardError('Attribute {} is missing. The HDF5 cube seems badly formatted. Try to create it again with the last version of ORB.'.format(attr))
                 else:
                     return None
                    

@@ -92,7 +92,7 @@ def aggregate_pixels(pixel_list, radius=1.42):
             if len(new_source) > 1:
                 sources.append(new_source)
         sys.stdout.flush()
-    print(' '*20)
+    print ' '*20
     logging.info('{} sources detected'.format(len(sources)))
     return sources
 
@@ -181,7 +181,7 @@ def get_mask_from_ds9_region_file(reg_path, x_range, y_range,
             sys.stdout.flush()
             
     if len(_regions) > 1:
-        print('\n')
+        print '\n'
     if integrate:
         return np.nonzero(mask.T) # transposed to return
     else:
@@ -289,8 +289,8 @@ def sort_image_list(file_list, image_mode, cube=True):
 
     try:
         file_keys = np.array(file_seq, dtype=int)
-    except Exception as e:
-        raise Exception('Malformed sequence of files: {}:\n{}'.format(
+    except Exception, e:
+        raise StandardError('Malformed sequence of files: {}:\n{}'.format(
             e, file_seq))
 
 
@@ -326,7 +326,7 @@ def sort_image_list(file_list, image_mode, cube=True):
         file_list.sort(key=lambda x: float(re.findall("[0-9]+", x)[
             column_index]))
     else:
-        raise Exception('Image list cannot be sorted.')
+        raise StandardError('Image list cannot be sorted.')
 
     return file_list
 

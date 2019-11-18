@@ -20,13 +20,13 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import core
-from . import utils.photometry
-from . import utils.filters
-from . import utils.spectrum
-from . import utils.vector
-from . import utils.io
-from . import utils.err
+import core
+import utils.photometry
+import utils.filters
+import utils.spectrum
+import utils.vector
+import utils.io
+import utils.err
 
 import numpy as np
 import logging
@@ -246,7 +246,7 @@ class Standard(core.Tools):
         elif std_type == 'OKE':
             self.ang, self.flux = self._read_oke_dat(std_file_path)
         else:
-            raise Exception(
+            raise StandardError(
                 "Bad type of standard file. Must be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'")
        
 

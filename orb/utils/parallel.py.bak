@@ -43,7 +43,7 @@ class RayJobServer(object):
 
         def wrapped_f(func, args, modules):
             for imod in modules:
-                exec((imod), locals())
+                exec(imod) in locals()
             return func(*args)
 
         if not isinstance(args, tuple):

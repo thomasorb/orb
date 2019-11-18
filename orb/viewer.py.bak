@@ -26,11 +26,11 @@ import traceback
 import warnings
 
 # ORB IMPORTS
-from .core import Tools, HDFCube, Lines
-from . import utils.spectrum
-from . import utils.fft
-from . import utils.stats
-from . import fit
+from core import Tools, HDFCube, Lines
+import utils.spectrum
+import utils.fft
+import utils.stats
+import fit
 import orb.cutils
 
 # OTHER IMPORTS
@@ -348,7 +348,7 @@ class BaseViewer(object):
 
     def _print_traceback(self):
         """Print a traceback"""
-        print(traceback.format_exc())
+        print traceback.format_exc()
 
 
     def _get_vplugins(self):
@@ -370,7 +370,7 @@ class BaseViewer(object):
         """Reload a file and update the displayed data. The file might
         have a new size.
         """
-        print(' > Reloading {}'.format(self.filepath))
+        print ' > Reloading {}'.format(self.filepath)
         self.load_file(self.filepath, reload=True)
 
 
@@ -513,8 +513,8 @@ class BaseViewer(object):
 
             try:
                 self.spectrum_window.update(zdata)
-            except Exception as e:
-                print(e)
+            except Exception, e:
+                print e
                 
         
     def _on_move_cb(self, data_x, data_y):
@@ -599,7 +599,7 @@ class BaseViewer(object):
         for icall in self._plugins_postload_calls:
             try:
                 icall()
-            except Exception as e:
+            except Exception, e:
                 warnings.warn('> Error during plugins postload call: {}'.format(e))
                 self._print_traceback()
                 
@@ -672,7 +672,7 @@ class BaseViewer(object):
                 raise Exception('BAD WCS')
             self.BAD_WCS_FLAG = False
         except Exception as e:
-            print('WCS Error: ', e)
+            print 'WCS Error: ', e
             self.BAD_WCS_FLAG = True
 
         if not reload:
@@ -851,7 +851,7 @@ class AutoCuts(object):
         else:
             try:
                 coeff = float(self.autocut_method)
-            except Exception as e:
+            except Exception, e:
                 self._print_error('Bad autocut method: {}'.format(e))
             vmin = orb.cutils.part_value(distrib, 1.-coeff)
             vmax = orb.cutils.part_value(distrib, coeff)
@@ -939,7 +939,7 @@ class HeaderWindow(PopupWindow):
         self.w.add(box)
         for i in range(len(self.header)):
             header_store.append([
-                list(self.header.keys())[i],
+                self.header.keys()[i],
                 str(self.header[i]),
                 self.header.comments[i]])
             
@@ -1604,7 +1604,7 @@ class FitPlugin(object):
                     
     def _get_lines_keys(self):
         """Return lines keys."""
-        keys = list(Lines().air_lines_nm.keys())
+        keys = Lines().air_lines_nm.keys()
         keys.sort()
         keys.append('Filter lines')
         keys.append('Sky lines')
@@ -1662,7 +1662,7 @@ class FitPlugin(object):
             filter_lines = list()
             all_lines = Lines().air_lines_nm
         
-            for line in list(all_lines.keys()):
+            for line in all_lines.keys():
                 line_nm = all_lines[line]
                 
                 if (line_nm > nm_min

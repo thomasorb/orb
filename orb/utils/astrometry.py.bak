@@ -127,7 +127,7 @@ class Moffat(PSF):
         self.params = dict()
         
         if isinstance(params, dict):
-            if (set([key for key in params.keys()])
+            if (set([key for key in params.iterkeys()])
                 & set(self.input_params) == set(self.input_params)):
                 self.params['height'] = float(params['height'])
                 self.params['amplitude'] = float(params['amplitude'])
@@ -247,7 +247,7 @@ class Gaussian(PSF):
         
         self.params = dict()
         if isinstance(params, dict):
-            if (set([key for key in params.keys()])
+            if (set([key for key in params.iterkeys()])
                 & set(self.input_params) == set(self.input_params)):
                 self.params['height'] = float(params['height'])
                 self.params['amplitude'] = float(params['amplitude'])
@@ -584,7 +584,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
                                             saturation),
                                       maxfev=100, full_output=True,
                                       xtol=fit_tol)
-    except Exception as e:
+    except Exception, e:
         warnings.warn('fit_star leastsq exception: {}'.format(e))
         return []
     
@@ -1825,7 +1825,7 @@ def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
             if not np.all(np.isnan(result)):
                 return np.sqrt(np.nanmean(result**2.))
             else: return 1e9
-        except Exception as e:
+        except Exception, e:
             #logging.debug(str(e))
             pass
             return 1e9
@@ -2088,7 +2088,7 @@ def _get_wcs_parameters(wcs, fix_rc=None):
         compute_median_err(fit['x'], allp)))
 
     if np.any(compute_median_err(fit['x'], allp) > 1e-5):
-        raise Exception('optimization error, please retry: {}'.format(
+        raise StandardError('optimization error, please retry: {}'.format(
             compute_median_err(fit['x'], allp)))
 
     allp[2:4] = fit['x'][0:2]
@@ -2117,10 +2117,10 @@ def get_wcs_parameters(wcs, fix_rc=None):
     while trials < 50:
         try:
             return _get_wcs_parameters(wcs, fix_rc=fix_rc)
-        except Exception as e:
+        except Exception, e:
             trials += 1
             logging.debug(e)
-    raise Exception('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
+    raise StandardError('number of trials exceded to get comprehensive wcs parameters. Please check wcs.')
 
 def brute_force_guess(image, star_list, x_range, y_range, r_range,
                       rc, zoom_factor, box_size, verbose=True, init_wcs=None,
@@ -2217,7 +2217,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         out_wcs = copy.copy(init_wcs)
 
     if out_wcs is not None and init_wcs is None:
-        raise Exception('if out_wcs is set, init_wcs must also be set')
+        raise StandardError('if out_wcs is set, init_wcs must also be set')
 
     if verbose:
         logging.info('Brute force range:')
@@ -2499,7 +2499,7 @@ def fit2df(fit):
     for istar in fit:
         if keys is None:
             if istar is None: continue
-            keys = list(istar.keys())
+            keys = istar.keys()
             for ikey in keys:
                 df[ikey] = list()
             break
@@ -2574,7 +2574,7 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
     """
     star_nb = len(fit_results[0])
     if star_nb < 4: 
-        raise Exception("Not enough stars to align properly : %d (must be >= 3)"%star_nb)
+        raise StandardError("Not enough stars to align properly : %d (must be >= 3)"%star_nb)
 
     fit_x = np.array([ifit['x'].values for ifit in fit_results]).T
     fit_y = np.array([ifit['y'].values for ifit in fit_results]).T
@@ -2588,7 +2588,7 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
     good_nb = len(np.nonzero(~np.isnan(start_x))[0])
 
     if good_nb < 4 or good_nb < min_coeff * star_nb:
-        raise Exception("Not enough detected stars (%d) in the first frame"%good_nb)
+        raise StandardError("Not enough detected stars (%d) in the first frame"%good_nb)
 
     ## Create alignment vectors from fitted positions
     alignment_vector_x = ((fit_x.T - start_x.T).T)[0,:]

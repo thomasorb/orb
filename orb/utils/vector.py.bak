@@ -251,17 +251,17 @@ def interpolate_size(a, size, deg):
     """
     if a.dtype != np.complex:
         f = interpolate.UnivariateSpline(np.arange(a.shape[0]), a, k=deg, s=0)
-        return f(np.arange(size)/float(size - 1) * float(a.shape[0] - 1))
+        return f(np.arange(size)/float(size - 1L) * float(a.shape[0] - 1L))
     else:
         result = np.empty(size, dtype=complex)
         f_real = interpolate.UnivariateSpline(
             np.arange(a.shape[0]), a.real, k=deg, s=0)
         result.real = f_real(
-            np.arange(size)/float(size - 1) * float(a.shape[0] - 1))
+            np.arange(size)/float(size - 1L) * float(a.shape[0] - 1L))
         f_imag = interpolate.UnivariateSpline(
             np.arange(a.shape[0]), a.imag, k=deg, s=0)
         result.imag = f_imag(
-            np.arange(size)/float(size - 1) * float(a.shape[0] - 1))
+            np.arange(size)/float(size - 1L) * float(a.shape[0] - 1L))
         return result
         
 def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=np.nan):

@@ -27,14 +27,14 @@ import time
 import scipy
 import gvar
 
-from . import utils.validate
-from . import utils.fft
-from . import utils.vector
-from . import utils.err
-from . import core
-from . import cutils
-from . import fit
-from . import photometry
+import utils.validate
+import utils.fft
+import utils.vector
+import utils.err
+import core
+import cutils
+import fit
+import photometry
 
 
 
@@ -80,7 +80,7 @@ class Interferogram(core.Vector1d):
         if self.axis is None:
             self.axis = core.Axis(opdaxis)
         elif np.any(opdaxis != self.axis.data):
-            raise Exception('provided axis is inconsistent with the opd axis computed from the observation parameters')
+            raise StandardError('provided axis is inconsistent with the opd axis computed from the observation parameters')
         
         if self.axis.dimx != self.dimx:
             raise ValueError('axis must have the same size as the interferogram')
@@ -587,7 +587,7 @@ class Phase(core.Cm1Vector1d):
             pcov = _fit[1]
             perr = np.sqrt(np.diag(pcov) * np.std(_fit[2]['fvec'])**2)
             
-        except Exception as e:
+        except Exception, e:
             raise utils.err.FitError('Exception occured during phase fit: {}'.format(e))
         
         all_pfit = format_guess(pfit)
@@ -898,10 +898,10 @@ class Spectrum(core.Cm1Vector1d):
                 **kwargs)
             warnings.simplefilter('default')
 
-        except Exception as e:
+        except Exception, e:
             warnings.warn('Exception occured during fit: {}'.format(e))
             import traceback
-            print((traceback.format_exc()))
+            print(traceback.format_exc())
 
             return []
         
@@ -1170,7 +1170,7 @@ class PhaseMaps(core.Tools):
             if len(self.phase_maps) == 0: raise ValueError('No phase maps in phase map file')
 
             # add params
-            for ikey in list(f.attrs.keys()):
+            for ikey in f.attrs.keys():
                 self.params[ikey] = f.attrs[ikey]
 
             
@@ -1180,7 +1180,7 @@ class PhaseMaps(core.Tools):
         
         binx = self.dimx_unbinned/self.dimx
         biny = self.dimy_unbinned/self.dimy
-        if binx != biny: raise Exception('Binning along x and y axes is different ({} != {})'.format(binx, biny))
+        if binx != biny: raise StandardError('Binning along x and y axes is different ({} != {})'.format(binx, biny))
         else: self.binning = binx
 
         logging.info('Phase maps loaded : order {}, shape ({}, {}), binning {}'.format(

@@ -29,19 +29,19 @@ import warnings
 import os
 import logging
 
-from . import core
-from . import old
-from . import utils.io
-from . import utils.misc
-from . import utils.astrometry
-from . import fft
-from . import image
+import core
+import old
+import utils.io
+import utils.misc
+import utils.astrometry
+import fft
+import image
 
 import scipy.interpolate
 import gvar
 import pyregion
 
-from . import photometry
+import photometry
 import gc
 import h5py
 
@@ -62,14 +62,14 @@ class MockArray(object):
 
         with utils.io.open_hdf5(path, 'r') as f:
             if 'data' not in f:
-                raise Exception('badly formatted hdf5 file')
+                raise StandardError('badly formatted hdf5 file')
 
             self.shape = f['data'].shape
             self.ndim = f['data'].ndim
             self.dtype = f['data'].dtype
                 
     def __getitem__(self, key):
-        raise Exception('you are using a MockArray :)')
+        raise StandardError('you are using a MockArray :)')
 
 #################################################
 #### CLASS HDFCube ##############################
@@ -130,7 +130,7 @@ class HDFCube(core.WCSData):
                 for param in f.attrs:
                     try:
                         self.params[param] = f.attrs[param]
-                    except TypeError as e:
+                    except TypeError, e:
                         logging.debug('error reading param from attributes {}: {}'.format(
                             param, e))
 
@@ -177,7 +177,7 @@ class HDFCube(core.WCSData):
             f = self.open_hdf5('r')
             f.flush()
             f.close()
-        except Exception as e:
+        except Exception, e:
             warnings.warn('error while deleting object: {}'.format(e))
         
     def __getitem__(self, key):
@@ -342,7 +342,7 @@ class HDFCube(core.WCSData):
         ymax = self.validate_y_index(np.nanmax(region[1]), clip=False) + 1
 
         if (xmax - xmin)  * (ymax - ymin) > SIZE_LIMIT:
-            raise Exception('size limit exceeded, try a smaller region')
+            raise StandardError('size limit exceeded, try a smaller region')
 
         quadrant = self.get_data(xmin, xmax, ymin, ymax, 0, self.dimz)
         xpix = np.copy(region[0])
@@ -394,7 +394,7 @@ class HDFCube(core.WCSData):
                 raise AttributeError('{} dataset not in the hdf5 file'.format(path))
             attrs = f[path].attrs
             out = dict()
-            for i in list(attrs.keys()):
+            for i in attrs.keys():
                 out[i] = attrs[i]
             return out
 
@@ -543,7 +543,7 @@ class HDFCube(core.WCSData):
         """
         try:
             return fft.PhaseMaps(self.cube_path)
-        except Exception:
+        except StandardError:
             return None
 
     def get_high_order_phase(self):
@@ -712,7 +712,7 @@ class HDFCube(core.WCSData):
                 self.calibration_laser_map = self.get_dataset('calib_map', protect=False)
             else:
                 if 'calibration_laser_map_path' not in self.params:
-                    raise Exception("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
+                    raise StandardError("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
                 calib_path = self.params.calibration_laser_map_path
                 if not os.path.exists(calib_path):
                     if not os.path.isabs(calib_path):
@@ -727,7 +727,7 @@ class HDFCube(core.WCSData):
             self.calibration_laser_map = utils.image.interpolate_map(
                 self.calibration_laser_map, self.dimx, self.dimy)
         if not self.calibration_laser_map.shape == (self.dimx, self.dimy):
-            raise Exception('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
+            raise StandardError('Calibration laser map shape is {} and must be ({} {})'.format(self.calibration_laser_map.shape[0], self.dimx, self.dimy))
         return self.calibration_laser_map
         
     def get_calibration_coeff_map(self):
@@ -785,7 +785,7 @@ class HDFCube(core.WCSData):
         """
 
         if self.dimz > 25:
-            raise Exception('master combination is useful for a small set of frames')
+            raise StandardError('master combination is useful for a small set of frames')
         
         if combine is None:
             combine='average'
@@ -850,14 +850,14 @@ class HDFCube(core.WCSData):
                 logging.debug('airmass size is {} but cube dimz is {}. no frame header present so the airmass is returned as is'.format(np.size(self.params.airmass), self.dimz))
                 return self.params.airmass
         elif not self.has_dataset('frame_header_0'):
-            raise Exception('airmass not set and no frame headers')
+            raise StandardError('airmass not set and no frame headers')
 
         airmass = list()
         for i in range(self.dimz):
             try:
                 airmass.append(float(self.get_frame_header(i)['AIRMASS']))
             except KeyError:
-                raise Exception('frame_header_{} not present'.format(i))
+                raise StandardError('frame_header_{} not present'.format(i))
         self.params['airmass'] = np.array(airmass)
         return self.params.airmass
 
@@ -956,7 +956,7 @@ class HDFCube(core.WCSData):
         dy_mean = list([np.nan] * self.dimz)
         fwhm_mean = list([np.nan] * self.dimz)
         
-        if self.dimz < 2: raise Exception(
+        if self.dimz < 2: raise StandardError(
             "Data must have 3 dimensions. Use fit_stars_in_frame method instead")
         
         if add_cube is not None:
@@ -964,9 +964,9 @@ class HDFCube(core.WCSData):
                 added_cube = add_cube[0]
                 added_cube_scale = add_cube[1]
                 if not isinstance(added_cube, Cube):
-                    raise Exception('Added cube must be a Cube instance. Check add_cube option')
+                    raise StandardError('Added cube must be a Cube instance. Check add_cube option')
                 if np.size(added_cube_scale) != 1:
-                    raise Exception('Bad added cube scale. Check add_cube option.')
+                    raise StandardError('Bad added cube scale. Check add_cube option.')
 
         # Init of the multiprocessing server
         job_server, ncpus = self._init_pp_server()
@@ -1154,7 +1154,7 @@ class RWHDFCube(HDFCube):
             raise ValueError('shape or dtype must be set only when creating a new HDFCube')
 
         HDFCube.__init__(self, path, instrument=instrument, **kwargs)
-        if self.is_old: raise Exception('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
+        if self.is_old: raise StandardError('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
         if self.has_params:
             self.set_params(self.params)
@@ -1345,7 +1345,7 @@ class RWHDFCube(HDFCube):
         std_sp = photometry.StandardSpectrum(std_sp, instrument=self.instrument)
         try:
             std_sp = photometry.StandardSpectrum(std_sp, instrument=self.instrument)
-        except Exception as e:
+        except Exception, e:
             raise TypeError('std_sp must be a StandardSpectrum instance or a path to a valid hdf5 spectrum: {}'.format(e))
 
         self.set_dataset('standard_spectrum', std_sp.data, protect=False)
@@ -1453,11 +1453,11 @@ class Cube(HDFCube):
     def validate(self):
         """Check if this class is valid"""
         if self.instrument not in ['sitelle', 'spiomm']:
-            raise Exception("class not valid: set instrument to 'sitelle' or 'spiomm' at init")
+            raise StandardError("class not valid: set instrument to 'sitelle' or 'spiomm' at init")
         else: self.set_param('instrument', self.instrument)
         try: self.params_defined
-        except AttributeError: raise Exception("class not valid: set params at init")
-        if not self.params_defined: raise Exception("class not valid: set params at init")
+        except AttributeError: raise StandardError("class not valid: set params at init")
+        if not self.params_defined: raise StandardError("class not valid: set params at init")
 
         # validate needed params
         for iparam in self.needed_params:
@@ -1630,7 +1630,7 @@ class FDCube(core.Tools):
             image_list_file = utils.io.open_file(self.image_list_path, "r")
             image_name_list = image_list_file.readlines()
             if len(image_name_list) == 0:
-                raise Exception('No image path in the given image list')
+                raise StandardError('No image path in the given image list')
             is_first_image = True
             
             for image_name in image_name_list:
@@ -1682,7 +1682,7 @@ class FDCube(core.Tools):
                                     + ", " + str(self.dimy) + ", " 
                                     + str(self.dimz) + ")")
             else:
-                raise Exception("Incorrect data shape : (" 
+                raise StandardError("Incorrect data shape : (" 
                                   + str(self.dimx) + ", " + str(self.dimy) 
                                   + ", " +str(self.dimz) + ")")
             
@@ -1702,7 +1702,7 @@ class FDCube(core.Tools):
         data = self._get_frame_section(x_slice, y_slice, z_slice.start)
         
         # return this frame if only one frame is wanted
-        if z_slice.stop == z_slice.start + 1:
+        if z_slice.stop == z_slice.start + 1L:
             return data
 
         if self._parallel_access_to_data:
@@ -1710,9 +1710,9 @@ class FDCube(core.Tools):
             job_server, ncpus = self._init_pp_server(silent=self._silent_load) 
 
             if not self._silent_load:
-                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1)
+                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1L)
             
-            for ik in range(z_slice.start + 1, z_slice.stop, ncpus):
+            for ik in range(z_slice.start + 1L, z_slice.stop, ncpus):
                 # No more jobs than frames to compute
                 if (ik + ncpus >= z_slice.stop): 
                     ncpus = z_slice.stop - ik
@@ -1739,9 +1739,9 @@ class FDCube(core.Tools):
             self._close_pp_server(job_server)
         else:
             if not self._silent_load:
-                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1)
+                progress = core.ProgressBar(z_slice.stop - z_slice.start - 1L)
             
-            for ik in range(z_slice.start + 1, z_slice.stop):
+            for ik in range(z_slice.start + 1L, z_slice.stop):
 
                 added_data = self._get_frame_section(x_slice, y_slice, ik)
 
@@ -1762,19 +1762,19 @@ class FDCube(core.Tools):
         if isinstance(_slice, slice):
             if _slice.start is not None:
                 if (isinstance(_slice.start, int)
-                    or isinstance(_slice.start, int)):
+                    or isinstance(_slice.start, long)):
                     if (_slice.start >= 0) and (_slice.start <= _max):
                         slice_min = int(_slice.start)
                     else:
-                        raise Exception(
+                        raise StandardError(
                             "Index error: list index out of range")
                 else:
-                    raise Exception("Type error: list indices of slice must be integers")
+                    raise StandardError("Type error: list indices of slice must be integers")
             else: slice_min = 0
 
             if _slice.stop is not None:
                 if (isinstance(_slice.stop, int)
-                    or isinstance(_slice.stop, int)):
+                    or isinstance(_slice.stop, long)):
                     if _slice.stop < 0: # transform negative index to real index
                         slice_stop = _max + _slice.stop
                     else:  slice_stop = _slice.stop
@@ -1782,18 +1782,18 @@ class FDCube(core.Tools):
                         and slice_stop > slice_min):
                         slice_max = int(slice_stop)
                     else:
-                        raise Exception(
+                        raise StandardError(
                             "Index error: list index out of range")
 
                 else:
-                    raise Exception("Type error: list indices of slice must be integers")
+                    raise StandardError("Type error: list indices of slice must be integers")
             else: slice_max = _max
 
-        elif isinstance(_slice, int) or isinstance(_slice, int):
+        elif isinstance(_slice, int) or isinstance(_slice, long):
             slice_min = _slice
             slice_max = slice_min + 1
         else:
-            raise Exception("Type error: list indices must be integers or slices")
+            raise StandardError("Type error: list indices must be integers or slices")
         return slice(slice_min, slice_max, 1)
 
     def _get_frame_section(self, x_slice, y_slice, frame_index):
@@ -1867,7 +1867,7 @@ class FDCube(core.Tools):
         def del_key(key, header):
             if '*' in key:
                 key = key[:key.index('*')]
-                for k in list(header.keys()):
+                for k in header.keys():
                     if key in k:
                         header.remove(k)
             else:
@@ -1974,7 +1974,7 @@ class SpectralCube(Cube):
         (min, max)"""
         if xy is None:
             if not self.has_wavenumber_calibration():
-                raise Exception('if the spectral cube is not calibrated, xy must be provided')
+                raise StandardError('if the spectral cube is not calibrated, xy must be provided')
             xy = [self.dimx//2, self.dimy//2]
 
         return utils.spectrum.cm12pix(
@@ -2031,7 +2031,7 @@ class SpectralCube(Cube):
         if not self.has_param('axis_corr'):
             if self.has_param('wavenumber_calibration'):
                 if self.params.wavenumber_calibration:
-                    raise Exception('wavenumber_calibration is True but axis_corr is not set')
+                    raise StandardError('wavenumber_calibration is True but axis_corr is not set')
             logging.debug('axis_corr not set: cube is considered uncalibrated in wavenumber')
             self.set_param('wavenumber_calibration', False)
             self.set_param('axis_corr', self.get_axis_corr())
@@ -2106,7 +2106,7 @@ class SpectralCube(Cube):
 
         calib_map = self.get_calibration_laser_map_orig()
         if calib_map is None:
-            raise Exception('No calibration laser map given. Please redo the last step of the data reduction')
+            raise StandardError('No calibration laser map given. Please redo the last step of the data reduction')
 
         if self.has_wavenumber_calibration():
             calib_map = (np.ones((self.dimx, self.dimy), dtype=float)
@@ -2310,7 +2310,7 @@ class SpectralCube(Cube):
         """
         if not isinstance(b, int):
             raise TypeError('b must be an int')
-        if b < 1: raise Exception('Binning must be at least 1')
+        if b < 1: raise StandardError('Binning must be at least 1')
         
         x = self.validate_x_index(x, clip=False)
         y = self.validate_y_index(y, clip=False)
@@ -2352,7 +2352,7 @@ class SpectralCube(Cube):
             std_flux_sp = photometry.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
             return std_flux_sp
         
-        else: raise Exception('standard spectrum dataset or standard_path parameter are not defined')
+        else: raise StandardError('standard spectrum dataset or standard_path parameter are not defined')
         
     def get_standard_image(self):
         """Return standard image
@@ -2365,7 +2365,7 @@ class SpectralCube(Cube):
             if self.has_param('standard_image_path'):
                 std_cube = HDFCube(self.params.standard_image_path)
                 std_im = std_cube.compute_sum_image() / std_cube.dimz 
-            else: raise Exception('if no standard image can be found in the archive, standard_image_path must be set')
+            else: raise StandardError('if no standard image can be found in the archive, standard_image_path must be set')
             return image.StandardImage(
                 std_im, params=std_cube.params)
         else:
@@ -2388,7 +2388,7 @@ class SpectralCube(Cube):
         if std_sp is None:
             try:
                 std_sp = self.get_standard_spectrum()
-            except Exception:
+            except StandardError:
                 logging.info('standard_spectrum not set: no relative vector correction computed')
                 std_sp = None
 
@@ -2406,7 +2406,7 @@ class SpectralCube(Cube):
         if std_im is None:
             try:
                 std_im = self.get_standard_image()
-            except Exception:
+            except StandardError:
                 logging.info('standard_image not set: no absolute vector correction computed')
                 std_im = None
         

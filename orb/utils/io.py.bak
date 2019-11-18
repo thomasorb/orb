@@ -52,7 +52,7 @@ def open_file(file_name, mode='r'):
       read mode and 'a' for append mode.
     """
     if mode not in ['w','r','a','rU']:
-        raise Exception("mode option must be 'w', 'r', 'rU' or 'a'")
+        raise StandardError("mode option must be 'w', 'r', 'rU' or 'a'")
 
     if mode in ['w','a']:
         # create folder if it does not exist
@@ -349,7 +349,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
             data_index = get_hdu_data_index(hdulist)
 
         fits_header = hdulist[data_index].header
-    except Exception as e:
+    except Exception, e:
         if not no_error:
             raise IOError(
                 "File '%s' could not be opened: {}, {}".format(fits_path, e))
@@ -638,7 +638,7 @@ def write_hdf5(file_path, data, header=None,
         data = [data]
 
     if max_hdu_check and len(data) > MAX_HDUS:
-        raise Exception('Data list length is > {}. As a list is interpreted has a list of data unit make sure to pass a numpy.ndarray instance instead of a list. '.format(MAX_HDUS))
+        raise StandardError('Data list length is > {}. As a list is interpreted has a list of data unit make sure to pass a numpy.ndarray instance instead of a list. '.format(MAX_HDUS))
 
     # Check header format
     if header is not None:
@@ -665,18 +665,18 @@ def write_hdf5(file_path, data, header=None,
                         header_seems_ok = True
 
                 if not header_seems_ok:
-                    raise Exception('Badly formated header')
+                    raise StandardError('Badly formated header')
 
             elif not isinstance(header[0], pyfits.Header):
 
-                raise Exception('Header must be a pyfits.Header instance or a list')
+                raise StandardError('Header must be a pyfits.Header instance or a list')
 
         else:
-            raise Exception('Header must be a pyfits.Header instance or a list')
+            raise StandardError('Header must be a pyfits.Header instance or a list')
 
 
         if len(header) != len(data):
-            raise Exception('The number of headers must be the same as the number of data units.')
+            raise StandardError('The number of headers must be the same as the number of data units.')
 
 
     # change path if file exists and must not be overwritten
@@ -702,8 +702,8 @@ def write_hdf5(file_path, data, header=None,
             if not isinstance(idata, np.ndarray):
                 try:
                     idata = np.array(idata, dtype=float)
-                except Exception as e:
-                    raise Exception('Data to write must be convertible to a numpy array of numeric values: {}'.format(e))
+                except Exception, e:
+                    raise StandardError('Data to write must be convertible to a numpy array of numeric values: {}'.format(e))
 
 
             # convert data to float32
@@ -737,14 +737,14 @@ def write_hdf5(file_path, data, header=None,
     return new_file_path
 
 
-castables = [int, float, bool, str, str,
-             np.int64, np.float64, int, np.float128]
+castables = [int, float, bool, str, unicode,
+             np.int64, np.float64, long, np.float128]
     
 def cast(a, t_str):
     for _t in castables:
         if t_str == repr(_t):
             return _t(a)
-    raise Exception('Bad type string {}'.format(t_str))
+    raise StandardError('Bad type string {}'.format(t_str))
 
 def dict2array(data):
     """Convert a dictionary to an array that can be written in an hdf5 file
@@ -782,7 +782,7 @@ def dict2header(params):
     """
     # filter illegal header values
     cards = list()
-    ok_types = [float, int, str, bool, str, np.bool_]
+    ok_types = [float, int, str, bool, unicode, np.bool_]
 
     for iparam in params:
         val = params[iparam]
@@ -820,7 +820,7 @@ def header_fits2hdf5(fits_header):
     for ikey in range(len(fits_header)):
         _tstr = str(type(fits_header[ikey]))
         ival = np.array(
-            (list(fits_header.keys())[ikey], str(fits_header[ikey]),
+            (fits_header.keys()[ikey], str(fits_header[ikey]),
              fits_header.comments[ikey], _tstr))
 
         hdf5_header.append(ival)
@@ -886,7 +886,7 @@ def cast2hdf5(val):
         return 'None'
     elif isinstance(val, np.float128):
         return val.astype(np.float64)
-    elif isinstance(val, int):
+    elif isinstance(val, long):
         return str(val)
     elif isinstance(val, np.ndarray):
         if val.dtype == np.float128:

@@ -43,17 +43,17 @@ import logging
 import gvar
 import lsqfit
 
-from . import utils.fft
-from . import constants
-from . import utils.spectrum
-from . import utils.fit
-from . import utils.stats
-from . import utils.validate
-from . import utils.err
-from . import cutils
+import utils.fft
+import constants
+import utils.spectrum
+import utils.fit
+import utils.stats
+import utils.validate
+import utils.err
+import cutils
 
-from .core import Lines, FilterFile, Axis
-from . import core
+from core import Lines, FilterFile, Axis
+import core
 
 class FitVector(object):
     """
@@ -179,7 +179,7 @@ class FitVector(object):
             # guess nan values for each model
             self.models[-1].make_guess(self.vector)
             self.priors_list.append(self.models[-1].get_priors(self.classic))
-            self.priors_keys_list.append(list(self.priors_list[-1].keys()))
+            self.priors_keys_list.append(self.priors_list[-1].keys())
         self.all_keys_index = None
         
         if signal_range is not None:
@@ -206,7 +206,7 @@ class FitVector(object):
         for p in p_list:
             # check if two parameters have the same key
             for _k in p:
-                if _k in list(all_p.keys()):
+                if _k in all_p.keys():
                     raise Exception('Two parameters are sharing the same key: {}'.format(_k))
             all_p.update(p)
         return all_p
@@ -256,7 +256,7 @@ class FitVector(object):
             for key in keys_list:
                 all_keys_index[key] = index
                 index += 1
-        if all_keys_index.keys() != p_dict.keys(): raise Exception(
+        if all_keys_index.viewkeys() != p_dict.viewkeys(): raise Exception(
             'Badly formatted input dict')
         
         self.all_keys_index = all_keys_index # save keys--index dict
@@ -347,7 +347,7 @@ class FitVector(object):
                     model_to_append = model_list
                 mult_model *= model_to_append
             if self.models_operation[i] not in ['mult', 'add']:
-                raise Exception('Bad model operation. Model operation must be in {}'.format(self.models_operations))
+                raise StandardError('Bad model operation. Model operation must be in {}'.format(self.models_operations))
 
         model = None
         if np.all(mult_model == 1): mult_model = None
@@ -480,7 +480,7 @@ class FitVector(object):
                     method='lm',
                     full_output=True,
                     maxfev=self.max_iter)
-            except RuntimeError as e:
+            except RuntimeError, e:
                 logging.debug('RuntimeError during fit: {}'.format(e))
                 fit_classic = list(['Runtime error during fit: {}'.format(e), 0])
                 
@@ -546,7 +546,7 @@ class FitVector(object):
             fit_p = fit.p
             
             # correct for normalization coeff
-            for key in list(fit_p.keys()):
+            for key in fit_p.keys():
                 if 'amp' in key or 'cont_p' in key:
                     fit_p[key] = fit_p[key] * self.normalization_coeff
                     
@@ -765,7 +765,7 @@ class Model(object):
             # init an error will be raised.
             self.unused_keys = dict(self.p_dict)
 
-            for key in list(self.p_dict.keys()):
+            for key in self.p_dict.keys():
                 if key not in self.accepted_keys:
                     raise Exception('Input dictionary contains unknown key: {}'.format(key))
         
@@ -779,7 +779,7 @@ class Model(object):
         # create free and fixed vectors
         self.val2free()
         if len(self.unused_keys) != 0:
-            raise utils.err.FitInitError('Some input keys where not used during fit init: {}'.format(list(self.unused_keys.keys())))
+            raise utils.err.FitInitError('Some input keys where not used during fit init: {}'.format(self.unused_keys.keys()))
 
     def parse_dict(self):
         """Parse input dictionary to create :py:attr:`fit.Model.p_def`, :py:attr:`fit.Model.p_val` and
@@ -833,7 +833,7 @@ class Model(object):
 
         :param p_free: New vector of free parameters
         """
-        if self.p_free.keys() == p_free.keys():
+        if self.p_free.viewkeys() == p_free.viewkeys():
             self.p_free = dict(p_free)
             self.free2val()
         else: raise Exception('bad format of passed free parameters')
@@ -856,7 +856,7 @@ class Model(object):
         
         :param p_val: New full set of parameters.
         """
-        if list(p_val.keys()) == list(self.p_val.keys()):
+        if p_val.keys() == self.p_val.keys():
             self.p_val = copy.copy(p_val)
             self.val2free()
         else: raise Exception('bad format of passed val parameters')
@@ -1059,7 +1059,7 @@ class ContinuumModel(Model):
         
     def get_p_val_as_array(self, p_val=None):
         if p_val is None:
-            if p_val.keys() == self.p_val.keys():
+            if p_val.viewkeys() == self.p_val.viewkeys():
                 p_val = dict(self.p_val)
             else: raise Exception('Badly formatted p_val')
 
@@ -1107,7 +1107,7 @@ class ContinuumModel(Model):
         pass
 
     def make_guess(self, v):
-        for key in list(self.p_val.keys()):
+        for key in self.p_val.keys():
             if self.p_val[key] is None:
                 order = self._get_order_from_key(key)
                 self.p_val[key] = np.nanmedian(v)**(1./(order+1))
@@ -1375,7 +1375,7 @@ class LinesModel(Model):
 
     def get_p_val_as_array(self, p_val=None):
         if p_val is None:
-            if p_val.keys() == self.p_val.keys():
+            if p_val.viewkeys() == self.p_val.viewkeys():
                 p_val = dict(self.p_val)
             else: raise Exception('Badly formatted p_val')
 
@@ -1501,7 +1501,7 @@ class LinesModel(Model):
                             
                     elif p_cov is not None:
                         if np.size(p_cov) != 0: raise ValueError("{}_cov must not be set ({}) if {}_def is set to 'free' or 'fixed'".format(key, self.p_dict[key_cov], key))
-                    logging.debug('Covarying symbols for {}: {}'.format(key, list(p_cov_dict.keys())))
+                    logging.debug('Covarying symbols for {}: {}'.format(key, p_cov_dict.keys()))
                 if p_cov is not None:
                     if np.size(p_cov) > 0: raise TypeError("too much covarying parameters ({}): {} ({}) must have the same size as the number of covarying parameters ({})".format(np.size(p_cov) + len(p_cov_dict), key_cov, self.p_dict[key_cov], len(p_cov_dict)))
             else:
@@ -1564,7 +1564,7 @@ class LinesModel(Model):
 
     def check_input(self):
         """Check input parameters"""
-        for key in list(self.p_val.keys()):
+        for key in self.p_val.keys():
             if self.p_val[key] is None:
                 if 'pos' in key:
                     warnings.warn('No initial position given')
@@ -1594,7 +1594,7 @@ class LinesModel(Model):
 
         self._p_val2array()
 
-        for key in list(self.p_array.keys()):
+        for key in self.p_array.keys():
             if self.p_array[key] is None: 
                 if 'pos' in key:
                     raise Exception('initial guess on lines position must be given, no automatic lines detection is implemented at this level.')
@@ -1609,7 +1609,7 @@ class LinesModel(Model):
                     self.p_array[key] = 1e-8
 
         # amp must be checked after the others
-        for key in list(self.p_array.keys()):
+        for key in self.p_array.keys():
             if self.p_array[key] is None:
                 if 'amp' in key:
                     self.p_array[key] = np.nanmax(gvar.mean(v))
@@ -1654,7 +1654,7 @@ class LinesModel(Model):
             iline = self._get_iline_from_key(idef)
         else:
             iline = self._get_iline_from_key(
-                list(self.p_def.keys())[list(self.p_def.values()).index(idef)])
+                self.p_def.keys()[self.p_def.values().index(idef)])
     
         if 'amp' in idef:
             return gvar.gvar(mean, max(10 * mean, AMP_SDEV))
@@ -1727,7 +1727,7 @@ class LinesModel(Model):
             else:
                 mult_amp = 1.
 
-            if np.any(np.isnan(gvar.mean(mult_amp))): raise Exception('Nan in mult_amp')
+            if np.any(np.isnan(gvar.mean(mult_amp))): raise StandardError('Nan in mult_amp')
 
             
             if fmodel == 'sinc':
@@ -1929,7 +1929,7 @@ class Cm1LinesModel(LinesModel):
             iline = self._get_iline_from_key(idef)
         else:
             iline = self._get_iline_from_key(
-                list(self.p_def.keys())[list(self.p_def.values()).index(idef)])
+                self.p_def.keys()[self.p_def.values().index(idef)])
 
         if 'amp' in idef:
             return gvar.gvar(mean,max(mean * 10, AMP_SDEV))
@@ -2092,7 +2092,7 @@ class InputParams(object):
 
     def clean_kwargs(self, kwargs, params):
         # remove used params from kwargs
-        for key in list(params.keys()):
+        for key in params.keys():
             if key in kwargs:
                 kwargs.pop(key)
         return kwargs
@@ -2126,7 +2126,7 @@ class InputParams(object):
         params.update(kwargs)
         
         # remove bad keys in case
-        for key in list(params.keys()):
+        for key in params.keys():
             if key not in ContinuumModel.accepted_keys:
                 del params[key]
 
@@ -2252,7 +2252,7 @@ class InputParams(object):
         all_params.update(default_params)
 
         # remove bad keys in case
-        for key in list(all_params.keys()):
+        for key in all_params.keys():
             if key not in LinesModel.accepted_keys:
                 logging.debug('key removed: {}'.format(key))
                 del all_params[key]
@@ -2399,7 +2399,7 @@ class Cm1InputParams(InputParams):
         all_params.update(default_params)
 
         # remove bad keys in case
-        for key in list(all_params.keys()):
+        for key in all_params.keys():
             if key not in Cm1LinesModel.accepted_keys:
                 logging.debug('key removed: {}'.format(key))
                 del all_params[key]
@@ -2437,7 +2437,7 @@ class Cm1InputParams(InputParams):
         all_params.update(default_params)
 
         # remove bad keys in case
-        for key in list(all_params.keys()):
+        for key in all_params.keys():
             if key not in FilterModel.accepted_keys:
                 del all_params[key]
 
@@ -2657,7 +2657,7 @@ class OutputParams(Params):
         """Convert class to a raw pickable format
         """
         raw = dict()
-        for ipar in list(self.keys()):
+        for ipar in self.keys():
             raw[ipar] = self[ipar]
         raw = utils.fit.gvardict2pickdict(raw)
         return raw
@@ -2795,7 +2795,7 @@ def _prepare_input_params(step_nb, lines, step, order, nm_laser,
                                 max(kwargs['signal_range']))
         kwargs.pop('signal_range')
     if len(kwargs) > 0:
-        raise ValueError('some kwargs are unknown: {}. Please remove them.'.format(list(kwargs.keys())))
+        raise ValueError('some kwargs are unknown: {}. Please remove them.'.format(kwargs.keys()))
     return ip
 
 def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,

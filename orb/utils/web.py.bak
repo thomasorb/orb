@@ -21,9 +21,9 @@
 ## along with ORB.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import urllib.request, urllib.error, urllib.parse
+import urllib2
 from xml.dom import minidom
-import io
+import StringIO
 import numpy as np
 import socket
 import orb.constants
@@ -57,7 +57,7 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
         keys.append(ikey)
     object_name = '+'.join(keys)
     url = orb.constants.SESAME_URL + '{}'.format(object_name)
-    xml_result = urllib.request.urlopen(url).read()
+    xml_result = urllib2.urlopen(url).read()
     dom = minidom.parseString(xml_result)
     # get position
     if not degree:
@@ -171,7 +171,7 @@ def query_vizier(radius, target_ra, target_dec,
     catalogs['gaia'] = catalogs['gaia2']
 
     if catalog not in catalogs:
-        raise Exception("Bad catalog name. Can be {}".format(list(catalogs.keys())))
+        raise Exception("Bad catalog name. Can be {}".format(catalogs.keys()))
     else:
         cat = catalogs[catalog]
 
@@ -187,7 +187,7 @@ def query_vizier(radius, target_ra, target_dec,
         vizier = astroquery.vizier.Vizier()
     vizier.ROW_LIMIT = -1
     result = vizier.query_region(coords, radius=radius/60.*astropy.units.deg, catalog=cat.name)
-    if len(result) == 0: raise Exception('Query returned nothing')
+    if len(result) == 0: raise StandardError('Query returned nothing')
     else: result = result[0]
 
     sorting_key = cat.sort

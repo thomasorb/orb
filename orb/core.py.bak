@@ -27,7 +27,7 @@ The Core module contains all the core classes of ORB.
 __author__ = "Thomas Martin"
 __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
 __docformat__ = 'reStructuredText'
-from . import version
+import version
 __version__ = version.__version__
 
 ## BASIC IMPORTS
@@ -43,7 +43,7 @@ import logging
 import warnings
 
 import threading
-import socketserver
+import SocketServer
 import logging.handlers
 import struct
 import pickle
@@ -67,9 +67,9 @@ try: import pygit2
 except ImportError: pass
 
 ## MODULES IMPORTS
-from . import cutils
-from . import utils.spectrum, utils.parallel, utils.io, utils.filters
-from . import utils.photometry
+import cutils
+import utils.spectrum, utils.parallel, utils.io, utils.filters
+import utils.photometry
 
 #################################################
 #### CLASS TextColor ############################
@@ -142,7 +142,7 @@ class ExtDebugLoggingFilter(logging.Filter):
             if record.module in self.bad_names: return False
         return True
 
-class LogRecordStreamHandler(socketserver.StreamRequestHandler):
+class LogRecordStreamHandler(SocketServer.StreamRequestHandler):
     """Handler for a streaming logging request.
 
     This basically logs the record using whatever logging policy is
@@ -178,14 +178,14 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         # cycles and network bandwidth!
         logger.handle(record)
     
-class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
+class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
     """
     Simple TCP socket-based logging receiver suitable for testing.
     """
     def __init__(self, host='localhost',
                  port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                  handler=LogRecordStreamHandler):
-        socketserver.ThreadingTCPServer.__init__(self, (host, port), handler)
+        SocketServer.ThreadingTCPServer.__init__(self, (host, port), handler)
         self.abort = False
         self.timeout = True
 
@@ -253,7 +253,7 @@ class Logger(object):
         if self.debug:
             try:
                 self.listen()
-            except Exception as e:
+            except Exception, e:
                 warnings.warn('Exception occured during logging server init (maybe it is already initialized): {}'.format(e))
 
 
@@ -305,7 +305,7 @@ class Logger(object):
             else: return self.logfilters['none']
             
         elif logfilter not in self.logfilters:
-            raise ValueError('logfilter must be in {}'.format(list(self.logfilters.keys())))
+            raise ValueError('logfilter must be in {}'.format(self.logfilters.keys()))
         return self.logfilters[logfilter]
     
     def start_logging(self, logfilter=None):
@@ -346,7 +346,7 @@ class Logger(object):
         if _len == 0: return False
         elif _len < 3: return True
         else:
-            raise Exception('Logging in strange state: {}'.format(self.getLogger().handlers))
+            raise StandardError('Logging in strange state: {}'.format(self.getLogger().handlers))
 
     def get_file_logging_state(self):
         """Return True if the file logging appears set"""
@@ -354,7 +354,7 @@ class Logger(object):
         if _len < 2: return False
         elif _len == 2: return True
         else:
-            raise Exception('File Logging in strange state: {}'.format(self.getLogger().handlers))
+            raise StandardError('File Logging in strange state: {}'.format(self.getLogger().handlers))
         
         
     def get_logformat(self):
@@ -389,7 +389,7 @@ class Logger(object):
         thread.daemon = True # Daemonize thread
         try:
             thread.start() # Start the execution
-        except Exception as e:
+        except Exception, e:
             warnings.warn('Error during listener execution')
 
 
@@ -463,7 +463,7 @@ class ROParams(Params):
 
         :param value: Attribute value.
         """
-        raise Exception('Parameter is read-only')
+        raise StandardError('Parameter is read-only')
 
     def __setitem__(self, key, value):
         """Special set item function. Raises a warning when parameter
@@ -543,7 +543,7 @@ class Tools(object):
         # loading minimal config
         self.instrument = instrument
         self.set_config('DIV_NB', int)
-        self.config['QUAD_NB'] = self.config.DIV_NB**2
+        self.config['QUAD_NB'] = self.config.DIV_NB**2L
         self.set_config('BIG_DATA', bool)
         self.set_config('DETECT_STAR_NB', int)
         self.set_config('INIT_FWHM', float)
@@ -677,11 +677,11 @@ class Tools(object):
         :param config_file_name: Name of the configuration file.
         """
         if self.config_file_name is None:
-            raise Exception('No instrument configuration given')
+            raise StandardError('No instrument configuration given')
         config_file_path = self._get_orb_data_file_path(
             self.config_file_name)
         if not os.path.exists(config_file_path):
-             raise Exception(
+             raise StandardError(
                  "Configuration file %s does not exist !"%config_file_path)
         return config_file_path
 
@@ -690,7 +690,7 @@ class Tools(object):
         """
         for ifilter in self.filters:
             if ifilter in filter_name: return ifilter
-        raise Exception('this name or path does not point to any known filter: {}'.format(
+        raise StandardError('this name or path does not point to any known filter: {}'.format(
             filter_name))
 
     def _get_filter_file_path(self, filter_name):
@@ -747,7 +747,7 @@ class Tools(object):
         if camera_number == 0: cam_name = 'merged'
         elif camera_number == 1: cam_name = 'cam1'
         elif camera_number == 2: cam_name = 'cam2'
-        else: raise Exception('Bad camera number, must be 0, 1 or 2')
+        else: raise StandardError('Bad camera number, must be 0, 1 or 2')
         
         sip_file_path =  self._get_orb_data_file_path(
             "sip." + cam_name + ".fits")
@@ -788,7 +788,7 @@ class Tools(object):
         standard_table_path = self._get_orb_data_file_path(
             standard_table_name)
         if not os.path.exists(standard_table_path):
-             raise Exception(
+             raise StandardError(
                  "Standard table %s does not exist !"%standard_table_path)
         return standard_table_path
 
@@ -802,7 +802,7 @@ class Tools(object):
         """
         groups = ['MASSEY', 'MISC', 'CALSPEC', 'OKE', None]
         if group not in groups:
-            raise Exception('Group must be in %s'%str(groups))
+            raise StandardError('Group must be in %s'%str(groups))
         std_table = utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
         std_list = list()
@@ -842,7 +842,7 @@ class Tools(object):
                     if os.path.exists(file_path):
                         return file_path, iline[1]
 
-        raise Exception('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
+        raise StandardError('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
 
     def _get_standard_radec(self, standard_name,
                             standard_table_name='std_table.orb',
@@ -880,11 +880,11 @@ class Tools(object):
                         else:
                             return ra, dec
                     else:
-                        raise Exception('No RA DEC recorded for standard: {}'.format(
+                        raise StandardError('No RA DEC recorded for standard: {}'.format(
                             standard_name))
                     
 
-        raise Exception('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
+        raise StandardError('Standard name unknown. Please see data/std_table.orb for the list of recorded standard spectra')
 
 
     def _get_atmospheric_extinction_file_path(self):
@@ -944,7 +944,7 @@ class Tools(object):
                 if line.split()[0] == param_key:
                     return line.split()[1]
         if not optional:
-            raise Exception("Parameter key %s not found in file %s"%(
+            raise StandardError("Parameter key %s not found in file %s"%(
                 param_key, self.config_file_name))
         else:
             warnings.warn("Parameter key %s not found in file %s"%(
@@ -1056,7 +1056,7 @@ class ProgressBar(object):
     :param max_index: Index representing a 100% completed task.
     """
 
-    REFRESH_COUNT = 3 # number of steps used to calculate a remaining time
+    REFRESH_COUNT = 3L # number of steps used to calculate a remaining time
     MAX_CARAC = 78 # Maximum number of characters in a line
     BAR_LENGTH = 10. # Length of the bar
 
@@ -1123,9 +1123,9 @@ class ProgressBar(object):
         if (self._max_index > 0):
             color = TextColor.CYAN
             self._count += 1
-            for _icount in range(self.REFRESH_COUNT - 1):
-                self._time_table[_icount] = self._time_table[_icount + 1]
-                self._index_table[_icount] = self._index_table[_icount + 1]
+            for _icount in range(self.REFRESH_COUNT - 1L):
+                self._time_table[_icount] = self._time_table[_icount + 1L]
+                self._index_table[_icount] = self._index_table[_icount + 1L]
             self._time_table[-1] = time.time()
             self._index_table[-1] = index
             if (self._count > self.REFRESH_COUNT):
@@ -1252,7 +1252,7 @@ class Indexer(Tools):
         elif index == 2:
             return 'cam2'
         else:
-            raise Exception(
+            raise StandardError(
                 'Group index must be in %s'%(str(self.file_group_indexes)))
 
     def get_path(self, file_key, file_group=None, err=False):
@@ -1275,13 +1275,13 @@ class Indexer(Tools):
         elif (file_group in self.file_group_indexes):
             file_key = self._index2group(file_group) + '.' + file_key
         elif file_group is not None:
-            raise Exception('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
+            raise StandardError('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
 
         if file_key in self.index:
             return self[file_key]
         else:
             if err:
-                raise Exception("File key '%s' does not exist"%file_key)
+                raise StandardError("File key '%s' does not exist"%file_key)
             else:
                 warnings.warn("File key '%s' does not exist"%file_key)
 
@@ -1299,7 +1299,7 @@ class Indexer(Tools):
         if (file_group in self.file_groups) or (file_group is None):
             self.file_group = file_group
             
-        else: raise Exception(
+        else: raise StandardError(
             'Bad file group name. Must be in %s'%str(self.file_groups))
 
     def load_index(self):
@@ -1418,7 +1418,7 @@ class Lines(Tools):
 
         # create corresponding inverted dicts
         self.air_lines_name = dict()
-        for ikey in self.air_lines_nm.keys():
+        for ikey in self.air_lines_nm.iterkeys():
             self.air_lines_name[str(self.air_lines_nm[ikey])] = ikey
 
         for ikey in self.other_names:
@@ -1442,8 +1442,8 @@ class Lines(Tools):
                 if '#' not in line and len(line) > 2:
                     line = line.split()
                     self.air_sky_lines_nm[line[1]] = (float(line[1]) / 10., float(line[3]))
-        except Exception as e:
-            raise Exception('Error during parsing of {}: {}'.format(sky_lines_file_path, e))
+        except Exception, e:
+            raise StandardError('Error during parsing of {}: {}'.format(sky_lines_file_path, e))
         finally:
             f.close()
 
@@ -1648,7 +1648,7 @@ class ParamsFile(Tools):
                             line_dict[self._keys[ikey]] = iline[ikey]
                         self._params_list.append(line_dict)
                     else:
-                        raise Exception(
+                        raise StandardError(
                             'Wrong file format: {:s}'.format(file_path))
             self.f.close()
             self.f = utils.io.open_file(file_path, 'a')
@@ -1677,19 +1677,19 @@ class ParamsFile(Tools):
         """
         if len(self._params_list) == 0:
             self._params_list.append(params)
-            self._keys = list(params.keys())
+            self._keys = params.keys()
             self._keys.sort()
             self.f.write('# KEYS')
             for ikey in self._keys:
                 self.f.write(' {:s}'.format(ikey))
             self.f.write('\n')
         else:
-            keys = list(params.keys())
+            keys = params.keys()
             keys.sort()
             if keys == self._keys:
                 self._params_list.append(params)
             else:
-                raise Exception('parameters of the new entry are not the same as the old entries')
+                raise StandardError('parameters of the new entry are not the same as the old entries')
         
         for ikey in self._keys:
             self.f.write(' {}'.format(self._params_list[-1][ikey]))
@@ -1719,7 +1719,7 @@ class Waves(object):
         wavelengths.
         """
         if len(np.array(nm).shape) > 1:
-            raise Exception('nm must be an array of dimension 1')
+            raise StandardError('nm must be an array of dimension 1')
 
         if not isinstance(nm, list):
             if np.size(nm) == 1:
@@ -1743,7 +1743,7 @@ class Waves(object):
         if np.size(velocity) == 1:
             self.velocity = float(velocity)
         elif np.array(velocity).shape != self.nm.shape:
-            raise Exception('Velocity array shape must be the same as nm shape')
+            raise StandardError('Velocity array shape must be the same as nm shape')
         else:
             self.velocity = np.array(velocity).astype(np.longdouble)
 
@@ -1839,7 +1839,7 @@ class Data(object):
                     # load data
                     if (hdffile[_data_path].ndim > 2
                         and np.any(hdffile[_data_path].shape > LIMIT_SIZE)):
-                        raise Exception('file too big to be opened this way')
+                        raise StandardError('file too big to be opened this way')
                     else:
                         self.data = hdffile[_data_path][:]
 
@@ -1847,7 +1847,7 @@ class Data(object):
                     for iparam in hdffile.attrs:
                         try:
                             self.params[iparam] = hdffile.attrs[iparam]
-                        except TypeError as e:
+                        except TypeError, e:
                             logging.debug('error reading param from attributes {}: {}'.format(
                                 iparam, e))
 
@@ -1945,7 +1945,7 @@ class Data(object):
         
         for iparam in self.needed_params:
             if iparam not in self.params:
-                raise Exception('param {} must be set'.format(iparam))
+                raise StandardError('param {} must be set'.format(iparam))
 
         # load err
         if err is not None:
@@ -2010,7 +2010,7 @@ class Data(object):
     def assert_params(self):
         """Assert the presence of parameters"""
         if not self.has_params():
-            raise Exception(
+            raise StandardError(
                 'Parameters not supplied, please give: {} at init'.format(
                     self.needed_params))
     
@@ -2108,7 +2108,7 @@ class Data(object):
         
     def assert_err(self):
         """Assert the presence of an error"""
-        if not self.has_err(): raise Exception('No error supplied')
+        if not self.has_err(): raise StandardError('No error supplied')
 
     def get_err(self):
         """Return a copy of self.err"""
@@ -2120,7 +2120,7 @@ class Data(object):
         
     def assert_axis(self):
         """Assert the presence of an axis"""
-        if not self.has_axis(): raise Exception('No axis supplied')
+        if not self.has_axis(): raise StandardError('No axis supplied')
 
     def get_axis(self):
         """Return a copy of self.axis"""
@@ -2132,7 +2132,7 @@ class Data(object):
         
     def assert_mask(self):
         """Assert the presence of a mask"""
-        if not self.has_mask(): raise Exception('No mask supplied')
+        if not self.has_mask(): raise StandardError('No mask supplied')
 
     def set_mask(self, data):
         """Set mask. 
@@ -2562,9 +2562,9 @@ class Axis(Vector1d):
         # check that axis is regularly sampled
         diff = np.diff(self.data)
         if np.any(~np.isclose(diff - diff[0], 0.)):
-            raise Exception('axis must be regularly sampled')
+            raise StandardError('axis must be regularly sampled')
         if self.data[0] > self.data[-1]:
-            raise Exception('axis must be naturally ordered')
+            raise StandardError('axis must be naturally ordered')
 
         self.axis_step = diff[0]
 
@@ -2637,7 +2637,7 @@ class Cm1Vector1d(Vector1d):
             #else:
                 #raise StandardError('{} must all be provided'.format(self.obs_params))
             
-        if self.axis is None: raise Exception('an axis must be provided or the observation parameters ({}) must be provided'.format(self.obs_params))
+        if self.axis is None: raise StandardError('an axis must be provided or the observation parameters ({}) must be provided'.format(self.obs_params))
             
     def get_filter_bandpass_cm1(self):
         """Return filter bandpass in cm-1"""
@@ -2896,7 +2896,7 @@ class WCSData(Data, Tools):
             self.config['CAM1_DETECTOR_SIZE_X'] = self.dimx
             self.config['CAM1_DETECTOR_SIZE_Y'] = self.dimy
             if not self.has_param('delta_x'): # wcs not loaded properly
-                raise Exception('instrument set to None, wcs not loaded properly. Please set a correct WCS to your file or choose one of the available instrument configurations')
+                raise StandardError('instrument set to None, wcs not loaded properly. Please set a correct WCS to your file or choose one of the available instrument configurations')
             self.config['FIELD_OF_VIEW_1'] = (self.params.delta_x * 60.
                                               * max(self.config.CAM1_DETECTOR_SIZE_X,
                                                     self.config.CAM1_DETECTOR_SIZE_Y))
@@ -2930,7 +2930,7 @@ class WCSData(Data, Tools):
                 (self.dimx, self.dimy), detector_shape)
 
             if binning[0] != binning[1]:
-                raise Exception('Images with different binning along X and Y axis are not handled by ORBS')
+                raise StandardError('Images with different binning along X and Y axis are not handled by ORBS')
             self.set_param('binning', binning[0])
 
             logging.debug('Computed binning of camera {}: {}x{}'.format(
@@ -3014,12 +3014,12 @@ class WCSData(Data, Tools):
         # check if all needed parameters are present
         for iparam in self.default_params:
             if iparam not in self.params:
-                raise Exception('param {} must be set'.format(iparam))
+                raise StandardError('param {} must be set'.format(iparam))
 
         # load sip
         if sip is not None:
             if not isinstance(sip, pywcs.WCS):
-                raise Exception('sip must be an astropy.wcs.WCS instance')
+                raise StandardError('sip must be an astropy.wcs.WCS instance')
         else:
             if self.get_wcs().sip is None:
                 sip = self.load_sip(self._get_sip_file_path(self.params.camera))
@@ -3050,7 +3050,7 @@ class WCSData(Data, Tools):
     def assert_dxdymaps(self):
         """Raise an exception if dxdymaps are not loaded"""
         if not self.has_dxdymaps():
-            raise Exception('no dxdymaps loaded')
+            raise StandardError('no dxdymaps loaded')
 
     def set_dxdymaps(self, dxmap, dymap):
         """Set dxmap and dymap. Must have the same shape as the image shape.
@@ -3098,12 +3098,12 @@ class WCSData(Data, Tools):
                 naxis=2, relax=True)
         try:        
             _params = utils.astrometry.get_wcs_parameters(wcs)
-        except Exception as e:
+        except StandardError, e:
             logging.debug('wcs could not be loaded:', e)
             return
             
         # remove old sip params if they exist
-        for ipar in list(self.params.keys()):
+        for ipar in self.params.keys():
             if ('A_' == ipar[:2]
                 or 'B_' == ipar[:2]
                 or 'AP_' == ipar[:3]
@@ -3138,7 +3138,7 @@ class WCSData(Data, Tools):
         try:
             _fits_params = np.array(utils.astrometry.get_wcs_parameters(
                 self.get_wcs(validate=False)))
-        except Exception:
+        except StandardError:
             warnings.warn('bad WCS in header')
             return
         
@@ -3182,7 +3182,7 @@ class WCSData(Data, Tools):
             x = xy[:,0]
             y = xy[:,1]
         else:
-            raise Exception('xy must be a tuple (x,y) of coordinates or a list of tuples ((x0,y0), (x1,y1), ...)')
+            raise StandardError('xy must be a tuple (x,y) of coordinates or a list of tuples ((x0,y0), (x1,y1), ...)')
 
         if not self.has_dxdymaps():
             coords = np.array(
@@ -3223,7 +3223,7 @@ class WCSData(Data, Tools):
             ra = radec[:,0]
             dec = radec[:,1]
         else:
-            raise Exception('radec must be a tuple (ra,dec) of coordinates or a list of tuples ((ra0,dec0), (ra1,dec1), ...)')
+            raise StandardError('radec must be a tuple (ra,dec) of coordinates or a list of tuples ((ra0,dec0), (ra1,dec1), ...)')
 
         if not self.has_dxdymaps():
             coords = np.array(

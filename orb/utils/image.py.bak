@@ -51,12 +51,12 @@ def correct_cosmic_rays(frame, cr_map):
 
     """
     MEDIAN_DEG = 2
-    x_range = list(range(MEDIAN_DEG, int(frame.shape[0] - MEDIAN_DEG - 1)))
-    y_range = list(range(MEDIAN_DEG, int(frame.shape[1] - MEDIAN_DEG - 1)))
+    x_range = range(MEDIAN_DEG, int(frame.shape[0] - MEDIAN_DEG - 1L))
+    y_range = range(MEDIAN_DEG, int(frame.shape[1] - MEDIAN_DEG - 1L))
     x_min = np.min(x_range)
-    x_max = np.max(x_range) + 1
+    x_max = np.max(x_range) + 1L
     y_min = np.min(y_range)
-    y_max = np.max(y_range) + 1
+    y_max = np.max(y_range) + 1L
 
     
     orb.utils.validate.is_2darray(frame, object_name='frame')
@@ -396,7 +396,7 @@ def polar_map2d(f, n, corner=False, circle=True):
         R = np.sqrt(X**2+Y**2)
     else:
         R = np.sqrt((X/(float(nx)/n))**2+(Y/(float(ny)/n))**2)
-    return np.array(list(map(f,R)))
+    return np.array(map(f,R))
 
 
 def correct_hot_pixels(im, hp_map, box_size=3, std_filter_coeff=1.5):
@@ -2081,22 +2081,22 @@ def get_quadrant_dims(quad_number, dimx, dimy, div_nb):
     """
     quad_nb = div_nb**2
 
-    if (quad_number < 0) or (quad_number > quad_nb - 1):
-        raise Exception("quad_number out of bounds [0," + str(quad_nb- 1) + "]")
+    if (quad_number < 0) or (quad_number > quad_nb - 1L):
+        raise StandardError("quad_number out of bounds [0," + str(quad_nb- 1L) + "]")
         return None
 
     index_x = quad_number % div_nb
     index_y = (quad_number - index_x) / div_nb
 
-    x_min = int(index_x * np.ceil(dimx / div_nb))
-    if (index_x != div_nb - 1):            
-        x_max = int((index_x  + 1) * np.ceil(dimx / div_nb))
+    x_min = long(index_x * np.ceil(dimx / div_nb))
+    if (index_x != div_nb - 1L):            
+        x_max = long((index_x  + 1L) * np.ceil(dimx / div_nb))
     else:
         x_max = dimx
 
-    y_min = int(index_y * np.ceil(dimy / div_nb))
-    if (index_y != div_nb - 1):            
-        y_max = int((index_y  + 1) * np.ceil(dimy / div_nb))
+    y_min = long(index_y * np.ceil(dimy / div_nb))
+    if (index_y != div_nb - 1L):            
+        y_max = long((index_y  + 1L) * np.ceil(dimy / div_nb))
     else:
         y_max = dimy
 

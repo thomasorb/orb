@@ -80,7 +80,7 @@ def pickdict2gvardict(pickdict):
         raise TypeError('pickdict must be a dict instance')
     pickdict = copy.copy(pickdict)
     idict = dict()
-    _all_keys = list(pickdict.keys())
+    _all_keys = pickdict.keys()
     for ikey in _all_keys:
         if ikey in pickdict:
             if '_mean' in ikey:
