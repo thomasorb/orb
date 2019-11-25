@@ -27,8 +27,6 @@ The Core module contains all the core classes of ORB.
 __author__ = "Thomas Martin"
 __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
 __docformat__ = 'reStructuredText'
-from . import version
-__version__ = version.__version__
 
 ## BASIC IMPORTS
 import os
@@ -1820,8 +1818,8 @@ class Data(object):
             if params is not None:
                 # params are transformed into kwargs
                 kwargs.update(params)
-            
-            if 'fit' in os.path.splitext(data)[1]:
+        
+            if 'fit' in os.path.splitext(data)[1] or '.fz' == os.path.splitext(data)[1]:
                 self.data, _header = orb.utils.io.read_fits(data, return_header=True)
                 self.params = dict(_header)
                 if 'COMMENT' in self.params:
@@ -1845,7 +1843,10 @@ class Data(object):
                     # load params
                     for iparam in hdffile.attrs:
                         try:
-                            self.params[iparam] = hdffile.attrs[iparam]
+                            ivalue = hdffile.attrs[iparam]
+                            if isinstance(ivalue, bytes):
+                                ivalue = ivalue.decode()
+                            self.params[iparam] = ivalue
                         except TypeError as e:
                             logging.debug('error reading param from attributes {}: {}'.format(
                                 iparam, e))
@@ -2077,7 +2078,6 @@ class Data(object):
         if self.data.ndim >= 3:
             header['CTYPE3'] = 'WAVE-SIP' # avoid a warning for
                                           # inconsistency
-        
         return header
 
     def get_wcs(self):

@@ -161,8 +161,8 @@ class HDFCube(orb.core.WCSData):
                     instrument = kwargs['params']['instrument']
 
         orb.core.WCSData.__init__(self, self, instrument=instrument,
-                              data_prefix=data_prefix,
-                              config=config, **kwargs)
+                                  data_prefix=data_prefix,
+                                  config=config, **kwargs)
 
         # checking dims
         if self.data.ndim != 3:
@@ -1188,12 +1188,18 @@ class RWHDFCube(HDFCube):
         with self.open_hdf5('a') as f:
             _update = True
             value = orb.utils.io.cast2hdf5(value)
-            if key in f.attrs:
-                if np.all(f.attrs[key] == value):
-                    _update = False
+            try:
+                if key in f.attrs:
+                    if np.all(f.attrs[key] == value):
+                        _update = False
+            except ValueError: pass
+                
             if _update:
-                f.attrs[key] = value
-
+                try:
+                    f.attrs[key] = value
+                except TypeError:
+                    logging.debug('error setting param {} ()'.format(key, type(value)))
+                    
     def set_params(self, params):
         """Set class parameters
 
@@ -1240,6 +1246,7 @@ class RWHDFCube(HDFCube):
 
             if isinstance(data, dict):
                 data = orb.utils.io.dict2array(data)
+
             f.create_dataset(path, data=data, chunks=True)
 
     def set_deep_frame(self, deep_frame):
@@ -1919,7 +1926,7 @@ class FDCube(orb.core.Tools):
         """
         cube = RWHDFCube(
             export_path, shape=(self.dimx, self.dimy, self.dimz),
-            instrument=self.instrument)
+            instrument=self.instrument, reset=True)
 
         if mask is not None:
             cube.set_mask(mask)
@@ -1928,7 +1935,6 @@ class FDCube(orb.core.Tools):
             cube.update_params(params)
 
         cube.set_header(self.get_cube_header())
-
         progress = orb.core.ProgressBar(self.dimz)
         for iframe in range(self.dimz):
             progress.update(iframe, info='writing frame {}/{}'.format(

@@ -2038,7 +2038,7 @@ def create_wcs(target_x, target_y, deltax, deltay, target_ra,
 
     return _wcs
 
-def _get_wcs_parameters(wcs, fix_rc=None):
+def _get_wcs_parameters(wcs, fix_rc=None, randsize=1e4):
     """see get_wcs_parameters
     """
     if not isinstance(wcs, pywcs.WCS):
@@ -2055,9 +2055,8 @@ def _get_wcs_parameters(wcs, fix_rc=None):
     vec10 = np.array(wcs2.wcs_world2pix(wcs2.wcs.crval[0] - deltax, wcs2.wcs.crval[1], 0)) - wcs2.wcs.crpix
     rotation = np.angle(vec10[0] + 1j*vec10[1], deg=True)
 
-    RANDSIZE = 1e5
     randa = np.random.uniform(size=50) * 2. * np.pi
-    randl = np.random.uniform(size=randa.size) * RANDSIZE * 0.2 + RANDSIZE
+    randl = np.random.uniform(size=randa.size) * randsize * 0.2 + randsize
     randy = np.sin(randa) * randl
     randx = np.cos(randa) * randl
     random_star_list_pix = np.array([randx, randy]).T
@@ -2116,7 +2115,8 @@ def get_wcs_parameters(wcs, fix_rc=None):
     trials = 0
     while trials < 50:
         try:
-            return _get_wcs_parameters(wcs, fix_rc=fix_rc)
+            randsize = 10**np.random.uniform(low=3, high=6, size=1)
+            return _get_wcs_parameters(wcs, fix_rc=fix_rc, randsize=randsize)
         except Exception as e:
             trials += 1
             logging.debug(e)

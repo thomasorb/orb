@@ -34,10 +34,8 @@ import bottleneck as bn
 import orb.cutils
 import h5py
 import datetime
-import orb.version
 import orb.utils.validate
 
-__version__ = orb.version.__version__
 
 def open_file(file_name, mode='r'):
     """Open a file in write mode (by default) and return a file
@@ -244,7 +242,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
             date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
             hdu.header.set('MASK', 'False', '', after=5)
             hdu.header.set('DATE', date, 'Creation date', after=5)
-            hdu.header.set('PROGRAM', "ORB v%s"%__version__, 
+            hdu.header.set('PROGRAM', "ORB", 
                            'Thomas Martin: thomas.martin.1@ulaval.ca',
                            after=5)
 
@@ -563,8 +561,7 @@ def open_hdf5(file_path, mode):
     f = h5py.File(file_path, mode)
 
     if mode in ['w', 'a', 'w-', 'x', 'r+']:
-        f.attrs['program'] = 'Created/modified by ORB version {}'.format(
-            __version__)
+        f.attrs['program'] = 'Created/modified by ORB version'
         f.attrs['date'] = str(datetime.datetime.now())
 
     return f
@@ -737,7 +734,7 @@ def write_hdf5(file_path, data, header=None,
     return new_file_path
 
 
-castables = [int, float, bool, str, str,
+castables = [int, float, bool, str,
              np.int64, np.float64, int, np.float128]
     
 def cast(a, t_str):
@@ -824,7 +821,7 @@ def header_fits2hdf5(fits_header):
              fits_header.comments[ikey], _tstr))
 
         hdf5_header.append(ival)
-    return np.array(hdf5_header)
+    return np.array(hdf5_header, dtype='S300')
 
 
 def header_hdf52fits(hdf5_header):
@@ -886,8 +883,8 @@ def cast2hdf5(val):
         return 'None'
     elif isinstance(val, np.float128):
         return val.astype(np.float64)
-    elif isinstance(val, int):
-        return str(val)
+    #elif isinstance(val, int):
+    #    return str(val)
     elif isinstance(val, np.ndarray):
         if val.dtype == np.float128:
             return val.astype(np.float64)
