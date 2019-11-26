@@ -54,15 +54,6 @@ pip install lsqfit --no-deps
 pip install fpdf --no-deps
 ```
 
-### 3b. install parallelpython (https://www.parallelpython.com/)
-
-```bash
-wget https://www.parallelpython.com/downloads/pp/pp-1.6.4.4.zip
-unzip pp-1.6.4.4.zip
-cd pp-1.6.4.4/
-pip install .
-```
-
 ### 4. add orb3 module
 
 clone [ORB](https://github.com/thomasorb/orb)

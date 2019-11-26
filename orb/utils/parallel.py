@@ -22,12 +22,9 @@
 
 import logging
 import os
-import pp
 import getpass
 import multiprocessing
 import dill
-# import ray
-
 
 
 # see https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
@@ -162,16 +159,7 @@ def init_pp_server(ncpus=0, silent=False, use_ray=False):
     if not use_ray:
         job_server = JobServer(ncpus)
         ncpus = job_server.ncpus
-        
-        # ppservers = ()
-
-        # if ncpus == 0:
-        #     job_server = pp.Server(ppservers=ppservers)
-        # else:
-        #     job_server = pp.Server(ncpus, ppservers=ppservers)
-
-        # ncpus = job_server.get_ncpus()
-        
+                
     else:
         ray.shutdown()
         ray.init(num_cpus=int(ncpus), configure_logging=False, object_store_memory=int(3e9))
