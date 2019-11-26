@@ -27,6 +27,7 @@ import time
 import warnings
 import astropy.io.fits as pyfits
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
+from astropy.wcs import FITSFixedWarning
 import astropy.io.votable
 import pandas as pd
 
@@ -738,6 +739,8 @@ castables = [int, float, bool, str,
              np.int64, np.float64, int, np.float128]
     
 def cast(a, t_str):
+    if isinstance(t_str, bytes):
+        t_str = t_str.decode()
     for _t in castables:
         if t_str == repr(_t):
             return _t(a)
@@ -802,6 +805,7 @@ def dict2header(params):
 
     warnings.simplefilter('ignore', category=VerifyWarning)
     warnings.simplefilter('ignore', category=AstropyUserWarning)
+    warnings.simplefilter('ignore', category=FITSFixedWarning)
     header = pyfits.Header(cards)
     return header
 
@@ -832,8 +836,9 @@ def header_hdf52fits(hdf5_header):
     fits_header = pyfits.Header()
     for i in range(hdf5_header.shape[0]):
         ival = hdf5_header[i,:]
+        ival = [iival.decode() for iival in ival]
         if ival[3] != 'comment':
-            fits_header[ival[0]] = (cast(ival[1], ival[3]), str(ival[2]))
+            fits_header[ival[0]] = cast(ival[1], ival[3]), str(ival[2])
         else:
             fits_header['comment'] = ival[1]
     return fits_header

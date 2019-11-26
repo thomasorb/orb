@@ -27,6 +27,8 @@ The Core module contains all the core classes of ORB.
 __author__ = "Thomas Martin"
 __licence__ = "Thomas Martin (thomas.martin.1@ulaval.ca)"                      
 __docformat__ = 'reStructuredText'
+import orb.version
+__version__ = orb.version.__version__
 
 ## BASIC IMPORTS
 import os
@@ -232,17 +234,7 @@ class Logger(object):
         else:
             self.level = logging.INFO
 
-        # get git branch (if possible)
-        repo_path = os.path.abspath(os.path.dirname(__file__) + os.sep + '..')
-        try:
-            pygit2
-            try:
-                self.branch_name = pygit2.Repository(repo_path).head.shorthand + '|'
-            except pygit2.GitError:
-                self.branch_name = ''
-        except NameError:
-            self.branch_name = ''
-
+        self.branch_name = orb.version.__version__ + '|'
         
         self.start_logging()
         

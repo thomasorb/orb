@@ -6,7 +6,6 @@ import os
 import sys
 
 import orb
-import orb.version
 import numpy
 
 packages = find_packages(where=".")
@@ -37,7 +36,7 @@ extensions = [
 setup(
     name='orb-kernel',
     ext_modules=cythonize(extensions),
-    version=orb.version.__version__,
+    version='',
     url='https://github.com/thomasorb/orb',
     license='GPLv3+',
     author='Thomas Martin',

@@ -25,8 +25,61 @@ import os
 import pp
 import getpass
 import multiprocessing
+import dill
 # import ray
 
+
+
+# see https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
+def run_dill_encoded(payload):
+    fun, args = dill.loads(payload)
+    return fun(*args)
+
+
+def apply_async(pool, fun, args):
+    payload = dill.dumps((fun, args))
+    return pool.apply_async(run_dill_encoded, (payload,))
+
+class JobServer(object):
+
+    def __init__(self, ncpus, timeout=10000):
+
+        self.ncpus = int(ncpus)
+        self.timeout = int(timeout)
+        
+        if self.ncpus == 0:
+            self.ncpus = multiprocessing.cpu_count()
+
+        self.pool = multiprocessing.Pool(processes=self.ncpus)
+        
+
+    def submit(self, func, args=(), modules=()):
+        
+        if not isinstance(args, tuple):
+            raise TypeError('args must be a tuple')
+
+        if not isinstance(modules, tuple):
+            raise TypeError('modules must be a tuple')
+
+        #job = self.pool.apply_async(func, args=args)
+        job = apply_async(self.pool, func, args)
+        
+
+        return Job(job, self.timeout)
+
+    def __del__(self):
+        self.pool.close()
+        self.pool.join()
+
+class Job(object):
+    
+    def __init__(self, job, timeout):
+        self.job = job
+        self.timeout = int(timeout)
+
+    def __call__(self):
+        return self.job.get(timeout=self.timeout)
+    
 
 class RayJob(object):
 
@@ -107,14 +160,18 @@ def init_pp_server(ncpus=0, silent=False, use_ray=False):
     ncpus = get_ncpus(ncpus)
 
     if not use_ray:
-        ppservers = ()
+        job_server = JobServer(ncpus)
+        ncpus = job_server.ncpus
+        
+        # ppservers = ()
 
-        if ncpus == 0:
-            job_server = pp.Server(ppservers=ppservers)
-        else:
-            job_server = pp.Server(ncpus, ppservers=ppservers)
+        # if ncpus == 0:
+        #     job_server = pp.Server(ppservers=ppservers)
+        # else:
+        #     job_server = pp.Server(ncpus, ppservers=ppservers)
 
-        ncpus = job_server.get_ncpus()
+        # ncpus = job_server.get_ncpus()
+        
     else:
         ray.shutdown()
         ray.init(num_cpus=int(ncpus), configure_logging=False, object_store_memory=int(3e9))
@@ -141,26 +198,7 @@ def close_pp_server(js):
     if isinstance(js, RayJobServer):
         ray.shutdown()
     else:
-        logging.debug(get_stats_str(js))
-        # First shut down the normal way
-        js.destroy()
-        # access job server methods for shutting down cleanly
-        js._Server__exiting = True
-        js._Server__queue_lock.acquire()
-        js._Server__queue = []
-        js._Server__queue_lock.release()
-        for worker in js._Server__workers:
-            worker.t.exiting = True
-            try:
-                # add worker close()
-                worker.t.close()
-                os.kill(worker.pid, 0)
-                os.waitpid(worker.pid, os.WNOHANG)
-            except OSError:
-                # PID does not exist
-                pass
-            except IOError: pass
-
+        del js
 
 def get_stats_str(js):
     """Return job server statistics as a string"""
