@@ -1178,8 +1178,8 @@ class PhaseMaps(orb.core.Tools):
         self.dimx = self.phase_maps[0].shape[0]
         self.dimy = self.phase_maps[0].shape[1]
         
-        binx = self.dimx_unbinned/self.dimx
-        biny = self.dimy_unbinned/self.dimy
+        binx = int(self.dimx_unbinned/self.dimx)
+        biny = int(self.dimy_unbinned/self.dimy)
         if binx != biny: raise Exception('Binning along x and y axes is different ({} != {})'.format(binx, biny))
         else: self.binning = binx
 
@@ -1284,6 +1284,8 @@ class PhaseMaps(orb.core.Tools):
         :param unbin: If True, positions are unbinned position
           (i.e. real positions on the detector) (default False).
         """
+        x = int(x)
+        y = int(y)
         if unbin:
             orb.utils.validate.index(x, 0, self.dimx_unbinned, clip=False)
             orb.utils.validate.index(y, 0, self.dimy_unbinned, clip=False)

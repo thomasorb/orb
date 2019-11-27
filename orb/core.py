@@ -2360,7 +2360,7 @@ class Vector1d(Data):
             interf_complex = scipy.fftpack.ifft(self.data)
             best_n = orb.utils.fft.next_power_of_two(self.dimx * quality)
             zp_interf = np.zeros(best_n, dtype=complex)
-            center = interf_complex.shape[0] / 2
+            center = interf_complex.shape[0] // 2
             zp_interf[:center] = interf_complex[:center]
             zp_interf[
                 -center-int(interf_complex.shape[0]&1):] = interf_complex[

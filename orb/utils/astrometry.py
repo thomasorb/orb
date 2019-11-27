@@ -2504,6 +2504,10 @@ def fit2df(fit):
                 df[ikey] = list()
             break
 
+    if keys is None:
+        logging.debug('empty fit results')
+        return None
+    
     # load dataframe
     for istar in fit:            
         for ikey in keys:

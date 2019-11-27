@@ -1690,11 +1690,11 @@ def unwrap_phase_map0(phase_map):
 
     def unwrap_all(pm0, bin_size):
         test_line = np.nanmedian(
-            pm0[:, pm0.shape[1]/2-LINE_SIZE/2:pm0.shape[1]/2+LINE_SIZE/2],
+            pm0[:, int(pm0.shape[1]//2-LINE_SIZE//2):int(pm0.shape[1]//2+LINE_SIZE//2)],
             axis=1)
         test_line_init = np.copy(test_line)
-        for ii in range(0, test_line.shape[0]-bin_size/2):
-            linebin = test_line[ii:ii+bin_size+1]
+        for ii in range(0, test_line.shape[0]-bin_size//2):
+            linebin = test_line[ii:int(ii+bin_size+1)]
             linebin_med = np.nanmedian(orb.utils.stats.sigmacut(
                 linebin, sigma=2))
             for ik in range(linebin.shape[0]):
