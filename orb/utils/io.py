@@ -50,8 +50,8 @@ def open_file(file_name, mode='r'):
     :param mode: (Optional) Can be 'w' for write mode, 'r' for
       read mode and 'a' for append mode.
     """
-    if mode not in ['w','r','a','rU']:
-        raise Exception("mode option must be 'w', 'r', 'rU' or 'a'")
+    if mode not in ['w','r','a']:
+        raise Exception("mode option must be 'w', 'r' or 'a'")
 
     if mode in ['w','a']:
         # create folder if it does not exist
@@ -59,8 +59,6 @@ def open_file(file_name, mode='r'):
         if dirname != '':
             if not os.path.exists(dirname): 
                 os.makedirs(dirname)
-    if mode == 'r': mode = 'rU' # read in universal mode by
-                                # default to handle Windows files.
 
     return open(file_name, mode)
 

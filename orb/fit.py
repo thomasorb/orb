@@ -1380,7 +1380,7 @@ class LinesModel(Model):
             else: raise Exception('Badly formatted p_val')
 
         ans = np.empty((self._get_line_nb(),
-                       len(p_val) / self._get_line_nb()))
+                       len(p_val) // self._get_line_nb()))
 
         for ipar in p_val:
             iline = self._get_iline_from_key(ipar)
@@ -2516,7 +2516,7 @@ class OutputParams(Params):
             nan_col.fill(np.nan)
             line_params = np.append(line_params.T, nan_col)
             line_params = line_params.reshape(
-                line_params.shape[0]/line_nb, line_nb).T
+                line_params.shape[0]//line_nb, line_nb).T
 
         # evaluate continuum level at each position
         cont_params = self['fit_params'][1]
@@ -2534,7 +2534,7 @@ class OutputParams(Params):
         cont_level = cont_model.get_model(pos_pix)
         all_params = np.append(cont_level, line_params.T)
         line_params = all_params.reshape(
-            (all_params.shape[0]/line_nb, line_nb)).T
+            (all_params.shape[0]//line_nb, line_nb)).T
 
 
         # compute vel err
@@ -2544,7 +2544,7 @@ class OutputParams(Params):
         if all_inputparams.fmodel not in ['sincgauss', 'sincgaussphased', 'sincphased']:
             line_params_err = np.append(line_params_err.T, nan_col)
             line_params_err = line_params_err.reshape(
-                line_params_err.shape[0]/line_nb, line_nb).T
+                line_params_err.shape[0]//line_nb, line_nb).T
 
         # evaluate error on continuum level at each position
         cont_params_err = self[fit_params_err_key][1]
@@ -2561,7 +2561,7 @@ class OutputParams(Params):
         cont_level_err = gvar.fabs(cont_level_max - cont_level_min)
         all_params_err = np.append(cont_level_err, line_params_err.T)
         line_params_err = all_params_err.reshape(
-            (all_params_err.shape[0]/line_nb, line_nb)).T
+            (all_params_err.shape[0]//line_nb, line_nb)).T
 
 
         # set 0 sigma to nan

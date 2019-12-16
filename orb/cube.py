@@ -335,7 +335,7 @@ class HDFCube(orb.core.WCSData):
             raise TypeError('badly formatted region.')
 
         if len(region[0]) == 1:
-            return np.atleast_2d(self[region[0][0], region[1][0], :])
+            return np.atleast_2d(self[int(region[0][0]), int(region[1][0]), :])
 
         xmin = self.validate_x_index(np.nanmin(region[0]), clip=False)
         xmax = self.validate_y_index(np.nanmax(region[0]), clip=False) + 1
@@ -756,7 +756,7 @@ class HDFCube(orb.core.WCSData):
         :param clip: (Optional) If True return an index inside the
           boundaries, else: raise an exception (default True).
         """
-        return orb.utils.validate.index(x, 0, self.dimx, clip=clip)
+        return orb.utils.validate.index(x, 0, int(self.dimx), clip=clip)
     
     def validate_y_index(self, y, clip=True):
         """validate an y index, return an integer inside the boundaries or
@@ -767,7 +767,7 @@ class HDFCube(orb.core.WCSData):
         :param clip: (Optional) If True return an index inside the
           boundaries, else: raise an exception (default True).
         """
-        return orb.utils.validate.index(y, 0, self.dimy, clip=clip)
+        return orb.utils.validate.index(y, 0, int(self.dimy), clip=clip)
 
 
     def get_master_frame(self, combine=None, reject=None):
@@ -823,8 +823,8 @@ class HDFCube(orb.core.WCSData):
           also (default False)
 
         """
-        x = self.validate_x_index(x, clip=False)
-        y = self.validate_y_index(y, clip=False)
+        x = self.validate_x_index(int(x), clip=False)
+        y = self.validate_y_index(int(y), clip=False)
 
         region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
         calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])

@@ -904,7 +904,9 @@ class Spectrum(orb.core.Cm1Vector1d):
             print((traceback.format_exc()))
 
             return []
-        
+
+        del spectrum
+                
         if auto_mode and _fit != []:
             snr_guess = np.nanmax(self.data) / np.nanstd(self.data - _fit['fitted_vector'])
             return self.prepared_fit(

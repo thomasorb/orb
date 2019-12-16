@@ -61,12 +61,18 @@ class JobServer(object):
         #job = self.pool.apply_async(func, args=args)
         job = apply_async(self.pool, func, args)
         
-
         return Job(job, self.timeout)
 
-    def __del__(self):
+
+    def close(self):
         self.pool.close()
         self.pool.join()
+
+    def __del__(self):
+        try:
+            self.close()
+        except:
+            pass
 
 class Job(object):
     
@@ -186,6 +192,7 @@ def close_pp_server(js):
     if isinstance(js, RayJobServer):
         ray.shutdown()
     else:
+        js.close()
         del js
 
 def get_stats_str(js):

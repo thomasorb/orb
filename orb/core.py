@@ -925,13 +925,12 @@ class Tools(object):
              ## Instrumental parameters
              PIX_SIZE_CAM1 20 # Size of one pixel of the camera 1 in um
              PIX_SIZE_CAM2 15 # Size of one pixel of the camera 2 in um  
-        """ 
-        f = orb.utils.io.open_file(
-            self._get_config_file_path(), 'r')
-        for line in f:
-            if len(line) > 2:
-                if line.split()[0] == param_key:
-                    return line.split()[1]
+        """
+        with orb.utils.io.open_file(self._get_config_file_path(), 'r') as f:
+            for line in f:
+                if len(line) > 2:
+                    if line.split()[0] == param_key:
+                        return line.split()[1]
         if not optional:
             raise Exception("Parameter key %s not found in file %s"%(
                 param_key, self.config_file_name))
@@ -955,7 +954,7 @@ class Tools(object):
           sources and information on Parallel Python software
         """
         return orb.utils.parallel.init_pp_server(ncpus=int(self.config.NCPUS),
-                                             silent=silent)
+                                                 silent=silent)
 
     def _close_pp_server(self, js):
         """
