@@ -733,16 +733,18 @@ def write_hdf5(file_path, data, header=None,
     return new_file_path
 
 
-castables = [int, float, bool, str,
+castables = [int, float, bool, str, 
              np.int64, np.float64, int, np.float128]
     
 def cast(a, t_str):
     if isinstance(t_str, bytes):
         t_str = t_str.decode()
+    if 'type' in t_str: t_str = t_str.replace('type', 'class')
+    if 'long' in t_str: t_str = t_str.replace('long', 'int')
     for _t in castables:
         if t_str == repr(_t):
             return _t(a)
-    raise Exception('Bad type string {}'.format(t_str))
+    raise Exception('Bad type string {} should be in {}'.format(t_str, [repr(_t) for _t in castables]))
 
 def dict2array(data):
     """Convert a dictionary to an array that can be written in an hdf5 file

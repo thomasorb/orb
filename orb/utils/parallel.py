@@ -39,7 +39,7 @@ def apply_async(pool, fun, args):
 
 class JobServer(object):
 
-    def __init__(self, ncpus, timeout=10000):
+    def __init__(self, ncpus, timeout=100):
 
         self.ncpus = int(ncpus)
         self.timeout = int(timeout)
@@ -63,16 +63,10 @@ class JobServer(object):
         
         return Job(job, self.timeout)
 
-
-    def close(self):
+    def __del__(self):
         self.pool.close()
         self.pool.join()
-
-    def __del__(self):
-        try:
-            self.close()
-        except:
-            pass
+        del self.pool
 
 class Job(object):
     
@@ -174,6 +168,8 @@ def init_pp_server(ncpus=0, silent=False, use_ray=False):
     
     if not silent:
         logging.info("Init of the parallel processing server with %d threads"%ncpus)
+    else:
+        logging.debug("Init of the parallel processing server with %d threads"%ncpus)
 
     return job_server, ncpus
 
@@ -192,7 +188,6 @@ def close_pp_server(js):
     if isinstance(js, RayJobServer):
         ray.shutdown()
     else:
-        js.close()
         del js
 
 def get_stats_str(js):
