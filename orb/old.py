@@ -215,7 +215,7 @@ class Cube(orb.core.Tools):
             self._silent_load = True
         if mask:
             self._return_mask = True
-        data = self[x_min:x_max, y_min:y_max, z_min:z_max]
+        data = self[int(x_min):int(x_max), int(y_min):int(y_max), int(z_min):int(z_max)]
         self._silent_load = False
         self._return_mask = False
         return data
@@ -468,7 +468,8 @@ class HDFCube(Cube):
                              ik - z_slice.start] = unbin_data
 
                     if not self._silent_load and not only_one_frame:
-                        progress.update(ik - z_slice.start, info="Loading data")
+                        if not ik%100:
+                            progress.update(ik - z_slice.start, info="Loading data")
 
                 if not self._silent_load and not only_one_frame:
                     progress.end()

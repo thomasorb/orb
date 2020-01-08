@@ -54,6 +54,7 @@ import numpy as np
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from astropy.io.fits.verify import VerifyWarning, VerifyError, AstropyUserWarning
+import pylab as pl
 
 import gvar
 import h5py
@@ -1800,7 +1801,7 @@ class Data(object):
         LIMIT_SIZE = 100
                 
         # load from file
-        if isinstance(data, str):
+        if isinstance(data, str):    
             self.axis = None
             self.params = dict()
             self.mask = None
@@ -1860,7 +1861,8 @@ class Data(object):
                 raise ValueError('extension not recognized, must be fits or hdf5')
 
         # load from another instance
-        elif isinstance(data, self.__class__) or isinstance(self, data.__class__):
+        #elif isinstance(data, self.__class__) or isinstance(self, data.__class__):
+        elif all([hasattr(data, attr) for attr in ['data', 'err', 'params', 'axis', 'mask']]):
             if data.data.ndim < 3:
                 _data = data.copy()
             else: _data = data
@@ -2532,6 +2534,9 @@ class Vector1d(Data):
         return np.sum(self.data)
 
 
+    def plot(self):
+        """Plot vector"""
+        pl.plot(self.axis.data, self.data)
 
 #################################################
 #### CLASS Axis #################################
@@ -2850,7 +2855,7 @@ class WCSData(Data, Tools):
         Tools.__init__(self, instrument=instrument,
                        data_prefix=data_prefix,
                        config=config)
-
+        
         Data.__init__(self, data, **kwargs) # note that this init may change the value of data
 
         # try to load wcs from fits keywords if a FITS file

@@ -102,6 +102,7 @@ class HDFCube(orb.core.WCSData):
 
         :param kwargs: (Optional) :py:class:`~orb.orb.core.Data` kwargs.
         """
+        
         self.cube_path = str(path)
 
         if not os.path.exists(self.cube_path):
@@ -116,7 +117,6 @@ class HDFCube(orb.core.WCSData):
                     warnings.warn('old cube architecture. IO performances could be reduced.')
                     self.is_old = True
                     self.oldcube = orb.old.HDFCube(self.cube_path, silent_init=True)
-                    
                     self.data = MockArray()
                     self.data.shape = self.oldcube.shape
                     self.data.dtype = self.oldcube.dtype
@@ -130,7 +130,10 @@ class HDFCube(orb.core.WCSData):
                 self.params = orb.core.ROParams()
                 for param in f.attrs:
                     try:
-                        self.params[param] = f.attrs[param]
+                        param_value = f.attrs[param]
+                        if isinstance(param_value, bytes):
+                            param_value = param_value.decode()
+                        self.params[param] = param_value
                     except TypeError as e:
                         logging.debug('error reading param from attributes {}: {}'.format(
                             param, e))
@@ -138,10 +141,11 @@ class HDFCube(orb.core.WCSData):
                 if 'instrument' in self.params and instrument is None:
                     instrument = self.params['instrument']
 
+                
         # init Tools and Data
-        if not self.is_old:
+        if not self.is_old and instrument is None:
             instrument = orb.utils.misc.read_instrument_value_from_file(self.cube_path)
-
+            
         # load header if present and update params
         header = self._read_old_header()
         if 'params' not in kwargs:
@@ -172,14 +176,6 @@ class HDFCube(orb.core.WCSData):
             if not isinstance(indexer, orb.core.Indexer):
                 raise TypeError('indexer must be an orb.orb.core.Indexer instance')
         self.indexer = indexer
-
-    def __del__(self):
-        try:
-            f = self.open_hdf5('r')
-            f.flush()
-            f.close()
-        except Exception as e:
-            warnings.warn('error while deleting object: {}'.format(e))
         
     def __getitem__(self, key):
         """Implement getitem special method"""
@@ -1444,7 +1440,6 @@ class Cube(HDFCube):
           keyword arguments.
         """
         HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
-        
         # compute additional parameters
         self.filterfile = orb.core.FilterFile(self.params.filter_name)
         self.set_param('filter_name', self.filterfile.basic_path)
