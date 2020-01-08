@@ -187,8 +187,56 @@ def fwhm_cm12nm(fwhm_cm1, cm1):
     """
     return 1e7 * fwhm_cm1 / cm1**2.
 
-def line_shift(velocity, line, wavenumber=False):
-    """Return the line shift given its velocity in nm or in cm-1.
+
+def velocity_relativistic2classic(vel):
+    """Convert a relativistic velocity to a classic velocity
+
+    :param vel: Relativistic velocity in km/s
+    """
+    line = 1
+    shift = line_shift(vel, line, wavenumber=False, relativistic=True)
+    return orb.utils.spectrum.compute_radial_velocity(
+        line + shift, line, wavenumber=False, relativistic=False)
+
+def velocity_classic2relativistic(vel):
+    """Convert a classic velocity to a relativistic velocity
+
+    :param vel: Classic velocity in km/s
+    """
+    line = 1
+    shift = line_shift(vel, line, wavenumber=False, relativistic=False)
+    return orb.utils.spectrum.compute_radial_velocity(
+        line + shift, line, wavenumber=False, relativistic=True)
+
+def compute_radial_velocity(line, rest_line, wavenumber=False, relativistic=True):
+    """
+    Return relativistic radial velocity in km.s-1
+
+    V [km.s-1] = c [km.s-1]* (Lambda^2 / Lambda_0^2 - 1) / (Lambda^2 / Lambda_0^2 + 1)
+
+    :param line: Emission line wavelength/wavenumber (can be a numpy
+      array)
+    
+    :param rest_line: Rest-frame wavelength/wavenumber (can be a numpy
+      array but must have the same size as line)
+
+    :param wavenumber: (Optional) If True the result is returned in cm-1,
+      else it is returned in nm.
+    """
+    if wavenumber:
+        line = cm12nm(line)
+        rest_line = cm12nm(rest_line)
+        
+    if relativistic:
+        ratio = (line / rest_line)**2.
+        vel = orb.constants.LIGHT_VEL_KMS * (ratio - 1) / (ratio + 1)
+    else:
+        vel = (line - rest_line) / rest_line * orb.constants.LIGHT_VEL_KMS
+    return vel
+
+
+def line_shift(velocity, line, wavenumber=False, relativistic=True):
+    """Return the line shift (in nm or in cm-1) given its relativistic velocity 
 
     beta = v / c
 
@@ -204,12 +252,19 @@ def line_shift(velocity, line, wavenumber=False):
     :param wavenumber: (Optional) If True the result is returned in cm-1,
       else it is returned in nm.
     """
+    if wavenumber:
+        line = cm12nm(line)
+        
     beta = velocity / orb.constants.LIGHT_VEL_KMS
-    gamma = gvar.sqrt((1. + beta) / (1. - beta))
-    if wavenumber: 
-        shift = line * (1. / gamma - 1.)
-    else:
+    if relativistic:
+        gamma = gvar.sqrt((1. + beta) / (1. - beta))
         shift = line * (gamma - 1.)
+    else:
+        shift = line * beta
+
+    if wavenumber:
+        shift = nm2cm1(line + shift) - nm2cm1(line)
+        
     return shift
 
 def compute_line_fwhm(step_nb, step, order, apod_coeff=1., corr=1.,
@@ -314,26 +369,6 @@ def compute_resolution(step_nb, step, order, corr=1, sigma=None):
         sigma = (order + 0.5) / (2.* step) * corr * 1e7
     return sigma / fwhm_cm1
 
-def compute_radial_velocity(line, rest_line, wavenumber=False):
-    """
-    Return radial velocity in km.s-1
-
-    V [km.s-1] = c [km.s-1]* (Lambda^2 / Lambda_0^2 - 1) / (Lambda^2 / Lambda_0^2 + 1)
-
-    :param line: Emission line wavelength/wavenumber (can be a numpy
-      array)
-    
-    :param rest_line: Rest-frame wavelength/wavenumber (can be a numpy
-      array but must have the same size as line)
-
-    :param wavenumber: (Optional) If True the result is returned in cm-1,
-      else it is returned in nm.
-    """
-    if wavenumber:
-        ratio = (rest_line / line)**2.
-    else:
-        ratio = (line / rest_line)**2.
-    return orb.constants.LIGHT_VEL_KMS * (ratio - 1) / (ratio + 1)
     
 def theta2corr(theta):
     """Convert the incident angle to a correction coefficient.
