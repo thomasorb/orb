@@ -307,6 +307,7 @@ def sort_image_list(file_list, image_mode, cube=True):
     steplist = list()
     if cube:
         for path in file_list:
+            sys.stdout.write('\rreading {}'.format(path))
             if '.fits' in path:
                 try:
                     hdr = orb.utils.io.read_fits(
@@ -314,7 +315,8 @@ def sort_image_list(file_list, image_mode, cube=True):
                     if 'SITSTEP' in hdr:
                         steplist.append(int(hdr['SITSTEP']))
                 except Exception: pass
-
+        sys.stdout.write('\n')
+            
 
     if len(steplist) == len(file_list):
         _list = list()

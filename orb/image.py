@@ -198,7 +198,7 @@ class Image(Frame2D):
         :param fwhm_arc: FWHM of stars in arcsec
         """
         self.params['fwhm_arc'] = float(fwhm_arc)
-        logging.info('fwhm reset to {} arcseconds, i.e. {} pixels'.format(self.params.fwhm_arc, self.get_fwhm_pix()))
+        logging.debug('fwhm reset to {} arcseconds, i.e. {} pixels'.format(self.params.fwhm_arc, self.get_fwhm_pix()))
 
     def get_fwhm_pix(self):
         return self.arc2pix(self.params.fwhm_arc)

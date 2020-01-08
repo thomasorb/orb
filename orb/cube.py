@@ -1672,8 +1672,9 @@ class FDCube(orb.core.Tools):
 
             # image list is sorted
             if not no_sort:
+                logging.info('sorting images')
                 self.image_list = orb.utils.misc.sort_image_list(self.image_list,
-                                                             self._image_mode)
+                                                                 self._image_mode)
             
             self.image_list = np.array(self.image_list)
             self.dimz = self.image_list.shape[0]
@@ -1918,7 +1919,7 @@ class FDCube(orb.core.Tools):
 
         :param params: (Optional) A dict of parameters that will be
           added to the exported cube.
-        """
+        """        
         cube = RWHDFCube(
             export_path, shape=(self.dimx, self.dimy, self.dimz),
             instrument=self.instrument, reset=True)
