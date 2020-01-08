@@ -1470,32 +1470,29 @@ class Image(Frame2D):
         return out
 
 
-    def compute_panstarrs_photometry(self, register=True, star_number=1000, max_xmatch_radius=10):
-
-        if register:
-            self.register()
+    def compute_panstarrs_photometry(self, star_number=1000, max_xmatch_radius=10, eps=None):
 
         # compute flambda
         photom = orb.photometry.Photometry(
             self.params.filter_name, self.params.camera,
             airmass=self.params.airmass)
         
-        flam = photom.compute_flambda(modulated=False)
+        flam = photom.compute_flambda(modulated=False, eps=eps)
             
         # fit stars in image
-        starlist, fwhm = self.detect_stars(min_star_number=star_number)
+        starlist, fwhm = self.detect_stars(min_star_number=star_number, saturation_threshold=1e99)
         starfit = self.fit_stars(starlist)
 
         # convert measured flux to AB magnitude
         filter_file = orb.core.FilterFile(self.params.filter_name)
         
         starfit['aperture_erg'] = starfit.aperture_flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
-        starfit['aperture_mag'] = orb.utils.orb.photometry.flambda2ABmag(
+        starfit['aperture_mag'] = orb.utils.photometry.flambda2ABmag(
             starfit.aperture_erg.values,
             filter_file.get_mean_nm() * 10.)
 
         starfit['flux_erg'] = starfit.flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
-        starfit['flux_mag'] = orb.utils.orb.photometry.flambda2ABmag(
+        starfit['flux_mag'] = orb.utils.photometry.flambda2ABmag(
             starfit.flux_erg.values,
             filter_file.get_mean_nm() * 10.)
         

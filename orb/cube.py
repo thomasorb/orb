@@ -1016,7 +1016,6 @@ class HDFCube(orb.core.WCSData):
                     istar_list[:,1] += alignment_vectors[1][ik+ijob]
                     star_lists.append(istar_list)                    
     
-                
             # follow FWHM variations
             fwhm_pix = None
             if ik > FOLLOW_NB - 1:
@@ -1028,6 +1027,7 @@ class HDFCube(orb.core.WCSData):
             frames = self[:,:,ik:ik+ncpus]
             if add_cube is not None:
                 frames += added_cube[:,:,ik:ik+ncpus] * added_cube_scale
+            frames = np.atleast_3d(frames)
                 
             # get stars photometry for each frame
             params = self.params.convert()
