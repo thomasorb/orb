@@ -864,10 +864,10 @@ class HDFCube(orb.core.WCSData):
         :param kwargs: orb.image.Image.detect_stars kwargs.
         """
         if self.has_dataset('deep_frame'):
-            logging.debug('detecting stars using the deep frame')
+            logging.info('detecting stars using the deep frame')
             df = self.get_deep_frame().data
         else:
-            logging.debug('detecting stars using a stack of the first {}'.format(
+            logging.info('detecting stars using a stack of the first {} frames'.format(
                 self.config.DETECT_STACK))
             _stack = self[:,:,:self.config.DETECT_STACK]
             df = np.nanmedian(_stack, axis=2)

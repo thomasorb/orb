@@ -920,7 +920,7 @@ def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
         return fit_params['stars-params'][:,4], fit_params['stars-params-err'][:,4]
     else:
         warnings.warn('FWHM could not be measured, check star positions')
-        return None, None
+        return np.nan, np.nan
 
 def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                               aper_coeff=3., detect_fwhm=False,

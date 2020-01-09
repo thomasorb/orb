@@ -500,7 +500,7 @@ class Image(Frame2D):
         mean_fwhm, mean_fwhm_err = orb.utils.astrometry.detect_fwhm_in_frame(
             self.data, star_list,
             self.get_fwhm_pix())
-
+    
         mean_fwhm = np.nanmedian(mean_fwhm)
         mean_fwhm_err = np.nanmedian(mean_fwhm_err)
         
