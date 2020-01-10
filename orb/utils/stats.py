@@ -25,6 +25,16 @@ import numpy as np
 import warnings
 import orb.cutils
 
+
+def unbiased_std(a):
+    """Return the std based on the interquartile range.
+
+    Robust to outliers, but the underlying distribution must be Normal-ish
+
+    https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    """
+    return np.diff(np.nanpercentile(a, [25,75]))[0]/1.349
+
 def robust_mean(a, weights=None, warn=True):
     """Compute the mean of a distribution even with NaN values
 

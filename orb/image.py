@@ -495,14 +495,10 @@ class Image(Frame2D):
         :param star_list: list of stars (can be an np.ndarray or a path
           to a star list).
         """
-        star_list = orb.utils.astrometry.load_star_list(star_list)
-        
-        mean_fwhm, mean_fwhm_err = orb.utils.astrometry.detect_fwhm_in_frame(
-            self.data, star_list,
-            self.get_fwhm_pix())
-    
-        mean_fwhm = np.nanmedian(mean_fwhm)
-        mean_fwhm_err = np.nanmedian(mean_fwhm_err)
+        stars = self.fit_stars(star_list, no_aperture_photometry=True)        
+        fwhms = orb.utils.stats.sigmacut(stars['fwhm'], sigma=3.5)
+        mean_fwhm = np.nanmedian(stars['fwhm'])
+        mean_fwhm_err = orb.utils.stats.unbiased_std(fwhms)
         
         if np.isnan(mean_fwhm):
             warnings.warn('detected FWHM is nan')

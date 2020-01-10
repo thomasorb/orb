@@ -881,46 +881,6 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     else:
         return returns, base_aperture_surface, base_annulus_surface
 
-def detect_fwhm_in_frame(frame, star_list, fwhm_guess_pix):
-    """Detect stars FWHM in a frame.
-
-    .. warning:: star positions must be known precisely
-
-    :param frame: Frame
-
-    :param star_list: List of the positions of the stars used to
-      detect FWHM.
-
-    :param fwhm_guess_pix: Initial guess on the FWHM of the stars.
-
-    :return: (FWHM, FWHM_ERR) in pixels
-    """
-    FIT_BOXSZ_COEFF = 8
-
-    # note that the fwhm guess is divided by two because it is better
-    # to have a starting guess smaller than the real fwhm value
-    fit_params = orb.cutils.multi_fit_stars(
-        np.array(frame, dtype=float),
-        np.array(star_list, dtype=float),
-        int(np.nanmedian(fwhm_guess_pix*FIT_BOXSZ_COEFF)),
-        height_guess=np.nanmedian(frame),
-        fwhm_guess=np.atleast_1d(fwhm_guess_pix) / 2.,
-        cov_height=False,
-        cov_pos=True,
-        cov_fwhm=True,
-        fix_height=False,
-        fix_pos=True,
-        fix_fwhm=False,
-        enable_zoom=False,
-        enable_rotation=False,
-        estimate_local_noise=False)
-
-
-    if fit_params != []:
-        return fit_params['stars-params'][:,4], fit_params['stars-params-err'][:,4]
-    else:
-        warnings.warn('FWHM could not be measured, check star positions')
-        return np.nan, np.nan
 
 def multi_aperture_photometry(frame, pos_list, fwhm_guess_pix,
                               aper_coeff=3., detect_fwhm=False,
