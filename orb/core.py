@@ -2495,14 +2495,18 @@ class Vector1d(Data):
             _out = getattr(np, opname)(_out)
         else:            
             _out = getattr(np, opname)(_out, _arg)
+            del _arg
 
         # transform gvar to data and err
         if isinstance(_out[0], gvar._gvarcore.GVar):
             out.data = gvar.mean(_out)
             out.err = gvar.sdev(_out)
+            
         else:
             out.data = _out
             out.err = None
+
+        del _out
         return out
 
     def add(self, vector):

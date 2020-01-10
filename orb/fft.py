@@ -419,6 +419,8 @@ class RealInterferogram(Interferogram):
         comb.data = gvar.mean(_comb)
         comb.err = gvar.sdev(_comb)
 
+        del _comb
+
         # compute photon_noise
         comb.params.reset('source_counts', interf.params.source_counts
                           + self.params.source_counts)
@@ -990,7 +992,9 @@ class RealSpectrum(Spectrum):
         xmin, xmax = self.get_filter_bandpass_pix(border_ratio=-0.05)
         _data[:xmin] = 0
         _data[xmax:] = 0
-        return np.sum(_data)
+        counts =  np.sum(_data)
+        del _data
+        return counts
     
     def compute_me(self):
         """Return the modulation efficiency, computed from the ratio between
@@ -999,7 +1003,11 @@ class RealSpectrum(Spectrum):
         """
         _source_counts = gvar.gvar(self.params.source_counts,
                                    np.sqrt(self.params.source_counts))
-        return  self.compute_counts_in_pectrum() / _source_counts
+        _counts_in_spec = self.compute_counts_in_spectrum()
+        me = _counts_in_spec / _source_counts
+        del _counts_in_spec
+        del _source_counts
+        return me
 
     def subtract_sky(self, sky):
         """Subtract sky interferogram. 

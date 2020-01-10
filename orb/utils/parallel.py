@@ -39,7 +39,7 @@ def apply_async(pool, fun, args):
 
 class JobServer(object):
 
-    def __init__(self, ncpus, timeout=100):
+    def __init__(self, ncpus, timeout=1000):
 
         self.ncpus = int(ncpus)
         self.timeout = int(timeout)
@@ -47,7 +47,7 @@ class JobServer(object):
         if self.ncpus == 0:
             self.ncpus = multiprocessing.cpu_count()
 
-        self.pool = multiprocessing.Pool(processes=self.ncpus)
+        self.pool = multiprocessing.Pool(processes=self.ncpus, maxtasksperchild=1)
         
 
     def submit(self, func, args=(), modules=()):
@@ -63,11 +63,7 @@ class JobServer(object):
         
         return Job(job, self.timeout)
 
-    def __del__(self):
-        self.pool.close()
-        self.pool.join()
-        del self.pool
-
+    
 class Job(object):
     
     def __init__(self, job, timeout):
