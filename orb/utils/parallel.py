@@ -32,7 +32,6 @@ def run_dill_encoded(payload):
     fun, args = dill.loads(payload)
     return fun(*args)
 
-
 def apply_async(pool, fun, args):
     payload = dill.dumps((fun, args))
     return pool.apply_async(run_dill_encoded, (payload,))
@@ -63,6 +62,13 @@ class JobServer(object):
         
         return Job(job, self.timeout)
 
+    def __del__(self):
+        try:
+            self.pool.close()
+        except: pass
+        try:
+            self.pool.join()
+        except: pass
     
 class Job(object):
     
