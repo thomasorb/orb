@@ -25,12 +25,18 @@ import os
 import getpass
 import multiprocessing
 import dill
-
+import warnings
+import traceback
 
 # see https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
 def run_dill_encoded(payload):
-    fun, args = dill.loads(payload)
-    return fun(*args)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fun, args = dill.loads(payload)
+        try:
+            return fun(*args)
+        except:
+            print('%s: %s' % (fun, traceback.format_exc()))
 
 def apply_async(pool, fun, args):
     payload = dill.dumps((fun, args))
@@ -38,7 +44,7 @@ def apply_async(pool, fun, args):
 
 class JobServer(object):
 
-    def __init__(self, ncpus, timeout=1000):
+    def __init__(self, ncpus, timeout=100):
 
         self.ncpus = int(ncpus)
         self.timeout = int(timeout)
@@ -46,8 +52,9 @@ class JobServer(object):
         if self.ncpus == 0:
             self.ncpus = multiprocessing.cpu_count()
 
-        self.pool = multiprocessing.Pool(processes=self.ncpus, maxtasksperchild=1)
-        
+        print('starting pool')
+        self.pool = multiprocessing.get_context('spawn').Pool(processes=self.ncpus, maxtasksperchild=1)
+        print('end start pool')
 
     def submit(self, func, args=(), modules=()):
         
@@ -65,11 +72,18 @@ class JobServer(object):
     def __del__(self):
         try:
             self.pool.close()
-        except: pass
+        except:
+            logging.debug('exception occured during pool.close: ', traceback.format_exc()) 
         try:
             self.pool.join()
+        except RuntimeError: pass
+        except:
+            logging.info('exception occured during pool.join: ', traceback.format_exc())
+        logging.info('parallel processing closed')
+        try:
+            del self.pool
         except: pass
-    
+            
 class Job(object):
     
     def __init__(self, job, timeout):
@@ -77,7 +91,15 @@ class Job(object):
         self.timeout = int(timeout)
 
     def __call__(self):
-        return self.job.get(timeout=self.timeout)
+        try:
+            return self.job.get(timeout=self.timeout)
+        except multiprocessing.TimeoutError:
+            logging.info('worker timeout: ', traceback.format_exc())
+        except:
+            logging.info('exception occured during worker execution: ', traceback.format_exc())
+        #finally:
+            #self.job.terminate()
+        #    raise
     
 
 class RayJob(object):
@@ -187,6 +209,7 @@ def close_pp_server(js):
     .. note:: Please refer to http://www.parallelpython.com/ for
         sources and information on Parallel Python software.
     """
+    logging.info("Closing parallel processing server")
     if isinstance(js, RayJobServer):
         ray.shutdown()
     else:
