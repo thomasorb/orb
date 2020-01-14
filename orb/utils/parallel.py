@@ -30,13 +30,13 @@ import traceback
 
 # see https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
 def run_dill_encoded(payload):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fun, args = dill.loads(payload)
-        try:
-            return fun(*args)
-        except:
-            print('%s: %s' % (fun, traceback.format_exc()))
+    #with warnings.catch_warnings():
+    #    warnings.simplefilter("ignore")
+    fun, args = dill.loads(payload)
+    try:
+        return fun(*args)
+    except:
+        print('%s: %s' % (fun, traceback.format_exc()))
 
 def apply_async(pool, fun, args):
     payload = dill.dumps((fun, args))
@@ -52,9 +52,7 @@ class JobServer(object):
         if self.ncpus == 0:
             self.ncpus = multiprocessing.cpu_count()
 
-        print('starting pool')
         self.pool = multiprocessing.get_context('spawn').Pool(processes=self.ncpus, maxtasksperchild=1)
-        print('end start pool')
 
     def submit(self, func, args=(), modules=()):
         
@@ -64,7 +62,6 @@ class JobServer(object):
         if not isinstance(modules, tuple):
             raise TypeError('modules must be a tuple')
 
-        #job = self.pool.apply_async(func, args=args)
         job = apply_async(self.pool, func, args)
         
         return Job(job, self.timeout)
@@ -97,9 +94,6 @@ class Job(object):
             logging.info('worker timeout: ', traceback.format_exc())
         except:
             logging.info('exception occured during worker execution: ', traceback.format_exc())
-        #finally:
-            #self.job.terminate()
-        #    raise
     
 
 class RayJob(object):

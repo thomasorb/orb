@@ -507,16 +507,14 @@ class HDFCube(orb.core.WCSData):
         
         .. note:: In this process NaNs are handled correctly
         """
-        try:
-            im = orb.image.Image(self.deep_frame, params=self.params)
-            if self.has_dataset('dxmap') and self.has_dataset('dymap'):
-                im.set_dxdymaps(self.get_dxdymaps()[0], self.get_dxdymaps()[1])
-            return im
-        
-        except AttributeError: pass
+        if not recompute:
+            try:
+                im = orb.image.Image(self.deep_frame, params=self.params)
+                if self.has_dataset('dxmap') and self.has_dataset('dymap'):
+                    im.set_dxdymaps(self.get_dxdymaps()[0], self.get_dxdymaps()[1])
+                return im
+            except AttributeError: pass
 
-        gain = self.get_gain()
-        
         df = None
         if not recompute:
             if self.has_dataset('deep_frame'):
@@ -1169,8 +1167,12 @@ class RWHDFCube(HDFCube):
 
         with self.open_hdf5('a') as f:
             if f['data'].dtype != value.dtype:
-                del f['data']
-                f.create_dataset('data', shape=self.data.shape, dtype=value.dtype, chunks=True)
+                # warning !! never do the following since all data is
+                # reset, if only a part of the data must be set this
+                # is just insane
+                #del f['data']
+                #f.create_dataset('data', shape=self.data.shape, dtype=value.dtype, chunks=True)
+                value = value.astype(f['data'].dtype)
             f['data'].__setitem__(key, value)
 
     def set_param(self, key, value):
