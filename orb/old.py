@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import math
 import traceback
 import inspect
 import re
@@ -479,12 +478,11 @@ class HDFCube(Cube):
             with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if not self._silent_load:
                     progress = ProgressBar(self.quad_nb)
-
                 for iquad in range(self.quad_nb):
                     if not self._silent_load:
                         progress.update(iquad, info='Loading data')
                     x_min, x_max, y_min, y_max = self._get_quadrant_dims(
-                        iquad, self.dimx, self.dimy, int(math.sqrt(float(self.quad_nb))))
+                        iquad, self.dimx, self.dimy, int(np.sqrt(float(self.quad_nb))))
                     if slice_in_quad(x_slice, x_min, x_max) and slice_in_quad(y_slice, y_min, y_max):
                         data[max(x_min, x_slice.start) - x_slice.start:
                              min(x_max, x_slice.stop) - x_slice.start,

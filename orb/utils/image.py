@@ -2086,17 +2086,16 @@ def get_quadrant_dims(quad_number, dimx, dimy, div_nb):
         return None
 
     index_x = quad_number % div_nb
-    index_y = (quad_number - index_x) / div_nb
-
-    x_min = int(index_x * np.ceil(dimx / div_nb))
+    index_y = (quad_number - index_x) // div_nb
+    x_min = int(index_x * np.ceil(dimx // div_nb))
     if (index_x != div_nb - 1):            
-        x_max = int((index_x  + 1) * np.ceil(dimx / div_nb))
+        x_max = int((index_x  + 1) * np.ceil(dimx // div_nb))
     else:
         x_max = dimx
 
-    y_min = int(index_y * np.ceil(dimy / div_nb))
+    y_min = int(index_y * np.ceil(dimy // div_nb))
     if (index_y != div_nb - 1):            
-        y_max = int((index_y  + 1) * np.ceil(dimy / div_nb))
+        y_max = int((index_y  + 1) * np.ceil(dimy // div_nb))
     else:
         y_max = dimy
 
