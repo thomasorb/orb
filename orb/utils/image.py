@@ -1100,6 +1100,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         res = model_laser_map(p, calib.shape[0], calib.shape[1], pixel_size)
         res -= calib
         res = res[np.nonzero(~np.isnan(res))]
+        
         #res = orb.utils.stats.sigmacut(res)
         return res
 
@@ -1142,6 +1143,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     BORDER_SIZE = 10 # in pixels
     ANGLE_RANGE = 4 # in degrees
 
+        
     # compute angle at the exact center of the map
     cx = calib_laser_map.shape[0]/2.
     cy = calib_laser_map.shape[1]/2.
@@ -1151,7 +1153,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     
     theta_c = np.arccos(calib_laser_nm/center_calib_nm) / np.pi * 180.
     logging.info('Angle at the center of the frame: {}'.format(theta_c))
-
+  
     # filter calibration laser map
     value_min = calib_laser_nm / np.cos((theta_c - ANGLE_RANGE)/180.*np.pi)
     value_max = calib_laser_nm / np.cos((theta_c + ANGLE_RANGE)/180.*np.pi)
@@ -1171,7 +1173,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
         calib_laser_map_bin = nanbin_image(calib_laser_map, binning)
     else:
         calib_laser_map_bin = calib_laser_map
-
+    
     logging.info('> Calibration laser map fit')
 
     ## mirror_dist, Y angle
@@ -1183,7 +1185,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     ## 4: phi_y
     ## 5: phi_r    
 
-
+    
     logging.info('  > First fit on the central portion of the calibration laser map ({:.1f}% of the total size)'.format(CENTER_COEFF*100))
     xmin,xmax,ymin,ymax = get_box_coords(
         calib_laser_map_bin.shape[0]/2,

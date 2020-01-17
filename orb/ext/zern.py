@@ -75,7 +75,7 @@ def zernike_rad(m, n, rho):
 		return rho*0.0
 
 	wf = rho*0.0
-	for k in range((n-m)/2+1):
+	for k in range(int(n-m)//2+1):
 		wf += rho**(n-2.0*k) * (-1.0)**k * fac(n-k) / ( fac(k) * fac( (n+m)/2.0 - k ) * fac( (n-m)/2.0 - k ) )
 
 	return wf

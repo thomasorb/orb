@@ -2579,7 +2579,7 @@ class OutputParams(Params):
             # compute velocity
             pos_wave = line_params[:,2]
             velocity = orb.utils.spectrum.compute_radial_velocity(
-                pos_wave, gvar.mean(all_inputparams.pos_guess),
+                gvar.mean(pos_wave), gvar.mean(all_inputparams.pos_guess),
                 wavenumber=wavenumber)
 
             self['velocity_gvar'] = velocity
