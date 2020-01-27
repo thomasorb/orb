@@ -459,12 +459,12 @@ def read_sitelle_chip(hdu, chip_index, substract_bias=True):
         xamp, yamp = get_slice('DSEC', iamp)
         amp_data = get_data('DSEC', iamp, frame)
         bias_data = get_data('BSEC', iamp, frame)
-
+        overscan_size = int(bias_data.shape[0]/2) 
         if iamp in ['A', 'C', 'E', 'G']:
-            bias_data = bias_data[int(bias_data.shape[0]/2):,:]
+            bias_data = bias_data[-overscan_size:,:]
         else:
-            bias_data = bias_data[:int(bias_data.shape[0]/2),:]
-
+            bias_data = bias_data[:overscan_size,:]
+        
         bias_data = np.mean(bias_data, axis=0)
         amp_data = amp_data - bias_data
 
