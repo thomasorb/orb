@@ -2285,6 +2285,7 @@ class Data(object):
             bundle['mask'] = None
         
         return bundle
+
 #################################################
 #### CLASS Vector1d #############################
 #################################################
@@ -2575,7 +2576,7 @@ class Axis(Vector1d):
         :return: Position in index
         """
         pos_index = (pos - self.data[0]) / float(self.axis_step)
-        if pos_index < 0 or pos_index >= self.dimx:
+        if np.any(pos_index < 0) or np.any(pos_index >= self.dimx):
             warnings.warn('requested position is off axis')
         return pos_index
 

@@ -2560,7 +2560,7 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
     alignment_error = np.sqrt(fit_x_err[0,:]**2. + fit_y_err[0,:]**2.)
 
     # correct alignment vectors for NaN values
-    if alignment_vector_x.size > 6:
+    if alignment_vector_x.size > 10:
         alignment_vector_x = orb.utils.vector.correct_vector(
             alignment_vector_x, polyfit=True, deg=3)
         alignment_vector_y = orb.utils.vector.correct_vector(

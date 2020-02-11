@@ -689,35 +689,34 @@ class Spectrum(orb.core.Cm1Vector1d):
         """Return the inverse transform of the spectrum. This should be the
         exact inverse transform of Interferogram.transform()
         """
-        raise NotImplementedError()
-        notcomplex = False
-        if not np.any(np.iscomplex(self.data)):
-            logging.debug('input spectrum is not complex. therefore its inverse transform will not be a real interferogram.')
-            notcomplex = True
-        
         spec = self.copy()
         spec.data[np.isnan(spec.data)] = 0.
-        # uncorrect phase. The sign depends on even or odd order.
-        if self.has_params():
-            if int(self.params.order)&1:
-                spec.zpd_shift(self.params.zpd_index)
-            else:
-                spec.zpd_shift(-self.params.zpd_index)
+        if np.any(np.iscomplex(spec.data)):
+            logging.debug('input spectrum is not complex. therefore its inverse transform will not be a real interferogram.')
+            iscomplex = True
+            raise NotImplementedError()
+        else:
+            iscomplex = False
 
         # spectrum is flipped if order is even
         if self.has_params():
             if int(self.params.order)&1:
                 spec.reverse()
 
-        spec = spec.data
-        if not notcomplex:
-            spec = np.concatenate([spec, spec[::-1]])
-            raise NotImplementedError()
-            
-        spec_ifft = scipy.fftpack.ifft(spec)
+        spec.data = spec.data.astype(np.complex128)
+        
+        a = np.concatenate((spec.data, np.zeros(spec.dimx)))
+        a_ifft = scipy.fftpack.ifft(a)
+        
+        a_interf = np.concatenate(
+            (a_ifft[-self.params.zpd_index:], 
+             a_ifft[:self.params.step_nb - self.params.zpd_index]))
 
-        interf = Interferogram(spec_ifft, params=self.params)
+        a_interf = a_interf.real.astype(float)
+        interf = Interferogram(a_interf, params=self.params)
+        interf.data += np.mean(spec.data).astype(np.float128) / 2.
         return interf 
+                
         
     def zpd_shift(self, shift):
         """correct spectrum phase from shifted zpd"""

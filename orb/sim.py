@@ -31,8 +31,10 @@ import orb.utils.spectrum
 import orb.core
 import orb.fft
 import orb.constants
+import scipy.interpolate
+import scipy.stats
 
-class Simulator(object):
+class RawSimulator(object):
 
     def __init__(self, step_nb, params, instrument='sitelle'):
         """
@@ -162,4 +164,90 @@ class Simulator(object):
 
         a_interf = a_interf.real.astype(float)
         self.data += a_interf
+
+
         
+        
+        
+class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
+
+
+    needed_params = ('instrument', 'filter_name', 'exposure_time', 'step_nb', 'airmass')
+    
+    def __init__(self, spectrum, axis, params, data_prefix="./", **kwargs):
+
+        
+        orb.core.Tools.__init__(self, instrument=params['instrument'],
+                       data_prefix=data_prefix,
+                       config=None)
+        
+        orb.core.Vector1d.__init__(self, spectrum, axis=axis, params=params, **kwargs)
+
+        ff = orb.core.FilterFile(self.params['filter_name'])
+        self.params.update(ff.params)
+        self.params['zpd_index'] = int(0.25 * self.params['step_nb'])
+        self.params['nm_laser'] = self.config.CALIB_NM_LASER
+        self.params['apodization'] = 1.
+        self.params['wavenumber'] = True
+
+    def get_interferogram(self, camera=0, theta=None, binning=1, me_factor=1.):
+
+        if theta is None:
+            theta = self.config.OFF_AXIS_ANGLE_CENTER
+
+        corr = orb.utils.spectrum.theta2corr(theta)
+        self.params['calib_coeff_orig'] = corr
+        
+        
+        regular_cm1_axis = np.linspace(1e7/self.axis.data[-1], 1e7/self.axis.data[0], self.dimx)
+        
+        spectrum = scipy.interpolate.interp1d(self.axis.data,
+                                              self.data.astype(np.float128),
+                                              bounds_error=False)(1e7/regular_cm1_axis)
+        
+        
+        spectrum = orb.fft.Spectrum(spectrum, axis=regular_cm1_axis, params=self.params)
+        
+        
+        photom = orb.photometry.Photometry(self.params.filter_name,
+                                           camera, instrument=self.params.instrument,
+                                           airmass=self.params.airmass)
+        
+        
+        
+        cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
+            self.params.step_nb, self.params.step, self.params.order, corr=corr))
+
+        #spectrum = spectrum.project(cm1_axis)
+        # flux conservative projection
+        bins = np.array(list(cm1_axis.data[:-1] - np.diff(cm1_axis.data) / 2.) + list((cm1_axis.data[-2:] + np.diff(cm1_axis.data[-3:-1]) / 2.)))
+
+        spectrum.data = scipy.stats.binned_statistic(
+            spectrum.axis.data.astype(float),
+            spectrum.data.astype(float),
+            bins=bins, statistic='mean')[0].astype(complex)
+        spectrum.axis = cm1_axis
+
+        spectrum = photom.flux2counts(spectrum, modulated=False)
+
+        spectrum.data *= self.params.step_nb * self.params.exposure_time * binning**2.
+        
+        spectrum = orb.fft.Spectrum(spectrum)
+        
+        spectrum.data = spectrum.data.real
+        spectrum.params['calib_coeff'] = corr
+        
+        interf = spectrum.inverse_transform()
+
+        interf.data = interf.data.real
+
+        # modulation efficiency
+        mean_ = np.mean(interf.data)
+        interf.data -= mean_
+        interf.data *= orb.utils.fft.gaussian_window(
+            me_factor, interf.axis.data/np.max(interf.axis.data))
+        interf.data += mean_
+
+        # poisson noise
+        interf.data = np.random.poisson(interf.data.astype(int)).astype(float)
+        return interf

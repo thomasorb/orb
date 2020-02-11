@@ -734,7 +734,7 @@ def write_hdf5(file_path, data, header=None,
 
 
 castables = [int, float, bool, str, 
-             np.int64, np.float64, int, np.float128]
+             np.int64, np.float64, int, np.float128, np.bool_]
     
 def cast(a, t_str):
     if isinstance(t_str, bytes):
@@ -782,14 +782,14 @@ def dict2header(params):
     """
     # filter illegal header values
     cards = list()
-    ok_types = [float, int, str, bool, str, np.bool_]
 
     for iparam in params:
         val = params[iparam]
         val_ok = False
-        for itype in ok_types:
+        for itype in castables:
             if isinstance(val, itype):
                 val_ok = True
+        
         if val_ok:
             if isinstance(val, bool):
                 val = int(val)
