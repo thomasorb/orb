@@ -228,7 +228,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
             bins=bins, statistic='mean')[0].astype(complex)
         spectrum.axis = cm1_axis
 
-        spectrum = photom.flux2counts(spectrum, modulated=False)
+        spectrum = photom.flux2counts(spectrum, modulated=True)
 
         spectrum.data *= self.params.step_nb * self.params.exposure_time * binning**2.
         
@@ -241,7 +241,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
 
         interf.data = interf.data.real
 
-        # modulation efficiency
+        # modulation efficiency loss with OPD
         mean_ = np.mean(interf.data)
         interf.data -= mean_
         interf.data *= orb.utils.fft.gaussian_window(
