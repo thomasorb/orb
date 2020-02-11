@@ -4,7 +4,6 @@
 whole suite of data reduction and analysis tools for
 [SITELLE](http://www.cfht.hawaii.edu/Instruments/Sitelle):
 [ORBS](https://github.com/thomasorb/orbs),
-[ORCS](https://github.com/thomasorb/orcs).
 
 It provides basic access to the data cubes as long as the fitting
 engine of ORCS and numerous utilitary functions for the analysis of
@@ -54,7 +53,7 @@ pip install lsqfit --no-deps
 pip install fpdf --no-deps
 ```
 
-### 4. add orb3 module
+### 4. add ORB module
 
 clone [ORB](https://github.com/thomasorb/orb)
 ```bash
@@ -76,29 +75,8 @@ Test it:
 conda activate orb3 # you don't need to do it if you are already in the orb3 environment
 python -c 'import orb.core'
 ```
-### 5. add orcs module
 
-clone [ORCS](https://github.com/thomasorb/orcs)
-```bash
-mkdir orcs-stable # do it where you want to put orcs files
-cd orcs-stable
-git clone https://github.com/thomasorb/orcs.git
-```
-
-in the downloaded folder
-```bash
-conda activate orb3 # you don't need to do it if you are already in the orb3 environment
-cd path/to/orcs-stable
-python setup.py install
-```
-
-Test it:
-```bash
-conda activate orb3 # you don't need to do it if you are already in the orb3 environment
-python -c 'import orcs.process'
-```
-
-### 6. Install jupyter
+### 5. install jupyter
 
 ```bash
 conda install -n orb3 -c conda-forge jupyterlab
