@@ -2385,8 +2385,8 @@ class SpectralCube(Cube):
         """
         # compute flambda from configuration curves
         photom = orb.photometry.Photometry(self.params.filter_name, self.params.camera,
-                                       instrument=self.params.instrument)
-        flam_config = photom.compute_flambda()
+                                           instrument=self.params.instrument)
+        flam_config = photom.compute_flambda(self.get_base_axis())
         logging.info('mean flambda config: {}'.format(np.nanmean(flam_config.data)))
 
         # compute the correction from a standard star spectrum
@@ -2421,7 +2421,7 @@ class SpectralCube(Cube):
 
             eps_vector = eps_vector.multiply(eps_mean)
                 
-        return photom.compute_flambda(eps=eps_vector)
+        return photom.compute_flambda(self.get_base_axis(), eps=eps_vector)
 
         
         

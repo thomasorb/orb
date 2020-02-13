@@ -707,14 +707,14 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         a = np.concatenate((spec.data, np.zeros(spec.dimx)))
         a_ifft = scipy.fftpack.ifft(a)
-        
         a_interf = np.concatenate(
             (a_ifft[-self.params.zpd_index:], 
              a_ifft[:self.params.step_nb - self.params.zpd_index]))
 
-        a_interf = a_interf.real.astype(float)
+        # compensate energy lost in the imaginary part !
+        a_interf = a_interf.real.astype(float) * 2.
+        
         interf = Interferogram(a_interf, params=self.params)
-        interf.data += np.mean(spec.data).astype(np.float128) / 2.
         return interf 
                 
         

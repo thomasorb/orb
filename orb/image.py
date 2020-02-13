@@ -1477,8 +1477,11 @@ class Image(Frame2D):
             photom = orb.photometry.Photometry(
                 self.params.filter_name, self.params.camera,
                 airmass=self.params.airmass)
-        
-            flam = photom.compute_flambda(modulated=modulated, eps=eps)
+            raise Exception('the following should work, but it must be checked')
+            cm1_axis = orb.utils.spectrum.create_cm1_axis(
+                self.params.STEP_NB, self.params.step, self.params.order,
+                orb.utils.spectrum.theta2corr(self.tools.config['OFF_AXIS_ANGLE_CENTER']))
+            flam = photom.compute_flambda(cm1_axis, modulated=modulated, eps=eps)
         
         # fit stars in image
         starlist, fwhm = self.detect_stars(

@@ -198,7 +198,7 @@ class Photometry(object):
         else:
             return flux.mean_in_filter()
 
-    def compute_flambda(self, eps=None, modulated=True):
+    def compute_flambda(self, cm1_axis, eps=None, modulated=True):
         """Compute the flambda calibration function from the correction vector.
 
         It can be computed with
@@ -207,8 +207,8 @@ class Photometry(object):
         StandardSpectrum.compute_flux_calibration_vector().
         """
         flux = orb.core.Cm1Vector1d(
-            np.ones_like(self.cm1_axis.data, dtype=float),
-            axis=self.cm1_axis, filter_name=self.filter_name)
+            np.ones_like(cm1_axis.data, dtype=float),
+            axis=cm1_axis, filter_name=self.filter_name)
         # flux must be in erg/cm2/s/A
         
         f2c = self.flux2counts(flux, eps=eps, modulated=modulated)

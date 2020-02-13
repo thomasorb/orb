@@ -65,7 +65,7 @@ class RawSimulator(object):
         else:
             raise TypeError('params must be a filter name (str) or a parameter dictionary')
             
-        self.data = np.zeros(self.params.step_nb)
+        self.data = np.zeros(self.params.step_nb, dtype=float)
 
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
             self.params.step_nb, self.params.step, self.params.order,
@@ -162,7 +162,8 @@ class RawSimulator(object):
             (a_ifft[-self.params.zpd_index:], 
              a_ifft[:self.params.step_nb - self.params.zpd_index]))
 
-        a_interf = a_interf.real.astype(float)
+        # compensate for energy lost in the imaginary part !
+        a_interf = a_interf.real.astype(float) * 2. 
         self.data += a_interf
 
 
@@ -211,9 +212,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         
         photom = orb.photometry.Photometry(self.params.filter_name,
                                            camera, instrument=self.params.instrument,
-                                           airmass=self.params.airmass)
-        
-        
+                                           airmass=self.params.airmass)        
         
         cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
             self.params.step_nb, self.params.step, self.params.order, corr=corr))
@@ -227,26 +226,32 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
             spectrum.data.astype(float),
             bins=bins, statistic='mean')[0].astype(complex)
         spectrum.axis = cm1_axis
-
+        
         spectrum = photom.flux2counts(spectrum, modulated=True)
-
+        spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
+        
         spectrum.data *= self.params.step_nb * self.params.exposure_time * binning**2.
         
         spectrum = orb.fft.Spectrum(spectrum)
         
         spectrum.data = spectrum.data.real
         spectrum.params['calib_coeff'] = corr
-        
         interf = spectrum.inverse_transform()
 
-        interf.data = interf.data.real
+        unmod_spectrum = spectrum.math('divide', photom.get_modulation_efficiency())
+        unmod_spectrum.data[np.nonzero(np.isnan(unmod_spectrum.data))] = 0.
+        
+        interf.data += np.mean(unmod_spectrum.data).astype(np.float128)
 
+        interf.data = interf.data.real
+        
         # modulation efficiency loss with OPD
-        mean_ = np.mean(interf.data)
-        interf.data -= mean_
-        interf.data *= orb.utils.fft.gaussian_window(
-            me_factor, interf.axis.data/np.max(interf.axis.data))
-        interf.data += mean_
+        if me_factor > 1:
+            mean_ = np.mean(interf.data)
+            interf.data -= mean_
+            interf.data *= orb.utils.fft.gaussian_window(
+                me_factor, interf.axis.data/np.max(interf.axis.data))
+            interf.data += mean_
 
         # poisson noise
         interf.data = np.random.poisson(interf.data.astype(int)).astype(float)
