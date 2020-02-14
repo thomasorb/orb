@@ -1508,6 +1508,66 @@ class Cube(HDFCube):
         return filter_min_pix_map, filter_max_pix_map
     
 
+    def integrate(self, filter_function, xmin=None, xmax=None, ymin=None, ymax=None):
+        """
+        Integrate a cube under a filter function and generate an image
+
+        :math:`I = \int F(\sigma)S(\sigma)\text{d}\sigma`
+
+        with :math:`I`, the image, :math:`S` the spectral cube, :math:`F` the
+        filter function.
+
+        :param filter_function: Must be an orb.core.Filter instance
+
+        :param xmin: (Optional) lower boundary of the ROI along x axis (default
+          None, i.e. min)
+
+        :param xmax: (Optional) lower boundary of the ROI along y axis (default
+          None, i.e. min)
+
+        :param ymin: (Optional) upper boundary of the ROI along x axis (default
+          None, i.e. max)
+
+        :param ymax: (Optional) upper boundary of the ROI along y axis (default
+          None, i.e. max)
+        """
+        if not isinstance(filter_function, Filter):
+            raise TypeError('filter_function must be an orcs.core.Filter instance')
+
+        if (filter_function.start <= self.params.base_axis[0]
+            or filter_function.end >= self.params.base_axis[-1]):
+            raise ValueError('filter passband (>5%) between {} - {} out of cube band {} - {}'.format(
+                filter_function.start,
+                filter_function.end,
+                self.params.base_axis[0],
+                self.params.base_axis[-1]))
+
+        if xmin is None: xmin = 0
+        if ymin is None: ymin = 0
+        if xmax is None: xmax = self.dimx
+        if ymax is None: ymax = self.dimy
+
+        xmin = int(np.clip(xmin, 0, self.dimx))
+        xmax = int(np.clip(xmax, 0, self.dimx))
+        ymin = int(np.clip(ymin, 0, self.dimy))
+        ymax = int(np.clip(ymax, 0, self.dimy))
+
+        start_pix, end_pix = orb.utils.spectrum.cm12pix(
+            self.params.base_axis, [filter_function.start, filter_function.end])
+
+        sframe = np.zeros((self.dimx, self.dimy), dtype=float)
+        zsize = end_pix-start_pix+1
+        # This splits the range in zsize//10 +1 chunks (not necessarily of same
+        # size). The endpix is correctly handled in the extraction
+        izranges = np.array_split(range(start_pix, end_pix+1), zsize//10+1)
+        for izrange in izranges:
+            sframe[xmin:xmax, ymin:ymax] += np.sum(
+                self.get_data(xmin, xmax, ymin, ymax,
+                              izrange.min(), izrange.max()+1, silent=True)
+                * filter_function(
+                    self.params.base_axis[izrange].astype(float)), axis=2)
+        sframe /= np.sum(filter_function(self.params.base_axis.astype(float)))
+        return sframe
         
         
 #################################################
