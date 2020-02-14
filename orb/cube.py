@@ -1507,17 +1507,16 @@ class Cube(HDFCube):
         
         return filter_min_pix_map, filter_max_pix_map
     
-
-    def integrate(self, filter_function, xmin=None, xmax=None, ymin=None, ymax=None):
-        """
-        Integrate a cube under a filter function and generate an image
+    def integrate(self, filter_function, xmin=None, xmax=None, ymin=None, ymax=None, split=10):
+        """Integrate a cube under a filter function and generate an image
 
         :math:`I = \int F(\sigma)S(\sigma)\text{d}\sigma`
 
         with :math:`I`, the image, :math:`S` the spectral cube, :math:`F` the
         filter function.
 
-        :param filter_function: Must be an orb.core.Filter instance
+        :param filter_function: Must be an orb.core.Cm1Vector1d
+          instance or the name of a filter registered in orb/data/
 
         :param xmin: (Optional) lower boundary of the ROI along x axis (default
           None, i.e. min)
@@ -1530,18 +1529,27 @@ class Cube(HDFCube):
 
         :param ymax: (Optional) upper boundary of the ROI along y axis (default
           None, i.e. max)
+
         """
-        if not isinstance(filter_function, Filter):
-            raise TypeError('filter_function must be an orcs.core.Filter instance')
+        if isinstance(filter_function, str):
+            filter_function = orb.core.Vector1d(self._get_filter_file_path(filter_function))
+            
+        if not isinstance(filter_function, orb.core.Vector1d):
+            raise TypeError('filter function must be an orb.core.Vector1d instance or the name of a registered filter: {}'.format(self.filters))
 
-        if (filter_function.start <= self.params.base_axis[0]
-            or filter_function.end >= self.params.base_axis[-1]):
-            raise ValueError('filter passband (>5%) between {} - {} out of cube band {} - {}'.format(
-                filter_function.start,
-                filter_function.end,
-                self.params.base_axis[0],
-                self.params.base_axis[-1]))
 
+        start = np.argmax(filter_function.data > 0.05)
+        end = np.argmin(filter_function.data[start:] > 0.05) + start
+        
+        if (filter_function.axis[start] <= self.params.base_axis[0]
+            or filter_function.axis[end] >= self.params.base_axis[-1]):
+            raise ValueError(
+                'filter passband (>5%) between {} - {} out of cube band {} - {}'.format(
+                    filter_function.axis[start],
+                    filter_function.axis[end],
+                    self.params.base_axis[0],
+                    self.params.base_axis[-1]))
+        
         if xmin is None: xmin = 0
         if ymin is None: ymin = 0
         if xmax is None: xmax = self.dimx
@@ -1553,22 +1561,33 @@ class Cube(HDFCube):
         ymax = int(np.clip(ymax, 0, self.dimy))
 
         start_pix, end_pix = orb.utils.spectrum.cm12pix(
-            self.params.base_axis, [filter_function.start, filter_function.end])
+            self.params.base_axis, [filter_function.axis[start], filter_function.axis[end]]).astype(int)
 
         sframe = np.zeros((self.dimx, self.dimy), dtype=float)
-        zsize = end_pix-start_pix+1
+        zsize = end_pix - start_pix + 1
         # This splits the range in zsize//10 +1 chunks (not necessarily of same
         # size). The endpix is correctly handled in the extraction
-        izranges = np.array_split(range(start_pix, end_pix+1), zsize//10+1)
+        if split > 0:
+            izranges = np.array_split(range(start_pix, end_pix+1), zsize//split+1)
+        else:
+            izranges = (np.arange(start_pix, end_pix+1),)
+        progress = orb.core.ProgressBar(len(izranges))
+        _index = 0
+
         for izrange in izranges:
+            progress.update(_index)
+            _index += 1
+            
+            axis_onrange = orb.core.Axis(self.params.base_axis[izrange].astype(float))
+            filter_onrange = filter_function.project(axis_onrange)
             sframe[xmin:xmax, ymin:ymax] += np.sum(
                 self.get_data(xmin, xmax, ymin, ymax,
                               izrange.min(), izrange.max()+1, silent=True)
-                * filter_function(
-                    self.params.base_axis[izrange].astype(float)), axis=2)
-        sframe /= np.sum(filter_function(self.params.base_axis.astype(float)))
-        return sframe
+                * filter_onrange.data, axis=2)
+        progress.end()
         
+        sframe /= np.sum(filter_function.project(orb.core.Axis(self.params.base_axis.astype(float))).data)
+        return sframe
         
 #################################################
 #### CLASS InteferogramCube #####################
