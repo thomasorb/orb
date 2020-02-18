@@ -585,6 +585,7 @@ class Tools(object):
             self.set_config('CALIB_ORDER', int)
             self.set_config('CALIB_STEP_SIZE', float)
             self.set_config('PHASE_FIT_DEG', int)
+            self.set_config('PHASE_BINNING', int)
 
             self.set_config('NCPUS', int)
             self.set_config('DIV_NB', int)
