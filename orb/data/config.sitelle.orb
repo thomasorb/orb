@@ -47,6 +47,7 @@ CALIB_STEP_SIZE 3255.231 # Step size of the calibration cube [in nm]
 
 ## Phase parameters
 PHASE_FIT_DEG 1 # Degree of the polynomial used to fit the phase
+PHASE_BINNING 6
 
 ## Processing parameters
 NCPUS 0 # Max number of CPU to use (0 : max available)
