@@ -1470,6 +1470,7 @@ class Image(Frame2D):
                                      max_roundness=0.5, eps=None, 
                                      modulated=False, calibrated=False):
 
+        STEP_NB = 200
         filter_file = orb.core.FilterFile(self.params.filter_name)
         
         # compute flambda
@@ -1477,11 +1478,11 @@ class Image(Frame2D):
             photom = orb.photometry.Photometry(
                 self.params.filter_name, self.params.camera,
                 airmass=self.params.airmass)
-            raise Exception('the following should work, but it must be checked')
             cm1_axis = orb.utils.spectrum.create_cm1_axis(
-                self.params.STEP_NB, self.params.step, self.params.order,
-                orb.utils.spectrum.theta2corr(self.tools.config['OFF_AXIS_ANGLE_CENTER']))
+                STEP_NB, self.params.step, self.params.order,
+                orb.utils.spectrum.theta2corr(self.config['OFF_AXIS_ANGLE_CENTER']))
             flam = photom.compute_flambda(cm1_axis, modulated=modulated, eps=eps)
+            flam_mean = flam.mean_in_filter() / STEP_NB
         
         # fit stars in image
         starlist, fwhm = self.detect_stars(
@@ -1492,8 +1493,7 @@ class Image(Frame2D):
         # convert measured flux to AB magnitude
         
         if not calibrated:
-            starfit['aperture_erg'] = starfit.aperture_flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter() / 290.
-            print('yep')
+            starfit['aperture_erg'] = starfit.aperture_flux  / self.params.EXPTIME / self.params.step_nb * flam_mean
         else:
             starfit['aperture_erg'] = starfit.aperture_flux
             
@@ -1502,7 +1502,7 @@ class Image(Frame2D):
             filter_file.get_mean_nm() * 10.)
 
         if not calibrated:
-            starfit['flux_erg'] = starfit.flux  / self.params.EXPTIME / self.params.STEPNB * flam.mean_in_filter()
+            starfit['flux_erg'] = starfit.flux  / self.params.EXPTIME / self.params.step_nb * flam_mean
         else:
             starfit['flux_erg'] = starfit.flux
             
