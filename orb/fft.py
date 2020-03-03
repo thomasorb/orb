@@ -692,7 +692,6 @@ class Spectrum(orb.core.Cm1Vector1d):
         spec = self.copy()
         spec.data[np.isnan(spec.data)] = 0.
         if np.any(np.iscomplex(spec.data)):
-            logging.debug('input spectrum is not complex. therefore its inverse transform will not be a real interferogram.')
             iscomplex = True
             raise NotImplementedError()
         else:
@@ -1131,8 +1130,15 @@ class PhaseMaps(orb.core.Tools):
         :param kwargs: Kwargs are :meth:`core.Tools` properties.
         """
         with orb.utils.io.open_hdf5(phase_maps_path, 'r') as f:
-            kwargs['instrument'] = f.attrs['instrument']
-    
+            if 'instrument' not in f.attrs:
+                raise StandardError('instrument not in cube attributes')
+            
+            instrument = f.attrs['instrument']
+            if not isinstance(instrument, str):
+                instrument = instrument.decode()
+                
+            kwargs['instrument'] = instrument
+
         orb.core.Tools.__init__(self, **kwargs)
         self.params = orb.core.ROParams()
         
