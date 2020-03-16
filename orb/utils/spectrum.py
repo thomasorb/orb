@@ -131,14 +131,20 @@ def nm2cm1(nm):
 
     :param nm: wavelength in nm
     """
-    return 1e7 / np.array(nm).astype(float)
+    try:
+        return 1e7 / np.array(nm).astype(float)
+    except TypeError:
+        return 1e7 / nm
 
 def cm12nm(cm1):
     """Convert a wavenumber in cm-1 to a wavelength in nm.
 
     :param cm1: wavenumber in cm-1
     """
-    return 1e7 / np.array(cm1).astype(float)
+    try:
+        return 1e7 / np.array(cm1).astype(float)
+    except TypeError:
+        return 1e7 / cm1
 
 def pix2cm1(cm1_axis, pix):
      """Convert a wavenumber in cm-1 to a pixel position given an axis
@@ -226,7 +232,6 @@ def compute_radial_velocity(line, rest_line, wavenumber=False, relativistic=True
     if wavenumber:
         line = cm12nm(line)
         rest_line = cm12nm(rest_line)
-        
     if relativistic:
         ratio = (line / rest_line)**2.
         vel = orb.constants.LIGHT_VEL_KMS * (ratio - 1) / (ratio + 1)

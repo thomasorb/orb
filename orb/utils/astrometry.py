@@ -1729,33 +1729,57 @@ def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
       set to None) this header value must be given.
 
     """
+    def triangular_number(n):
+        return n * (n+1) // 2
+    
+    def mat2list(mat):
+        matflat = list()
+        for i in range(mat.shape[0]):
+            for j in range(mat.shape[1]):
+                if i+j < mat.shape[0]:
+                    matflat.append(mat[i,j])
+        return list(matflat)
+
+    def list2mat(matflat, order=None):
+        if order is None:
+            size = None
+            for isize in range(2,10):
+                # triangular number
+                if triangular_number(isize) == len(matflat):
+                    size = isize
+                    break
+        else:
+            size = order + 1
+        if size is None: raise StandardError('badly formatted matflat')
+        
+        mat = np.zeros((size, size), dtype=float)
+        k = 0
+        for i in range(mat.shape[0]):
+            for j in range(mat.shape[1]):
+                if i+j < mat.shape[0]:
+                    mat[i,j] = matflat[k]
+                    k += 1
+        return mat
+
     def p2sip(p, sip, direct):
         if direct:
-            sip.sip.a[:] = np.reshape(
-                p[:(sip.sip.a_order + 1)**2],
-                (sip.sip.a_order + 1, sip.sip.a_order + 1))
-            p = p[(sip.sip.a_order + 1)**2:]
-            sip.sip.b[:] = np.reshape(
-                p[:(sip.sip.b_order + 1)**2],
-                (sip.sip.b_order + 1, sip.sip.b_order + 1))
+            sip.sip.a[:] = list2mat(p[:(sip.sip.a_order + 1)**2], sip.sip.a_order)
+            p = p[triangular_number(sip.sip.a_order + 1):]
+            sip.sip.b[:] = list2mat(p[:(sip.sip.b_order + 1)**2], sip.sip.b_order)
         else:
-            sip.sip.ap[:] = np.reshape(
-                p[:(sip.sip.a_order + 1)**2],
-                (sip.sip.a_order + 1, sip.sip.a_order + 1))
-            p = p[(sip.sip.a_order + 1)**2:]
-            sip.sip.bp[:] = np.reshape(
-                p[:(sip.sip.b_order + 1)**2],
-                (sip.sip.b_order + 1, sip.sip.b_order + 1))
+            sip.sip.ap[:] = list2mat(p[:(sip.sip.a_order + 1)**2], sip.sip.a_order)
+            p = p[triangular_number(sip.sip.a_order + 1):]
+            sip.sip.bp[:] = list2mat(p[:(sip.sip.b_order + 1)**2], sip.sip.b_order)
         return sip
 
     def sip2p(sip, direct):
         p = list()
         if direct:
-            p += list(sip.sip.a.flatten())
-            p += list(sip.sip.b.flatten())
+            p += mat2list(sip.sip.a)
+            p += mat2list(sip.sip.b)
         else:
-            p += list(sip.sip.ap.flatten())
-            p += list(sip.sip.bp.flatten())
+            p += mat2list(sip.sip.ap)
+            p += mat2list(sip.sip.bp)
         return p
 
     def diff(p, star_list2, star_list_deg1, 
@@ -1800,7 +1824,6 @@ def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
         return wcs
 
 
-
     if params is not None:
         raise Exception('Not implemented')
 
@@ -1829,7 +1852,7 @@ def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
 
     if init_sip.sip is None:
         init_sip = add_sip(init_sip)
-    
+
     # computation of a reference ra/dec list of stars from the
     # reference list of pixels (star_list1)
     star_list_deg1 = init_sip.all_pix2world(star_list1, 0)
@@ -1842,14 +1865,13 @@ def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
     err /= np.nanmean(err)
 
     guess = np.array(sip2p(init_sip, True))
-
     logging.debug('initial guess: {} (average error: {})'.format(
         guess, diff(guess, star_list2, star_list_deg1, params,
                     init_sip, err, True)))
     
     # look for direct transformation parameters (A, B matrices)
     logging.debug('gradient optimization started')
-    
+
     fit = optimize.fmin(diff, guess,
                         args=(star_list2, star_list_deg1, params,
                               init_sip, err, True),

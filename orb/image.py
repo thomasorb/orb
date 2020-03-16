@@ -564,6 +564,7 @@ class Image(Frame2D):
                  rrange=None, xyrange=None,
                  nsteps=7,
                  return_fit_params=False, rscale_coeff=1.,
+                 skip_registration=False,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
                  return_error_spl=False, star_list_query=None, fwhm_arc=None):
@@ -716,209 +717,147 @@ class Image(Frame2D):
 
         self.box_size_coeff = 5.
 
-        # match lists
-        if rrange is None:
-            rrange = (RMAX, RMAX/6)
+        if not skip_registration:
+            # match lists
+            if rrange is None:
+                rrange = (RMAX, RMAX/6)
 
-        if xyrange is None:
-            xyrange = (XYMAX, XYMAX/10.)
+            if xyrange is None:
+                xyrange = (XYMAX, XYMAX/10.)
 
-        wcs, sl_cat_matched, sl_im_matched = orb.utils.astrometry.match_star_lists(
-            self.get_wcs(),
-            sl_cat_deg[:,:2],
-            sl_im_pix, [self.params.target_x, self.params.target_y],
-            xyrange=xyrange,
-            rrange=rrange,
-            zrange=(ZMAX, ZMAX/1),
-            nsteps=nsteps)
+            wcs, sl_cat_matched, sl_im_matched = orb.utils.astrometry.match_star_lists(
+                self.get_wcs(),
+                sl_cat_deg[:,:2],
+                sl_im_pix, [self.params.target_x, self.params.target_y],
+                xyrange=xyrange,
+                rrange=rrange,
+                zrange=(ZMAX, ZMAX/1),
+                nsteps=nsteps)
 
-        self.set_wcs(wcs)
+            self.set_wcs(wcs)
 
-        logging.info('wcs after lists matching')
-        logging.info(str(self.get_wcs()))
+            logging.info('wcs after lists matching')
+            logging.info(str(self.get_wcs()))
 
-        # refine registration
-        wcs = orb.utils.astrometry.fit_wcs(
-            sl_im_pix[sl_im_matched],
-            sl_cat_deg[sl_cat_matched][:,:2],
-            self.get_wcs())
+            # refine registration
+            wcs = orb.utils.astrometry.fit_wcs(
+                sl_im_pix[sl_im_matched],
+                sl_cat_deg[sl_cat_matched][:,:2],
+                self.get_wcs())
 
-        # update wcs
-        
-        self.set_wcs(wcs)
-        logging.info('wcs after fit')
-        logging.info(str(self.get_wcs()))
-        
-        ############################
-        ### plot stars positions ###
-        ############################
-        # import pylab as pl
-        # im = pl.imshow(deep_frame.T,
-        #                vmin=np.nanmedian(deep_frame),
-        #                vmax=np.nanmedian(deep_frame)+50)
-        # im.set_cmap('gray')
-        # star_list_pix = radius_filter(
-        #     world2pix(wcs, star_list_deg), rmax)
-        # pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
-        #            edgecolor='blue', linewidth=2., alpha=1.,
-        #            facecolor=(0,0,0,0))
-        ## pl.show()
-                    
+            # update wcs
+            self.set_wcs(wcs)
+            logging.info('wcs after fit')
+            logging.info(str(self.get_wcs()))                    
 
         ## COMPUTE SIP
         if compute_distortion:
             logging.info('Computing SIP coefficients')
-            raise NotImplementedError()
-            
-            # if self.get_wcs() is None:
-            #     warnings.warn('As no prior SIP has been given, this initial SIP is computed over the field inner circle. To cover the whole field the result of this registration must be passed at the definition of the class. max_radius_coeff is set to 0.5 unless a smaller coeff has been set.')
-            #     r_coeff = min(0.5, max_radius_coeff / 2.)
-            # else:
-            #     r_coeff = max_radius_coeff / 2.
-                
-            # logging.debug('distorsion computed on a radius of: {:.3f} * dimx'.format(r_coeff))
-                
-            # # compute optical distortion with a greater list of stars
-            # rmax = max(self.dimx, self.dimy) * r_coeff
+            logging.info('sip before sip fit (A matrix)')
+            if self.get_wcs().sip is not None:
+                logging.info(str(self.get_wcs().sip.a))
+            else:
+                logging.info('no sip')
 
-            # star_list_pix = radius_filter(
-            #     world2pix(wcs, star_list_query), rmax,
-            #     borders=[0, self.dimx, 0, self.dimy])
+            sl_cat_pix = self.world2pix(sl_cat_deg[:,:2])
+            logging.info('sip computed with {} stars'.format(sl_cat_pix.shape[0]))
+            
+            fit = self.fit_stars(
+                sl_cat_pix,
+                local_background=True,
+                multi_fit=False, fix_fwhm=True,
+                no_aperture_photometry=True)
+            
+            ## remove bad fits
+            
+            fit[np.abs(fit.dx) > self.get_fwhm_pix()] = np.nan
+            fit[np.abs(fit.dy) > self.get_fwhm_pix()] = np.nan
 
-            # logging.debug('using {} stars'.format(star_list_pix.shape[0]))
-            # fit_params = self.fit_stars(
-            #     star_list_pix,
-            #     local_background=True,
-            #     multi_fit=False, fix_fwhm=True,
-            #     no_aperture_photometry=True)
+            logging.debug('{} stars fitted'.format(len(fit.dropna())))
             
-            # ## SNR and DIST filter
-            # star_list_fit, index = get_filtered_params(
-            #     fit_params, param='star_list', dist_min=15.,
-            #     return_index=True)
-            
-            # star_list_pix = star_list_pix[np.nonzero(index)]
+            wcs = self.fit_sip(sl_cat_pix,
+                               orb.utils.astrometry.df2list(fit),
+                               params=None, init_sip=self.get_wcs(),
+                               err=None, sip_order=sip_order)
 
-            # logging.debug('{} stars fitted'.format(star_list_pix.shape[0]))
-            
-            
-            # ############################
-            # ### plot stars positions ###
-            # ############################
-            # ## import pylab as pl
-            # ## pl.imshow(self.data.T, vmin=30, vmax=279, cmap='gray',
-            # ##           interpolation='None')
-            # ## pl.scatter(star_list_fit[:,0], star_list_fit[:,1],
-            # ##            edgecolor='blue', linewidth=2., alpha=1.,
-            # ##            facecolor=(0,0,0,0))
-
-            # ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
-            # ##            edgecolor='red', linewidth=2., alpha=1.,
-            # ##            facecolor=(0,0,0,0))
-            # ## pl.show()
-            
-            # wcs = self.fit_sip(star_list_pix,
-            #                    star_list_fit,
-            #                    params=None, init_sip=wcs,
-            #                    err=None, sip_order=sip_order)
-
-            # ## star_list_pix = wcs.all_world2pix(star_list_query[:,:2], 0)
-            # ## pl.scatter(star_list_pix[:,0], star_list_pix[:,1],
-            # ##            edgecolor='green', linewidth=2., alpha=1.,
-            # ##            facecolor=(0,0,0,0))
+            # update wcs
+            self.set_wcs(wcs)
+            logging.info('sip after sip fit (A matrix)')
+            logging.info(str(self.get_wcs().sip.a))
             
         # computing distortion maps
         if return_error_maps or return_error_spl:
             logging.info('Computing distortion maps')
-            raise NotImplementedError()
-            # r_coeff = 1./np.sqrt(2)
-            # rmax = max(self.dimx, self.dimy) * r_coeff
+            
+            sl_cat_pix = self.world2pix(sl_cat_deg[:,:2])
+            logging.info('error maps computed with {} stars'.format(sl_cat_pix.shape[0]))
+            
+            # fit based on SIP corrected parameters
+            fit = self.fit_stars(
+                sl_cat_pix,
+                local_background=True,
+                multi_fit=False, fix_fwhm=True,
+                no_aperture_photometry=True)
 
-            # star_list_pix = radius_filter(
-            #     world2pix(wcs, star_list_query), rmax, borders=[
-            #         0, self.dimx, 0, self.dimy])
+            ## remove bad fits            
+            fit[np.abs(fit.dx) > self.get_fwhm_pix()] = np.nan
+            fit[np.abs(fit.dy) > self.get_fwhm_pix()] = np.nan
+            fit = fit.dropna()
 
-            # # fit based on SIP corrected parameters
-            # fit_params = self.fit_stars(
-            #     star_list_pix,
-            #     local_background=False,
-            #     multi_fit=False, fix_fwhm=True,
-            #     no_aperture_photometry=True)
+            # avoids duplicate of the same star (singular matrix error
+            # with RBF)
+            for ix in range(len(fit)):
+                if np.nansum(np.isclose(fit.x - fit.iloc[ix].x, 0)) > 1:
+                    fit.iloc[ix] = np.nan
+                     
+            fit = fit.dropna()
+            _w = 1./fit.x_err.values
+            _x = fit.x.values
+            _y = fit.y.values
+            _dx = fit.dx.values
+            _dy = fit.dy.values
 
-            # _x = fit_params['x'].values
-            # _y = fit_params['y'].values
-            # _r = np.sqrt((_x - self.dimx / 2.)**2.
-            #              + (_y - self.dimy / 2.)**2.)
+            logging.info('error maps computed with {} good stars'.format(_x.shape[0]))
+            
+            dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
+            dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
 
-            # _dx = fit_params['dx'].values
-            # _dy = fit_params['dy'].values
+            # RBF models are converted to pixel maps and fitted with
+            # Zernike polynomials
+            X, Y = np.mgrid[:self.dimx:400j,:self.dimy:400j]
+            dxmap = dxrbf(X, Y)
+            dymap = dyrbf(X, Y)
 
-            # # filtering badly fitted stars (jumping stars)
-            # ## _x[np.nonzero(np.abs(_dx) > 5.)] = np.nan
-            # ## _x[np.nonzero(np.abs(_dy) > 5.)] = np.nan
-            # _x[np.nonzero(_r > rmax)] = np.nan
+            dxmap_fit, dxmap_res, fit_error = orb.utils.image.fit_map_zernike(
+                dxmap, np.ones_like(dxmap), 20)
+            dymap_fit, dymap_res, fit_error = orb.utils.image.fit_map_zernike(
+                dymap, np.ones_like(dymap), 20)
 
-            # # avoids duplicate of the same star (singular matrix error
-            # # with RBF)
-            # for ix in range(_x.size):
-            #     if np.nansum(_x == _x[ix]) > 1:
-            #          _x[ix] = np.nan
+            # error maps are converted to a RectBivariateSpline instance
+            dxspl = interpolate.RectBivariateSpline(
+                np.linspace(0, self.dimx, dxmap.shape[0]),
+                np.linspace(0, self.dimy, dxmap.shape[1]),
+                dxmap_fit, kx=3, ky=3)
 
-            # nonans = np.nonzero(~np.isnan(_x))
-            # _w = 1./fit_params['x_err'].values[nonans]
-            # _x = fit_params['x'].values[nonans]
-            # _y = fit_params['y'].values[nonans]
-            # _dx = fit_params['dx'].values[nonans]
-            # _dy = fit_params['dy'].values[nonans]
+            dyspl = interpolate.RectBivariateSpline(
+                np.linspace(0, self.dimx, dymap.shape[0]),
+                np.linspace(0, self.dimy, dymap.shape[1]),
+                dymap_fit, kx=3, ky=3)
 
-            # dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
-            # dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
-
-            # # RBF models are converted to pixel maps and fitted with
-            # # Zernike polynomials
-            # X, Y = np.mgrid[:self.dimx:200j,:self.dimy:200j]
-            # dxmap = dxrbf(X, Y)
-            # dymap = dyrbf(X, Y)
-
-            # dxmap_fit, dxmap_res, fit_error = orb.utils.image.fit_map_zernike(
-            #     dxmap, np.ones_like(dxmap), 20)
-            # dymap_fit, dymap_res, fit_error = orb.utils.image.fit_map_zernike(
-            #     dymap, np.ones_like(dymap), 20)
-
-            # # error maps are converted to a RectBivariateSpline instance
-            # dxspl = interpolate.RectBivariateSpline(
-            #     np.linspace(0, self.dimx, dxmap.shape[0]),
-            #     np.linspace(0, self.dimy, dxmap.shape[1]),
-            #     dxmap_fit, kx=3, ky=3)
-
-            # dyspl = interpolate.RectBivariateSpline(
-            #     np.linspace(0, self.dimx, dymap.shape[0]),
-            #     np.linspace(0, self.dimy, dymap.shape[1]),
-            #     dymap_fit, kx=3, ky=3)
-
-            ## import pylab as pl
-            ## pl.figure(1)
-            ## pl.imshow(dxmap.T, interpolation='none')
-            ## pl.colorbar()
-            ## pl.scatter(_x/10., _y/10.,
-            ##            edgecolor='red', linewidth=2., alpha=1.,
-            ##            facecolor=(0,0,0,0))
-            ## pl.figure(2)
-            ## pl.imshow(dymap.T, interpolation='none')
-            ## pl.colorbar()            
-            ## pl.scatter(_x/10., _y/10.,
-            ##            edgecolor='red', linewidth=2., alpha=1.,
-            ##            facecolor=(0,0,0,0))
-            ## pl.show()
-
+            logging.info('comuting full sized dxdymaps (error maps)')
+            X = np.arange(self.dimx)
+            Y = np.arange(self.dimy)    
+            dxmap = dxspl(X, Y, grid=True)
+            dymap = dyspl(X, Y, grid=True)
+            
+            self.set_dxdymaps(dxmap, dymap)
             
         ## COMPUTE PRECISION
         if compute_precision:
             logging.info('Computing astrometrical precision')
 
-
             fit_params = self.fit_stars(
-                self.world2pix(sl_cat_deg),
+                self.world2pix(sl_cat_deg[:,:2]),
                 #local_background=True,
                 #multi_fit=False, fix_fwhm=False,
                 no_aperture_photometry=True)
@@ -957,13 +896,11 @@ class Image(Frame2D):
             fit_params['registration_precision_starnb'] = np.size(dx)
 
         logging.info('corrected WCS computed')
-        logging.info('internal WCS updated (to update the file use self.writeto function)')
+        logging.info('internal WCS updated (to update the file on disk use self.writeto function)')
         
         if not return_fit_params:
             if return_error_maps:
-                X = np.arange(self.dimx)
-                Y = np.arange(self.dimy)
-                return self.get_wcs(), dxspl(X, Y, grid=True), dyspl(X, Y, grid=True)
+                return self.get_wcs(), dxmap, dymap
             elif return_error_spl:
                 return self.get_wcs(), dxspl, dyspl
             else:

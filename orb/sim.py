@@ -200,13 +200,13 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         self.params['calib_coeff_orig'] = corr
         
         
-        regular_cm1_axis = np.linspace(1e7/self.axis.data[-1], 1e7/self.axis.data[0], self.dimx)
+        regular_cm1_axis = np.linspace(1e7/self.axis.data[-1], 1e7/self.axis.data[0], self.dimx*2)
         
         spectrum = scipy.interpolate.interp1d(self.axis.data,
                                               self.data.astype(np.float128),
                                               bounds_error=False)(1e7/regular_cm1_axis)
         
-        
+
         spectrum = orb.fft.Spectrum(spectrum, axis=regular_cm1_axis, params=self.params)
         
         
@@ -217,16 +217,21 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
             self.params.step_nb, self.params.step, self.params.order, corr=corr))
 
+        
         #spectrum = spectrum.project(cm1_axis)
         # flux conservative projection
-        bins = np.array(list(cm1_axis.data[:-1] - np.diff(cm1_axis.data) / 2.) + list((cm1_axis.data[-2:] + np.diff(cm1_axis.data[-3:-1]) / 2.)))
+        delta = np.diff(cm1_axis.data)[0]
+        bins = (np.arange(cm1_axis.dimx + 1) - 0.5) * delta + cm1_axis.data[0]
 
-        spectrum.data = scipy.stats.binned_statistic(
-            spectrum.axis.data.astype(float),
-            spectrum.data.astype(float),
-            bins=bins, statistic='mean')[0].astype(complex)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            spectrum.data = scipy.stats.binned_statistic(
+                spectrum.axis.data.astype(float),
+                spectrum.data.astype(float),
+                bins=bins, statistic='mean')[0].astype(complex)
+            
         spectrum.axis = cm1_axis
-        
+
         spectrum = photom.flux2counts(spectrum, modulated=True)
         spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
         
@@ -254,5 +259,5 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
             interf.data += mean_
 
         # poisson noise
-        interf.data = np.random.poisson(interf.data.astype(int)).astype(float)
+        interf.data = np.random.poisson(interf.data).astype(int).astype(float)
         return interf

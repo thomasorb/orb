@@ -2493,11 +2493,13 @@ class Vector1d(Data):
             else: _arg = arg
 
         # do the math
-        if arg is None:
-            _out = getattr(np, opname)(_out)
-        else:            
-            _out = getattr(np, opname)(_out, _arg)
-            del _arg
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if arg is None:
+                _out = getattr(np, opname)(_out)
+            else:            
+                _out = getattr(np, opname)(_out, _arg)
+                del _arg
 
         # transform gvar to data and err
         if isinstance(_out[0], gvar._gvarcore.GVar):
