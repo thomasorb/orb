@@ -160,7 +160,7 @@ def get_ncpus(ncpus):
 
     
     
-def init_pp_server(ncpus=0, silent=False, use_ray=False):
+def init_pp_server(ncpus=0, silent=False, use_ray=False, timeout=100):
     """Initialize a server for parallel processing.
 
     :param ncpus: (Optional) Number of cpus to use. 0 means use all
@@ -175,7 +175,7 @@ def init_pp_server(ncpus=0, silent=False, use_ray=False):
     ncpus = get_ncpus(ncpus)
 
     if not use_ray:
-        job_server = JobServer(ncpus)
+        job_server = JobServer(ncpus, timeout=timeout)
         ncpus = job_server.ncpus
                 
     else:

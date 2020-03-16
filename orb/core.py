@@ -946,17 +946,20 @@ class Tools(object):
         """
         return orb.utils.parallel.get_ncpus(int(self.config.NCPUS))
         
-    def _init_pp_server(self, silent=False):
+    def _init_pp_server(self, silent=False, timeout=100):
         """Initialize a server for parallel processing.
 
         :param silent: (Optional) If silent no message is printed
           (Default False).
 
+        :param timeout: (Optional) Job timeout in s.
+
         .. note:: Please refer to http://www.parallelpython.com/ for
           sources and information on Parallel Python software
         """
-        return orb.utils.parallel.init_pp_server(ncpus=int(self.config.NCPUS),
-                                                 silent=silent)
+        return orb.utils.parallel.init_pp_server(
+            ncpus=int(self.config.NCPUS),
+            silent=silent, timeout=timeout)
 
     def _close_pp_server(self, js):
         """
