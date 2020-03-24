@@ -1116,7 +1116,7 @@ class HDFCube(orb.core.WCSData):
 #################################################
 class RWHDFCube(HDFCube):
     
-    def __init__(self, path, shape=None, instrument=None, reset=False, **kwargs):
+    def __init__(self, path, shape=None, instrument=None, reset=False, dtype=np.float32, **kwargs):
         """:param path: Path to an HDF5 cube
 
         :param shape: (Optional) Must be set to something else than
@@ -1141,7 +1141,7 @@ class RWHDFCube(HDFCube):
             
             with orb.utils.io.open_hdf5(path, 'w') as f:
                 orb.utils.validate.has_len(shape, 3, object_name='shape')
-                f.create_dataset('data', shape=shape, chunks=True)
+                f.create_dataset('data', shape=shape, chunks=True, dtype=dtype)
                 f.attrs['level2'] = True
                 f.attrs['instrument'] = instrument
 
@@ -1167,6 +1167,8 @@ class RWHDFCube(HDFCube):
 
         with self.open_hdf5('a') as f:
             if f['data'].dtype != value.dtype:
+                warnings.warn('wrong types: cube is {} and new data is {}'.format(
+                    f['data'].dtype, value.dtype))
                 # warning !! never do the following since all data is
                 # reset, if only a part of the data must be set this
                 # is just insane
