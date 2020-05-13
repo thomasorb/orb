@@ -126,14 +126,14 @@ class Frame2D(orb.core.WCSData):
         newim.set_wcs(cutout.wcs)
         return newim
 
-    def imshow(self, figscale=15, perc=99, cmap=None, wcs=True):
+    def imshow(self, figscale=15, perc=99, cmap=None, wcs=True, alpha=1):
         perc = np.clip(perc, 50, 100)
         vmin, vmax = np.nanpercentile(self.data, [100-perc, perc])
         ratio = self.dimy / float(self.dimx)
         fig = pl.figure(figsize=(figscale, figscale*ratio))
         if wcs:
             ax = fig.add_subplot(111, projection=self.get_wcs())
-        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left')
+        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left', alpha=alpha)
         
 
 #################################################
@@ -739,16 +739,20 @@ class Image(Frame2D):
             logging.info('wcs after lists matching')
             logging.info(str(self.get_wcs()))
 
-            # refine registration
-            wcs = orb.utils.astrometry.fit_wcs(
-                sl_im_pix[sl_im_matched],
-                sl_cat_deg[sl_cat_matched][:,:2],
-                self.get_wcs())
-
-            # update wcs
-            self.set_wcs(wcs)
-            logging.info('wcs after fit')
-            logging.info(str(self.get_wcs()))                    
+            try:
+                # refine registration
+                wcs = orb.utils.astrometry.fit_wcs(
+                    sl_im_pix[sl_im_matched],
+                    sl_cat_deg[sl_cat_matched][:,:2],
+                    self.get_wcs())
+            except Exception as e:
+                warnings.warn('registration could not be fitted: {}'.format(e))
+                
+            else:
+                # update wcs
+                self.set_wcs(wcs)
+                logging.info('wcs after fit')
+                logging.info(str(self.get_wcs()))                    
 
         ## COMPUTE SIP
         if compute_distortion:
