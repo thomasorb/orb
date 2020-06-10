@@ -1718,7 +1718,7 @@ def unwrap_phase_map0(phase_map):
     return phase_map
 
         
-def interpolate_map(m, dimx, dimy):
+def interpolate_map(m, dimx, dimy, deg=3):
     """Interpolate 2D data map.
 
     This function is robust to Nans.
@@ -1739,7 +1739,7 @@ def interpolate_map(m, dimx, dimy):
 
     x_map = np.arange(m.shape[0])
     y_map = np.arange(m.shape[1])
-    interp = interpolate.RectBivariateSpline(x_map, y_map, m)
+    interp = interpolate.RectBivariateSpline(x_map, y_map, m, kx=deg, ky=deg)
     return interp(x_int, y_int)
 
 

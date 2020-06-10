@@ -126,11 +126,11 @@ class Frame2D(orb.core.WCSData):
         newim.set_wcs(cutout.wcs)
         return newim
 
-    def imshow(self, figscale=15, perc=99, cmap=None, wcs=True, alpha=1):
+    def imshow(self, figsize=(15,15), perc=99, cmap=None, wcs=True, alpha=1):
         perc = np.clip(perc, 50, 100)
         vmin, vmax = np.nanpercentile(self.data, [100-perc, perc])
-        ratio = self.dimy / float(self.dimx)
-        fig = pl.figure(figsize=(figscale, figscale*ratio))
+        #ratio = self.dimy / float(self.dimx)
+        fig = pl.figure(figsize=figsize)
         if wcs:
             ax = fig.add_subplot(111, projection=self.get_wcs())
         pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left', alpha=alpha)
