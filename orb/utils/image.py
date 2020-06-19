@@ -613,10 +613,10 @@ def low_pass_image_filter(im, deg):
 
 
 def fit_phase_map(data_map, err_map, theta_map):
+    """Fit an order 0 phase map with a simple cos(theta) model
     """
-    """
-    def model(x, p):
-        return p[0] * np.cos(np.deg2rad(x))
+    def model(x, *p):
+        return p[0] + p[1] * np.cos(np.deg2rad(x))
     
     orb.utils.validate.is_2darray(data_map)
     orb.utils.validate.have_same_shape((data_map, err_map, theta_map))
@@ -630,15 +630,14 @@ def fit_phase_map(data_map, err_map, theta_map):
     okpix[np.nonzero(np.isinf(data_map))] = False
     okpix = np.nonzero(okpix)
 
-    pfit, pcov = optimize.curve_fit(model, theta_map[okpix], data_map[okpix], p0=(1,), sigma=err_map[okpix])
+    pfit, pcov = optimize.curve_fit(model, theta_map[okpix], data_map[okpix], p0=(0,1), sigma=err_map[okpix])
 
     fitted = model(theta_map, *pfit)
     residual = (fitted - data_map)
-    err = orb.utils.stats.sigmacut(residual[np.nonzero(pixmap)], sigma=2.5)
-    logging.info('modeling error: {} (uncertainty on data: {})'.format(
+    err = orb.utils.stats.sigmacut(residual[okpix], sigma=2.5)
+    logging.info('modeling error: {} rad'.format(
         np.nanstd(err),
-        np.nanmedian(sdevs)))
-    print('yrppp')
+        np.nanmedian(err_map[okpix])))
 
     return fitted, residual
 

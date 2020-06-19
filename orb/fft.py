@@ -1254,13 +1254,7 @@ class PhaseMaps(orb.core.Tools):
         """
         _phase_map = self.get_map(0)
         _phase_map_err = self.get_map_err(0)
-        
-        # thetas, model, err = orb.utils.image.fit_map_theta(
-        #     _phase_map,
-        #     _phase_map_err,
-        #     #np.cos(np.deg2rad(self.theta_map)), model is linear with
-        #     # this input but it will be analyzed later
-        #     self.theta_map)
+                
         model, err = orb.utils.image.fit_phase_map(
             _phase_map,
             _phase_map_err,
