@@ -555,20 +555,20 @@ class HDFCube(orb.core.WCSData):
         return (self.get_dataset('dxmap'),
                 self.get_dataset('dymap'))
     
-    def compute_sum_image(self):
+    def compute_sum_image(self, step_size=100):
         """compute the sum along z axis
         """
-        SIZE = 30
         sum_im = None
         progress = orb.core.ProgressBar(self.dimz)
-        for ik in range(0, self.dimz, SIZE):
-            frames = self[:,:,ik:ik+SIZE]
+        for ik in range(0, self.dimz, step_size):
+            progress.update(ik, info="Creating sum image")
+            frames = self[:,:,ik:ik+step_size]
             if sum_im is None: # avoid creating a zeros frame with a
                                # possibly uncompatible dtype
                 sum_im = np.nansum(frames, axis=2)
             else:
                 sum_im += np.nansum(frames, axis=2)
-            progress.update(ik, info="Creating sum image")
+            
         progress.end()
         return sum_im
 
@@ -1509,7 +1509,8 @@ class Cube(HDFCube):
         
         return filter_min_pix_map, filter_max_pix_map
     
-    def integrate(self, filter_function, xmin=None, xmax=None, ymin=None, ymax=None, split=10):
+    def integrate(self, filter_function, xmin=None, xmax=None, ymin=None, ymax=None, split=100,
+                  mean=True, square_filter=False):
         """Integrate a cube under a filter function and generate an image
 
         :math:`I = \int F(\sigma)S(\sigma)\text{d}\sigma`
@@ -1564,8 +1565,8 @@ class Cube(HDFCube):
 
         start_pix, end_pix = orb.utils.spectrum.cm12pix(
             self.params.base_axis, [filter_function.axis[start], filter_function.axis[end]]).astype(int)
-
-        sframe = np.zeros((self.dimx, self.dimy), dtype=float)
+        
+        sframe = np.zeros((self.dimx, self.dimy), dtype=np.complex128)
         zsize = end_pix - start_pix + 1
         # This splits the range in zsize//10 +1 chunks (not necessarily of same
         # size). The endpix is correctly handled in the extraction
@@ -1573,22 +1574,35 @@ class Cube(HDFCube):
             izranges = np.array_split(range(start_pix, end_pix+1), zsize//split+1)
         else:
             izranges = (np.arange(start_pix, end_pix+1),)
+            
         progress = orb.core.ProgressBar(len(izranges))
         _index = 0
-
         for izrange in izranges:
             progress.update(_index)
-            _index += 1
             
             axis_onrange = orb.core.Axis(self.params.base_axis[izrange].astype(float))
             filter_onrange = filter_function.project(axis_onrange)
-            sframe[xmin:xmax, ymin:ymax] += np.sum(
-                self.get_data(xmin, xmax, ymin, ymax,
-                              izrange.min(), izrange.max()+1, silent=True)
-                * filter_onrange.data, axis=2)
+            filter_onrange = filter_onrange.data.astype(np.complex128)
+            filter_onrange.imag = filter_onrange.real
+            progress.update(_index, info='loading data')
+            
+            idata = self.get_data(
+                xmin, xmax, ymin, ymax,
+                izrange.min(), izrange.max()+1, silent=True).astype(np.complex128)
+            progress.update(_index, info='data loaded')
+            
+            if not square_filter:
+                sframe[xmin:xmax, ymin:ymax] += np.sum(
+                    idata
+                    * filter_onrange, axis=2).astype(np.complex128)
+            else:
+                sframe[xmin:xmax, ymin:ymax] += np.sum(
+                    idata, axis=2).astype(np.complex128)
+
+            _index += 1
         progress.end()
-        
-        sframe /= np.sum(filter_function.project(orb.core.Axis(self.params.base_axis.astype(float))).data)
+        if mean:
+            sframe /= np.sum(filter_function.project(orb.core.Axis(self.params.base_axis.astype(float))).data)
         return sframe
         
 #################################################
@@ -2505,7 +2519,15 @@ class SpectralCube(Cube):
         return photom.compute_flambda(self.get_base_axis(), eps=eps_vector)
 
         
+    def compute_modulation_ratio(self):
+        deep_spectral = self.compute_sum_image()
+        deep_interf = self.get_deep_frame().data
+        mod = np.abs(deep_spectral).real / deep_interf
+        mod[mod == 0] = np.nan
+        return mod
         
+        
+            
             
         
         

@@ -127,12 +127,17 @@ class Frame2D(orb.core.WCSData):
         return newim
 
     def imshow(self, figsize=(15,15), perc=99, cmap=None, wcs=True, alpha=1):
-        if len(list(perc)) == 1:
-            perc = np.clip(perc, 50, 100)
+        try:
+            iter(perc)
+        except Exception:
+            perc = np.clip(float(perc), 50, 100)
             perc = 100-perc, perc
-        elif len(list(perc)) != 2:
-            raise Exception('perc should be a tuple of len 2 or a single float')
-        
+
+        else:
+            if len(list(perc)) != 2:
+                raise Exception('perc should be a tuple of len 2 or a single float')
+
+            
         vmin, vmax = np.nanpercentile(self.data, perc)
         #ratio = self.dimy / float(self.dimx)
         fig = pl.figure(figsize=figsize)
@@ -386,7 +391,14 @@ class Image(Frame2D):
 
         cat = self.query_vizier(as_pandas=True, max_stars=max_stars, catalog='gaia2')
 
-        obsdate = astropy.time.Time(self.params['DATE-OBS'])
+        date_key = 'DATE-OBS'
+        if date_key not in self.params:
+            date_key = 'DATE'
+            if date_key not in self.params:
+                raise Exception('No DATE or DATE-OBS in header')
+            
+        obsdate = astropy.time.Time(self.params[date_key])
+            
         epoch = astropy.time.Time(cat.Epoch.values[0], format='decimalyear')
         pm_unit = astropy.units.mas/astropy.units.yr
 

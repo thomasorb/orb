@@ -2547,7 +2547,11 @@ class Vector1d(Data):
 
     def plot(self):
         """Plot vector"""
-        pl.plot(self.axis.data, self.data)
+        if not np.all(np.iscomplex(self.data)):
+            pl.plot(self.axis.data, self.data)
+        else:
+            pl.plot(self.axis.data, self.data.real, label='real part')
+            pl.plot(self.axis.data, self.data.imag, label='imaginary part')
 
 #################################################
 #### CLASS Axis #################################
