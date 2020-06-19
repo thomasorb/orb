@@ -127,8 +127,13 @@ class Frame2D(orb.core.WCSData):
         return newim
 
     def imshow(self, figsize=(15,15), perc=99, cmap=None, wcs=True, alpha=1):
-        perc = np.clip(perc, 50, 100)
-        vmin, vmax = np.nanpercentile(self.data, [100-perc, perc])
+        if len(list(perc)) == 1:
+            perc = np.clip(perc, 50, 100)
+            perc = 100-perc, perc
+        elif len(list(perc)) != 2:
+            raise Exception('perc should be a tuple of len 2 or a single float')
+        
+        vmin, vmax = np.nanpercentile(self.data, perc)
         #ratio = self.dimy / float(self.dimx)
         fig = pl.figure(figsize=figsize)
         if wcs:

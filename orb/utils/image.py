@@ -611,6 +611,37 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
+
+def fit_phase_map(data_map, err_map, theta_map):
+    """
+    """
+    def model(x, p):
+        return p[0] * np.cos(np.deg2rad(x))
+    
+    orb.utils.validate.is_2darray(data_map)
+    orb.utils.validate.have_same_shape((data_map, err_map, theta_map))
+    KNOTS_NB = 100
+    thetas = np.linspace(np.nanpercentile(theta_map,.1),
+                         np.nanpercentile(theta_map,99.9),
+                         KNOTS_NB)
+    okpix = np.zeros_like(data_map, dtype=bool)
+    okpix[np.nonzero(data_map)] = True
+    okpix[np.nonzero(np.isnan(data_map))] = False
+    okpix[np.nonzero(np.isinf(data_map))] = False
+    okpix = np.nonzero(okpix)
+
+    pfit, pcov = optimize.curve_fit(model, theta_map[okpix], data_map[okpix], p0=(1,), sigma=err_map[okpix])
+
+    fitted = model(theta_map, *pfit)
+    residual = (fitted - data_map)
+    err = orb.utils.stats.sigmacut(residual[np.nonzero(pixmap)], sigma=2.5)
+    logging.info('modeling error: {} (uncertainty on data: {})'.format(
+        np.nanstd(err),
+        np.nanmedian(sdevs)))
+    print('yrppp')
+
+    return fitted, residual
+
 def fit_map_theta(data_map, err_map, theta_map):
     """fit any data map with respect to theta. Given the corresponding theta map.
 
@@ -1293,368 +1324,6 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     else:
         return params, new_calib_laser_map
 
-
-def fit_highorder_phase_map(phase_map, err_map, calib_map, nm_laser, knb=10):
-    """Robust fit phase maps of order > 1
-
-    Uses a theta dependant fit model base on a spline. See
-    py:meth:`utils.fit_map_cos`.
-    
-    :param phase_map: Phase map to fit
-
-    :param err_map: Error map of phase map values
-
-    :param calib_map: Calibration laser map.
-
-    :param nm_laser: Calibration laser wavelength in nm.
-
-    :return: A tuple: (Fitted map, residual map)
-    """
-
-    # WARNING: CROP_COEFF must correspond to the CROP_COEFF used in
-    # fit_sitelle_phase_map
-
-    CROP_COEFF = 0.98 # proportion of the phase map to keep when
-                      # cropping
-
-    # bad values are filtered and phase map is cropped to remove
-    # borders with erroneous phase values.
-    phase_map[np.nonzero(phase_map==0)] = np.nan
-    
-    xmin,xmax,ymin,ymax = get_box_coords(
-        phase_map.shape[0]/2,
-        phase_map.shape[1]/2,
-        int(CROP_COEFF*phase_map.shape[0]),
-        0, phase_map.shape[0],
-        0, phase_map.shape[1])
-    phase_map[:xmin,:] = np.nan
-    phase_map[xmax:,:] = np.nan
-    phase_map[:,:ymin] = np.nan
-    phase_map[:,ymax:] = np.nan
-    
-    err_map[np.nonzero(np.isnan(phase_map))] = np.nan
-    
-    phase_map_fit, res_map, rms_error = fit_map_cos(phase_map, err_map, calib_map, nm_laser, knb=knb)
-    logging.info(' > Residual STD after cos theta fit: {}'.format(np.nanstd(res_map)))
-
-    return phase_map_fit, phase_map - phase_map_fit
-    
-    
-
-
-def fit_sitelle_phase_map(phase_map, phase_map_err, calib_laser_map,
-                          calib_laser_nm, pixel_size=15., binning=4,
-                          return_coeffs=False, wavefront_map=None):
-
-    """
-    Fit a SITELLE phase map (order 0 map of the phase) using a
-    model based on a simulated calibration laser map.
-
-    A real calibration laser map is needed first to get an initial guess
-    on the parameters of the fit. Then the whole phase map is modeled
-    to fit the real phase map.
-
-    The modeled calibration laser map obtained from the fit is also
-    returned.
-
-    :param phase_map: Phase map to fit.
-    
-    :param phase_map_err: Error on the phase map values.
-    
-    :param calib_laser_map: Reference calibration laser map.
-    
-    :param calib_laser_nm: Wavelength of the calibration laser in nm.
-    
-    :param pixel_size: (Optional) Size of the CCD pixels in um
-      (default 15).
-    
-    :param binning: (Optional) Maps are binned to accelerate the
-      process. Set the binning factor (default 4).
-
-    :param return_coeffs: (Optional) If True, transformation
-      coefficients are returned also (default False).
-
-    :param wavefront_map: (Optional) Residual between the modeled
-      calibration laser map and the real laser map. This residual can
-      generally be fitted with Zernike polynomials. If given, the
-      wavefront is considered stable and is removed before the model
-      is fitted (default None).
-
-    :return: a tuple (fitted phase map, error map, fit error, new
-      calibration laser map) + a tuple of transformation coefficients
-      (a0 and a1) if return_coeffs is True.
-      
-    """
-    def model_laser_map(p, calib, calib_laser_nm, pixel_size):
-        return simulate_calibration_laser_map(
-            calib.shape[0], calib.shape[1], pixel_size,
-            p[0], p[1], p[2], p[3], p[4], p[5], calib_laser_nm)
-
-    def model_phase_map(p, calib, calib_laser_nm, pixel_size, poly_deg, wf_map):
-        _model_calib_map = model_laser_map(
-            p[poly_deg + 1:], calib, calib_laser_nm, pixel_size)
-        _model_calib_map += wf_map
-        return orb.utils.fft.calib_map2phase_map0(
-            p[:poly_deg + 1],
-            _model_calib_map,
-            calib_laser_nm)
-
-    def get_p(p_var, p_fix, p_ind):
-        """p_ind = 0: variable parameter, index=1: fixed parameter
-        """
-        p_all = np.empty_like(p_ind, dtype=float)
-        p_all[np.nonzero(p_ind == 0.)] = p_var
-        p_all[np.nonzero(p_ind > 0.)] = p_fix
-        return p_all
-
-    def diff_phase_map(p_var, calib, calib_laser_nm, pixel_size, pm,
-                       pm_err, p_fix, p_ind, poly_deg, wf_map):
-        p_all = get_p(p_var, p_fix, p_ind)
-        model_map = model_phase_map(p_all, calib, calib_laser_nm, pixel_size,
-                                    poly_deg, wf_map)
-        result = (model_map - pm) / pm_err
-        result[np.isinf(result)] = np.nan
-        result = result[np.nonzero(~np.isnan(result))]
-        return result
-
-    def print_params(params, p_ind, poly_deg):
-        def str_fix(i):
-            if p_ind[i] == 1: return '(fixed)'
-            else: return ''
-        def ang(_a):
-            return np.fmod(float(_a),360.)
-
-        poly_str = ''.join(['a{}: {} radians {}\n'.format(
-            i, params[i], str_fix(i)) for i in range(poly_deg + 1)])
-        _i = poly_deg + 1
-        logging.info(('> Phase map fit parameters:\n'
-               + poly_str
-               + 'distance to mirror: {} cm {}\n'.format(
-                   params[_i]*1e-4, str_fix(_i))
-               + 'X angle from the optical axis: {} degrees {}\n'.format(
-                   ang(params[_i+1]), str_fix(_i+1))
-               + 'Y angle from the optical axis: {} degrees {}\n'.format(
-                   ang(params[_i+2]), str_fix(_i+2))
-               + 'Tilt along X: {} degrees {}\n'.format(
-                   ang(params[_i+3]), str_fix(_i+3))
-               + 'Tilt along Y: {} degrees {}\n'.format(
-                   ang(params[_i+4]), str_fix(_i+4))
-               + 'Rotation angle: {} degrees {}\n'.format(
-                   ang(params[_i+5]), str_fix(_i+5))))
-
-    # WARNING: CROP_COEFF must correspond to the CROP_COEFF used in
-    # fit_highorder_phase_map
-
-    CROP_COEFF = 0.98 # proportion of the phase map to keep when
-                      # cropping
-
-    POLY_DEG = 2 # degree of the polyomial used to transform a
-                 # calibration map in a phase map
-
-    # bad values are filtered and phase map is cropped to remove
-    # borders with erroneous phase values.
-    phase_map[np.nonzero(phase_map==0)] = np.nan
-    uncropped_phase_map = np.copy(phase_map)
-
-    xmin,xmax,ymin,ymax = get_box_coords(
-        phase_map.shape[0]/2,
-        phase_map.shape[1]/2,
-        int(CROP_COEFF*phase_map.shape[0]),
-        0, phase_map.shape[0],
-        0, phase_map.shape[1])
-    phase_map[:xmin,:] = np.nan
-    phase_map[xmax:,:] = np.nan
-    phase_map[:,:ymin] = np.nan
-    phase_map[:,ymax:] = np.nan
-
-    if wavefront_map is None:
-        wavefront_map = np.zeros_like(phase_map)
-    
-    # Data is binned to accelerate the fit
-    if binning > 1:
-        logging.info('> Binning phase maps')
-        phase_map_bin = nanbin_image(phase_map, binning)
-        phase_map_err_bin = nanbin_image(phase_map_err, binning)
-        calib_laser_map_bin = nanbin_image(calib_laser_map, binning)
-        wavefront_map_bin = nanbin_image(wavefront_map, binning)
-    else:
-        phase_map_bin = phase_map
-        phase_map_err_bin = phase_map_err
-        calib_laser_map_bin = calib_laser_map
-        wavefront_map_bin = wavefront_map
-
-    calib_laser_map_bin -= wavefront_map_bin
-
-    # ref calibration laser map fit
-    calib_fit_params, _, _ = fit_calibration_laser_map(
-        calib_laser_map_bin, calib_laser_nm,
-        pixel_size=pixel_size*binning,
-        binning=1, return_model_fit=True)
-    
-    ## Output of fit_calibration_laser_map
-    ## 0: mirror_distance
-    ## 1: theta_cx
-    ## 2: theta_cy
-    ## 3: phi_x
-    ## 4: phi_y
-    ## 5: phi_r
-    ## 6: calib_laser_nm (unused)
-    ## 7: theta c (unused, control value, not a fit parameter)
-    
-    logging.info('> Phase map fit')
-    ## 0: a0
-    ## 1: a1
-    ## 2: mirror_distance
-    ## 3: theta_cx
-    ## 4: theta_cy
-    ## 5: phi_x
-    ## 6: phi_y
-    ## 7: phi_r
-
-    # first fit of the linear parameters
-    p_ind = np.array(list([0])*(POLY_DEG+1) + [1,1,1,1,1,1])
-    p_fix = calib_fit_params[:-2]
-    fit = scipy.optimize.leastsq(diff_phase_map,
-                                 [0., 0., 0.],
-                                 args=(calib_laser_map_bin,
-                                       calib_laser_nm,
-                                       float(pixel_size*binning),
-                                       phase_map_bin,
-                                       phase_map_err_bin,
-                                       p_fix, p_ind, POLY_DEG,
-                                       wavefront_map_bin),
-                                 full_output=True)
-    params = get_p(fit[0], p_fix, p_ind)
-    print_params(params, p_ind, POLY_DEG)
-    res_phase_map = phase_map - model_phase_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
-        wavefront_map)
-    logging.info('residual std: {} (flux error: {}%)'.format(
-        np.nanstd(res_phase_map),
-        100 * (1. - np.cos(np.nanstd(res_phase_map)))))
-
-
-    ## # second fit
-    ## p_ind = np.array(list([1])*(POLY_DEG+1) + [1,0,1,1,1,0])
-    ## p_fix = params[p_ind.astype(bool)]
-    ## p_var = params[~p_ind.astype(bool)]
-    ## fit = scipy.optimize.leastsq(diff_phase_map,
-    ##                              p_var,
-    ##                              args=(calib_laser_map_bin,
-    ##                                    calib_laser_nm,
-    ##                                    float(pixel_size*binning),
-    ##                                    phase_map_bin,
-    ##                                    phase_map_err_bin,
-    ##                                    p_fix, p_ind, POLY_DEG,
-    ##                                    wavefront_map_bin),
-    ##                              full_output=True)
-    ## params = get_p(fit[0], p_fix, p_ind)
-    ## print_params(params, p_ind, POLY_DEG)
-    ## res_phase_map = phase_map - model_phase_map(
-    ##     params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
-    ##     wavefront_map)
-    ## logging.info('residual std: {} (flux error: {}%)'.format(
-    ##     np.nanstd(res_phase_map),
-    ##     100 * (1. - np.cos(np.nanstd(res_phase_map)))))
-
-    ## # third fit
-    ## p_ind = np.array(list([0])*(POLY_DEG+1) + [1,0,0,1,1,0])   
-    ## p_fix = params[p_ind.astype(bool)]
-    ## p_var = params[~p_ind.astype(bool)]
-    ## fit = scipy.optimize.leastsq(diff_phase_map,
-    ##                              p_var,
-    ##                              args=(calib_laser_map_bin,
-    ##                                    calib_laser_nm,
-    ##                                    float(pixel_size*binning),
-    ##                                    phase_map_bin,
-    ##                                    phase_map_err_bin,
-    ##                                    p_fix, p_ind, POLY_DEG,
-    ##                                    wavefront_map_bin),
-    ##                              full_output=True)
-    ## params = get_p(fit[0], p_fix, p_ind)
-    ## print_params(params, p_ind, POLY_DEG)
-    ## res_phase_map = phase_map - model_phase_map(
-    ##     params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
-    ##     wavefront_map)
-    ## logging.info('residual std: {} (flux error: {}%)'.format(
-    ##     np.nanstd(res_phase_map),
-    ##     100 * (1. - np.cos(np.nanstd(res_phase_map)))))
-
-    
-    fitted_phase_map = model_phase_map(
-        params, calib_laser_map, calib_laser_nm, pixel_size, POLY_DEG,
-        wavefront_map)
-
-    ## computed calibration laser map from instrumental parameters
-    ## deduced from the phase map fit. If the wavefront is added, this
-    ## calibration laser map might be used for a better wavelength
-    ## calibration.
-    new_calib_laser_map = (model_laser_map(
-        params[POLY_DEG +1:], calib_laser_map, calib_laser_nm, pixel_size)
-                           + wavefront_map)
-    
-    # Residual fit
-    logging.info('> Phase map residuals fit with cos theta fit')
-   
-    res_phase_map = uncropped_phase_map - fitted_phase_map
-    
-    res_phase_map_fit, _err_map, _fit_error = fit_map_cos(
-        res_phase_map, np.ones_like(res_phase_map),
-        new_calib_laser_map, calib_laser_nm, knb=5)
-    
-    fitted_phase_map += res_phase_map_fit
-
-    ## Error computation
-    # Creation of the error map: The error map gives the 
-    # Squared Error for each point used in the fit point. 
-    error_map = phase_map - fitted_phase_map
-    error_map[np.nonzero(phase_map == 0)] = np.nan
-    
-
-    # The square root of the mean of this map is then normalized
-    # by the range of the values fitted. This gives the Normalized
-    # root-mean-square deviation
-    fit_error_rms =(np.nanmean(np.sqrt(error_map**2.))
-                / (np.nanpercentile(phase_map, 84)
-                   - np.nanpercentile(phase_map, 16)))
-
-    fit_error = np.nanstd(error_map)
-
-    logging.info('> Final fit std: {} radians'.format(fit_error))
-
-    if not return_coeffs:
-        return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map
-    else:
-        return fitted_phase_map, error_map, fit_error_rms, new_calib_laser_map, [params[2], params[3]]
-
-
-def fit_phase_map02calib_map(calib, pm0, nm_laser):
-    """Return the best transformation parameters that permit to
-    compute an order 0 phase map from a calibration laser map
-
-    :param calib: Calibration laser map
-
-    :param pm0: Order 0 phase map
-
-    :param nm_laser: Calibration laser wavelength in nm.
-    """
-    def diff(p, calib, pm0, nm_laser):
-        
-        res = orb.utils.fft.calib_map2phase_map0(
-            p, calib, nm_laser) - pm0
-        return res[np.nonzero(~np.isnan(res))]
-
-    p0 = [np.pi, 100]
-
-    fit = scipy.optimize.leastsq(
-        diff, p0, args=(calib, pm0, nm_laser),
-        full_output=True)
-    if fit[-1] < 5:
-        return fit[0]
-    else:
-        warnings.warn('Phase map 2 calibration laser map fit failed: {}'.format(fit[-2]))
-        return None
-
 def unwrap_phase_map0(phase_map):
     """
     Phase is defined modulo pi/2. The Unwrapping is a
@@ -1741,8 +1410,6 @@ def interpolate_map(m, dimx, dimy, deg=3):
     y_map = np.arange(m.shape[1])
     interp = interpolate.RectBivariateSpline(x_map, y_map, m, kx=deg, ky=deg)
     return interp(x_int, y_int)
-
-
 
 def on_ellipse(x, y, x0, y0, rX, rY, theta, e=0.5):
     """Tell whether a pixel is on the ellipse or not.

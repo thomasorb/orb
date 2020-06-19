@@ -1250,29 +1250,29 @@ class PhaseMaps(orb.core.Tools):
             return np.copy(self.phase_maps_err[order])
 
     def get_model_0(self):
-        """Return order 0 model as a Scipy.UnivariateSpline instance.
-
-        :return: (original theta vector, model, uncertainty), model
-          and uncertainty are returned as UnivariateSpline instances
-
+        """Return order 0 model.
         """
         _phase_map = self.get_map(0)
         _phase_map_err = self.get_map_err(0)
         
-        thetas, model, err = orb.utils.image.fit_map_theta(
+        # thetas, model, err = orb.utils.image.fit_map_theta(
+        #     _phase_map,
+        #     _phase_map_err,
+        #     #np.cos(np.deg2rad(self.theta_map)), model is linear with
+        #     # this input but it will be analyzed later
+        #     self.theta_map)
+        model, err = orb.utils.image.fit_phase_map(
             _phase_map,
             _phase_map_err,
-            #np.cos(np.deg2rad(self.theta_map)), model is linear with
-            # this input but it will be analyzed later
             self.theta_map)
 
-        return thetas, model, err
+        return model, err
 
     def modelize(self):
         """Replace phase maps by their model inplace
         """
-        thetas, model, err = self.get_model_0()
-        self.phase_maps[0] = model(self.theta_map)
+        model, err = self.get_model_0()
+        self.phase_maps[0] = model
 
         for iorder in range(1, len(self.phase_maps)):
             self.phase_maps[iorder] = (np.ones_like(self.phase_maps[iorder])
