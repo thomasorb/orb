@@ -2727,10 +2727,10 @@ def match_star_lists(wcs, sl1deg, sl2pix, rc, xyrange=(500, 50), rrange=(6,1), z
     rmax, rstep = rrange
     zmax, zstep = zrange
     
-    x_range = np.linspace(-xymax, xymax, (2*xymax)//xystep + 1)
+    x_range = np.linspace(-xymax, xymax, int((2*xymax)//xystep + 1))
     y_range = np.copy(x_range)
-    r_range = np.linspace(-rmax, rmax, (2*rmax)//rstep + 1)
-    z_range = np.linspace(-zmax, zmax, (2*zmax)//zstep + 1) + 1.    
+    r_range = np.linspace(-rmax, rmax, int((2*rmax)//rstep + 1))
+    z_range = np.linspace(-zmax, zmax, int((2*zmax)//zstep + 1)) + 1.    
 
     if len(sl1deg) < len(sl2pix):
         inverted = False

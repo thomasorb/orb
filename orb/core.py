@@ -3030,14 +3030,14 @@ class WCSData(Data, Tools):
         if sip is not None:
             if not isinstance(sip, pywcs.WCS):
                 raise Exception('sip must be an astropy.wcs.WCS instance')
-        else:
-            if self.get_wcs().sip is None:
-                sip = self.load_sip(self._get_sip_file_path(self.params.camera))
-                logging.debug('SIP Loaded from{}\n{}'.format(
-                    self._get_sip_file_path(self.params.camera), sip))
-            else:
-                sip = self.get_wcs()
-                logging.debug('SIP already defined\n{}'.format(sip))
+        # else:
+        #     if self.get_wcs().sip is None:
+        #         sip = self.load_sip(self._get_sip_file_path(self.params.camera))
+        #         logging.debug('SIP Loaded from{}\n{}'.format(
+        #             self._get_sip_file_path(self.params.camera), sip))
+        #     else:
+        #         sip = self.get_wcs()
+        #         logging.debug('SIP already defined\n{}'.format(sip))
 
         # reset wcs
         wcs = orb.utils.astrometry.create_wcs(
