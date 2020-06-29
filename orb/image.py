@@ -57,6 +57,8 @@ import orb.utils.misc
 import orb.utils.io
 
 import pylab as pl
+import matplotlib.cm
+import matplotlib.colors
 
 import copy
 
@@ -126,7 +128,8 @@ class Frame2D(orb.core.WCSData):
         newim.set_wcs(cutout.wcs)
         return newim
 
-    def imshow(self, figsize=(15,15), perc=99, cmap=None, wcs=True, alpha=1):
+    def imshow(self, figsize=(15,15), perc=99, cmap='viridis', wcs=True, alpha=1, ncolors=None,
+               vmin=None, vmax=None):
         try:
             iter(perc)
         except Exception:
@@ -137,13 +140,22 @@ class Frame2D(orb.core.WCSData):
             if len(list(perc)) != 2:
                 raise Exception('perc should be a tuple of len 2 or a single float')
 
+        if vmin is None: vmin = np.nanpercentile(self.data, perc[0])
+        if vmax is None: vmax = np.nanpercentile(self.data, perc[1])
+        
+        if ncolors is not None:
+            cmap = getattr(matplotlib.cm, cmap)
+            norm = matplotlib.colors.BoundaryNorm(np.linspace(vmin, vmax, ncolors),
+                                                  cmap.N, clip=True)
+        else:
+            norm = None
             
-        vmin, vmax = np.nanpercentile(self.data, perc)
-        #ratio = self.dimy / float(self.dimx)
         fig = pl.figure(figsize=figsize)
         if wcs:
             ax = fig.add_subplot(111, projection=self.get_wcs())
-        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left', alpha=alpha)
+            ax.coords[0].set_major_formatter('d.dd')
+            ax.coords[1].set_major_formatter('d.dd')
+        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left', alpha=alpha,norm=norm)
         
 
 #################################################
