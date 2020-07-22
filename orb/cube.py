@@ -2299,7 +2299,15 @@ class SpectralCube(Cube):
         if not median:
             spectrum = np.nansum(spectra, axis=0)
         else:
-            spectrum = np.nanmedian(spectra, axis=0)
+            # if spectra are complex, the median of the imaginary part
+            # and the median of the real part must be computed
+            # independanlty due to a bug in
+            # numpy. https://github.com/numpy/numpy/issues/12943
+            if np.iscomplexobj(spectra):
+                spectrum = np.nanmedian(spectra.real, axis=0).astype(spectra.dtype)
+                spectrum.imag = np.nanmedian(spectra.imag, axis=0)
+            else:    
+                spectrum = np.nanmedian(spectra, axis=0)
             spectrum *= len(spectra)
 
         # calculate number of integrated pixels

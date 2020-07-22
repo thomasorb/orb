@@ -2545,13 +2545,14 @@ class Vector1d(Data):
         return np.sum(self.data)
 
 
-    def plot(self):
+    def plot(self, plot_imag=True):
         """Plot vector"""
-        if not np.all(np.iscomplex(self.data)):
+        if not np.any(np.iscomplex(self.data)):
             pl.plot(self.axis.data, self.data)
         else:
             pl.plot(self.axis.data, self.data.real, label='real part')
-            pl.plot(self.axis.data, self.data.imag, label='imaginary part')
+            if plot_imag:
+                pl.plot(self.axis.data, self.data.imag, label='imaginary part')
 
 #################################################
 #### CLASS Axis #################################

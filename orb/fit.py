@@ -3014,6 +3014,99 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
     return []
 
 
+def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
+                               zpd_index, vel=0, sigma=0, alpha=0, fmodel='sinc'):
+    """Return a simple emission-line spectrum model in cm-1 from raw
+    parameters. For more physical parameters use
+    create_cm1_lines_model().
+
+    :param lines_cm1: lines in cm-1
+    
+    :param amp: Amplitude (must have the same size as lines)
+    
+    :param step: Step size
+
+    :param order: Folding order
+
+    :param step_nb: Total numer of steps
+
+    :param corr: calibration coeff.
+
+    :param zpd_index: ZPD index.
+    
+    :param vel: (Optional) Global velocity shift applied to all the
+      lines (in km/s, default 0.)
+    
+    :param sigma: (Optional) Line broadening (in km/s, default 0.)
+
+    :param alpha: (Optional) Phase coefficient of the lines (default
+      0.)
+
+    :param fmodel: (Optional) Lines model. Can be 'gaussian', 'sinc',
+      'sincgauss', 'sincphased', 'sincgaussphased' (default sincgauss).
+
+    """
+    NM_LASER = 543.5 # can be anything
+    RATIO = 0.25
+
+    fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
+        step_nb, step, order, corr, wavenumber=True)
+
+    def get_defguess(param):
+        if np.size(param) == 1:
+            return np.arange(np.size(lines_cm1)).astype(str), list([gvar.mean(param)]) * np.size(lines_cm1)
+        elif np.size(param) == np.size(lines_cm1):
+            return np.arange(np.size(lines_cm1)).astype(str), gvar.mean(param)
+        else: raise Exception('param size must be 1 or {} but is {}'.format(
+                np.size(lines_cm1), np.size(param)))
+        
+    pos_def, pos_cov = get_defguess(vel)
+    model_params = {
+        'step_nb':step_nb,
+        'step':step,
+        'order':order,
+        'nm_laser':NM_LASER,
+        'nm_laser_obs':NM_LASER * corr,
+        'line_nb':np.size(lines_cm1),
+        'fwhm_def':['1'] * np.size(lines_cm1),
+        'fwhm_guess':[gvar.mean(fwhm_guess)] * np.size(lines_cm1),
+        'pos_guess':gvar.mean(lines_cm1),
+        'pos_cov':pos_cov,
+        'pos_def':pos_def,
+        'fmodel':fmodel,
+        'amp_def':['free'] * np.size(lines_cm1),
+        'ratio':zpd_index / (step_nb - zpd_index)
+    }
+    
+    if fmodel in ['sincgauss', 'sincgaussphased']:
+        sigma_def, sigma_cov = get_defguess(sigma)    
+        sigma_params = {
+            'sigma_def':sigma_def,
+            'sigma_guess':np.zeros(np.size(lines_cm1)),
+            'sigma_cov':sigma_cov}
+        
+        model_params.update(sigma_params)
+
+    if fmodel in ['sincgaussphased',]:
+        alpha_params = {
+            'alpha_def':['1'] * np.size(lines_cm1),
+            'alpha_guess':[gvar.mean(alpha)] * np.size(lines_cm1),
+            'alpha_cov':[0.]}
+        
+        model_params.update(alpha_params)
+    
+        
+    lines_model = Cm1LinesModel(model_params) # never more than 0.
+
+    p_free = dict(lines_model.p_free)
+    for iline in range(np.size(lines_cm1)):
+        p_free[lines_model._get_ikey('amp', iline)] = amp[iline]
+        
+    lines_model.set_p_free(p_free)
+    spectrum = lines_model.get_model(np.arange(step_nb))
+    
+    return gvar.mean(spectrum)
+
 
 def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
                            theta, vel=0., sigma=0., alpha=0.,
@@ -3031,8 +3124,6 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     :param resolution: Resolution of the spectrum
 
     :param theta: Incident angle
-
-    :param step_nb: Number of steps of the spectrum.
     
     :param vel: (Optional) Global velocity shift applied to all the
       lines (in km/s, default 0.)
@@ -3053,56 +3144,13 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     nm_laser_obs = nm_laser / np.cos(np.deg2rad(theta))
     
     step_nb = orb.utils.spectrum.compute_step_nb(resolution, step, order)
-    fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
-        step_nb, step, order, nm_laser_obs / nm_laser, wavenumber=True)
-
+    
     total_step_nb = step_nb * (1. + ratio)
+    zpd_index = total_step_nb - step_nb
     
-    model_params = {
-        'step_nb':total_step_nb,
-        'step':step,
-        'order':order,
-        'nm_laser':nm_laser,
-        'nm_laser_obs':nm_laser_obs,
-        'line_nb':np.size(lines_cm1),
-        'fwhm_def':['1'] * np.size(lines_cm1),
-        'fwhm_guess':[gvar.mean(fwhm_guess)] * np.size(lines_cm1),
-        'pos_guess':gvar.mean(lines_cm1),
-        'pos_cov':[gvar.mean(vel)],
-        'pos_def':['1'] * np.size(lines_cm1),
-        'fmodel':fmodel,
-        'amp_def':['free'] * np.size(lines_cm1),
-        'ratio':ratio
-    }
-    
-    if fmodel in ['sincgauss', 'sincgaussphased']:
-        sigma_params = {
-            'sigma_def':['1'] * np.size(lines_cm1),
-            'sigma_guess':[gvar.mean(sigma)] * np.size(lines_cm1),
-            'sigma_cov':[0.]}
-        
-        model_params.update(sigma_params)
-
-    if fmodel in ['sincgaussphased',]:
-        alpha_params = {
-            'alpha_def':['1'] * np.size(lines_cm1),
-            'alpha_guess':[gvar.mean(alpha)] * np.size(lines_cm1),
-            'alpha_cov':[0.]}
-        
-        model_params.update(alpha_params)
-    
-        
-    lines_model = Cm1LinesModel(model_params) # never more than 0.
-
-    p_free = dict(lines_model.p_free)
-    for iline in range(np.size(lines_cm1)):
-        p_free[lines_model._get_ikey('amp', iline)] = amp[iline]
-        
-    lines_model.set_p_free(p_free)
-    spectrum = lines_model.get_model(np.arange(total_step_nb))
-    
-    #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
-    return gvar.mean(spectrum)
+    return create_cm1_lines_model_raw(
+        lines_cm1, amp, step, order, total_step_nb, orb.utils.spectrum.theta2corr(theta),
+        zpd_index, vel=vel, sigma=sigma, alpha=alpha, fmodel='sinc')
 
 def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
                        sigma=0., alpha=0., fmodel='sincgauss'):

@@ -34,6 +34,21 @@ import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 import orb.utils.io
 
+import fnmatch
+
+def find(pattern, path):
+    """Find a file from a pattern at a given path
+    https://stackoverflow.com/questions/1724693/find-a-file-in-python
+    """
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    return result
+
+find('*.txt', '/path/to/dir')
+
 def aggregate_pixels(pixel_list, radius=1.42):
     """Aggregate neighbouring pixels into a set of sources. Two
     neighbours are found if there distance is smaller than a given
