@@ -173,9 +173,9 @@ class RawSimulator(object):
 class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
 
 
-    needed_params = ('instrument', 'filter_name', 'exposure_time', 'step_nb', 'airmass')
+    #needed_params = ('instrument', 'filter_name', 'exposure_time', 'step_nb', 'airmass')
     
-    def __init__(self, spectrum, axis, params, data_prefix="./", **kwargs):
+    def __init__(self, spectrum, axis, data_prefix="./", **kwargs):
 
         
         orb.core.Tools.__init__(self, instrument=params['instrument'],
@@ -190,6 +190,8 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         self.params['nm_laser'] = self.config.CALIB_NM_LASER
         self.params['apodization'] = 1.
         self.params['wavenumber'] = True
+
+    def add_line(self)
 
     def get_interferogram(self, camera=0, theta=None, binning=1, me_factor=1.):
 
