@@ -27,6 +27,7 @@ import warnings
 import orb.utils.validate
 import orb.utils.filters
 import orb.utils.sim
+import orb.utils.photometry
 import orb.utils.spectrum
 import orb.core
 import orb.fft
@@ -34,6 +35,109 @@ import orb.constants
 import scipy.interpolate
 import scipy.stats
 
+import pandas as pd
+
+class SkyModel(object):
+    """Very basic sky model which generate a spectrum of the sky.
+    
+    It includes continuum brightness, sky lines and moon brightness.
+
+    most data comes from https://www.gemini.edu/observing/telescopes-and-sites/sites
+    """
+    
+    def __init__(self, airmass=1, instrument='sitelle'):
+
+        self.airmass = float(airmass)
+
+        # www.cfht.hawaii.edu/Instruments/ObservatoryManual/CFHT_ObservatoryManual_(Sec_2).html
+        # self.sky_brightness = pd.DataFrame(
+        #     {'band': ['U', 'B', 'V', 'R', 'I', 'J', 'H', 'K'],
+        #      'nm': [365, 445, 551, 658, 806, 1220, 1630, 2190], # nm
+        #      'mag': [21.6, 22.3, 21.1, 20.3, 19.2, 14.8, 13.4, 12.6]}) # mag/arsec^2
+        
+        # self.sky_brightness['flam'] = orb.utils.photometry.ABmag2flambda(
+        #     self.sky_brightness.mag, self.sky_brightness.nm*10.) # erg/cm2/s/A/arcsec^2
+
+        self.skybg = dict()
+        self.tools = orb.core.Tools(instrument=instrument)
+        filepath = self.tools._get_orb_data_file_path('skybg_50_10.dat')
+        with open(filepath) as f:
+            for line in f:
+                if '#' in line: continue
+                if len(self.skybg) == 0:
+                    keys = line.strip().split()
+                    [self.skybg.__setitem__(ikey, list()) for ikey in keys]
+                    continue
+                vals = line.strip().split()
+                if float(vals[1]) == 0: continue
+                for ikey, ival in zip(keys, vals):
+                    self.skybg[ikey].append(float(ival))
+
+        self.skybg = pd.DataFrame(self.skybg)
+        self.skybg['flam'] = self.skybg['phot/s/nm/arcsec^2/m^2'].values
+        self.skybg['flam'] *= orb.utils.photometry.compute_photon_energy(self.skybg.nm.values) # erg/s/nm/arcsec2/m2
+        self.skybg['flam'] /= 10 # erg/s/m2/A/arcsec2
+        self.skybg['flam'] /= 1e4 # erg/s/cm2/A/arcsec2
+
+        y = self.skybg['flam'].values
+        x = self.skybg.nm.values
+        BIN = 31
+        diffuse = np.array([((x[min(i+BIN, x.size-1)]+x[i])/2, np.min(y[i:i+BIN]))
+                            for i in range(0, x.size, BIN)]).T
+        self.diffusef = scipy.interpolate.UnivariateSpline(diffuse[0], diffuse[1], k=2, s=np.mean(diffuse[1])**2 * 0.05)
+        self.skybg['diffuse'] = self.diffusef(x)
+
+        BIN = 200
+        #lines = np.array([((x[min(i+BIN, x.size-1)]+x[i])/2, np.mean(y[i:i+BIN]) - np.min(y[i:i+BIN]))
+        #                       for i in range(0, x.size, BIN)]).T
+        #self.linesf = scipy.interpolate.UnivariateSpline(lines[0], lines[1], k=2, s=0)
+        self.linesf = scipy.interpolate.UnivariateSpline(x, y - self.diffusef(x), k=2, s=0)
+        
+        atm_ext_cm1 = orb.core.Vector1d(
+            self.tools._get_atmospheric_extinction_file_path(), instrument=instrument)
+        
+        atm_ext_cm1.data = orb.utils.photometry.ext2trans(
+            atm_ext_cm1.data, self.airmass)
+        
+        self.atm_transf = scipy.interpolate.UnivariateSpline(
+            1e7/atm_ext_cm1.axis.data[::-1], atm_ext_cm1.data[::-1], k=3, s=0, ext=3)
+
+    def get_spectrum(self, cm1_axis):
+
+        assert np.all(np.isclose(np.diff(cm1_axis), np.diff(cm1_axis)[0]), 0), 'cm1_axis must be evenly spaced'
+        sky_spectrum = np.zeros_like(cm1_axis)
+        sky_lines = orb.core.Lines().air_sky_lines_nm
+        axis_step = cm1_axis[1] - cm1_axis[0]
+        fwhm = axis_step*4
+        
+        for iline in sky_lines:
+    
+            iline_cm1 = 1e7/sky_lines[iline][0]
+            iline_amp = sky_lines[iline][1]
+            if ((iline_cm1 > cm1_axis[0])
+                and(iline_cm1 < cm1_axis[-1])):
+                iiline = orb.utils.spectrum.gaussian1d(
+                    cm1_axis, 0, iline_amp, iline_cm1, fwhm)
+                sky_spectrum += iiline
+            
+        # lines are scaled to the brightness of the reference lines        
+        SMOOTH = 2
+        sky_spectrum /= orb.utils.vector.smooth(sky_spectrum, deg=sky_spectrum.size/SMOOTH)
+        sky_spectrum *= orb.utils.vector.smooth(self.linesf(1e7/cm1_axis), deg=sky_spectrum.size/SMOOTH)
+                
+        # adding diffuse brightness
+        sky_spectrum += self.diffusef(1e7/cm1_axis)
+
+        # convert to erg/cm2/s/A
+        pixel_surf = (self.tools.config.FIELD_OF_VIEW_1 * 60
+                      / self.tools.config.CAM1_DETECTOR_SIZE_X)**2
+        sky_spectrum *= pixel_surf
+
+        
+        return orb.core.Vector1d(sky_spectrum, axis=cm1_axis)
+    
+        
+        
 class RawSimulator(object):
 
     def __init__(self, step_nb, params, instrument='sitelle'):
@@ -173,51 +277,117 @@ class RawSimulator(object):
 class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
 
 
-    #needed_params = ('instrument', 'filter_name', 'exposure_time', 'step_nb', 'airmass')
     
-    def __init__(self, spectrum, axis, data_prefix="./", **kwargs):
+    def __init__(self, spectrum, axis, instrument='sitelle', data_prefix="./", **kwargs):
+        """Init
+
+        :param spectrum: Spectrum of the source, may be vector of
+          zeros.  Must have the same size as axis. Must be calibrated
+          in erg/cm2/s/A.
+
+        :param axis: Axis in cm-1. Resolution must be much higher than
+          the simulated spectrum (e.g. np.linspace(10000, 25000,
+          30000))
+
+        """
+        orb.core.Tools.__init__(
+            self, instrument=instrument,
+            data_prefix=data_prefix,
+            config=None)
+        
+        orb.core.Vector1d.__init__(
+            self, spectrum, axis=axis,
+            params={'instrument':instrument}, **kwargs)
 
         
-        orb.core.Tools.__init__(self, instrument=params['instrument'],
-                       data_prefix=data_prefix,
-                       config=None)
+    def add_line(self, wave, flux, vel=None, sigma=None):
+        """add a line to the spectrum
+
+        :param wave: Name of the line or its wavenumber in cm-1 (can be a tuple)
+
+        :param vel: Velocity in km/s
+
+        :param flux: Flux in erg/cm2/s
+
+        :param sigma: Broadening in km/s
+        """
+        if np.size(wave) == 1:
+            wave = [wave,]
+        wave = np.array(wave)
+        if not np.issubdtype(wave.dtype, np.number):
+            wave = orb.core.Lines().get_line_cm1(wave)
+
+        flux = np.array(flux)
+        assert flux.size == wave.size, 'flux must have same size as wave'
+            
+        if vel is not None:
+            vel = np.array(vel)
+            assert vel.size == wave.size, 'vel must have same size as wave'
+            wave += orb.utils.spectrum.line_shift(
+                vel, wave, wavenumber=True)
+            
+        if sigma is not None:
+            sigma = np.array(sigma)
+            assert sigma.size == wave.size, 'sigma must have same size as wave'
+        else:
+            sigma = np.zeros_like(wave)
+
+        axis_step = self.axis.data[1] - self.axis.data[0]
+        for iwave, isigma, iflux in zip(wave, sigma, flux):
+            isigma = orb.utils.fit.vel2sigma(isigma, iwave, axis_step) * axis_step
+            isigma = max(4 * axis_step, isigma)
+            iline = orb.utils.spectrum.gaussian1d(
+                self.axis.data, 0, 1, iwave, isigma * orb.constants.FWHM_COEFF)
+            iline /= orb.utils.spectrum.gaussian1d_flux(1, isigma) # flux is normalized to 1 
+            iline *= iflux
+            self.data += iline
+            
+
+    def add_spectrum(self, spectrum):
+        """Spectrum
+
+        :param spectrum: spectrum vector, must be in erg/cm2/s/A
+        """
+        spectrum = np.array(spectrum)
+        assert spectrum.size == self.axis.data.size, 'spectrum must have same size has the axis provided at init'
+        self.data += spectrum
+
+    def get_interferogram(self, params, camera=0, theta=None, binning=1, me_factor=1.):
+
+        needed_params = ('instrument', 'filter_name', 'exposure_time', 'step_nb', 'airmass')
+        for ipar in needed_params:
+            if ipar not in params:
+                raise Exception('parameter {} needed'.format(ipar))
+
+
+        ff = orb.core.FilterFile(params['filter_name'])
+        params.update(ff.params)
+        params['zpd_index'] = int(0.25 * params['step_nb'])
+        params['nm_laser'] = self.config.CALIB_NM_LASER
+        params['apodization'] = 1.
+        params['wavenumber'] = True
         
-        orb.core.Vector1d.__init__(self, spectrum, axis=axis, params=params, **kwargs)
-
-        ff = orb.core.FilterFile(self.params['filter_name'])
-        self.params.update(ff.params)
-        self.params['zpd_index'] = int(0.25 * self.params['step_nb'])
-        self.params['nm_laser'] = self.config.CALIB_NM_LASER
-        self.params['apodization'] = 1.
-        self.params['wavenumber'] = True
-
-    def add_line(self)
-
-    def get_interferogram(self, camera=0, theta=None, binning=1, me_factor=1.):
-
         if theta is None:
             theta = self.config.OFF_AXIS_ANGLE_CENTER
 
         corr = orb.utils.spectrum.theta2corr(theta)
-        self.params['calib_coeff_orig'] = corr
+        params['calib_coeff_orig'] = corr
         
         
-        regular_cm1_axis = np.linspace(1e7/self.axis.data[-1], 1e7/self.axis.data[0], self.dimx*2)
-        
-        spectrum = scipy.interpolate.interp1d(self.axis.data,
-                                              self.data.astype(np.float128),
-                                              bounds_error=False)(1e7/regular_cm1_axis)
-        
-
-        spectrum = orb.fft.Spectrum(spectrum, axis=regular_cm1_axis, params=self.params)
+        #regular_cm1_axis = np.linspace(1e7/self.axis.data[-1], 1e7/self.axis.data[0], self.dimx*2)
+        #spectrum = scipy.interpolate.interp1d(self.axis.data,
+        #                                      self.data.astype(np.float128),
+        #                                      bounds_error=False)(1e7/regular_cm1_axis)
+        #spectrum = orb.fft.Spectrum(spectrum, axis=regular_cm1_axis, params=params)
+        spectrum = orb.fft.Spectrum(self.data, axis=self.axis, params=params)
         
         
-        photom = orb.photometry.Photometry(self.params.filter_name,
-                                           camera, instrument=self.params.instrument,
-                                           airmass=self.params.airmass)        
+        photom = orb.photometry.Photometry(params.filter_name,
+                                           camera, instrument=params.instrument,
+                                           airmass=params.airmass)        
         
         cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
-            self.params.step_nb, self.params.step, self.params.order, corr=corr))
+            params.step_nb, params.step, params.order, corr=corr))
 
         
         #spectrum = spectrum.project(cm1_axis)
@@ -237,7 +407,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         spectrum = photom.flux2counts(spectrum, modulated=True)
         spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
         
-        spectrum.data *= self.params.step_nb * self.params.exposure_time * binning**2.
+        spectrum.data *= params.step_nb * params.exposure_time * binning**2.
         
         spectrum = orb.fft.Spectrum(spectrum)
         

@@ -105,7 +105,7 @@ def compute_mean_star_flux(star_spectrum, filter_transmission):
 
 def compute_mean_photon_energy(nm_axis, filter_transmission):
     """Return mean energy of the photons passing thourgh a given
-    filter.
+    filter (in erg).
     
     :param nm_axis: Filter transmission axis in nm.
     :param filter_transmission: Filter transmission curve
@@ -115,7 +115,7 @@ def compute_mean_photon_energy(nm_axis, filter_transmission):
             / np.sum(filter_transmission))
 
 def compute_photon_energy(nm_axis):
-    """Return the photon energy computed for all the wavelength along
+    """Return the photon energy (in erg) computed for all the wavelength along
     a given wavelength axis.
 
     :param nm_axis: Wavelength axis in nm
