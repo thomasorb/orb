@@ -372,49 +372,48 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
 
         corr = orb.utils.spectrum.theta2corr(theta)
         params['calib_coeff_orig'] = corr
-        
-        
-        #regular_cm1_axis = np.linspace(1e7/self.axis.data[-1], 1e7/self.axis.data[0], self.dimx*2)
-        #spectrum = scipy.interpolate.interp1d(self.axis.data,
-        #                                      self.data.astype(np.float128),
-        #                                      bounds_error=False)(1e7/regular_cm1_axis)
-        #spectrum = orb.fft.Spectrum(spectrum, axis=regular_cm1_axis, params=params)
+        params['calib_coeff'] = corr
+
         spectrum = orb.fft.Spectrum(self.data, axis=self.axis, params=params)
-        
         
         photom = orb.photometry.Photometry(params.filter_name,
                                            camera, instrument=params.instrument,
-                                           airmass=params.airmass)        
-        
-        cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
-            params.step_nb, params.step, params.order, corr=corr))
+                                           airmass=params.airmass)
 
-        
-        #spectrum = spectrum.project(cm1_axis)
-        # flux conservative projection
-        delta = np.diff(cm1_axis.data)[0]
-        bins = (np.arange(cm1_axis.dimx + 1) - 0.5) * delta + cm1_axis.data[0]
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            spectrum.data = scipy.stats.binned_statistic(
-                spectrum.axis.data.astype(float),
-                spectrum.data.astype(float),
-                bins=bins, statistic='mean')[0].astype(complex)
-            
-        spectrum.axis = cm1_axis
-
-        spectrum = photom.flux2counts(spectrum, modulated=True)
-        spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
-        
+        # spectrum.data is in erg/cm2/s/A
+        # it should be transformed to counts
+        spectrum = orb.fft.Spectrum(photom.flux2counts(spectrum, modulated=True))
         spectrum.data *= params.step_nb * params.exposure_time * binning**2.
-        
-        spectrum = orb.fft.Spectrum(spectrum)
-        
-        spectrum.data = spectrum.data.real
-        spectrum.params['calib_coeff'] = corr
-        interf = spectrum.inverse_transform()
+        spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
 
+        # compute total flux of input spectrum
+        # axis_steps = (1e7/spectrum.axis.data[:-1] - 1e7/spectrum.axis.data[1:]) * 10
+        # axis_steps = np.concatenate((axis_steps, [axis_steps[-1],]))
+        # print(np.sum(spectrum.data * axis_steps) )
+
+        # decalibrate spectrum
+        decal_cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
+            self.dimx, params.step, params.order, corr=corr))
+
+        spectrum = spectrum.project(decal_cm1_axis)
+        spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
+                
+        # spectrum is flipped if order is even
+        if int(params.order)&1:
+            spectrum.reverse()
+
+        a = np.concatenate((spectrum.data, np.zeros(spectrum.dimx)))    
+        a_ifft = scipy.fft.ifft(a)
+        a_interf = np.concatenate(
+            (a_ifft[-params.zpd_index:], 
+             a_ifft[:params.step_nb - params.zpd_index]))
+
+        # compensate energy lost in the imaginary part !
+        a_interf = a_interf.real.astype(float) * 2.
+        
+            
+        interf = orb.fft.Interferogram(a_interf, params=params)
+                
         unmod_spectrum = spectrum.math('divide', photom.get_modulation_efficiency())
         unmod_spectrum.data[np.nonzero(np.isnan(unmod_spectrum.data))] = 0.
         

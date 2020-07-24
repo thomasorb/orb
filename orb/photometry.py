@@ -41,7 +41,6 @@ class Photometry(object):
     transmission_terms = ['atmosphere', 'mirror', 'optics', 'filter', 'telescope']
     cameras = [0,1,2]
     def __init__(self, filter_name, camera_index, instrument='sitelle', airmass=1):
-        
         self.tools = orb.core.Tools(instrument=instrument)
         self.filter_name = filter_name
         if not camera_index in self.cameras:
