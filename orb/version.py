@@ -5,7 +5,7 @@ __version__ = 'unknown'
 
 try: import git
 except ImportError:
-    logging.debug('git import error')
+    logging.debug('git import error: pip install gitpython')
 else:
     # get git branch (if possible)
     repo_path = os.path.abspath(os.path.dirname(__file__) + os.sep + '..')
