@@ -273,6 +273,16 @@ class Logger(object):
             formatter = logging.Formatter(
                 self.get_logformat(),
                 self.get_logdateformat())
+
+            # print warning traceback
+            _formatwarning = warnings.formatwarning
+            def formatwarning_tb(*args, **kwargs):
+                s = _formatwarning(*args, **kwargs)
+                tb = traceback.format_stack()
+                s += ''.join(tb[:-1])
+                return s
+            warnings.formatwarning = formatwarning_tb
+        
         else:
             formatter = logging.Formatter(
                 self.get_simplelogformat(),
@@ -282,7 +292,7 @@ class Logger(object):
         self.root.addHandler(ch)
 
         logging.captureWarnings(True)
-
+        
         sys.excepthook = excepthook_with_log
 
     def getLogger(self):
@@ -2555,9 +2565,7 @@ class Vector1d(Data):
         :param kwargs: All keyword arguments accepted by
           matplotlib.plot()
         """
-        if not np.any(np.iscomplex(self.data)):
-            pl.plot(self.axis.data, self.data, **kwargs)
-        else:
+        if np.any(np.iscomplex(self.data)):
             if plot_real == True or plot_real == 'both':
                 if 'label' not in kwargs:
                     kwargs['label'] = 'real part'
@@ -2567,6 +2575,8 @@ class Vector1d(Data):
                 if 'label' not in kwargs:
                     kwargs['label'] = 'imaginary part'
                 pl.plot(self.axis.data, self.data.imag, **kwargs)
+        else:
+            pl.plot(self.axis.data, self.data.real, **kwargs)
 
 #################################################
 #### CLASS Axis #################################

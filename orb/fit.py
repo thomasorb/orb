@@ -613,7 +613,7 @@ class FitVector(object):
             
             
             returned_data['chi2'] = fit.chi2
-            returned_data['residual'] = residual
+            returned_data['residual'] = residual * self.normalization_coeff
             # kolmogorov smirnov test: if p_value < 0.05 residual is not normal
             returned_data['ks_pvalue'] = scipy.stats.kstest(
                 residual / np.std(orb.utils.stats.sigmacut(residual)), 'norm')[1]
@@ -627,6 +627,7 @@ class FitVector(object):
 
             returned_data['logGBF'] = fit.logGBF
             returned_data['fit_time'] = time.time() - start_time
+            returned_data['signal_range'] = self.signal_range
             
         else:
             logging.debug('bad fit')
@@ -2474,7 +2475,6 @@ class Cm1InputParams(InputParams):
 
 class OutputParams(Params):
 
-
     def translate(self, inputparams, fitvector):
         if isinstance(inputparams, InputParams):
             inputparams = inputparams.convert()
@@ -2648,6 +2648,7 @@ class OutputParams(Params):
         self['lines_params_gvar'] = line_params
         self['lines_params'] = gvar.mean(line_params)
         self['lines_params_err'] = np.abs(gvar.sdev(line_params))
+        self.update(all_inputparams)
 
         return self
 
@@ -2661,6 +2662,62 @@ class OutputParams(Params):
         raw = orb.utils.fit.gvardict2pickdict(raw)
         return raw
 
+
+    def get_axis(self):
+        """Returns the axis of the fitted spectrum
+        """
+        return orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
+            self.step_nb, self.step, self.order, self.axis_corr_proj))
+        
+    def get_params(self):
+        """Return basic parameters of the fitted spectrum
+        """
+        params = dict()
+        keys = ('step', 'order', 'filter_name')
+        for ikey in keys:
+            params[ikey] = self[ikey]
+        return params
+    
+    def get_spectrum(self):
+        """Return fitted spectrum"""
+        spectrum = orb.core.Cm1Vector1d(
+            self.fitted_vector, axis=self.get_axis(), params=self.get_params())
+        return spectrum
+    
+    def get_residual(self):
+        """Return fit residual"""
+        res = np.zeros_like(self.get_spectrum().data)
+        res[np.min(self.signal_range):np.max(self.signal_range)] = self.residual
+        spectrum = orb.core.Cm1Vector1d(res, axis=self.get_axis(), params=self.get_params())
+        return spectrum
+    
+    def plot(self, *args, **kwargs):
+        """Plot fitted spectrum. Convenient wrapper around pyplot.plot() function""" 
+        self.get_spectrum().plot(*args, **kwargs)
+        
+    def plot_residual(self, *args, **kwargs):
+        """Plot residual. Convenient wrapper around pyplot.plot() function""" 
+        self.get_residual().plot(*args, **kwargs)
+        
+    def __repr__(self):
+        """Called by repr() and print() to display the most important results of the fit."""
+        lines_nm = 1e7/gvar.mean(self['pos_guess'])
+        lines = list()
+        for iline in lines_nm:
+            line_name = orb.core.Lines().get_line_name(iline)
+            if line_name is None:
+                line_name = str(iline)
+            lines.append(line_name)
+        info = '=== Fit results ===\n'
+        info += 'lines: {}, fmodel: {}\n'.format(lines, self['fmodel'])
+        info += 'iterations: {}, fit time: {:.2e} s\n'.format(self['iter_nb'], self['fit_time'])
+        info += 'Velocity (km/s): {} \n'.format(self['velocity_gvar'])
+        info += 'Flux: {}\n'.format(self['flux_gvar'])
+        info += 'Broadening (km/s): {}\n'.format(self['broadening_gvar'])
+        return info
+    
+    __str__ = __repr__
+    
         
 
 ################################################

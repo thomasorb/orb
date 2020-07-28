@@ -369,7 +369,7 @@ class RealInterferogram(Interferogram):
         out.params.reset('source_counts', source_counts)
             
     def subtract_sky(self, sky):
-        """Subtract sky interferogram. 
+        """Subtract sky interferogram (or any background interferogram). 
         
         The values of the parameter 'pixels' in both this
         interferogram and the sky interferogram should be set to the
@@ -886,7 +886,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         if self.has_err():
             err = np.copy(self.err)
             err[np.isnan(err)] = 0.
-            spectrum = gvar.gvar(spectrum, err)
+            spectrum = gvar.gvar(spectrum.real, err)
         try:
             warnings.simplefilter('ignore')
             _fit = orb.fit._fit_lines_in_spectrum(
@@ -1007,9 +1007,12 @@ class RealSpectrum(Spectrum):
         del _source_counts
         return me
 
+    
     def subtract_sky(self, sky):
-        """Subtract sky interferogram. 
+        """Subtract spectrum interferogram (or any background spectrum).
         
+        :param sky: A spectrum instance.
+
         The values of the parameter 'pixels' in both this
         interferogram and the sky interferogram should be set to the
         number of integrated pixels.
