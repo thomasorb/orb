@@ -567,7 +567,10 @@ class HDFCube(orb.core.WCSData):
                                # possibly uncompatible dtype
                 sum_im = np.nansum(frames, axis=2)
             else:
-                sum_im += np.nansum(frames, axis=2)
+                sum_im += np.nansum(np.reshape(
+                    frames, (frames.shape[0], frames.shape[1],
+                             int(frames.size//(frames.shape[0] * frames.shape[1])))),
+                                    axis=2)
             
         progress.end()
         return sum_im
