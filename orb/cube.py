@@ -502,10 +502,15 @@ class HDFCube(orb.core.WCSData):
     def get_deep_frame(self, recompute=False):
         """Return the deep frame of a cube (in counts, i.e. e- x gain).
 
-        :param recompute: (Optional) Force to recompute deep frame
+        :param recompute: (Optional) Force deep frame computation
           even if it is already present in the cube (default False).
+
+        ... warning:: deep frame computation should only be done on an
+          interferogram cube. Deep frame computed on a spectral cube
+          is *much* more noisy by definition.
         
         .. note:: In this process NaNs are handled correctly
+
         """
         if not recompute:
             try:
@@ -1379,8 +1384,7 @@ class RWHDFCube(HDFCube):
                 self.dimx, self.dimy))
         self.set_dataset('dxmap', dxmap, protect=False)
         self.set_dataset('dymap', dymap, protect=False)
-        
-            
+                
     def write_frame(self, index, data=None, header=None, section=None,
                     record_stats=False):
         """Write a frame. 
@@ -2488,6 +2492,15 @@ class SpectralCube(Cube):
         
     def compute_flambda(self, deg=1, std_im=None, std_sp=None):
         """Return flamba calibration function
+
+        :param deg: Degree of the polynomial used to fit the flux
+          correction vector (this is only used if std_sp is set to a
+          standard spectrum.)
+
+        :param std_im: Standard image used to correct the absolute calibration.
+
+        :param std_sp: Standard spectrum used to compute the
+          wavelength dependant flux calibration.
         """
         # compute flambda from configuration curves
         photom = orb.photometry.Photometry(self.params.filter_name, self.params.camera,
@@ -2529,6 +2542,12 @@ class SpectralCube(Cube):
                 
         return photom.compute_flambda(self.get_base_axis(), eps=eps_vector)
 
+    def set_flambda(self, flambda):
+        """Set flux calibration.
+
+        :param flambda: must be core.Cm1Vector1d instance.
+        """
+        self.set_param('flambda', flambda.project(self.get_base_axis()).data)
         
     def compute_modulation_ratio(self):
         deep_spectral = self.compute_sum_image()

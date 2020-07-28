@@ -130,6 +130,29 @@ class Frame2D(orb.core.WCSData):
 
     def imshow(self, figsize=(15,15), perc=99, cmap='viridis', wcs=True, alpha=1, ncolors=None,
                vmin=None, vmax=None):
+        """Convenient image plotting function
+
+        :param figsize: size of the figure (same as pyplot.figure's figsize keyword)
+
+        :param perc: percentile of the data distribution used to scale
+          the colorbar. Can be a tuple (min, max) or a scalar in which
+          case the min percentile will be 100-perc.
+
+        :param cmap: colormap
+
+        :param wcs: if True, display wcs coordinates. Else, pixel coordinates are shown.
+
+        :param alpha: image opacity (if another image is displayed above)
+
+        :param ncolors: if an integer is passed, the colorbar is
+          discretized to this number of colors.
+        
+        :param vmin: min value used to scale the colorbar. If set the
+          perc parameter is not used.
+
+        :param vmax: max value used to scale the colorbar. If set the
+          perc parameter is not used.
+        """
         try:
             iter(perc)
         except Exception:
