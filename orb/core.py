@@ -2545,14 +2545,28 @@ class Vector1d(Data):
         return np.sum(self.data)
 
 
-    def plot(self, plot_imag=True):
-        """Plot vector"""
+    def plot(self, plot_real=True, **kwargs):
+        """Plot vector
+
+        :param plot_real: If True, plot only the real part, if False
+          plot only the imaginary part, if both, plot the real and
+          imaginary part. Plot only the real part by default.
+
+        :param kwargs: All keyword arguments accepted by
+          matplotlib.plot()
+        """
         if not np.any(np.iscomplex(self.data)):
-            pl.plot(self.axis.data, self.data)
+            pl.plot(self.axis.data, self.data, **kwargs)
         else:
-            pl.plot(self.axis.data, self.data.real, label='real part')
-            if plot_imag:
-                pl.plot(self.axis.data, self.data.imag, label='imaginary part')
+            if plot_real == True or plot_real == 'both':
+                if 'label' not in kwargs:
+                    kwargs['label'] = 'real part'
+                pl.plot(self.axis.data, self.data.real, **kwargs)
+                
+            if plot_real == False or plot_real == 'both':
+                if 'label' not in kwargs:
+                    kwargs['label'] = 'imaginary part'
+                pl.plot(self.axis.data, self.data.imag, **kwargs)
 
 #################################################
 #### CLASS Axis #################################

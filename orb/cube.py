@@ -2286,7 +2286,7 @@ class SpectralCube(Cube):
 
         .. note:: the region must not have a size greater than 400x400
           pixels. If you really need a larger region, you can split
-          you region into smaller ones and combines the resulting
+          you region into smaller ones and combine the resulting
           spectra.
         """
         if not self.has_wavenumber_calibration():
