@@ -194,7 +194,7 @@ class Interferogram(orb.core.Vector1d):
             zeros_vector[:-sym_len] = 2.
 
         if sym_len > self.dimx / 2.:
-            warnings.warn('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
+            logging.warn('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
 
         if not inplace:
             spec = self.copy()
@@ -327,12 +327,13 @@ class RealInterferogram(Interferogram):
         if 'pixels' not in self.params:
             self.params.reset('pixels', 1)
         elif not isinstance(self.params.pixels, int):
-            raise TypeError('pixels must be an integer')
+            logging.debug('pixels converted to an integer')
+            self.params['pixels'] = int(self.params.pixels)
 
         # check source_counts
         if 'source_counts' not in self.params:
             if np.nanmin(self.data) < 0:
-                warnings.warn('interferogram may be a combined interferogram. source_counts can be wrong')
+                logging.warn('interferogram may be a combined interferogram. source_counts can be wrong')
             self.params.reset('source_counts', np.sum(np.abs(self.data)))
         elif not isinstance(self.params.source_counts, float):
             raise TypeError('source_counts must be a float')
@@ -342,7 +343,7 @@ class RealInterferogram(Interferogram):
                                # read during Vector1d init. Only
                                # self.err is tested
             if np.nanmin(self.data) < 0:
-                warnings.warn('interferogram may be a combined interferogram. photon noise can be wrong.')
+                logging.warn('interferogram may be a combined interferogram. photon noise can be wrong.')
             
             self.err = np.sqrt(np.abs(self.data))
             
@@ -735,7 +736,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             phase = orb.core.Vector1d(phase, axis=self.axis).data
             
         if phase.shape[0] != self.dimx:
-            warnings.warn('phase does not have the same size as spectrum. It will be interpolated.')
+            logging.warn('phase does not have the same size as spectrum. It will be interpolated.')
             phase = orb.utils.vector.interpolate_size(phase, self.dimx, 1)
             
         self.data *= np.exp(-1j * phase)
@@ -899,7 +900,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             warnings.simplefilter('default')
 
         except Exception as e:
-            warnings.warn('Exception occured during fit: {}'.format(e))
+            logging.warn('Exception occured during fit: {}'.format(e))
             import traceback
             print((traceback.format_exc()))
 

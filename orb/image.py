@@ -379,7 +379,7 @@ class Image(Frame2D):
                 std_name, return_pm=True)
             object_found = True
         except Exception:
-            warnings.warn('object name not found in the standard table')
+            logging.warn('object name not found in the standard table')
 
         if not object_found:
             raise Exception('object coordinates could not be resolved')
@@ -553,7 +553,7 @@ class Image(Frame2D):
         mean_fwhm_err = orb.utils.stats.unbiased_std(fwhms)
         
         if np.isnan(mean_fwhm):
-            warnings.warn('detected FWHM is nan')
+            logging.warn('detected FWHM is nan')
             return self.get_fwhm_pix(), 0
         else:
             logging.info("Detected stars FWHM : {:.2f}({:.2f}) pixels, {:.2f}({:.2f}) arc-seconds".format(mean_fwhm, mean_fwhm_err, self.pix2arc(mean_fwhm), self.pix2arc(mean_fwhm_err)))
@@ -738,7 +738,7 @@ class Image(Frame2D):
         else:
             star_list_query = np.copy(star_list_query)
             if fwhm_arc is None:
-                warnings.warn('fwhm_arc is kept to its default value: {}'.format(self.params.fwhm_arc))
+                logging.warn('fwhm_arc is kept to its default value: {}'.format(self.params.fwhm_arc))
             else:
                 self.reset_fwhm_arc(fwhm_arc)
                 
@@ -798,7 +798,7 @@ class Image(Frame2D):
                     sl_cat_deg[sl_cat_matched][:,:2],
                     self.get_wcs())
             except Exception as e:
-                warnings.warn('registration could not be fitted: {}'.format(e))
+                logging.warn('registration could not be fitted: {}'.format(e))
                 
             else:
                 # update wcs
@@ -1148,7 +1148,7 @@ class Image(Frame2D):
             
             if fit['status'] > 0:
                 if fit['cost'] > 10:
-                    warnings.warn(
+                    logging.warn(
                         'Star lists not well matched (residual {} > 10)'.format(fit['cost']))
                 return fit['x']
             
@@ -1156,7 +1156,6 @@ class Image(Frame2D):
                 raise Exception('No matching parameters found (fit status {})'.format(fit['status']))
             
         def brute_force_alignment(coeffs, xy_range, r_range):
-
             (coeffs.dx, coeffs.dy, coeffs.dr, guess_matrix) = (
                 orb.utils.astrometry.brute_force_guess(
                     image2.data.astype(np.float64), star_list1,
@@ -1164,9 +1163,9 @@ class Image(Frame2D):
                     xy_range + coeffs.dy,
                     r_range + coeffs.dr,
                     coeffs.rc, coeffs.zoom,
-                    image2.get_fwhm_pix() * 3.,
-                    init_wcs=self.get_wcs(),
-                    out_wcs=image2.get_wcs()))
+                    image2.get_fwhm_pix() * 3))
+                    #init_wcs=self.get_wcs(), 
+                    #out_wcs=image2.get_wcs()))
             coeffs.da = 0.
             coeffs.db = 0.
 
@@ -1219,6 +1218,7 @@ class Image(Frame2D):
             pcoeffs.rc = [self.dimx/2., self.dimy/2.]
             coeffs = pcoeffs
 
+        
         # check brute force ranges
         if len(xy_range) < 2:
             raise TypeError('xy_range must be an array of more than 5 values or a tuple of 2 arrays each one containing more than 5 values')
@@ -1259,8 +1259,7 @@ class Image(Frame2D):
         
         image2.reset_fwhm_arc(fwhm_arc)
         self.reset_fwhm_arc(fwhm_arc)
-        
-        
+                
         ##########################################
         ### BRUTE FORCE GUESS (only dx and dy) ###
         ##########################################
@@ -1369,7 +1368,7 @@ class Image(Frame2D):
                 raise Exception("Not enough fitted stars in both cubes (%d%%). Alignment parameters might be wrong."%int(fitted_star_nb / MIN_STAR_NB * 100.))
                 
             if (fitted_star_nb < WARNING_RATIO * MIN_STAR_NB):
-                warnings.warn("Poor ratio of fitted stars in both cubes (%d%%). Check alignment parameters."%int(fitted_star_nb / MIN_STAR_NB * 100.))
+                logging.warn("Poor ratio of fitted stars in both cubes (%d%%). Check alignment parameters."%int(fitted_star_nb / MIN_STAR_NB * 100.))
 
             
             err = fit_results['x_err'].values
@@ -1389,7 +1388,7 @@ class Image(Frame2D):
             if final_err < self.arc2pix(WARNING_DIST):
                 logging.info('Mean difference on star positions: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
             elif final_err < self.arc2pix(ERROR_DIST):
-                warnings.warn('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
+                logging.warn('Mean difference on star positions is bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
             else:
                 raise Exception('Mean difference on star positions is too bad: {} pixels = {} arcsec'.format(final_err, self.pix2arc(final_err)))
         

@@ -585,7 +585,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
                                       maxfev=100, full_output=True,
                                       xtol=fit_tol)
     except Exception as e:
-        warnings.warn('fit_star leastsq exception: {}'.format(e))
+        logging.warn('fit_star leastsq exception: {}'.format(e))
         return []
     
     if fit_params[-1] <= 4:
@@ -815,7 +815,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
     
     if np.nansum(aperture_surface) < MIN_APER_SIZE:
         if warn:
-            warnings.warn('Not enough pixels in the aperture')
+            logging.warn('Not enough pixels in the aperture')
         return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
     
     # Estimation of the background
@@ -864,7 +864,7 @@ def aperture_photometry(star_box, fwhm_guess, background_guess=None,
                               / math.sqrt(np.size(background_pixels)))
             
             if warn:
-                warnings.warn('Estimation of the background might be bad')
+                logging.warn('Estimation of the background might be bad')
                 bad = 1
     else:
         background = background_guess
@@ -1028,7 +1028,7 @@ def sky_background_level(im, smooth_coeff=0.1, return_mode=False, bins=25,
     hist, bin_edges = np.histogram(sig_im, bins=bins)
     
     if np.size(hist) == 0.:
-        warnings.warn(
+        logging.warn(
             'Bad sky histogram: returning median of the distribution')
         return np.median(im)
     if smooth_coeff > 0.:
@@ -1057,7 +1057,7 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
 
     :param yr: Number of years
     """
-    warnings.warn('this conversion is naive and might be wrong, or at least unprecise. astropy.coordinates.SkyCoord.apply_space_motion should be used instead. A version adapted for python 2 is written in orb.image.Image.get_stars_from_catalog.')
+    logging.warn('this conversion is naive and might be wrong, or at least unprecise. astropy.coordinates.SkyCoord.apply_space_motion should be used instead. A version adapted for python 2 is written in orb.image.Image.get_stars_from_catalog.')
     
     ra = ra_deg + (pm_ra_mas * yr) * 1e-3 / 3600.
     dec = dec_deg + (pm_dec_mas * yr) * 1e-3 / 3600.
@@ -1423,7 +1423,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
     
     if frame_median < 0.:
         frame -= frame_median
-        warnings.warn('frame median is < 0 ({}), a value of {} has been subtracted to have a median at 0.'.format(frame_median, frame_median))
+        logging.warn('frame median is < 0 ({}), a value of {} has been subtracted to have a median at 0.'.format(frame_median, frame_median))
     
     ## Frame background determination if wanted
     background = None

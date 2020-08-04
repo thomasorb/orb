@@ -25,6 +25,7 @@
 import numpy as np
 import warnings
 import orb.utils.err
+import logging
 
 def is_ndarray(obj, raise_exception=True, object_name='object'):
     """Check if object is a numpy.ndarray
@@ -36,7 +37,7 @@ def is_ndarray(obj, raise_exception=True, object_name='object'):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg)
         else:
-            warnings.warn(err_msg)
+            logging.warn(err_msg)
             return False
     return True
 
@@ -55,7 +56,7 @@ def has_dtype(obj, dtype, raise_exception=True, object_name='object'):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg(obj.dtype))
         else:
-            warnings.warn(err_msg(obj.dtype))
+            logging.warn(err_msg(obj.dtype))
             return False
     return True
 
@@ -80,7 +81,7 @@ def is_xdarray(obj, ndim, raise_exception=True, object_name='object'):
     if raise_exception:
         raise orb.utils.err.ValidationError(err_msg)
     else:
-        warnings.warn(err_msg)
+        logging.warn(err_msg)
         return False
     
 def is_1darray(obj, raise_exception=True, object_name='object'):
@@ -121,7 +122,7 @@ def have_same_shape(objs, raise_exception=True, object_name='arrays'):
                         if raise_exception:
                             raise orb.utils.err.ValidationError(err_msg)
                         else:
-                            warnings.warn(err_msg)
+                            logging.warn(err_msg)
                             return False
             else: break
     else:
@@ -164,7 +165,7 @@ def is_iterable(obj, raise_exception=True, object_name='object'):
         if not is_1darray(obj, raise_exception=False, object_name=object_name):            
             if raise_exception: raise orb.utils.err.ValidationError(err_msg)
             else:
-                warnings.warn(err_msg)
+                logging.warn(err_msg)
                 return False
     return True
 
@@ -192,6 +193,6 @@ def has_len(obj, length, raise_exception=True, object_name='object'):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg)
         else:
-            warnings.warn(err_msg)
+            logging.warn(err_msg)
             return False
     return True

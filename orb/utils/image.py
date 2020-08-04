@@ -193,7 +193,7 @@ def check_frames(frames, sigma_reject=2.5):
                          + sigma_reject * orb.utils.stats.robust_std(
                                   z_median_cut)))
     if np.any(bad_frames):
-        warnings.warn('Some frames (%d) appear to be much different from the others. They have been removed before being combined. Please check the frames.'%np.sum(bad_frames))
+        logging.warn('Some frames (%d) appear to be much different from the others. They have been removed before being combined. Please check the frames.'%np.sum(bad_frames))
         logging.info('Median levels: %s'%str(z_median))
         logging.info('Rejected: %s'%str(bad_frames))
         frames = np.dstack([frames[:,:,iframe]
@@ -259,15 +259,15 @@ def create_master_frame(frames, combine='average', reject='avsigclip',
     frames = np.array(frames)
 
     if len(frames.shape) == 2: # only one image
-        if not silent: warnings.warn("Only one image to create a master frame. No combining method can be used.")
+        if not silent: logging.warn("Only one image to create a master frame. No combining method can be used.")
         return frames
 
     if frames.shape[2] < 3:
         if frames.shape[2] == 1:
-            warnings.warn("Only one image to create a master frame. No combining method can be used.")
+            logging.warn("Only one image to create a master frame. No combining method can be used.")
             return np.squeeze(frames)
         
-        if not silent: warnings.warn("Not enough frames to use a rejection method (%d < 3)"%frames.shape[2])
+        if not silent: logging.warn("Not enough frames to use a rejection method (%d < 3)"%frames.shape[2])
 
         if combine == 'average':
             return np.nanmean(frames, axis=2)

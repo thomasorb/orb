@@ -114,7 +114,7 @@ class HDFCube(orb.core.WCSData):
         if isinstance(self.cube_path, str):
             with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if 'level2' not in f.attrs:
-                    warnings.warn('old cube architecture. IO performances could be reduced.')
+                    logging.warn('old cube architecture. IO performances could be reduced.')
                     self.is_old = True
                     self.oldcube = orb.old.HDFCube(self.cube_path, silent_init=True)
                     self.data = MockArray()
@@ -181,7 +181,7 @@ class HDFCube(orb.core.WCSData):
         """Implement getitem special method"""
         if self.is_old:
             if self.has_dataset('mask'):
-                warnings.warn('mask is not handled for old cubes format')
+                logging.warn('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
         with self.open_hdf5() as f:
@@ -810,7 +810,48 @@ class HDFCube(orb.core.WCSData):
         """Return the axis at x, y"""
         return None
 
-    def get_zvector(self, x, y, r=0, return_region=False):
+    def get_zvector_from_region(self, region, median=False):
+        """Return an orb.fft.Vector1d instance integrated over a given region
+
+        :param region: A ds9-like region file or a list of pixels
+          having the same format as the list returned by np.nonzero(),
+          i.e. (x_positions_1d_array, y_positions_1d_array).
+
+
+        :param median: If True, a median is used instead of a mean to
+          combine vectors. As the resulting vector is integrated,
+          the median value of the combined spectra is then scaled to
+          the number of integrated pixels.
+
+        """
+        if isinstance(region, str):
+            region = self.get_region(region)
+        
+        calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
+        
+        vectors = self.get_data_from_region(region)
+        if not median:
+            vector = np.nansum(vectors, axis=0)
+        else:
+            # if vectors are complex, the median of the imaginary part
+            # and the median of the real part must be computed
+            # independanlty due to a bug in
+            # numpy. https://github.com/numpy/numpy/issues/12943
+            if np.iscomplexobj(vectors):
+                vector = np.nanmedian(vectors.real, axis=0).astype(vectors.dtype)
+                vector.imag = np.nanmedian(vectors.imag, axis=0)
+            else:    
+                vector = np.nanmedian(vectors, axis=0)
+            vector *= len(vectors)
+
+        params = dict(self.params)
+        params['pixels'] = len(vectors)
+        return orb.core.Vector1d(vector, params=params,
+                                 zpd_index=self.params.zpd_index,
+                                 calib_coeff=calib_coeff,
+                                 axis=np.arange(self.dimz))
+        
+    def get_zvector(self, x, y, r=0, return_region=False, median=False):
         """Return an orb.fft.Vector1d instance taken at a given position in x, y.
         
         :param x: x position 
@@ -821,23 +862,20 @@ class HDFCube(orb.core.WCSData):
           circular aperture of radius r. In this case the number of
           pixels is returned as a parameter: pixels
 
+        :param median: If True, a median is used instead of a mean to
+          combine vectors. As the resulting vector is integrated,
+          the median value of the combined spectra is then scaled to
+          the number of integrated pixels.
+
         :param return_region: (Optional) If True, region is returned
           also (default False)
 
         """
         x = self.validate_x_index(int(x), clip=False)
         y = self.validate_y_index(int(y), clip=False)
-
+        
         region = self.get_region('circle({},{},{})'.format(x+1, y+1, r))
-        calib_coeff = np.nanmean(self.get_calibration_coeff_map()[region])
-        interfs = self.get_data_from_region(region)
-        interf = np.nansum(interfs, axis=0)
-        params = dict(self.params)
-        params['pixels'] = len(interfs)
-        vec = orb.core.Vector1d(interf, params=params,
-                            zpd_index=self.params.zpd_index,
-                            calib_coeff=calib_coeff,
-                            axis=np.arange(self.dimz))
+        vec = self.get_zvector_from_region(region, median=median)
         if not return_region:
             return vec
         else:
@@ -1175,7 +1213,7 @@ class RWHDFCube(HDFCube):
 
         with self.open_hdf5('a') as f:
             if f['data'].dtype != value.dtype:
-                warnings.warn('wrong types: cube is {} and new data is {}'.format(
+                logging.warn('wrong types: cube is {} and new data is {}'.format(
                     f['data'].dtype, value.dtype))
                 # warning !! never do the following since all data is
                 # reset, if only a part of the data must be set this
@@ -1217,7 +1255,7 @@ class RWHDFCube(HDFCube):
             try:
                 self.set_param(ipar, params[ipar])
             except TypeError:
-                warnings.warn('error setting param {}'.format(ipar))
+                logging.warn('error setting param {}'.format(ipar))
 
     def set_mask(self, data):
         """Set mask
@@ -1250,7 +1288,7 @@ class RWHDFCube(HDFCube):
         with self.open_hdf5('a') as f:
             if path in f:
                 del f[path]
-                warnings.warn('{} dataset changed'.format(path))
+                logging.warn('{} dataset changed'.format(path))
 
             if isinstance(data, dict):
                 data = orb.utils.io.dict2array(data)
@@ -1333,7 +1371,7 @@ class RWHDFCube(HDFCube):
         #     self.set_calibration_laser_map(calibration_laser_map)
         # else:
         #     self.set_calibration_laser_map(self.calibration_laser_map)
-        #     warnings.warn('calibration laser map unchanged since it already exists')
+        #     logging.warn('calibration laser map unchanged since it already exists')
 
     def set_standard_image(self, std_im):
         """Set standard image
@@ -1620,10 +1658,10 @@ class InterferogramCube(Cube):
     observation parameters are known.
     """
 
-    def get_interferogram(self, x, y, r=0):
+    def get_interferogram(self, x, y, r=0, median=False):
         """Return an orb.fft.Interferogram instance.
 
-        See Cube.get_zvector for the parameters.        
+        See Cube.get_zvector for the parameters. 
         """
         vector, region = Cube.get_zvector(self, x, y, r=r, return_region=True)
         vector.params['source_counts'] = np.nansum(self.get_deep_frame().data[region])
@@ -2297,7 +2335,7 @@ class SpectralCube(Cube):
           spectra.
         """
         if not self.has_wavenumber_calibration():
-            warnings.warn('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
+            logging.warn('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
             
         if isinstance(region, str):
             region = self.get_region(region)

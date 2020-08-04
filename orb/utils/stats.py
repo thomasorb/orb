@@ -61,7 +61,7 @@ def robust_mean(a, weights=None, warn=True):
         result = orb.cutils.robust_average(a, weights)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        warnings.warn('Only NaN values found in the given array')
+        logging.warn('Only NaN values found in the given array')
         
     return result
 
@@ -81,7 +81,7 @@ def robust_std(a, warn=True):
     result = orb.cutils.robust_std(a)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        warnings.warn('Only NaN values found in the given array')
+        logging.warn('Only NaN values found in the given array')
         
     return result
 
@@ -101,7 +101,7 @@ def robust_sum(a, warn=True):
     result = orb.cutils.robust_sum(a)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        warnings.warn('Only NaN values found in the given array')
+        logging.warn('Only NaN values found in the given array')
         
     return result
 
@@ -121,7 +121,7 @@ def robust_median(a, warn=True):
     result = orb.cutils.robust_median(a)
     
     if np.isnan(result.imag) and np.isnan(result.real) and warn:
-        warnings.warn('Only NaN values found in the given array')
+        logging.warn('Only NaN values found in the given array')
         
     return result
 
@@ -156,7 +156,7 @@ def sigmacut(x, sigma=3., min_values=3, central_value=None, warn=False,
 
     if np.size(x) <= min_values:
         if warn:
-            warnings.warn("No sigma-cut done because the number of values (%d) is too low"%np.size(x))
+            logging.warn("No sigma-cut done because the number of values (%d) is too low"%np.size(x))
         return x
         
     return orb.cutils.sigmacut(

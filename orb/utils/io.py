@@ -158,7 +158,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
     # complex data cannot be written in fits
     if np.iscomplexobj(fits_data):
         fits_data = fits_data.real.astype(np.float32)
-        warnings.warn('Complex data cast to float32 (FITS format do not support complex data)')
+        logging.warn('Complex data cast to float32 (FITS format do not support complex data)')
 
     base_fits_path = fits_path
 
@@ -353,7 +353,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
 
         else:
             if not silent:
-                warnings.warn(
+                logging.warn(
                     "File '%s' could not be opened {}, {}".format(fits_path, e))
             return None
 
@@ -393,7 +393,7 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
         try:
             os.remove(fits_path)
         except:
-             warnings.warn("The file '%s' could not be deleted"%fits_path)
+             logging.warn("The file '%s' could not be deleted"%fits_path)
 
     if return_header:
         return np.squeeze(fits_data), fits_header
