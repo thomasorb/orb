@@ -1396,9 +1396,9 @@ class RWHDFCube(HDFCube):
         :param std_sp: a orb.photometry.StandardSpectrum instance or a
           path to an hdf5 spectrum.
         """
-        std_sp = orb.photometry.StandardSpectrum(std_sp, instrument=self.instrument)
+        std_sp = orb.fft.StandardSpectrum(std_sp, instrument=self.instrument)
         try:
-            std_sp = orb.photometry.StandardSpectrum(std_sp, instrument=self.instrument)
+            std_sp = orb.fft.StandardSpectrum(std_sp, instrument=self.instrument)
         except Exception as e:
             raise TypeError('std_sp must be a StandardSpectrum instance or a path to a valid hdf5 spectrum: {}'.format(e))
 
@@ -2495,14 +2495,14 @@ class SpectralCube(Cube):
         if self.has_dataset('standard_spectrum'):
            std_sp = self.get_dataset('standard_spectrum', protect=False)
            hdr = self.get_dataset_attrs('standard_spectrum')
-           return orb.photometry.StandardSpectrum(std_sp, axis=hdr['axis'],
+           return orb.fft.StandardSpectrum(std_sp, axis=hdr['axis'],
                                               params=hdr, instrument=self.instrument)
         
         if self.has_param('standard_path'):
             data, hdr = orb.utils.io.read_fits(self.params.standard_path, return_header=True)
             std_flux_sp, wav = data.T
             wav = np.linspace(wav[0], wav[-1], wav.size) # avoids rounding errors due to float32 conversion
-            std_flux_sp = orb.photometry.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
+            std_flux_sp = orb.fft.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
             return std_flux_sp
         
         else: raise Exception('standard spectrum dataset or standard_path parameter are not defined')

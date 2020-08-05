@@ -27,6 +27,7 @@ import orb.utils.spectrum
 import orb.utils.vector
 import orb.utils.io
 import orb.utils.err
+import astropy.io.fits as pyfits
 
 import numpy as np
 import logging
@@ -238,16 +239,21 @@ class Standard(orb.core.Tools):
         orb.core.Tools.__init__(self, **kwargs)
              
         std_file_path, std_type = self._get_standard_file_path(std_name)
+        
         if std_type == 'MASSEY' or std_type == 'MISC':
-            self.ang, self.flux = self._read_massey_dat(std_file_path)
+            self.ang, self.flux, self.resolution = self._read_massey_dat(std_file_path)
+            std_source = 'Massey (1988)'
         elif std_type == 'CALSPEC':
-            self.ang, self.flux = self._read_calspec_fits(std_file_path)
+            self.ang, self.flux, self.resolution = self._read_calspec_fits(std_file_path)
+            std_source = 'CALSPEC: Bohlin, Gordon, & Tremblay (2014)'
         elif std_type == 'OKE':
-            self.ang, self.flux = self._read_oke_dat(std_file_path)
+            self.ang, self.flux, self.resolution = self._read_oke_dat(std_file_path)
+            std_source = 'Oke (1990)'
         else:
             raise Exception(
                 "Bad type of standard file. Must be 'MASSEY', 'CALSPEC', 'MISC' or 'OKE'")
-       
+        logging.info('standard spectrum source: {}'.format(std_source))
+        
 
     def _get_data_prefix(self):
         return (os.curdir + os.sep + 'STANDARD' + os.sep
@@ -275,7 +281,8 @@ class Standard(orb.core.Tools):
         spec_ang = np.array(spec_ang, dtype=float)
         spec_flux = np.array(spec_flux, dtype=float) * 1e-16
 
-        return spec_ang, spec_flux
+        spec_res = spec_ang / np.where(spec_ang > 4700, 2., 1.)
+        return spec_ang, spec_flux, spec_res
 
     def _read_massey_dat(self, file_path):
         """Read a data file from Massey et al., Spectrophotometric
@@ -292,10 +299,18 @@ class Standard(orb.core.Tools):
         
         spec_ang = list()
         spec_mag = list()
+        inst = 'IRS'
         for line in std_file:
-             line = line.split()
-             spec_ang.append(line[0])
-             spec_mag.append(line[1])
+            if '#' in line:
+                if 'IIDS' in line:
+                    inst = 'IIDS'
+                elif 'BOTH' in line:
+                    inst = 'both'
+                
+                continue
+            line = line.split()
+            spec_ang.append(line[0])
+            spec_mag.append(line[1])
 
         spec_ang = np.array(spec_ang, dtype=float)
         spec_mag = np.array(spec_mag, dtype=float)
@@ -303,7 +318,18 @@ class Standard(orb.core.Tools):
         # convert mag to flux in erg/cm^2/s/A
         spec_flux = orb.utils.photometry.ABmag2flambda(spec_mag, spec_ang)
 
-        return spec_ang, spec_flux
+        if inst == 'both': # combined IRS + IIDS, worst resolution is assumed
+            # 7 A resolution < 5000 A
+            spec_res = spec_ang / np.where(spec_ang > 5000, 14, 10)     
+        elif inst == 'IRS':
+            spec_res = spec_ang / 10 # 10 A resolution everywhere
+        elif inst == 'IIDS':
+            # 7 A resolution < 5000 A
+            spec_res = spec_ang / np.where(spec_ang > 5000, 14, 7)
+        else: raise Exception('inst must be both, IRS or IIDS, not {}'.format(inst))
+        
+            
+        return spec_ang, spec_flux, spec_res
 
     def _read_calspec_fits(self, file_path):
         """Read a CALSPEC fits file containing a standard spectrum and
@@ -315,47 +341,49 @@ class Standard(orb.core.Tools):
         :param file_path: Path to the Massey dat file (generally
           'spXX.dat').
         """
-        hdu = orb.utils.io.read_fits(file_path, return_hdu_only=True, data_index=1)
-        hdr = hdu.header
-        data = hdu.data
+        hdu = pyfits.open(file_path)
+        hdr = hdu[1].header
+        data = hdu[1].data
 
         logging.info('Calspec file flux unit: %s'%hdr['TUNIT2'])
         
         # wavelength is in A
-        spec_ang = np.array([data[ik][0] for ik in range(len(data))])
-
+        spec_ang = np.array(data['WAVELENGTH'])
+        
         # flux is in erg/cm2/s/A
-        spec_flux = np.array([data[ik][1] for ik in range(len(data))])
+        spec_flux = np.array(data['FLUX'])
+        
+        # resolution
+        spec_res =  np.array(data['WAVELENGTH'] / data['FWHM'])
 
-        return spec_ang, spec_flux
+        return spec_ang, spec_flux, spec_res
 
-    def get_spectrum(self, filter_name, n, corr=None):
+    def get_spectrum(self, filter_name, cm1_axis):
         """Return part of the standard spectrum corresponding to the
         observation parameters.
 
         Returned spectrum is calibrated in erg/cm^2/s/A
-
-        :param filter_name: Filter name        
         
-        :param n: Number of steps
-                  
-        :param corr: (Optional) Correction coefficient related to the incident
-          angle (default None, taken at the center of the field).
+        :param cm1_axis: Axis instance in cm-1
         """
-        ff = orb.core.FilterFile(filter_name)
-        if corr is None: corr = orb.utils.spectrum.theta2corr(
-                self.config['OFF_AXIS_ANGLE_CENTER'])
-        axis = orb.utils.spectrum.create_cm1_axis(
-            n, ff.params.step, ff.params.order, corr=corr)
-        old_axis = orb.utils.spectrum.nm2cm1(self.ang / 10.)
+        assert isinstance(cm1_axis, orb.core.Axis), 'cm1_axis must be an Axis instance, but is {}'.format(type(cm1_axis))
         
-        params = {'step': ff.params.step, 'order':ff.params.order, 'calib_coeff':corr,
-                  'filter_file_path':ff.basic_path}
+        ff = orb.core.FilterFile(filter_name)
 
-        return orb.core.Cm1Vector1d(orb.utils.vector.interpolate_axis(
+        axis = cm1_axis.data
+        old_axis = orb.utils.spectrum.nm2cm1(self.ang / 10.)
+
+        resolution_cm1 = orb.utils.vector.interpolate_axis(
+            self.resolution, axis, 3, old_axis=old_axis)
+
+        params = {'filter_file_path':ff.basic_path, 'resolution':resolution_cm1}
+
+        spec = orb.core.Cm1Vector1d(orb.utils.vector.interpolate_axis(
             self.flux, axis, 3, old_axis=old_axis), axis=axis, params=params)
 
-    def simulate_measured_flux(self, filter_name, n, airmass=1, corr=None, camera_index=1,
+        return spec
+
+    def simulate_measured_flux(self, filter_name, cm1_axis, airmass=1, camera_index=1,
                                opd_jitter=None, wf_error=None, modulated=True):
         """Return a simulation of the measured flux in counts/s
 
@@ -370,7 +398,7 @@ class Standard(orb.core.Tools):
 
         :param wf_error: wavefront error ratio (e.g. 1/30.)
         """
-        spe = self.get_spectrum(filter_name, n, corr=corr)
+        spe = self.get_spectrum(filter_name, cm1_axis)
         
         photom = Photometry(filter_name, camera_index,
                             instrument=self.instrument,

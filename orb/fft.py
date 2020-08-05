@@ -643,7 +643,7 @@ class Spectrum(orb.core.Cm1Vector1d):
           supplied in the params dictionnary.    
         """
         orb.core.Cm1Vector1d.__init__(self, spectrum, err=err, axis=axis,
-                                  params=params, **kwargs)
+                                      params=params, **kwargs)
             
         if not np.iscomplexobj(self.data):
             logging.debug('input spectrum is not complex')
@@ -672,8 +672,10 @@ class Spectrum(orb.core.Cm1Vector1d):
         return np.copy(self.data.imag)
 
     def apodize(self, coeff):
-        """Return an apodized spectrum"""
+        """Return an apodized spectrum (works well only if spectrum is complex)"""
         spec = self.copy()
+        if not np.any(np.iscomplex(self.data)):
+            logging.warn('spectrum is not complex. Apodizing will not give ideal results')
         spec.data[np.isnan(spec.data)] = 0.
         zp_spec = np.concatenate([spec.data, spec.data[::-1]])
         spec_ifft = scipy.fftpack.ifft(zp_spec)
@@ -1027,7 +1029,10 @@ class RealSpectrum(Spectrum):
 #################################################
 
 class StandardSpectrum(RealSpectrum):
-    """Spectrum class computed from real interferograms (in counts)
+    """Spectrum class for standard spectrum computed from real
+    interferograms (in counts).
+    
+    Spectrum unit should be in counts.
     """
 
     convert_params = {'AIRMASS':'airmass',
@@ -1050,8 +1055,36 @@ class StandardSpectrum(RealSpectrum):
             logging.debug('airmass not set, automatically set to 1')
             self.params['airmass'] = 1.
     
-    
-    def compute_flux_correction_vector(self, deg=2):
+
+    def get_standard(self):
+        """Return the standard spectrum
+        """
+        std = orb.photometry.Standard(self.params.object_name,
+                                      instrument=self.params.instrument)
+        airmass = self.params.airmass
+        if len(airmass) > 1:
+            airmass = np.nanmedian(airmass)
+            
+        sim = std.simulate_measured_flux(
+            self.params.filter_name, self.axis,
+            camera_index=self.params.camera,
+            modulated=True, airmass=airmass)
+
+        assert np.all(np.isclose(sim.axis.data - self.axis.data, 0)), 'axes must be equal'
+        
+        sim.data[np.isnan(sim.data)] = 0
+
+        return sim
+
+    def to_counts_s(self):
+        """Return spectrum in counts/s
+        """
+        spe = self.copy()
+        spe.data /= self.dimx * self.params.exposure_time # data unit changed to counts/s
+        spe.data[np.isnan(spe.data)] = 0
+        return spe
+
+    def compute_flux_correction_vector(self, deg=2, resolution=350, return_residual=False):
         """Compute flux correction vector by fitting a simulated model of the
         standard star on the observed spectrum.
         """
@@ -1059,30 +1092,20 @@ class StandardSpectrum(RealSpectrum):
             m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
             return np.array(m, dtype=float)
 
-        std = orb.photometry.Standard(self.params.object_name,
-                                  instrument=self.params.instrument)
-
-        sim = std.simulate_measured_flux(
-            self.params.filter_name, self.dimx,
-            camera_index=self.params.camera,
-            modulated=False, airmass=self.params.airmass) 
-
-        sim = sim.project(self.axis)
-        sim.data[np.isnan(sim.data)] = 0
-
-        spe_data = np.copy(self.data).astype(float)
-        spe_data[np.isnan(spe_data)] = 0
-
+        sim = self.get_standard().change_resolution(resolution) # standard flux in counts/s
+               
+        spe = self.to_counts_s().change_resolution(resolution)
+        
         xmin, xmax = self.get_filter_bandpass_pix(
             border_ratio=0.05)
         sim.data[:xmin] = 0
         sim.data[xmax:] = 0
-        spe_data[:xmin] = 0
-        spe_data[xmax:] = 0
+        spe.data[:xmin] = 0
+        spe.data[xmax:] = 0
 
 
         fit = scipy.optimize.curve_fit(
-            model, sim.data, spe_data,
+            model, sim.data, spe.data,
             p0=np.ones(deg+1, dtype=float)/10.)
         
         sim_fit = orb.core.Cm1Vector1d(
@@ -1094,21 +1117,31 @@ class StandardSpectrum(RealSpectrum):
         
         xmin, xmax = self.get_filter_bandpass_pix(
             border_ratio=-0.1)
-        
+
         poly[:xmin] = np.nan
         poly[xmax:] = np.nan
+        
+        # this is not a real residual but the fitted data so that both
+        # the residual and the fitted polynomial can be plotted
+        # together directly.
+        if return_residual: 
+            residual = spe.copy()
+            residual.data /= sim.data
+            residual.data[:xmin] = np.nan
+            residual.data[xmax:] = np.nan
+            residual.data /= np.nanmean(poly)
+            #residual.data[np.isnan(poly)] = 1.
+            
         poly /= np.nanmean(poly)
         poly[np.isnan(poly)] = 1.
         
         eps = orb.core.Cm1Vector1d(
             poly, axis=self.axis, params=self.params)
-                
-        # import pylab as pl
-        # pl.figure()
-        # pl.plot(sim_fit.axis.data, sim_fit.data)
-        # pl.plot(self.axis.data, spe_data)
-        
-        return eps
+
+        if not return_residual:
+            return eps
+        else:
+            return eps, residual
 
 #################################################
 #### CLASS PhaseMaps ############################

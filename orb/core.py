@@ -478,8 +478,9 @@ class ROParams(Params):
                 if not np.all(np.isclose(self[key] - value, 0.)):
                     logging.debug('Parameter {} already defined'.format(key))
                     logging.debug('Old value={} / new_value={}'.format(self[key], value))
-            except TypeError:
-                pass
+            except TypeError: pass
+            except ValueError: pass
+                
         dict.__setitem__(self, key, value)
     
     def reset(self, key, value):
@@ -2673,6 +2674,22 @@ class Cm1Vector1d(Vector1d):
                 #raise StandardError('{} must all be provided'.format(self.obs_params))
             
         if self.axis is None: raise Exception('an axis must be provided or the observation parameters ({}) must be provided'.format(self.obs_params))
+
+        try:
+            resolution = orb.utils.spectrum.compute_resolution(
+                self.dimx - self.params.zpd_index,
+                self.params.step, self.params.order,
+                self.params.calib_coeff)
+            
+        except Exception as e:
+            logging.debug('resolution could not be computed: {}'.format(e))
+        else:
+            if not self.has_param('resolution'):
+                self.set_param('resolution', resolution)
+                
+            elif not np.all(np.isclose(resolution - self.params.resolution, 0)):
+                    logging.debug('computed resolution {} is different from recorded resolution {}'.format(resolution, self.params.resolution))
+
             
     def get_filter_bandpass_cm1(self):
         """Return filter bandpass in cm-1"""
@@ -2723,6 +2740,30 @@ class Cm1Vector1d(Vector1d):
         spec = self.project(new_axis)
         spec.axis = self.axis
         return spec
+
+    def change_resolution(self, resolution):
+        """Return a vector with a defined resolution (note that resolution can
+        only be decreased, there is no way to increase resolution)
+        """
+        if self.has_param('resolution'):
+            if np.any(resolution >= self.params.resolution):
+                logging.warn('original resolution {} lower than target resolution {}'.format(
+                    self.params.resolution, resolution))
+    
+        spectrum = self.copy()
+        mean_cm1 = (self.axis.data[1] + self.axis.data[0])/2
+        fwhm_cm1 = mean_cm1 / resolution
+        channel_width = self.axis.data[1] - self.axis.data[0]
+        fwhm_pix = fwhm_cm1 / channel_width
+        size = int(6 * fwhm_pix + 1)
+        kernel = orb.utils.spectrum.gaussian1d(
+            np.arange(-size//2, size//2+1, 1), 0, 1, 0, fwhm_pix)
+
+        kernel /= orb.utils.spectrum.gaussian1d_flux(1, fwhm_pix)
+        spectrum.data = scipy.signal.convolve(
+            spectrum.data.real, kernel, mode='same')
+        spectrum.params['resolution'] = resolution
+        return spectrum
         
     
 #################################################
