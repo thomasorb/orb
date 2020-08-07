@@ -194,7 +194,7 @@ class Interferogram(orb.core.Vector1d):
             zeros_vector[:-sym_len] = 2.
 
         if sym_len > self.dimx / 2.:
-            logging.warning('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
+            logging.debug('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
 
         if not inplace:
             spec = self.copy()

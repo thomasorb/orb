@@ -341,6 +341,9 @@ def read_fits(fits_path, no_error=False, nan_filter=False,
         fits_path = mask_path
 
     try:
+        warnings.filterwarnings('ignore', module='astropy')
+        warnings.filterwarnings('ignore', category=ResourceWarning)
+    
         hdulist = pyfits.open(fits_path)
         if data_index is None:
             data_index = get_hdu_data_index(hdulist)
@@ -560,7 +563,7 @@ def open_hdf5(file_path, mode):
     f = h5py.File(file_path, mode)
 
     if mode in ['w', 'a', 'w-', 'x', 'r+']:
-        f.attrs['program'] = 'Created/modified by ORB version'
+        f.attrs['program'] = 'Created/modified with ORB'
         f.attrs['date'] = str(datetime.datetime.now())
 
     return f

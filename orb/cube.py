@@ -110,12 +110,12 @@ class HDFCube(orb.core.WCSData):
                                 
         # check if cube has an old format in which case it must be
         # loaded before and passed as an instance to Data.
-        self.is_old = False
+        
+        logging.info('Cube is level {}'.format(self.get_level()))
+        
         if isinstance(self.cube_path, str):
             with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
-                if 'level2' not in f.attrs:
-                    logging.warning('old cube architecture. IO performances could be reduced.')
-                    self.is_old = True
+                if self.is_level1():
                     self.oldcube = orb.old.HDFCube(self.cube_path, silent_init=True)
                     self.data = MockArray()
                     self.data.shape = self.oldcube.shape
@@ -143,7 +143,7 @@ class HDFCube(orb.core.WCSData):
 
                 
         # init Tools and Data
-        if not self.is_old and instrument is None:
+        if not self.is_level1() and instrument is None:
             instrument = orb.utils.misc.read_instrument_value_from_file(self.cube_path)
             
         # load header if present and update params
@@ -179,7 +179,7 @@ class HDFCube(orb.core.WCSData):
         
     def __getitem__(self, key):
         """Implement getitem special method"""
-        if self.is_old:
+        if self.is_level1():
             if self.has_dataset('mask'):
                 logging.warning('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
@@ -239,7 +239,52 @@ class HDFCube(orb.core.WCSData):
                 
         return params
 
+    def is_level1(self):
+        """Return True if cube is level 1"""
+        return self.get_level() == 1
 
+    def is_level2(self):
+        """Return True if cube is level 2"""
+        return self.get_level() == 2
+
+    def is_level3(self):
+        """Return True if cube is level 3"""
+        return self.get_level() == 3
+    
+    def get_level(self):
+        """Return reduction level of the cube.
+
+        * level 1: old hdf5 architecture, real output, unit in
+          erg/cm2/s/A, deep frame is the mean of the interferogram cube
+
+        * level 2: new hdf5 architecture, real output, unit in
+          erg/cm2/s/A, deep frame is the sum of the interferogram cube
+
+        * level 3: new hdf5 architecture, complex output, unit in
+          counts, data can be calibrated via flambda parameter :
+          spectrum *= cube.params.flambda / cube.dimz /
+          cube.exposure_time, deep frame is the sum of the
+          interferogram cube
+
+        """
+        try:
+            return int(self.level)
+        except AttributeError: pass
+        
+        with self.open_hdf5('r') as f:
+            self.level = 1
+            if 'level2' in f.attrs:
+                self.level = 2
+            if 'level3' in f.attrs:
+                self.level = 3
+                if 'level2' in f.attrs:
+                    logging.warning('both level2 and level3 in attrs')
+            
+            if self.level == 1:
+                logging.warning('old cube architecture (level 1). IO performances could be reduced.')
+                
+        return self.level
+                    
     
     def copy(self):
         raise NotImplementedError('HDFCube instance cannot be copied')
@@ -274,7 +319,7 @@ class HDFCube(orb.core.WCSData):
           architecture (default False).
 
         """
-        if self.is_old:
+        if self.is_level1():
             return self.oldcube.get_data(
                 x_min, x_max, y_min, y_max, z_min, z_max,
                 silent=silent)
@@ -524,10 +569,10 @@ class HDFCube(orb.core.WCSData):
         if not recompute:
             if self.has_dataset('deep_frame'):
                 df = self.get_dataset('deep_frame', protect=False)
-                if self.is_old:
+                if self.is_level1():
                     df *= self.dimz
         
-            elif self.is_old:
+            elif self.is_level1():
                 df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
 
         if df is None:
@@ -627,7 +672,7 @@ class HDFCube(orb.core.WCSData):
             return True
 
         with orb.utils.io.open_hdf5(path, 'w') as fout:
-            fout.attrs['level2'] = True
+            fout.attrs['level3'] = True
             
             with self.open_hdf5() as f:
                 for iattr in f.attrs:
@@ -1180,24 +1225,27 @@ class RWHDFCube(HDFCube):
         # reset
         if reset:
             if os.path.exists(path):
+                logging.info('deleting {} before writing a new cube'.format(path))
                 os.remove(path)
 
         # create file if it does not exists
         if not os.path.exists(path):
+            logging.info('Creating cube {}'.format(path))
             if shape is None:
                 raise ValueError('cube does not exist. If you want to create one, shape must be set.')
             
             with orb.utils.io.open_hdf5(path, 'w') as f:
                 orb.utils.validate.has_len(shape, 3, object_name='shape')
                 f.create_dataset('data', shape=shape, chunks=True, dtype=dtype)
-                f.attrs['level2'] = True
+                f.attrs['level3'] = True
                 f.attrs['instrument'] = instrument
 
         elif shape is not None:
             raise ValueError('shape or dtype must be set only when creating a new HDFCube')
 
         HDFCube.__init__(self, path, instrument=instrument, **kwargs)
-        if self.is_old: raise Exception('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
+        
+        if self.is_level1(): raise Exception('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
         if self.has_params:
             self.set_params(self.params)
@@ -2588,8 +2636,8 @@ class SpectralCube(Cube):
         :param flambda: must be core.Cm1Vector1d instance.
         """
         self.set_param('flambda', flambda.project(self.get_base_axis()).data)
-        if self.is_old:
-            logging.warning('data is already calibrated. Modification of flambda will  not change the data.')
+        if self.get_level() < 3:
+            logging.warning('data should be already calibrated in erg/cm2/s/A. Setting a new flambda will not change the data.')
         
     def compute_modulation_ratio(self):
         deep_spectral = self.compute_sum_image()

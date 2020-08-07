@@ -153,7 +153,7 @@ class FitVector(object):
             if snr_guess is None:
                 self.snr_guess = None
                 self.classic = True
-                logging.warning('No SNR guess given. Fit mode is classic.')
+                logging.debug('No SNR guess given. Fit mode is classic.')
             else:
                 try:
                     snr_guess = float(snr_guess)
@@ -3107,7 +3107,7 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
     RATIO = 0.25
 
     fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
-        step_nb, step, order, corr, wavenumber=True)
+        step_nb - zpd_index, step, order, corr, wavenumber=True)
 
     def get_defguess(param):
         if np.size(param) == 1:
