@@ -114,7 +114,7 @@ class HDFCube(orb.core.WCSData):
         if isinstance(self.cube_path, str):
             with orb.utils.io.open_hdf5(self.cube_path, 'r') as f:
                 if 'level2' not in f.attrs:
-                    logging.warn('old cube architecture. IO performances could be reduced.')
+                    logging.warning('old cube architecture. IO performances could be reduced.')
                     self.is_old = True
                     self.oldcube = orb.old.HDFCube(self.cube_path, silent_init=True)
                     self.data = MockArray()
@@ -181,7 +181,7 @@ class HDFCube(orb.core.WCSData):
         """Implement getitem special method"""
         if self.is_old:
             if self.has_dataset('mask'):
-                logging.warn('mask is not handled for old cubes format')
+                logging.warning('mask is not handled for old cubes format')
             return self.oldcube.__getitem__(key)
         
         with self.open_hdf5() as f:
@@ -1213,7 +1213,7 @@ class RWHDFCube(HDFCube):
 
         with self.open_hdf5('a') as f:
             if f['data'].dtype != value.dtype:
-                logging.warn('wrong types: cube is {} and new data is {}'.format(
+                logging.warning('wrong types: cube is {} and new data is {}'.format(
                     f['data'].dtype, value.dtype))
                 # warning !! never do the following since all data is
                 # reset, if only a part of the data must be set this
@@ -1255,7 +1255,7 @@ class RWHDFCube(HDFCube):
             try:
                 self.set_param(ipar, params[ipar])
             except TypeError:
-                logging.warn('error setting param {}'.format(ipar))
+                logging.warning('error setting param {}'.format(ipar))
 
     def set_mask(self, data):
         """Set mask
@@ -1288,7 +1288,7 @@ class RWHDFCube(HDFCube):
         with self.open_hdf5('a') as f:
             if path in f:
                 del f[path]
-                logging.warn('{} dataset changed'.format(path))
+                logging.warning('{} dataset changed'.format(path))
 
             if isinstance(data, dict):
                 data = orb.utils.io.dict2array(data)
@@ -1371,7 +1371,7 @@ class RWHDFCube(HDFCube):
         #     self.set_calibration_laser_map(calibration_laser_map)
         # else:
         #     self.set_calibration_laser_map(self.calibration_laser_map)
-        #     logging.warn('calibration laser map unchanged since it already exists')
+        #     logging.warning('calibration laser map unchanged since it already exists')
 
     def set_standard_image(self, std_im):
         """Set standard image
@@ -2335,7 +2335,7 @@ class SpectralCube(Cube):
           spectra.
         """
         if not self.has_wavenumber_calibration():
-            logging.warn('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
+            logging.warning('spectral cube is not calibrated in wavenumber, a large region may result in a deformation of the ILS.')
             
         if isinstance(region, str):
             region = self.get_region(region)

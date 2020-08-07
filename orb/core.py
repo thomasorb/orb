@@ -244,7 +244,7 @@ class Logger(object):
             try:
                 self.listen()
             except Exception as e:
-                logging.warn('Exception occured during logging server init (maybe it is already initialized): {}'.format(e))
+                logging.warning('Exception occured during logging server init (maybe it is already initialized): {}'.format(e))
 
 
     def _reset_logging_state(self, logfilter=None):
@@ -390,7 +390,7 @@ class Logger(object):
         try:
             thread.start() # Start the execution
         except Exception as e:
-            logging.warn('Error during listener execution')
+            logging.warning('Error during listener execution')
 
 
 
@@ -708,7 +708,7 @@ class Tools(object):
         filter_file_path =  self._get_orb_data_file_path(
             "filter_" + filter_name + ".hdf5")
         if not os.path.exists(filter_file_path):
-             logging.warn(
+             logging.warning(
                  "Filter file %s does not exist !"%filter_file_path)
              return None
          
@@ -729,7 +729,7 @@ class Tools(object):
             "phase_" + filter_name + ".hdf5")
         
         if not os.path.exists(phase_file_path):
-             logging.warn(
+             logging.warning(
                  "Phase file %s does not exist !"%phase_file_path)
              return None
          
@@ -755,7 +755,7 @@ class Tools(object):
             "sip." + cam_name + ".fits")
         
         if not os.path.exists(sip_file_path):
-             logging.warn(
+             logging.warning(
                  "SIP file %s does not exist !"%sip_file_path)
              return None
          
@@ -775,7 +775,7 @@ class Tools(object):
         optics_file_path =  self._get_orb_data_file_path(
             "optics_" + filter_name + ".hdf5")
         if not os.path.exists(optics_file_path):
-             logging.warn(
+             logging.warning(
                  "Optics file %s does not exist !"%optics_file_path)
              return None
          
@@ -948,7 +948,7 @@ class Tools(object):
             raise Exception("Parameter key %s not found in file %s"%(
                 param_key, self.config_file_name))
         else:
-            logging.warn("Parameter key %s not found in file %s"%(
+            logging.warning("Parameter key %s not found in file %s"%(
                 param_key, self.config_file_name))
             return None
 
@@ -1005,7 +1005,7 @@ class Tools(object):
         logging.info('looking for tuning parameter: {}'.format(
             full_parameter_name))
         if full_parameter_name in self.config:
-            logging.warn(
+            logging.warning(
                 'Tuning parameter {} changed to {} (default {})'.format(
                     full_parameter_name,
                     self.config[full_parameter_name],
@@ -1221,7 +1221,7 @@ class Indexer(Tools):
         if file_key in self.index:
             return self.index[file_key]
         else:
-            logging.warn("File key '%s' does not exist"%file_key)
+            logging.warning("File key '%s' does not exist"%file_key)
             return None
             
     def __setitem__(self, file_key, file_path):
@@ -1287,7 +1287,7 @@ class Indexer(Tools):
             if err:
                 raise Exception("File key '%s' does not exist"%file_key)
             else:
-                logging.warn("File key '%s' does not exist"%file_key)
+                logging.warning("File key '%s' does not exist"%file_key)
 
     def set_file_group(self, file_group):
         """Set the group of the next files to be recorded. All given
@@ -1901,7 +1901,7 @@ class Data(object):
             if 'DataBundle' not in data or 'data' not in data or 'class' not in data:
                 raise TypeError('if a dict is passed it must be a bundle created with to_bundle()')
             if self.__class__.__name__ != data['class']:
-                logging.warn('bundle was loaded with {} but its original class is {}'.format(
+                logging.warning('bundle was loaded with {} but its original class is {}'.format(
                     self.__class__.__name__, data['class']))
             self.data = data['data']
             self.params = data['params']
@@ -2239,7 +2239,7 @@ class Data(object):
                     try:
                         hdffile.attrs[iparam] = self.params[iparam]
                     except TypeError:
-                        logging.warn('{} ({}) could not be written'.format(
+                        logging.warning('{} ({}) could not be written'.format(
                             iparam, type(self.params[iparam])))
 
             hdffile.create_dataset(
@@ -2613,7 +2613,7 @@ class Axis(Vector1d):
         """
         pos_index = (pos - self.data[0]) / float(self.axis_step)
         if np.any(pos_index < 0) or np.any(pos_index >= self.dimx):
-            logging.warn('requested position is off axis')
+            logging.warning('requested position is off axis')
         return pos_index
 
     def convert(self, pos):
@@ -2747,7 +2747,7 @@ class Cm1Vector1d(Vector1d):
         """
         if self.has_param('resolution'):
             if np.any(resolution >= self.params.resolution):
-                logging.warn('original resolution {} lower than target resolution {}'.format(
+                logging.warning('original resolution {} lower than target resolution {}'.format(
                     self.params.resolution, resolution))
     
         spectrum = self.copy()
@@ -2968,7 +2968,7 @@ class WCSData(Data, Tools):
         # check params
         self.params.reset('instrument', self.instrument)
         if self.instrument is None:
-            logging.warn('Instrument set to None: some parameters will be automatically defined')
+            logging.warning('Instrument set to None: some parameters will be automatically defined')
             self.config['CAM1_DETECTOR_SIZE_X'] = self.dimx
             self.config['CAM1_DETECTOR_SIZE_Y'] = self.dimy
             if not self.has_param('delta_x'): # wcs not loaded properly
@@ -2998,7 +2998,7 @@ class WCSData(Data, Tools):
             
         if not self.has_param('binning'):
             if cropped:
-                logging.warn('data is cropped. computed binning might be inconsistent')
+                logging.warning('data is cropped. computed binning might be inconsistent')
             detector_shape = [self.config[cam + '_DETECTOR_SIZE_X'],
                               self.config[cam + '_DETECTOR_SIZE_Y']]
 
@@ -3014,7 +3014,7 @@ class WCSData(Data, Tools):
 
             
         if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:
-            logging.warn('image might be cropped, target_x, target_y and other parameters might be wrong')
+            logging.warning('image might be cropped, target_x, target_y and other parameters might be wrong')
 
         # load wcs parameters
         if 'target_x' not in self.params:
@@ -3215,7 +3215,7 @@ class WCSData(Data, Tools):
             _fits_params = np.array(orb.utils.astrometry.get_wcs_parameters(
                 self.get_wcs(validate=False)))
         except Exception:
-            logging.warn('bad WCS in header')
+            logging.warning('bad WCS in header')
             return
         
         _wcs_params = np.array([self.params['target_x'],
@@ -3335,10 +3335,10 @@ class WCSData(Data, Tools):
         platescale_ok = True
         if np.abs(((basic_scale / 3600.) / self.params.delta_x) - 1) > 0.05:
             platescale_ok = False
-            logging.warn('wcs platescale along X ({}) seems incoherent with known platescale ({})'.format(self.params.delta_x, basic_scale/3600.))
+            logging.warning('wcs platescale along X ({}) seems incoherent with known platescale ({})'.format(self.params.delta_x, basic_scale/3600.))
         if np.abs(((basic_scale / 3600.) / self.params.delta_y) - 1) > 0.05:
             platescale_ok = False
-            logging.warn('wcs platescale along Y ({}) seems incoherent with known platescale ({})'.format(self.params.delta_y, basic_scale/3600.))
+            logging.warning('wcs platescale along Y ({}) seems incoherent with known platescale ({})'.format(self.params.delta_y, basic_scale/3600.))
 
         if platescale_ok:
             return np.mean([self.params.delta_x, self.params.delta_y]) * 3600.

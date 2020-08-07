@@ -313,7 +313,7 @@ def sort_image_list(file_list, image_mode, cube=True):
     test = np.sum(file_keys == file_keys[0,:], axis=0)
 
     if np.min(test) > 1:
-        logging.warn('Images list cannot be safely sorted. Two images at least have the same index')
+        logging.warning('Images list cannot be safely sorted. Two images at least have the same index')
         column_index = np.nan
     else:
         column_index = np.argmin(test)

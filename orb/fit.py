@@ -153,7 +153,7 @@ class FitVector(object):
             if snr_guess is None:
                 self.snr_guess = None
                 self.classic = True
-                logging.warn('No SNR guess given. Fit mode is classic.')
+                logging.warning('No SNR guess given. Fit mode is classic.')
             else:
                 try:
                     snr_guess = float(snr_guess)
@@ -315,7 +315,7 @@ class FitVector(object):
         # check nans
         for ikey in all_p_free:
             if np.isnan(gvar.sdev(all_p_free[ikey])):
-                logging.warn('nan in passed parameters: {}'.format(all_p_free))
+                logging.warning('nan in passed parameters: {}'.format(all_p_free))
     
         step_nb = self.vector.shape[0]
         if x is None:
@@ -373,7 +373,7 @@ class FitVector(object):
                 
     
         if np.any(np.isnan(gvar.mean(model))):
-            logging.warn('Nan in model')
+            logging.warning('Nan in model')
 
         if return_models:
             return model, models
@@ -552,7 +552,7 @@ class FitVector(object):
                     
             if fit.stopping_criterion == 0:
                 logging.debug('Dit not converge: stopping criterion == 0')
-                logging.warn('Did not converge')
+                logging.warning('Did not converge')
                 return []
 
             returned_data = dict()
@@ -1162,7 +1162,7 @@ class ContinuumModel(Model):
                 mod *= multfsp(x)
 
         if np.any(np.isnan(gvar.mean(mod))):
-            logging.warn('Nan in model')
+            logging.warning('Nan in model')
 
         if return_complex:
             mod = orb.utils.vector.complex2float((mod, np.zeros_like(mod)))
@@ -1568,15 +1568,15 @@ class LinesModel(Model):
         for key in list(self.p_val.keys()):
             if self.p_val[key] is None:
                 if 'pos' in key:
-                    logging.warn('No initial position given')
+                    logging.warning('No initial position given')
                 if 'fwhm' in key:
-                    logging.warn('No initial fwhm given')
+                    logging.warning('No initial fwhm given')
                 if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
                     if 'sigma' in key:
-                        logging.warn('No initial sigma given')
+                        logging.warning('No initial sigma given')
                 if self._get_fmodel() in ['sincphased', 'sincgaussphased']:
                     if 'alpha' in key:
-                        logging.warn('No initial alpha given')
+                        logging.warning('No initial alpha given')
         ratio = self._get_ratio()
         if ratio is None:
             raise ValueError('ratio must be set to something else than None (e.g. 0.25)')
@@ -2159,7 +2159,7 @@ class InputParams(object):
         if params.fmodel in ['sincgauss', 'sincgaussphased']:
             if 'fwhm_def' in params:
                 if np.any(np.array(params.fwhm_def, dtype=str) != 'fixed'):
-                    logging.warn('fmodel is a sincgauss and FWHM is not fixed')
+                    logging.warning('fmodel is a sincgauss and FWHM is not fixed')
             else:
                 params['fwhm_def'] = ['fixed'] * np.size(lines)
                 
@@ -2206,11 +2206,11 @@ class InputParams(object):
                     params['sigma_cov'] = list(_sigma_cov)
 
                 if np.any(gvar.mean(params.sigma_guess) <= 0.):
-                    logging.warn('please set a guess, or a covarying value of sigma > 0 or use a  sinc model or you might end up with nans')
+                    logging.warning('please set a guess, or a covarying value of sigma > 0 or use a  sinc model or you might end up with nans')
 
 
         if 'line_nb' in params:
-            logging.warning('line_nb was set by user')
+            logging.warninging('line_nb was set by user')
             del params.line_nb # this parameter cannot be changed
 
         if 'pos_guess' in params:
@@ -2451,7 +2451,7 @@ class Cm1InputParams(InputParams):
             filter_bandpass = self.filterfile.get_filter_bandpass_cm1()
             if (min(self.signal_range_cm1) > min(filter_bandpass)
                 or max(self.signal_range_cm1) < max(filter_bandpass)):
-                logging.warn('Filter model might be badly constrained with such a signal range')
+                logging.warning('Filter model might be badly constrained with such a signal range')
 
 
     def set_signal_range(self, rmin, rmax):
@@ -2976,7 +2976,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
         return fit
     
     elif ip.allparams.fmodel in ['sincgauss', 'sincgaussphased']:
-        logging.warn('bad fit, fmodel replaced by a normal sinc')
+        logging.warning('bad fit, fmodel replaced by a normal sinc')
         all_args['fmodel'] = 'sinc'
         return fit_lines_in_spectrum(**all_args)
         

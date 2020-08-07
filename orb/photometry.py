@@ -158,7 +158,7 @@ class Photometry(object):
         """
         if not modulated:
             if opd_jitter is not None or wf_error is not None:
-                logging.warn('opd_jitter and wf_error have no effect when computing unmodulated flux')
+                logging.warning('opd_jitter and wf_error have no effect when computing unmodulated flux')
                 
         if isinstance(flux, orb.core.Cm1Vector1d):
             cm1_axis = flux.axis.data

@@ -194,7 +194,7 @@ class Interferogram(orb.core.Vector1d):
             zeros_vector[:-sym_len] = 2.
 
         if sym_len > self.dimx / 2.:
-            logging.warn('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
+            logging.warning('interferogram is mostly symmetric. The use of Mertz ramp should be avoided.')
 
         if not inplace:
             spec = self.copy()
@@ -333,7 +333,7 @@ class RealInterferogram(Interferogram):
         # check source_counts
         if 'source_counts' not in self.params:
             if np.nanmin(self.data) < 0:
-                logging.warn('interferogram may be a combined interferogram. source_counts can be wrong')
+                logging.warning('interferogram may be a combined interferogram. source_counts can be wrong')
             self.params.reset('source_counts', np.sum(np.abs(self.data)))
         elif not isinstance(self.params.source_counts, float):
             raise TypeError('source_counts must be a float')
@@ -343,7 +343,7 @@ class RealInterferogram(Interferogram):
                                # read during Vector1d init. Only
                                # self.err is tested
             if np.nanmin(self.data) < 0:
-                logging.warn('interferogram may be a combined interferogram. photon noise can be wrong.')
+                logging.warning('interferogram may be a combined interferogram. photon noise can be wrong.')
             
             self.err = np.sqrt(np.abs(self.data))
             
@@ -675,7 +675,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         """Return an apodized spectrum (works well only if spectrum is complex)"""
         spec = self.copy()
         if not np.any(np.iscomplex(self.data)):
-            logging.warn('spectrum is not complex. Apodizing will not give ideal results')
+            logging.warning('spectrum is not complex. Apodizing will not give ideal results')
         spec.data[np.isnan(spec.data)] = 0.
         zp_spec = np.concatenate([spec.data, spec.data[::-1]])
         spec_ifft = scipy.fftpack.ifft(zp_spec)
@@ -738,7 +738,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             phase = orb.core.Vector1d(phase, axis=self.axis).data
             
         if phase.shape[0] != self.dimx:
-            logging.warn('phase does not have the same size as spectrum. It will be interpolated.')
+            logging.warning('phase does not have the same size as spectrum. It will be interpolated.')
             phase = orb.utils.vector.interpolate_size(phase, self.dimx, 1)
             
         self.data *= np.exp(-1j * phase)
@@ -902,7 +902,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             warnings.simplefilter('default')
 
         except Exception as e:
-            logging.warn('Exception occured during fit: {}'.format(e))
+            logging.warning('Exception occured during fit: {}'.format(e))
             import traceback
             print((traceback.format_exc()))
 
