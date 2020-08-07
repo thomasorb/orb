@@ -524,6 +524,8 @@ class HDFCube(orb.core.WCSData):
         if not recompute:
             if self.has_dataset('deep_frame'):
                 df = self.get_dataset('deep_frame', protect=False)
+                if self.is_old:
+                    df *= self.dimz
         
             elif self.is_old:
                 df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
@@ -2586,6 +2588,8 @@ class SpectralCube(Cube):
         :param flambda: must be core.Cm1Vector1d instance.
         """
         self.set_param('flambda', flambda.project(self.get_base_axis()).data)
+        if self.is_old:
+            logging.warning('data is already calibrated. Modification of flambda will  not change the data.')
         
     def compute_modulation_ratio(self):
         deep_spectral = self.compute_sum_image()
