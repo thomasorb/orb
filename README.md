@@ -48,8 +48,8 @@ conda activate orb3
 ```
 now your prompt should be something like `(orb3) $`.
 ```bash
-pip install gvar --no-deps
-pip install lsqfit --no-deps
+pip install gvar==9.2 --no-deps
+pip install lsqfit==11.2 --no-deps
 pip install fpdf --no-deps
 ```
 
