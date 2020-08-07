@@ -116,7 +116,7 @@ pluggy==0.9.0
 pp==1.6.5
 prometheus-client==0.6.0
 prompt-toolkit==1.0.15
-psutil==5.6.1
+psutil==5.6.6
 ptyprocess==0.6.0
 py==1.8.0
 py-expression-eval==0.3.3
