@@ -1,5 +1,5 @@
-from Cython.Build import cythonize
 from setuptools import setup, Extension, find_packages
+from Cython.Build import cythonize
 import io
 import codecs
 import os
@@ -36,7 +36,7 @@ extensions = [
 setup(
     name='orb-kernel',
     ext_modules=cythonize(extensions),
-    version='',
+    version='3.0',
     url='https://github.com/thomasorb/orb',
     license='GPLv3+',
     author='Thomas Martin',
