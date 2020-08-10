@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>orb package &mdash; Orb unknown documentation</title>
+  <title>orb package &mdash; Orb latest documentation</title>
   
 
   
@@ -40,7 +40,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="orb.ext package" href="orb.ext.html" />
-    <link rel="prev" title="ORB installation" href="installation.html" /> 
+    <link rel="prev" title="ORB Documentation" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                unknown
+                latest
               </div>
             
           
@@ -92,10 +92,7 @@
               
             
             
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">ORB installation</a></li>
-</ul>
-<ul class="current">
+              <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">orb package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="orb.ext.html">orb.ext package</a></li>
@@ -117,9 +114,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-orb">Module contents</a></li>
 </ul>
 </li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
             
@@ -2273,6 +2267,23 @@ is <em>much</em> more noisy by definition.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="orb.cube.HDFCube.get_level">
+<code class="sig-name descname">get_level</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.get_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return reduction level of the cube.</p>
+<ul class="simple">
+<li><p>level 1: old hdf5 architecture, real output, unit in
+erg/cm2/s/A, deep frame is the mean of the interferogram cube</p></li>
+<li><p>level 2: new hdf5 architecture, real output, unit in
+erg/cm2/s/A, deep frame is the sum of the interferogram cube</p></li>
+<li><p>level 3: new hdf5 architecture, complex output, unit in
+counts, data can be calibrated via flambda parameter :
+spectrum <a href="#id1"><span class="problematic" id="id2">*</span></a>= cube.params.flambda / cube.dimz /
+cube.exposure_time, deep frame is the sum of the
+interferogram cube</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
 <dt id="orb.cube.HDFCube.get_master_frame">
 <code class="sig-name descname">get_master_frame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">combine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reject</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.get_master_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Combine frames along z to create a master frame.</p>
@@ -2442,6 +2453,24 @@ axes.</p>
 <dd class="field-odd"><p><strong>cube_test</strong> – Cube to check</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="orb.cube.HDFCube.is_level1">
+<code class="sig-name descname">is_level1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.is_level1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if cube is level 1</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="orb.cube.HDFCube.is_level2">
+<code class="sig-name descname">is_level2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.is_level2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if cube is level 2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="orb.cube.HDFCube.is_level3">
+<code class="sig-name descname">is_level3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.is_level3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if cube is level 3</p>
 </dd></dl>
 
 <dl class="py method">
@@ -6552,7 +6581,7 @@ angle (default None, taken at the center of the field).</p></li>
         <a href="orb.ext.html" class="btn btn-neutral float-right" title="orb.ext package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="installation.html" class="btn btn-neutral float-left" title="ORB installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="ORB Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -6562,7 +6591,7 @@ angle (default None, taken at the center of the field).</p></li>
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2017, Thomas Martin (thomas.martin.1@ulaval.ca)
+        &copy; Copyright 2020, Thomas Martin (thomas.martin.1@ulaval.ca)
 
     </p>
   </div>

@@ -12,12 +12,14 @@
 # serve to show the default.
 
 import sys, os
+import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.append(os.path.abspath('./../orb'))
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('./../orb'))
 
 
 # -- General configuration -----------------------------------------------------
@@ -49,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Orb'
-copyright = '2017, Thomas Martin (thomas.martin.1@ulaval.ca)'
+copyright = '{}, Thomas Martin (thomas.martin.1@ulaval.ca)'.format(datetime.datetime.today().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -7,8 +7,8 @@
 ORB Documentation
 ##################
 
-.. image:: images/logo.*
-   :width: 25%
+.. image:: logo.png
+   :width: 35%
    :align: center
 
 .. topic:: Welcome to ORB documentation !
@@ -36,8 +36,11 @@ Getting started
 .. toctree::
    :maxdepth: 2
 
-   installation
+The archive and the installation instructions for ORB_ can be found on github::
+  
+  https://github.com/thomasorb/orb
 
+  
 Documentation
 -------------
 
@@ -46,13 +49,6 @@ Documentation
 
    orb
 	      
-Changelog
----------
-
-.. toctree::
-   :maxdepth: 2
-
-   changelog
 
 Indices and tables
 ------------------
