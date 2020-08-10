@@ -793,6 +793,25 @@ class Spectrum(orb.core.Cm1Vector1d):
             else:
                 signal_range = None
 
+        # check kwargs formatting
+        def to_tuple(ikey, length=1):
+            if isinstance(kwargs[ikey], str):
+                kwargs[ikey] = tuple([kwargs[ikey],])
+            elif np.isscalar(kwargs[ikey]):
+                kwargs[ikey] = tuple([kwargs[ikey],])
+            
+
+        for ikey in kwargs:
+            if '_def' in ikey:
+                to_tuple(ikey)
+                if len(kwargs[ikey]) <= 1:
+                    kwargs[ikey] = kwargs[ikey] * len(lines)
+                
+            if '_cov' in ikey:
+                to_tuple(ikey)
+
+                
+                
         inputparams = orb.fit._prepare_input_params(
             self.params.step_nb,
             lines,
