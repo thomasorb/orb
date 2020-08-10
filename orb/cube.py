@@ -102,7 +102,6 @@ class HDFCube(orb.core.WCSData):
 
         :param kwargs: (Optional) :py:class:`~orb.orb.core.Data` kwargs.
         """
-        
         self.cube_path = str(path)
 
         if not os.path.exists(self.cube_path):
@@ -164,9 +163,9 @@ class HDFCube(orb.core.WCSData):
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
 
-        orb.core.WCSData.__init__(self, self, instrument=instrument,
-                                  data_prefix=data_prefix,
-                                  config=config, **kwargs)
+        super().__init__(self, instrument=instrument,
+                         data_prefix=data_prefix,
+                         config=config, **kwargs)
 
         # checking dims
         if self.data.ndim != 3:
@@ -1243,7 +1242,7 @@ class RWHDFCube(HDFCube):
         elif shape is not None:
             raise ValueError('shape or dtype must be set only when creating a new HDFCube')
 
-        HDFCube.__init__(self, path, instrument=instrument, **kwargs)
+        super().__init__(path, instrument=instrument, **kwargs)
         
         if self.is_level1(): raise Exception('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
@@ -1540,7 +1539,8 @@ class Cube(HDFCube):
           and the params dictionary can itself be modified with
           keyword arguments.
         """
-        HDFCube.__init__(self, path, instrument=instrument, params=params, **kwargs)
+        super().__init__(path, instrument=instrument, params=params, **kwargs)
+        
         # compute additional parameters
         self.filterfile = orb.core.FilterFile(self.params.filter_name)
         self.set_param('filter_name', self.filterfile.basic_path)
@@ -1815,7 +1815,7 @@ class FDCube(orb.core.Tools):
 
         :param kwargs: (Optional) :py:class:`~orb.core.Cube` kwargs.
         """
-        orb.core.Tools.__init__(self, **kwargs)
+        super().__init__(**kwargs)
 
         self.image_list_path = image_list_path
 
@@ -2143,12 +2143,9 @@ class SpectralCube(Cube):
     """
     def __init__(self, *args, **kwargs):
         """Init class"""
-        Cube.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.reset_params()
-        js, ncpus = self._init_pp_server(silent=True)
-        self._close_pp_server(js)
-        self.set_param('ncpus', int(ncpus))
         self.validate()
 
         logging.info('shape: {}'.format(self.shape))

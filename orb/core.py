@@ -67,8 +67,9 @@ try: import pygit2
 except ImportError: pass
 
 ## MODULES IMPORTS
-import orb.cutils
 import orb.utils.spectrum, orb.utils.parallel, orb.utils.io, orb.utils.filters
+import orb.cutils
+
 import orb.utils.photometry
 
 #################################################
@@ -114,7 +115,7 @@ class ColorStreamHandler(logging.StreamHandler):
         else:                          return cls.DEFAULT
 
     def __init__(self, stream=None):
-        logging.StreamHandler.__init__(self, stream)
+        super().__init__(stream)
 
     def format(self, record):
         text = logging.StreamHandler.format(self, record)
@@ -185,7 +186,7 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
     def __init__(self, host='localhost',
                  port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                  handler=LogRecordStreamHandler):
-        socketserver.ThreadingTCPServer.__init__(self, (host, port), handler)
+        super().__init__((host, port), handler)
         self.abort = False
         self.timeout = True
 
@@ -1418,7 +1419,7 @@ class Lines(Tools):
 
         :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
         """
-        Tools.__init__(self, **kwargs)
+        super().__init__(**kwargs)
 
         # create corresponding inverted dicts
         self.air_lines_name = dict()
@@ -1636,7 +1637,7 @@ class ParamsFile(Tools):
 
         :param kwargs: Kwargs are :py:class:`~core.Tools` properties.
         """
-        Tools.__init__(self, **kwargs)
+        super().__init__(**kwargs)
         
         self._params_list = list()
         if not reset and os.path.exists(file_path):
@@ -1812,7 +1813,7 @@ class Data(object):
           dict. These parameters take precedence over the parameters
           supplied in the params dictionnary.
 
-        """
+        """        
         LIMIT_SIZE = 100
                 
         # load from file
@@ -2312,7 +2313,7 @@ class Vector1d(Data):
     
     def __init__(self, *args, **kwargs):
 
-        Data.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # checking
         if self.data.ndim != 1:
@@ -2593,7 +2594,7 @@ class Axis(Vector1d):
         if axis is not None: raise ValueError('axis must be set to None')
         if mask is not None: raise ValueError('mask must be set to None')
         
-        Vector1d.__init__(self, data, **kwargs)
+        super().__init__(data, **kwargs)
 
         # check that axis is regularly sampled
         diff = np.diff(self.data)
@@ -2659,7 +2660,7 @@ class Cm1Vector1d(Vector1d):
           supplied in the params dictionnary.
 
         """
-        Vector1d.__init__(self, spectrum, axis=axis, params=params, **kwargs)
+        super().__init__(spectrum, axis=axis, params=params, **kwargs)
 
         if self.has_params():
             if len(set(self.obs_params).intersection(self.params)) == len(self.obs_params):
@@ -2793,7 +2794,7 @@ class FilterFile(Vector1d):
 
         if not os.path.exists(self.basic_path):
             raise ValueError('filter_name is not a valid filter name and is not a valid filter file path')
-        Vector1d.__init__(self, self.basic_path, axis=None, params=params, **kwargs)
+        super().__init__(self.basic_path, axis=None, params=params, **kwargs)
 
         # reload self.tools with new params
         self.tools = Tools(instrument=self.params.instrument) 
@@ -2897,7 +2898,7 @@ class FilterFile(Vector1d):
 #################################################
 #### CLASS WCSData ##############################
 #################################################
-class WCSData(Data, Tools):
+class WCSData(Tools, Data):
     """Add WCS functionalities to a Data instance.
     """
     default_params = {'camera':1,
@@ -2933,11 +2934,11 @@ class WCSData(Data, Tools):
                 if 'instrument' in kwargs['params']:
                     instrument = kwargs['params']['instrument']
 
-        Tools.__init__(self, instrument=instrument,
-                       data_prefix=data_prefix,
-                       config=config)
+        super().__init__(instrument=instrument,
+                         data_prefix=data_prefix,
+                         config=config)
         
-        Data.__init__(self, data, **kwargs) # note that this init may change the value of data
+        Data.__init__(self, data, **kwargs)
 
         # try to load wcs from fits keywords if a FITS file
         if data_path is not None:
