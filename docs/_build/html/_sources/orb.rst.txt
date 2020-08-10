@@ -12,13 +12,6 @@ Subpackages
 Submodules
 ----------
 
-orb.astrometry module
----------------------
-
-.. automodule:: orb.astrometry
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 orb.cgvar module
 ----------------
@@ -44,6 +37,14 @@ orb.core module
     :undoc-members:
     :show-inheritance:
 
+orb.cube module
+---------------
+
+.. automodule:: orb.cube
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 orb.cutils module
 -----------------
 
@@ -52,10 +53,10 @@ orb.cutils module
     :undoc-members:
     :show-inheritance:
 
-orb.etc module
+orb.fft module
 --------------
 
-.. automodule:: orb.etc
+.. automodule:: orb.fft
     :members:
     :undoc-members:
     :show-inheritance:
@@ -68,7 +69,38 @@ orb.fit module
     :undoc-members:
     :show-inheritance:
 
+orb.image module
+----------------
 
+.. automodule:: orb.image
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+orb.old module
+--------------
+
+.. automodule:: orb.old
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+orb.image photometry
+--------------------
+
+.. automodule:: orb.photometry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+orb.sim
+-------
+
+.. automodule:: orb.sim
+    :members:
+    :undoc-members:
+    :show-inheritance:
+       
 Module contents
 ---------------
 
