@@ -1456,6 +1456,8 @@ class RWHDFCube(HDFCube):
         
         with self.open_hdf5('a') as f:
             for iparam in std_sp.params:
+                if iparam == 'COMMENT':
+                    continue
                 f['standard_spectrum'].attrs[iparam] = std_sp.params[iparam]
             f['standard_spectrum'].attrs['axis'] = std_sp.axis.data
             

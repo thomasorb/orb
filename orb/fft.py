@@ -1062,8 +1062,10 @@ class StandardSpectrum(RealSpectrum):
         std = orb.photometry.Standard(self.params.object_name,
                                       instrument=self.params.instrument)
         airmass = self.params.airmass
-        if len(airmass) > 1:
+        if np.size(airmass) > 1:
             airmass = np.nanmedian(airmass)
+        else:
+            airmass = float(airmass)
             
         sim = std.simulate_measured_flux(
             self.params.filter_name, self.axis,
