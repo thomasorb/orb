@@ -175,7 +175,8 @@ class HDFCube(orb.core.WCSData):
             if not isinstance(indexer, orb.core.Indexer):
                 raise TypeError('indexer must be an orb.orb.core.Indexer instance')
         self.indexer = indexer
-        
+
+
     def __getitem__(self, key):
         """Implement getitem special method"""
         if self.is_level1():
@@ -196,8 +197,7 @@ class HDFCube(orb.core.WCSData):
             _data = _data.astype(np.complex128)
 
         return np.squeeze(_data)
-
-
+    
     def _read_old_header(self):
         """Backward compatibility method. Read old 'header' dataset and return a dict()
         """
@@ -237,7 +237,7 @@ class HDFCube(orb.core.WCSData):
                 params[ikey] = header[ikey]
                 
         return params
-
+        
     def is_level1(self):
         """Return True if cube is level 1"""
         return self.get_level() == 1
@@ -2548,10 +2548,7 @@ class SpectralCube(Cube):
                                               params=hdr, instrument=self.instrument)
         
         if self.has_param('standard_path'):
-            data, hdr = orb.utils.io.read_fits(self.params.standard_path, return_header=True)
-            std_flux_sp, wav = data.T
-            wav = np.linspace(wav[0], wav[-1], wav.size) # avoids rounding errors due to float32 conversion
-            std_flux_sp = orb.fft.StandardSpectrum(std_flux_sp, axis=wav, params=hdr)
+            std_flux_sp = orb.fft.StandardSpectrum(self.params.standard_path)
             return std_flux_sp
         
         else: raise Exception('standard spectrum dataset or standard_path parameter are not defined')

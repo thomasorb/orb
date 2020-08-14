@@ -615,7 +615,7 @@ class Image(Frame2D):
                  sip_order=3,
                  rrange=None, xyrange=None,
                  nsteps=7,
-                 return_fit_params=False, rscale_coeff=1.,
+                 return_fit_params=False, 
                  skip_registration=False,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
@@ -636,11 +636,7 @@ class Image(Frame2D):
         :param max_stars_detect: (Optional) Number of detected stars
           in the frame for the initial wcs parameters (default 60).
 
-        :param rrange: (Optional) initial brute force range for the
-          angle, must be a tuple (rmax, step_size).
-
-        :param rrange: (Optional) initial brute force range for the
-          x/y shift, must be a tuple (xymax, step_size).
+        :param max_radius_coeff: (Optional) Maximum radius to detect stars.
 
         :param nsteps: (Optional) Number of refinement steps (default 7).
 
@@ -648,10 +644,6 @@ class Image(Frame2D):
 
         :param return_fit_params: (Optional) If True return final fit
           parameters instead of wcs (default False).
-
-        :param rscale_coeff: (Optional) Coefficient on the maximum
-          radius of the fitted stars to compute scale. When rscale_coeff
-          = 1, rmax is half the longest side of the image (default 1).
 
         :param compute_distortion: (Optional) If True, optical
           distortion (SIP) are computed. Note that a frame with a lot
@@ -718,7 +710,7 @@ class Image(Frame2D):
         XYMAX = 500
         RMAX = 6
         ZMAX = 0.03
-        
+
         if not (self.params.target_ra is not None and self.params.target_dec is not None
                 and self.params.target_x is not None and self.params.target_y is not None
                 and self.params.wcs_rotation is not None):
@@ -729,6 +721,7 @@ class Image(Frame2D):
         logging.info('Computing WCS')
         logging.info('initial wcs')
         logging.info(str(self.get_wcs()))
+        logging.info('initial sip: {}'.format(self.get_wcs().sip))
         
         # Query to get reference star positions in degrees
         if star_list_query is None:
@@ -748,7 +741,7 @@ class Image(Frame2D):
             
         # reference star position list in degrees
         sl_cat_deg = star_list_query[:max_stars_detect*20]
-        
+            
         # ## Define a basic WCS        
         # wcs = orb.utils.astrometry.create_wcs(
         #     self.params.target_x, self.params.target_y,
@@ -816,6 +809,7 @@ class Image(Frame2D):
                 logging.info('no sip')
 
             sl_cat_pix = self.world2pix(sl_cat_deg[:,:2])
+        
             logging.info('sip computed with {} stars'.format(sl_cat_pix.shape[0]))
             
             fit = self.fit_stars(
@@ -826,11 +820,11 @@ class Image(Frame2D):
             
             ## remove bad fits
             
-            fit[np.abs(fit.dx) > self.get_fwhm_pix()] = np.nan
-            fit[np.abs(fit.dy) > self.get_fwhm_pix()] = np.nan
+            fit[np.abs(fit.dx) > self.get_fwhm_pix() * 3] = np.nan
+            fit[np.abs(fit.dy) > self.get_fwhm_pix() * 3] = np.nan
 
-            logging.debug('{} stars fitted'.format(len(fit.dropna())))
-            
+            logging.info('{} stars fitted'.format(len(fit.dropna())))
+
             wcs = self.fit_sip(sl_cat_pix,
                                orb.utils.astrometry.df2list(fit),
                                params=None, init_sip=self.get_wcs(),
@@ -846,7 +840,7 @@ class Image(Frame2D):
             logging.info('Computing distortion maps')
             
             sl_cat_pix = self.world2pix(sl_cat_deg[:,:2])
-            logging.info('error maps computed with {} stars'.format(sl_cat_pix.shape[0]))
+            logging.info('distortion maps computed with {} stars'.format(sl_cat_pix.shape[0]))
             
             # fit based on SIP corrected parameters
             fit = self.fit_stars(
@@ -873,7 +867,7 @@ class Image(Frame2D):
             _dx = fit.dx.values
             _dy = fit.dy.values
 
-            logging.info('error maps computed with {} good stars'.format(_x.shape[0]))
+            logging.info('distortion maps computed with {} good stars'.format(_x.shape[0]))
             
             dxrbf = interpolate.Rbf(_x, _y, _dx, epsilon=1, function='linear')
             dyrbf = interpolate.Rbf(_x, _y, _dy, epsilon=1, function='linear')
@@ -900,7 +894,7 @@ class Image(Frame2D):
                 np.linspace(0, self.dimy, dymap.shape[1]),
                 dymap_fit, kx=3, ky=3)
 
-            logging.info('comuting full sized dxdymaps (error maps)')
+            logging.info('computing full sized dxdymaps (error maps)')
             X = np.arange(self.dimx)
             Y = np.arange(self.dimy)    
             dxmap = dxspl(X, Y, grid=True)

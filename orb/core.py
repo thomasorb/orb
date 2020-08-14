@@ -1990,7 +1990,6 @@ class Data(object):
                
         self.params = ROParams(self.params) # self.params must always be an ROParams instance
         
-        
     def __getitem__(self, key):
         _data = self.data.__getitem__(key)
         if self.has_mask():
@@ -3102,19 +3101,18 @@ class WCSData(Tools, Data):
         #         sip = self.load_sip(self._get_sip_file_path(self.params.camera))
         #         logging.debug('SIP Loaded from{}\n{}'.format(
         #             self._get_sip_file_path(self.params.camera), sip))
-        #     else:
-        #         sip = self.get_wcs()
-        #         logging.debug('SIP already defined\n{}'.format(sip))
-
+        else:
+            sip = self.get_wcs()
+            
         # reset wcs
         wcs = orb.utils.astrometry.create_wcs(
             self.params.target_x, self.params.target_y,
             self.params.delta_x, self.params.delta_y,
             self.params.target_ra, self.params.target_dec,
             self.params.wcs_rotation, sip=sip)
-
+        
         self.set_wcs(wcs)
-
+        
         logging.debug(self.get_wcs())
         self.validate_wcs()
         

@@ -31,6 +31,11 @@ instructions are here: [Miniconda — Conda](https://conda.io/miniconda.html)
 ```bash
 bash Miniconda*.sh
 ```
+You may have to run
+```bash
+conda init bash
+```
+
 ### 2. install `conda-build` tools
 ```bash
 conda install conda-build
@@ -65,7 +70,7 @@ git clone https://github.com/thomasorb/orb.git
 in the downloaded folder
 ```bash
 conda activate orb3 # you don't need to do it if you are already in the orb3 environment
-cd path/to/orb-stable
+cd path/to/orb-stable/orb
 python setup.py build_ext --inplace
 python setup.py install
 ```

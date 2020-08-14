@@ -585,7 +585,8 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
                                       maxfev=100, full_output=True,
                                       xtol=fit_tol)
     except Exception as e:
-        logging.warning('fit_star leastsq exception: {}'.format(e))
+        #logging.debug('fit_star leastsq exception: {}'.format(e))
+        pass
         return []
     
     if fit_params[-1] <= 4:

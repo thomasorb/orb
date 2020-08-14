@@ -44,7 +44,7 @@ def apply_async(pool, fun, args):
 
 class JobServer(object):
 
-    def __init__(self, ncpus, timeout=100):
+    def __init__(self, ncpus, timeout=1000):
 
         self.ncpus = int(ncpus)
         self.timeout = int(timeout)
@@ -160,7 +160,7 @@ def get_ncpus(ncpus):
 
     
     
-def init_pp_server(ncpus=0, silent=False, use_ray=False, timeout=100):
+def init_pp_server(ncpus=0, silent=False, use_ray=False, timeout=1000):
     """Initialize a server for parallel processing.
 
     :param ncpus: (Optional) Number of cpus to use. 0 means use all
