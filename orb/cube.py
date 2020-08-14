@@ -2633,7 +2633,7 @@ class SpectralCube(Cube):
         """
         self.set_param('flambda', flambda.project(self.get_base_axis()).data)
         if self.get_level() < 3:
-            logging.warning('data should be already calibrated in erg/cm2/s/A. Setting a new flambda will not change the data.')
+            logging.warning('internal data should be already calibrated in erg/cm2/s/A. Setting a new flambda will not change the data.')
         
     def compute_modulation_ratio(self):
         deep_spectral = self.compute_sum_image()
