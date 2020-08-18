@@ -105,7 +105,7 @@ class HDFCube(orb.core.WCSData):
         self.cube_path = str(path)
 
         if not os.path.exists(self.cube_path):
-            raise IOError('File does not exist')
+            raise IOError('File {} does not exist'.format(self.cube_path))
                                 
         # check if cube has an old format in which case it must be
         # loaded before and passed as an instance to Data.

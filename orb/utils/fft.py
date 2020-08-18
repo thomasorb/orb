@@ -374,4 +374,10 @@ def interf_mean_energy(interf):
     .. note:: NaNs are set to 0.
     """
     return orb.cutils.interf_mean_energy(interf)
+
+def phase_model(sigma, costheta, *p):
+    if len(p) != 2:
+        raise Exception('p must have len 2, not {}'.format(len(p)))
+    return np.polynomial.polynomial.polyval(sigma, p)
+    #return np.polynomial.polynomial.polyval(sigma, p) * (1 - costheta)
     

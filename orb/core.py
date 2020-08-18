@@ -1209,10 +1209,13 @@ class Indexer(Tools):
     This class can be accessed like a dictionary.
     """
 
-    file_groups = ['cam1', 'cam2', 'merged']
-    file_group_indexes = [0, 1, 2]
-    index = dict()
-    file_group = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.file_groups = ['cam1', 'cam2', 'merged']
+        self.file_group_indexes = [0, 1, 2]
+        self.index = dict()
+        self.file_group = None
 
     def __getitem__(self, file_key):
         """Implement the evaluation of self[file_key]
@@ -2890,6 +2893,12 @@ class FilterFile(Vector1d):
             _nm_min, _nm_max, _delta_nm)
 
         return orb.utils.spectrum.nm2cm1(_lines_nm)
+
+    def get_high_order_phase(self):
+        params = dict(self.params)
+        params['filter_name'] = self.filter_name
+        return Cm1Vector1d(self.tools._get_phase_file_path(self.filter_name),
+                           params=params)
 
 
 

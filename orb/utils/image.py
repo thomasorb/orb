@@ -635,9 +635,8 @@ def fit_phase_map(data_map, err_map, theta_map):
     fitted = model(theta_map, *pfit)
     residual = (fitted - data_map)
     err = orb.utils.stats.sigmacut(residual[okpix], sigma=2.5)
-    logging.info('modeling error: {} rad'.format(
-        np.nanstd(err),
-        np.nanmedian(err_map[okpix])))
+    logging.info('p: {} | modeling error: {} rad'.format(
+        pfit, np.nanstd(err)))
 
     return fitted, residual
 

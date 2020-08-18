@@ -488,10 +488,20 @@ class Phase(orb.core.Cm1Vector1d):
             ph += new_orig
             
         data[zmin:zmax] = ph
+
+            
+        out = self.copy()
+        out.data = data
+
+        if out.has_err():
+            out.err[:zmin] = np.nan
+            out.err[zmax:] = np.nan
+            
+        return out
         
-        return Phase(data, axis=self.axis, params=self.params)        
-        
-    def polyfit(self, deg, coeffs=None, return_coeffs=False,
+    def polyfit(self, deg, coeffs=None,
+                calib_coeff=None,
+                return_coeffs=False,
                 border_ratio=0.1):
         """Polynomial fit of the phase
    
@@ -535,7 +545,13 @@ class Phase(orb.core.Cm1Vector1d):
             raise orb.utils.err.FitError('phase contains nans in the filter passband')
         
         phase[np.isnan(phase)] = 0.
-        
+
+        # use calibration coeff in phase fit
+        if calib_coeff is not None:
+            costheta = 1. / calib_coeff
+        else:
+            costheta = 0
+            
         # create guess
         guesses = list()
         guess0 = np.nanmean(ok_phase)
@@ -571,12 +587,12 @@ class Phase(orb.core.Cm1Vector1d):
                 all_p = p
             return np.array(all_p)
         
-        def model(x, *p):
-            p = format_guess(p)            
-            return np.polynomial.polynomial.polyval(x, p)
+        def model(x, ctheta, *p):
+            p = format_guess(p)
+            return orb.utils.fft.phase_model(x, ctheta, *p)
 
-        def diff(p, x, y, w):
-            res = model(x, *p) - y
+        def diff(p, x, y, w, ctheta):
+            res = model(x, ctheta, *p) - y
             return res * w
         
         try:            
@@ -584,7 +600,7 @@ class Phase(orb.core.Cm1Vector1d):
                 diff, guesses,
                 args=(
                     self.axis.data.astype(float),
-                    phase, weights),
+                    phase, weights, costheta),
                 full_output=True)
             pfit = _fit[0]
             pcov = _fit[1]
@@ -1351,14 +1367,8 @@ class PhaseMaps(orb.core.Tools):
         :param unbin: If True, positions are unbinned position
           (i.e. real positions on the detector) (default False).
         """
-        x = int(x)
-        y = int(y)
-        if unbin:
-            orb.utils.validate.index(x, 0, self.dimx_unbinned, clip=False)
-            orb.utils.validate.index(y, 0, self.dimy_unbinned, clip=False)
-        else:
-            orb.utils.validate.index(x, 0, self.dimx, clip=False)
-            orb.utils.validate.index(y, 0, self.dimy, clip=False)
+        x, y = self.validate_xy(x, y, unbin=unbin)
+        
         coeffs = list()
         for iorder in range(len(self.phase_maps)):
             if unbin:
@@ -1367,6 +1377,17 @@ class PhaseMaps(orb.core.Tools):
                 coeffs.append(self.phase_maps[iorder][x, y])
                 
         return coeffs
+
+    def validate_xy(x, y, unbin=False):
+        x = int(x)
+        y = int(y)
+        if unbin:
+            orb.utils.validate.index(x, 0, self.dimx_unbinned, clip=False)
+            orb.utils.validate.index(y, 0, self.dimy_unbinned, clip=False)
+        else:
+            orb.utils.validate.index(x, 0, self.dimx, clip=False)
+            orb.utils.validate.index(y, 0, self.dimy, clip=False)
+        return x, y
     
     def get_phase(self, x, y, unbin=False, coeffs=None):
         """Return a phase instance at position x, y in the maps. x, y are
@@ -1390,10 +1411,16 @@ class PhaseMaps(orb.core.Tools):
                 if coeffs[i] is not None:
                     if not np.isnan(coeffs[i]):
                         _coeffs[i] = coeffs[i]
+
+        x, y = self.validate_xy(x, y, unbin=unbin)
+        if unbin:
+            ctheta = 1. / self.unbinned_calibration_coeff_map[x, y]
+        else:
+            ctheta = 1. / self.calibration_coeff_map[x, y]
             
+        model = orb.utils.fft.phase_model(self.axis, ctheta, *_coeffs)
         return Phase(
-            np.polynomial.polynomial.polyval(
-                self.axis, _coeffs).astype(float),
+            model.astype(float),
             axis=self.axis, params=self.params)
     
 
