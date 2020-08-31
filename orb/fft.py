@@ -469,26 +469,9 @@ class Phase(orb.core.Cm1Vector1d):
         zmin, zmax = self.get_filter_bandpass_pix(border_ratio=border_ratio)
         data = np.empty_like(self.data)
         data.fill(np.nan)
-        ph = orb.utils.vector.robust_unwrap(self.data[zmin:zmax], 2*np.pi)
-        if np.any(np.isnan(ph)):
-            ph.fill(np.nan)
-        else:
-            # set the first sample at the smallest positive modulo pi
-            # value (order 0 is modulo pi)
-            new_orig = np.fmod(ph[0], np.pi)
-            while new_orig < 0:
-                new_orig += np.pi
-            if np.abs(new_orig) > np.abs(new_orig - np.pi):
-                new_orig -= np.pi
-            elif np.abs(new_orig) > np.abs(new_orig + np.pi):
-                new_orig += np.pi
-                
-                
-            ph -= ph[0]
-            ph += new_orig
-            
-        data[zmin:zmax] = ph
         
+        data[zmin:zmax] = orb.utils.fft.clean_phase(self.data[zmin:zmax])
+                    
         return Phase(data, axis=self.axis, params=self.params)        
         
     def polyfit(self, deg, coeffs=None, return_coeffs=False,
