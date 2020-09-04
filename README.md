@@ -15,7 +15,7 @@ photometry.
 
 You can find the up-to-date documentation here:
 
-http://celeste.phy.ulaval.ca/orb-doc/index.html
+https://orb.readthedocs.io/en/latest/
 
 
 

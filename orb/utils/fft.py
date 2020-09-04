@@ -39,6 +39,34 @@ import orb.cutils
 import orb.constants
 
 
+def mod2pi(a):
+    """Return the smallest signed modulo 2 pi of any angle in radians
+    """
+    return np.arctan2(np.sin(a), np.cos(a))
+
+def clean_phase(ph):
+    """Return a cleaned phase vector (which does not depend on an arbitrary modulo pi)
+    """
+    ph = orb.utils.vector.robust_unwrap(np.copy(ph), 2*np.pi)
+    if np.any(np.isnan(ph)):
+        ph.fill(np.nan)
+    else:
+        # set the first sample at the smallest positive modulo pi
+        # value (order 0 is modulo pi)
+        new_orig = np.fmod(ph[0], np.pi)
+        while new_orig < 0:
+            new_orig += np.pi
+        if np.abs(new_orig) > np.abs(new_orig - np.pi):
+            new_orig -= np.pi
+        elif np.abs(new_orig) > np.abs(new_orig + np.pi):
+            new_orig += np.pi
+
+
+        ph -= ph[0]
+        ph += new_orig
+    return ph
+        
+
 def next_power_of_two(n):
     """Return the next power of two greater than n.
     
