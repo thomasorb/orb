@@ -616,7 +616,7 @@ def fit_phase_map(data_map, err_map, theta_map):
     """Fit an order 0 phase map with a simple cos(theta) model
     """
     def model(x, *p):
-        return p[0] + p[1] * (1 - np.cos(np.deg2rad(x)))
+        return p[0] + p[1] * np.cos(np.deg2rad(x))
     
     orb.utils.validate.is_2darray(data_map)
     orb.utils.validate.have_same_shape((data_map, err_map, theta_map))
