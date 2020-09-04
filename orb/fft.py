@@ -1323,11 +1323,10 @@ class PhaseMaps(orb.core.Tools):
         if self._isvalid_order(order):
             return np.copy(self.phase_maps_err[order])
 
-    def get_model_0(self):
-        """Return order 0 model.
-        """
-        _phase_map = self.get_map(0)
-        _phase_map_err = self.get_map_err(0)
+    def get_mapped_model(self, order):
+        """Return mapped model"""
+        _phase_map = self.get_map(order)
+        _phase_map_err = self.get_map_err(order)
                 
         model, err = orb.utils.image.fit_phase_map(
             _phase_map,
@@ -1339,10 +1338,13 @@ class PhaseMaps(orb.core.Tools):
     def modelize(self):
         """Replace phase maps by their model inplace
         """
-        model, err = self.get_model_0()
+        model, err = self.get_mapped_model(0)
         self.phase_maps[0] = model
+        
+        model, err = self.get_mapped_model(1)
+        self.phase_maps[1] = model
 
-        for iorder in range(1, len(self.phase_maps)):
+        for iorder in range(2, len(self.phase_maps)):
             self.phase_maps[iorder] = (np.ones_like(self.phase_maps[iorder])
                                        * np.nanmean(self.phase_maps[iorder]))
         self._compute_unbinned_maps()
@@ -1378,7 +1380,7 @@ class PhaseMaps(orb.core.Tools):
                 
         return coeffs
 
-    def validate_xy(x, y, unbin=False):
+    def validate_xy(self, x, y, unbin=False):
         x = int(x)
         y = int(y)
         if unbin:
@@ -1447,6 +1449,7 @@ class PhaseMaps(orb.core.Tools):
         progress.end()
 
         orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+        return phase_cube
         
     
     def unwrap_phase_map_0(self):

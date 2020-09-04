@@ -1925,7 +1925,7 @@ class Data(object):
             data = np.squeeze(np.copy(data))
             if data.ndim > 3: raise TypeError('data dimension > 3 is not supported')
             self.data = data
-            
+
         self.dimx = self.data.shape[0]
         if self.data.ndim > 1:
             self.dimy = self.data.shape[1]

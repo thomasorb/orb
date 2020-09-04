@@ -616,21 +616,21 @@ def fit_phase_map(data_map, err_map, theta_map):
     """Fit an order 0 phase map with a simple cos(theta) model
     """
     def model(x, *p):
-        return p[0] + p[1] * np.cos(np.deg2rad(x))
+        return p[0] + p[1] * (1 - np.cos(np.deg2rad(x)))
     
     orb.utils.validate.is_2darray(data_map)
     orb.utils.validate.have_same_shape((data_map, err_map, theta_map))
-    KNOTS_NB = 100
-    thetas = np.linspace(np.nanpercentile(theta_map,.1),
-                         np.nanpercentile(theta_map,99.9),
-                         KNOTS_NB)
     okpix = np.zeros_like(data_map, dtype=bool)
     okpix[np.nonzero(data_map)] = True
     okpix[np.nonzero(np.isnan(data_map))] = False
     okpix[np.nonzero(np.isinf(data_map))] = False
     okpix = np.nonzero(okpix)
 
-    pfit, pcov = optimize.curve_fit(model, theta_map[okpix], data_map[okpix], p0=(0,1), sigma=err_map[okpix])
+    if np.all(np.isnan(err_map)) or np.nanmax(err_map) == np.nanmin(err_map):
+        err_map.fill(1.)
+        
+    pfit, pcov = optimize.curve_fit(model, theta_map[okpix], data_map[okpix],
+                                    p0=(1,1), sigma=err_map[okpix])
 
     fitted = model(theta_map, *pfit)
     residual = (fitted - data_map)
