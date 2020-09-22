@@ -1543,7 +1543,7 @@ class StandardImage(Image):
     def compute_flux_correction_factor(self):
         """Compute the flux correction factor that can be used by
         orb.photometry.Photometry.get_flambda()"""
-        
+
         std_xy = self.find_object()
         try:
             orb.utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
@@ -1558,8 +1558,14 @@ class StandardImage(Image):
         std = orb.photometry.Standard(self.params.object_name,
                                       instrument=self.instrument)
 
+        ff = orb.core.FilterFile(self.params.filter_name)
+        cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
+            1000, ff.params.step, ff.params.order,
+            corr=orb.utils.spectrum.theta2corr(
+                self.config.OFF_AXIS_ANGLE_CENTER)))
+
         std_flux_sim = std.simulate_measured_flux(
-            self.params.filter_name, 1000,
+            self.params.filter_name, cm1_axis,
             camera_index=self.params.camera,
             modulated=False, airmass=self.params.airmass) 
 
