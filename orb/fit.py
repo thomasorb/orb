@@ -2602,7 +2602,7 @@ class OutputParams(Params):
             # compute fwhm in Angstroms to get flux
             # If calibrated, amplitude unit must be in erg/cm2/s/A, then
             # fwhm/width units must be in Angströms
-            if wavenumber:                
+            if wavenumber:
                 fwhm = orb.utils.spectrum.fwhm_cm12nm(
                     line_params[:,3], line_params[:,2]) * 10.
             else:
@@ -3104,8 +3104,7 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
 
     """
     NM_LASER = 543.5 # can be anything
-    RATIO = 0.25
-
+    
     fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
         step_nb - zpd_index, step, order, corr, wavenumber=True)
 
@@ -3161,8 +3160,11 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
         
     lines_model.set_p_free(p_free)
     spectrum = lines_model.get_model(np.arange(step_nb))
-    
-    return gvar.mean(spectrum)
+
+    spectrum = gvar.mean(spectrum)
+    cm1_axis = orb.utils.spectrum.create_cm1_axis(
+        spectrum.size, step, order, corr=corr)
+    return cm1_axis, spectrum
 
 
 def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,

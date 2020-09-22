@@ -1088,7 +1088,7 @@ class StandardSpectrum(RealSpectrum):
         spe.data[np.isnan(spe.data)] = 0
         return spe
 
-    def compute_flux_correction_vector(self, deg=2, resolution=350, return_residual=False):
+    def compute_flux_correction_vector(self, deg=None, resolution=None, return_residual=False):
         """Compute flux correction vector by fitting a simulated model of the
         standard star on the observed spectrum.
         """
@@ -1096,35 +1096,39 @@ class StandardSpectrum(RealSpectrum):
             m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
             return np.array(m, dtype=float)
 
+        if deg is None:
+            deg = int(orb.core.FilterFile(self.params.filter_name).params.flux_correction_order)
+        logging.info('flux correction fitted with an order {} polynomial'.format(deg))
+        
+        if resolution is None:
+            resolution = int(orb.core.FilterFile(self.params.filter_name).params.flux_correction_resolution)
+        logging.info('flux correction fitted with a resolution R={}'.format(resolution))
+            
         sim = self.get_standard().change_resolution(resolution) # standard flux in counts/s
                
         spe = self.to_counts_s().change_resolution(resolution)
+
         
         xmin, xmax = self.get_filter_bandpass_pix(
-            border_ratio=0.05)
-        sim.data[:xmin] = 0
-        sim.data[xmax:] = 0
-        spe.data[:xmin] = 0
-        spe.data[xmax:] = 0
+            border_ratio=0.1)
+        
+        sim.data[:xmin] = sim.data[xmin]
+        sim.data[xmax:] = sim.data[xmax]
+        spe.data[:xmin] = sim.data[xmin]
+        spe.data[xmax:] = sim.data[xmax]
 
-
+        sigma = np.ones_like(spe.data, dtype=float)
+        sigma[:xmin] = 1e7
+        sigma[xmax:] = 1e7
+        
         fit = scipy.optimize.curve_fit(
             model, sim.data, spe.data,
-            p0=np.ones(deg+1, dtype=float)/10.)
+            p0=np.ones(deg+1, dtype=float)/10.,
+            sigma=sigma)
         
-        sim_fit = orb.core.Cm1Vector1d(
-            model(sim.data, *fit[0]),
-            axis=self.axis, params=self.params)
-
         poly = np.polynomial.polynomial.polyval(
             np.arange(sim.dimx), fit[0])
-        
-        xmin, xmax = self.get_filter_bandpass_pix(
-            border_ratio=-0.1)
 
-        poly[:xmin] = np.nan
-        poly[xmax:] = np.nan
-        
         # this is not a real residual but the fitted data so that both
         # the residual and the fitted polynomial can be plotted
         # together directly.
@@ -1133,11 +1137,14 @@ class StandardSpectrum(RealSpectrum):
             residual.data /= sim.data
             residual.data[:xmin] = np.nan
             residual.data[xmax:] = np.nan
-            residual.data /= np.nanmean(poly)
-            #residual.data[np.isnan(poly)] = 1.
-            
-        poly /= np.nanmean(poly)
-        poly[np.isnan(poly)] = 1.
+            residual.data /= np.nanmean(poly[xmin:xmax])
+
+        poly /= np.nanmean(poly[xmin:xmax])
+        poly[:xmin] = poly[xmin]
+        poly[xmax:] = poly[xmax]
+
+        # smooth polynomial on the borders
+        poly = orb.utils.vector.smooth(poly, deg=int(0.1*poly.size))
         
         eps = orb.core.Cm1Vector1d(
             poly, axis=self.axis, params=self.params)
