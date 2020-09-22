@@ -398,6 +398,8 @@ class Standard(orb.core.Tools):
 
         :param wf_error: wavefront error ratio (e.g. 1/30.)
         """
+        assert isinstance(cm1_axis, orb.core.Axis), 'cm1_axis must be an Axis instance, but is {}'.format(type(cm1_axis))
+        
         spe = self.get_spectrum(filter_name, cm1_axis)
         
         photom = Photometry(filter_name, camera_index,
