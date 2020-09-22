@@ -178,7 +178,7 @@ class Frame2D(orb.core.WCSData):
             ax = fig.add_subplot(111, projection=self.get_wcs())
             ax.coords[0].set_major_formatter('d.dd')
             ax.coords[1].set_major_formatter('d.dd')
-        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='bottom-left', alpha=alpha,norm=norm)
+        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm)
         
 
 #################################################
