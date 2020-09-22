@@ -1880,7 +1880,6 @@ class Data(object):
                 raise ValueError('extension not recognized, must be fits or hdf5')
 
         # load from another instance
-        #elif isinstance(data, self.__class__) or isinstance(self, data.__class__):
         elif all([hasattr(data, attr) for attr in ['data', 'err', 'params', 'axis', 'mask']]):
             if data.data.ndim < 3:
                 _data = data.copy()
