@@ -682,7 +682,7 @@ def gaussian1d_flux(a, fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_COEFF
-    return gvar.fabs(a * math.sqrt(2*math.pi) * width)
+    return a * gvar.fabs(math.sqrt(2*math.pi) * width)
 
 def sinc1d_flux(a, fwhm):
     """Compute flux of a 1D sinc.
@@ -691,7 +691,7 @@ def sinc1d_flux(a, fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_SINC_COEFF
-    return gvar.fabs(a * width)
+    return a * gvar.fabs(width)
 
 def sinc21d_flux(a,fwhm):
     """Compute flux of a 1D sinc2.
@@ -700,7 +700,7 @@ def sinc21d_flux(a,fwhm):
     :param fwhm: FWHM
     """
     width = fwhm / orb.constants.FWHM_SINC_COEFF
-    return od.abs(a*fwhm)
+    return a * od.abs(fwhm)
     
 def sincgauss1d_flux(a, fwhm, sigma):
     """Compute flux of a 1D sinc convoluted with a Gaussian of
