@@ -703,6 +703,11 @@ yes. If deemed appropriate, the record may be modified in-place.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="orb.core.FilterFile.get_high_order_phase">
+<code class="sig-name descname">get_high_order_phase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.FilterFile.get_high_order_phase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt id="orb.core.FilterFile.get_mean_cm1">
 <code class="sig-name descname">get_mean_cm1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.FilterFile.get_mean_cm1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return mean wavenumber</p>
@@ -783,7 +788,7 @@ instead of a tuple (filter_nm, filter_trans, filter_min, filter_max)</p>
 
 <dl class="py class">
 <dt id="orb.core.Indexer">
-<em class="property">class </em><code class="sig-prename descclassname">orb.core.</code><code class="sig-name descname">Indexer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">instrument</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">data_prefix</span><span class="o">=</span><span class="default_value">'./temp/data.'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Indexer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">orb.core.</code><code class="sig-name descname">Indexer</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Indexer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#orb.core.Tools" title="orb.core.Tools"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.core.Tools</span></code></a></p>
 <p>Manage locations of created files.</p>
 <p>All files locations are stored in a text-like file: the index
@@ -792,21 +797,6 @@ file. This file is the ‘real’ counterpart of the index (which is
 called). This method is called each time
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">core.Indexer.__setitem__()</span></code> is called.</p>
 <p>This class can be accessed like a dictionary.</p>
-<dl class="py attribute">
-<dt id="orb.core.Indexer.file_group">
-<code class="sig-name descname">file_group</code><em class="property"> = None</em><a class="headerlink" href="#orb.core.Indexer.file_group" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="orb.core.Indexer.file_group_indexes">
-<code class="sig-name descname">file_group_indexes</code><em class="property"> = [0, 1, 2]</em><a class="headerlink" href="#orb.core.Indexer.file_group_indexes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="orb.core.Indexer.file_groups">
-<code class="sig-name descname">file_groups</code><em class="property"> = ['cam1', 'cam2', 'merged']</em><a class="headerlink" href="#orb.core.Indexer.file_groups" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt id="orb.core.Indexer.get_path">
 <code class="sig-name descname">get_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_key</span></em>, <em class="sig-param"><span class="n">file_group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">err</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.Indexer.get_path" title="Permalink to this definition">¶</a></dt>
@@ -826,11 +816,6 @@ the file is not indexed.</p></li>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py attribute">
-<dt id="orb.core.Indexer.index">
-<code class="sig-name descname">index</code><em class="property"> = {}</em><a class="headerlink" href="#orb.core.Indexer.index" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt id="orb.core.Indexer.load_index">
@@ -1507,7 +1492,7 @@ common part is kept.</p>
 <dl class="py class">
 <dt id="orb.core.WCSData">
 <em class="property">class </em><code class="sig-prename descclassname">orb.core.</code><code class="sig-name descname">WCSData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">instrument</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">data_prefix</span><span class="o">=</span><span class="default_value">'./'</span></em>, <em class="sig-param"><span class="n">sip</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.core.WCSData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#orb.core.Data" title="orb.core.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.core.Data</span></code></a>, <a class="reference internal" href="#orb.core.Tools" title="orb.core.Tools"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.core.Tools</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#orb.core.Tools" title="orb.core.Tools"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.core.Tools</span></code></a>, <a class="reference internal" href="#orb.core.Data" title="orb.core.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.core.Data</span></code></a></p>
 <p>Add WCS functionalities to a Data instance.</p>
 <dl class="py method">
 <dt id="orb.core.WCSData.arc2pix">
@@ -4048,7 +4033,7 @@ default 0.)</p>
 
 <dl class="py method">
 <dt id="orb.fft.Phase.polyfit">
-<code class="sig-name descname">polyfit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">deg</span></em>, <em class="sig-param"><span class="n">coeffs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">return_coeffs</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">border_ratio</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Phase.polyfit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">polyfit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">deg</span></em>, <em class="sig-param"><span class="n">coeffs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">calib_coeff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">return_coeffs</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">border_ratio</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Phase.polyfit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Polynomial fit of the phase</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -4146,9 +4131,9 @@ on the detector)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="orb.fft.PhaseMaps.get_model_0">
-<code class="sig-name descname">get_model_0</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.PhaseMaps.get_model_0" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return order 0 model.</p>
+<dt id="orb.fft.PhaseMaps.get_mapped_model">
+<code class="sig-name descname">get_mapped_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">order</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.PhaseMaps.get_mapped_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mapped model</p>
 </dd></dl>
 
 <dl class="py method">
@@ -4202,6 +4187,11 @@ pattern can be recovered and fitted easily.</p>
 possibly very noisy map, where a naive 2d unwrapping cannot be
 done.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt id="orb.fft.PhaseMaps.validate_xy">
+<code class="sig-name descname">validate_xy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">unbin</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.PhaseMaps.validate_xy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -6010,7 +6000,7 @@ optional arguments thus cannot be passed:</p>
 
 <dl class="py method">
 <dt id="orb.image.Image.register">
-<code class="sig-name descname">register</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max_stars_detect</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">max_roundness</span><span class="o">=</span><span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">max_radius_coeff</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">saturation_threshold</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sip_order</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">rrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xyrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">7</span></em>, <em class="sig-param"><span class="n">return_fit_params</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">rscale_coeff</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">skip_registration</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">compute_precision</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">compute_distortion</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">return_error_maps</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">return_error_spl</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">star_list_query</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fwhm_arc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.image.Image.register" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">register</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max_stars_detect</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">max_roundness</span><span class="o">=</span><span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">max_radius_coeff</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">saturation_threshold</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sip_order</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">rrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xyrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">7</span></em>, <em class="sig-param"><span class="n">return_fit_params</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">skip_registration</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">compute_precision</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">compute_distortion</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">return_error_maps</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">return_error_spl</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">star_list_query</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fwhm_arc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.image.Image.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register data and return a corrected pywcs.WCS
 object.</p>
 <p>Optionally (if return_error_maps set to True or
@@ -6025,17 +6015,11 @@ transformation parameters are optimized va a SIP model.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>max_stars_detect</strong> – (Optional) Number of detected stars
 in the frame for the initial wcs parameters (default 60).</p></li>
-<li><p><strong>rrange</strong> – (Optional) initial brute force range for the
-angle, must be a tuple (rmax, step_size).</p></li>
-<li><p><strong>rrange</strong> – (Optional) initial brute force range for the
-x/y shift, must be a tuple (xymax, step_size).</p></li>
+<li><p><strong>max_radius_coeff</strong> – (Optional) Maximum radius to detect stars.</p></li>
 <li><p><strong>nsteps</strong> – (Optional) Number of refinement steps (default 7).</p></li>
 <li><p><strong>sip_order</strong> – (Optional) SIP order (default 3)</p></li>
 <li><p><strong>return_fit_params</strong> – (Optional) If True return final fit
 parameters instead of wcs (default False).</p></li>
-<li><p><strong>rscale_coeff</strong> – (Optional) Coefficient on the maximum
-radius of the fitted stars to compute scale. When rscale_coeff
-= 1, rmax is half the longest side of the image (default 1).</p></li>
 <li><p><strong>compute_distortion</strong> – (Optional) If True, optical
 distortion (SIP) are computed. Note that a frame with a lot
 of stars is better for this purpose (default False).</p></li>

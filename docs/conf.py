@@ -20,8 +20,8 @@ import datetime
 sys.path.insert(0, os.path.abspath('./'))
 sys.path.insert(0, os.path.abspath('../'))
 
-autodoc_mock_imports = ["orb.cutils"]
-autodoc_mock_imports = ["orb.cgvar"]
+autodoc_mock_imports = ["orb.cutils", "orb.cgvar"]
+
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

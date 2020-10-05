@@ -1266,6 +1266,12 @@ gaussian shape function.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt id="orb.utils.fft.clean_phase">
+<code class="sig-prename descclassname">orb.utils.fft.</code><code class="sig-name descname">clean_phase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ph</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.clean_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a cleaned phase vector (which does not depend on an arbitrary modulo pi)</p>
+</dd></dl>
+
+<dl class="py function">
 <dt id="orb.utils.fft.cube_raw_fft">
 <code class="sig-prename descclassname">orb.utils.fft.</code><code class="sig-name descname">cube_raw_fft</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">apod</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.cube_raw_fft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the raw FFT of a cube (the last axis
@@ -1353,6 +1359,12 @@ Blackman-Harris window.</p>
 x = np.linspace(-1., 1., n) for a symmetrical window.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="orb.utils.fft.mod2pi">
+<code class="sig-prename descclassname">orb.utils.fft.</code><code class="sig-name descname">mod2pi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.mod2pi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the smallest signed modulo 2 pi of any angle in radians</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1524,6 +1536,11 @@ Optical Society of America A.</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py function">
+<dt id="orb.utils.fft.phase_model">
+<code class="sig-prename descclassname">orb.utils.fft.</code><code class="sig-name descname">phase_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sigma</span></em>, <em class="sig-param"><span class="n">costheta</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">p</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fft.phase_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt id="orb.utils.fft.raw_fft">
@@ -2934,7 +2951,7 @@ number instead of file path (default True).</p></li>
 
 <dl class="py class">
 <dt id="orb.utils.parallel.JobServer">
-<em class="property">class </em><code class="sig-prename descclassname">orb.utils.parallel.</code><code class="sig-name descname">JobServer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncpus</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.JobServer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">orb.utils.parallel.</code><code class="sig-name descname">JobServer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncpus</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.JobServer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt id="orb.utils.parallel.JobServer.submit">
@@ -2996,7 +3013,7 @@ sources and information on Parallel Python software.</p>
 
 <dl class="py function">
 <dt id="orb.utils.parallel.init_pp_server">
-<code class="sig-prename descclassname">orb.utils.parallel.</code><code class="sig-name descname">init_pp_server</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncpus</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">silent</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">use_ray</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.init_pp_server" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">orb.utils.parallel.</code><code class="sig-name descname">init_pp_server</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncpus</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">silent</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">use_ray</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.parallel.init_pp_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a server for parallel processing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
