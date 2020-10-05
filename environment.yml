@@ -113,7 +113,6 @@ dependencies:
   - photutils=0.7.2=py37h516909a_1
   - pickleshare=0.7.5=py37hc8dfbb8_1001
   - pillow=7.2.0=py37hb39fc2d_0
-  - pip=20.1.1=py37_1
   - pluggy=0.13.1=py37_0
   - prometheus_client=0.8.0=pyh9f0ad1d_0
   - prompt_toolkit=1.0.15=py_1
