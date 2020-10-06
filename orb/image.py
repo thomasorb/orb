@@ -163,8 +163,10 @@ class Frame2D(orb.core.WCSData):
             if len(list(perc)) != 2:
                 raise Exception('perc should be a tuple of len 2 or a single float')
 
-        if vmin is None: vmin = np.nanpercentile(self.data, perc[0])
-        if vmax is None: vmax = np.nanpercentile(self.data, perc[1])
+        data = self.data.real.astype(float)
+            
+        if vmin is None: vmin = np.nanpercentile(data, perc[0])
+        if vmax is None: vmax = np.nanpercentile(data, perc[1])
         
         if ncolors is not None:
             cmap = getattr(matplotlib.cm, cmap)
@@ -178,7 +180,8 @@ class Frame2D(orb.core.WCSData):
             ax = fig.add_subplot(111, projection=self.get_wcs())
             ax.coords[0].set_major_formatter('d.dd')
             ax.coords[1].set_major_formatter('d.dd')
-        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm)
+        pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap,
+                  origin='lower', alpha=alpha,norm=norm)
         
 
 #################################################
