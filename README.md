@@ -72,7 +72,12 @@ in the downloaded folder
 conda activate orb3 # you don't need to do it if you are already in the orb3 environment
 cd path/to/orb-stable/orb
 python setup.py build_ext --inplace
-python setup.py install
+python setup.py install # not for developer
+```
+**(developer only)**
+```
+cd
+echo '/absolute/path/to/orb-stable/orb' > miniconda3/envs/orb3/lib/python3.7/site-packages/conda.pth
 ```
 
 Test it:
