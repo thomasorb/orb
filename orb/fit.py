@@ -1715,8 +1715,7 @@ class LinesModel(Model):
             else:
                 multfsp = scipy.interpolate.UnivariateSpline(
                     x, multf, k=1, s=0, ext=2)
-            
-        
+
         for iline in range(line_nb):
             if multf is not None:
                 try:
@@ -1758,7 +1757,7 @@ class LinesModel(Model):
                     model_function = orb.utils.spectrum.sincgauss1d_complex
                 else:
                     model_function = orb.utils.spectrum.sincgauss1d
-                    
+
                 line_mod = model_function(
                     x, 0.,
                     self.p_array[self._get_ikey('amp', iline)],
@@ -3153,8 +3152,8 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
         model_params.update(alpha_params)
     
         
-    lines_model = Cm1LinesModel(model_params) # never more than 0.
-
+    lines_model = Cm1LinesModel(model_params)
+    
     p_free = dict(lines_model.p_free)
     for iline in range(np.size(lines_cm1)):
         p_free[lines_model._get_ikey('amp', iline)] = amp[iline]
@@ -3207,7 +3206,7 @@ def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
     
     return create_cm1_lines_model_raw(
         lines_cm1, amp, step, order, total_step_nb, orb.utils.spectrum.theta2corr(theta),
-        zpd_index, vel=vel, sigma=sigma, alpha=alpha, fmodel='sinc')
+        zpd_index, vel=vel, sigma=sigma, alpha=alpha, fmodel=fmodel)
 
 def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
                        sigma=0., alpha=0., fmodel='sincgauss'):
@@ -3259,140 +3258,3 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
     #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
     return gvar.mean(spectrum)
 
-
-
-
-def check_fit_cm1(lines_cm1, amp, step, order, resolution, theta,
-                  snr, sigma=0, vel=0, alpha=0., fmodel='sincgauss'):
-    """Create a model and fit it.
-
-    This is a good way to check the quality and the internal coherency
-    of the fitting routine.
-
-    :param lines_cm1: Lines rest wavenumber in cm-1
-
-    :param amp: Amplitude of the lines
-
-    :param step: Step size in nm
-
-    :param oder: Folding order
-
-    :param resolution: Resolution
-
-    :param theta: Incident angle
-
-    :param snr: SNR of the strongest line
-
-    :param sigma: (Optional) Line broadening in km/s (default 0.)
-
-    :param vel: (Optional) Velocity in km/s (default 0.)
-
-    :param alpha: (Optional) Phase coefficient of the lines (default
-      0.)
-    """
-    SIGMA_SDEV = 10 # channels
-    FWHM_SDEV = 10 # channels
-    SHIFT_SDEV = 10 # channels
-
-    spectrum = create_cm1_lines_model(lines_cm1, amp, step,
-                                      order, resolution, theta,
-                                      sigma=sigma, vel=vel, alpha=alpha,
-                                      fmodel=fmodel)
-
-    ## import pylab as pl
-    ## pl.plot(gvar.mean(spectrum))
-    ## pl.show()
-    ## quit()
-    
-    # add noise
-    if snr > 0.:
-        spectrum += np.random.standard_normal(
-            spectrum.shape[0]) * np.nanmax(amp)/snr
-
-    step_nb = spectrum.shape[0]
-
-    cm1_axis = orb.utils.spectrum.create_cm1_axis(step_nb, step, order)
-    cm1_axis_step = cm1_axis[1] - cm1_axis[0]
-    fwhm_sdev_cm1 = cm1_axis_step * FWHM_SDEV
-    sigma_sdev_kms = np.nanmean(orb.utils.fit.sigma2vel(
-        SIGMA_SDEV, lines_cm1, cm1_axis_step))
-    lines_cm1_sdev = SHIFT_SDEV * cm1_axis_step
-
-    ## if np.any(gvar.sdev(fwhm_guess) == 0.):
-    ##     fwhm_guess = gvar.gvar(fwhm_guess, np.ones_like(fwhm_guess) * fwhm_sdev_cm1)
-    ## if gvar.sdev(sigma) == 0.:
-    ##     sigma = gvar.gvar(sigma, np.ones_like(sigma) * sigma_sdev_kms)
-    if np.any(gvar.sdev(lines_cm1) == 0.):
-        lines_cm1 = gvar.gvar(lines_cm1, np.ones_like(lines_cm1) * lines_cm1_sdev)
-
-    fit = fit_lines_in_spectrum(
-        spectrum, lines_cm1, step, order, 543.5, theta,
-        0, wavenumber=True, 
-        fmodel=fmodel, pos_cov=vel, pos_def='1',
-        fwhm_def='fixed',
-        sigma_def='1',
-        sigma_cov=sigma,
-        alpha_def='1',
-        alpha_cov=alpha,
-        snr_guess=snr)
-
-    return fit, gvar.mean(spectrum)
-
-
-def check_fit(lines, amp, fwhm, step_nb, snr,
-              line_shift=0, sigma=0, alpha=0, fmodel='sincgauss'):
-    """Create a model and fit it.
-
-    This is a good way to check the quality and the internal coherency
-    of the fitting routine.
-
-    :param lines: lines channels
-    
-    :param amp: Amplitude (must have the same size as lines)
-    
-    :param fwhm: lines FWHM (in channels)
-    
-    :param step_nb: Number of steps of the spectrum.
-
-    :param snr: SNR of the strongest line
-    
-    :param line_shift: (Optional) Global shift applied to all the
-      lines (in channels, default 0.)
-    
-    :param sigma: (Optional) Sigma of the lines (in channels, default
-      0.)
-
-    :param alpha: (Optional) Phase coefficient of the lines (default
-      0.)
-
-    :param fmodel: (Optional) Lines model. Can be 'gaussian', 'sinc',
-      'sincgauss', 'sincphased', 'sincgaussphased' (default sincgauss).
-    """
-    SIGMA_SDEV = 10
-    FWHM_SDEV = 10
-    SHIFT_SDEV = 10
-    spectrum = create_lines_model(lines, amp, fwhm, step_nb,
-                                  line_shift=line_shift, sigma=sigma,
-                                  alpha=alpha, fmodel=fmodel)
-
-    if np.any(gvar.sdev(fwhm) == 0.):
-        fwhm = gvar.gvar(fwhm, np.ones_like(fwhm) * FWHM_SDEV)
-    if gvar.sdev(sigma) == 0.:
-        sigma = gvar.gvar(sigma, np.ones_like(sigma) * SIGMA_SDEV)
-    if gvar.sdev(line_shift) == 0.:
-        line_shift = gvar.gvar(line_shift, np.ones_like(line_shift) * SHIFT_SDEV)
-    
-    # add noise
-    if snr > 0.:
-        spectrum += np.random.standard_normal(
-            spectrum.shape[0]) * np.nanmax(amp) / snr
-
-    fit = fit_lines_in_vector(
-        spectrum, lines, fwhm,
-        fmodel=fmodel,
-        pos_def='1',
-        pos_cov=line_shift,
-        sigma_guess=sigma,
-        alpha_guess=alpha, snr_guess=snr)
-
-    return fit, gvar.mean(spectrum)

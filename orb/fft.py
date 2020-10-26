@@ -919,7 +919,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             return []
 
         del spectrum
-                
+    
         if auto_mode and _fit != []:
             snr_guess = np.nanmax(self.data) / np.nanstd(self.data - _fit['fitted_vector'])
             return self.prepared_fit(
@@ -951,11 +951,25 @@ class Spectrum(orb.core.Cm1Vector1d):
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
         # prepare input params
+        kwargs_orig = dict(kwargs)
         inputparams, kwargs = self.prepare_fit(
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
-                    
-        return self.prepared_fit(
+
+        fit = self.prepared_fit(
             inputparams, snr_guess=snr_guess, max_iter=max_iter, **kwargs)
+
+        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
+            logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
+            
+            new_kwargs = dict(kwargs_orig)
+            for ikey in list(new_kwargs.keys()):
+                if 'sigma_' in ikey:
+                    del new_kwargs[ikey]
+                    
+            return self.fit(lines, fmodel='sinc', nofilter=nofilter,
+                            snr_guess=snr_guess, max_iter=max_iter, **new_kwargs)
+        
+        return fit
 
 #################################################
 #### CLASS RealSpectrum #########################
