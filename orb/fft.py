@@ -959,7 +959,6 @@ class Spectrum(orb.core.Cm1Vector1d):
         fit = self.prepared_fit(
             inputparams, snr_guess=snr_guess, max_iter=max_iter, **kwargs)
 
-        print(fit)
         if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
             
