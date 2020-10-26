@@ -950,12 +950,28 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
+        kwargs_orig = dict(kwargs)
+        
         # prepare input params
         inputparams, kwargs = self.prepare_fit(
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
-                    
-        return self.prepared_fit(
+
+        fit = self.prepared_fit(
             inputparams, snr_guess=snr_guess, max_iter=max_iter, **kwargs)
+
+        print(fit)
+        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
+            logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
+            
+            new_kwargs = dict(kwargs_orig)
+            for ikey in list(new_kwargs.keys()):
+                if 'sigma_' in ikey:
+                    del new_kwargs[ikey]
+                     
+            return self.fit(lines, fmodel='sinc', nofilter=nofilter,
+                            snr_guess=snr_guess, max_iter=max_iter, **new_kwargs)
+        
+        return fit
 
 #################################################
 #### CLASS RealSpectrum #########################

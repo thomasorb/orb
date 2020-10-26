@@ -555,7 +555,6 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     fwhm = np.fabs(fwhm)
 
     broadening_ratio = np.fabs(sigma / fwhm)
-    max_broadening_ratio = gvar.mean(broadening_ratio) + gvar.sdev(broadening_ratio)
     
     if broadening_ratio < 1e-2:
         return sinc1d(x, h, a, dx, fwhm)
@@ -563,9 +562,6 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
     if np.isclose(gvar.mean(sigma), 0.):
         return sinc1d(x, h, a, dx, fwhm)
 
-    if max_broadening_ratio > 7:
-        return gaussian1d(x, h, a, dx, sigma * (2. * gvar.sqrt(2. * gvar.log(2.))))
-    
     width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi ###    
     
@@ -711,6 +707,9 @@ def sincgauss1d_flux(a, fwhm, sigma):
     :param sigma: Sigma of the gaussian
     :param no_err: (Optional) No error is returned (default False)
     """
+    if np.isnan(gvar.mean(sigma)) or np.isclose(gvar.mean(sigma), 0):
+        return sinc1d_flux(a, fwhm)
+    
     width = fwhm / orb.constants.FWHM_SINC_COEFF
     width /= math.pi
 
