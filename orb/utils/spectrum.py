@@ -707,7 +707,7 @@ def sincgauss1d_flux(a, fwhm, sigma):
     :param sigma: Sigma of the gaussian
     :param no_err: (Optional) No error is returned (default False)
     """
-    if np.isnan(gvar.mean(sigma)) or np.isclose(gvar.mean(sigma), 0):
+    if np.all(np.isnan(gvar.mean(sigma))) or np.all(np.isclose(gvar.mean(sigma), 0)):
         return sinc1d_flux(a, fwhm)
     
     width = fwhm / orb.constants.FWHM_SINC_COEFF
