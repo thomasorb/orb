@@ -1817,7 +1817,7 @@ class Data(object):
           supplied in the params dictionnary.
 
         """        
-        LIMIT_SIZE = 100
+        LIMIT_SIZE = 2 # Gb
                 
         # load from file
         if isinstance(data, str):    
@@ -1845,11 +1845,12 @@ class Data(object):
                         _data_path = 'vector'
 
                     # load data
-                    if (hdffile[_data_path].ndim > 2
-                        and np.any(hdffile[_data_path].shape > LIMIT_SIZE)):
-                        raise Exception('file too big to be opened this way')
-                    else:
-                        self.data = hdffile[_data_path][:]
+                    if (hdffile[_data_path].ndim > 2):
+                        memsize = hdffile[_data_path].size * 8 / 1e9
+                        if np.any(memsize > LIMIT_SIZE):
+                            raise Exception('file too big to be opened this way: {} Gb > {} Gb'.format(memsize, LIMIT_SIZE))
+                    
+                    self.data = hdffile[_data_path][:]
 
                     # load params
                     for iparam in hdffile.attrs:
