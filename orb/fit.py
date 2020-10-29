@@ -82,7 +82,7 @@ class FitVector(object):
     
     def __init__(self, vector, models, params, snr_guess=None,
                  fit_tol=1e-8, signal_range=None, classic=False,
-                 max_iter=None, docomplex=False):
+                 max_iter=None, docomplex=False, nogvar=False):
         """Init class.
 
         :param vector: Vector to fit
@@ -112,7 +112,29 @@ class FitVector(object):
         :param docomplex: (Optional) If data is complex and docomplex
           is True, tries a complex fit. If False, always fit the real
           part only.
-        """       
+
+        :param nogvar: (Optional) No gvar are returned. Fit must be
+          classic.
+        """
+        self.classic = bool(classic)
+        if not self.classic:
+            if snr_guess is None:
+                self.snr_guess = None
+                self.classic = True
+                logging.debug('No SNR guess given. Fit mode is classic.')
+            else:
+                try:
+                    snr_guess = float(snr_guess)
+                except Exception:
+                    raise Exception('SNR guess is {} but it must be a single number'.format(type(snr_guess)))
+                self.snr_guess = np.fabs(snr_guess)
+        else: self.snr_guess = None
+
+        if nogvar and not self.classic:
+            raise Exception('classic must be True ({}) if nogvar is True ({})'.format(
+                self.classic, nogvar))
+        self.nogvar = bool(nogvar)
+        
         if not isinstance(models, tuple) and not isinstance(models, list) :
             raise ValueError('models must be a tuple of (model, model_operation).')
 
@@ -148,20 +170,6 @@ class FitVector(object):
             self.vector_imag /= self.normalization_coeff
         self.sigma /= self.normalization_coeff
 
-        self.classic = bool(classic)
-        if not self.classic:
-            if snr_guess is None:
-                self.snr_guess = None
-                self.classic = True
-                logging.debug('No SNR guess given. Fit mode is classic.')
-            else:
-                try:
-                    snr_guess = float(snr_guess)
-                except Exception:
-                    raise Exception('SNR guess is {} but it must be a single number'.format(type(snr_guess)))
-                self.snr_guess = np.fabs(snr_guess)
-        else: self.snr_guess = None
-        
         self.retry_count = 0
         self.models = list()
         self.models_operation = list()
@@ -573,11 +581,11 @@ class FitVector(object):
                     else:
                         _models[ikey] = orb.utils.vector.float2complex(_models[ikey])
                             
-                    
+
+            
             (returned_data['fitted_vector_gvar'],
              returned_data['fitted_models_gvar']) = _model, _models
             
-
             returned_data['fitted_vector'] = gvar.mean(returned_data['fitted_vector_gvar'])
             returned_data['fitted_models'] = dict()
             for imod in returned_data['fitted_models_gvar']:
@@ -601,15 +609,17 @@ class FitVector(object):
                 
             returned_data['fit_params'] = full_p_list
             returned_data['fit_params_err'] = full_p_list_err
-            returned_data['fit_params_gvar'] = full_p_list_gvar
+            if not self.nogvar:
+                returned_data['fit_params_gvar'] = full_p_list_gvar
 
             
             ## compute error on parameters
             # compute reduced chi square
             returned_data['rchi2'] = fit.chi2 / fit.dof
             returned_data['rchi2_err'] = np.sqrt(2./self._get_vector_onrange().shape[0])
-            returned_data['rchi2_gvar'] = gvar.gvar(returned_data['rchi2'],
-                                                    returned_data['rchi2_err'])
+            if not self.nogvar:
+                returned_data['rchi2_gvar'] = gvar.gvar(returned_data['rchi2'],
+                                                        returned_data['rchi2_err'])
             
             
             returned_data['chi2'] = fit.chi2
@@ -633,10 +643,13 @@ class FitVector(object):
             logging.debug('bad fit')
             return []
 
+
+        if self.nogvar:
+            del returned_data['fitted_vector_gvar']
+            del returned_data['fitted_models_gvar']
+
         return returned_data
         
-
-
 class Model(object):
     """
     Template class for fit models. This class cannot be used directly.
@@ -2475,7 +2488,7 @@ class Cm1InputParams(InputParams):
 
 class OutputParams(Params):
 
-    def translate(self, inputparams, fitvector):
+    def translate(self, inputparams, fitvector, nogvar=False):
         if isinstance(inputparams, InputParams):
             inputparams = inputparams.convert()
             
@@ -2581,7 +2594,8 @@ class OutputParams(Params):
             velocity = orb.utils.spectrum.compute_radial_velocity(
                 pos_wave, gvar.mean(all_inputparams.pos_guess),
                 wavenumber=wavenumber)
-            self['velocity_gvar'] = velocity
+            if not nogvar:
+                self['velocity_gvar'] = velocity
             self['velocity'] = gvar.mean(velocity)
             self['velocity_err'] = gvar.sdev(velocity)
 
@@ -2594,8 +2608,9 @@ class OutputParams(Params):
 
             broadening = (gvar.fabs(sigma_total_kms**2
                                     - sigma_apod_kms**2))**0.5
-            
-            self['broadening_gvar'] = broadening
+
+            if not nogvar:
+                self['broadening_gvar'] = broadening
             self['broadening'] = gvar.mean(broadening)
             self['broadening_err'] = gvar.sdev(broadening)
 
@@ -2637,7 +2652,8 @@ class OutputParams(Params):
             flux = None
 
         if flux is not None:
-            self['flux_gvar'] = flux
+            if not nogvar:
+                self['flux_gvar'] = flux
             self['flux'] = gvar.mean(flux)
             self['flux_err'] = gvar.sdev(flux)
 
@@ -2645,13 +2661,18 @@ class OutputParams(Params):
         self['snr'] = gvar.mean(line_params[:,1]) / gvar.sdev(line_params[:,1])
 
         # store lines-params
-        self['lines_params_gvar'] = line_params
+        if not nogvar:
+            self['lines_params_gvar'] = line_params
         self['lines_params'] = gvar.mean(line_params)
         self['lines_params_err'] = np.abs(gvar.sdev(line_params))
         self.update(all_inputparams)
 
+        if nogvar:
+            for ikey in self:
+                if isinstance(self[ikey], np.ndarray):
+                    if self[ikey].dtype == np.object:
+                        self[ikey] = gvar.mean(self[ikey])
         return self
-
         
     def convert(self):
         """Convert class to a raw pickable format
@@ -2711,9 +2732,10 @@ class OutputParams(Params):
         info = '=== Fit results ===\n'
         info += 'lines: {}, fmodel: {}\n'.format(lines, self['fmodel'])
         info += 'iterations: {}, fit time: {:.2e} s\n'.format(self['iter_nb'], self['fit_time'])
-        info += 'Velocity (km/s): {} \n'.format(self['velocity_gvar'])
-        info += 'Flux: {}\n'.format(self['flux_gvar'])
-        info += 'Broadening (km/s): {}\n'.format(self['broadening_gvar'])
+        info += 'Velocity (km/s): {} \n'.format(gvar.gvar(self['velocity'], self['velocity_err']))
+        info += 'Flux: {}\n'.format(gvar.gvar(self['flux'], self['flux_err']))
+        info += 'Broadening (km/s): {}\n'.format(gvar.gvar(self['broadening'], self['broadening_err']))
+            
         return info
     
     __str__ = __repr__
@@ -2727,7 +2749,7 @@ class OutputParams(Params):
 
 def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                            compute_mcmc_error=False,
-                           snr_guess=None, max_iter=None,
+                           snr_guess=None, max_iter=None, nogvar=False,
                            **kwargs):
     """raw function for spectrum fitting. Need the InputParams
     class to be defined before call.
@@ -2749,6 +2771,9 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
 
     :param max_iter: (Optional) Maximum number of iterations (default None)
 
+    :param nogvar: (Optional) No gvar are returned. Fit must be
+          classic.
+        
     :param kwargs: (Optional) Model parameters that must be changed in
       the InputParams instance.
     """
@@ -2774,14 +2799,15 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                    signal_range=rawip['signal_range'],
                    fit_tol=fit_tol,
                    snr_guess=snr_guess,
-                   max_iter=max_iter)
+                   max_iter=max_iter,
+                   nogvar=nogvar)
 
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
 
     if fit != []:
         fit = OutputParams(fit)
-        return fit.translate(ip, fv)
+        return fit.translate(ip, fv, nogvar=nogvar)
     
     else: return []
 

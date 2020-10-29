@@ -822,7 +822,8 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return inputparams.convert(), kwargs
 
-    def prepared_fit(self, inputparams, snr_guess=None, max_iter=None, **kwargs):
+    def prepared_fit(self, inputparams, snr_guess=None, max_iter=None,
+                     nogvar=False, **kwargs):
         """Run a fit already prepared with prepare_fit() method.
         """
         start_time = time.time()
@@ -908,6 +909,7 @@ class Spectrum(orb.core.Cm1Vector1d):
                 compute_mcmc_error=False,
                 snr_guess=snr_guess,
                 max_iter=max_iter,
+                nogvar=nogvar,
                 **kwargs)
             warnings.simplefilter('default')
 
@@ -933,7 +935,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             return _fit
     
     def fit(self, lines, fmodel='sinc', nofilter=True,
-            snr_guess=None, max_iter=None, **kwargs):
+            snr_guess=None, max_iter=None, nogvar=False, **kwargs):
         """Fit lines in a spectrum
 
         Wrapper around orb.fit.fit_lines_in_spectrum.
@@ -951,13 +953,12 @@ class Spectrum(orb.core.Cm1Vector1d):
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
         kwargs_orig = dict(kwargs)
-        
         # prepare input params
         inputparams, kwargs = self.prepare_fit(
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
 
         fit = self.prepared_fit(
-            inputparams, snr_guess=snr_guess, max_iter=max_iter, **kwargs)
+            inputparams, snr_guess=snr_guess, max_iter=max_iter, nogvar=nogvar, **kwargs)
 
         if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
@@ -968,7 +969,9 @@ class Spectrum(orb.core.Cm1Vector1d):
                     del new_kwargs[ikey]
                      
             return self.fit(lines, fmodel='sinc', nofilter=nofilter,
-                            snr_guess=snr_guess, max_iter=max_iter, **new_kwargs)
+                            snr_guess=snr_guess, max_iter=max_iter,
+                            nogvar=nogvar,
+                            **new_kwargs)
         
         return fit
 
