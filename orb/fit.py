@@ -323,7 +323,7 @@ class FitVector(object):
         # check nans
         for ikey in all_p_free:
             if np.isnan(gvar.sdev(all_p_free[ikey])):
-                logging.warning('nan in passed parameters: {}'.format(all_p_free))
+                logging.debug('nan in passed parameters: {}'.format(all_p_free))
     
         step_nb = self.vector.shape[0]
         if x is None:
