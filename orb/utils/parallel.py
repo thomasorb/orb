@@ -75,8 +75,8 @@ class JobServer(object):
             self.pool.join()
         except RuntimeError: pass
         except:
-            logging.info('exception occured during pool.join: ', traceback.format_exc())
-        logging.info('parallel processing closed')
+            logging.debug('exception occured during pool.join: ', traceback.format_exc())
+        logging.debug('parallel processing closed')
         try:
             del self.pool
         except: pass
