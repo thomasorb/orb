@@ -193,7 +193,7 @@ def init_pp_server(ncpus=0, silent=False, use_ray=False, timeout=1000):
 
     
 
-def close_pp_server(js):
+def close_pp_server(js, silent=False):
     """
     Destroy the parallel python job server to avoid too much
     opened files.
@@ -203,7 +203,10 @@ def close_pp_server(js):
     .. note:: Please refer to http://www.parallelpython.com/ for
         sources and information on Parallel Python software.
     """
-    logging.info("Closing parallel processing server")
+    if not silent:
+        logging.info("Closing parallel processing server")
+    else:
+        logging.debug("Closing parallel processing server")
     if isinstance(js, RayJobServer):
         ray.shutdown()
     else:
