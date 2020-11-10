@@ -691,6 +691,9 @@ class Tools(object):
     def _parse_filter_name(self, filter_name):
         """Parse a filter name which can sometimes be a full filter file path
         """
+        if str(filter_name).upper() == 'NONE':
+            filter_name = 'FULL'
+            
         for ifilter in self.filters:
             if ifilter in filter_name: return ifilter
         raise Exception('this name or path does not point to any known filter: {}'.format(
