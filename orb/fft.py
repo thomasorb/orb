@@ -933,9 +933,11 @@ class Spectrum(orb.core.Cm1Vector1d):
             logging.debug('total fit timing: {}'.format(time.time() - start_time))
         
             return _fit
-    
+
+        
     def fit(self, lines, fmodel='sinc', nofilter=True,
-            snr_guess=None, max_iter=None, nogvar=False, **kwargs):
+            snr_guess=None, max_iter=None, nogvar=False,
+            **kwargs):
         """Fit lines in a spectrum
 
         Wrapper around orb.fit.fit_lines_in_spectrum.
@@ -958,7 +960,8 @@ class Spectrum(orb.core.Cm1Vector1d):
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
 
         fit = self.prepared_fit(
-            inputparams, snr_guess=snr_guess, max_iter=max_iter, nogvar=nogvar, **kwargs)
+            inputparams, snr_guess=snr_guess, max_iter=max_iter, nogvar=nogvar,
+            **kwargs)
 
         if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
@@ -974,6 +977,62 @@ class Spectrum(orb.core.Cm1Vector1d):
                             **new_kwargs)
         
         return fit
+
+    def estimate_flux(self, lines, fmodel='sinc', **kwargs):
+
+        NFWHM = 1
+        NFWHM_LARGE = 10
+        
+        badkeys = 'nofilter', 'snr_guess', 'max_iter', 'nogvar'
+        for ikey in badkeys:
+            if ikey in kwargs:
+                del kwargs[ikey]
+
+        ip, kwargs = self.prepare_fit(
+            lines, fmodel='gaussian', nofilter=True, **kwargs)
+        ip = ip['allparams']
+
+        lines_dict = dict()
+        igroup = 0
+        for i in range(len(ip['pos_def'])):
+            ikey = ip['pos_def'][i]
+            if ikey not in lines_dict:
+                lines_dict[ikey] = dict()
+                lines_dict[ikey]['pos_guess'] = list()
+                lines_dict[ikey]['fwhm_guess'] = list()
+                lines_dict[ikey]['flux'] = list()
+                lines_dict[ikey]['pos_cov'] = ip['pos_cov'][igroup]
+                igroup += 1
+                
+            lines_dict[ikey]['pos_guess'].append(ip['pos_guess_mean'][i])
+            lines_dict[ikey]['fwhm_guess'].append(ip['fwhm_guess'][i])
+
+        axis_step = (self.axis.data[1] - self.axis.data[0])
+        for igroup in lines_dict:
+            linescm1 = lines_dict[igroup]['pos_guess']
+            linescm1 += orb.utils.spectrum.line_shift(
+                lines_dict[igroup]['pos_cov'], linescm1, wavenumber=True)
+            linespix = self.axis(linescm1)
+            fwhmspix = np.array(lines_dict[igroup]['fwhm_guess']) / axis_step
+            fluxes = list()
+            for ipix, ifwhm, icm1 in zip(linespix, fwhmspix, linescm1):
+                irange = np.arange(
+                    max(0, int(ipix - NFWHM * ifwhm)),
+                    min(self.dimx, int(ipix + NFWHM * ifwhm) + 1))
+                irangel = np.arange(
+                    max(0, int(ipix - NFWHM_LARGE * ifwhm)),
+                    min(self.dimx, int(ipix + NFWHM_LARGE * ifwhm) + 1))
+                
+                imax = self.data[irange].real.max()
+                imin = self.data[irangel].real.min()
+
+                ifwhm_nm = orb.utils.spectrum.fwhm_cm12nm(
+                    ifwhm * axis_step, icm1) * 10.
+                
+                lines_dict[igroup]['flux'].append(orb.utils.spectrum.gaussian1d_flux(
+                    imax - imin, ifwhm_nm))
+                
+        return lines_dict
 
 #################################################
 #### CLASS RealSpectrum #########################
