@@ -593,7 +593,7 @@ class Phase(orb.core.Cm1Vector1d):
         if return_coeffs:
             return all_pfit, all_perr
         else:
-            return self.__class__(model(self.axis.data.astype(float), *pfit),
+            return self.__class__(model(self.axis.data.astype(float), costheta, *pfit),
                                   self.axis, params=self.params)
 
     def subtract_low_order_poly(self, deg, border_ratio=0.1):

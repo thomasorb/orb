@@ -30,8 +30,6 @@ import traceback
 
 # see https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
 def run_dill_encoded(payload):
-    #with warnings.catch_warnings():
-    #    warnings.simplefilter("ignore")
     fun, args = dill.loads(payload)
     try:
         return fun(*args)
@@ -52,7 +50,8 @@ class JobServer(object):
         if self.ncpus == 0:
             self.ncpus = multiprocessing.cpu_count()
 
-        self.pool = multiprocessing.get_context('spawn').Pool(processes=self.ncpus, maxtasksperchild=1)
+        self.pool = multiprocessing.get_context('forkserver').Pool(
+            processes=self.ncpus, maxtasksperchild=1)
 
     def submit(self, func, args=(), modules=()):
         

@@ -691,6 +691,9 @@ class Tools(object):
     def _parse_filter_name(self, filter_name):
         """Parse a filter name which can sometimes be a full filter file path
         """
+        if str(filter_name).upper() == 'NONE':
+            filter_name = 'FULL'
+            
         for ifilter in self.filters:
             if ifilter in filter_name: return ifilter
         raise Exception('this name or path does not point to any known filter: {}'.format(
@@ -1388,6 +1391,7 @@ class Lines(Tools):
         '[OIII]4363':436.3209,
         '[OIII]4959':495.8911,
         '[OIII]5007':500.6843,
+        '[NII]5755':575.459,
         'HeI5876':587.567, 
         '[OI]6300':630.0304, 
         '[SIII]6312':631.206, 
