@@ -545,7 +545,6 @@ class Tools(object):
         # loading minimal config
         self.instrument = instrument
         self.set_config('DIV_NB', int)
-        self.config['QUAD_NB'] = self.config.DIV_NB**2
         self.set_config('BIG_DATA', bool)
         self.set_config('DETECT_STAR_NB', int)
         self.set_config('INIT_FWHM', float)
