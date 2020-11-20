@@ -852,8 +852,10 @@ class Tools(object):
     def _get_standard_radec(self, standard_name,
                             standard_table_name='std_table.orb',
                             return_pm=False):
-        """
-        Return standard RA and DEC and optionally PM
+        """Return standard RA and DEC and optionally PM.
+
+        First tries to get coordinates from SESAME then use the table
+        if it fails.
         
         :param standard_name: Name of the standard star. Must be
           recorded in the standard table.
@@ -862,8 +864,17 @@ class Tools(object):
           table file (default std_table.orb).
 
         :param return_pm: (Optional) Returns also proper motion if
-          recorded (in mas/yr), else returns 0.
+          recorded (in mas/yr, pm_ra_cos, pm_dec), else returns 0.
+
         """
+        coords = orb.utils.web.query_sesame(
+            standard_name, degree=True, pm=return_pm)
+        if coords == []:            
+            logging.warning('Standard name could not be resolved with SESAME. Using table.')
+        else:
+            logging.info('Standard name resolved with SESAME.')
+            return coords
+            
         std_table = orb.utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
 

@@ -44,7 +44,7 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
       (default False)
 
     :param pm: (Optional) If True proper motion is also returned
-      (default False)
+      (default False) (mu_ra*cos(dec), mu_dec)
     
     :returns: [RA, DEC]
     """

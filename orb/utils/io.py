@@ -31,7 +31,6 @@ from astropy.wcs import FITSFixedWarning
 import astropy.io.votable
 import pandas as pd
 
-import bottleneck as bn
 import orb.cutils
 import h5py
 import datetime
@@ -225,8 +224,8 @@ def write_fits(fits_path, fits_data, fits_header=None,
             if record_stats:
                 fdata = fits_data[np.nonzero(~np.isnan(fits_data))]
                 if np.size(fdata) > 0:
-                    data_mean = bn.nanmean(fdata)
-                    data_median = bn.nanmedian(fdata)
+                    data_mean = np.nanmean(fdata)
+                    data_median = np.nanmedian(fdata)
                 else:
                     data_mean = np.nan
                     data_median = np.nan
@@ -532,7 +531,7 @@ def read_spiomm_data(hdu, image_path, substract_bias=True):
         y_max = int(bias_frame.shape[1]/2.
                     + CENTER_SIZE_COEFF * bias_frame.shape[1] + 1)
 
-        bias_level = bn.nanmedian(bias_frame[x_min:x_max, y_min:y_max])
+        bias_level = np.nanmedian(bias_frame[x_min:x_max, y_min:y_max])
 
         if bias_level is not np.nan:
             hdr['BIAS-LVL'] = (

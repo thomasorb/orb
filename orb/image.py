@@ -366,26 +366,30 @@ class Image(Frame2D):
         object_found = False
         if not is_standard:
             logging.info('resolving coordinates of {}'.format(self.params.OBJECT))
-            try:
-                print(astropy.coordinates.get_icrs_coordinates(self.params.OBJECT))
-                object_found = True
-            except NameResolveError:
+            coords = orb.utils.web.query_sesame(
+                standard_name, degree=True, pm=True)
+
+            if coords == []:
                 logging.debug('object name could not be resolved')
-                
-        logging.info('looking in the standard table for {}'.format(self.params.OBJECT))
-        try:
-            std_name = ''.join(self.params.OBJECT.strip().split()).upper()
-            std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
-                std_name, return_pm=True)
-            object_found = True
-        except Exception:
-            logging.warning('object name not found in the standard table')
+            else:
+                std_ra, std_dec, std_pm_ra, std_pm_dec = coords
+                object_found = True                
+
+        if not object_found:
+            try:
+                std_name = ''.join(self.params.OBJECT.strip().split()).upper()
+                std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
+                    std_name, return_pm=True)
+                object_found = True
+            except Exception:
+                logging.warning('object name not found in the standard table')
 
         if not object_found:
             raise Exception('object coordinates could not be resolved')
 
         std_yr_obs = float(self.params['DATE-OBS'].split('-')[0])
-        pm_orig_yr = 2000 # radec are considered to be J2000
+        pm_orig_yr = 2000 # radec are J2000 in ICRS frame
+
         # compute ra/dec with proper motion
         std_ra, std_dec = orb.utils.astrometry.compute_radec_pm(
             std_ra, std_dec, std_pm_ra, std_pm_dec,

@@ -1128,7 +1128,6 @@ class HDFCube(orb.core.WCSData):
                          "import numpy as np",
                          "import math",
                          "import orb.cutils",
-                         "import bottleneck as bn",
                          "import warnings",
                          "from orb.utils.astrometry import *")))
                     for ijob in range(ncpus)]

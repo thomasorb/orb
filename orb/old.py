@@ -17,7 +17,6 @@ import select
 import socket
 
 import numpy as np
-import bottleneck as bn
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
 from scipy import interpolate

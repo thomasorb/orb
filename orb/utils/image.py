@@ -25,7 +25,6 @@ import numpy as np
 import scipy
 import warnings
 from scipy import interpolate, optimize, ndimage, signal
-import bottleneck as bn
 
 import orb.utils.validate
 import orb.utils.stats
@@ -185,7 +184,7 @@ def check_frames(frames, sigma_reject=2.5):
     :param sigma_reject: (Optional) Rejection coefficient (default 2.5)
     
     """
-    z_median = np.array([bn.nanmedian(frames[:,:,iframe])
+    z_median = np.array([np.nanmedian(frames[:,:,iframe])
                          for iframe in range(frames.shape[2])])
     z_median_cut = orb.utils.stats.sigmacut(
         z_median, sigma=sigma_reject)

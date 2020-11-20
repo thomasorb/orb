@@ -46,7 +46,7 @@ conda install conda-build
 create an environment and install needed modules manually
 ```bash
 conda create -n orb3 python=3.7 
-conda install -n orb3 numpy scipy bottleneck matplotlib astropy cython h5py dill pandas pytables
+conda install -n orb3 numpy scipy matplotlib astropy cython h5py dill pandas pytables
 conda install -n orb3 -c conda-forge pyregion
 conda install -n orb3 -c astropy photutils astroquery
 conda activate orb3

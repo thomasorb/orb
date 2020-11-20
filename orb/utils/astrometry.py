@@ -23,12 +23,14 @@
 import logging
 from scipy import optimize, interpolate, signal
 import math
-import bottleneck as bn
 import numpy as np
 import warnings
 import astropy
 import astropy.wcs as pywcs
-from astropy.coordinates import SkyCoord
+import astropy.time
+import astropy.coordinates
+import astropy.units
+
 import pandas
 import os
 import sys
@@ -1052,21 +1054,21 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
 
     :param dec_deg: DEC in degrees
 
-    :param pm_ra_mas: Proper motion along RA axis in mas/yr
+    :param pm_ra_mas: Proper motion along RA axis in mas/yr (cos of declination)
 
     :param pm_dec_mas: Proper motion along DEC axis in mas/yr
 
     :param yr: Number of years
     """
-    logging.warning('this conversion is naive and might be wrong, or at least unprecise. astropy.coordinates.SkyCoord.apply_space_motion should be used instead. A version adapted for python 2 is written in orb.image.Image.get_stars_from_catalog.')
-    
-    ra = ra_deg + (pm_ra_mas * yr) * 1e-3 / 3600.
-    dec = dec_deg + (pm_dec_mas * yr) * 1e-3 / 3600.
-    if ra > 360. : ra -= 360.
-    if ra < 0. : ra += 360.
-    if dec > 90.: dec = 90. - dec
-    if dec < 0.: dec = -dec
-    return ra, dec
+    coords = astropy.coordinates.SkyCoord(
+        ra=ra_deg * astropy.units.deg,
+        dec=dec_deg * astropy.units.deg,
+        pm_ra_cosdec=pm_ra_mas * astropy.units.mas/astropy.units.yr,
+        pm_dec= pm_dec_mas * astropy.units.mas/astropy.units.yr,
+        obstime=astropy.time.Time(2000., format='decimalyear'))
+
+    coords = coords.apply_space_motion(dt=yr*astropy.units.yr)
+    return float(coords.ra.deg), float(coords.dec.deg)
 
 def ra2deg(ra):
     """Convert RA in sexagesimal format to degrees.
@@ -1080,7 +1082,7 @@ def ra2deg(ra):
         else:
             raise TypeError('badly formatted input coordinates: {}'.format(ra))
 
-    return SkyCoord(ra, 0, unit=astropy.units.hourangle).ra.deg
+    return astropy.coordinates.SkyCoord(ra, 0, unit=astropy.units.hourangle).ra.deg
 
 def dec2deg(dec):
     """Convert DEC in sexagesimal format to degrees.
@@ -1094,14 +1096,14 @@ def dec2deg(dec):
         else:
             raise TypeError('badly formatted input coordinates: {}'.format(dec))
 
-    return SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
+    return astropy.coordinates.SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
 def deg2ra(deg, string=False):
     """Convert RA in degrees to sexagesimal.
 
     :param deg: RA in degrees
     """
-    c = SkyCoord(deg, 0, unit='deg')
+    c = astropy.coordinates.SkyCoord(deg, 0, unit='deg')
     hms = c.ra.hms
     if not string:
         return [hms.h, hms.m, hms.s]
@@ -1113,7 +1115,7 @@ def deg2dec(deg, string=False):
 
     :param deg: DEC in degrees
     """
-    c = SkyCoord(0, deg, unit='deg')
+    c = astropy.coordinates.SkyCoord(0, deg, unit='deg')
     dms = c.dec.dms
     if not string:
         return [dms.d, dms.m, dms.s]
@@ -1420,7 +1422,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
         if multi_fit: fix_height = False
         else: fix_height = True
 
-    frame_median = bn.nanmedian(frame)
+    frame_median = np.nanmedian(frame)
     
     if frame_median < 0.:
         frame -= frame_median
@@ -1633,8 +1635,10 @@ def fit_stars_in_frame(frame, star_list, box_size,
                 mean_fwhm = orb.utils.stats.robust_mean(
                     orb.utils.stats.sigmacut(
                     [ires['fwhm_pix'] for ires in fit_results if ires is not None]))
-            else:
+            elif fit_results[0] is not None:
                 mean_fwhm = fit_results[0]['fwhm_pix']
+            else:
+                mean_fwhm = fwhm_pix
         else:
             mean_fwhm = fwhm_pix
 
