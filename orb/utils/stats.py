@@ -40,12 +40,10 @@ def robust_modulo(_dat, mod):
     while np.any(sup):
         _dat[sup] -= mod
         sup = (_dat > mod/2.) * nonan
-        print(np.sum(sup))
     inf = (_dat < -(mod/2.)) * nonan
     while np.any(inf):
         _dat[inf] += mod
         inf = (_dat < -(mod/2.)) * nonan
-        print(np.sum(inf))
     return _dat
 
 def unbiased_std(a):
