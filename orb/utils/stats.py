@@ -25,6 +25,28 @@ import numpy as np
 import warnings
 import orb.cutils
 
+def robust_modulo(_dat, mod):
+    """Return an array modulo mod. 
+
+    Returned values have the smallest possible absolute
+    value. e.g. -1.1 % 1 = -0.1, -0.6 % 1 = 0.4. This is perfect to
+    compute the residual of a phase fit (which is known modulo 2pi)
+
+    This is robust to NaN and fast.
+    """
+    _dat = np.copy(_dat)
+    nonan = ~np.isnan(_dat)
+    sup = (_dat > mod/2.) * nonan
+    while np.any(sup):
+        _dat[sup] -= mod
+        sup = (_dat > mod/2.) * nonan
+        print(np.sum(sup))
+    inf = (_dat < -(mod/2.)) * nonan
+    while np.any(inf):
+        _dat[inf] += mod
+        inf = (_dat < -(mod/2.)) * nonan
+        print(np.sum(inf))
+    return _dat
 
 def unbiased_std(a):
     """Return the std based on the interquartile range.
