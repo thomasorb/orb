@@ -365,9 +365,10 @@ class Image(Frame2D):
         """
         object_found = False
         if not is_standard:
-            logging.info('resolving coordinates of {}'.format(self.params.OBJECT))
+            logging.info('resolving coordinates of {}'.format(
+                self.params.OBJECT.strip().upper()))
             coords = orb.utils.web.query_sesame(
-                standard_name, degree=True, pm=True)
+                self.params.OBJECT, degree=True, pm=True)
 
             if coords == []:
                 logging.debug('object name could not be resolved')
