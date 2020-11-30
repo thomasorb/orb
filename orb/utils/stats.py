@@ -24,6 +24,7 @@ import logging
 import numpy as np
 import warnings
 import orb.cutils
+import sys
 
 def robust_modulo(_dat, mod):
     """Return an array modulo mod. 
@@ -38,10 +39,14 @@ def robust_modulo(_dat, mod):
     nonan = ~np.isnan(_dat)
     sup = (_dat > mod/2.) * nonan
     while np.any(sup):
+        sys.stdout.write('\r{}'.format(np.sum(sup)))
+        sys.stdout.flush()
         _dat[sup] -= mod
         sup = (_dat > mod/2.) * nonan
     inf = (_dat < -(mod/2.)) * nonan
     while np.any(inf):
+        sys.stdout.write('\r{}'.format(np.sum(inf)))
+        sys.stdout.flush()
         _dat[inf] += mod
         inf = (_dat < -(mod/2.)) * nonan
     return _dat

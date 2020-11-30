@@ -1386,24 +1386,20 @@ class PhaseMaps(orb.core.Tools):
         """Return mapped model"""
         _phase_map = self.get_map(order)
         _phase_map_err = self.get_map_err(order)
-        minerr, maxerr = np.nanpercentile(_phase_map_err, (5, 95))
-        #_phase_map_err[minerr]
-        _phase_map_err.fill(1.)
+        _phase_map_err -= np.nanpercentile(_phase_map_err, 5)
+        _phase_map_err /= np.nanpercentile(_phase_map_err, 95)
+        _phase_map_err = np.clip(_phase_map_err, 0, 1) + 1
 
-        if order == -1:
-            _, model, err = orb.utils.image.fit_map_theta(
-                _phase_map,
-                _phase_map_err,
-                self.theta_map)
-            model = model(self.theta_map)
-            err = err(self.theta_map)
-            
+        if order == 1:
+            model, err = orb.utils.image.fit_map_gradient(_phase_map, _phase_map_err)
         else:
-            model, err = orb.utils.image.fit_phase_map(
-                _phase_map,
-                _phase_map_err,
-                self.theta_map)
-
+            model, err, _ = orb.utils.image.fit_map_zernike(_phase_map, 1/_phase_map_err, 5)
+            
+        #     model, err = orb.utils.image.fit_phase_map(
+        #         _phase_map,
+        #         _phase_map_err,
+        #         self.theta_map)
+        
         return model, err
 
     def modelize(self):
@@ -1495,9 +1491,8 @@ class PhaseMaps(orb.core.Tools):
         return Phase(
             model.astype(float),
             axis=self.axis, params=self.params)
-    
-
-    def generate_phase_cube(self, path, coeffs=None):
+        
+    def generate_phase_cube(self, path, coeffs=None, x_range=None, y_range=None, silent=False):
         """Generate a phase cube from the given phase maps.
 
         :param coeffs: Used to set some coefficients to a given
@@ -1505,21 +1500,36 @@ class PhaseMaps(orb.core.Tools):
           coeff to a np.nan to use the phase map value.
 
         """
-        phase_cube = np.empty((self.dimx, self.dimy, self.axis.size), dtype=float)
-        phase_cube.fill(np.nan)
         
-        progress = orb.core.ProgressBar(self.dimx)
-        for ii in range(self.dimx):
-            progress.update(
-                ii, info="computing column {}/{}".format(
-                    ii, self.dimx))
-                
-            for ij in range(self.dimy):
-                phase_cube[ii, ij, :] = self.get_phase(ii, ij, coeffs=coeffs).data
-                
-        progress.end()
+        if x_range is None:
+            x_range = (0, self.dimx)
+        if y_range is None:
+            y_range = (0, self.dimy)
 
-        orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+        phase_cube = np.empty((x_range[1] - x_range[0],
+                               y_range[1] - y_range[0],
+                               self.axis.size), dtype=float)
+        phase_cube.fill(np.nan)
+
+
+        if not silent:
+            progress = orb.core.ProgressBar(self.dimx)
+            
+        for ii in range(x_range[0],  x_range[1]):
+            if not silent:
+                progress.update(
+                    ii, info="computing column {}/{}".format(ii, self.dimx))
+                
+            for ij in range(y_range[0],  y_range[1]):
+                phase_cube[ii - x_range[0], ij - y_range[0], :] = self.get_phase(
+                    ii, ij, coeffs=coeffs).data
+                
+        if not silent:
+            progress.end()
+
+        if path is not None:
+            orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+            
         return phase_cube
         
     
@@ -1552,3 +1562,69 @@ class PhaseMaps(orb.core.Tools):
                             overwrite=True)
         if self.indexer is not None:
             self.indexer['phase_map_unwraped_0'] = phase_map_path
+
+
+#################################################
+#### CLASS HighOrderPhaseMaps ###################
+#################################################
+
+class HighOrdersPhaseMaps(orb.core.Data):
+    
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.config = orb.core.Tools(self.params.instrument).config
+        self.full_shape = (self.config['CAM1_DETECTOR_SIZE_X'],
+                           self.config['CAM1_DETECTOR_SIZE_Y'])
+        
+        self.x_map = np.linspace(0, self.full_shape[0], self.dimx, endpoint=False)
+        self.x_map += np.diff(self.x_map)[0] / 2.
+        self.y_map = np.linspace(0, self.full_shape[1], self.dimy, endpoint=False)
+        self.y_map += np.diff(self.y_map)[0] / 2.
+        self.maps = list()
+        for i in range(self.dimz):
+            self.maps.append(scipy.interpolate.interp2d(
+                self.x_map, self.y_map, self.data[:,:,i]))
+            
+        
+    def get_phase_coeffs(self, x, y):
+        return [imap(x, y) for imap in self.maps]
+            
+    def get_phase(self, x, y, asarr=False, axis=None):
+        if axis is None:
+            axis = self.params.phase_axis.astype(float)
+        else:
+            if isinstance(axis, orb.core.Axis):
+                axis = axis.data
+            assert isinstance(axis, np.ndarray), 'axis must be a numpy.ndarray or a orb.core.Axis instance'
+            axis = axis.astype(float)
+            
+        arr = np.polyval(self.get_phase_coeffs(x, y), axis).astype(float)
+        if asarr:
+            return arr
+        else:
+            return orb.fft.Phase(arr, axis=axis, params=self.params)
+        
+    def get_map(self, order):
+        return self.maps[-(order+1)](self.x_map, self.y_map)
+    
+    def generate_phase_cube(self, path, dimx, dimy, axis=None):
+        if axis is None:
+            axis = self.params.phase_axis.astype(float)
+            
+        x_map = np.linspace(0, self.full_shape[0], dimx, endpoint=False)
+        x_map += np.diff(x_map)[0] / 2.
+        y_map = np.linspace(0, self.full_shape[1], dimy, endpoint=False)
+        y_map += np.diff(y_map)[0] / 2.
+        
+        phase_cube = np.empty((x_map.size, y_map.size, axis.shape[0]), dtype=float)
+        phase_cube.fill(np.nan)
+        progress = orb.core.ProgressBar(x_map.size)
+        for ii in range(x_map.size):
+            progress.update(ii)
+            for ij in range(y_map.size):
+                phase_cube[ii,ij] = self.get_phase(x_map[ii], y_map[ij], asarr=True, axis=axis)
+        progress.end()
+        if path is not None:
+            orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+        return phase_cube

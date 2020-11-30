@@ -52,11 +52,11 @@ def mk_rad_mask(r0, r1=None, norm=True, center=None, dtype=np.float,
 	# 2.0/r0 first and multiply r0v with it depending on **norm**, this will 
 	# yield different results due to rounding errors.
 	if (norm):
-		r0v = np.linspace(-1-center[0], 1-center[0], r0).astype(dtype).reshape(-1,1)
-		r1v = np.linspace(-1-center[1], 1-center[1], r1).astype(dtype).reshape(1,-1)
+		r0v = np.linspace(-1-center[0], 1-center[0], int(r0)).astype(dtype).reshape(-1,1)
+		r1v = np.linspace(-1-center[1], 1-center[1], int(r1)).astype(dtype).reshape(1,-1)
 	else:
-		r0v = np.linspace(0-center[0], r0-center[0], r0).astype(dtype).reshape(-1,1)
-		r1v = np.linspace(0-center[1], r1-center[1], r1).astype(dtype).reshape(1,-1)
+		r0v = np.linspace(0-center[0], r0-center[0], int(r0)).astype(dtype).reshape(-1,1)
+		r1v = np.linspace(0-center[1], r1-center[1], int(r1)).astype(dtype).reshape(1,-1)
 	
 	if (getxy):
 		return r0v, r1v

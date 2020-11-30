@@ -611,6 +611,42 @@ def low_pass_image_filter(im, deg):
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
 
+def smooth_map(pm, binning=20, smoothdeg=3):
+    """Fast map smoothin. 
+    """
+    pmb = orb.utils.image.nanbin_image(pm, binning)
+    pmbs = ndimage.median_filter(pmb, size=smoothdeg, mode='nearest')
+    pmbs = orb.utils.image.low_pass_image_filter(pmbs, smoothdeg)
+    mod = orb.cutils.unbin_image(pmbs, pm.shape[0], pm.shape[1])
+    err = pm - mod
+    logging.info('smoothing residual std: {}'.format(np.nanstd(err)))
+    return mod, err
+
+def gradient_map(dimx, dimy, h, dx, da, dy, db):
+    """Simple gradient map model"""
+    m = np.zeros((dimx, dimy), dtype=float) + h
+    m += ((np.arange(dimx) - dx) * np.sin(da)).reshape((dimx,1))
+    m += ((np.arange(dimy) - dy) * np.sin(db)).reshape((1,dimy))
+    return m
+
+def fit_map_gradient(im, im_err):
+    
+    nonans = ~np.isnan(im) * ~np.isnan(im_err)
+    
+    def diff(p):
+        return ((im - gradient_map(im.shape[0], im.shape[1], *p))/im_err)[nonans]
+    
+    
+    fit = scipy.optimize.least_squares(diff, (0,0,0,0,0))
+    
+    mod = gradient_map(im.shape[0], im.shape[1], *fit.x)
+    err = im - mod
+    logging.info('gradient modeling params: {}'.format(fit.x))
+    logging.info('gradient modeling error: {:.2e}'.format(np.nanstd(err)))
+    return mod, err
+ 
+    
+
 def fit_phase_map(data_map, err_map, theta_map):
     """Fit an order 0 phase map with a simple cos(theta) model
     """
@@ -1322,7 +1358,7 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     else:
         return params, new_calib_laser_map
 
-def unwrap_phase_map0(phase_map):
+def unwrap_phase_map0(phase_map, bin_size=20, line_size=30):
     """
     Phase is defined modulo pi/2. The Unwrapping is a
     reconstruction of the phase so that the distance between two
@@ -1336,8 +1372,6 @@ def unwrap_phase_map0(phase_map):
     :param phase_map: Order 0 phase map.
     """
 
-    BIN_SIZE = 20
-    LINE_SIZE = 30
 
     def unwrap(val, target):
         while abs(val - target) > np.pi / 2.:
@@ -1359,7 +1393,7 @@ def unwrap_phase_map0(phase_map):
 
     def unwrap_all(pm0, bin_size):
         test_line = np.nanmedian(
-            pm0[:, int(pm0.shape[1]//2-LINE_SIZE//2):int(pm0.shape[1]//2+LINE_SIZE//2)],
+            pm0[:, int(pm0.shape[1]//2-line_size//2):int(pm0.shape[1]//2+line_size//2)],
             axis=1)
         test_line_init = np.copy(test_line)
         for ii in range(0, test_line.shape[0]-bin_size//2):
@@ -1376,9 +1410,9 @@ def unwrap_phase_map0(phase_map):
     phase_map = np.fmod(phase_map, np.pi)
 
     # unwrap pixels along columns
-    phase_map = unwrap_columns(phase_map, BIN_SIZE)
+    phase_map = unwrap_columns(phase_map, bin_size)
     # unwrap columns along a line
-    phase_map = unwrap_all(phase_map, BIN_SIZE)
+    phase_map = unwrap_all(phase_map, bin_size)
 
     phase_map[np.nonzero(np.isnan(phase_map))] = 0.
 
