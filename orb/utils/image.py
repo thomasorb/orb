@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: image.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -680,7 +680,8 @@ def fit_map_theta(data_map, err_map, theta_map):
 
     w = 1. / np.array(sdevs)
     w /= np.nanmax(w)
-    model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=None)
+    w=None
+    model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=0)
     model_err = interpolate.UnivariateSpline(okthetas, sdevs, w=w, ext=0, k=3, s=None)   
 
     err = (model(theta_map) - data_map)[np.nonzero(pixmap)]

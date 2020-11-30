@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: fft.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -1386,11 +1386,23 @@ class PhaseMaps(orb.core.Tools):
         """Return mapped model"""
         _phase_map = self.get_map(order)
         _phase_map_err = self.get_map_err(order)
-                
-        model, err = orb.utils.image.fit_phase_map(
-            _phase_map,
-            _phase_map_err,
-            self.theta_map)
+        minerr, maxerr = np.nanpercentile(_phase_map_err, (5, 95))
+        #_phase_map_err[minerr]
+        _phase_map_err.fill(1.)
+
+        if order == -1:
+            _, model, err = orb.utils.image.fit_map_theta(
+                _phase_map,
+                _phase_map_err,
+                self.theta_map)
+            model = model(self.theta_map)
+            err = err(self.theta_map)
+            
+        else:
+            model, err = orb.utils.image.fit_phase_map(
+                _phase_map,
+                _phase_map_err,
+                self.theta_map)
 
         return model, err
 

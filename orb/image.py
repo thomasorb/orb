@@ -3,7 +3,7 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: image.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -55,6 +55,7 @@ import orb.utils.vector
 import orb.utils.web
 import orb.utils.misc
 import orb.utils.io
+import orb.utils.graph
 
 import pylab as pl
 import matplotlib.cm
@@ -128,58 +129,20 @@ class Frame2D(orb.core.WCSData):
         newim.set_wcs(cutout.wcs)
         return newim
 
-    def imshow(self, figsize=(15,15), perc=99, cmap='viridis', wcs=True, alpha=1, ncolors=None,
-               vmin=None, vmax=None):
+    def imshow(self, wcs=True, **kwargs):
         """Convenient image plotting function
 
         :param figsize: size of the figure (same as pyplot.figure's figsize keyword)
 
-        :param perc: percentile of the data distribution used to scale
-          the colorbar. Can be a tuple (min, max) or a scalar in which
-          case the min percentile will be 100-perc.
-
-        :param cmap: colormap
-
         :param wcs: if True, display wcs coordinates. Else, pixel coordinates are shown.
 
-        :param alpha: image opacity (if another image is displayed above)
-
-        :param ncolors: if an integer is passed, the colorbar is
-          discretized to this number of colors.
-        
-        :param vmin: min value used to scale the colorbar. If set the
-          perc parameter is not used.
-
-        :param vmax: max value used to scale the colorbar. If set the
-          perc parameter is not used.
+        :params kwargs: other kwargs of orb.utils.graph.imshow()
         """
-        try:
-            iter(perc)
-        except Exception:
-            perc = np.clip(float(perc), 50, 100)
-            perc = 100-perc, perc
-
-        else:
-            if len(list(perc)) != 2:
-                raise Exception('perc should be a tuple of len 2 or a single float')
-
-        if vmin is None: vmin = np.nanpercentile(self.data, perc[0])
-        if vmax is None: vmax = np.nanpercentile(self.data, perc[1])
-        
-        if ncolors is not None:
-            cmap = getattr(matplotlib.cm, cmap)
-            norm = matplotlib.colors.BoundaryNorm(np.linspace(vmin, vmax, ncolors),
-                                                  cmap.N, clip=True)
-        else:
-            norm = None
-            
-        fig = pl.figure(figsize=figsize)
         if wcs:
-            ax = fig.add_subplot(111, projection=self.get_wcs())
-            ax.coords[0].set_major_formatter('d.dd')
-            ax.coords[1].set_major_formatter('d.dd')
-        pl.imshow(self.data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm)
-        
+            wcs = self.get_wcs()
+        else:
+            wcs = None
+        orb.utils.graph.imshow(self.data, wcs=wcs, **kwargs)
 
 #################################################
 #### CLASS Image ################################

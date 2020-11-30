@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: cube.py
 
-## Copyright (c) 2010-2018 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##

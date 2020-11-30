@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: core.py
 
-## Copyright (c) 2010-2018 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -1985,8 +1985,8 @@ class Data(object):
         # load axis
         if axis is not None:
             axis = Axis(axis)
-            if axis.dimx != self.dimx:
-                raise TypeError('axis must have the same length as data first axis')
+            if axis.dimx != self.shape[-1]:
+                raise TypeError('axis must have the same length as data last axis')
             self.axis = axis
             
         # load mask

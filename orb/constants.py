@@ -3,7 +3,7 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: constants.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
