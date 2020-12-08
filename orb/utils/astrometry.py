@@ -1087,13 +1087,19 @@ def dec2deg(dec):
 
     :param dec: DEC in sexagesimal format
     """
-    if not isinstance(dec, str):        
-        dec = np.array(dec, dtype=float)
-        if (dec.shape == (3,)):    
-            dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), dec[2])
-        else:
+    if not isinstance(dec, str):
+        try:
+            dec = list(dec)
+        except TypeError:
             raise TypeError('badly formatted input coordinates: {}'.format(dec))
-
+        assert len(dec) == 3, 'badly formatted input coordinates: {}'.format(dec)
+        
+        for i in range(len(dec)):
+            dec[i] = str(dec[i])
+            dec[i] = dec[i].replace('+-', '-')
+            
+        dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), float(dec[2]))
+        
     return SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
 def deg2ra(deg, string=False):
