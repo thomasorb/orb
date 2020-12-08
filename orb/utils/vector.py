@@ -325,7 +325,7 @@ def robust_unwrap(vec, dis):
     :param dis: discontinuity (eg. np.pi)
     """
     orb.utils.validate.is_1darray(vec)
-    orb.utils.validate.has_dtype(vec, float)
+    
     nvec = np.copy(vec)
 
     nvec = np.fmod(nvec, dis)

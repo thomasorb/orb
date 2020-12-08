@@ -31,6 +31,7 @@ import orb.utils.validate
 import orb.utils.fft
 import orb.utils.vector
 import orb.utils.err
+import orb.utils.stats
 import orb.core
 import orb.cutils
 import orb.fit
@@ -475,7 +476,6 @@ class Phase(orb.core.Cm1Vector1d):
 
         
     def polyfit(self, deg, coeffs=None,
-                calib_coeff=None,
                 return_coeffs=False,
                 border_ratio=0.1):
         """Polynomial fit of the phase
@@ -494,9 +494,11 @@ class Phase(orb.core.Cm1Vector1d):
         :param border_ratio: (Optional) relative width on the
           borders of the filter range removed from the fitted values
           (default 0.1)
-
         """
         self.assert_params()
+
+        sigmaref = orb.core.FilterFile(self.params.filter_name).get_phase_fit_ref()
+        
         deg = int(deg)
         if deg < 0: raise ValueError('deg must be >= 0')
 
@@ -509,23 +511,13 @@ class Phase(orb.core.Cm1Vector1d):
         cm1_border = np.abs(cm1_max - cm1_min) * border_ratio
         cm1_min += cm1_border
         cm1_max -= cm1_border
-
-        weights = np.ones(self.dimx, dtype=float) * 1e-35
-        weights[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1] = 1.
-        
         
         phase = np.copy(self.data).astype(float)
-        ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1]
+        ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
+        ok_axis = self.axis.data.astype(float)[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
         if np.any(np.isnan(ok_phase)):
             raise orb.utils.err.FitError('phase contains nans in the filter passband')
         
-        phase[np.isnan(phase)] = 0.
-
-        # use calibration coeff in phase fit
-        if calib_coeff is not None:
-            costheta = 1. / calib_coeff
-        else:
-            costheta = 0
             
         # create guess
         guesses = list()
@@ -562,20 +554,16 @@ class Phase(orb.core.Cm1Vector1d):
                 all_p = p
             return np.array(all_p)
         
-        def model(x, ctheta, *p):
+        def model(x, p):
             p = format_guess(p)
-            return orb.utils.fft.phase_model(x, ctheta, *p)
+            return orb.utils.fft.phase_model(x, sigmaref, p)
 
-        def diff(p, x, y, w, ctheta):
-            res = model(x, ctheta, *p) - y
-            return res * w
-        
-        try:            
+        def diff(p):
+            return ok_phase - model(ok_axis, p)
+
+        try:
             _fit = scipy.optimize.leastsq(
                 diff, guesses,
-                args=(
-                    self.axis.data.astype(float),
-                    phase, weights, costheta),
                 full_output=True)
             pfit = _fit[0]
             pcov = _fit[1]
@@ -593,7 +581,7 @@ class Phase(orb.core.Cm1Vector1d):
         if return_coeffs:
             return all_pfit, all_perr
         else:
-            return self.__class__(model(self.axis.data.astype(float), costheta, *pfit),
+            return self.__class__(model(self.axis.data.astype(float), pfit),
                                   self.axis, params=self.params)
 
     def subtract_low_order_poly(self, deg, border_ratio=0.1):
@@ -606,7 +594,7 @@ class Phase(orb.core.Cm1Vector1d):
           borders of the filter range removed from the fitted values
           (default 0.1)
         """
-        self = self.subtract(self.polyfit(deg, border_ratio=border_ratio))
+        return self.subtract(orb.core.Vector1d(self.polyfit(deg, border_ratio=border_ratio).project(self.axis)))
 
 #################################################
 #### CLASS Spectrum #############################
@@ -1384,21 +1372,16 @@ class PhaseMaps(orb.core.Tools):
 
     def get_mapped_model(self, order):
         """Return mapped model"""
+        import orb.utils.stats
         _phase_map = self.get_map(order)
         _phase_map_err = self.get_map_err(order)
-        _phase_map_err -= np.nanpercentile(_phase_map_err, 5)
-        _phase_map_err /= np.nanpercentile(_phase_map_err, 95)
-        _phase_map_err = np.clip(_phase_map_err, 0, 1) + 1
+        _phase_map_err[_phase_map_err > np.nanmedian(_phase_map_err) + 3 * orb.utils.stats.unbiased_std(
+            _phase_map_err)] = np.nan
+        _phase_map[np.isnan(_phase_map_err)] = np.nan
+        _phase_map_err[~np.isnan(_phase_map_err)] = 1
+        _phase_map_err.fill(1.)
 
-        if order == 1:
-            model, err = orb.utils.image.fit_map_gradient(_phase_map, _phase_map_err)
-        else:
-            model, err, _ = orb.utils.image.fit_map_zernike(_phase_map, 1/_phase_map_err, 5)
-            
-        #     model, err = orb.utils.image.fit_phase_map(
-        #         _phase_map,
-        #         _phase_map_err,
-        #         self.theta_map)
+        model, err, _ = orb.utils.image.fit_map_zernike(_phase_map, 1/_phase_map_err, 5)
         
         return model, err
 
@@ -1568,7 +1551,7 @@ class PhaseMaps(orb.core.Tools):
 #### CLASS HighOrderPhaseMaps ###################
 #################################################
 
-class HighOrdersPhaseMaps(orb.core.Data):
+class HighOrderPhaseCube(orb.core.Data):
     
     
     def __init__(self, *args, **kwargs):

@@ -27,7 +27,7 @@ import matplotlib.cm
 import matplotlib.colors
 import numpy as np
 
-def imshow(data, figsize=(15,15), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
+def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
            vmin=None, vmax=None):
     """Convenient image plotting function
 

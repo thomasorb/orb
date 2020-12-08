@@ -622,27 +622,30 @@ def smooth_map(pm, binning=20, smoothdeg=3):
     logging.info('smoothing residual std: {}'.format(np.nanstd(err)))
     return mod, err
 
-def gradient_map(dimx, dimy, h, dx, da, dy, db):
+def gradient_map(dimx, dimy, h, da, db):
     """Simple gradient map model"""
-    m = np.zeros((dimx, dimy), dtype=float) + h
-    m += ((np.arange(dimx) - dx) * np.sin(da)).reshape((dimx,1))
-    m += ((np.arange(dimy) - dy) * np.sin(db)).reshape((1,dimy))
-    return m
+    m = np.zeros((dimx, dimy), dtype=float)
+    m += ((np.arange(dimx) - dimx/2) * da).reshape((dimx,1))
+    m += ((np.arange(dimy) - dimy/2) * db).reshape((1,dimy))
+    return m + h
 
 def fit_map_gradient(im, im_err):
     
     nonans = ~np.isnan(im) * ~np.isnan(im_err)
+    im = np.copy(im)
+    im_err = np.copy(im_err)
     
     def diff(p):
         return ((im - gradient_map(im.shape[0], im.shape[1], *p))/im_err)[nonans]
     
     
-    fit = scipy.optimize.least_squares(diff, (0,0,0,0,0))
-    
+    fit = scipy.optimize.least_squares(
+        diff, (0,0,0), loss='soft_l1')
     mod = gradient_map(im.shape[0], im.shape[1], *fit.x)
     err = im - mod
     logging.info('gradient modeling params: {}'.format(fit.x))
-    logging.info('gradient modeling error: {:.2e}'.format(np.nanstd(err)))
+    logging.info('gradient modeling error: {:.2e}'.format(
+        orb.utils.stats.unbiased_std(err)))
     return mod, err
  
     
@@ -775,7 +778,7 @@ def fit_map_zernike(data_map, weights_map, nmodes):
     res_map = data_map - data_map_fit
     fit_error_map = np.abs(res_map) / np.abs(data_map)
     fit_error_map[np.isinf(fit_error_map)] = np.nan
-    fit_res_std = np.nanstd(res_map)
+    fit_res_std = orb.utils.stats.unbiased_std(res_map)
     fit_error = np.nanmedian(fit_error_map)
     logging.info('Standard deviation of the residual: {}'.format(fit_res_std))
     logging.info('Median relative error (err/val)): {:.2f}%'.format(
@@ -1360,9 +1363,9 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
 
 def unwrap_phase_map0(phase_map, bin_size=20, line_size=30):
     """
-    Phase is defined modulo pi/2. The Unwrapping is a
+    Phase is defined modulo pi. The Unwrapping is a
     reconstruction of the phase so that the distance between two
-    neighbour pixels is always less than pi/4. Then the real
+    neighbour pixels is always less than pi/2. Then the real
     phase pattern can be recovered and fitted easily.
     
     The idea is the same as with np.unwrap() but in 2D, on a
@@ -1407,7 +1410,7 @@ def unwrap_phase_map0(phase_map, bin_size=20, line_size=30):
         pm0 = (pm0.T + diff.T).T
         return pm0
 
-    phase_map = np.fmod(phase_map, np.pi)
+    phase_map = orb.utils.stats.robust_modulo(phase_map, np.pi)
 
     # unwrap pixels along columns
     phase_map = unwrap_columns(phase_map, bin_size)

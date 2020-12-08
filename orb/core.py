@@ -718,6 +718,26 @@ class Tools(object):
         return filter_file_path
 
     
+    def _get_old_phase_file_path(self, filter_name):
+        """Return the full path to the phase file given the name of
+        the filter.
+
+        The file name must be 'phase_FILTER_NAME.orb' and it must be
+        located in orb/data/.
+
+        :param filter_name: Name of the filter.
+        """
+        filter_name = self._parse_filter_name(filter_name)
+        phase_file_path =  self._get_orb_data_file_path(
+            "phase_" + filter_name + ".old.hdf5")
+        
+        if not os.path.exists(phase_file_path):
+             logging.warning(
+                 "Phase file %s does not exist !"%phase_file_path)
+             return None
+         
+        return phase_file_path
+
     def _get_phase_file_path(self, filter_name):
         """Return the full path to the phase file given the name of
         the filter.
@@ -2252,6 +2272,10 @@ class Data(object):
             os.remove(path)
         with orb.utils.io.open_hdf5(path, 'w') as hdffile:
             if self.has_params():
+                self.params['program'] = 'ORB version {}'.format(orb.version.__version__)
+                self.params['author'] = 'thomas.martin.1@ulaval.ca'
+                self.params['date'] = str(datetime.datetime.now())
+
                 for iparam in self.params:
                     try:
                         hdffile.attrs[iparam] = self.params[iparam]
@@ -2866,6 +2890,10 @@ class FilterFile(Vector1d):
         """Return phase fit order."""
         return self.params.phase_fit_order
 
+    def get_phase_fit_ref(self):
+        """Return reference wavenumber for phase fitting"""
+        return self.params.polyref
+
     def get_filter_bandpass(self):
         """Return filter bandpass in nm"""
         return self.params.bandpass_min_nm, self.params.bandpass_max_nm
@@ -2911,8 +2939,9 @@ class FilterFile(Vector1d):
     def get_high_order_phase(self):
         params = dict(self.params)
         params['filter_name'] = self.filter_name
-        return Cm1Vector1d(self.tools._get_phase_file_path(self.filter_name),
-                           params=params)
+        return orb.fft.HighOrderPhaseCube(
+            self.tools._get_phase_file_path(self.filter_name),
+            params=params)
 
 
 

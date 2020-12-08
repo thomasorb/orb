@@ -28,6 +28,7 @@ import numpy as np
 import warnings
 import os
 import logging
+import datetime
 
 import orb.core
 import orb.old
@@ -37,6 +38,7 @@ import orb.utils.astrometry
 import orb.fft
 import orb.image
 import orb.cutils
+import orb.version
 
 import scipy.interpolate
 import gvar
@@ -597,7 +599,7 @@ class HDFCube(orb.core.WCSData):
 
         This is just the config high order phase
         """
-        return orb.fft.Phase(self._get_phase_file_path(self.params.filter_name))
+        return orb.fft.HighOrderPhaseCube(self._get_phase_file_path(self.params.filter_name))
         
 
     def get_dxdymaps(self):
@@ -1237,6 +1239,10 @@ class RWHDFCube(HDFCube):
                 f.create_dataset('data', shape=shape, chunks=True, dtype=dtype)
                 f.attrs['level3'] = True
                 f.attrs['instrument'] = instrument
+                f.attrs['program'] = 'ORB version {}'.format(orb.version.__version__)
+                f.attrs['author'] = 'thomas.martin.1@ulaval.ca'
+                f.attrs['date'] = str(datetime.datetime.now())
+
 
         elif shape is not None:
             raise ValueError('shape or dtype must be set only when creating a new HDFCube')
@@ -1246,6 +1252,9 @@ class RWHDFCube(HDFCube):
         if self.is_level1(): raise Exception('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
         if self.has_params:
+            self.params['program'] = 'ORB version {}'.format(orb.version.__version__)
+            self.params['author'] = 'thomas.martin.1@ulaval.ca'
+            self.params['date'] = str(datetime.datetime.now())
             self.set_params(self.params)
 
     def __setitem__(self, key, value):

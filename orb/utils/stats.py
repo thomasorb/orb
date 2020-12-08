@@ -31,7 +31,7 @@ def robust_modulo(_dat, mod):
 
     Returned values have the smallest possible absolute
     value. e.g. -1.1 % 1 = -0.1, -0.6 % 1 = 0.4. This is perfect to
-    compute the residual of a phase fit (which is known modulo 2pi)
+    compute the residual of a phase fit (which is known modulo pi)
 
     This is robust to NaN and fast.
     """
