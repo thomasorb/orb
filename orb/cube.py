@@ -1112,7 +1112,7 @@ class HDFCube(orb.core.WCSData):
           
             # load data
             progress.update(ik, info="loading: " + str(ik))
-            frames = self[:,:,ik:ik+ncpus]
+            frames = np.copy(self[:,:,ik:ik+ncpus])
             if add_cube is not None:
                 frames += added_cube[:,:,ik:ik+ncpus] * added_cube_scale
             frames = np.atleast_3d(frames)
@@ -1122,7 +1122,10 @@ class HDFCube(orb.core.WCSData):
             progress.update(ik, info="computing photometry: " + str(ik))
             jobs = [(ijob, job_server.submit(
                 _fit_stars_in_frame,
-                args=(frames[:,:,ijob], star_lists[ijob], fwhm_pix, params, kwargs),
+                args=(frames[:,:,ijob], star_lists[ijob],
+                      fwhm_pix,
+                      params,
+                      dict(kwargs)),
                 modules=("import logging",
                          "import orb.utils.stats",
                          "import orb.utils.image",
