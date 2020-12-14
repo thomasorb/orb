@@ -140,7 +140,7 @@ class SkyModel(object):
         
 class RawSimulator(object):
 
-    def __init__(self, step_nb, params, instrument='sitelle'):
+    def __init__(self, step_nb, params, instrument='sitelle', **kwargs):
         """
         :param params: Can be a parameters dict or the name of a filter.
         """
@@ -161,6 +161,7 @@ class RawSimulator(object):
             self.params['calib_coeff'] = orb.utils.spectrum.theta2corr(
                 self.tools.config['OFF_AXIS_ANGLE_CENTER'])
             self.params['nm_laser'] = self.tools.config['CALIB_NM_LASER']
+            
         elif isinstance(params, dict):
             self.params = params
             if 'calib_coeff' not in self.params:
@@ -168,7 +169,14 @@ class RawSimulator(object):
                     self.params['calib_coeff'] = self.params['axis_corr']
         else:
             raise TypeError('params must be a filter name (str) or a parameter dictionary')
-            
+
+        self.params.update(kwargs)
+
+        self.params['calib_coeff_orig'] = self.params['calib_coeff']
+        self.params['apodization'] = 1
+        self.params['wavenumber'] = True
+        
+        
         self.data = np.zeros(self.params.step_nb, dtype=float)
 
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
@@ -182,7 +190,7 @@ class RawSimulator(object):
 
     def add_line(self, wave, vel=0, flux=1, sigma=0, jitter=0):
         """
-
+        :param wave: The name of the line or the line wavenumber in cm-1
         :param vel: Velocity in km/s
 
         :param jitter: Std of an OPD jitter. Must be given in nm.
