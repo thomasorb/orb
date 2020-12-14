@@ -1102,7 +1102,7 @@ def dec2deg(dec):
             
         dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), float(dec[2]))
         
-    return SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
+    return astropy.coordinates.SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
 def deg2ra(deg, string=False):
     """Convert RA in degrees to sexagesimal.
