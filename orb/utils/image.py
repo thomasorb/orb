@@ -610,6 +610,14 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
+def filter_background(im):
+    """Filter modulated background
+    """
+    med = np.nanmedian(im)
+    hp_im = high_pass_diff_image_filter(im, deg=1)
+    hp_im = low_pass_image_filter(hp_im, deg=1)
+    hp_im += med
+    return hp_im
 
 def smooth_map(pm, binning=20, smoothdeg=3):
     """Fast map smoothin. 

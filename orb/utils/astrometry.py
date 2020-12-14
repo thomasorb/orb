@@ -1245,12 +1245,13 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        dark_current_level=0.,
                        local_background=True,
                        no_aperture_photometry=False,
-                       precise_guess=False, aper_coeff=3., blur=False,
+                       precise_guess=False, aper_coeff=3.,
                        no_fit=False, estimate_local_noise=True,
                        multi_fit=False, enable_zoom=False,
                        enable_rotation=False, saturation=None,
                        fix_pos=False, nozero=False, silent=True,
-                       sip=None, background_value=None):
+                       sip=None, background_value=None,
+                       filter_background=False):
   
     """Fit stars in a frame.
 
@@ -1351,12 +1352,6 @@ def fit_stars_in_frame(frame, star_list, box_size,
       and 3. to account for the flux in the wings (default 3., better
       for star with a high SNR).
 
-    :param blur: (Optional) If True, blur frame (low pass filtering)
-      before fitting stars. It can be used to enhance the quality of
-      the fitted flux of undersampled data. Note that the error on
-      star position can be greater on blurred frame. This option must
-      not be used for alignment purpose (default False).
-
     :param no_fit: (Optional) If True, no fit is done. Only the
       aperture photometry. Star positions in the star list must thus
       be precise (default False).
@@ -1409,11 +1404,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        # than the normal star box. This box is used for
                        # background determination and aperture
                        # photometry
-                       
-    BLUR_FWHM = 3.5   # FWHM of the gaussian kernel used to blur frames
-    BLUR_DEG = int(math.ceil(
-        BLUR_FWHM * 2. / (2. * math.sqrt(2. * math.log(2.)))))
-    
+                           
     dimx = frame.shape[0]
     dimy = frame.shape[1]
 
@@ -1444,7 +1435,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     if not local_background and background_value is None:
         if precise_guess:
-            background = utils.astrometry.sky_background_level(frame)
+            background = orb.utils.astrometry.sky_background_level(frame)
         else:
             background = frame_median
         if not multi_fit:
@@ -1452,11 +1443,9 @@ def fit_stars_in_frame(frame, star_list, box_size,
         else:
             cov_height = True
     
-    ## Blur frame to avoid undersampled data
-    if blur:
-        fit_frame = np.copy(utils.image.low_pass_image_filter(
-            frame, deg=BLUR_DEG))
-        fwhm_pix = BLUR_FWHM
+    ## remove modulated background
+    if filter_background:
+        fit_frame = orb.utils.image.filter_background(frame)
     else:
         fit_frame = np.copy(frame)
 
@@ -2588,10 +2577,16 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
         raise Exception("Not enough detected stars (%d) in the first frame"%good_nb)
 
     ## Create alignment vectors from fitted positions
-    alignment_vector_x = ((fit_x.T - start_x.T).T)[0,:]
-    alignment_vector_y = ((fit_y.T - start_y.T).T)[0,:]
-    alignment_error = np.sqrt(fit_x_err[0,:]**2. + fit_y_err[0,:]**2.)
-
+    matrix_x = ((fit_x.T - start_x.T).T)
+    matrix_y = ((fit_y.T - start_y.T).T)
+    alignment_vector_x = np.nanmedian(matrix_x, axis=0)
+    alignment_vector_y = np.nanmedian(matrix_y, axis=0)
+    errx25, errx75 = np.nanpercentile(matrix_x, [25, 75], axis=0)
+    errx = (errx75 - errx25) / 1.349
+    erry25, erry75 = np.nanpercentile(matrix_y, [25, 75], axis=0)
+    erry = (erry75 - erry25) / 1.349
+    alignment_error = np.sqrt(errx**2 + erry**2)
+    
     # correct alignment vectors for NaN values
     if alignment_vector_x.size > 10:
         alignment_vector_x = orb.utils.vector.correct_vector(
@@ -2762,3 +2757,31 @@ def match_star_lists(wcs, sl1deg, sl2pix, rc, xyrange=(500, 50), rrange=(6,1), z
         return wcs, matched_small, matched_big
     else:
         return wcs, matched_big, matched_small
+
+def dflist2arr(df, key):
+    """Convert a list of stars fit results (as the one returned by
+    orb.cube.fit_stars) saved in a data frame (which can be loaded
+    with utils.io.load_df) to a array of vectors given the key which
+    must be extracted.
+
+    :param df: list of DataFrames
+    :param key: Can be flux, aperture_flux, flux_err, aperture_flux_err, etc.
+
+    """
+    _photom = list()
+    _len = None
+    for ik in df:
+        is_empty = False
+        if ik is None: is_empty = True
+        elif ik.empty: is_empty = True
+        if not is_empty:
+            _photom.append(ik[key].values)
+            _len = len(_photom[-1])
+        else:
+            _photom.append(None)
+    if _len is None: raise Exception('photometry dataframe is empty')
+    for ik in range(len(_photom)):
+        if _photom[ik] is None:
+            _photom[ik] = list([np.nan]) * _len
+
+    return np.array(_photom).T

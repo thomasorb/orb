@@ -478,8 +478,10 @@ class Image(Frame2D):
         logging.debug('initial number of stars: {}'.format(len(sources)))
         
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
+        # avoids also too bright stars
         if saturation_threshold is None:
-            saturation_threshold = np.nanmax(self.data) * 0.45 
+            saturation_threshold = np.nanpercentile(self.data, 99.9) * 0.45
+            
         sources = sources[sources.peak < saturation_threshold]
         logging.debug('number of stars after peak filter: {}'.format(len(sources)))
             

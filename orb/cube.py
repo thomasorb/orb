@@ -979,6 +979,7 @@ class HDFCube(orb.core.WCSData):
         return im.fit_stars(star_list, **kwargs)
 
     def fit_stars_in_cube(self, star_list,
+                          path=None,
                           correct_alignment=False,
                           alignment_vectors=None,
                           add_cube=None, **kwargs):
@@ -997,6 +998,8 @@ class HDFCube(orb.core.WCSData):
             see :meth:`astrometry.utils.fit_stars_in_frame` for more
             information.
     
+        :param path: (Optional) path where the results are saved to.
+
         :param correct_alignment: (Optional) If True, the initial star
           positions from the star list are corrected by their last
           recorded deviation. Useful when the cube is smoothly
@@ -1148,11 +1151,15 @@ class HDFCube(orb.core.WCSData):
                         if 'fwhm_pix' in res:
                             fwhm_mean[ik+ijob] = np.nanmean(orb.utils.stats.sigmacut(res['fwhm_pix'].values))
             
-            
+
+        progress.end()
         self._close_pp_server(job_server)
         
-        progress.end()
-  
+        
+        if path is not None:
+            orb.utils.io.save_dflist(fit_results, path)
+            logging.info('fit results saved as {}'.format(path))
+        
         return fit_results
 
     def get_raw_alignement_vectors(self, star_number=60, searched_size=80):
@@ -1187,7 +1194,7 @@ class HDFCube(orb.core.WCSData):
             
     
     def get_alignment_vectors(self, star_list, min_coeff=0.2,
-                              alignment_vectors=None):
+                              alignment_vectors=None, path=None):
         """Return alignement vectors
 
         :param star_list: list of stars
@@ -1196,14 +1203,23 @@ class HDFCube(orb.core.WCSData):
             fitted to assume a good enough calculated disalignment
             (default 0.2).
 
+        :param path: If not None, fit results are written to this path
+
         :return: alignment_vector_x, alignment_vector_y, alignment_error
         """
         star_list = orb.utils.astrometry.load_star_list(star_list)
-        fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
+        # warning: multi_fit must stay at False (if multi_fit is True,
+        # a problem on one star affects evrything else)
+        fit_results = self.fit_stars_in_cube(star_list,
+                                             path=path,
+                                             correct_alignment=True,
                                              alignment_vectors=alignment_vectors,
                                              no_aperture_photometry=True,
-                                             multi_fit=False, # sure ???
-                                             fix_height=False)
+                                             multi_fit=False,
+                                             # must star af FALSE
+                                             fix_height=False,
+                                             filter_background=True)
+            
         return orb.utils.astrometry.compute_alignment_vectors(fit_results)
     
 
