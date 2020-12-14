@@ -35,6 +35,7 @@ def robust_modulo(_dat, mod):
 
     This is robust to NaN and fast.
     """
+    warnings.simplefilter('ignore', RuntimeWarning)
     _dat = np.copy(_dat)
     nonan = ~np.isnan(_dat)
     sup = (_dat > mod/2.) * nonan
@@ -49,6 +50,7 @@ def robust_modulo(_dat, mod):
         sys.stdout.flush()
         _dat[inf] += mod
         inf = (_dat < -(mod/2.)) * nonan
+    sys.stdout.write('completed\n')
     return _dat
 
 def unbiased_std(a):

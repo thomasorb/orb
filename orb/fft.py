@@ -1309,7 +1309,9 @@ class PhaseMaps(orb.core.Tools):
             for ikey in list(f.attrs.keys()):
                 self.params[ikey] = f.attrs[ikey]
 
-            
+
+        self.sigmaref = orb.core.FilterFile(self.params.filter_name).get_phase_fit_ref()
+        
         # detect binning
         self.dimx = self.phase_maps[0].shape[0]
         self.dimy = self.phase_maps[0].shape[1]
@@ -1469,8 +1471,9 @@ class PhaseMaps(orb.core.Tools):
             ctheta = 1. / self.unbinned_calibration_coeff_map[x, y]
         else:
             ctheta = 1. / self.calibration_coeff_map[x, y]
-            
-        model = orb.utils.fft.phase_model(self.axis, ctheta, *_coeffs)
+
+
+        model = orb.utils.fft.phase_model(self.axis, self.sigmaref, _coeffs)
         return Phase(
             model.astype(float),
             axis=self.axis, params=self.params)
