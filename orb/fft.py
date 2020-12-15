@@ -1375,10 +1375,12 @@ class PhaseMaps(orb.core.Tools):
     def get_mapped_model(self, order):
         """Return mapped model"""
         import orb.utils.stats
+        warnings.simplefilter("ignore", category=RuntimeWarning)
         _phase_map = self.get_map(order)
         _phase_map_err = self.get_map_err(order)
-        _phase_map_err[_phase_map_err > np.nanmedian(_phase_map_err) + 3 * orb.utils.stats.unbiased_std(
-            _phase_map_err)] = np.nan
+        _phase_map_err[_phase_map_err > np.nanmedian(_phase_map_err)
+                       + 3 * orb.utils.stats.unbiased_std(
+                           _phase_map_err)] = np.nan
         _phase_map[np.isnan(_phase_map_err)] = np.nan
         _phase_map_err[~np.isnan(_phase_map_err)] = 1
         _phase_map_err.fill(1.)

@@ -599,8 +599,19 @@ class HDFCube(orb.core.WCSData):
 
         This is just the config high order phase
         """
-        return orb.fft.HighOrderPhaseCube(self._get_phase_file_path(self.params.filter_name))
+        try:
+            path = self._get_phase_file_path(self.params.filter_name)
+        except Exception as e:
+            logging.warning('No high order phase loaded for filter {}!: {}'.format(
+                self.params.filter_name, e))
+            path = None
         
+        if path is not None:
+            return orb.fft.HighOrderPhaseCube(path)
+        else:
+            logging.warning('No high order phase loaded for filter {}!'.format(
+                self.params.filter_name))
+            return None
 
     def get_dxdymaps(self):
         """Return dxdymaps.
@@ -2646,10 +2657,13 @@ class SpectralCube(Cube):
                 std_im = None
         
         if std_im is not None:
-            eps_mean = std_im.compute_flux_correction_factor()
-            logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
-
-            eps_vector = eps_vector.multiply(eps_mean)
+            try:
+                eps_mean = std_im.compute_flux_correction_factor()
+            except Exception as e:
+                logging.warning('error during compute_flux_correction_vector: {}'.format(e))
+            else:
+                logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
+                eps_vector = eps_vector.multiply(eps_mean)
                 
         return photom.compute_flambda(self.get_base_axis(), eps=eps_vector)
 

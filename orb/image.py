@@ -455,7 +455,8 @@ class Image(Frame2D):
 
         
     def detect_stars(self, min_star_number=30, max_roundness=0.1,
-                     max_radius_coeff=1., path=None, saturation_threshold=None):
+                     max_radius_coeff=1., path=None, saturation_threshold=None,
+                     filter_background=False):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
@@ -469,18 +470,23 @@ class Image(Frame2D):
         """
         DETECT_THRESHOLD = 5
         FWHM_STARS_NB = 30
+
+        data = np.copy(self.data.T)
+        if filter_background:
+            data = orb.utils.image.filter_background(data)
         
-        mean, median, std = self.get_stats()
-        daofind = photutils.DAOStarFinder(fwhm=self.get_fwhm_pix(),
-                                          threshold=DETECT_THRESHOLD * std)
-        sources = daofind(self.data.T - median).to_pandas()
+        daofind = photutils.DAOStarFinder(
+            fwhm=self.get_fwhm_pix(),
+            threshold=DETECT_THRESHOLD * orb.utils.stats.unbiased_std(data))
+            
+        sources = daofind(data - np.nanmedian(data)).to_pandas()
         if len(sources) == 0: raise Exception('no star detected, check input image')
         logging.debug('initial number of stars: {}'.format(len(sources)))
         
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
         # avoids also too bright stars
         if saturation_threshold is None:
-            saturation_threshold = np.nanpercentile(self.data, 99.9) * 0.45
+            saturation_threshold = np.nanpercentile(data, 99.9) * 0.45
             
         sources = sources[sources.peak < saturation_threshold]
         logging.debug('number of stars after peak filter: {}'.format(len(sources)))
@@ -589,7 +595,8 @@ class Image(Frame2D):
                  skip_registration=False,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
-                 return_error_spl=False, star_list_query=None, fwhm_arc=None):
+                 return_error_spl=False, star_list_query=None, fwhm_arc=None,
+                 filter_background=False):
         """Register data and return a corrected pywcs.WCS
         object.
 
@@ -687,6 +694,11 @@ class Image(Frame2D):
             raise Exception("Not enough parameters to register data. Please set target_xy, target_radec and wcs_rotation parameters at Astrometry init")
 
         if return_error_maps and return_error_spl: raise Exception('return_error_maps and return_error_spl cannot be both set to True, choose only one of them')
+
+        if filter_background:
+            logging.warning('filter background: data background filtered for registration')
+            original_data = np.copy(self.data)
+            self.data = orb.utils.image.filter_background(self.data)
         
         logging.info('Computing WCS')
         logging.info('initial wcs')
@@ -917,6 +929,10 @@ class Image(Frame2D):
 
         logging.info('corrected WCS computed')
         logging.info('internal WCS updated (to update the file on disk use self.writeto function)')
+
+        if filter_background:
+            logging.info('filter background: restoring original data')
+            self.data = original_data
         
         if not return_fit_params:
             if return_error_maps:
@@ -1515,13 +1531,17 @@ class StandardImage(Image):
         orb.photometry.Photometry.get_flambda()"""
 
         std_xy = self.find_object()
+        logging.info('Object found at {}'.format(std_xy))
         try:
             orb.utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
             orb.utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
         except orb.utils.err.ValidationError:
             raise Exception('standard star not in the image, check image registration')
 
-        star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
+        star_list, fwhm = self.detect_stars(
+            min_star_number=30, filter_background=True,
+            max_roundness=0.6) # used to recompute fwhm properly
+        
         std_fit = self.fit_stars([std_xy], aper_coeff=6)
         std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
 
