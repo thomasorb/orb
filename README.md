@@ -57,6 +57,7 @@ now your prompt should be something like `(orb3) $`.
 pip install gvar==9.2 --no-deps
 pip install lsqfit==11.2 --no-deps
 pip install fpdf --no-deps
+pip install gitpython
 ```
 
 ### 4. add ORB module
