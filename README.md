@@ -72,10 +72,10 @@ cd orb-stable
 git clone https://github.com/thomasorb/orb.git
 ```
 
-in the downloaded folder
+in the orb-stable folder
 ```bash
 conda activate orb3 # you don't need to do it if you are already in the orb3 environment
-cd path/to/orb-stable/orb
+cd orb
 python setup.py build_ext --inplace
 python setup.py install # not for developer
 ```
