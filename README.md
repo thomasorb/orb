@@ -58,6 +58,11 @@ pip install lsqfit==11.2 --no-deps
 pip install fpdf --no-deps
 ```
 
+If you encounter a problem building gvar you may want to install build-essential (for Ubuntu users)
+```
+sudo apt install build-essential
+```
+
 ### 4. add ORB module
 
 clone [ORB](https://github.com/thomasorb/orb)
