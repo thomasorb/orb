@@ -595,8 +595,8 @@ class Image(Frame2D):
         return phot_table
     
     def register(self, max_stars_detect=60,
-                 max_roundness=0.2,
-                 max_radius_coeff=1.,
+                 max_roundness=0.5,
+                 max_radius_coeff=1.5,
                  saturation_threshold=False,
                  sip_order=3,
                  rrange=None, xyrange=None,
@@ -606,7 +606,7 @@ class Image(Frame2D):
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
                  return_error_spl=False, star_list_query=None, fwhm_arc=None,
-                 filter_background=False):
+                 filter_background=True):
         """Register data and return a corrected pywcs.WCS
         object.
 
