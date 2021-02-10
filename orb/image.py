@@ -317,7 +317,7 @@ class Image(Frame2D):
         self.params['CTYPE1'] = 'RA---TAN'
         self.params['CTYPE2'] = 'DEC--TAN'
             
-    def find_object(self, is_standard=False, return_radec=False):
+    def find_object(self, is_standard=False, return_radec=False, optimize=True):
         """Try to find the object given the name in the header
 
         :param is_standard: if object is a standard, do not try to
@@ -326,6 +326,7 @@ class Image(Frame2D):
         :param return_radec: if true, radec coordinates are retruned
           instead of image coordinates (pixel position).
         """
+        OPTIMIZE_BOX_SIZE = 15
         object_found = False
         if not is_standard:
             logging.info('resolving coordinates of {}'.format(
@@ -363,6 +364,15 @@ class Image(Frame2D):
         std_dec_str = '{:.0f}:{:.0f}:{:.3f}'.format(
             *orb.utils.astrometry.deg2dec(std_dec))
         logging.info('Object {} RA/DEC: {} ({:.3f}) {} ({:.3f}) (corrected for proper motion)'.format(self.params.OBJECT, std_ra_str, std_ra, std_dec_str, std_dec))
+
+        if optimize:
+            x, y = np.squeeze(self.world2pix([std_ra, std_dec]))
+            crop = self.crop(x, y, OPTIMIZE_BOX_SIZE)
+            max_index = np.unravel_index(np.nanargmax(crop.data), shape=crop.shape)
+            bbox = crop.params['cropped_bbox']
+            newx, newy = max_index[0] + bbox[0], max_index[1] + bbox[2]
+            std_ra, std_dec = np.squeeze(self.pix2world([newx, newy]))
+            
         if not return_radec:
             return np.squeeze(self.world2pix([std_ra, std_dec]))
         else:
