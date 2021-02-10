@@ -454,8 +454,8 @@ class Image(Frame2D):
         return sources
 
         
-    def detect_stars(self, min_star_number=30, max_roundness=0.1,
-                     max_radius_coeff=1., path=None, saturation_threshold=None,
+    def detect_stars(self, min_star_number=30, max_roundness=0.5,
+                     max_radius_coeff=1.3, path=None, saturation_threshold=None,
                      filter_background=False):
         """Detect star positions in data.
 
@@ -466,6 +466,12 @@ class Image(Frame2D):
 
         :param path: (Optional) Path to the output star list file. If
           None, nothing is written.
+
+        :param saturation_threshold: (Optional) reject stars higher
+          than this threshold. Can be a float, False or None. If
+          False: saturation_threshold is set to 99.9th percentile. If
+          None (default) it is set to 0.45 * 99.9th percentile to
+          avoid selecting stars which will saturate at ZPD.
 
         """
         DETECT_THRESHOLD = 5
@@ -485,6 +491,8 @@ class Image(Frame2D):
         
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
         # avoids also too bright stars
+        if saturation_threshold is False:
+            saturation_threshold = np.nanpercentile(data, 99.9)
         if saturation_threshold is None:
             saturation_threshold = np.nanpercentile(data, 99.9) * 0.45
             
@@ -1229,10 +1237,16 @@ class Image(Frame2D):
         
         if star_list1 is None:
             star_list1, fwhm_pix = self.detect_stars(
-                min_star_number=MIN_STAR_NB)
+                min_star_number=MIN_STAR_NB, saturation_threshold=False)
+            if len(star_list1) < 5:
+                orb.utils.io.write_fits('detection_frame.debug.fits', self.data, overwrite=True)
+                raise Exception('not enough stars detected: {}. detection frame written as detection_frame.debug.fits'.format(len(star_list1)))
             fwhm_arc = self.pix2arc(fwhm_pix)
-        elif fwhm_arc is None:
-            raise Exception('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
+        else:
+            logging.info('external star list used')
+            if fwhm_arc is None:
+                raise Exception('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
+            
 
         star_list1 = orb.utils.astrometry.load_star_list(star_list1)
         star_list1_deg = self.pix2world(star_list1)        

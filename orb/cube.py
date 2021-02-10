@@ -961,12 +961,8 @@ class HDFCube(orb.core.WCSData):
         self.params['airmass'] = np.array(airmass)
         return self.params.airmass
 
-    def detect_stars(self, **kwargs):
-        """Detect valid stars in the image
-
-        :param kwargs: orb.image.Image.detect_stars kwargs.
-        """
-        if self.has_dataset('deep_frame'):
+    def get_detection_frame(self):
+        if self.has_dataset('deep_frame') or hasattr(self, 'deep_frame'):
             logging.info('detecting stars using the deep frame')
             df = self.get_deep_frame().data
         else:
@@ -974,8 +970,19 @@ class HDFCube(orb.core.WCSData):
                 self.config.DETECT_STACK))
             _stack = self[:,:,:self.config.DETECT_STACK]
             df = np.nanmedian(_stack, axis=2)
-        df = orb.image.Image(df, params=self.params)
-        return df.detect_stars(**kwargs)
+        return orb.image.Image(df, params=self.params)
+        
+        
+    def detect_stars(self, **kwargs):
+        """Detect valid stars in the image
+
+        :param kwargs: orb.image.Image.detect_stars kwargs.
+        """
+        return self.get_detection_frame().detect_stars(**kwargs)
+
+    def detect_fwhm(self, star_list):
+        return self.get_detection_frame().detect_fwhm(star_list)
+
 
     def fit_stars_in_frame(self, star_list, index, **kwargs):
         """Fit stars in frame

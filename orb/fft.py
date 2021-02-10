@@ -1169,12 +1169,14 @@ class StandardSpectrum(RealSpectrum):
             m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
             return np.array(m, dtype=float)
 
+        ff = orb.core.FilterFile(self.params.filter_name)
+        
         if deg is None:
-            deg = int(orb.core.FilterFile(self.params.filter_name).params.flux_correction_order)
+            deg = int(ff.params.flux_correction_order)
         logging.info('flux correction fitted with an order {} polynomial'.format(deg))
         
         if resolution is None:
-            resolution = int(orb.core.FilterFile(self.params.filter_name).params.flux_correction_resolution)
+            resolution = int(ff.params.flux_correction_resolution)
         logging.info('flux correction fitted with a resolution R={}'.format(resolution))
             
         sim = self.get_standard().change_resolution(resolution) # standard flux in counts/s
@@ -1217,7 +1219,7 @@ class StandardSpectrum(RealSpectrum):
         poly[xmax:] = poly[xmax]
 
         # smooth polynomial on the borders
-        poly = orb.utils.vector.smooth(poly, deg=int(0.1*poly.size))
+        poly = orb.utils.vector.smooth(poly, deg=int(0.10*poly.size))
         
         eps = orb.core.Cm1Vector1d(
             poly, axis=self.axis, params=self.params)

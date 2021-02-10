@@ -92,7 +92,7 @@ class Job(object):
 
     def __call__(self):
         try:
-            return self.job.get(timeout=self.timeout)
+            return self.job.get()#timeout=self.timeout)
         except multiprocessing.TimeoutError:
             logging.info('worker timeout: ', traceback.format_exc())
         except:

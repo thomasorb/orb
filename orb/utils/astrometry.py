@@ -2305,6 +2305,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         logging.info('Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
             dx, dy, dr))
 
+    #orb.utils.io.write_fits('guess_matrix.fits', guess_matrix, overwrite=True)
     if raise_border_error:
         if ((dx == np.min(x_range) and len(x_range) > 3)
             or (dx == np.max(x_range) and len(x_range) > 3)
@@ -2518,15 +2519,20 @@ def df2list(sources):
         raise TypeError('Badly formatted stars params')
         
 def load_star_list(star_list, remove_nans=False):
-    """Load a list of stars coordinates from an hdffile or a pandas DataFrame or a numpy.ndarray
+    """Load a list of stars coordinates from an hdffile, a pandas
+    DataFrame, a numpy.ndarray or a 2 columns text file.
 
     :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
 
     :param remove_nans: If True, Nans are removed from the output star list
+
     """
     if isinstance(star_list, str):
-        sources = pandas.read_hdf(star_list, key='data')
-        star_list = df2list(sources)
+        try:
+            sources = pandas.read_hdf(star_list, key='data')
+            star_list = df2list(sources)
+        except OSError:
+            star_list = pandas.read_csv(star_list, sep=' ', header=None).to_numpy()
 
     elif isinstance(star_list, pandas.DataFrame):
         star_list = df2list(star_list)
