@@ -2667,7 +2667,7 @@ class SpectralCube(Cube):
             try:
                 eps_mean = std_im.compute_flux_correction_factor()
             except Exception as e:
-                logging.warning('error during compute_flux_correction_vector: {}'.format(e))
+                logging.warning('error during compute_flux_correction_factor: {}'.format(e))
             else:
                 logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
                 eps_vector = eps_vector.multiply(eps_mean)

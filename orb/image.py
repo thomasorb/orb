@@ -492,9 +492,11 @@ class Image(Frame2D):
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
         # avoids also too bright stars
         if saturation_threshold is False:
-            saturation_threshold = np.nanpercentile(data, 99.9)
+            saturation_threshold = np.nanpercentile(data, 99.999)
+            logging.debug('saturation threshold at maximum: {}'.format(saturation_threshold))
         if saturation_threshold is None:
-            saturation_threshold = np.nanpercentile(data, 99.9) * 0.45
+            saturation_threshold = np.nanpercentile(data, 99.999) * 0.45
+            logging.debug('saturation threshold at half maximum: {}'.format(saturation_threshold))
             
         sources = sources[sources.peak < saturation_threshold]
         logging.debug('number of stars after peak filter: {}'.format(len(sources)))
@@ -595,7 +597,7 @@ class Image(Frame2D):
     def register(self, max_stars_detect=60,
                  max_roundness=0.2,
                  max_radius_coeff=1.,
-                 saturation_threshold=None,
+                 saturation_threshold=False,
                  sip_order=3,
                  rrange=None, xyrange=None,
                  nsteps=7,
@@ -1557,6 +1559,9 @@ class StandardImage(Image):
             max_roundness=0.6) # used to recompute fwhm properly
         
         std_fit = self.fit_stars([std_xy], aper_coeff=6)
+        if std_fit is None:
+            raise Exception('standard star could not be fitted, check image registration')
+        
         std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
 
         std = orb.photometry.Standard(self.params.object_name,
