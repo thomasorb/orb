@@ -66,7 +66,7 @@ INIT_FWHM 1. # Rough estimate of the usual stars FWHM [in arcsecond]
 PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
 MOFFAT_BETA 3.5 # default beta parameter for the Moffat PSF
 DETECT_STACK 5 # Number of frames to combine for star detection
-ALIGNER_RANGE_COEFF 0.01 # Range coefficient for the aligner search
+ALIGNER_RANGE_COEFF 0.004 # Range coefficient for the aligner search
 
 ## Detectors parameters
 SATURATION_THRESHOLD 65000
