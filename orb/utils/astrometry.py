@@ -1063,10 +1063,10 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
     coords = astropy.coordinates.SkyCoord(
         ra=ra_deg * astropy.units.deg,
         dec=dec_deg * astropy.units.deg,
+        distance=200 * astropy.units.pc,
         pm_ra_cosdec=pm_ra_mas * astropy.units.mas/astropy.units.yr,
         pm_dec= pm_dec_mas * astropy.units.mas/astropy.units.yr,
-        obstime=astropy.time.Time(2000., format='decimalyear'))
-
+        obstime=astropy.time.Time(2000, format='decimalyear'))
     coords = coords.apply_space_motion(dt=yr*astropy.units.yr)
     return float(coords.ra.deg), float(coords.dec.deg)
 
