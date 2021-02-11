@@ -95,7 +95,7 @@ class Frame2D(orb.core.WCSData):
             
         return astropy.stats.sigma_clipped_stats(_data, sigma=3.0)
 
-    def crop(self, cx, cy, size):
+    def crop(self, cx, cy, size, return_cutout=False):
         """Return a portion of the image as another Frame2D instance.
 
         :param cx: X center position
@@ -105,6 +105,9 @@ class Frame2D(orb.core.WCSData):
         :param size: Size of the cropped rectangle. A tuple (sz,
           sy). Can be single int in which case the cropped data is a
           box.
+
+        :param return_cutout: If True return only the cutout, not a
+          new image object (default False).
 
         .. warning:: size of the returned box is not guaranteed if cx
           and cy are on the border of the image.
@@ -121,6 +124,9 @@ class Frame2D(orb.core.WCSData):
         cutout = astropy.nddata.Cutout2D(
             self.data.T, position=[cx, cy],
             size=size, wcs=self.get_wcs())
+
+        if return_cutout:
+            return cutout
         
         newim = self.copy(data=cutout.data.T)
         newim.update_params(cutout.wcs.to_header(relax=True))
@@ -367,11 +373,13 @@ class Image(Frame2D):
 
         if optimize:
             x, y = np.squeeze(self.world2pix([std_ra, std_dec]))
-            crop = self.crop(x, y, OPTIMIZE_BOX_SIZE)
-            max_index = np.unravel_index(np.nanargmax(crop.data), shape=crop.shape)
-            bbox = crop.params['cropped_bbox']
-            newx, newy = max_index[0] + bbox[0], max_index[1] + bbox[2]
+            crop = self.crop(x, y, OPTIMIZE_BOX_SIZE, return_cutout=True)
+            max_index = np.unravel_index(
+                np.nanargmax(crop.data.T), shape=crop.data.T.shape)
+            ((ymin, ymax), (xmin, xmax)) = crop.bbox_original
+            newx, newy = max_index[0] + xmin, max_index[1] + ymin
             std_ra, std_dec = np.squeeze(self.pix2world([newx, newy]))
+            del crop
             
         if not return_radec:
             return np.squeeze(self.world2pix([std_ra, std_dec]))
@@ -1583,6 +1591,7 @@ class StandardImage(Image):
             corr=orb.utils.spectrum.theta2corr(
                 self.config.OFF_AXIS_ANGLE_CENTER)))
 
+        logging.info('correction factor computed from an image from camera {}'.format(self.params.camera))
         std_flux_sim = std.simulate_measured_flux(
             self.params.filter_name, cm1_axis,
             camera_index=self.params.camera,
