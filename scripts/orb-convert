@@ -25,7 +25,8 @@ import sys, os
 from argparse import ArgumentParser
 import argparse
 
-from orb.core import Tools, HDFCube, ProgressBar
+from orb.core import Tools, ProgressBar
+import orb.cube
 import orb
 
 ###########################################
@@ -35,33 +36,18 @@ import orb
 def main(args):
 
     DIV_NB = 2
-    cube = HDFCube(args.input_cube_path)
+    cube = orb.cube.HDFCube(args.input_cube_path)
 
     if args.zrange is not None:
-        tmp=args.zrange.split(',')
-    	zrange = (int(tmp[0]),int(tmp[1]))
+        tmp = args.zrange.split(',')
+        zrange = (int(tmp[0]),int(tmp[1]))
     else:
-        zrange=None
+        zrange = None
 
-    if not args.split:
-        export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
-        cube.export(export_path, force_fits=True, overwrite=True,
-                    header=cube.get_cube_header(),
-                    z_range=zrange)
-    else:
-        for iquad in range(DIV_NB**2):
-            print 'Exporting quadrant {}'.format(iquad)
-            export_path = (os.path.splitext(
-                args.input_cube_path)[0]
-                           + '.quad{}.fits'.format(iquad))
-        
-            xmin, xmax, ymin, ymax = cube.get_quadrant_dims(iquad, div_nb=DIV_NB)
-            cube.export(
-                export_path, force_fits=True, overwrite=True,
-                header=cube.get_cube_header(),
-                x_range=(xmin,xmax),
-                y_range=(ymin,ymax),
-                z_range=args.zrange)
+    export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
+    cube.to_fits(export_path)# , force_fits=True, overwrite=True,
+                    # header=cube.get_cube_header(),
+                    # z_range=zrange)
                 
                 
                 
@@ -69,18 +55,11 @@ def main(args):
 
 if __name__ == "__main__":
 
-    #import pydevd
-    #pydevd.settrace('localhost', port=8888, stdoutToServer=True, stderrToServer=True)
-
-    parser = ArgumentParser(version=('ORB-version {}'.format(
-        orb.core.__version__)),
-                            description=
-                            "Convert an HDF5 cube to a FITS cube")
+    parser = ArgumentParser(prog='orb-convert',
+                            formatter_class=argparse.RawDescriptionHelpFormatter,
+                            description="Convert an HDF5 cube to a FITS cube")
     
     parser.add_argument('input_cube_path', help='Path to an HDF5 cube.')
-    parser.add_argument('--split', dest='split', action='store_true',
-                        default=False,
-                        help='Split output cube into 4 quadrants')
 
     parser.add_argument("-z", dest="zrange", default=None,
                         action="store",

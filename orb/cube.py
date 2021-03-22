@@ -39,6 +39,7 @@ import orb.fft
 import orb.image
 import orb.cutils
 import orb.version
+import astropy.io.fits
 
 import scipy.interpolate
 import gvar
@@ -753,8 +754,31 @@ class HDFCube(orb.core.WCSData):
 
         :param path: Path to the FITS file
         """
-        raise NotImplementedError()
-                
+        # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
+
+        wcshdr = self.get_wcs().to_header()
+
+        hdr = astropy.io.fits.PrimaryHDU().header
+        hdr['NAXIS'] = 3
+        hdr['NAXIS1'] = self.dimx
+        hdr['NAXIS2'] = self.dimy
+        hdr['NAXIS3'] = self.dimz
+        hdr['BITPIX'] = (-32, 'np.float32')
+        hdr.update(wcshdr)
+        
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        
+        shdu = astropy.io.fits.StreamingHDU(path, hdr)
+        progress = orb.core.ProgressBar(self.dimz)
+        for iz in range(self.dimz):
+            progress.update(iz, info='Exporting frame {}'.format(iz))
+            shdu.write(self[:,:,iz].real.astype(np.float32).T)
+        progress.end()
+        shdu.close()
+            
     def get_frame_header(self, index):
         """Return the header of a frame given its index in the list.
 
