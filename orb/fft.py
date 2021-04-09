@@ -833,6 +833,8 @@ class Spectrum(orb.core.Cm1Vector1d):
                     bad_snr_param = True
             else:
                 try:
+                    if np.iscomplexobj(snr_guess):
+                        snr_guess = snr_guess.real
                     snr_guess = float(snr_guess)
                 except Exception:
                     bad_snr_param = True
@@ -951,14 +953,14 @@ class Spectrum(orb.core.Cm1Vector1d):
             inputparams, snr_guess=snr_guess, max_iter=max_iter, nogvar=nogvar,
             **kwargs)
 
-        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
+        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening_err'])):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
             
             new_kwargs = dict(kwargs_orig)
             for ikey in list(new_kwargs.keys()):
                 if 'sigma_' in ikey:
                     del new_kwargs[ikey]
-                     
+            
             return self.fit(lines, fmodel='sinc', nofilter=nofilter,
                             snr_guess=snr_guess, max_iter=max_iter,
                             nogvar=nogvar,

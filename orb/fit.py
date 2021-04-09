@@ -2218,12 +2218,8 @@ class InputParams(object):
                 if 'sigma_cov' not in params and len(_sigma_cov) > 0:
                     params['sigma_cov'] = list(_sigma_cov)
 
-                if np.any(gvar.mean(params.sigma_guess) <= 0.):
-                    logging.warning('please set a guess, or a covarying value of sigma > 0 or use a  sinc model or you might end up with nans')
-
-
         if 'line_nb' in params:
-            logging.warninging('line_nb was set by user')
+            logging.warning('line_nb reset by user')
             del params.line_nb # this parameter cannot be changed
 
         if 'pos_guess' in params:

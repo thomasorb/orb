@@ -35,6 +35,7 @@ import orb.old
 import orb.utils.io
 import orb.utils.misc
 import orb.utils.astrometry
+import orb.utils.err
 import orb.fft
 import orb.image
 import orb.cutils
@@ -546,8 +547,13 @@ class HDFCube(orb.core.WCSData):
         return gain
 
     
-    def get_deep_frame(self, recompute=False):
+    def get_deep_frame(self, recompute=False, compute=True):
         """Return the deep frame of a cube (in counts, i.e. e- x gain).
+
+
+        :param compute: (Optional) If True, deep frame can be computed
+          if not already present. If False, raise an exception when
+          deep frame is not already present (default True).
 
         :param recompute: (Optional) Force deep frame computation
           even if it is already present in the cube (default False).
@@ -575,8 +581,10 @@ class HDFCube(orb.core.WCSData):
                     df *= self.dimz
         
             elif self.is_level1():
-                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
-
+                if compute:
+                    df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
+                else: raise orb.utils.err.DeepFrameError('deep frame not already computed.')
+                    
         if df is None:
             df = self.compute_sum_image()
 
@@ -2243,6 +2251,14 @@ class SpectralCube(Cube):
         return orb.utils.spectrum.cm12pix(
             self.get_axis(xy[0], xy[1]).data, self.get_filter_range())
 
+    def get_deep_frame(self, recompute=False, compute=False):
+        try:
+            return Cube.get_deep_frame(self, recompute=recompute, compute=compute)
+        except orb.utils.err.DeepFrameError:
+            logging.warning("Deep frame not present in the cube. Replaced with a map of zeros. Please attach it with cube.deep_frame = orb.utils.io.read_fits('deep_frame.fits')")
+            self.deep_frame = np.zeros((self.dimx, self.dimy), dtype=float)
+            return self.get_deep_frame()
+    
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
         """
