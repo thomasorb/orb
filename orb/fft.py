@@ -810,8 +810,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return inputparams.convert(), kwargs
 
-    def prepared_fit(self, inputparams, snr_guess=None, max_iter=None,
-                     nogvar=False, **kwargs):
+    def prepared_fit(self, inputparams, max_iter=None, nogvar=False, **kwargs):
         """Run a fit already prepared with prepare_fit() method.
         """
         start_time = time.time()
@@ -823,39 +822,6 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         theta_orig = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff_orig'])
-
-        # check snr guess param
-        bad_snr_param = False    
-        if snr_guess is not None:
-            if isinstance(snr_guess, str):
-                snr_guess = snr_guess.lower()
-                if snr_guess != 'auto':
-                    bad_snr_param = True
-            else:
-                try:
-                    if np.iscomplexobj(snr_guess):
-                        snr_guess = snr_guess.real
-                    snr_guess = float(snr_guess)
-                except Exception:
-                    bad_snr_param = True
-
-        if bad_snr_param:
-            raise ValueError("snr_guess parameter not understood. It can be set to a float, 'auto' or None.")
-
-        auto_mode = False
-        if snr_guess is not None:
-            if snr_guess == 'auto':
-                auto_mode = True
-
-        if auto_mode:
-            if self.has_err():
-                spectrum_snr = self.data / self.err
-                spectrum_snr[np.isinf(spectrum_snr)] = np.nan
-                snr_guess = np.nanmax(spectrum_snr)
-                logging.debug('first SNR guess computed from spectrum uncertainty: {}'.format(snr_guess))
-            else: snr_guess = 30.
-
-        logging.debug('SNR guess: {}'.format(snr_guess))
         
         # recompute the fwhm guess
         if 'calib_coeff_orig' not in self.params:
@@ -886,20 +852,20 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         spectrum = np.copy(self.data)
         spectrum[np.isnan(spectrum)] = 0
-        
+
+        err = None
         if self.has_err():
             err = np.copy(self.err)
             err[np.isnan(err)] = 0.
-            spectrum = gvar.gvar(spectrum.real, err)
         try:
             warnings.simplefilter('ignore')
             _fit = orb.fit._fit_lines_in_spectrum(
                 spectrum, inputparams,
                 fit_tol=1e-10,
                 compute_mcmc_error=False,
-                snr_guess=snr_guess,
                 max_iter=max_iter,
                 nogvar=nogvar,
+                vector_err=err,
                 **kwargs)
             warnings.simplefilter('default')
 
@@ -912,21 +878,13 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         del spectrum
                 
-        if auto_mode and _fit != []:
-            snr_guess = np.nanmax(self.data) / np.nanstd(self.data - _fit['fitted_vector'])
-            return self.prepared_fit(
-                inputparams,
-                snr_guess=snr_guess,
-                max_iter=max_iter,
-                **kwargs_orig)
-        else:
-            logging.debug('total fit timing: {}'.format(time.time() - start_time))
+        logging.debug('total fit timing: {}'.format(time.time() - start_time))
         
-            return _fit
+        return _fit
 
         
     def fit(self, lines, fmodel='sinc', nofilter=True,
-            snr_guess=None, max_iter=None, nogvar=False,
+            max_iter=None, nogvar=False,
             **kwargs):
         """Fit lines in a spectrum
 
@@ -934,23 +892,23 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         :param lines: lines to fit.
         
-        :param snr_guess: Guess on the SNR of the spectrum. Necessary
-          to make a Bayesian fit (If unknown you can set it to 'auto'
-          to try an automatic mode, two fits are made - one with a
-          predefined SNR and the other with the SNR deduced from the
-          first fit). If None a classical fit is made. (default None).
-
         :param max_iter: (Optional) Maximum number of iterations (default None)
         
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
+        if 'snr_guess' in kwargs:
+            logging.warning(
+                "snr_guess is deprecated. It's value is not used anymore")
+            kwargs.pop('snr_guess')
+        
         kwargs_orig = dict(kwargs)
+
         # prepare input params
         inputparams, kwargs = self.prepare_fit(
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
 
         fit = self.prepared_fit(
-            inputparams, snr_guess=snr_guess, max_iter=max_iter, nogvar=nogvar,
+            inputparams, max_iter=max_iter, nogvar=nogvar,
             **kwargs)
 
         if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening_err'])):
@@ -962,8 +920,7 @@ class Spectrum(orb.core.Cm1Vector1d):
                     del new_kwargs[ikey]
             
             return self.fit(lines, fmodel='sinc', nofilter=nofilter,
-                            snr_guess=snr_guess, max_iter=max_iter,
-                            nogvar=nogvar,
+                            max_iter=max_iter, nogvar=nogvar,
                             **new_kwargs)
         
         return fit
@@ -973,7 +930,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         NFWHM = 1
         NFWHM_LARGE = 10
         
-        badkeys = 'nofilter', 'snr_guess', 'max_iter', 'nogvar'
+        badkeys = 'nofilter', 'max_iter', 'nogvar'
         for ikey in badkeys:
             if ikey in kwargs:
                 del kwargs[ikey]
