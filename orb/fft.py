@@ -925,61 +925,23 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return fit
 
-    def estimate_flux(self, lines, fmodel='sinc', **kwargs):
+    def prepare_velocity_estimate(self, lines, vel_range, precision=2):
+        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        oversampling_ratio = (self.params.zpd_index
+                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        combs, vels = orb.utils.fit.prepare_combs(lines_cm1, self.axis.data, vel_range, oversampling_ratio, precision)
+        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio
 
-        NFWHM = 1
-        NFWHM_LARGE = 10
-        
-        badkeys = 'nofilter', 'max_iter', 'nogvar'
-        for ikey in badkeys:
-            if ikey in kwargs:
-                del kwargs[ikey]
+    def estimate_velocity_prepared(self, combs, vels, filter_range_pix):
+        return orb.utils.fit.estimate_velocity_prepared(self.data.real, vels, combs, filter_range_pix)
 
-        ip, kwargs = self.prepare_fit(
-            lines, fmodel='gaussian', nofilter=True, **kwargs)
-        ip = ip['allparams']
-
-        lines_dict = dict()
-        igroup = 0
-        for i in range(len(ip['pos_def'])):
-            ikey = ip['pos_def'][i]
-            if ikey not in lines_dict:
-                lines_dict[ikey] = dict()
-                lines_dict[ikey]['pos_guess'] = list()
-                lines_dict[ikey]['fwhm_guess'] = list()
-                lines_dict[ikey]['flux'] = list()
-                lines_dict[ikey]['pos_cov'] = ip['pos_cov'][igroup]
-                igroup += 1
-                
-            lines_dict[ikey]['pos_guess'].append(ip['pos_guess_mean'][i])
-            lines_dict[ikey]['fwhm_guess'].append(ip['fwhm_guess'][i])
-
-        axis_step = (self.axis.data[1] - self.axis.data[0])
-        for igroup in lines_dict:
-            linescm1 = lines_dict[igroup]['pos_guess']
-            linescm1 += orb.utils.spectrum.line_shift(
-                lines_dict[igroup]['pos_cov'], linescm1, wavenumber=True)
-            linespix = self.axis(linescm1)
-            fwhmspix = np.array(lines_dict[igroup]['fwhm_guess']) / axis_step
-            fluxes = list()
-            for ipix, ifwhm, icm1 in zip(linespix, fwhmspix, linescm1):
-                irange = np.arange(
-                    max(0, int(ipix - NFWHM * ifwhm)),
-                    min(self.dimx, int(ipix + NFWHM * ifwhm) + 1))
-                irangel = np.arange(
-                    max(0, int(ipix - NFWHM_LARGE * ifwhm)),
-                    min(self.dimx, int(ipix + NFWHM_LARGE * ifwhm) + 1))
-                
-                imax = self.data[irange].real.max()
-                imin = self.data[irangel].real.min()
-
-                ifwhm_nm = orb.utils.spectrum.fwhm_cm12nm(
-                    ifwhm * axis_step, icm1) * 10.
-                
-                lines_dict[igroup]['flux'].append(orb.utils.spectrum.gaussian1d_flux(
-                    imax - imin, ifwhm_nm))
-                
-        return lines_dict
+    def estimate_flux(self, lines, vel):
+        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        oversampling_ratio = (self.params.zpd_index
+                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        return orb.utils.fit.estimate_flux(
+            self.data.real, self.axis.data, lines_cm1, vel,
+            self.axis(self.params.filter_range).astype(int), oversampling_ratio)
 
 #################################################
 #### CLASS RealSpectrum #########################
