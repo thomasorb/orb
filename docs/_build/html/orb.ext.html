@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>orb.ext package &mdash; Orb latest documentation</title>
   
@@ -13,12 +13,16 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
 
   
   
     <link rel="shortcut icon" href="_static/logo.ico"/>
   
+
   
+  
+
   
 
   
@@ -31,8 +35,6 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -54,7 +56,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Orb
+            <a href="index.html" class="icon icon-home"> Orb
           
 
           
@@ -159,6 +161,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -172,7 +176,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/orb.ext.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -203,7 +207,7 @@
 Construct and analyze Zernike basis functions</p>
 <dl class="py function">
 <dt id="orb.ext.zern.calc_zern_basis">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">calc_zern_basis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nmodes</span></em>, <em class="sig-param"><span class="n">rad</span></em>, <em class="sig-param"><span class="n">modestart</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">calc_covmat</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zern_basis" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">calc_zern_basis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nmodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modestart</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calc_covmat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zern_basis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate a basis of <strong>nmodes</strong> Zernike modes with radius <strong>rad</strong>.
 ((If <strong>mask</strong> is true, set everything outside of radius <strong>rad</strong> to zero (default). If this is not done, the set of Zernikes will be <strong>rad</strong> by <strong>rad</strong> square and are not orthogonal anymore.)) –&gt; Nothing is masked, do this manually using the ‘mask’ entry in the returned dict.
 This output of this function can be used as cache for other functions.
@@ -216,7 +220,7 @@ This output of this function can be used as cache for other functions.
 
 <dl class="py function">
 <dt id="orb.ext.zern.calc_zernike">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">calc_zernike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">zern_vec</span></em>, <em class="sig-param"><span class="n">rad</span></em>, <em class="sig-param"><span class="n">zern_data</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">mask</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zernike" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">calc_zernike</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zern_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zern_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.calc_zernike" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct wavefront with Zernike amplitudes <strong>zern_vec</strong>.
 Given vector <strong>zern_vec</strong> with the amplitude of Zernike modes, return the reconstructed wavefront with radius <strong>rad</strong>.
 This function uses <strong>zern_data</strong> as cache. If this is not given, it will be generated. See calc_zern_basis() for details.
@@ -230,7 +234,7 @@ If <strong>mask</strong> is True, set everything outside radius <strong>rad</str
 
 <dl class="py function">
 <dt id="orb.ext.zern.fit_zernike">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">fit_zernike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wavefront</span></em>, <em class="sig-param"><span class="n">zern_data</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">nmodes</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">startmode</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">fitweight</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">center</span><span class="o">=</span><span class="default_value">- 0.5, - 0.5</span></em>, <em class="sig-param"><span class="n">rad</span><span class="o">=</span><span class="default_value">- 0.5</span></em>, <em class="sig-param"><span class="n">rec_zern</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">err</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.fit_zernike" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">fit_zernike</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wavefront</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zern_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitweight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-</span> <span class="pre">0.5,</span> <span class="pre">-</span> <span class="pre">0.5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rec_zern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.fit_zernike" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit <strong>nmodes</strong> Zernike modes to a <strong>wavefront</strong>.
 The <strong>wavefront</strong> will be fit to Zernike modes for a circle with radius <strong>rad</strong> with origin at <strong>center</strong>. <strong>weigh</strong> is a weighting mask used when fitting the modes.
 If <strong>center</strong> or <strong>rad</strong> are between 0 and -1, the values will be interpreted as fractions of the image shape.
@@ -255,14 +259,14 @@ This function uses <strong>zern_data</strong> as cache. If this is not given, it
 
 <dl class="py function">
 <dt id="orb.ext.zern.fix_noll_map">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">fix_noll_map</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.fix_noll_map" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">fix_noll_map</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.fix_noll_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate old incorrect Noll coordinates to correct values.
 This function repairs data generated with noll_to_zern_broken().</p>
 </dd></dl>
 
 <dl class="py function">
 <dt id="orb.ext.zern.mk_rad_mask">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">mk_rad_mask</code><span class="sig-paren">(</span><em class="sig-param">r0</em>, <em class="sig-param">r1=None</em>, <em class="sig-param">norm=True</em>, <em class="sig-param">center=None</em>, <em class="sig-param">dtype=&lt;class 'float'&gt;</em>, <em class="sig-param">getxy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.mk_rad_mask" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">mk_rad_mask</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">r0</span></em>, <em class="sig-param"><span class="pre">r1=None</span></em>, <em class="sig-param"><span class="pre">norm=True</span></em>, <em class="sig-param"><span class="pre">center=None</span></em>, <em class="sig-param"><span class="pre">dtype=&lt;class</span> <span class="pre">'float'&gt;</span></em>, <em class="sig-param"><span class="pre">getxy=False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.mk_rad_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a rectangular matrix of size (r0, r1) where the value of each 
 element is the Euclidean distance to <strong>center</strong>. If <strong>center</strong> is not 
 given, it is the middle of the matrix. If <strong>norm</strong> is True (default), 
@@ -284,7 +288,7 @@ To make a circular binary mask of (r0, r0), use</p>
 
 <dl class="py function">
 <dt id="orb.ext.zern.noll_to_zern">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">noll_to_zern</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">j</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.noll_to_zern" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">noll_to_zern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.noll_to_zern" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert linear Noll index to tuple of Zernike indices.
 j is the linear Noll coordinate, n is the radial Zernike index and m is the azimuthal Zernike index.
 &#64;param [in] j Zernike mode Noll index
@@ -294,7 +298,7 @@ j is the linear Noll coordinate, n is the radial Zernike index and m is the azim
 
 <dl class="py function">
 <dt id="orb.ext.zern.noll_to_zern_broken">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">noll_to_zern_broken</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">j</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.noll_to_zern_broken" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">noll_to_zern_broken</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.noll_to_zern_broken" title="Permalink to this definition">¶</a></dt>
 <dd><p>Previous and incorrect Noll-to-Zernike conversion.
 Stored for reference purposes. Fixed around 1321970330.98158 or Tue Nov 22 13:59:10 2011 UTC. All data generated before this has invalid mapping.
 &#64;deprecated Incorrect mapping, use noll_to_zern instead</p>
@@ -302,7 +306,7 @@ Stored for reference purposes. Fixed around 1321970330.98158 or Tue Nov 22 13:59
 
 <dl class="py function">
 <dt id="orb.ext.zern.zern_normalisation">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">zern_normalisation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nmodes</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zern_normalisation" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">zern_normalisation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nmodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zern_normalisation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate normalisation vector.
 This function calculates a <strong>nmodes</strong> element vector with normalisation constants for Zernike modes that have not already been normalised.
 &#64;param [in] nmodes Size of normalisation vector.
@@ -311,7 +315,7 @@ This function calculates a <strong>nmodes</strong> element vector with normalisa
 
 <dl class="py function">
 <dt id="orb.ext.zern.zernike">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">zernike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">n</span></em>, <em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">phi</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernike" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">zernike</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernike" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate Zernike mode (m,n) on grid <strong>rho</strong> and <strong>phi</strong>.
 <strong>rho</strong> and <strong>phi</strong> should be radial and azimuthal coordinate grids of identical shape, respectively.
 &#64;param [in] m Radial Zernike index
@@ -325,7 +329,7 @@ This function calculates a <strong>nmodes</strong> element vector with normalisa
 
 <dl class="py function">
 <dt id="orb.ext.zern.zernike_rad">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">zernike_rad</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">n</span></em>, <em class="sig-param"><span class="n">rho</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernike_rad" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">zernike_rad</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernike_rad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make radial Zernike polynomial on coordinate grid <strong>rho</strong>.
 &#64;param [in] m Radial Zernike index
 &#64;param [in] n Azimuthal Zernike index
@@ -335,7 +339,7 @@ This function calculates a <strong>nmodes</strong> element vector with normalisa
 
 <dl class="py function">
 <dt id="orb.ext.zern.zernikel">
-<code class="sig-prename descclassname">orb.ext.zern.</code><code class="sig-name descname">zernikel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">j</span></em>, <em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">phi</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernikel" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.ext.zern.</span></code><code class="sig-name descname"><span class="pre">zernikel</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.ext.zern.zernikel" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -349,37 +353,29 @@ This function calculates a <strong>nmodes</strong> element vector with normalisa
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="orb.utils.html" class="btn btn-neutral float-right" title="orb.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="orb.html" class="btn btn-neutral float-left" title="orb package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="orb.utils.html" class="btn btn-neutral float-right" title="orb.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="orb.html" class="btn btn-neutral float-left" title="orb package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, Thomas Martin (thomas.martin.1@ulaval.ca)
+        &#169; Copyright 2021, Thomas Martin (thomas.martin.1@ulaval.ca).
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

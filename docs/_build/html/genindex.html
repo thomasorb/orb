@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>Index &mdash; Orb latest documentation</title>
   
@@ -13,12 +13,16 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
 
   
   
     <link rel="shortcut icon" href="_static/logo.ico"/>
   
+
   
+  
+
   
 
   
@@ -31,8 +35,6 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -52,7 +54,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Orb
+            <a href="index.html" class="icon icon-home"> Orb
           
 
           
@@ -132,6 +134,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -143,7 +147,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
         
       </li>
     
@@ -349,10 +353,6 @@
 </li>
       <li><a href="orb.html#orb.cutils.check_cosmic_rays_neighbourhood">check_cosmic_rays_neighbourhood() (in module orb.cutils)</a>
 </li>
-      <li><a href="orb.html#orb.fit.check_fit">check_fit() (in module orb.fit)</a>
-</li>
-      <li><a href="orb.html#orb.fit.check_fit_cm1">check_fit_cm1() (in module orb.fit)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.image.check_frames">check_frames() (in module orb.utils.image)</a>
 </li>
       <li><a href="orb.html#orb.fit.ContinuumModel.check_input">check_input() (orb.fit.ContinuumModel method)</a>
@@ -372,6 +372,8 @@
 </li>
       </ul></li>
       <li><a href="orb.html#orb.fit.InputParams.clean_kwargs">clean_kwargs() (orb.fit.InputParams method)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.fft.clean_phase">clean_phase() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.html#orb.fft.Phase.cleaned">cleaned() (orb.fft.Phase method)</a>
 </li>
@@ -439,10 +441,10 @@
         <li><a href="orb.html#orb.photometry.Standard.compute_optimal_texp">(orb.photometry.Standard method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.image.Image.compute_panstarrs_photometry">compute_panstarrs_photometry() (orb.image.Image method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.photometry.compute_photon_energy">compute_photon_energy() (in module orb.utils.photometry)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.compute_radec_pm">compute_radec_pm() (in module orb.utils.astrometry)</a>
@@ -565,6 +567,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.dec2deg">dec2deg() (in module orb.utils.astrometry)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.err.DeepFrameError">DeepFrameError</a>
+</li>
       <li><a href="orb.html#orb.core.ColorStreamHandler.DEFAULT">DEFAULT (orb.core.ColorStreamHandler attribute)</a>
 
       <ul>
@@ -579,8 +583,12 @@
 </li>
       <li><a href="orb.html#orb.cutils.detect_cosmic_rays">detect_cosmic_rays() (in module orb.cutils)</a>
 </li>
-      <li><a href="orb.html#orb.image.Image.detect_fwhm">detect_fwhm() (orb.image.Image method)</a>
+      <li><a href="orb.html#orb.cube.HDFCube.detect_fwhm">detect_fwhm() (orb.cube.HDFCube method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.image.Image.detect_fwhm">(orb.image.Image method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.image.Image.DETECT_INDEX">DETECT_INDEX (orb.image.Image attribute)</a>
@@ -596,6 +604,8 @@
       <li><a href="orb.html#orb.image.Image.detrend">detrend() (orb.image.Image method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.df2list">df2list() (in module orb.utils.astrometry)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.astrometry.dflist2arr">dflist2arr() (in module orb.utils.astrometry)</a>
 </li>
       <li><a href="orb.html#orb.cutils.dft">dft() (in module orb.cutils)</a>
 </li>
@@ -617,10 +627,26 @@
 </li>
       <li><a href="orb.html#orb.core.ColorStreamHandler.ERROR">ERROR (orb.core.ColorStreamHandler attribute)</a>
 </li>
-      <li><a href="orb.html#orb.cube.FDCube.export">export() (orb.cube.FDCube method)</a>
+      <li><a href="orb.utils.html#orb.utils.fit.estimate_flux">estimate_flux() (in module orb.utils.fit)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fft.Spectrum.estimate_flux">(orb.fft.Spectrum method)</a>
+</li>
+      </ul></li>
+      <li><a href="orb.html#orb.fft.Spectrum.estimate_parameters">estimate_parameters() (orb.fft.Spectrum method)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.fit.estimate_velocity">estimate_velocity() (in module orb.utils.fit)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="orb.utils.html#orb.utils.fit.estimate_velocity_prepared">estimate_velocity_prepared() (in module orb.utils.fit)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fft.Spectrum.estimate_velocity_prepared">(orb.fft.Spectrum method)</a>
+</li>
+      </ul></li>
+      <li><a href="orb.html#orb.cube.FDCube.export">export() (orb.cube.FDCube method)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.photometry.ext2trans">ext2trans() (in module orb.utils.photometry)</a>
 </li>
       <li><a href="orb.html#orb.core.ExtDebugLoggingFilter">ExtDebugLoggingFilter (class in orb.core)</a>
@@ -661,12 +687,6 @@
         <li><a href="orb.utils.html#orb.utils.vector.fft_filter">(in module orb.utils.vector)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.core.Indexer.file_group">file_group (orb.core.Indexer attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Indexer.file_group_indexes">file_group_indexes (orb.core.Indexer attribute)</a>
-</li>
-      <li><a href="orb.html#orb.core.Indexer.file_groups">file_groups (orb.core.Indexer attribute)</a>
-</li>
       <li><a href="orb.html#orb.core.ExtDebugLoggingFilter.filter">filter() (orb.core.ExtDebugLoggingFilter method)</a>
 
       <ul>
@@ -676,7 +696,11 @@
 </li>
       </ul></li>
       <li><a href="orb.html#orb.cutils.filter_background">filter_background() (in module orb.cutils)</a>
+
+      <ul>
+        <li><a href="orb.utils.html#orb.utils.image.filter_background">(in module orb.utils.image)</a>
 </li>
+      </ul></li>
       <li><a href="orb.html#orb.core.FilterFile">FilterFile (class in orb.core)</a>
 </li>
       <li><a href="orb.html#orb.fit.FilterModel">FilterModel (class in orb.fit)</a>
@@ -702,6 +726,8 @@
       <li><a href="orb.html#orb.fit.fit_lines_in_vector">fit_lines_in_vector() (in module orb.fit)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.fit_map">fit_map() (in module orb.utils.image)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.image.fit_map_gradient">fit_map_gradient() (in module orb.utils.image)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.fit_map_theta">fit_map_theta() (in module orb.utils.image)</a>
 </li>
@@ -785,8 +811,6 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.fwhm_nm2cm1">fwhm_nm2cm1() (in module orb.utils.spectrum)</a>
 </li>
-      <li><a href="orb.html#orb.fit.InputParams.FWHM_SDEV">FWHM_SDEV (orb.fit.InputParams attribute)</a>
-</li>
       <li><a href="orb.html#orb.constants.FWHM_SINC_COEFF">FWHM_SINC_COEFF (in module orb.constants)</a>
 </li>
   </ul></td>
@@ -813,8 +837,12 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.fft.gaussian_window">gaussian_window() (in module orb.utils.fft)</a>
 </li>
-      <li><a href="orb.html#orb.fft.PhaseMaps.generate_phase_cube">generate_phase_cube() (orb.fft.PhaseMaps method)</a>
+      <li><a href="orb.html#orb.fft.HighOrderPhaseCube.generate_phase_cube">generate_phase_cube() (orb.fft.HighOrderPhaseCube method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fft.PhaseMaps.generate_phase_cube">(orb.fft.PhaseMaps method)</a>
 </li>
+      </ul></li>
       <li><a href="orb.html#orb.cube.HDFCube.get_airmass">get_airmass() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.get_alignment_vectors">get_alignment_vectors() (orb.cube.HDFCube method)</a>
@@ -883,6 +911,8 @@
 </li>
       <li><a href="orb.html#orb.fft.PhaseMaps.get_coeffs">get_coeffs() (orb.fft.PhaseMaps method)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.fit.get_comb">get_comb() (in module orb.utils.fit)</a>
+</li>
       <li><a href="orb.html#orb.cube.FDCube.get_cube_header">get_cube_header() (orb.cube.FDCube method)</a>
 </li>
       <li><a href="orb.html#orb.core.ParamsFile.get_data">get_data() (orb.core.ParamsFile method)</a>
@@ -904,6 +934,12 @@
       <li><a href="orb.html#orb.cube.HDFCube.get_datasets">get_datasets() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.get_deep_frame">get_deep_frame() (orb.cube.HDFCube method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.cube.SpectralCube.get_deep_frame">(orb.cube.SpectralCube method)</a>
+</li>
+      </ul></li>
+      <li><a href="orb.html#orb.cube.HDFCube.get_detection_frame">get_detection_frame() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.get_dxdymaps">get_dxdymaps() (orb.cube.HDFCube method)</a>
 </li>
@@ -943,8 +979,12 @@
 </li>
       <li><a href="orb.html#orb.core.Data.get_header">get_header() (orb.core.Data method)</a>
 </li>
-      <li><a href="orb.html#orb.cube.HDFCube.get_high_order_phase">get_high_order_phase() (orb.cube.HDFCube method)</a>
+      <li><a href="orb.html#orb.core.FilterFile.get_high_order_phase">get_high_order_phase() (orb.core.FilterFile method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.cube.HDFCube.get_high_order_phase">(orb.cube.HDFCube method)</a>
 </li>
+      </ul></li>
       <li><a href="orb.html#orb.fft.Spectrum.get_imag">get_imag() (orb.fft.Spectrum method)</a>
 </li>
       <li><a href="orb.html#orb.core.WCSData.get_initial_alignment_parameters">get_initial_alignment_parameters() (orb.core.WCSData method)</a>
@@ -973,20 +1013,26 @@
 </li>
       <li><a href="orb.html#orb.core.Logger.get_logging_state">get_logging_state() (orb.core.Logger method)</a>
 </li>
-      <li><a href="orb.html#orb.fft.PhaseMaps.get_map">get_map() (orb.fft.PhaseMaps method)</a>
+      <li><a href="orb.html#orb.fft.HighOrderPhaseCube.get_map">get_map() (orb.fft.HighOrderPhaseCube method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fft.PhaseMaps.get_map">(orb.fft.PhaseMaps method)</a>
 </li>
+      </ul></li>
       <li><a href="orb.html#orb.fft.PhaseMaps.get_map_err">get_map_err() (orb.fft.PhaseMaps method)</a>
+</li>
+      <li><a href="orb.html#orb.fft.PhaseMaps.get_mapped_model">get_mapped_model() (orb.fft.PhaseMaps method)</a>
 </li>
       <li><a href="orb.html#orb.core.Data.get_mask">get_mask() (orb.core.Data method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file">get_mask_from_ds9_region_file() (in module orb.utils.misc)</a>
 
       <ul>
         <li><a href="orb.html#orb.cube.SpectralCube.get_mask_from_ds9_region_file">(orb.cube.SpectralCube method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cube.HDFCube.get_master_frame">get_master_frame() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.core.FilterFile.get_mean_cm1">get_mean_cm1() (orb.core.FilterFile method)</a>
@@ -1009,8 +1055,6 @@
         <li><a href="orb.html#orb.fit.Model.get_model">(orb.fit.Model method)</a>
 </li>
       </ul></li>
-      <li><a href="orb.html#orb.fft.PhaseMaps.get_model_0">get_model_0() (orb.fft.PhaseMaps method)</a>
-</li>
       <li><a href="orb.html#orb.photometry.Photometry.get_modulated_transmission">get_modulated_transmission() (orb.photometry.Photometry method)</a>
 </li>
       <li><a href="orb.html#orb.core.FilterFile.get_modulation_efficiency">get_modulation_efficiency() (orb.core.FilterFile method)</a>
@@ -1052,6 +1096,8 @@
       <li><a href="orb.html#orb.cube.InterferogramCube.get_phase">get_phase() (orb.cube.InterferogramCube method)</a>
 
       <ul>
+        <li><a href="orb.html#orb.fft.HighOrderPhaseCube.get_phase">(orb.fft.HighOrderPhaseCube method)</a>
+</li>
         <li><a href="orb.html#orb.fft.Interferogram.get_phase">(orb.fft.Interferogram method)</a>
 </li>
         <li><a href="orb.html#orb.fft.PhaseMaps.get_phase">(orb.fft.PhaseMaps method)</a>
@@ -1059,7 +1105,11 @@
         <li><a href="orb.html#orb.fft.Spectrum.get_phase">(orb.fft.Spectrum method)</a>
 </li>
       </ul></li>
+      <li><a href="orb.html#orb.fft.HighOrderPhaseCube.get_phase_coeffs">get_phase_coeffs() (orb.fft.HighOrderPhaseCube method)</a>
+</li>
       <li><a href="orb.html#orb.core.FilterFile.get_phase_fit_order">get_phase_fit_order() (orb.core.FilterFile method)</a>
+</li>
+      <li><a href="orb.html#orb.core.FilterFile.get_phase_fit_ref">get_phase_fit_ref() (orb.core.FilterFile method)</a>
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.get_phase_maps">get_phase_maps() (orb.cube.HDFCube method)</a>
 </li>
@@ -1175,6 +1225,8 @@
 </li>
       <li><a href="orb.html#orb.core.Logger.getLogger">getLogger() (orb.core.Logger method)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.image.gradient_map">gradient_map() (in module orb.utils.image)</a>
+</li>
       <li><a href="orb.html#orb.core.TextColor.GREEN">GREEN (orb.core.TextColor attribute)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.guess">guess() (in module orb.utils.astrometry)</a>
@@ -1239,6 +1291,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.high_pass_image_filter">high_pass_image_filter() (in module orb.utils.image)</a>
 </li>
+      <li><a href="orb.html#orb.fft.HighOrderPhaseCube">HighOrderPhaseCube (class in orb.fft)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.astrometry.histogram_registration">histogram_registration() (in module orb.utils.astrometry)</a>
 </li>
   </ul></td>
@@ -1254,8 +1308,6 @@
       <li><a href="orb.html#orb.image.Frame2D.imshow">imshow() (orb.image.Frame2D method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.in_ellipse">in_ellipse() (in module orb.utils.image)</a>
-</li>
-      <li><a href="orb.html#orb.core.Indexer.index">index (orb.core.Indexer attribute)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.validate.index">index() (in module orb.utils.validate)</a>
 </li>
@@ -1289,10 +1341,10 @@
         <li><a href="orb.utils.html#orb.utils.fft.interf_mean_energy">(in module orb.utils.fft)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.fft.Interferogram">Interferogram (class in orb.fft)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cube.InterferogramCube">InterferogramCube (class in orb.cube)</a>
 </li>
       <li><a href="orb.html#orb.fft.Spectrum.interpolate">interpolate() (orb.fft.Spectrum method)</a>
@@ -1456,6 +1508,8 @@
       <li><a href="orb.ext.html#orb.ext.zern.mk_rad_mask">mk_rad_mask() (in module orb.ext.zern)</a>
 </li>
       <li><a href="orb.html#orb.cube.MockArray">MockArray (class in orb.cube)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.fft.mod2pi">mod2pi() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.html#orb.fit.Model">Model (class in orb.fit)</a>
 </li>
@@ -1907,14 +1961,16 @@
 </li>
       <li><a href="orb.html#orb.fft.PhaseMaps.phase_maps">phase_maps (orb.fft.PhaseMaps attribute)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.fft.phase_model">phase_model() (in module orb.utils.fft)</a>
+</li>
       <li><a href="orb.utils.html#orb.utils.spectrum.phase_shift_cm1_axis">phase_shift_cm1_axis() (in module orb.utils.spectrum)</a>
 </li>
       <li><a href="orb.html#orb.fft.PhaseMaps">PhaseMaps (class in orb.fft)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.photometry.Photometry">Photometry (class in orb.photometry)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.fit.pick2paramslist">pick2paramslist() (in module orb.utils.fit)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fit.pickdict2gvardict">pickdict2gvardict() (in module orb.utils.fit)</a>
@@ -1951,7 +2007,11 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.pp_create_master_frame">pp_create_master_frame() (in module orb.utils.image)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.fit.prepare_combs">prepare_combs() (in module orb.utils.fit)</a>
+</li>
       <li><a href="orb.html#orb.fft.Spectrum.prepare_fit">prepare_fit() (orb.fft.Spectrum method)</a>
+</li>
+      <li><a href="orb.html#orb.fft.Spectrum.prepare_velocity_estimate">prepare_velocity_estimate() (orb.fft.Spectrum method)</a>
 </li>
       <li><a href="orb.html#orb.fft.Spectrum.prepared_fit">prepared_fit() (orb.fft.Spectrum method)</a>
 </li>
@@ -2077,6 +2137,8 @@
         <li><a href="orb.utils.html#orb.utils.stats.robust_median">(in module orb.utils.stats)</a>
 </li>
       </ul></li>
+      <li><a href="orb.utils.html#orb.utils.stats.robust_modulo">robust_modulo() (in module orb.utils.stats)</a>
+</li>
       <li><a href="orb.html#orb.cutils.robust_std">robust_std() (in module orb.cutils)</a>
 
       <ul>
@@ -2181,13 +2243,9 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.shift_frame">shift_frame() (in module orb.utils.image)</a>
 </li>
-      <li><a href="orb.html#orb.fit.InputParams.SHIFT_SDEV">SHIFT_SDEV (orb.fit.InputParams attribute)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.fft.sigma2apod">sigma2apod() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fit.sigma2vel">sigma2vel() (in module orb.utils.fit)</a>
-</li>
-      <li><a href="orb.html#orb.fit.InputParams.SIGMA_SDEV">SIGMA_SDEV (orb.fit.InputParams attribute)</a>
 </li>
       <li><a href="orb.html#orb.cutils.sigmaclip">sigmaclip() (in module orb.cutils)</a>
 </li>
@@ -2199,12 +2257,12 @@
       </ul></li>
       <li><a href="orb.utils.html#orb.utils.image.simulate_calibration_laser_map">simulate_calibration_laser_map() (in module orb.utils.image)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.photometry.Standard.simulate_measured_flux">simulate_measured_flux() (orb.photometry.Standard method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.image.simulate_theta_map">simulate_theta_map() (in module orb.utils.image)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.sinc1d">sinc1d() (in module orb.cutils)</a>
 
       <ul>
@@ -2240,6 +2298,8 @@
       <li><a href="orb.html#orb.sim.SkyModel">SkyModel (class in orb.sim)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.vector.smooth">smooth() (in module orb.utils.vector)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.image.smooth_map">smooth_map() (in module orb.utils.image)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.misc.sort_image_list">sort_image_list() (in module orb.utils.misc)</a>
 </li>
@@ -2389,6 +2449,8 @@
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.validate_x_index">validate_x_index() (orb.cube.HDFCube method)</a>
 </li>
+      <li><a href="orb.html#orb.fft.PhaseMaps.validate_xy">validate_xy() (orb.fft.PhaseMaps method)</a>
+</li>
       <li><a href="orb.html#orb.cube.HDFCube.validate_y_index">validate_y_index() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.err.ValidationError">ValidationError</a>
@@ -2486,28 +2548,25 @@
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, Thomas Martin (thomas.martin.1@ulaval.ca)
+        &#169; Copyright 2021, Thomas Martin (thomas.martin.1@ulaval.ca).
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
