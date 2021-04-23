@@ -925,7 +925,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return fit
 
-    def prepare_velocity_estimate(self, lines, vel_range, precision=2):
+    def prepare_velocity_estimate(self, lines, vel_range, precision=10):
         lines_cm1 = orb.core.Lines().get_line_cm1(lines)
         oversampling_ratio = (self.params.zpd_index
                               / (self.params.step_nb - self.params.zpd_index) + 1)
@@ -933,8 +933,17 @@ class Spectrum(orb.core.Cm1Vector1d):
         return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio
 
     def estimate_velocity_prepared(self, combs, vels, filter_range_pix):
-        return orb.utils.fit.estimate_velocity_prepared(self.data.real, vels, combs, filter_range_pix)
+        return orb.utils.fit.estimate_velocity_prepared(
+            self.data.real, vels, combs, filter_range_pix)
 
+    def estimate_parameters(self, lines, vel_range, precision=10):
+        (combs, vels, filter_range_pix,
+         lines_cm1, oversampling_ratio) = self.prepare_velocity_estimate(
+             lines, vel_range, precision=precision)  
+        vel = self.estimate_velocity_prepared(combs, vels, filter_range_pix)
+        fluxes = self.estimate_flux(lines, vel)
+        return vel, fluxes
+    
     def estimate_flux(self, lines, vel):
         lines_cm1 = orb.core.Lines().get_line_cm1(lines)
         oversampling_ratio = (self.params.zpd_index
