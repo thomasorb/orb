@@ -1210,6 +1210,12 @@ transform.</p>
 <div class="section" id="module-orb.utils.err">
 <span id="orb-utils-err-module"></span><h2>orb.utils.err module<a class="headerlink" href="#module-orb.utils.err" title="Permalink to this headline">¶</a></h2>
 <dl class="py exception">
+<dt id="orb.utils.err.DeepFrameError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">orb.utils.err.</span></code><code class="sig-name descname"><span class="pre">DeepFrameError</span></code><a class="headerlink" href="#orb.utils.err.DeepFrameError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
+</dd></dl>
+
+<dl class="py exception">
 <dt id="orb.utils.err.FitError">
 <em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">orb.utils.err.</span></code><code class="sig-name descname"><span class="pre">FitError</span></code><a class="headerlink" href="#orb.utils.err.FitError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#orb.utils.err.ORBError" title="orb.utils.err.ORBError"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.utils.err.ORBError</span></code></a></p>
@@ -1643,6 +1649,26 @@ considered as bad borders near the filter edges (must be between
 <div class="section" id="module-orb.utils.fit">
 <span id="orb-utils-fit-module"></span><h2>orb.utils.fit module<a class="headerlink" href="#module-orb.utils.fit" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
+<dt id="orb.utils.fit.estimate_flux">
+<code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">estimate_flux</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spectrum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines_cm1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_range_pix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversampling_ratio</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.estimate_flux" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="orb.utils.fit.estimate_velocity">
+<code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">estimate_velocity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spectrum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines_cm1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversampling_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.estimate_velocity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="orb.utils.fit.estimate_velocity_prepared">
+<code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">estimate_velocity_prepared</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spectrum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_range_pix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.estimate_velocity_prepared" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="orb.utils.fit.get_comb">
+<code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">get_comb</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines_cm1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversampling_ratio</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.get_comb" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt id="orb.utils.fit.gvardict2pickdict">
 <code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">gvardict2pickdict</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gvardict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.gvardict2pickdict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a dictionary containing gvars into a nice pickable
@@ -1665,6 +1691,11 @@ dictionary with couples of _mean / _sdev keys.</p>
 <code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">pickdict2gvardict</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pickdict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.pickdict2gvardict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invert gvardict2pickdict.</p>
 </dd></dl>
+
+<dl class="py function">
+<dt id="orb.utils.fit.prepare_combs">
+<code class="sig-prename descclassname"><span class="pre">orb.utils.fit.</span></code><code class="sig-name descname"><span class="pre">prepare_combs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines_cm1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversampling_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.utils.fit.prepare_combs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt id="orb.utils.fit.sigma2vel">

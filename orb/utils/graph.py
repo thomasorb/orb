@@ -26,10 +26,13 @@ import astropy.wcs
 import matplotlib.cm
 import matplotlib.colors
 import numpy as np
+import orb.utils.io
 
 def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
            vmin=None, vmax=None):
     """Convenient image plotting function
+
+    :param data: 2d array to show. Can be a path to a fits file.
 
     :param figsize: size of the figure (same as pyplot.figure's figsize keyword)
 
@@ -53,6 +56,13 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
     :param vmax: max value used to scale the colorbar. If set the
       perc parameter is not used.
     """
+    if isinstance(data, str):
+        data = orb.utils.io.read_fits(data)
+    assert data.ndim == 2, 'array must have 2 dimensions'
+
+    if np.iscomplexobj(data):
+        data = data.real
+    
     try:
         iter(perc)
     except Exception:

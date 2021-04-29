@@ -828,8 +828,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return inputparams.convert(), kwargs
 
-    def prepared_fit(self, inputparams, snr_guess=None, max_iter=None,
-                     nogvar=False, **kwargs):
+    def prepared_fit(self, inputparams, max_iter=None, nogvar=False, **kwargs):
         """Run a fit already prepared with prepare_fit() method.
         """
         start_time = time.time()
@@ -841,37 +840,6 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         theta_orig = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff_orig'])
-
-        # check snr guess param
-        bad_snr_param = False    
-        if snr_guess is not None:
-            if isinstance(snr_guess, str):
-                snr_guess = snr_guess.lower()
-                if snr_guess != 'auto':
-                    bad_snr_param = True
-            else:
-                try:
-                    snr_guess = float(snr_guess)
-                except Exception:
-                    bad_snr_param = True
-
-        if bad_snr_param:
-            raise ValueError("snr_guess parameter not understood. It can be set to a float, 'auto' or None.")
-
-        auto_mode = False
-        if snr_guess is not None:
-            if snr_guess == 'auto':
-                auto_mode = True
-
-        if auto_mode:
-            if self.has_err():
-                spectrum_snr = self.data / self.err
-                spectrum_snr[np.isinf(spectrum_snr)] = np.nan
-                snr_guess = np.nanmax(spectrum_snr)
-                logging.debug('first SNR guess computed from spectrum uncertainty: {}'.format(snr_guess))
-            else: snr_guess = 30.
-
-        logging.debug('SNR guess: {}'.format(snr_guess))
         
         # recompute the fwhm guess
         if 'calib_coeff_orig' not in self.params:
@@ -902,20 +870,20 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         spectrum = np.copy(self.data)
         spectrum[np.isnan(spectrum)] = 0
-        
+
+        err = None
         if self.has_err():
             err = np.copy(self.err)
             err[np.isnan(err)] = 0.
-            spectrum = gvar.gvar(spectrum.real, err)
         try:
             warnings.simplefilter('ignore')
             _fit = orb.fit._fit_lines_in_spectrum(
                 spectrum, inputparams,
                 fit_tol=1e-10,
                 compute_mcmc_error=False,
-                snr_guess=snr_guess,
                 max_iter=max_iter,
                 nogvar=nogvar,
+                vector_err=err,
                 **kwargs)
             warnings.simplefilter('default')
 
@@ -928,21 +896,13 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         del spectrum
                 
-        if auto_mode and _fit != []:
-            snr_guess = np.nanmax(self.data) / np.nanstd(self.data - _fit['fitted_vector'])
-            return self.prepared_fit(
-                inputparams,
-                snr_guess=snr_guess,
-                max_iter=max_iter,
-                **kwargs_orig)
-        else:
-            logging.debug('total fit timing: {}'.format(time.time() - start_time))
+        logging.debug('total fit timing: {}'.format(time.time() - start_time))
         
-            return _fit
+        return _fit
 
         
     def fit(self, lines, fmodel='sinc', nofilter=True,
-            snr_guess=None, max_iter=None, nogvar=False,
+            max_iter=None, nogvar=False,
             **kwargs):
         """Fit lines in a spectrum
 
@@ -950,95 +910,65 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         :param lines: lines to fit.
         
-        :param snr_guess: Guess on the SNR of the spectrum. Necessary
-          to make a Bayesian fit (If unknown you can set it to 'auto'
-          to try an automatic mode, two fits are made - one with a
-          predefined SNR and the other with the SNR deduced from the
-          first fit). If None a classical fit is made. (default None).
-
         :param max_iter: (Optional) Maximum number of iterations (default None)
         
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
+        if 'snr_guess' in kwargs:
+            logging.warning(
+                "snr_guess is deprecated. It's value is not used anymore")
+            kwargs.pop('snr_guess')
+        
         kwargs_orig = dict(kwargs)
+
         # prepare input params
         inputparams, kwargs = self.prepare_fit(
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
 
         fit = self.prepared_fit(
-            inputparams, snr_guess=snr_guess, max_iter=max_iter, nogvar=nogvar,
+            inputparams, max_iter=max_iter, nogvar=nogvar,
             **kwargs)
 
-        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
+        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening_err'])):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
             
             new_kwargs = dict(kwargs_orig)
             for ikey in list(new_kwargs.keys()):
                 if 'sigma_' in ikey:
                     del new_kwargs[ikey]
-                     
+            
             return self.fit(lines, fmodel='sinc', nofilter=nofilter,
-                            snr_guess=snr_guess, max_iter=max_iter,
-                            nogvar=nogvar,
+                            max_iter=max_iter, nogvar=nogvar,
                             **new_kwargs)
         
         return fit
 
-    def estimate_flux(self, lines, fmodel='sinc', **kwargs):
+    def prepare_velocity_estimate(self, lines, vel_range, precision=10):
+        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        oversampling_ratio = (self.params.zpd_index
+                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        combs, vels = orb.utils.fit.prepare_combs(lines_cm1, self.axis.data, vel_range, oversampling_ratio, precision)
+        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio
 
-        NFWHM = 1
-        NFWHM_LARGE = 10
-        
-        badkeys = 'nofilter', 'snr_guess', 'max_iter', 'nogvar'
-        for ikey in badkeys:
-            if ikey in kwargs:
-                del kwargs[ikey]
+    def estimate_velocity_prepared(self, combs, vels, filter_range_pix):
+        return orb.utils.fit.estimate_velocity_prepared(
+            self.data.real, vels, combs, filter_range_pix)
 
-        ip, kwargs = self.prepare_fit(
-            lines, fmodel='gaussian', nofilter=True, **kwargs)
-        ip = ip['allparams']
-
-        lines_dict = dict()
-        igroup = 0
-        for i in range(len(ip['pos_def'])):
-            ikey = ip['pos_def'][i]
-            if ikey not in lines_dict:
-                lines_dict[ikey] = dict()
-                lines_dict[ikey]['pos_guess'] = list()
-                lines_dict[ikey]['fwhm_guess'] = list()
-                lines_dict[ikey]['flux'] = list()
-                lines_dict[ikey]['pos_cov'] = ip['pos_cov'][igroup]
-                igroup += 1
-                
-            lines_dict[ikey]['pos_guess'].append(ip['pos_guess_mean'][i])
-            lines_dict[ikey]['fwhm_guess'].append(ip['fwhm_guess'][i])
-
-        axis_step = (self.axis.data[1] - self.axis.data[0])
-        for igroup in lines_dict:
-            linescm1 = lines_dict[igroup]['pos_guess']
-            linescm1 += orb.utils.spectrum.line_shift(
-                lines_dict[igroup]['pos_cov'], linescm1, wavenumber=True)
-            linespix = self.axis(linescm1)
-            fwhmspix = np.array(lines_dict[igroup]['fwhm_guess']) / axis_step
-            fluxes = list()
-            for ipix, ifwhm, icm1 in zip(linespix, fwhmspix, linescm1):
-                irange = np.arange(
-                    max(0, int(ipix - NFWHM * ifwhm)),
-                    min(self.dimx, int(ipix + NFWHM * ifwhm) + 1))
-                irangel = np.arange(
-                    max(0, int(ipix - NFWHM_LARGE * ifwhm)),
-                    min(self.dimx, int(ipix + NFWHM_LARGE * ifwhm) + 1))
-                
-                imax = self.data[irange].real.max()
-                imin = self.data[irangel].real.min()
-
-                ifwhm_nm = orb.utils.spectrum.fwhm_cm12nm(
-                    ifwhm * axis_step, icm1) * 10.
-                
-                lines_dict[igroup]['flux'].append(orb.utils.spectrum.gaussian1d_flux(
-                    imax - imin, ifwhm_nm))
-                
-        return lines_dict
+    def estimate_parameters(self, lines, vel_range, precision=10):
+        (combs, vels, filter_range_pix,
+         lines_cm1, oversampling_ratio) = self.prepare_velocity_estimate(
+             lines, vel_range, precision=precision)  
+        vel = self.estimate_velocity_prepared(combs, vels, filter_range_pix)
+        fluxes = self.estimate_flux(lines, vel)
+        return vel, fluxes
+    
+    def estimate_flux(self, lines, vel):
+        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        oversampling_ratio = (self.params.zpd_index
+                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        return orb.utils.fit.estimate_flux(
+            self.data.real, self.axis.data, lines_cm1, vel,
+            self.axis(self.params.filter_range).astype(int), oversampling_ratio)
 
 #################################################
 #### CLASS RealSpectrum #########################

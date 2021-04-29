@@ -29,3 +29,5 @@ class FitInitError(ORBError) : pass
 class FitError(ORBError): pass
 
 class ValidationError(ORBError): pass
+
+class DeepFrameError(ORBError): pass

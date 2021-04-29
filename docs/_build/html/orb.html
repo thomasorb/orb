@@ -1768,9 +1768,6 @@ coordinates you want to transform.</p>
 <dt id="orb.cube.Cube.integrate">
 <code class="sig-name descname"><span class="pre">integrate</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">square_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.Cube.integrate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Integrate a cube under a filter function and generate an image</p>
-<p><span class="math notranslate nohighlight">\(I = \int F(\sigma)S(\sigma)      ext{d}\sigma\)</span></p>
-<p>with <span class="math notranslate nohighlight">\(I\)</span>, the image, <span class="math notranslate nohighlight">\(S\)</span> the spectral cube, <span class="math notranslate nohighlight">\(F\)</span> the
-filter function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1782,8 +1779,7 @@ None, i.e. min)</p></li>
 None, i.e. min)</p></li>
 <li><p><strong>ymin</strong> – (Optional) upper boundary of the ROI along x axis (default
 None, i.e. max)</p></li>
-<li><p><strong>ymax</strong> – (Optional) upper boundary of the ROI along y axis (default
-None, i.e. max)</p></li>
+<li><p><strong>ymax</strong> – (Optional) upper boundary of the ROI along y axis (default None, i.e. max)</p></li>
 </ul>
 </dd>
 </dl>
@@ -2116,12 +2112,17 @@ i.e. (x_positions_1d_array, y_positions_1d_array).</p>
 
 <dl class="py method">
 <dt id="orb.cube.HDFCube.get_deep_frame">
-<code class="sig-name descname"><span class="pre">get_deep_frame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recompute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.get_deep_frame" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_deep_frame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recompute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.HDFCube.get_deep_frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the deep frame of a cube (in counts, i.e. e- x gain).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>recompute</strong> – (Optional) Force deep frame computation
-even if it is already present in the cube (default False).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compute</strong> – (Optional) If True, deep frame can be computed
+if not already present. If False, raise an exception when
+deep frame is not already present (default True).</p></li>
+<li><p><strong>recompute</strong> – (Optional) Force deep frame computation
+even if it is already present in the cube (default False).</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="simple">
@@ -2740,6 +2741,32 @@ computed by <a class="reference internal" href="#orb.cube.HDFCube.get_calibratio
 <code class="sig-name descname"><span class="pre">get_calibration_laser_map_orig</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.SpectralCube.get_calibration_laser_map_orig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the original calibration laser map (not the version
 computed by <a class="reference internal" href="#orb.cube.HDFCube.get_calibration_laser_map" title="orb.cube.HDFCube.get_calibration_laser_map"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_calibration_laser_map()</span></code></a>)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="orb.cube.SpectralCube.get_deep_frame">
+<code class="sig-name descname"><span class="pre">get_deep_frame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recompute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.cube.SpectralCube.get_deep_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the deep frame of a cube (in counts, i.e. e- x gain).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compute</strong> – (Optional) If True, deep frame can be computed
+if not already present. If False, raise an exception when
+deep frame is not already present (default True).</p></li>
+<li><p><strong>recompute</strong> – (Optional) Force deep frame computation
+even if it is already present in the cube (default False).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>… warning:: deep frame computation should only be done on an</dt><dd><p>interferogram cube. Deep frame computed on a spectral cube
+is <em>much</em> more noisy by definition.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this process NaNs are handled correctly</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -4377,23 +4404,28 @@ number of integrated pixels.</p>
 
 <dl class="py method">
 <dt id="orb.fft.Spectrum.estimate_flux">
-<code class="sig-name descname"><span class="pre">estimate_flux</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmodel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sinc'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.estimate_flux" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">estimate_flux</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.estimate_flux" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="orb.fft.Spectrum.estimate_parameters">
+<code class="sig-name descname"><span class="pre">estimate_parameters</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.estimate_parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="orb.fft.Spectrum.estimate_velocity_prepared">
+<code class="sig-name descname"><span class="pre">estimate_velocity_prepared</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">combs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_range_pix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.estimate_velocity_prepared" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt id="orb.fft.Spectrum.fit">
-<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmodel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sinc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nofilter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nogvar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmodel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sinc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nofilter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nogvar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit lines in a spectrum</p>
 <p>Wrapper around orb.fit.fit_lines_in_spectrum.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>lines</strong> – lines to fit.</p></li>
-<li><p><strong>snr_guess</strong> – Guess on the SNR of the spectrum. Necessary
-to make a Bayesian fit (If unknown you can set it to ‘auto’
-to try an automatic mode, two fits are made - one with a
-predefined SNR and the other with the SNR deduced from the
-first fit). If None a classical fit is made. (default None).</p></li>
 <li><p><strong>max_iter</strong> – (Optional) Maximum number of iterations (default None)</p></li>
 <li><p><strong>kwargs</strong> – kwargs used by orb.fit.fit_lines_in_spectrum.</p></li>
 </ul>
@@ -4451,8 +4483,13 @@ similar fits.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="orb.fft.Spectrum.prepare_velocity_estimate">
+<code class="sig-name descname"><span class="pre">prepare_velocity_estimate</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vel_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.prepare_velocity_estimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt id="orb.fft.Spectrum.prepared_fit">
-<code class="sig-name descname"><span class="pre">prepared_fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputparams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nogvar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.prepared_fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">prepared_fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputparams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nogvar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fft.Spectrum.prepared_fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a fit already prepared with prepare_fit() method.</p>
 </dd></dl>
 
@@ -4729,7 +4766,7 @@ model (default False).</p></li>
 
 <dl class="py class">
 <dt id="orb.fit.FitVector">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">FitVector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docomplex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nogvar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.FitVector" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">FitVector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docomplex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nogvar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector_err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.FitVector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>General fitting class for a 1d array of data based on
 Levenberg-Marquardt least square fit algorithm.</p>
@@ -4826,21 +4863,6 @@ None).</p></li>
 <dt id="orb.fit.InputParams">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">InputParams</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_nb</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.InputParams" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py attribute">
-<dt id="orb.fit.InputParams.FWHM_SDEV">
-<code class="sig-name descname"><span class="pre">FWHM_SDEV</span></code><em class="property"> <span class="pre">=</span> <span class="pre">10</span></em><a class="headerlink" href="#orb.fit.InputParams.FWHM_SDEV" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="orb.fit.InputParams.SHIFT_SDEV">
-<code class="sig-name descname"><span class="pre">SHIFT_SDEV</span></code><em class="property"> <span class="pre">=</span> <span class="pre">10</span></em><a class="headerlink" href="#orb.fit.InputParams.SHIFT_SDEV" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="orb.fit.InputParams.SIGMA_SDEV">
-<code class="sig-name descname"><span class="pre">SIGMA_SDEV</span></code><em class="property"> <span class="pre">=</span> <span class="pre">10</span></em><a class="headerlink" href="#orb.fit.InputParams.SIGMA_SDEV" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt id="orb.fit.InputParams.add_continuum_model">
 <code class="sig-name descname"><span class="pre">add_continuum_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.InputParams.add_continuum_model" title="Permalink to this definition">¶</a></dt>
@@ -5058,15 +5080,9 @@ individual models (default False)</p></li>
 
 <dl class="py method">
 <dt id="orb.fit.LinesModel.get_priors">
-<code class="sig-name descname"><span class="pre">get_priors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.LinesModel.get_priors" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_priors</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.LinesModel.get_priors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return priors. Replace gaussian distribution by lognormal
 distribution for some parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>classic</strong> – If True, return classic priors (e.g. no log
-distribution)</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py attribute">
@@ -5230,13 +5246,8 @@ model (default False).</p></li>
 
 <dl class="py method">
 <dt id="orb.fit.Model.get_priors">
-<code class="sig-name descname"><span class="pre">get_priors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.Model.get_priors" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_priors</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.Model.get_priors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return priors</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>classic</strong> – If True, return classic priors (e.g. no log distribution)</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -5515,7 +5526,7 @@ lines (in channels, default 0.)</p></li>
 
 <dl class="py function">
 <dt id="orb.fit.fit_lines_in_spectrum">
-<code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">fit_lines_in_spectrum</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spectrum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nm_laser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zpd_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavenumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apodization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_mcmc_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.fit_lines_in_spectrum" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">fit_lines_in_spectrum</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spectrum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nm_laser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zpd_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavenumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apodization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_mcmc_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.fit_lines_in_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit lines in spectrum</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -5553,7 +5564,6 @@ the spectrum noise. Try avoid using it with low a SNR spectrum.</p></li>
 estimates are computed from a Markov chain Monte-Carlo
 algorithm. If the estimates can be better constrained, the
 fitting time is orders of magnitude longer (default False).</p></li>
-<li><p><strong>snr_guess</strong> – (Optional) Guess on the SNR (default None).</p></li>
 <li><p><strong>max_iter</strong> – (Optional) Maximum number of iterations (default None)</p></li>
 <li><p><strong>kwargs</strong> – (Optional) Fitting parameters of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">orb.fit.Cm1LinesInput</span></code> or
@@ -5589,7 +5599,7 @@ the lines in km/s</p></li>
 
 <dl class="py function">
 <dt id="orb.fit.fit_lines_in_vector">
-<code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">fit_lines_in_vector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fwhm_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_mcmc_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">orb.fit.</span></code><code class="sig-name descname"><span class="pre">fit_lines_in_vector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fwhm_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_mcmc_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#orb.fit.fit_lines_in_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit lines in a vector</p>
 <p>Use this function only if little is known about the vector. A
 vector resulting from an interferogram FFT is assumed :
@@ -5616,11 +5626,8 @@ fitting time is orders of magnitude longer (default False).</p></li>
 <a class="reference internal" href="#orb.fit.FitVector" title="orb.fit.FitVector"><code class="xref py py-class docutils literal notranslate"><span class="pre">orb.fit.FitVector</span></code></a>.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Snr_guess</dt>
-<dd class="field-even"><p>(Optional) Guess on the SNR (default None).</p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><p>a dictionary containing:</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>a dictionary containing:</p>
 <ul class="simple">
 <li><p>all the fit parameters [key: ‘fit_params’]</p></li>
 <li><p>lines parameters [key: ‘lines_params’] Lines parameters are

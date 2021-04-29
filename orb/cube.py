@@ -35,6 +35,7 @@ import orb.old
 import orb.utils.io
 import orb.utils.misc
 import orb.utils.astrometry
+import orb.utils.err
 import orb.fft
 import orb.image
 import orb.cutils
@@ -546,8 +547,13 @@ class HDFCube(orb.core.WCSData):
         return gain
 
     
-    def get_deep_frame(self, recompute=False):
+    def get_deep_frame(self, recompute=False, compute=True):
         """Return the deep frame of a cube (in counts, i.e. e- x gain).
+
+
+        :param compute: (Optional) If True, deep frame can be computed
+          if not already present. If False, raise an exception when
+          deep frame is not already present (default True).
 
         :param recompute: (Optional) Force deep frame computation
           even if it is already present in the cube (default False).
@@ -575,8 +581,10 @@ class HDFCube(orb.core.WCSData):
                     df *= self.dimz
         
             elif self.is_level1():
-                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
-
+                if compute:
+                    df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
+                else: raise orb.utils.err.DeepFrameError('deep frame not already computed.')
+                    
         if df is None:
             df = self.compute_sum_image()
 
@@ -1679,11 +1687,6 @@ class Cube(HDFCube):
                   mean=True, square_filter=False):
         """Integrate a cube under a filter function and generate an image
 
-        :math:`I = \int F(\sigma)S(\sigma)\text{d}\sigma`
-
-        with :math:`I`, the image, :math:`S` the spectral cube, :math:`F` the
-        filter function.
-
         :param filter_function: Must be an orb.core.Cm1Vector1d
           instance or the name of a filter registered in orb/data/
 
@@ -1696,9 +1699,8 @@ class Cube(HDFCube):
         :param ymin: (Optional) upper boundary of the ROI along x axis (default
           None, i.e. max)
 
-        :param ymax: (Optional) upper boundary of the ROI along y axis (default
-          None, i.e. max)
-
+        :param ymax: (Optional) upper boundary of the ROI along y axis (default None, i.e. max)
+        
         """
         if isinstance(filter_function, str):
             filter_function = orb.core.Vector1d(self._get_filter_file_path(filter_function))
@@ -2239,16 +2241,22 @@ class SpectralCube(Cube):
             if not self.has_wavenumber_calibration():
                 raise Exception('if the spectral cube is not calibrated, xy must be provided')
             xy = [self.dimx//2, self.dimy//2]
-
         return orb.utils.spectrum.cm12pix(
-            self.get_axis(xy[0], xy[1]).data, self.get_filter_range())
+            self.get_axis(int(xy[0]), int(xy[1])).data, self.get_filter_range())
 
+    def get_deep_frame(self, recompute=False, compute=False):
+        try:
+            return Cube.get_deep_frame(self, recompute=recompute, compute=compute)
+        except orb.utils.err.DeepFrameError:
+            logging.warning("Deep frame not present in the cube. Replaced with a map of zeros. Please attach it with cube.deep_frame = orb.utils.io.read_fits('deep_frame.fits')")
+            self.deep_frame = np.zeros((self.dimx, self.dimy), dtype=float)
+            return self.get_deep_frame()
+    
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
         """
-        self.validate()
-        orb.utils.validate.index(x, 0, self.dimx, clip=False)
-        orb.utils.validate.index(y, 0, self.dimy, clip=False)
+        orb.utils.validate.index(x, 0, int(self.dimx), clip=False)
+        orb.utils.validate.index(y, 0, int(self.dimy), clip=False)
         
         axis = orb.utils.spectrum.create_cm1_axis(
             self.dimz, self.params.step, self.params.order,

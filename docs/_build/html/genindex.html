@@ -567,6 +567,8 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.astrometry.dec2deg">dec2deg() (in module orb.utils.astrometry)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.err.DeepFrameError">DeepFrameError</a>
+</li>
       <li><a href="orb.html#orb.core.ColorStreamHandler.DEFAULT">DEFAULT (orb.core.ColorStreamHandler attribute)</a>
 
       <ul>
@@ -625,10 +627,24 @@
 </li>
       <li><a href="orb.html#orb.core.ColorStreamHandler.ERROR">ERROR (orb.core.ColorStreamHandler attribute)</a>
 </li>
-      <li><a href="orb.html#orb.fft.Spectrum.estimate_flux">estimate_flux() (orb.fft.Spectrum method)</a>
+      <li><a href="orb.utils.html#orb.utils.fit.estimate_flux">estimate_flux() (in module orb.utils.fit)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fft.Spectrum.estimate_flux">(orb.fft.Spectrum method)</a>
+</li>
+      </ul></li>
+      <li><a href="orb.html#orb.fft.Spectrum.estimate_parameters">estimate_parameters() (orb.fft.Spectrum method)</a>
+</li>
+      <li><a href="orb.utils.html#orb.utils.fit.estimate_velocity">estimate_velocity() (in module orb.utils.fit)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="orb.utils.html#orb.utils.fit.estimate_velocity_prepared">estimate_velocity_prepared() (in module orb.utils.fit)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.fft.Spectrum.estimate_velocity_prepared">(orb.fft.Spectrum method)</a>
+</li>
+      </ul></li>
       <li><a href="orb.html#orb.cube.FDCube.export">export() (orb.cube.FDCube method)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.photometry.ext2trans">ext2trans() (in module orb.utils.photometry)</a>
@@ -795,8 +811,6 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.spectrum.fwhm_nm2cm1">fwhm_nm2cm1() (in module orb.utils.spectrum)</a>
 </li>
-      <li><a href="orb.html#orb.fit.InputParams.FWHM_SDEV">FWHM_SDEV (orb.fit.InputParams attribute)</a>
-</li>
       <li><a href="orb.html#orb.constants.FWHM_SINC_COEFF">FWHM_SINC_COEFF (in module orb.constants)</a>
 </li>
   </ul></td>
@@ -897,6 +911,8 @@
 </li>
       <li><a href="orb.html#orb.fft.PhaseMaps.get_coeffs">get_coeffs() (orb.fft.PhaseMaps method)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.fit.get_comb">get_comb() (in module orb.utils.fit)</a>
+</li>
       <li><a href="orb.html#orb.cube.FDCube.get_cube_header">get_cube_header() (orb.cube.FDCube method)</a>
 </li>
       <li><a href="orb.html#orb.core.ParamsFile.get_data">get_data() (orb.core.ParamsFile method)</a>
@@ -918,7 +934,11 @@
       <li><a href="orb.html#orb.cube.HDFCube.get_datasets">get_datasets() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.get_deep_frame">get_deep_frame() (orb.cube.HDFCube method)</a>
+
+      <ul>
+        <li><a href="orb.html#orb.cube.SpectralCube.get_deep_frame">(orb.cube.SpectralCube method)</a>
 </li>
+      </ul></li>
       <li><a href="orb.html#orb.cube.HDFCube.get_detection_frame">get_detection_frame() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.cube.HDFCube.get_dxdymaps">get_dxdymaps() (orb.cube.HDFCube method)</a>
@@ -1005,14 +1025,14 @@
 </li>
       <li><a href="orb.html#orb.core.Data.get_mask">get_mask() (orb.core.Data method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.misc.get_mask_from_ds9_region_file">get_mask_from_ds9_region_file() (in module orb.utils.misc)</a>
 
       <ul>
         <li><a href="orb.html#orb.cube.SpectralCube.get_mask_from_ds9_region_file">(orb.cube.SpectralCube method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cube.HDFCube.get_master_frame">get_master_frame() (orb.cube.HDFCube method)</a>
 </li>
       <li><a href="orb.html#orb.core.FilterFile.get_mean_cm1">get_mean_cm1() (orb.core.FilterFile method)</a>
@@ -1947,10 +1967,10 @@
 </li>
       <li><a href="orb.html#orb.fft.PhaseMaps">PhaseMaps (class in orb.fft)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.photometry.Photometry">Photometry (class in orb.photometry)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.fit.pick2paramslist">pick2paramslist() (in module orb.utils.fit)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fit.pickdict2gvardict">pickdict2gvardict() (in module orb.utils.fit)</a>
@@ -1987,7 +2007,11 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.pp_create_master_frame">pp_create_master_frame() (in module orb.utils.image)</a>
 </li>
+      <li><a href="orb.utils.html#orb.utils.fit.prepare_combs">prepare_combs() (in module orb.utils.fit)</a>
+</li>
       <li><a href="orb.html#orb.fft.Spectrum.prepare_fit">prepare_fit() (orb.fft.Spectrum method)</a>
+</li>
+      <li><a href="orb.html#orb.fft.Spectrum.prepare_velocity_estimate">prepare_velocity_estimate() (orb.fft.Spectrum method)</a>
 </li>
       <li><a href="orb.html#orb.fft.Spectrum.prepared_fit">prepared_fit() (orb.fft.Spectrum method)</a>
 </li>
@@ -2219,13 +2243,9 @@
 </li>
       <li><a href="orb.utils.html#orb.utils.image.shift_frame">shift_frame() (in module orb.utils.image)</a>
 </li>
-      <li><a href="orb.html#orb.fit.InputParams.SHIFT_SDEV">SHIFT_SDEV (orb.fit.InputParams attribute)</a>
-</li>
       <li><a href="orb.utils.html#orb.utils.fft.sigma2apod">sigma2apod() (in module orb.utils.fft)</a>
 </li>
       <li><a href="orb.utils.html#orb.utils.fit.sigma2vel">sigma2vel() (in module orb.utils.fit)</a>
-</li>
-      <li><a href="orb.html#orb.fit.InputParams.SIGMA_SDEV">SIGMA_SDEV (orb.fit.InputParams attribute)</a>
 </li>
       <li><a href="orb.html#orb.cutils.sigmaclip">sigmaclip() (in module orb.cutils)</a>
 </li>
@@ -2239,10 +2259,10 @@
 </li>
       <li><a href="orb.html#orb.photometry.Standard.simulate_measured_flux">simulate_measured_flux() (orb.photometry.Standard method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.utils.html#orb.utils.image.simulate_theta_map">simulate_theta_map() (in module orb.utils.image)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="orb.html#orb.cutils.sinc1d">sinc1d() (in module orb.cutils)</a>
 
       <ul>

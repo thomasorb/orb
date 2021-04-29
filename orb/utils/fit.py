@@ -26,6 +26,8 @@ import math
 import orb.constants
 import gvar
 import orb.utils.validate
+import orb.utils.spectrum
+import orb.utils.stats
 import copy
 
 def vel2sigma(vel, lines, axis_step):
@@ -109,3 +111,65 @@ def pick2paramslist(picklist):
         paramslist.append(pickdict2gvardict(idict))
     return paramslist
 
+
+def get_comb(lines_cm1, vel, axis, oversampling_ratio):
+    axis_step = axis[1] - axis[0]
+    lines_cm1 = np.copy(lines_cm1)
+    fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(oversampling_ratio=oversampling_ratio)
+    lines_cm1 += orb.utils.spectrum.line_shift(vel, lines_cm1, wavenumber=True, relativistic=False)
+    lines_pix = (lines_cm1 - axis[0]) / axis_step
+    
+    comb = np.zeros_like(axis)
+    x = np.arange(len(axis))
+    flux = orb.utils.spectrum.gaussian1d_flux(1, fwhm_pix)
+    for iline in lines_pix:
+        comb += orb.utils.spectrum.gaussian1d(x, 0, 1, iline, fwhm_pix) / flux
+    return comb / len(lines_pix)
+
+def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
+    assert precision >= 1, 'precision must be >= 1'
+    axis_step_vel = orb.utils.spectrum.compute_radial_velocity(lines_cm1[0] - axis[1] + axis[0], lines_cm1[0], wavenumber=True, relativistic=False)
+    vels = np.linspace(vel_range[0], vel_range[1], max(3, int((vel_range[1] - vel_range[0]) / axis_step_vel * precision) + 1))
+    
+    combs = list()
+    for i in range(len(vels)):
+        combs.append(get_comb(lines_cm1, vels[i], axis, oversampling_ratio))
+    return combs, vels
+
+def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix):
+    score = np.empty_like(vels)
+    _spec = spectrum.real[filter_range_pix[0]:filter_range_pix[1]]
+    back = np.nanmedian(_spec)
+    _spec -= back
+    std = orb.utils.stats.unbiased_std(_spec)
+    for i in range(len(vels)):
+        score[i] = np.nansum(combs[i][filter_range_pix[0]:filter_range_pix[1]] * _spec)
+    _max = np.nanargmax(score)
+    #if _max == 0 or _max == len(score) - 1:
+    #    return np.nan
+    #if score[_max] < 0.2 * std:
+    #    return np.nan
+    return vels[_max]
+
+def estimate_velocity(spectrum , axis, lines_cm1, vel_range, oversampling_ratio, precision=2):    
+    assert vel_range[0] < vel_range[1], 'velocity_range must be in the order (vel_min, vel_max)'
+    combs, vels = prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision)
+    
+    return estimate_velocity_prepared(spectrum, vels, combs)
+
+def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio):
+    axis_step = axis[1] - axis[0]
+    lines_cm1 = np.copy(lines_cm1)
+    fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(oversampling_ratio=oversampling_ratio)
+    lines_cm1 += orb.utils.spectrum.line_shift(vel, lines_cm1, wavenumber=True, relativistic=False)
+    lines_pix = (lines_cm1 - axis[0]) / axis_step
+
+    _spec = spectrum.real[int(filter_range_pix[0]):int(filter_range_pix[1])]
+    back = np.nanmedian(_spec)
+    _spec -= back
+
+    fluxes = list()
+    for iline in lines_pix:
+        iline -= int(filter_range_pix[0])
+        fluxes.append(np.nansum(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1]))
+    return fluxes
