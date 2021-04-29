@@ -297,7 +297,10 @@ def fit_zernike(wavefront, zern_data={}, nmodes=10, startmode=1, fitweight=None,
 		wf_w = ((wavefront[yslice, xslice])[grid_mask]).reshape(1,-1) * weight
 		#wf_zern_vec = np.dot(wf_w, np.linalg.pinv(zern_basismat[:, grid_vec] * weight)).ravel()
 		# This is 5x faster:
-		wf_zern_vec = np.linalg.lstsq((zern_basismat[:, grid_vec] * weight).T, wf_w.ravel())[0]
+		wf_zern_vec = np.linalg.lstsq(
+                        (zern_basismat[:, grid_vec] * weight).T,
+                        wf_w.ravel(),
+                        rcond=None)[0]
 	else:
 		# LSQ fit with data. Only fit inside grid_mask
 

@@ -475,12 +475,17 @@ class Phase(orb.core.Cm1Vector1d):
         return Phase(data, axis=self.axis, params=self.params)        
 
         
-    def polyfit(self, deg, coeffs=None,
+    def polyfit(self, deg,
+                amplitude=None,
+                coeffs=None,
                 return_coeffs=False,
                 border_ratio=0.1):
         """Polynomial fit of the phase
    
         :param deg: Degree of the fitting polynomial. Must be >= 0.
+
+        :param amplitude: (Optional) Amplitude of the spectrum. Used
+          to weight the phase data (default None).
 
         :param coeffs: (Optional) Used to fix some coefficients to a
           given value. If not None, must be a list of length =
@@ -494,9 +499,13 @@ class Phase(orb.core.Cm1Vector1d):
         :param border_ratio: (Optional) relative width on the
           borders of the filter range removed from the fitted values
           (default 0.1)
+
         """
         self.assert_params()
 
+        if amplitude is not None:
+            assert len(amplitude) == self.dimx, 'amplitude vector must have same shape as phase vector'
+            
         sigmaref = orb.core.FilterFile(self.params.filter_name).get_phase_fit_ref()
         
         deg = int(deg)
@@ -514,9 +523,16 @@ class Phase(orb.core.Cm1Vector1d):
         
         phase = np.copy(self.data).astype(float)
         ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
-        ok_axis = self.axis.data.astype(float)[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
         if np.any(np.isnan(ok_phase)):
             raise orb.utils.err.FitError('phase contains nans in the filter passband')
+        
+        ok_axis = self.axis.data.astype(float)[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
+        if amplitude is not None:
+            ok_amp = amplitude[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
+            if np.any(np.isnan(ok_amp)):
+                raise orb.utils.err.FitError('amplitude contains nans in the filter passband')
+        else:
+            ok_amp = np.full_like(ok_phase, 1)
         
             
         # create guess
@@ -559,7 +575,9 @@ class Phase(orb.core.Cm1Vector1d):
             return orb.utils.fft.phase_model(x, sigmaref, p)
 
         def diff(p):
-            return ok_phase - model(ok_axis, p)
+            # weight = snr = amplitude because in this case noise is
+            # distributed, i.e. snr is propto signal
+            return (ok_phase - model(ok_axis, p)) * ok_amp
 
         try:
             _fit = scipy.optimize.leastsq(
