@@ -894,6 +894,33 @@ class Spectrum(orb.core.Cm1Vector1d):
 
             return []
 
+        if (_fit != [] and kwargs['fmodel'] == 'sincgauss'
+            and np.all(np.isnan(_fit['broadening_err']))):
+            logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
+
+            
+            # clean kwargs from sigma related params
+            new_kwargs = dict(kwargs_orig)
+            for ikey in list(new_kwargs.keys()):
+                if 'sigma_' in ikey:
+                    del new_kwargs[ikey]
+                    
+            new_kwargs['fmodel'] = 'sinc'
+            
+            new_inputparams = inputparams.copy()
+
+            # clean inputparams
+            for imodel in range(len(new_inputparams['models'])):    
+                if new_inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:
+                    for ikey in list(new_inputparams['params'][imodel].keys()):
+                        if 'sigma_' in ikey:
+                            del new_inputparams['params'][imodel][ikey]
+
+            return self.prepared_fit(
+                new_inputparams, max_iter=max_iter,
+                nogvar=nogvar, **new_kwargs)
+
+
         del spectrum
                 
         logging.debug('total fit timing: {}'.format(time.time() - start_time))
@@ -928,18 +955,6 @@ class Spectrum(orb.core.Cm1Vector1d):
         fit = self.prepared_fit(
             inputparams, max_iter=max_iter, nogvar=nogvar,
             **kwargs)
-
-        if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening_err'])):
-            logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
-            
-            new_kwargs = dict(kwargs_orig)
-            for ikey in list(new_kwargs.keys()):
-                if 'sigma_' in ikey:
-                    del new_kwargs[ikey]
-            
-            return self.fit(lines, fmodel='sinc', nofilter=nofilter,
-                            max_iter=max_iter, nogvar=nogvar,
-                            **new_kwargs)
         
         return fit
 
