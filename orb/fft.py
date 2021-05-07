@@ -894,11 +894,25 @@ class Spectrum(orb.core.Cm1Vector1d):
 
             return []
 
-        if (_fit != [] and kwargs['fmodel'] == 'sincgauss'
+        # handle sincgauss unstability when broadening is too small or SNR is too low
+
+        # check if model is sincgauss
+        is_sincgauss = False
+        if 'fmodel' in kwargs_orig:
+            if kwargs_orig['fmodel'] == 'sincgauss':
+                is_sincgauss = True
+        else:                        
+            for imodel in range(len(inputparams['models'])):
+                if inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:
+                    if inputparams['params'][imodel]['fmodel'] == 'sincgauss':
+                        is_sincgauss = True
+
+        if (_fit != []
+            and is_sincgauss
             and np.all(np.isnan(_fit['broadening_err']))):
+           
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
 
-            
             # clean kwargs from sigma related params
             new_kwargs = dict(kwargs_orig)
             for ikey in list(new_kwargs.keys()):
