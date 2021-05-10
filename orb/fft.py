@@ -919,8 +919,11 @@ class Spectrum(orb.core.Cm1Vector1d):
                     del new_kwargs[ikey]
                     
             new_kwargs['fmodel'] = 'sinc'
-            
-            new_inputparams = inputparams.convert()
+
+            try:
+                new_inputparams = inputparams.convert()
+            except AttributeError:
+                new_inputparams = dict(inputparams)
 
             # clean inputparams
             for imodel in range(len(new_inputparams['models'])):    
