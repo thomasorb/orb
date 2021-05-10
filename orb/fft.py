@@ -910,7 +910,6 @@ class Spectrum(orb.core.Cm1Vector1d):
         if (_fit != []
             and is_sincgauss
             and np.all(np.isnan(_fit['broadening_err']))):
-           
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
 
             # clean kwargs from sigma related params
@@ -921,7 +920,7 @@ class Spectrum(orb.core.Cm1Vector1d):
                     
             new_kwargs['fmodel'] = 'sinc'
             
-            new_inputparams = inputparams.copy()
+            new_inputparams = inputparams.convert()
 
             # clean inputparams
             for imodel in range(len(new_inputparams['models'])):    
