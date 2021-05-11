@@ -29,7 +29,7 @@ import numpy as np
 import orb.utils.io
 
 def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
-           vmin=None, vmax=None):
+           vmin=None, vmax=None, autofit=False):
     """Convenient image plotting function
 
     :param data: 2d array to show. Can be a path to a fits file.
@@ -91,3 +91,13 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
         ax.coords[0].set_major_formatter('d.dd')
         ax.coords[1].set_major_formatter('d.dd')
     pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm)
+
+    if autofit:
+        xbounds = np.arange(data.shape[0]) * np.where(np.any(~np.isnan(data), axis=1), 1, np.nan) # x
+        ybounds = np.arange(data.shape[1]) * np.where(np.any(~np.isnan(data), axis=0), 1, np.nan) # y
+        xmin = np.nanmin(xbounds)
+        xmax = np.nanmax(xbounds)+1
+        ymin = np.nanmin(ybounds)
+        ymax = np.nanmax(ybounds)+1
+        pl.xlim(xmin, xmax)
+        pl.ylim(ymin, ymax)

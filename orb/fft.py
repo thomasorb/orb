@@ -806,7 +806,6 @@ class Spectrum(orb.core.Cm1Vector1d):
                 
             if '_cov' in ikey:
                 to_tuple(ikey)
-
                 
                 
         inputparams = orb.fit._prepare_input_params(
@@ -921,9 +920,12 @@ class Spectrum(orb.core.Cm1Vector1d):
             new_kwargs['fmodel'] = 'sinc'
 
             try:
+                print('inpitparams')
                 new_inputparams = inputparams.convert()
             except AttributeError:
-                new_inputparams = dict(inputparams)
+                import copy
+                print('dict')
+                new_inputparams = copy.deepcopy(inputparams)
 
             # clean inputparams
             for imodel in range(len(new_inputparams['models'])):    
