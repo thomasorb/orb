@@ -2531,7 +2531,7 @@ def load_star_list(star_list, remove_nans=False):
         try:
             sources = pandas.read_hdf(star_list, key='data')
             star_list = df2list(sources)
-        except OSError:
+        except Exception:
             star_list = pandas.read_csv(star_list, sep=' ', header=None).to_numpy()
 
     elif isinstance(star_list, pandas.DataFrame):
