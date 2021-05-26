@@ -37,6 +37,9 @@ import scipy.stats
 
 import pandas as pd
 
+
+
+
 class SkyModel(object):
     """Very basic sky model which generate a spectrum of the sky.
     
@@ -137,8 +140,7 @@ class SkyModel(object):
         return orb.core.Vector1d(sky_spectrum, axis=cm1_axis)
     
         
-        
-class RawSimulator(object):
+class Base(object):
 
     def __init__(self, step_nb, params, instrument='sitelle', **kwargs):
         """
@@ -176,9 +178,42 @@ class RawSimulator(object):
         self.params['apodization'] = 1
         self.params['wavenumber'] = True
         
-        
-        self.data = np.zeros(self.params.step_nb, dtype=float)
+        self.data = None
+        self.axis = None
 
+class Spectrum(Base):
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+    def add_component(self, lines, amp, noise_std=0, vel=0, sigma=0):
+        lines = orb.core.Lines().get_line_cm1(lines)
+        ax, sp = orb.fit.create_cm1_lines_model_raw(
+            lines, amp, self.params.step, self.params.order, self.params.step_nb, 
+            self.params.calib_coeff, self.params.zpd_index,
+            vel=vel, sigma=sigma, fmodel='sincgauss')
+        if self.data is None:
+            self.data = np.copy(sp)
+        else:
+            self.data += sp
+        if self.axis is not None:
+            assert np.all(self.axis == ax)
+        else:
+            self.axis = np.copy(ax)
+    
+    def get_spectrum(self):
+        if self.data is None:
+            raise Exception('add at least one component with add_component()')
+        return orb.fft.Spectrum(self.data, axis=self.axis, params=self.params)  
+
+        
+class Interferogram(Base):
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
             self.params.step_nb, self.params.step, self.params.order,
             corr=self.params.calib_coeff)

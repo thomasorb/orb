@@ -173,3 +173,15 @@ def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling
         iline -= int(filter_range_pix[0])
         fluxes.append(np.nansum(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1]))
     return fluxes
+
+def BIC(residual, k):
+    """
+    Bayesian Information Criterion
+    https://en.wikipedia.org/wiki/Bayesian_information_criterion
+    
+    :param residual: Fit residual (as a vector)
+    
+    :param k: Number of free parameters of the model
+    """
+    n = residual.size    
+    return n * np.log(np.sum(residual**2)/n) + k * np.log(n)

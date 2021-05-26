@@ -577,6 +577,9 @@ class FitVector(object):
             returned_data['logGBF'] = fit.logGBF
             returned_data['fit_time'] = time.time() - start_time
             returned_data['signal_range'] = self.signal_range
+            returned_data['nparams'] = priors_arr.size # number of free parameters
+            # Bayesian information criterion
+            returned_data['BIC'] = orb.utils.fit.BIC(returned_data['residual'], returned_data['nparams'])
             
         else:
             logging.debug('bad fit')
@@ -2523,9 +2526,12 @@ class OutputParams(Params):
         info = '=== Fit results ===\n'
         info += 'lines: {}, fmodel: {}\n'.format(lines, self['fmodel'])
         info += 'iterations: {}, fit time: {:.2e} s\n'.format(self['iter_nb'], self['fit_time'])
+        info += 'number of free parameters: {}, BIC: {:.5e}, chi2: {:.2e}\n'.format(self['nparams'], self['BIC'], self['chi2'])
+        
         info += 'Velocity (km/s): {} \n'.format(gvar.gvar(self['velocity'], self['velocity_err']))
         info += 'Flux: {}\n'.format(gvar.gvar(self['flux'], self['flux_err']))
         info += 'Broadening (km/s): {}\n'.format(gvar.gvar(self['broadening'], self['broadening_err']))
+        info += 'SNR (km/s): {}\n'.format(self['snr'])
             
         return info
     
