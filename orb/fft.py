@@ -232,7 +232,7 @@ class Interferogram(orb.core.Vector1d):
 
         # dft
         #interf_fft = np.fft.fft(zp_interf)
-        interf_fft = scipy.fftpack.fft(zp_interf)
+        interf_fft = scipy.fft.fft(zp_interf)
         
         #interf_fft = interf_fft[:interf_fft.shape[0]/2+1]
         interf_fft = interf_fft[:self.dimx]
@@ -675,11 +675,11 @@ class Spectrum(orb.core.Cm1Vector1d):
             logging.warning('spectrum is not complex. Apodizing will not give ideal results')
         spec.data[np.isnan(spec.data)] = 0.
         zp_spec = np.concatenate([spec.data, spec.data[::-1]])
-        spec_ifft = scipy.fftpack.ifft(zp_spec)
+        spec_ifft = scipy.fft.ifft(zp_spec)
         x = np.linspace(0, 1, spec.dimx)
         x = np.concatenate([x, x[::-1]])
         w = orb.utils.fft.gaussian_window(coeff, x)
-        spec.data = scipy.fftpack.fft(spec_ifft * w)[:spec.dimx]
+        spec.data = scipy.fft.fft(spec_ifft * w)[:spec.dimx]
         if not np.any(np.iscomplex(self.data)):
             spec.data.imag.fill(0.)
         return spec
@@ -705,7 +705,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         spec.data = spec.data.astype(np.complex128)
         
         a = np.concatenate((spec.data, np.zeros(spec.dimx)))
-        a_ifft = scipy.fftpack.ifft(a)
+        a_ifft = scipy.fft.ifft(a)
         a_interf = np.concatenate(
             (a_ifft[-self.params.zpd_index:], 
              a_ifft[:self.params.step_nb - self.params.zpd_index]))
