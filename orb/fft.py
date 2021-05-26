@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: fft.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -31,6 +31,7 @@ import orb.utils.validate
 import orb.utils.fft
 import orb.utils.vector
 import orb.utils.err
+import orb.utils.stats
 import orb.core
 import orb.cutils
 import orb.fit
@@ -474,13 +475,17 @@ class Phase(orb.core.Cm1Vector1d):
         return Phase(data, axis=self.axis, params=self.params)        
 
         
-    def polyfit(self, deg, coeffs=None,
-                calib_coeff=None,
+    def polyfit(self, deg,
+                amplitude=None,
+                coeffs=None,
                 return_coeffs=False,
                 border_ratio=0.1):
         """Polynomial fit of the phase
    
         :param deg: Degree of the fitting polynomial. Must be >= 0.
+
+        :param amplitude: (Optional) Amplitude of the spectrum. Used
+          to weight the phase data (default None).
 
         :param coeffs: (Optional) Used to fix some coefficients to a
           given value. If not None, must be a list of length =
@@ -497,6 +502,12 @@ class Phase(orb.core.Cm1Vector1d):
 
         """
         self.assert_params()
+
+        if amplitude is not None:
+            assert len(amplitude) == self.dimx, 'amplitude vector must have same shape as phase vector'
+            
+        sigmaref = orb.core.FilterFile(self.params.filter_name).get_phase_fit_ref()
+        
         deg = int(deg)
         if deg < 0: raise ValueError('deg must be >= 0')
 
@@ -509,23 +520,20 @@ class Phase(orb.core.Cm1Vector1d):
         cm1_border = np.abs(cm1_max - cm1_min) * border_ratio
         cm1_min += cm1_border
         cm1_max -= cm1_border
-
-        weights = np.ones(self.dimx, dtype=float) * 1e-35
-        weights[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1] = 1.
-        
         
         phase = np.copy(self.data).astype(float)
-        ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))+1]
+        ok_phase = phase[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
         if np.any(np.isnan(ok_phase)):
             raise orb.utils.err.FitError('phase contains nans in the filter passband')
         
-        phase[np.isnan(phase)] = 0.
-
-        # use calibration coeff in phase fit
-        if calib_coeff is not None:
-            costheta = 1. / calib_coeff
+        ok_axis = self.axis.data.astype(float)[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
+        if amplitude is not None:
+            ok_amp = amplitude[int(self.axis(cm1_min)):int(self.axis(cm1_max))]
+            if np.any(np.isnan(ok_amp)):
+                raise orb.utils.err.FitError('amplitude contains nans in the filter passband')
         else:
-            costheta = 0
+            ok_amp = np.full_like(ok_phase, 1)
+        
             
         # create guess
         guesses = list()
@@ -562,20 +570,18 @@ class Phase(orb.core.Cm1Vector1d):
                 all_p = p
             return np.array(all_p)
         
-        def model(x, ctheta, *p):
+        def model(x, p):
             p = format_guess(p)
-            return orb.utils.fft.phase_model(x, ctheta, *p)
+            return orb.utils.fft.phase_model(x, sigmaref, p)
 
-        def diff(p, x, y, w, ctheta):
-            res = model(x, ctheta, *p) - y
-            return res * w
-        
-        try:            
+        def diff(p):
+            # weight = snr = amplitude because in this case noise is
+            # distributed, i.e. snr is propto signal
+            return (ok_phase - model(ok_axis, p)) * ok_amp
+
+        try:
             _fit = scipy.optimize.leastsq(
                 diff, guesses,
-                args=(
-                    self.axis.data.astype(float),
-                    phase, weights, costheta),
                 full_output=True)
             pfit = _fit[0]
             pcov = _fit[1]
@@ -593,7 +599,7 @@ class Phase(orb.core.Cm1Vector1d):
         if return_coeffs:
             return all_pfit, all_perr
         else:
-            return self.__class__(model(self.axis.data.astype(float), *pfit),
+            return self.__class__(model(self.axis.data.astype(float), pfit),
                                   self.axis, params=self.params)
 
     def subtract_low_order_poly(self, deg, border_ratio=0.1):
@@ -606,7 +612,7 @@ class Phase(orb.core.Cm1Vector1d):
           borders of the filter range removed from the fitted values
           (default 0.1)
         """
-        self = self.subtract(self.polyfit(deg, border_ratio=border_ratio))
+        return self.subtract(orb.core.Vector1d(self.polyfit(deg, border_ratio=border_ratio).project(self.axis)))
 
 #################################################
 #### CLASS Spectrum #############################
@@ -800,7 +806,6 @@ class Spectrum(orb.core.Cm1Vector1d):
                 
             if '_cov' in ikey:
                 to_tuple(ikey)
-
                 
                 
         inputparams = orb.fit._prepare_input_params(
@@ -822,7 +827,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return inputparams.convert(), kwargs
 
-    def prepared_fit(self, inputparams, snr_guess=None, max_iter=None, **kwargs):
+    def prepared_fit(self, inputparams, max_iter=None, nogvar=False, **kwargs):
         """Run a fit already prepared with prepare_fit() method.
         """
         start_time = time.time()
@@ -834,37 +839,6 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         theta_orig = orb.utils.spectrum.corr2theta(
             self.params['calib_coeff_orig'])
-
-        # check snr guess param
-        bad_snr_param = False    
-        if snr_guess is not None:
-            if isinstance(snr_guess, str):
-                snr_guess = snr_guess.lower()
-                if snr_guess != 'auto':
-                    bad_snr_param = True
-            else:
-                try:
-                    snr_guess = float(snr_guess)
-                except Exception:
-                    bad_snr_param = True
-
-        if bad_snr_param:
-            raise ValueError("snr_guess parameter not understood. It can be set to a float, 'auto' or None.")
-
-        auto_mode = False
-        if snr_guess is not None:
-            if snr_guess == 'auto':
-                auto_mode = True
-
-        if auto_mode:
-            if self.has_err():
-                spectrum_snr = self.data / self.err
-                spectrum_snr[np.isinf(spectrum_snr)] = np.nan
-                snr_guess = np.nanmax(spectrum_snr)
-                logging.debug('first SNR guess computed from spectrum uncertainty: {}'.format(snr_guess))
-            else: snr_guess = 30.
-
-        logging.debug('SNR guess: {}'.format(snr_guess))
         
         # recompute the fwhm guess
         if 'calib_coeff_orig' not in self.params:
@@ -895,19 +869,20 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         spectrum = np.copy(self.data)
         spectrum[np.isnan(spectrum)] = 0
-        
+
+        err = None
         if self.has_err():
             err = np.copy(self.err)
             err[np.isnan(err)] = 0.
-            spectrum = gvar.gvar(spectrum.real, err)
         try:
             warnings.simplefilter('ignore')
             _fit = orb.fit._fit_lines_in_spectrum(
                 spectrum, inputparams,
                 fit_tol=1e-10,
                 compute_mcmc_error=False,
-                snr_guess=snr_guess,
                 max_iter=max_iter,
+                nogvar=nogvar,
+                vector_err=err,
                 **kwargs)
             warnings.simplefilter('default')
 
@@ -918,45 +893,115 @@ class Spectrum(orb.core.Cm1Vector1d):
 
             return []
 
-        del spectrum
-    
-        if auto_mode and _fit != []:
-            snr_guess = np.nanmax(self.data) / np.nanstd(self.data - _fit['fitted_vector'])
+        # handle sincgauss unstability when broadening is too small or SNR is too low
+
+        # check if model is sincgauss
+        is_sincgauss = False
+        if 'fmodel' in kwargs_orig:
+            if kwargs_orig['fmodel'] == 'sincgauss':
+                is_sincgauss = True
+        else:                        
+            for imodel in range(len(inputparams['models'])):
+                if inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:
+                    if inputparams['params'][imodel]['fmodel'] == 'sincgauss':
+                        is_sincgauss = True
+
+        if (_fit != []
+            and is_sincgauss
+            and np.all(np.isnan(_fit['broadening_err']))):
+            logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
+
+            # clean kwargs from sigma related params
+            new_kwargs = dict(kwargs_orig)
+            for ikey in list(new_kwargs.keys()):
+                if 'sigma_' in ikey:
+                    del new_kwargs[ikey]
+                    
+            new_kwargs['fmodel'] = 'sinc'
+
+            try:
+                print('inpitparams')
+                new_inputparams = inputparams.convert()
+            except AttributeError:
+                import copy
+                print('dict')
+                new_inputparams = copy.deepcopy(inputparams)
+
+            # clean inputparams
+            for imodel in range(len(new_inputparams['models'])):    
+                if new_inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:
+                    for ikey in list(new_inputparams['params'][imodel].keys()):
+                        if 'sigma_' in ikey:
+                            del new_inputparams['params'][imodel][ikey]
+
             return self.prepared_fit(
-                inputparams,
-                snr_guess=snr_guess,
-                max_iter=max_iter,
-                **kwargs_orig)
-        else:
-            logging.debug('total fit timing: {}'.format(time.time() - start_time))
+                new_inputparams, max_iter=max_iter,
+                nogvar=nogvar, **new_kwargs)
+
+
+        del spectrum
+                
+        logging.debug('total fit timing: {}'.format(time.time() - start_time))
         
-            return _fit
-    
+        return _fit
+        
     def fit(self, lines, fmodel='sinc', nofilter=True,
-            snr_guess=None, max_iter=None, **kwargs):
+            max_iter=None, nogvar=False,
+            **kwargs):
         """Fit lines in a spectrum
 
         Wrapper around orb.fit.fit_lines_in_spectrum.
 
         :param lines: lines to fit.
         
-        :param snr_guess: Guess on the SNR of the spectrum. Necessary
-          to make a Bayesian fit (If unknown you can set it to 'auto'
-          to try an automatic mode, two fits are made - one with a
-          predefined SNR and the other with the SNR deduced from the
-          first fit). If None a classical fit is made. (default None).
-
         :param max_iter: (Optional) Maximum number of iterations (default None)
         
         :param kwargs: kwargs used by orb.fit.fit_lines_in_spectrum.
         """
+        if 'snr_guess' in kwargs:
+            logging.warning(
+                "snr_guess is deprecated. It's value is not used anymore")
+            kwargs.pop('snr_guess')
+        
+        kwargs_orig = dict(kwargs)
+
         # prepare input params
         kwargs_orig = dict(kwargs)
         inputparams, kwargs = self.prepare_fit(
             lines, fmodel=fmodel, nofilter=nofilter, **kwargs)
 
         fit = self.prepared_fit(
-            inputparams, snr_guess=snr_guess, max_iter=max_iter, **kwargs)
+            inputparams, max_iter=max_iter, nogvar=nogvar,
+            **kwargs)
+        
+        return fit
+
+    def prepare_velocity_estimate(self, lines, vel_range, precision=10):
+        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        oversampling_ratio = (self.params.zpd_index
+                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        combs, vels = orb.utils.fit.prepare_combs(lines_cm1, self.axis.data, vel_range, oversampling_ratio, precision)
+        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio
+
+    def estimate_velocity_prepared(self, combs, vels, filter_range_pix):
+        return orb.utils.fit.estimate_velocity_prepared(
+            self.data.real, vels, combs, filter_range_pix)
+
+    def estimate_parameters(self, lines, vel_range, precision=10):
+        (combs, vels, filter_range_pix,
+         lines_cm1, oversampling_ratio) = self.prepare_velocity_estimate(
+             lines, vel_range, precision=precision)  
+        vel = self.estimate_velocity_prepared(combs, vels, filter_range_pix)
+        fluxes = self.estimate_flux(lines, vel)
+        return vel, fluxes
+    
+    def estimate_flux(self, lines, vel):
+        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        oversampling_ratio = (self.params.zpd_index
+                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        return orb.utils.fit.estimate_flux(
+            self.data.real, self.axis.data, lines_cm1, vel,
+            self.axis(self.params.filter_range).astype(int), oversampling_ratio)
 
         if fit != [] and fmodel == 'sincgauss' and np.all(np.isnan(fit['broadening'])):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
@@ -1110,7 +1155,7 @@ class StandardSpectrum(RealSpectrum):
         spe.data[np.isnan(spe.data)] = 0
         return spe
 
-    def compute_flux_correction_vector(self, deg=2, resolution=350, return_residual=False):
+    def compute_flux_correction_vector(self, deg=None, resolution=None, return_residual=False):
         """Compute flux correction vector by fitting a simulated model of the
         standard star on the observed spectrum.
         """
@@ -1118,35 +1163,41 @@ class StandardSpectrum(RealSpectrum):
             m = _sim * np.polynomial.polynomial.polyval(np.arange(_sim.size), p)
             return np.array(m, dtype=float)
 
+        ff = orb.core.FilterFile(self.params.filter_name)
+        
+        if deg is None:
+            deg = int(ff.params.flux_correction_order)
+        logging.info('flux correction fitted with an order {} polynomial'.format(deg))
+        
+        if resolution is None:
+            resolution = int(ff.params.flux_correction_resolution)
+        logging.info('flux correction fitted with a resolution R={}'.format(resolution))
+            
         sim = self.get_standard().change_resolution(resolution) # standard flux in counts/s
                
         spe = self.to_counts_s().change_resolution(resolution)
+
         
         xmin, xmax = self.get_filter_bandpass_pix(
-            border_ratio=0.05)
-        sim.data[:xmin] = 0
-        sim.data[xmax:] = 0
-        spe.data[:xmin] = 0
-        spe.data[xmax:] = 0
+            border_ratio=0.1)
+        
+        sim.data[:xmin] = sim.data[xmin]
+        sim.data[xmax:] = sim.data[xmax]
+        spe.data[:xmin] = sim.data[xmin]
+        spe.data[xmax:] = sim.data[xmax]
 
-
+        sigma = np.ones_like(spe.data, dtype=float)
+        sigma[:xmin] = 1e7
+        sigma[xmax:] = 1e7
+        
         fit = scipy.optimize.curve_fit(
             model, sim.data, spe.data,
-            p0=np.ones(deg+1, dtype=float)/10.)
+            p0=np.ones(deg+1, dtype=float)/10.,
+            sigma=sigma)
         
-        sim_fit = orb.core.Cm1Vector1d(
-            model(sim.data, *fit[0]),
-            axis=self.axis, params=self.params)
-
         poly = np.polynomial.polynomial.polyval(
             np.arange(sim.dimx), fit[0])
-        
-        xmin, xmax = self.get_filter_bandpass_pix(
-            border_ratio=-0.1)
 
-        poly[:xmin] = np.nan
-        poly[xmax:] = np.nan
-        
         # this is not a real residual but the fitted data so that both
         # the residual and the fitted polynomial can be plotted
         # together directly.
@@ -1155,11 +1206,14 @@ class StandardSpectrum(RealSpectrum):
             residual.data /= sim.data
             residual.data[:xmin] = np.nan
             residual.data[xmax:] = np.nan
-            residual.data /= np.nanmean(poly)
-            #residual.data[np.isnan(poly)] = 1.
-            
-        poly /= np.nanmean(poly)
-        poly[np.isnan(poly)] = 1.
+            residual.data /= np.nanmean(poly[xmin:xmax])
+
+        poly /= np.nanmean(poly[xmin:xmax])
+        poly[:xmin] = poly[xmin]
+        poly[xmax:] = poly[xmax]
+
+        # smooth polynomial on the borders
+        poly = orb.utils.vector.smooth(poly, deg=int(0.10*poly.size))
         
         eps = orb.core.Cm1Vector1d(
             poly, axis=self.axis, params=self.params)
@@ -1251,7 +1305,9 @@ class PhaseMaps(orb.core.Tools):
             for ikey in list(f.attrs.keys()):
                 self.params[ikey] = f.attrs[ikey]
 
-            
+
+        self.sigmaref = orb.core.FilterFile(self.params.filter_name).get_phase_fit_ref()
+        
         # detect binning
         self.dimx = self.phase_maps[0].shape[0]
         self.dimy = self.phase_maps[0].shape[1]
@@ -1314,14 +1370,19 @@ class PhaseMaps(orb.core.Tools):
 
     def get_mapped_model(self, order):
         """Return mapped model"""
+        import orb.utils.stats
+        warnings.simplefilter("ignore", category=RuntimeWarning)
         _phase_map = self.get_map(order)
         _phase_map_err = self.get_map_err(order)
-                
-        model, err = orb.utils.image.fit_phase_map(
-            _phase_map,
-            _phase_map_err,
-            self.theta_map)
+        _phase_map_err[_phase_map_err > np.nanmedian(_phase_map_err)
+                       + 3 * orb.utils.stats.unbiased_std(
+                           _phase_map_err)] = np.nan
+        _phase_map[np.isnan(_phase_map_err)] = np.nan
+        _phase_map_err[~np.isnan(_phase_map_err)] = 1
+        _phase_map_err.fill(1.)
 
+        model, err, _ = orb.utils.image.fit_map_zernike(_phase_map, 1/_phase_map_err, 5)
+        
         return model, err
 
     def modelize(self):
@@ -1408,14 +1469,14 @@ class PhaseMaps(orb.core.Tools):
             ctheta = 1. / self.unbinned_calibration_coeff_map[x, y]
         else:
             ctheta = 1. / self.calibration_coeff_map[x, y]
-            
-        model = orb.utils.fft.phase_model(self.axis, ctheta, *_coeffs)
+
+
+        model = orb.utils.fft.phase_model(self.axis, self.sigmaref, _coeffs)
         return Phase(
             model.astype(float),
             axis=self.axis, params=self.params)
-    
-
-    def generate_phase_cube(self, path, coeffs=None):
+        
+    def generate_phase_cube(self, path, coeffs=None, x_range=None, y_range=None, silent=False):
         """Generate a phase cube from the given phase maps.
 
         :param coeffs: Used to set some coefficients to a given
@@ -1423,21 +1484,36 @@ class PhaseMaps(orb.core.Tools):
           coeff to a np.nan to use the phase map value.
 
         """
-        phase_cube = np.empty((self.dimx, self.dimy, self.axis.size), dtype=float)
-        phase_cube.fill(np.nan)
         
-        progress = orb.core.ProgressBar(self.dimx)
-        for ii in range(self.dimx):
-            progress.update(
-                ii, info="computing column {}/{}".format(
-                    ii, self.dimx))
-                
-            for ij in range(self.dimy):
-                phase_cube[ii, ij, :] = self.get_phase(ii, ij, coeffs=coeffs).data
-                
-        progress.end()
+        if x_range is None:
+            x_range = (0, self.dimx)
+        if y_range is None:
+            y_range = (0, self.dimy)
 
-        orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+        phase_cube = np.empty((x_range[1] - x_range[0],
+                               y_range[1] - y_range[0],
+                               self.axis.size), dtype=float)
+        phase_cube.fill(np.nan)
+
+
+        if not silent:
+            progress = orb.core.ProgressBar(self.dimx)
+            
+        for ii in range(x_range[0],  x_range[1]):
+            if not silent:
+                progress.update(
+                    ii, info="computing column {}/{}".format(ii, self.dimx))
+                
+            for ij in range(y_range[0],  y_range[1]):
+                phase_cube[ii - x_range[0], ij - y_range[0], :] = self.get_phase(
+                    ii, ij, coeffs=coeffs).data
+                
+        if not silent:
+            progress.end()
+
+        if path is not None:
+            orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+            
         return phase_cube
         
     
@@ -1470,3 +1546,69 @@ class PhaseMaps(orb.core.Tools):
                             overwrite=True)
         if self.indexer is not None:
             self.indexer['phase_map_unwraped_0'] = phase_map_path
+
+
+#################################################
+#### CLASS HighOrderPhaseMaps ###################
+#################################################
+
+class HighOrderPhaseCube(orb.core.Data):
+    
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.config = orb.core.Tools(self.params.instrument).config
+        self.full_shape = (self.config['CAM1_DETECTOR_SIZE_X'],
+                           self.config['CAM1_DETECTOR_SIZE_Y'])
+        
+        self.x_map = np.linspace(0, self.full_shape[0], self.dimx, endpoint=False)
+        self.x_map += np.diff(self.x_map)[0] / 2.
+        self.y_map = np.linspace(0, self.full_shape[1], self.dimy, endpoint=False)
+        self.y_map += np.diff(self.y_map)[0] / 2.
+        self.maps = list()
+        for i in range(self.dimz):
+            self.maps.append(scipy.interpolate.interp2d(
+                self.x_map, self.y_map, self.data[:,:,i]))
+            
+        
+    def get_phase_coeffs(self, x, y):
+        return [imap(x, y) for imap in self.maps]
+            
+    def get_phase(self, x, y, asarr=False, axis=None):
+        if axis is None:
+            axis = self.params.phase_axis.astype(float)
+        else:
+            if isinstance(axis, orb.core.Axis):
+                axis = axis.data
+            assert isinstance(axis, np.ndarray), 'axis must be a numpy.ndarray or a orb.core.Axis instance'
+            axis = axis.astype(float)
+            
+        arr = np.polyval(self.get_phase_coeffs(x, y), axis).astype(float)
+        if asarr:
+            return arr
+        else:
+            return orb.fft.Phase(arr, axis=axis, params=self.params)
+        
+    def get_map(self, order):
+        return self.maps[-(order+1)](self.x_map, self.y_map)
+    
+    def generate_phase_cube(self, path, dimx, dimy, axis=None):
+        if axis is None:
+            axis = self.params.phase_axis.astype(float)
+            
+        x_map = np.linspace(0, self.full_shape[0], dimx, endpoint=False)
+        x_map += np.diff(x_map)[0] / 2.
+        y_map = np.linspace(0, self.full_shape[1], dimy, endpoint=False)
+        y_map += np.diff(y_map)[0] / 2.
+        
+        phase_cube = np.empty((x_map.size, y_map.size, axis.shape[0]), dtype=float)
+        phase_cube.fill(np.nan)
+        progress = orb.core.ProgressBar(x_map.size)
+        for ii in range(x_map.size):
+            progress.update(ii)
+            for ij in range(y_map.size):
+                phase_cube[ii,ij] = self.get_phase(x_map[ii], y_map[ij], asarr=True, axis=axis)
+        progress.end()
+        if path is not None:
+            orb.utils.io.write_fits(path, phase_cube, overwrite=True)
+        return phase_cube

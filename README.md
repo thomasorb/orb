@@ -46,9 +46,10 @@ conda install conda-build
 create an environment and install needed modules manually
 ```bash
 conda create -n orb3 python=3.7 
-conda install -n orb3 numpy scipy bottleneck matplotlib astropy cython h5py dill pandas pytables
+conda install -n orb3 numpy scipy matplotlib astropy cython h5py dill pandas pytables
 conda install -n orb3 -c conda-forge pyregion
 conda install -n orb3 -c astropy photutils astroquery
+conda install -n orb3 -c anaconda gitpython
 conda activate orb3
 ```
 now your prompt should be something like `(orb3) $`.
@@ -56,6 +57,7 @@ now your prompt should be something like `(orb3) $`.
 pip install gvar==9.2 --no-deps
 pip install lsqfit==11.2 --no-deps
 pip install fpdf --no-deps
+pip install gitpython --no-deps
 ```
 
 If you encounter a problem building gvar you may want to install build-essential (for Ubuntu users)

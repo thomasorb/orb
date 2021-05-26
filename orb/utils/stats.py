@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: stats.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -24,7 +24,34 @@ import logging
 import numpy as np
 import warnings
 import orb.cutils
+import sys
 
+def robust_modulo(_dat, mod):
+    """Return an array modulo mod. 
+
+    Returned values have the smallest possible absolute
+    value. e.g. -1.1 % 1 = -0.1, -0.6 % 1 = 0.4. This is perfect to
+    compute the residual of a phase fit (which is known modulo pi)
+
+    This is robust to NaN and fast.
+    """
+    warnings.simplefilter('ignore', RuntimeWarning)
+    _dat = np.copy(_dat)
+    nonan = ~np.isnan(_dat)
+    sup = (_dat > mod/2.) * nonan
+    while np.any(sup):
+        sys.stdout.write('\r{}'.format(np.sum(sup)))
+        sys.stdout.flush()
+        _dat[sup] -= mod
+        sup = (_dat > mod/2.) * nonan
+    inf = (_dat < -(mod/2.)) * nonan
+    while np.any(inf):
+        sys.stdout.write('\r{}'.format(np.sum(inf)))
+        sys.stdout.flush()
+        _dat[inf] += mod
+        inf = (_dat < -(mod/2.)) * nonan
+    sys.stdout.write('completed\n')
+    return _dat
 
 def unbiased_std(a):
     """Return the std based on the interquartile range.

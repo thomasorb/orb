@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: image.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -44,7 +44,7 @@ def query_sesame(object_name, verbose=True, degree=False, pm=False):
       (default False)
 
     :param pm: (Optional) If True proper motion is also returned
-      (default False)
+      (default False) (mu_ra*cos(dec), mu_dec)
     
     :returns: [RA, DEC]
     """

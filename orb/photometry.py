@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: photometry.py
 
-## Copyright (c) 2010-2018 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -204,7 +204,7 @@ class Photometry(object):
         It can be computed with
         cube.SpectralCube.compute_flux_calibration() or
         image.StandardImage.compute_flux_correction_factor() and
-        StandardSpectrum.compute_flux_calibration_vector().
+        fft.StandardSpectrum.compute_flux_correction_vector().
         """
         flux = orb.core.Cm1Vector1d(
             np.ones_like(cm1_axis.data, dtype=float),

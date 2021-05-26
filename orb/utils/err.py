@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: err.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -29,3 +29,5 @@ class FitInitError(ORBError) : pass
 class FitError(ORBError): pass
 
 class ValidationError(ORBError): pass
+
+class DeepFrameError(ORBError): pass

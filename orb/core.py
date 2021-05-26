@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: core.py
 
-## Copyright (c) 2010-2018 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -545,7 +545,6 @@ class Tools(object):
         # loading minimal config
         self.instrument = instrument
         self.set_config('DIV_NB', int)
-        self.config['QUAD_NB'] = self.config.DIV_NB**2
         self.set_config('BIG_DATA', bool)
         self.set_config('DETECT_STAR_NB', int)
         self.set_config('INIT_FWHM', float)
@@ -691,6 +690,9 @@ class Tools(object):
     def _parse_filter_name(self, filter_name):
         """Parse a filter name which can sometimes be a full filter file path
         """
+        if str(filter_name).upper() == 'NONE':
+            filter_name = 'FULL'
+            
         for ifilter in self.filters:
             if ifilter in filter_name: return ifilter
         raise Exception('this name or path does not point to any known filter: {}'.format(
@@ -716,6 +718,26 @@ class Tools(object):
         return filter_file_path
 
     
+    def _get_old_phase_file_path(self, filter_name):
+        """Return the full path to the phase file given the name of
+        the filter.
+
+        The file name must be 'phase_FILTER_NAME.orb' and it must be
+        located in orb/data/.
+
+        :param filter_name: Name of the filter.
+        """
+        filter_name = self._parse_filter_name(filter_name)
+        phase_file_path =  self._get_orb_data_file_path(
+            "phase_" + filter_name + ".old.hdf5")
+        
+        if not os.path.exists(phase_file_path):
+             logging.warning(
+                 "Phase file %s does not exist !"%phase_file_path)
+             return None
+         
+        return phase_file_path
+
     def _get_phase_file_path(self, filter_name):
         """Return the full path to the phase file given the name of
         the filter.
@@ -850,8 +872,10 @@ class Tools(object):
     def _get_standard_radec(self, standard_name,
                             standard_table_name='std_table.orb',
                             return_pm=False):
-        """
-        Return standard RA and DEC and optionally PM
+        """Return standard RA and DEC and optionally PM.
+
+        First tries to get coordinates from SESAME then use the table
+        if it fails.
         
         :param standard_name: Name of the standard star. Must be
           recorded in the standard table.
@@ -860,8 +884,17 @@ class Tools(object):
           table file (default std_table.orb).
 
         :param return_pm: (Optional) Returns also proper motion if
-          recorded (in mas/yr), else returns 0.
+          recorded (in mas/yr, pm_ra_cos, pm_dec), else returns 0.
+
         """
+        coords = orb.utils.web.query_sesame(
+            standard_name, degree=True, pm=return_pm)
+        if coords == []:            
+            logging.warning('Standard name could not be resolved with SESAME. Using table.')
+        else:
+            logging.info('Standard name resolved with SESAME.')
+            return coords
+            
         std_table = orb.utils.io.open_file(self._get_standard_table_path(
             standard_table_name=standard_table_name), 'r')
 
@@ -1388,6 +1421,7 @@ class Lines(Tools):
         '[OIII]4363':436.3209,
         '[OIII]4959':495.8911,
         '[OIII]5007':500.6843,
+        '[NII]5755':575.459,
         'HeI5876':587.567, 
         '[OI]6300':630.0304, 
         '[SIII]6312':631.206, 
@@ -1817,7 +1851,7 @@ class Data(object):
           supplied in the params dictionnary.
 
         """        
-        LIMIT_SIZE = 100
+        LIMIT_SIZE = 2 # Gb
                 
         # load from file
         if isinstance(data, str):    
@@ -1845,11 +1879,12 @@ class Data(object):
                         _data_path = 'vector'
 
                     # load data
-                    if (hdffile[_data_path].ndim > 2
-                        and np.any(hdffile[_data_path].shape > LIMIT_SIZE)):
-                        raise Exception('file too big to be opened this way')
-                    else:
-                        self.data = hdffile[_data_path][:]
+                    if (hdffile[_data_path].ndim > 2):
+                        memsize = hdffile[_data_path].size * 8 / 1e9
+                        if np.any(memsize > LIMIT_SIZE):
+                            raise Exception('file too big to be opened this way: {} Gb > {} Gb'.format(memsize, LIMIT_SIZE))
+                    
+                    self.data = hdffile[_data_path][:]
 
                     # load params
                     for iparam in hdffile.attrs:
@@ -1970,8 +2005,8 @@ class Data(object):
         # load axis
         if axis is not None:
             axis = Axis(axis)
-            if axis.dimx != self.dimx:
-                raise TypeError('axis must have the same length as data first axis')
+            if axis.dimx != self.shape[-1]:
+                raise TypeError('axis must have the same length as data last axis')
             self.axis = axis
             
         # load mask
@@ -2237,6 +2272,10 @@ class Data(object):
             os.remove(path)
         with orb.utils.io.open_hdf5(path, 'w') as hdffile:
             if self.has_params():
+                self.params['program'] = 'ORB version {}'.format(orb.version.__version__)
+                self.params['author'] = 'thomas.martin.1@ulaval.ca'
+                self.params['date'] = str(datetime.datetime.now())
+
                 for iparam in self.params:
                     try:
                         hdffile.attrs[iparam] = self.params[iparam]
@@ -2851,6 +2890,10 @@ class FilterFile(Vector1d):
         """Return phase fit order."""
         return self.params.phase_fit_order
 
+    def get_phase_fit_ref(self):
+        """Return reference wavenumber for phase fitting"""
+        return self.params.polyref
+
     def get_filter_bandpass(self):
         """Return filter bandpass in nm"""
         return self.params.bandpass_min_nm, self.params.bandpass_max_nm
@@ -2896,8 +2939,9 @@ class FilterFile(Vector1d):
     def get_high_order_phase(self):
         params = dict(self.params)
         params['filter_name'] = self.filter_name
-        return Cm1Vector1d(self.tools._get_phase_file_path(self.filter_name),
-                           params=params)
+        return orb.fft.HighOrderPhaseCube(
+            self.tools._get_phase_file_path(self.filter_name),
+            params=params)
 
 
 

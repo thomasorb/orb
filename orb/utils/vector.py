@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: vector.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -325,7 +325,7 @@ def robust_unwrap(vec, dis):
     :param dis: discontinuity (eg. np.pi)
     """
     orb.utils.validate.is_1darray(vec)
-    orb.utils.validate.has_dtype(vec, float)
+    
     nvec = np.copy(vec)
 
     nvec = np.fmod(nvec, dis)

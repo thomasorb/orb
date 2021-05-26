@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: spectrum.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -561,7 +561,7 @@ def sincgauss1d(x, h, a, dx, fwhm, sigma):
 
     if np.isclose(gvar.mean(sigma), 0.):
         return sinc1d(x, h, a, dx, fwhm)
-    
+
     width = gvar.fabs(fwhm) / orb.constants.FWHM_SINC_COEFF
     width /= np.pi ###    
     

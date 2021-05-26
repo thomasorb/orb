@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: cube.py
 
-## Copyright (c) 2010-2018 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -28,15 +28,19 @@ import numpy as np
 import warnings
 import os
 import logging
+import datetime
 
 import orb.core
 import orb.old
 import orb.utils.io
 import orb.utils.misc
 import orb.utils.astrometry
+import orb.utils.err
 import orb.fft
 import orb.image
 import orb.cutils
+import orb.version
+import astropy.io.fits
 
 import scipy.interpolate
 import gvar
@@ -543,8 +547,13 @@ class HDFCube(orb.core.WCSData):
         return gain
 
     
-    def get_deep_frame(self, recompute=False):
+    def get_deep_frame(self, recompute=False, compute=True):
         """Return the deep frame of a cube (in counts, i.e. e- x gain).
+
+
+        :param compute: (Optional) If True, deep frame can be computed
+          if not already present. If False, raise an exception when
+          deep frame is not already present (default True).
 
         :param recompute: (Optional) Force deep frame computation
           even if it is already present in the cube (default False).
@@ -572,8 +581,10 @@ class HDFCube(orb.core.WCSData):
                     df *= self.dimz
         
             elif self.is_level1():
-                df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
-
+                if compute:
+                    df = self.oldcube.get_mean_image(recompute=recompute) * self.dimz
+                else: raise orb.utils.err.DeepFrameError('deep frame not already computed.')
+                    
         if df is None:
             df = self.compute_sum_image()
 
@@ -597,8 +608,19 @@ class HDFCube(orb.core.WCSData):
 
         This is just the config high order phase
         """
-        return orb.fft.Phase(self._get_phase_file_path(self.params.filter_name))
+        try:
+            path = self._get_phase_file_path(self.params.filter_name)
+        except Exception as e:
+            logging.warning('No high order phase loaded for filter {}!: {}'.format(
+                self.params.filter_name, e))
+            path = None
         
+        if path is not None:
+            return orb.fft.HighOrderPhaseCube(path)
+        else:
+            logging.warning('No high order phase loaded for filter {}!'.format(
+                self.params.filter_name))
+            return None
 
     def get_dxdymaps(self):
         """Return dxdymaps.
@@ -740,8 +762,31 @@ class HDFCube(orb.core.WCSData):
 
         :param path: Path to the FITS file
         """
-        raise NotImplementedError()
-                
+        # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
+
+        wcshdr = self.get_wcs().to_header()
+
+        hdr = astropy.io.fits.PrimaryHDU().header
+        hdr['NAXIS'] = 3
+        hdr['NAXIS1'] = self.dimx
+        hdr['NAXIS2'] = self.dimy
+        hdr['NAXIS3'] = self.dimz
+        hdr['BITPIX'] = (-32, 'np.float32')
+        hdr.update(wcshdr)
+        
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        
+        shdu = astropy.io.fits.StreamingHDU(path, hdr)
+        progress = orb.core.ProgressBar(self.dimz)
+        for iz in range(self.dimz):
+            progress.update(iz, info='Exporting frame {}'.format(iz))
+            shdu.write(self[:,:,iz].real.astype(np.float32).T)
+        progress.end()
+        shdu.close()
+            
     def get_frame_header(self, index):
         """Return the header of a frame given its index in the list.
 
@@ -948,12 +993,8 @@ class HDFCube(orb.core.WCSData):
         self.params['airmass'] = np.array(airmass)
         return self.params.airmass
 
-    def detect_stars(self, **kwargs):
-        """Detect valid stars in the image
-
-        :param kwargs: orb.image.Image.detect_stars kwargs.
-        """
-        if self.has_dataset('deep_frame'):
+    def get_detection_frame(self):
+        if self.has_dataset('deep_frame') or hasattr(self, 'deep_frame'):
             logging.info('detecting stars using the deep frame')
             df = self.get_deep_frame().data
         else:
@@ -961,8 +1002,19 @@ class HDFCube(orb.core.WCSData):
                 self.config.DETECT_STACK))
             _stack = self[:,:,:self.config.DETECT_STACK]
             df = np.nanmedian(_stack, axis=2)
-        df = orb.image.Image(df, params=self.params)
-        return df.detect_stars(**kwargs)
+        return orb.image.Image(df, params=self.params)
+        
+        
+    def detect_stars(self, **kwargs):
+        """Detect valid stars in the image
+
+        :param kwargs: orb.image.Image.detect_stars kwargs.
+        """
+        return self.get_detection_frame().detect_stars(**kwargs)
+
+    def detect_fwhm(self, star_list):
+        return self.get_detection_frame().detect_fwhm(star_list)
+
 
     def fit_stars_in_frame(self, star_list, index, **kwargs):
         """Fit stars in frame
@@ -977,6 +1029,7 @@ class HDFCube(orb.core.WCSData):
         return im.fit_stars(star_list, **kwargs)
 
     def fit_stars_in_cube(self, star_list,
+                          path=None,
                           correct_alignment=False,
                           alignment_vectors=None,
                           add_cube=None, **kwargs):
@@ -995,6 +1048,8 @@ class HDFCube(orb.core.WCSData):
             see :meth:`astrometry.utils.fit_stars_in_frame` for more
             information.
     
+        :param path: (Optional) path where the results are saved to.
+
         :param correct_alignment: (Optional) If True, the initial star
           positions from the star list are corrected by their last
           recorded deviation. Useful when the cube is smoothly
@@ -1110,7 +1165,7 @@ class HDFCube(orb.core.WCSData):
           
             # load data
             progress.update(ik, info="loading: " + str(ik))
-            frames = self[:,:,ik:ik+ncpus]
+            frames = np.copy(self[:,:,ik:ik+ncpus])
             if add_cube is not None:
                 frames += added_cube[:,:,ik:ik+ncpus] * added_cube_scale
             frames = np.atleast_3d(frames)
@@ -1120,7 +1175,10 @@ class HDFCube(orb.core.WCSData):
             progress.update(ik, info="computing photometry: " + str(ik))
             jobs = [(ijob, job_server.submit(
                 _fit_stars_in_frame,
-                args=(frames[:,:,ijob], star_lists[ijob], fwhm_pix, params, kwargs),
+                args=(frames[:,:,ijob], star_lists[ijob],
+                      fwhm_pix,
+                      params,
+                      dict(kwargs)),
                 modules=("import logging",
                          "import orb.utils.stats",
                          "import orb.utils.image",
@@ -1128,7 +1186,6 @@ class HDFCube(orb.core.WCSData):
                          "import numpy as np",
                          "import math",
                          "import orb.cutils",
-                         "import bottleneck as bn",
                          "import warnings",
                          "from orb.utils.astrometry import *")))
                     for ijob in range(ncpus)]
@@ -1144,11 +1201,15 @@ class HDFCube(orb.core.WCSData):
                         if 'fwhm_pix' in res:
                             fwhm_mean[ik+ijob] = np.nanmean(orb.utils.stats.sigmacut(res['fwhm_pix'].values))
             
-            
+
+        progress.end()
         self._close_pp_server(job_server)
         
-        progress.end()
-  
+        
+        if path is not None:
+            orb.utils.io.save_dflist(fit_results, path)
+            logging.info('fit results saved as {}'.format(path))
+        
         return fit_results
 
     def get_raw_alignement_vectors(self, star_number=60, searched_size=80):
@@ -1183,7 +1244,7 @@ class HDFCube(orb.core.WCSData):
             
     
     def get_alignment_vectors(self, star_list, min_coeff=0.2,
-                              alignment_vectors=None):
+                              alignment_vectors=None, path=None):
         """Return alignement vectors
 
         :param star_list: list of stars
@@ -1192,14 +1253,23 @@ class HDFCube(orb.core.WCSData):
             fitted to assume a good enough calculated disalignment
             (default 0.2).
 
+        :param path: If not None, fit results are written to this path
+
         :return: alignment_vector_x, alignment_vector_y, alignment_error
         """
         star_list = orb.utils.astrometry.load_star_list(star_list)
-        fit_results = self.fit_stars_in_cube(star_list, correct_alignment=True,
+        # warning: multi_fit must stay at False (if multi_fit is True,
+        # a problem on one star affects evrything else)
+        fit_results = self.fit_stars_in_cube(star_list,
+                                             path=path,
+                                             correct_alignment=True,
                                              alignment_vectors=alignment_vectors,
                                              no_aperture_photometry=True,
-                                             multi_fit=False, # sure ???
-                                             fix_height=False)
+                                             multi_fit=False,
+                                             # must star af FALSE
+                                             fix_height=False,
+                                             filter_background=True)
+            
         return orb.utils.astrometry.compute_alignment_vectors(fit_results)
     
 
@@ -1238,6 +1308,10 @@ class RWHDFCube(HDFCube):
                 f.create_dataset('data', shape=shape, chunks=True, dtype=dtype)
                 f.attrs['level3'] = True
                 f.attrs['instrument'] = instrument
+                f.attrs['program'] = 'ORB version {}'.format(orb.version.__version__)
+                f.attrs['author'] = 'thomas.martin.1@ulaval.ca'
+                f.attrs['date'] = str(datetime.datetime.now())
+
 
         elif shape is not None:
             raise ValueError('shape or dtype must be set only when creating a new HDFCube')
@@ -1247,6 +1321,9 @@ class RWHDFCube(HDFCube):
         if self.is_level1(): raise Exception('Old cubes are not writable. Please export the old cube to a new cube with writeto()')
 
         if self.has_params:
+            self.params['program'] = 'ORB version {}'.format(orb.version.__version__)
+            self.params['author'] = 'thomas.martin.1@ulaval.ca'
+            self.params['date'] = str(datetime.datetime.now())
             self.set_params(self.params)
 
     def __setitem__(self, key, value):
@@ -1610,11 +1687,6 @@ class Cube(HDFCube):
                   mean=True, square_filter=False):
         """Integrate a cube under a filter function and generate an image
 
-        :math:`I = \int F(\sigma)S(\sigma)\text{d}\sigma`
-
-        with :math:`I`, the image, :math:`S` the spectral cube, :math:`F` the
-        filter function.
-
         :param filter_function: Must be an orb.core.Cm1Vector1d
           instance or the name of a filter registered in orb/data/
 
@@ -1627,9 +1699,8 @@ class Cube(HDFCube):
         :param ymin: (Optional) upper boundary of the ROI along x axis (default
           None, i.e. max)
 
-        :param ymax: (Optional) upper boundary of the ROI along y axis (default
-          None, i.e. max)
-
+        :param ymax: (Optional) upper boundary of the ROI along y axis (default None, i.e. max)
+        
         """
         if isinstance(filter_function, str):
             filter_function = orb.core.Vector1d(self._get_filter_file_path(filter_function))
@@ -2170,16 +2241,22 @@ class SpectralCube(Cube):
             if not self.has_wavenumber_calibration():
                 raise Exception('if the spectral cube is not calibrated, xy must be provided')
             xy = [self.dimx//2, self.dimy//2]
-
         return orb.utils.spectrum.cm12pix(
-            self.get_axis(xy[0], xy[1]).data, self.get_filter_range())
+            self.get_axis(int(xy[0]), int(xy[1])).data, self.get_filter_range())
 
+    def get_deep_frame(self, recompute=False, compute=False):
+        try:
+            return Cube.get_deep_frame(self, recompute=recompute, compute=compute)
+        except orb.utils.err.DeepFrameError:
+            logging.warning("Deep frame not present in the cube. Replaced with a map of zeros. Please attach it with cube.deep_frame = orb.utils.io.read_fits('deep_frame.fits')")
+            self.deep_frame = np.zeros((self.dimx, self.dimy), dtype=float)
+            return self.get_deep_frame()
+    
     def get_axis(self, x, y):
         """Return the spectral axis at x, y
         """
-        self.validate()
-        orb.utils.validate.index(x, 0, self.dimx, clip=False)
-        orb.utils.validate.index(y, 0, self.dimy, clip=False)
+        orb.utils.validate.index(x, 0, int(self.dimx), clip=False)
+        orb.utils.validate.index(y, 0, int(self.dimy), clip=False)
         
         axis = orb.utils.spectrum.create_cm1_axis(
             self.dimz, self.params.step, self.params.order,
@@ -2619,10 +2696,13 @@ class SpectralCube(Cube):
                 std_im = None
         
         if std_im is not None:
-            eps_mean = std_im.compute_flux_correction_factor()
-            logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
-
-            eps_vector = eps_vector.multiply(eps_mean)
+            try:
+                eps_mean = std_im.compute_flux_correction_factor()
+            except Exception as e:
+                logging.warning('error during compute_flux_correction_factor: {}'.format(e))
+            else:
+                logging.info('absolute correction factor: {:.2f}'.format(eps_mean))
+                eps_vector = eps_vector.multiply(eps_mean)
                 
         return photom.compute_flambda(self.get_base_axis(), eps=eps_vector)
 

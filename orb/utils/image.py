@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: image.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -25,7 +25,6 @@ import numpy as np
 import scipy
 import warnings
 from scipy import interpolate, optimize, ndimage, signal
-import bottleneck as bn
 
 import orb.utils.validate
 import orb.utils.stats
@@ -185,7 +184,7 @@ def check_frames(frames, sigma_reject=2.5):
     :param sigma_reject: (Optional) Rejection coefficient (default 2.5)
     
     """
-    z_median = np.array([bn.nanmedian(frames[:,:,iframe])
+    z_median = np.array([np.nanmedian(frames[:,:,iframe])
                          for iframe in range(frames.shape[2])])
     z_median_cut = orb.utils.stats.sigmacut(
         z_median, sigma=sigma_reject)
@@ -611,6 +610,53 @@ def low_pass_image_filter(im, deg):
 
     return orb.cutils.low_pass_image_filter(np.copy(im).astype(float), int(deg))
 
+def filter_background(im):
+    """Filter modulated background
+    """
+    med = np.nanmedian(im)
+    hp_im = high_pass_diff_image_filter(im, deg=1)
+    hp_im = low_pass_image_filter(hp_im, deg=1)
+    hp_im += med
+    return hp_im
+
+def smooth_map(pm, binning=20, smoothdeg=3):
+    """Fast map smoothin. 
+    """
+    pmb = orb.utils.image.nanbin_image(pm, binning)
+    pmbs = ndimage.median_filter(pmb, size=smoothdeg, mode='nearest')
+    pmbs = orb.utils.image.low_pass_image_filter(pmbs, smoothdeg)
+    mod = orb.cutils.unbin_image(pmbs, pm.shape[0], pm.shape[1])
+    err = pm - mod
+    logging.info('smoothing residual std: {}'.format(np.nanstd(err)))
+    return mod, err
+
+def gradient_map(dimx, dimy, h, da, db):
+    """Simple gradient map model"""
+    m = np.zeros((dimx, dimy), dtype=float)
+    m += ((np.arange(dimx) - dimx/2) * da).reshape((dimx,1))
+    m += ((np.arange(dimy) - dimy/2) * db).reshape((1,dimy))
+    return m + h
+
+def fit_map_gradient(im, im_err):
+    
+    nonans = ~np.isnan(im) * ~np.isnan(im_err)
+    im = np.copy(im)
+    im_err = np.copy(im_err)
+    
+    def diff(p):
+        return ((im - gradient_map(im.shape[0], im.shape[1], *p))/im_err)[nonans]
+    
+    
+    fit = scipy.optimize.least_squares(
+        diff, (0,0,0), loss='soft_l1')
+    mod = gradient_map(im.shape[0], im.shape[1], *fit.x)
+    err = im - mod
+    logging.info('gradient modeling params: {}'.format(fit.x))
+    logging.info('gradient modeling error: {:.2e}'.format(
+        orb.utils.stats.unbiased_std(err)))
+    return mod, err
+ 
+    
 
 def fit_phase_map(data_map, err_map, theta_map):
     """Fit an order 0 phase map with a simple cos(theta) model
@@ -681,7 +727,8 @@ def fit_map_theta(data_map, err_map, theta_map):
 
     w = 1. / np.array(sdevs)
     w /= np.nanmax(w)
-    model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=None)
+    w=None
+    model = interpolate.UnivariateSpline(okthetas, means, w=w, ext=0, k=3, s=0)
     model_err = interpolate.UnivariateSpline(okthetas, sdevs, w=w, ext=0, k=3, s=None)   
 
     err = (model(theta_map) - data_map)[np.nonzero(pixmap)]
@@ -739,7 +786,7 @@ def fit_map_zernike(data_map, weights_map, nmodes):
     res_map = data_map - data_map_fit
     fit_error_map = np.abs(res_map) / np.abs(data_map)
     fit_error_map[np.isinf(fit_error_map)] = np.nan
-    fit_res_std = np.nanstd(res_map)
+    fit_res_std = orb.utils.stats.unbiased_std(res_map)
     fit_error = np.nanmedian(fit_error_map)
     logging.info('Standard deviation of the residual: {}'.format(fit_res_std))
     logging.info('Median relative error (err/val)): {:.2f}%'.format(
@@ -1322,11 +1369,11 @@ def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
     else:
         return params, new_calib_laser_map
 
-def unwrap_phase_map0(phase_map):
+def unwrap_phase_map0(phase_map, bin_size=20, line_size=30):
     """
-    Phase is defined modulo pi/2. The Unwrapping is a
+    Phase is defined modulo pi. The Unwrapping is a
     reconstruction of the phase so that the distance between two
-    neighbour pixels is always less than pi/4. Then the real
+    neighbour pixels is always less than pi/2. Then the real
     phase pattern can be recovered and fitted easily.
     
     The idea is the same as with np.unwrap() but in 2D, on a
@@ -1336,8 +1383,6 @@ def unwrap_phase_map0(phase_map):
     :param phase_map: Order 0 phase map.
     """
 
-    BIN_SIZE = 20
-    LINE_SIZE = 30
 
     def unwrap(val, target):
         while abs(val - target) > np.pi / 2.:
@@ -1359,7 +1404,7 @@ def unwrap_phase_map0(phase_map):
 
     def unwrap_all(pm0, bin_size):
         test_line = np.nanmedian(
-            pm0[:, int(pm0.shape[1]//2-LINE_SIZE//2):int(pm0.shape[1]//2+LINE_SIZE//2)],
+            pm0[:, int(pm0.shape[1]//2-line_size//2):int(pm0.shape[1]//2+line_size//2)],
             axis=1)
         test_line_init = np.copy(test_line)
         for ii in range(0, test_line.shape[0]-bin_size//2):
@@ -1373,12 +1418,12 @@ def unwrap_phase_map0(phase_map):
         pm0 = (pm0.T + diff.T).T
         return pm0
 
-    phase_map = np.fmod(phase_map, np.pi)
+    phase_map = orb.utils.stats.robust_modulo(phase_map, np.pi)
 
     # unwrap pixels along columns
-    phase_map = unwrap_columns(phase_map, BIN_SIZE)
+    phase_map = unwrap_columns(phase_map, bin_size)
     # unwrap columns along a line
-    phase_map = unwrap_all(phase_map, BIN_SIZE)
+    phase_map = unwrap_all(phase_map, bin_size)
 
     phase_map[np.nonzero(np.isnan(phase_map))] = 0.
 

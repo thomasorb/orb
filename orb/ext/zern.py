@@ -52,11 +52,11 @@ def mk_rad_mask(r0, r1=None, norm=True, center=None, dtype=np.float,
 	# 2.0/r0 first and multiply r0v with it depending on **norm**, this will 
 	# yield different results due to rounding errors.
 	if (norm):
-		r0v = np.linspace(-1-center[0], 1-center[0], r0).astype(dtype).reshape(-1,1)
-		r1v = np.linspace(-1-center[1], 1-center[1], r1).astype(dtype).reshape(1,-1)
+		r0v = np.linspace(-1-center[0], 1-center[0], int(r0)).astype(dtype).reshape(-1,1)
+		r1v = np.linspace(-1-center[1], 1-center[1], int(r1)).astype(dtype).reshape(1,-1)
 	else:
-		r0v = np.linspace(0-center[0], r0-center[0], r0).astype(dtype).reshape(-1,1)
-		r1v = np.linspace(0-center[1], r1-center[1], r1).astype(dtype).reshape(1,-1)
+		r0v = np.linspace(0-center[0], r0-center[0], int(r0)).astype(dtype).reshape(-1,1)
+		r1v = np.linspace(0-center[1], r1-center[1], int(r1)).astype(dtype).reshape(1,-1)
 	
 	if (getxy):
 		return r0v, r1v
@@ -297,7 +297,10 @@ def fit_zernike(wavefront, zern_data={}, nmodes=10, startmode=1, fitweight=None,
 		wf_w = ((wavefront[yslice, xslice])[grid_mask]).reshape(1,-1) * weight
 		#wf_zern_vec = np.dot(wf_w, np.linalg.pinv(zern_basismat[:, grid_vec] * weight)).ravel()
 		# This is 5x faster:
-		wf_zern_vec = np.linalg.lstsq((zern_basismat[:, grid_vec] * weight).T, wf_w.ravel())[0]
+		wf_zern_vec = np.linalg.lstsq(
+                        (zern_basismat[:, grid_vec] * weight).T,
+                        wf_w.ravel(),
+                        rcond=None)[0]
 	else:
 		# LSQ fit with data. Only fit inside grid_mask
 

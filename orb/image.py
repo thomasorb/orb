@@ -3,7 +3,7 @@
 # author : Thomas Martin (thomas.martin.1@ulaval.ca)
 # File: image.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -55,6 +55,7 @@ import orb.utils.vector
 import orb.utils.web
 import orb.utils.misc
 import orb.utils.io
+import orb.utils.graph
 
 import pylab as pl
 import matplotlib.cm
@@ -94,7 +95,7 @@ class Frame2D(orb.core.WCSData):
             
         return astropy.stats.sigma_clipped_stats(_data, sigma=3.0)
 
-    def crop(self, cx, cy, size):
+    def crop(self, cx, cy, size, return_cutout=False):
         """Return a portion of the image as another Frame2D instance.
 
         :param cx: X center position
@@ -104,6 +105,9 @@ class Frame2D(orb.core.WCSData):
         :param size: Size of the cropped rectangle. A tuple (sz,
           sy). Can be single int in which case the cropped data is a
           box.
+
+        :param return_cutout: If True return only the cutout, not a
+          new image object (default False).
 
         .. warning:: size of the returned box is not guaranteed if cx
           and cy are on the border of the image.
@@ -120,6 +124,9 @@ class Frame2D(orb.core.WCSData):
         cutout = astropy.nddata.Cutout2D(
             self.data.T, position=[cx, cy],
             size=size, wcs=self.get_wcs())
+
+        if return_cutout:
+            return cutout
         
         newim = self.copy(data=cutout.data.T)
         newim.update_params(cutout.wcs.to_header(relax=True))
@@ -128,61 +135,20 @@ class Frame2D(orb.core.WCSData):
         newim.set_wcs(cutout.wcs)
         return newim
 
-    def imshow(self, figsize=(15,15), perc=99, cmap='viridis', wcs=True, alpha=1, ncolors=None,
-               vmin=None, vmax=None):
+    def imshow(self, wcs=True, **kwargs):
         """Convenient image plotting function
 
         :param figsize: size of the figure (same as pyplot.figure's figsize keyword)
 
-        :param perc: percentile of the data distribution used to scale
-          the colorbar. Can be a tuple (min, max) or a scalar in which
-          case the min percentile will be 100-perc.
-
-        :param cmap: colormap
-
         :param wcs: if True, display wcs coordinates. Else, pixel coordinates are shown.
 
-        :param alpha: image opacity (if another image is displayed above)
-
-        :param ncolors: if an integer is passed, the colorbar is
-          discretized to this number of colors.
-        
-        :param vmin: min value used to scale the colorbar. If set the
-          perc parameter is not used.
-
-        :param vmax: max value used to scale the colorbar. If set the
-          perc parameter is not used.
+        :params kwargs: other kwargs of orb.utils.graph.imshow()
         """
-        try:
-            iter(perc)
-        except Exception:
-            perc = np.clip(float(perc), 50, 100)
-            perc = 100-perc, perc
-
-        else:
-            if len(list(perc)) != 2:
-                raise Exception('perc should be a tuple of len 2 or a single float')
-
-        data = self.data.real.astype(float)
-            
-        if vmin is None: vmin = np.nanpercentile(data, perc[0])
-        if vmax is None: vmax = np.nanpercentile(data, perc[1])
-        
-        if ncolors is not None:
-            cmap = getattr(matplotlib.cm, cmap)
-            norm = matplotlib.colors.BoundaryNorm(np.linspace(vmin, vmax, ncolors),
-                                                  cmap.N, clip=True)
-        else:
-            norm = None
-            
-        fig = pl.figure(figsize=figsize)
         if wcs:
-            ax = fig.add_subplot(111, projection=self.get_wcs())
-            ax.coords[0].set_major_formatter('d.dd')
-            ax.coords[1].set_major_formatter('d.dd')
-        pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap,
-                  origin='lower', alpha=alpha,norm=norm)
-        
+            wcs = self.get_wcs()
+        else:
+            wcs = None
+        orb.utils.graph.imshow(self.data, wcs=wcs, **kwargs)
 
 #################################################
 #### CLASS Image ################################
@@ -357,7 +323,7 @@ class Image(Frame2D):
         self.params['CTYPE1'] = 'RA---TAN'
         self.params['CTYPE2'] = 'DEC--TAN'
             
-    def find_object(self, is_standard=False, return_radec=False):
+    def find_object(self, is_standard=False, return_radec=False, optimize=True):
         """Try to find the object given the name in the header
 
         :param is_standard: if object is a standard, do not try to
@@ -366,29 +332,35 @@ class Image(Frame2D):
         :param return_radec: if true, radec coordinates are retruned
           instead of image coordinates (pixel position).
         """
+        OPTIMIZE_BOX_SIZE = 15
         object_found = False
         if not is_standard:
-            logging.info('resolving coordinates of {}'.format(self.params.OBJECT))
-            try:
-                print(astropy.coordinates.get_icrs_coordinates(self.params.OBJECT))
-                object_found = True
-            except NameResolveError:
+            logging.info('resolving coordinates of {}'.format(
+                self.params.OBJECT.strip().upper()))
+            coords = orb.utils.web.query_sesame(
+                self.params.OBJECT, degree=True, pm=True)
+
+            if coords == []:
                 logging.debug('object name could not be resolved')
-                
-        logging.info('looking in the standard table for {}'.format(self.params.OBJECT))
-        try:
-            std_name = ''.join(self.params.OBJECT.strip().split()).upper()
-            std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
-                std_name, return_pm=True)
-            object_found = True
-        except Exception:
-            logging.warning('object name not found in the standard table')
+            else:
+                std_ra, std_dec, std_pm_ra, std_pm_dec = coords
+                object_found = True                
+
+        if not object_found:
+            try:
+                std_name = ''.join(self.params.OBJECT.strip().split()).upper()
+                std_ra, std_dec, std_pm_ra, std_pm_dec = self._get_standard_radec(
+                    std_name, return_pm=True)
+                object_found = True
+            except Exception:
+                logging.warning('object name not found in the standard table')
 
         if not object_found:
             raise Exception('object coordinates could not be resolved')
 
         std_yr_obs = float(self.params['DATE-OBS'].split('-')[0])
-        pm_orig_yr = 2000 # radec are considered to be J2000
+        pm_orig_yr = 2000 # radec are J2000 in ICRS frame
+
         # compute ra/dec with proper motion
         std_ra, std_dec = orb.utils.astrometry.compute_radec_pm(
             std_ra, std_dec, std_pm_ra, std_pm_dec,
@@ -398,6 +370,17 @@ class Image(Frame2D):
         std_dec_str = '{:.0f}:{:.0f}:{:.3f}'.format(
             *orb.utils.astrometry.deg2dec(std_dec))
         logging.info('Object {} RA/DEC: {} ({:.3f}) {} ({:.3f}) (corrected for proper motion)'.format(self.params.OBJECT, std_ra_str, std_ra, std_dec_str, std_dec))
+
+        if optimize:
+            x, y = np.squeeze(self.world2pix([std_ra, std_dec]))
+            crop = self.crop(x, y, OPTIMIZE_BOX_SIZE, return_cutout=True)
+            max_index = np.unravel_index(
+                np.nanargmax(crop.data.T), shape=crop.data.T.shape)
+            ((ymin, ymax), (xmin, xmax)) = crop.bbox_original
+            newx, newy = max_index[0] + xmin, max_index[1] + ymin
+            std_ra, std_dec = np.squeeze(self.pix2world([newx, newy]))
+            del crop
+            
         if not return_radec:
             return np.squeeze(self.world2pix([std_ra, std_dec]))
         else:
@@ -489,8 +472,9 @@ class Image(Frame2D):
         return sources
 
         
-    def detect_stars(self, min_star_number=30, max_roundness=0.1,
-                     max_radius_coeff=1., path=None, saturation_threshold=None):
+    def detect_stars(self, min_star_number=30, max_roundness=0.5,
+                     max_radius_coeff=1.3, path=None, saturation_threshold=None,
+                     filter_background=False):
         """Detect star positions in data.
 
         :param min_star_number: Minimum number of stars to
@@ -501,20 +485,37 @@ class Image(Frame2D):
         :param path: (Optional) Path to the output star list file. If
           None, nothing is written.
 
+        :param saturation_threshold: (Optional) reject stars higher
+          than this threshold. Can be a float, False or None. If
+          False: saturation_threshold is set to 99.9th percentile. If
+          None (default) it is set to 0.45 * 99.9th percentile to
+          avoid selecting stars which will saturate at ZPD.
+
         """
         DETECT_THRESHOLD = 5
         FWHM_STARS_NB = 30
+
+        data = np.copy(self.data.T)
+        if filter_background:
+            data = orb.utils.image.filter_background(data)
         
-        mean, median, std = self.get_stats()
-        daofind = photutils.DAOStarFinder(fwhm=self.get_fwhm_pix(),
-                                          threshold=DETECT_THRESHOLD * std)
-        sources = daofind(self.data.T - median).to_pandas()
+        daofind = photutils.DAOStarFinder(
+            fwhm=self.get_fwhm_pix(),
+            threshold=DETECT_THRESHOLD * orb.utils.stats.unbiased_std(data))
+            
+        sources = daofind(data - np.nanmedian(data)).to_pandas()
         if len(sources) == 0: raise Exception('no star detected, check input image')
         logging.debug('initial number of stars: {}'.format(len(sources)))
         
         # this 0.45 on the saturation threshold ensures that stars at ZPD won't saturate
+        # avoids also too bright stars
+        if saturation_threshold is False:
+            saturation_threshold = np.nanpercentile(data, 99.999)
+            logging.debug('saturation threshold at maximum: {}'.format(saturation_threshold))
         if saturation_threshold is None:
-            saturation_threshold = np.nanmax(self.data) * 0.45 
+            saturation_threshold = np.nanpercentile(data, 99.999) * 0.45
+            logging.debug('saturation threshold at half maximum: {}'.format(saturation_threshold))
+            
         sources = sources[sources.peak < saturation_threshold]
         logging.debug('number of stars after peak filter: {}'.format(len(sources)))
             
@@ -612,9 +613,9 @@ class Image(Frame2D):
         return phot_table
     
     def register(self, max_stars_detect=60,
-                 max_roundness=0.2,
-                 max_radius_coeff=1.,
-                 saturation_threshold=None,
+                 max_roundness=0.5,
+                 max_radius_coeff=1.5,
+                 saturation_threshold=False,
                  sip_order=3,
                  rrange=None, xyrange=None,
                  nsteps=7,
@@ -622,7 +623,8 @@ class Image(Frame2D):
                  skip_registration=False,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
-                 return_error_spl=False, star_list_query=None, fwhm_arc=None):
+                 return_error_spl=False, star_list_query=None, fwhm_arc=None,
+                 filter_background=True):
         """Register data and return a corrected pywcs.WCS
         object.
 
@@ -720,6 +722,11 @@ class Image(Frame2D):
             raise Exception("Not enough parameters to register data. Please set target_xy, target_radec and wcs_rotation parameters at Astrometry init")
 
         if return_error_maps and return_error_spl: raise Exception('return_error_maps and return_error_spl cannot be both set to True, choose only one of them')
+
+        if filter_background:
+            logging.warning('filter background: data background filtered for registration')
+            original_data = np.copy(self.data)
+            self.data = orb.utils.image.filter_background(self.data)
         
         logging.info('Computing WCS')
         logging.info('initial wcs')
@@ -950,6 +957,10 @@ class Image(Frame2D):
 
         logging.info('corrected WCS computed')
         logging.info('internal WCS updated (to update the file on disk use self.writeto function)')
+
+        if filter_background:
+            logging.info('filter background: restoring original data')
+            self.data = original_data
         
         if not return_fit_params:
             if return_error_maps:
@@ -1246,10 +1257,16 @@ class Image(Frame2D):
         
         if star_list1 is None:
             star_list1, fwhm_pix = self.detect_stars(
-                min_star_number=MIN_STAR_NB)
+                min_star_number=MIN_STAR_NB, saturation_threshold=False)
+            if len(star_list1) < 5:
+                orb.utils.io.write_fits('detection_frame.debug.fits', self.data, overwrite=True)
+                raise Exception('not enough stars detected: {}. detection frame written as detection_frame.debug.fits'.format(len(star_list1)))
             fwhm_arc = self.pix2arc(fwhm_pix)
-        elif fwhm_arc is None:
-            raise Exception('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
+        else:
+            logging.info('external star list used')
+            if fwhm_arc is None:
+                raise Exception('If a list of stars is given (star_list1) the fwhm in arcsec (fwhm_arc) must also be given.')
+            
 
         star_list1 = orb.utils.astrometry.load_star_list(star_list1)
         star_list1_deg = self.pix2world(star_list1)        
@@ -1548,14 +1565,21 @@ class StandardImage(Image):
         orb.photometry.Photometry.get_flambda()"""
 
         std_xy = self.find_object()
+        logging.info('Object found at {}'.format(std_xy))
         try:
             orb.utils.validate.index(std_xy[0], 0, self.dimx, clip=False)
             orb.utils.validate.index(std_xy[1], 0, self.dimy, clip=False)
         except orb.utils.err.ValidationError:
             raise Exception('standard star not in the image, check image registration')
 
-        star_list, fwhm = self.detect_stars(min_star_number=30) # used to recompute fwhm properly
+        star_list, fwhm = self.detect_stars(
+            min_star_number=30, filter_background=True,
+            max_roundness=0.6) # used to recompute fwhm properly
+        
         std_fit = self.fit_stars([std_xy], aper_coeff=6)
+        if std_fit is None:
+            raise Exception('standard star could not be fitted, check image registration')
+        
         std_flux_im = std_fit['aperture_flux'].values[0] / self.params.exposure_time
 
         std = orb.photometry.Standard(self.params.object_name,
@@ -1567,6 +1591,7 @@ class StandardImage(Image):
             corr=orb.utils.spectrum.theta2corr(
                 self.config.OFF_AXIS_ANGLE_CENTER)))
 
+        logging.info('correction factor computed from an image from camera {}'.format(self.params.camera))
         std_flux_sim = std.simulate_measured_flux(
             self.params.filter_name, cm1_axis,
             camera_index=self.params.camera,

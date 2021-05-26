@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: astrometry.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -23,12 +23,14 @@
 import logging
 from scipy import optimize, interpolate, signal
 import math
-import bottleneck as bn
 import numpy as np
 import warnings
 import astropy
 import astropy.wcs as pywcs
-from astropy.coordinates import SkyCoord
+import astropy.time
+import astropy.coordinates
+import astropy.units
+
 import pandas
 import os
 import sys
@@ -1052,21 +1054,21 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
 
     :param dec_deg: DEC in degrees
 
-    :param pm_ra_mas: Proper motion along RA axis in mas/yr
+    :param pm_ra_mas: Proper motion along RA axis in mas/yr (cos of declination)
 
     :param pm_dec_mas: Proper motion along DEC axis in mas/yr
 
     :param yr: Number of years
     """
-    logging.warning('this conversion is naive and might be wrong, or at least unprecise. astropy.coordinates.SkyCoord.apply_space_motion should be used instead. A version adapted for python 2 is written in orb.image.Image.get_stars_from_catalog.')
-    
-    ra = ra_deg + (pm_ra_mas * yr) * 1e-3 / 3600.
-    dec = dec_deg + (pm_dec_mas * yr) * 1e-3 / 3600.
-    if ra > 360. : ra -= 360.
-    if ra < 0. : ra += 360.
-    if dec > 90.: dec = 90. - dec
-    if dec < 0.: dec = -dec
-    return ra, dec
+    coords = astropy.coordinates.SkyCoord(
+        ra=ra_deg * astropy.units.deg,
+        dec=dec_deg * astropy.units.deg,
+        distance=200 * astropy.units.pc,
+        pm_ra_cosdec=pm_ra_mas * astropy.units.mas/astropy.units.yr,
+        pm_dec= pm_dec_mas * astropy.units.mas/astropy.units.yr,
+        obstime=astropy.time.Time(2000, format='decimalyear'))
+    coords = coords.apply_space_motion(dt=yr*astropy.units.yr)
+    return float(coords.ra.deg), float(coords.dec.deg)
 
 def ra2deg(ra):
     """Convert RA in sexagesimal format to degrees.
@@ -1080,7 +1082,7 @@ def ra2deg(ra):
         else:
             raise TypeError('badly formatted input coordinates: {}'.format(ra))
 
-    return SkyCoord(ra, 0, unit=astropy.units.hourangle).ra.deg
+    return astropy.coordinates.SkyCoord(ra, 0, unit=astropy.units.hourangle).ra.deg
 
 def dec2deg(dec):
     """Convert DEC in sexagesimal format to degrees.
@@ -1100,14 +1102,14 @@ def dec2deg(dec):
             
         dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), float(dec[2]))
         
-    return SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
+    return astropy.coordinates.SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
 def deg2ra(deg, string=False):
     """Convert RA in degrees to sexagesimal.
 
     :param deg: RA in degrees
     """
-    c = SkyCoord(deg, 0, unit='deg')
+    c = astropy.coordinates.SkyCoord(deg, 0, unit='deg')
     hms = c.ra.hms
     if not string:
         return [hms.h, hms.m, hms.s]
@@ -1119,7 +1121,7 @@ def deg2dec(deg, string=False):
 
     :param deg: DEC in degrees
     """
-    c = SkyCoord(0, deg, unit='deg')
+    c = astropy.coordinates.SkyCoord(0, deg, unit='deg')
     dms = c.dec.dms
     if not string:
         return [dms.d, dms.m, dms.s]
@@ -1243,12 +1245,13 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        dark_current_level=0.,
                        local_background=True,
                        no_aperture_photometry=False,
-                       precise_guess=False, aper_coeff=3., blur=False,
+                       precise_guess=False, aper_coeff=3.,
                        no_fit=False, estimate_local_noise=True,
                        multi_fit=False, enable_zoom=False,
                        enable_rotation=False, saturation=None,
                        fix_pos=False, nozero=False, silent=True,
-                       sip=None, background_value=None):
+                       sip=None, background_value=None,
+                       filter_background=False):
   
     """Fit stars in a frame.
 
@@ -1349,12 +1352,6 @@ def fit_stars_in_frame(frame, star_list, box_size,
       and 3. to account for the flux in the wings (default 3., better
       for star with a high SNR).
 
-    :param blur: (Optional) If True, blur frame (low pass filtering)
-      before fitting stars. It can be used to enhance the quality of
-      the fitted flux of undersampled data. Note that the error on
-      star position can be greater on blurred frame. This option must
-      not be used for alignment purpose (default False).
-
     :param no_fit: (Optional) If True, no fit is done. Only the
       aperture photometry. Star positions in the star list must thus
       be precise (default False).
@@ -1407,11 +1404,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
                        # than the normal star box. This box is used for
                        # background determination and aperture
                        # photometry
-                       
-    BLUR_FWHM = 3.5   # FWHM of the gaussian kernel used to blur frames
-    BLUR_DEG = int(math.ceil(
-        BLUR_FWHM * 2. / (2. * math.sqrt(2. * math.log(2.)))))
-    
+                           
     dimx = frame.shape[0]
     dimy = frame.shape[1]
 
@@ -1426,7 +1419,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
         if multi_fit: fix_height = False
         else: fix_height = True
 
-    frame_median = bn.nanmedian(frame)
+    frame_median = np.nanmedian(frame)
     
     if frame_median < 0.:
         frame -= frame_median
@@ -1442,7 +1435,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
 
     if not local_background and background_value is None:
         if precise_guess:
-            background = utils.astrometry.sky_background_level(frame)
+            background = orb.utils.astrometry.sky_background_level(frame)
         else:
             background = frame_median
         if not multi_fit:
@@ -1450,11 +1443,9 @@ def fit_stars_in_frame(frame, star_list, box_size,
         else:
             cov_height = True
     
-    ## Blur frame to avoid undersampled data
-    if blur:
-        fit_frame = np.copy(utils.image.low_pass_image_filter(
-            frame, deg=BLUR_DEG))
-        fwhm_pix = BLUR_FWHM
+    ## remove modulated background
+    if filter_background:
+        fit_frame = orb.utils.image.filter_background(frame)
     else:
         fit_frame = np.copy(frame)
 
@@ -1639,8 +1630,10 @@ def fit_stars_in_frame(frame, star_list, box_size,
                 mean_fwhm = orb.utils.stats.robust_mean(
                     orb.utils.stats.sigmacut(
                     [ires['fwhm_pix'] for ires in fit_results if ires is not None]))
-            else:
+            elif fit_results[0] is not None:
                 mean_fwhm = fit_results[0]['fwhm_pix']
+            else:
+                mean_fwhm = fwhm_pix
         else:
             mean_fwhm = fwhm_pix
 
@@ -2312,6 +2305,7 @@ def brute_force_guess(image, star_list, x_range, y_range, r_range,
         logging.info('Brute force guess:\ndx = {}\ndy = {} \ndr = {}'.format(
             dx, dy, dr))
 
+    #orb.utils.io.write_fits('guess_matrix.fits', guess_matrix, overwrite=True)
     if raise_border_error:
         if ((dx == np.min(x_range) and len(x_range) > 3)
             or (dx == np.max(x_range) and len(x_range) > 3)
@@ -2525,15 +2519,20 @@ def df2list(sources):
         raise TypeError('Badly formatted stars params')
         
 def load_star_list(star_list, remove_nans=False):
-    """Load a list of stars coordinates from an hdffile or a pandas DataFrame or a numpy.ndarray
+    """Load a list of stars coordinates from an hdffile, a pandas
+    DataFrame, a numpy.ndarray or a 2 columns text file.
 
     :star_list: can be a np.ndarray of shape (n, 2) or a path to a star list
 
     :param remove_nans: If True, Nans are removed from the output star list
+
     """
     if isinstance(star_list, str):
-        sources = pandas.read_hdf(star_list, key='data')
-        star_list = df2list(sources)
+        try:
+            sources = pandas.read_hdf(star_list, key='data')
+            star_list = df2list(sources)
+        except Exception:
+            star_list = pandas.read_csv(star_list, sep=' ', header=None).to_numpy()
 
     elif isinstance(star_list, pandas.DataFrame):
         star_list = df2list(star_list)
@@ -2584,10 +2583,16 @@ def compute_alignment_vectors(fit_results, min_coeff=0.2):
         raise Exception("Not enough detected stars (%d) in the first frame"%good_nb)
 
     ## Create alignment vectors from fitted positions
-    alignment_vector_x = ((fit_x.T - start_x.T).T)[0,:]
-    alignment_vector_y = ((fit_y.T - start_y.T).T)[0,:]
-    alignment_error = np.sqrt(fit_x_err[0,:]**2. + fit_y_err[0,:]**2.)
-
+    matrix_x = ((fit_x.T - start_x.T).T)
+    matrix_y = ((fit_y.T - start_y.T).T)
+    alignment_vector_x = np.nanmedian(matrix_x, axis=0)
+    alignment_vector_y = np.nanmedian(matrix_y, axis=0)
+    errx25, errx75 = np.nanpercentile(matrix_x, [25, 75], axis=0)
+    errx = (errx75 - errx25) / 1.349
+    erry25, erry75 = np.nanpercentile(matrix_y, [25, 75], axis=0)
+    erry = (erry75 - erry25) / 1.349
+    alignment_error = np.sqrt(errx**2 + erry**2)
+    
     # correct alignment vectors for NaN values
     if alignment_vector_x.size > 10:
         alignment_vector_x = orb.utils.vector.correct_vector(
@@ -2758,3 +2763,31 @@ def match_star_lists(wcs, sl1deg, sl2pix, rc, xyrange=(500, 50), rrange=(6,1), z
         return wcs, matched_small, matched_big
     else:
         return wcs, matched_big, matched_small
+
+def dflist2arr(df, key):
+    """Convert a list of stars fit results (as the one returned by
+    orb.cube.fit_stars) saved in a data frame (which can be loaded
+    with utils.io.load_df) to a array of vectors given the key which
+    must be extracted.
+
+    :param df: list of DataFrames
+    :param key: Can be flux, aperture_flux, flux_err, aperture_flux_err, etc.
+
+    """
+    _photom = list()
+    _len = None
+    for ik in df:
+        is_empty = False
+        if ik is None: is_empty = True
+        elif ik.empty: is_empty = True
+        if not is_empty:
+            _photom.append(ik[key].values)
+            _len = len(_photom[-1])
+        else:
+            _photom.append(None)
+    if _len is None: raise Exception('photometry dataframe is empty')
+    for ik in range(len(_photom)):
+        if _photom[ik] is None:
+            _photom[ik] = list([np.nan]) * _len
+
+    return np.array(_photom).T

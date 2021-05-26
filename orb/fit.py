@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: fit.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -41,7 +41,6 @@ import time
 import logging
 
 import gvar
-import lsqfit
 
 import orb.utils.fft
 import orb.constants
@@ -80,9 +79,10 @@ class FitVector(object):
     max_fev = 5000
     fit_tol = None
     
-    def __init__(self, vector, models, params, snr_guess=None,
-                 fit_tol=1e-8, signal_range=None, classic=False,
-                 max_iter=None, docomplex=False):
+    def __init__(self, vector, models, params, 
+                 fit_tol=1e-8, signal_range=None, 
+                 max_iter=None, docomplex=False, nogvar=False,
+                 vector_err=None):
         """Init class.
 
         :param vector: Vector to fit
@@ -98,21 +98,19 @@ class FitVector(object):
         :param params: list of parameters dictionaries for each
           model. Needed parameters are defined in each model.
 
-        :param snr_guess: (Optional) Guess on the SNR of the given
-          vector of data (default None).
-
         :param fit_tol: (Optional) Fit tolerance (default 1e-10)
 
         :param signal_range: (Optional) couple (min, max) defining the
           range of values considered in the fitting process.
 
-        :param classic: (Optional) If True, fit is forced to be
-          classic. i.e. It makes no use of the priors std (default False).
-
         :param docomplex: (Optional) If data is complex and docomplex
           is True, tries a complex fit. If False, always fit the real
           part only.
-        """       
+
+        :param nogvar: (Optional) No gvar are returned.
+        """
+        self.nogvar = bool(nogvar)
+        
         if not isinstance(models, tuple) and not isinstance(models, list) :
             raise ValueError('models must be a tuple of (model, model_operation).')
 
@@ -138,8 +136,12 @@ class FitVector(object):
             self.vector_imag = None
         vector = vector.real
 
-        self.vector = gvar.mean(np.copy(vector))
-        self.sigma = gvar.sdev(np.copy(vector))
+        self.vector = np.copy(vector)
+        if vector_err is not None:
+            assert vector_err.size == vector.size, 'error vector must have same size as vector'
+            self.sigma = np.copy(vector_err)
+        else:
+            self.sigma = np.ones_like(self.vector)
         if np.all(self.sigma == 0.): self.sigma.fill(1.)
         self.fit_tol = fit_tol
         self.normalization_coeff = np.nanmax(self.vector) - np.nanmedian(self.vector)
@@ -148,20 +150,6 @@ class FitVector(object):
             self.vector_imag /= self.normalization_coeff
         self.sigma /= self.normalization_coeff
 
-        self.classic = bool(classic)
-        if not self.classic:
-            if snr_guess is None:
-                self.snr_guess = None
-                self.classic = True
-                logging.debug('No SNR guess given. Fit mode is classic.')
-            else:
-                try:
-                    snr_guess = float(snr_guess)
-                except Exception:
-                    raise Exception('SNR guess is {} but it must be a single number'.format(type(snr_guess)))
-                self.snr_guess = np.fabs(snr_guess)
-        else: self.snr_guess = None
-        
         self.retry_count = 0
         self.models = list()
         self.models_operation = list()
@@ -178,7 +166,7 @@ class FitVector(object):
                 self.models_operations))
             # guess nan values for each model
             self.models[-1].make_guess(self.vector)
-            self.priors_list.append(self.models[-1].get_priors(self.classic))
+            self.priors_list.append(self.models[-1].get_priors())
             self.priors_keys_list.append(list(self.priors_list[-1].keys()))
         self.all_keys_index = None
         
@@ -246,9 +234,6 @@ class FitVector(object):
 
         :param p_dict: Free parameters dict
         """
-        if not self.classic:
-            raise Exception('Fit must be in classic mode')
-
         # check keys and create all_keys_index
         all_keys_index = dict()
         index = 0
@@ -263,7 +248,7 @@ class FitVector(object):
 
         p_arr = np.empty(len(self.all_keys_index), dtype=float)
         for key in self.all_keys_index:
-            p_arr[self.all_keys_index[key]] = gvar.mean(p_dict[key])
+            p_arr[self.all_keys_index[key]] = p_dict[key]
             
         return p_arr
 
@@ -279,8 +264,6 @@ class FitVector(object):
         """
         if self.all_keys_index is None:
             raise Exception('self._all_p_dict2arr() must be called first')
-        if not self.classic:
-            raise Exception('Fit must be in classic mode')
         if np.size(p_arr) != len(self.all_keys_index):
             raise Exception('Badly formatted input array of free parameters')
 
@@ -315,7 +298,7 @@ class FitVector(object):
         # check nans
         for ikey in all_p_free:
             if np.isnan(gvar.sdev(all_p_free[ikey])):
-                logging.warning('nan in passed parameters: {}'.format(all_p_free))
+                logging.debug('nan in passed parameters: {}'.format(all_p_free))
     
         step_nb = self.vector.shape[0]
         if x is None:
@@ -361,10 +344,6 @@ class FitVector(object):
                     models[self.models[i].__class__.__name__] = models_to_append
                 else:
                     model_to_append = model_list
-
-                if self.classic:
-                    if self.vector_imag is None:
-                        model_to_append = gvar.mean(model_to_append)
                         
                 if model is None:
                     model = model_to_append
@@ -391,8 +370,7 @@ class FitVector(object):
 
         :param *all_p_free: Vector of free parameters.
         """
-        if self.classic:
-            all_p_free = self._all_p_arr2dict(all_p_free)
+        all_p_free = self._all_p_arr2dict(all_p_free)
         
         out = self.get_model(all_p_free, x=x)
         
@@ -447,19 +425,6 @@ class FitVector(object):
         all_args = dict(locals()) # used in case fit is retried (must stay
                                   # at the very beginning of the
                                   # function ;)
-        def fit_args(snr):
-            vector = self._get_vector_onrange()
-            err = (np.nanmax(vector) - np.nanmedian(vector)) / snr
-            vector = gvar.gvar(vector, np.ones_like(vector) * err) 
-            return dict(
-                udata=(np.arange(self.vector.shape[0]),
-                       vector),
-                prior=priors_dict,
-                fcn=self._get_model_onrange,
-                debug=True,
-                tol=self.fit_tol,
-                maxit=self.max_iter)
-
 
         MCMC_RANDOM_COEFF = 1e-2
         
@@ -467,79 +432,63 @@ class FitVector(object):
         priors_dict = self._all_p_list2dict(self.priors_list)
 
                         
-        ### CLASSIC MODE ##################
-        if self.classic:
-            priors_arr = self._all_p_dict2arr(priors_dict)
-            try:
-                fit_classic = scipy.optimize.curve_fit(
-                    self._get_model_onrange,
-                    np.arange(self.vector.shape[0]),
-                    self._get_vector_onrange(),
-                    #sigma=self._get_sigma_onrange(),
-                    p0=priors_arr,
-                    method='lm',
-                    full_output=True,
-                    maxfev=self.max_iter)
-            except RuntimeError as e:
-                logging.debug('RuntimeError during fit: {}'.format(e))
-                fit_classic = list(['Runtime error during fit: {}'.format(e), 0])
-                
-            fit = type('fit', (), {})
-            
-            if 0 < fit_classic[-1] < 5:
-                fit.stopping_criterion = fit_classic[-1]
-                fit.error = None
-                
-                # compute uncertainties
-                cov_x = fit_classic[1]
-                if np.all(np.isfinite(cov_x)):
-                    p_err = np.sqrt(np.diag(cov_x))
-                else:
-                    p_err = np.empty_like(fit_classic[0])
-                    p_err.fill(np.nan)
+        priors_arr = self._all_p_dict2arr(priors_dict)
+        try:
+            fit_results = scipy.optimize.curve_fit(
+                self._get_model_onrange,
+                np.arange(self.vector.shape[0]),
+                self._get_vector_onrange(),
+                #sigma=self._get_sigma_onrange(),
+                p0=priors_arr,
+                method='lm',
+                full_output=True,
+                maxfev=self.max_iter)
+        except RuntimeError as e:
+            logging.debug('RuntimeError during fit: {}'.format(e))
+            fit_results = list(['Runtime error during fit: {}'.format(e), 0])
 
-                fit.p = self._all_p_arr2dict(gvar.gvar(fit_classic[0], p_err),
-                                             keep_gvar=True)
+        fit = type('fit', (), {})
 
+        if 0 < fit_results[-1] < 5:
+            fit.stopping_criterion = fit_results[-1]
+            fit.error = None
 
-                last_diff = fit_classic[2]['fvec']
-
-                fitted_vector = self._get_model_onrange(
-                    np.arange(self.vector.shape[0], dtype=float),
-                    *gvar.gvar(fit_classic[0]))
-                vector = self._get_vector_onrange()
-                                    
-                residual = (vector - fitted_vector)
-
-                if self.vector_imag is None:
-                    res_ratio = residual/self._get_sigma_onrange()
-                else:
-                    res_ratio = residual
-                res_ratio[np.isinf(res_ratio)] = np.nan
-                fit.chi2 = np.nansum(res_ratio**2)
-                fit.dof = self._get_vector_onrange().shape[0] - np.size(fit_classic[0])
-                fit.logGBF = np.nan
-                fit.fitter_results = fit_classic[2]
-
+            # compute uncertainties
+            cov_x = fit_results[1]
+            if np.all(np.isfinite(cov_x)):
+                p_err = np.sqrt(np.diag(cov_x))
             else:
-                logging.debug('bad classic fit ({}): {}'.format(fit_classic[-1], fit_classic[-2]))
-                fit.stopping_criterion = 0
-                fit.error = True
+                p_err = np.empty_like(fit_results[0])
+                p_err.fill(np.nan)
+
+            fit.p = self._all_p_arr2dict(gvar.gvar(fit_results[0], p_err),
+                                         keep_gvar=True)
 
 
-        ### LSQFIT MODE ##################
+            last_diff = fit_results[2]['fvec']
+
+            fitted_vector = self._get_model_onrange(
+                np.arange(self.vector.shape[0], dtype=float),
+                *fit_results[0])
+            vector = self._get_vector_onrange()
+
+            residual = (vector - fitted_vector)
+
+            if self.vector_imag is None:
+                res_ratio = residual/self._get_sigma_onrange()
+            else:
+                res_ratio = residual
+            res_ratio[np.isinf(res_ratio)] = np.nan
+            fit.chi2 = np.nansum(res_ratio**2)
+            fit.dof = self._get_vector_onrange().shape[0] - np.size(fit_results[0])
+            fit.logGBF = np.nan
+            fit.fitter_results = fit_results[2]
+
         else:
-            if self.vector_imag is not None:
-                raise NotImplementedError('gvar mode is not compatible with complex')
-            
-            if self.snr_guess is None:
-                raise Exception('No SNR guess. This fit must be made in classic mode')
+            logging.debug('bad classic fit ({}): {}'.format(fit_results[-1], fit_results[-2]))
+            fit.stopping_criterion = 0
+            fit.error = True
 
-            fit = lsqfit.nonlinear_fit(**fit_args(self.snr_guess))
-                
-            fitted_vector = gvar.mean(self.get_model(fit.p))
-            residual = (self.vector - fitted_vector)[
-                np.min(self.signal_range):np.max(self.signal_range)]
             
         ### fit results formatting ###
         if fit.error is None:
@@ -573,11 +522,9 @@ class FitVector(object):
                     else:
                         _models[ikey] = orb.utils.vector.float2complex(_models[ikey])
                             
-                    
             (returned_data['fitted_vector_gvar'],
              returned_data['fitted_models_gvar']) = _model, _models
             
-
             returned_data['fitted_vector'] = gvar.mean(returned_data['fitted_vector_gvar'])
             returned_data['fitted_models'] = dict()
             for imod in returned_data['fitted_models_gvar']:
@@ -601,15 +548,17 @@ class FitVector(object):
                 
             returned_data['fit_params'] = full_p_list
             returned_data['fit_params_err'] = full_p_list_err
-            returned_data['fit_params_gvar'] = full_p_list_gvar
+            if not self.nogvar:
+                returned_data['fit_params_gvar'] = full_p_list_gvar
 
             
             ## compute error on parameters
             # compute reduced chi square
             returned_data['rchi2'] = fit.chi2 / fit.dof
             returned_data['rchi2_err'] = np.sqrt(2./self._get_vector_onrange().shape[0])
-            returned_data['rchi2_gvar'] = gvar.gvar(returned_data['rchi2'],
-                                                    returned_data['rchi2_err'])
+            if not self.nogvar:
+                returned_data['rchi2_gvar'] = gvar.gvar(returned_data['rchi2'],
+                                                        returned_data['rchi2_err'])
             
             
             returned_data['chi2'] = fit.chi2
@@ -628,15 +577,21 @@ class FitVector(object):
             returned_data['logGBF'] = fit.logGBF
             returned_data['fit_time'] = time.time() - start_time
             returned_data['signal_range'] = self.signal_range
+            returned_data['nparams'] = priors_arr.size # number of free parameters
+            # Bayesian information criterion
+            returned_data['BIC'] = orb.utils.fit.BIC(returned_data['residual'], returned_data['nparams'])
             
         else:
             logging.debug('bad fit')
             return []
 
+
+        if self.nogvar:
+            del returned_data['fitted_vector_gvar']
+            del returned_data['fitted_models_gvar']
+
         return returned_data
         
-
-
 class Model(object):
     """
     Template class for fit models. This class cannot be used directly.
@@ -816,18 +771,11 @@ class Model(object):
         """Return the vector of free parameters :py:attr:`fit.Model.p_free`"""
         return copy.copy(self.p_free)
 
-    def get_priors(self, classic):
+    def get_priors(self):
         """Return priors
-
-        :param classic: If True, return classic priors (e.g. no log distribution)
         """
-        if not classic:
-            return self.get_p_free()
-        else:
-            priors = dict(self.get_p_free())
-            for key in priors:
-                priors[key] = gvar.mean(priors[key])
-            return priors
+        priors = dict(self.get_p_free())
+        return priors
         
     def set_p_free(self, p_free):
         """Set the vector of free parameters :py:attr:`fit.Model.p_free`
@@ -881,12 +829,6 @@ class Model(object):
                     self.p_free[self.p_def[idef]]= self.p_cov[self.p_def[idef]][0]
                 self.p_fixed[idef] = self.p_val[idef]
                 passed_cov += list([self.p_def[idef]])
-        # check if p_free has a sdev
-        for idef in self.p_free:
-            if self.p_free[idef] is not None:
-                if gvar.sdev(self.p_free[idef]) == 0.: 
-                    self.p_free[idef] = self._estimate_sdev(
-                        idef, gvar.mean(self.p_free[idef]))
 
         # remove sdev from p_fixed
         for idef in self.p_fixed:
@@ -981,10 +923,6 @@ class FilterModel(Model):
 
     def make_guess(self, v):
         pass
-
-    def _estimate_sdev(self, idef, mean):
-        SHIFT_SDEV = 3 # channels
-        return gvar.gvar(mean, min(SHIFT_SDEV, self.filter_axis.shape[0] / 20))
 
     def get_model(self, x, p_free=None, return_models=False, return_complex=False):
         """Return model M(x, p).
@@ -1113,17 +1051,6 @@ class ContinuumModel(Model):
                 order = self._get_order_from_key(key)
                 self.p_val[key] = np.nanmedian(v)**(1./(order+1))
         self.val2free()
-
-
-    def _estimate_sdev(self, idef, mean):
-        """Estimate standard deviation of a free parameter is none is given
-        """
-        PSDEV = 1e3
-        if mean == 0:
-            return gvar.gvar(mean, PSDEV)
-        else:
-            return gvar.gvar(mean, mean*10.)
-
 
     def get_model(self, x, p_free=None, return_models=False, multf=None, return_complex=False):
         """Return model M(x, p).
@@ -1403,39 +1330,14 @@ class LinesModel(Model):
             
         return ans    
 
-    def get_priors(self, classic):
+    def get_priors(self):
         """Return priors. Replace gaussian distribution by lognormal
         distribution for some parameters.
-
-        :param classic: If True, return classic priors (e.g. no log
-          distribution)
         """
-        if classic:
-            priors = dict(self.get_p_free())
-            for key in priors:
-                priors[key] = gvar.mean(priors[key])
-            return priors
-
-        priors = dict()
-        p_free = self.get_p_free()
-        for ip in p_free:
-            priors[ip] = gvar.gvar(p_free[ip])
-            for ilog in self.log_param_keys:
-                if ilog in ip:
-                    if gvar.mean(p_free[ip]) == 0.:
-                        val = 1e-10
-                    else: val = gvar.mean(p_free[ip])
-                    priors['log({})'.format(ip)] = gvar.log(gvar.gvar(
-                        val, gvar.sdev(p_free[ip])))
-                    ## priors['sqrt({})'.format(ip)] = gvar.sqrt(gvar.gvar(
-                    ##     val, gvar.sdev(p_free[ip])))
-                    ## priors['erfinv({})'.format(ip)] = gvar.gvar(
-                    ##     val, gvar.sdev(p_free[ip])) / gvar.sqrt(2)
-                                
-                    del priors[ip]
-                    continue
-        return priors
-    
+        priors = dict(self.get_p_free())
+        for key in priors:
+            priors[key] = gvar.mean(priors[key])
+        return priors    
         
     def parse_dict(self):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""
@@ -1596,7 +1498,7 @@ class LinesModel(Model):
         self._p_val2array()
 
         for key in list(self.p_array.keys()):
-            if self.p_array[key] is None: 
+            if self.p_array[key] is None or np.isnan(self.p_array[key]): 
                 if 'pos' in key:
                     raise Exception('initial guess on lines position must be given, no automatic lines detection is implemented at this level.')
                 
@@ -1605,7 +1507,7 @@ class LinesModel(Model):
                     
                 if 'sigma' in key:
                     self.p_array[key] = 1e-8
-
+                    
                 if 'alpha' in key:
                     self.p_array[key] = 1e-8
 
@@ -1642,31 +1544,6 @@ class LinesModel(Model):
             return self.p_dict['fmodel']
         else:
             raise ValueError("'fmodel' must be set")
-
-    def _estimate_sdev(self, idef, mean):
-        """Estimate standard deviation of a free parameter
-        """
-        AMP_SDEV = 1000
-        FWHM_SDEV = 10 # channels
-        SIGMA_SDEV = 10 # channels
-
-        # get reference line if idef is a covariant parameter
-        if 'def' not in idef:
-            iline = self._get_iline_from_key(idef)
-        else:
-            iline = self._get_iline_from_key(
-                list(self.p_def.keys())[list(self.p_def.values()).index(idef)])
-    
-        if 'amp' in idef:
-            return gvar.gvar(mean, max(10 * mean, AMP_SDEV))
-        elif 'pos' in idef:
-            fwhm = gvar.mean(self.p_val[self._get_ikey('fwhm', iline)])
-            return gvar.gvar(mean, fwhm)
-        elif 'fwhm' in idef:
-            return gvar.gvar(mean, max(mean, FWHM_SDEV))
-        elif 'sigma' in idef:            
-            return gvar.gvar(mean, max(mean, SIGMA_SDEV))
-        else: raise NotImplementedError('not implemented for {}'.format(idef))
         
     def _p_val2array(self):
         self.p_array = dict(self.p_val)
@@ -1870,7 +1747,7 @@ class Cm1LinesModel(LinesModel):
         fwhm_pix = np.array(fwhm_cm1) / self.axis_step
         if self._get_fmodel() in ['sincgauss', 'sincgaussphased']:
             sigma_pix = orb.utils.fit.vel2sigma(
-                np.array(sigma_kms), lines_cm1, self.axis_step)
+                np.array(gvar.mean(sigma_kms), dtype=float), lines_cm1, self.axis_step)
                         
         self.p_array = dict(self.p_val)
         for iline in range(self._get_line_nb()):
@@ -1914,41 +1791,6 @@ class Cm1LinesModel(LinesModel):
 
         return self.p_val
       
-
-    def _estimate_sdev(self, idef, mean):
-        """Estimate standard deviation of a free parameter
-        """
-        FWHM_SDEV = 10 # channels
-        SIGMA_SDEV = 10 # channels
-        AMP_SDEV = 1000
-
-        fwhm_sdev_cm1 = self.axis_step * FWHM_SDEV
-        
-        # get reference line if idef is a covariant parameter
-        if 'def' not in idef:
-            iline = self._get_iline_from_key(idef)
-        else:
-            iline = self._get_iline_from_key(
-                list(self.p_def.keys())[list(self.p_def.values()).index(idef)])
-
-        if 'amp' in idef:
-            return gvar.gvar(mean,max(mean * 10, AMP_SDEV))
-        elif 'pos' in idef:
-            fwhm = gvar.mean(self.p_val[self._get_ikey('fwhm', iline)])
-            return gvar.gvar(np.squeeze(mean), np.squeeze(fwhm_sdev_cm1))
-        elif 'fwhm' in idef:
-            return gvar.gvar(np.squeeze(mean), max(mean, fwhm_sdev_cm1))
-        elif 'sigma' in idef:
-            lines_cm1 = gvar.mean(self.p_val[self._get_ikey('pos', iline)])
-            sigma_sdev_kms = np.nanmean(orb.utils.fit.sigma2vel(
-                SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step))
-            return gvar.gvar(mean, max(mean, gvar.mean(sigma_sdev_kms)))
-        elif 'alpha' in idef:
-            return gvar.gvar(np.squeeze(mean), max(mean, 2*np.pi))
-        else: raise NotImplementedError('not implemented for {}'.format(idef))
-        
-
-
     def parse_dict(self):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""
         LinesModel.parse_dict(self)
@@ -2034,12 +1876,6 @@ class Params(orb.core.Params):
 #### CLASS InputParams ######################
 #############################################
 class InputParams(object):
-
-
-    SHIFT_SDEV = 10 # channels
-    FWHM_SDEV = 10 # channels
-    SIGMA_SDEV = 10 # channels
-
 
     # simulate the use of this class as a dict converted class
     def __getitem__(self, key): return getattr(self, key)
@@ -2175,17 +2011,12 @@ class InputParams(object):
                     # sigma cov vel is adjusted to the initial guess + apodization
                     sqroots = list()
                     for i in range(np.size(lines)):
-                        isquare = gvar.gvar(sigma_cov_vel[i])**2. + gvar.gvar(params.sigma_guess[i])**2.
-                        
-                        if gvar.sdev(isquare) == 0:
-                            isqroot = gvar.gvar(np.sqrt(gvar.mean(isquare)))
-                        else:
-                            isqroot = np.sqrt(isquare)
+                        isqroot = np.sqrt(sigma_cov_vel[i]**2. + params.sigma_guess[i]**2.)
                     
                         sqroots.append(isqroot)
                     sigma_cov_vel = np.array(sqroots)
 
-                    _sigma_guess = gvar.mean(sigma_cov_vel)
+                    _sigma_guess = sigma_cov_vel
                 else: _sigma_guess = np.zeros_like(lines)
                         
                 if 'sigma_cov' not in params:
@@ -2204,12 +2035,8 @@ class InputParams(object):
                 if 'sigma_cov' not in params and len(_sigma_cov) > 0:
                     params['sigma_cov'] = list(_sigma_cov)
 
-                if np.any(gvar.mean(params.sigma_guess) <= 0.):
-                    logging.warning('please set a guess, or a covarying value of sigma > 0 or use a  sinc model or you might end up with nans')
-
-
         if 'line_nb' in params:
-            logging.warninging('line_nb was set by user')
+            logging.warning('line_nb reset by user')
             del params.line_nb # this parameter cannot be changed
 
         if 'pos_guess' in params:
@@ -2220,14 +2047,6 @@ class InputParams(object):
     def add_lines_model(self, lines, fwhm_guess, **kwargs):
         
         lines = np.array(lines)
-
-        if np.any(gvar.sdev(lines) == 0.):
-            lines_sdev = self.SHIFT_SDEV * self.axis_step
-            lines = gvar.gvar(lines, np.ones_like(lines) * lines_sdev)
-        
-        if np.all(gvar.sdev(fwhm_guess) == 0.):
-            fwhm_sdev = self.axis_step * self.FWHM_SDEV
-            fwhm_guess = gvar.gvar(gvar.mean(fwhm_guess), fwhm_sdev)
 
         line_nb = np.size(lines)
 
@@ -2332,7 +2151,7 @@ class Cm1InputParams(InputParams):
             sigma_cov_vel = orb.utils.fit.sigma2vel(
                 orb.utils.fft.apod2sigma(self.base_params.apodization,
                                      fwhm_guess_cm1.mean) / self.axis_step,
-                gvar.mean(lines_cm1), self.axis_step)
+                lines_cm1, self.axis_step)
         return np.atleast_1d(sigma_cov_vel).astype(float)
 
         
@@ -2347,10 +2166,6 @@ class Cm1InputParams(InputParams):
 
         lines_cm1 = np.array(lines_cm1)
 
-        if np.any(gvar.sdev(lines_cm1) == 0.):            
-            lines_cm1_sdev = self.SHIFT_SDEV * self.axis_step
-            lines_cm1 = gvar.gvar(lines_cm1, np.ones_like(lines_cm1) * lines_cm1_sdev)
-
         # guess fwhm
         fwhm_guess_cm1 = orb.utils.spectrum.compute_line_fwhm(
             self.base_params.step_nb - self.base_params.zpd_index,
@@ -2360,18 +2175,10 @@ class Cm1InputParams(InputParams):
             corr=self.base_params.axis_corr_orig,
             wavenumber=True)
 
-        fwhm_sdev_cm1 = self.axis_step * self.FWHM_SDEV
-        fwhm_guess_cm1 = gvar.gvar(fwhm_guess_cm1, fwhm_sdev_cm1)
-
-
         # guess sigma from apodization
         sigma_cov_vel = self._get_sigma_cov_vel(fwhm_guess_cm1, lines_cm1)
 
-        sigma_sdev_kms = orb.utils.fit.sigma2vel(
-            self.SIGMA_SDEV, gvar.mean(lines_cm1), self.axis_step)
-        sigma_sdev_kms = np.atleast_1d(sigma_sdev_kms)
-
-        sigma_guess = gvar.gvar(sigma_cov_vel, gvar.mean(sigma_sdev_kms))
+        sigma_guess = np.copy(sigma_cov_vel)
 
         # guess ratio
         ratio = (float(self.base_params.zpd_index)
@@ -2474,7 +2281,7 @@ class Cm1InputParams(InputParams):
 
 class OutputParams(Params):
 
-    def translate(self, inputparams, fitvector):
+    def translate(self, inputparams, fitvector, nogvar=False):
         if isinstance(inputparams, InputParams):
             inputparams = inputparams.convert()
             
@@ -2580,7 +2387,8 @@ class OutputParams(Params):
             velocity = orb.utils.spectrum.compute_radial_velocity(
                 pos_wave, gvar.mean(all_inputparams.pos_guess),
                 wavenumber=wavenumber)
-            self['velocity_gvar'] = velocity
+            if not nogvar:
+                self['velocity_gvar'] = velocity
             self['velocity'] = gvar.mean(velocity)
             self['velocity_err'] = gvar.sdev(velocity)
 
@@ -2593,15 +2401,16 @@ class OutputParams(Params):
 
             broadening = (gvar.fabs(sigma_total_kms**2
                                     - sigma_apod_kms**2))**0.5
-            
-            self['broadening_gvar'] = broadening
+
+            if not nogvar:
+                self['broadening_gvar'] = broadening
             self['broadening'] = gvar.mean(broadening)
             self['broadening_err'] = gvar.sdev(broadening)
 
             # compute fwhm in Angstroms to get flux
             # If calibrated, amplitude unit must be in erg/cm2/s/A, then
             # fwhm/width units must be in Angströms
-            if wavenumber:                
+            if wavenumber:
                 fwhm = orb.utils.spectrum.fwhm_cm12nm(
                     line_params[:,3], line_params[:,2]) * 10.
             else:
@@ -2636,7 +2445,8 @@ class OutputParams(Params):
             flux = None
 
         if flux is not None:
-            self['flux_gvar'] = flux
+            if not nogvar:
+                self['flux_gvar'] = flux
             self['flux'] = gvar.mean(flux)
             self['flux_err'] = gvar.sdev(flux)
 
@@ -2644,13 +2454,18 @@ class OutputParams(Params):
         self['snr'] = gvar.mean(line_params[:,1]) / gvar.sdev(line_params[:,1])
 
         # store lines-params
-        self['lines_params_gvar'] = line_params
+        if not nogvar:
+            self['lines_params_gvar'] = line_params
         self['lines_params'] = gvar.mean(line_params)
         self['lines_params_err'] = np.abs(gvar.sdev(line_params))
         self.update(all_inputparams)
 
+        if nogvar:
+            for ikey in self:
+                if isinstance(self[ikey], np.ndarray):
+                    if self[ikey].dtype == np.object:
+                        self[ikey] = gvar.mean(self[ikey])
         return self
-
         
     def convert(self):
         """Convert class to a raw pickable format
@@ -2710,9 +2525,13 @@ class OutputParams(Params):
         info = '=== Fit results ===\n'
         info += 'lines: {}, fmodel: {}\n'.format(lines, self['fmodel'])
         info += 'iterations: {}, fit time: {:.2e} s\n'.format(self['iter_nb'], self['fit_time'])
-        info += 'Velocity (km/s): {} \n'.format(self['velocity_gvar'])
-        info += 'Flux: {}\n'.format(self['flux_gvar'])
-        info += 'Broadening (km/s): {}\n'.format(self['broadening_gvar'])
+        info += 'number of free parameters: {}, BIC: {:.5e}, chi2: {:.2e}\n'.format(self['nparams'], self['BIC'], self['chi2'])
+        
+        info += 'Velocity (km/s): {} \n'.format(gvar.gvar(self['velocity'], self['velocity_err']))
+        info += 'Flux: {}\n'.format(gvar.gvar(self['flux'], self['flux_err']))
+        info += 'Broadening (km/s): {}\n'.format(gvar.gvar(self['broadening'], self['broadening_err']))
+        info += 'SNR (km/s): {}\n'.format(self['snr'])
+            
         return info
     
     __str__ = __repr__
@@ -2725,8 +2544,8 @@ class OutputParams(Params):
 
 
 def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
-                           compute_mcmc_error=False,
-                           snr_guess=None, max_iter=None,
+                           compute_mcmc_error=False, max_iter=None, nogvar=False,
+                           vector_err=None,
                            **kwargs):
     """raw function for spectrum fitting. Need the InputParams
     class to be defined before call.
@@ -2744,10 +2563,10 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
 
-    :param snr_guess: (Optional) Guess on the SNR (default None).
-
     :param max_iter: (Optional) Maximum number of iterations (default None)
 
+    :param nogvar: (Optional) No gvar are returned. 
+        
     :param kwargs: (Optional) Model parameters that must be changed in
       the InputParams instance.
     """
@@ -2765,22 +2584,23 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                     logging.debug('last minute changed parameter {}: {}'.format(key, iparams[key]))
 
     logging.debug('fwhm guess: {}'.format(
-        gvar.mean(rawip['params'][0]['fwhm_guess'])))
+        rawip['params'][0]['fwhm_guess']))
 
     rawip['params'] = orb.utils.fit.paramslist2pick(rawip['params'])
     fv = FitVector(spectrum,
                    rawip['models'], rawip['params'],
                    signal_range=rawip['signal_range'],
                    fit_tol=fit_tol,
-                   snr_guess=snr_guess,
-                   max_iter=max_iter)
+                   max_iter=max_iter,
+                   nogvar=nogvar,
+                   vector_err=vector_err)
 
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
 
     if fit != []:
         fit = OutputParams(fit)
-        return fit.translate(ip, fv)
+        return fit.translate(ip, fv, nogvar=nogvar)
     
     else: return []
 
@@ -2860,7 +2680,6 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           fit_tol=1e-10,
                           velocity_range=None,
                           compute_mcmc_error=False,
-                          snr_guess=None,
                           max_iter=None,
                           **kwargs):
     
@@ -2908,8 +2727,6 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
       estimates are computed from a Markov chain Monte-Carlo
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
-
-    :param snr_guess: (Optional) Guess on the SNR (default None).
 
     :param max_iter: (Optional) Maximum number of iterations (default None)
 
@@ -2967,7 +2784,6 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     fit = _fit_lines_in_spectrum(spectrum, ip,
                                  fit_tol=fit_tol,
                                  compute_mcmc_error=compute_mcmc_error,
-                                 snr_guess=snr_guess,
                                  max_iter=max_iter)
 
 
@@ -2984,7 +2800,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
 
 
 def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
-    compute_mcmc_error=False, snr_guess=None, max_iter=None, **kwargs):
+    compute_mcmc_error=False, max_iter=None, **kwargs):
     
     """Fit lines in a vector
 
@@ -3007,8 +2823,6 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
       estimates are computed from a Markov chain Monte-Carlo
       algorithm. If the estimates can be better constrained, the
       fitting time is orders of magnitude longer (default False).
-
-    :snr_guess: (Optional) Guess on the SNR (default None).
 
     :param max_iter: (Optional) Maximum number of iterations (default None)
 
@@ -3058,7 +2872,6 @@ def fit_lines_in_vector(vector, lines, fwhm_guess, fit_tol=1e-10,
                    ip.models, ip.params,
                    signal_range=ip.signal_range,
                    fit_tol=fit_tol,
-                   snr_guess=snr_guess,
                    max_iter=max_iter)
     
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
@@ -3103,16 +2916,15 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
 
     """
     NM_LASER = 543.5 # can be anything
-    RATIO = 0.25
-
+    
     fwhm_guess = orb.utils.spectrum.compute_line_fwhm(
         step_nb - zpd_index, step, order, corr, wavenumber=True)
 
     def get_defguess(param):
         if np.size(param) == 1:
-            return np.arange(np.size(lines_cm1)).astype(str), list([gvar.mean(param)]) * np.size(lines_cm1)
+            return np.arange(np.size(lines_cm1)).astype(str), list([param]) * np.size(lines_cm1)
         elif np.size(param) == np.size(lines_cm1):
-            return np.arange(np.size(lines_cm1)).astype(str), gvar.mean(param)
+            return np.arange(np.size(lines_cm1)).astype(str), param
         else: raise Exception('param size must be 1 or {} but is {}'.format(
                 np.size(lines_cm1), np.size(param)))
         
@@ -3125,8 +2937,8 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
         'nm_laser_obs':NM_LASER * corr,
         'line_nb':np.size(lines_cm1),
         'fwhm_def':['1'] * np.size(lines_cm1),
-        'fwhm_guess':[gvar.mean(fwhm_guess)] * np.size(lines_cm1),
-        'pos_guess':gvar.mean(lines_cm1),
+        'fwhm_guess':[fwhm_guess] * np.size(lines_cm1),
+        'pos_guess':lines_cm1,
         'pos_cov':pos_cov,
         'pos_def':pos_def,
         'fmodel':fmodel,
@@ -3146,7 +2958,7 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
     if fmodel in ['sincgaussphased',]:
         alpha_params = {
             'alpha_def':['1'] * np.size(lines_cm1),
-            'alpha_guess':[gvar.mean(alpha)] * np.size(lines_cm1),
+            'alpha_guess':[alpha] * np.size(lines_cm1),
             'alpha_cov':[0.]}
         
         model_params.update(alpha_params)
@@ -3160,8 +2972,11 @@ def create_cm1_lines_model_raw(lines_cm1, amp, step, order, step_nb, corr,
         
     lines_model.set_p_free(p_free)
     spectrum = lines_model.get_model(np.arange(step_nb))
-    
-    return gvar.mean(spectrum)
+
+    spectrum = spectrum
+    cm1_axis = orb.utils.spectrum.create_cm1_axis(
+        spectrum.size, step, order, corr=corr)
+    return cm1_axis, spectrum
 
 
 def create_cm1_lines_model(lines_cm1, amp, step, order, resolution,
@@ -3239,16 +3054,16 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
         {'line_nb':np.size(lines),
          'amp_def':'free',
          'fwhm_def':'1',
-         'pos_guess':gvar.mean(lines),
-         'pos_cov':gvar.mean(line_shift),
+         'pos_guess':lines,
+         'pos_cov':line_shift,
          'pos_def':'1',
          'fmodel':fmodel,
-         'fwhm_guess':gvar.mean(fwhm),
+         'fwhm_guess':fwhm,
          'sigma_def':'1',
-         'sigma_guess':gvar.mean(sigma),
+         'sigma_guess':sigma,
          'sigma_cov':0., # never more than 0.
          'alpha_def':'1',
-         'alpha_guess':gvar.mean(alpha),
+         'alpha_guess':alpha,
          'alpha_cov':0.}) # never more than 0.
     p_free = dict(lines_model.p_free)
     for iline in range(np.size(lines)):
@@ -3256,5 +3071,5 @@ def create_lines_model(lines, amp, fwhm, step_nb, line_shift=0.,
     lines_model.set_p_free(p_free)
     spectrum = lines_model.get_model(np.arange(step_nb))
     #model, models = lines_model.get_model(np.arange(step_nb), return_models=True)
-    return gvar.mean(spectrum)
+    return spectrum
 

@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: parallel.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -30,8 +30,6 @@ import traceback
 
 # see https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
 def run_dill_encoded(payload):
-    #with warnings.catch_warnings():
-    #    warnings.simplefilter("ignore")
     fun, args = dill.loads(payload)
     try:
         return fun(*args)
@@ -44,7 +42,7 @@ def apply_async(pool, fun, args):
 
 class JobServer(object):
 
-    def __init__(self, ncpus, timeout=1000):
+    def __init__(self, ncpus, timeout=1000, spawn=False):
 
         self.ncpus = int(ncpus)
         self.timeout = int(timeout)
@@ -52,7 +50,12 @@ class JobServer(object):
         if self.ncpus == 0:
             self.ncpus = multiprocessing.cpu_count()
 
-        self.pool = multiprocessing.get_context('spawn').Pool(processes=self.ncpus, maxtasksperchild=1)
+        if spawn:
+            spawn = 'spawn'
+        else:
+            spawn = 'forkserver'
+        self.pool = multiprocessing.get_context(spawn).Pool(
+            processes=self.ncpus, maxtasksperchild=1)
 
     def submit(self, func, args=(), modules=()):
         
@@ -75,8 +78,8 @@ class JobServer(object):
             self.pool.join()
         except RuntimeError: pass
         except:
-            logging.info('exception occured during pool.join: ', traceback.format_exc())
-        logging.info('parallel processing closed')
+            logging.debug('exception occured during pool.join: ', traceback.format_exc())
+        logging.debug('parallel processing closed')
         try:
             del self.pool
         except: pass
@@ -89,7 +92,7 @@ class Job(object):
 
     def __call__(self):
         try:
-            return self.job.get(timeout=self.timeout)
+            return self.job.get()#timeout=self.timeout)
         except multiprocessing.TimeoutError:
             logging.info('worker timeout: ', traceback.format_exc())
         except:
@@ -193,7 +196,7 @@ def init_pp_server(ncpus=0, silent=False, use_ray=False, timeout=1000):
 
     
 
-def close_pp_server(js):
+def close_pp_server(js, silent=False):
     """
     Destroy the parallel python job server to avoid too much
     opened files.
@@ -203,7 +206,10 @@ def close_pp_server(js):
     .. note:: Please refer to http://www.parallelpython.com/ for
         sources and information on Parallel Python software.
     """
-    logging.info("Closing parallel processing server")
+    if not silent:
+        logging.info("Closing parallel processing server")
+    else:
+        logging.debug("Closing parallel processing server")
     if isinstance(js, RayJobServer):
         ray.shutdown()
     else:

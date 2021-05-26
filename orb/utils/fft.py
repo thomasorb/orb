@@ -3,7 +3,7 @@
 # Author: Thomas Martin <thomas.martin.1@ulaval.ca>
 # File: fft.py
 
-## Copyright (c) 2010-2017 Thomas Martin <thomas.martin.1@ulaval.ca>
+## Copyright (c) 2010-2020 Thomas Martin <thomas.martin.1@ulaval.ca>
 ## 
 ## This file is part of ORB
 ##
@@ -403,9 +403,12 @@ def interf_mean_energy(interf):
     """
     return orb.cutils.interf_mean_energy(interf)
 
-def phase_model(sigma, costheta, *p):
-    if len(p) != 2:
-        raise Exception('p must have len 2, not {}'.format(len(p)))
-    return np.polynomial.polynomial.polyval(sigma, p)
-    #return np.polynomial.polynomial.polyval(sigma, p) * (1 - costheta)
+def phase_model(sigma, sigmaref, p):
+    """Phase model
+
+    A simple polynomial. Defining a reference wavenumber in the given
+    axis is important since, if a 0 is not in the axis, the polynomial
+    fitting is unstable. This reference is defined in the filterfile.
+    """
+    return np.polynomial.polynomial.polyval(sigma - sigmaref, p)
     

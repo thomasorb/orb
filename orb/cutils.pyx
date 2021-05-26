@@ -48,7 +48,6 @@ import scipy.interpolate
 import scipy.special
 import constants
 
-import bottleneck as bn # https://pypi.python.org/pypi/Bottleneck
 from cpython cimport bool
 
 ## Import functions from math.h (faster than python math.py)
@@ -452,7 +451,7 @@ def sigmacut(np.ndarray[np.float64_t, ndim=1] x, double central_value,
     if return_index_list:
         index_list = np.arange(np.size(x))
 
-    if bn.anynan(x):
+    if np.isnan(x).any():
         x = x[np.nonzero(~np.isnan(x))]
         if return_index_list:
             index_list = index_list[np.nonzero(~np.isnan(x))]
@@ -460,11 +459,11 @@ def sigmacut(np.ndarray[np.float64_t, ndim=1] x, double central_value,
     while still_rejection:
         sz = np.size(x)
         if not use_central_value:
-            central_x = bn.nanmedian(x)
+            central_x = np.nanmedian(x)
         else:
             central_x = central_value
 
-        std_x = bn.nanstd(x)
+        std_x = np.nanstd(x)
         new_x = x[np.nonzero((x < central_x + sigma * std_x)
                              * (x > central_x - sigma * std_x))]
         if return_index_list:
@@ -510,7 +509,7 @@ def meansigcut2d(np.ndarray[np.float64_t, ndim=2] x, double sigma=3,
             iline = x[:,i]
         else:
             iline = x[i,:]
-        line[i] = bn.nanmean(sigmacut(iline, 0, False,
+        line[i] = np.nanmean(sigmacut(iline, 0, False,
                                       sigma, min_values,
                                       return_index_list=False))
     return line
@@ -535,15 +534,15 @@ def sigmaclip(np.ndarray[np.float64_t, ndim=1] x, double sigma,
     cdef int min_mask = 0
     cdef int max_mask = x.shape[0] - 1
 
-    if bn.anynan(x):
+    if np.isnan(x).any():
         x = x[np.nonzero(~np.isnan(x))]
 
     # sort array once and for all
     x = np.sort(x)
 
     # compute first median without min and max
-    med = bn.median(x[1:-1])
-    std = bn.nanstd(x[1:-1])
+    med = np.median(x[1:-1])
+    std = np.nanstd(x[1:-1])
 
     while still_rejection:
         # put min and max at first and last index
@@ -559,8 +558,8 @@ def sigmaclip(np.ndarray[np.float64_t, ndim=1] x, double sigma,
         if new_sz == sz or new_sz <= min_values:
             still_rejection = 0
         else:
-            med = bn.median(x[min_mask:max_mask+1])
-            std = bn.nanstd(x[min_mask:max_mask+1])
+            med = np.median(x[min_mask:max_mask+1])
+            std = np.nanstd(x[min_mask:max_mask+1])
 
     return x[min_mask:max_mask+1]
 
@@ -638,8 +637,8 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
     cdef np.ndarray[np.float64_t, ndim=2] std2d = np.zeros((dimx, dimy))
 
     frames = np.sort(frames, axis=2)
-    mean2d = bn.nanmean(frames[:,:,1:-1], axis=2)
-    std2d = bn.nanstd(frames[:,:,1:-1], axis=2)
+    mean2d = np.nanmean(frames[:,:,1:-1], axis=2)
+    std2d = np.nanstd(frames[:,:,1:-1], axis=2)
 
     ## Rejection
     # sigclip or avsigclip
@@ -649,10 +648,10 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
                 sqrtmean2d = np.sqrt(np.abs(mean2d))
                 sqrtmean2d[np.nonzero(mean2d == 0)] = np.nan
                 std2d = (sqrtmean2d.T
-                         * bn.nanmean(std2d / sqrtmean2d, axis=1)).T
+                         * np.nanmean(std2d / sqrtmean2d, axis=1)).T
 
             framesdiff = np.abs((frames.T - mean2d.T).T)
-            max2d = bn.nanmax(framesdiff, axis=2)
+            max2d = np.nanmax(framesdiff, axis=2)
 
             # remove all-NaN slices
             nans = np.nonzero(np.isnan(max2d))
@@ -661,7 +660,7 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
             # All Nan slices are set to a value which will always reject them
             max2d[nans] = std2d[nans] * sigma * 2
 
-            argmax2d = bn.nanargmax(framesdiff, axis=2)
+            argmax2d = np.nanargmax(framesdiff, axis=2)
             mask2d = np.nonzero(np.logical_and(max2d > std2d * sigma,
                                                rejects2d < dimz - nkeep))
             rejpix = (mask2d[0], mask2d[1], argmax2d[mask2d])
@@ -673,8 +672,8 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
                 stop_rejection = 1
 
             rejects2d = np.copy(new_rejects2d)
-            mean2d = bn.nanmean(frames, axis=2)
-            std2d = bn.nanstd(frames, axis=2)
+            mean2d = np.nanmean(frames, axis=2)
+            std2d = np.nanstd(frames, axis=2)
 
     # minmax
     elif reject_mode == 2:
@@ -684,14 +683,14 @@ def master_combine(np.ndarray[np.float64_t, ndim=3] frames, double sigma,
 
     ## Combination
     if combine_mode == 0:
-        result = bn.nanmean(frames, axis=2)
+        result = np.nanmean(frames, axis=2)
     elif combine_mode == 1:
-        result = bn.nanmedian(frames, axis=2)
+        result = np.nanmedian(frames, axis=2)
     else: raise Exception('Bad combining mode. Must be 0 or 1')
     if not return_std_frame:
         return result, rejects2d
     else:
-        return result, rejects2d, bn.nanstd(frames, axis=2)
+        return result, rejects2d, np.nanstd(frames, axis=2)
 
 
 def _robust_format(np.ndarray x):
@@ -735,11 +734,11 @@ def robust_mean(np.ndarray x):
 
     if flag:
         if complexflag:
-            complexresult.real = bn.nanmean(x.real)
-            complexresult.imag = bn.nanmean(x.imag)
+            complexresult.real = np.nanmean(x.real)
+            complexresult.imag = np.nanmean(x.imag)
             return complexresult
         else:
-            return bn.nanmean(x)
+            return np.nanmean(x)
     else:
         return np.nanmean(x)
 
@@ -757,11 +756,11 @@ def robust_median(np.ndarray x):
 
     if flag:
         if complexflag:
-            complexresult.real = bn.nanmedian(x.real)
-            complexresult.imag = bn.nanmedian(x.imag)
+            complexresult.real = np.nanmedian(x.real)
+            complexresult.imag = np.nanmedian(x.imag)
             return complexresult
         else:
-            return bn.nanmedian(x)
+            return np.nanmedian(x)
     else:
         return np.median(x)
 
@@ -778,11 +777,11 @@ def robust_sum(np.ndarray x):
 
     if flag:
         if complexflag:
-            complexresult.real = bn.nansum(x.real)
-            complexresult.imag = bn.nansum(x.imag)
+            complexresult.real = np.nansum(x.real)
+            complexresult.imag = np.nansum(x.imag)
             return complexresult
         else:
-            return bn.nansum(x)
+            return np.nansum(x)
     else:
         return np.nansum(x)
 
@@ -799,11 +798,11 @@ def robust_std(np.ndarray x):
 
     if flag:
         if complexflag:
-            complexresult.real = bn.nanstd(x.real)
-            complexresult.imag = bn.nanstd(x.imag)
+            complexresult.real = np.nanstd(x.real)
+            complexresult.imag = np.nanstd(x.imag)
             return complexresult
         else:
-            return bn.nanstd(x)
+            return np.nanstd(x)
     else:
         return np.nanstd(x)
 
@@ -836,11 +835,11 @@ def robust_average(np.ndarray x,
 
     if flagx and flagw:
         if complexflagx or complexflagw:
-            complexresult.real = bn.nanmean(x.real * w.real)
-            complexresult.imag = bn.nanmean(x.imag * w.imag)
+            complexresult.real = np.nanmean(x.real * w.real)
+            complexresult.imag = np.nanmean(x.imag * w.imag)
             return complexresult
         else:
-            return bn.nanmean(x * w)
+            return np.nanmean(x * w)
     else:
         return np.nanmean(x * w)
 
@@ -928,11 +927,11 @@ def interf_mean_energy(np.ndarray interf):
     cdef double energy_sum
 
     if not np.iscomplexobj(interf):
-        energy_sum = bn.nansum((interf - bn.nanmean(interf))**2.)
+        energy_sum = np.nansum((interf - np.nanmean(interf))**2.)
     else:
-        energy_sum = bn.nansum(
-            (interf.real - bn.nanmean(interf.real))**2.
-            + (interf.imag - bn.nanmean(interf.imag))**2.)
+        energy_sum = np.nansum(
+            (interf.real - np.nanmean(interf.real))**2.
+            + (interf.imag - np.nanmean(interf.imag))**2.)
 
     return sqrt(energy_sum / <float> np.size(interf))
 
@@ -946,9 +945,9 @@ def spectrum_mean_energy(np.ndarray spectrum):
     cdef double energy_sum
 
     if not np.iscomplexobj(spectrum):
-        energy_sum = bn.nansum(spectrum**2.)
+        energy_sum = np.nansum(spectrum**2.)
     else:
-        energy_sum = bn.nansum(spectrum.real**2. + spectrum.imag**2.)
+        energy_sum = np.nansum(spectrum.real**2. + spectrum.imag**2.)
 
     return sqrt(energy_sum) / <float> np.size(spectrum)
 
@@ -1017,7 +1016,7 @@ def fft_filter(np.ndarray[np.float64_t, ndim=1] a,
     else:
         window = np.hstack((hwindow, hwindow[-1], hwindow[::-1]))
 
-    if bn.anynan(a):
+    if np.isnan(a).any():
         median_a = robust_median(a)
         a[np.nonzero(np.isnan(a))] = median_a
 
@@ -1062,12 +1061,12 @@ def low_pass_image_filter(np.ndarray[np.float64_t, ndim=2] im, int deg):
         if (ix >= deg and iy >= deg and ix < im.shape[0] - deg
             and  iy < im.shape[1] - deg):
             box = np.copy(im[ix-deg:ix+deg+1, iy-deg:iy+deg+1])
-            if not np.isnan(bn.nansum(box)):
+            if not np.isnan(np.nansum(box)):
                 kernel_mod = kernel * (~np.isnan(box))
-                kernel_mod = (kernel_mod / bn.nansum(kernel_mod)
-                              * bn.nansum(kernel))
+                kernel_mod = (kernel_mod / np.nansum(kernel_mod)
+                              * np.nansum(kernel))
                 box[np.nonzero(np.isnan(box))] = 0.
-                final_im[ix,iy] = bn.nansum(box * kernel_mod)
+                final_im[ix,iy] = np.nansum(box * kernel_mod)
 
     return np.copy(final_im)
 
@@ -1090,7 +1089,7 @@ def fast_gaussian_kernel(int deg):
     if deg < 0: raise ValueError('deg must be >= 0')
     if deg > 0:
         kernel = gaussian_array2d(0., 1., ddeg, ddeg, fwhm, sz, sz)
-        kernel / bn.nansum(kernel)
+        kernel / np.nansum(kernel)
         return kernel
     else:
         kernel.fill(1.)
@@ -1139,7 +1138,7 @@ def gaussian_kernel(double deg):
                 j = <int> (<double> ij / <double> PRECISION_COEFF)
                 kernel[i,j] += large_kernel[ii,ij]
 
-    return kernel / bn.nansum(kernel)
+    return kernel / np.nansum(kernel)
 
 
 def get_box_coords(int ix, int iy, int box_size,
@@ -1325,9 +1324,9 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                        (j+1)*stars_p.shape[0]] = stars_p[:,ip]
                 j += 1
 
-        if bn.nansum(cov_p_mask > 0):
+        if np.nansum(cov_p_mask > 0):
             free_p[-cov_free_p_nb:] = cov_p[np.nonzero(cov_p_mask)]
-        if bn.nansum(cov_p_mask > 0) != np.size(cov_p_mask):
+        if np.nansum(cov_p_mask > 0) != np.size(cov_p_mask):
             fixed_p[-(np.size(cov_p)-cov_free_p_nb):] = cov_p[
                 np.nonzero(cov_p_mask == 0)]
 
@@ -1340,8 +1339,8 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                            np.ndarray[np.float64_t, ndim=1] cov_p_mask,
                            int star_nb):
 
-        cdef int stars_free_p_nb = bn.nansum(stars_p_mask)
-        cdef int cov_free_p_nb = bn.nansum(cov_p_mask)
+        cdef int stars_free_p_nb = np.nansum(stars_p_mask)
+        cdef int cov_free_p_nb = np.nansum(cov_p_mask)
         cdef np.ndarray[np.float64_t, ndim=2] stars_p = np.zeros(
             (star_nb, np.size(stars_p_mask)), dtype=float)
         cdef np.ndarray[np.float64_t, ndim=1] cov_p = np.zeros(
@@ -1360,7 +1359,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                                          (j+1)*stars_p.shape[0]]
                 j += 1
 
-        if bn.nansum(cov_p_mask > 0):
+        if np.nansum(cov_p_mask > 0):
             cov_p[np.nonzero(cov_p_mask)] = free_p[-cov_free_p_nb:]
             cov_p[np.nonzero(cov_p_mask == 0)] = fixed_p[
                 -(np.size(cov_p)-cov_free_p_nb):]
@@ -1592,12 +1591,12 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     # distribution of the psf [e.g. Howell 2006]
     test_p = np.copy(stars_p)
     test_p[:,1] = 0.
-    test_x = np.abs(bn.nansum(model_diff(frame.shape[0], frame.shape[1],
+    test_x = np.abs(np.nansum(model_diff(frame.shape[0], frame.shape[1],
                                          test_p, box_size, frame,
                                          noise_guess * 0.,
                                          0., saturation, transpose=True,
                                          normalize=True), axis=1))
-    test_y = np.abs(bn.nansum(model_diff(frame.shape[0], frame.shape[1],
+    test_y = np.abs(np.nansum(model_diff(frame.shape[0], frame.shape[1],
                                          test_p, box_size, frame,
                                          noise_guess * 0.,
                                          0., saturation, transpose=False,
@@ -1649,7 +1648,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         # amplitude guess
         # the 3 most intense pixels are skipped to determine the max
         # in the box to avoid errors due to a cosmic ray.
-        amp_guess[istar] = bn.nanmax(
+        amp_guess[istar] = np.nanmax(
             (np.sort(box.flatten()))[:-3])
 
         # define 'sky pixels'
@@ -1664,11 +1663,11 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
         sky_pixels = box * S_sky
         sky_pixels = np.sort(sky_pixels[np.nonzero(sky_pixels)])[1:-1]
         # guess background
-        stars_p[istar,0] = bn.nanmedian(sky_pixels)
+        stars_p[istar,0] = np.nanmedian(sky_pixels)
         if np.isnan(stars_p[istar,0]): stars_p[istar,0] = 0.
 
         # guess noise
-        noise_guess[istar] = bn.nanstd(sky_pixels) #- sqrt(stars_p[istar,0])
+        noise_guess[istar] = np.nanstd(sky_pixels) #- sqrt(stars_p[istar,0])
 
     if not np.isnan(height_guess):
         stars_p[:,0] = height_guess
@@ -1677,7 +1676,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
     amp_guess[np.isnan(amp_guess)] = 1.
     stars_p[:,1] = amp_guess - stars_p[:,0]
 
-    if bn.anynan(stars_p): return []
+    if np.isnan(stars_p).any(): return []
 
     # guess ron and dcl
     if not np.isnan(ron) and not estimate_local_noise:
@@ -1829,14 +1828,14 @@ def part_value(np.ndarray[np.float64_t, ndim=1] distrib, double coeff):
     coeff = max(0., min(1., coeff)) # coeff is coerced between 0 and 1
 
     if coeff == 0:
-        return bn.nanmin(distrib)
+        return np.nanmin(distrib)
     if coeff == 1:
-        return bn.nanmax(distrib)
+        return np.nanmax(distrib)
 
     k = max(1, (min(<int> (coeff * np.size(cleaned_distrib)),
                     np.size(cleaned_distrib) - 1)))
 
-    return bn.partition(cleaned_distrib, k)[k]
+    return np.partition(cleaned_distrib, k)[k]
 
 def indft(np.ndarray[np.float64_t, ndim=1] a,
           np.ndarray[np.float64_t, ndim=1] x):
@@ -1992,7 +1991,7 @@ def nanbin_image(np.ndarray[np.float64_t, ndim=2] im, int binning):
             ymax = ymin + binning
             if ymax > im.shape[1]: ymax=im.shape[1]
 
-            out[ii,ij] = bn.nanmean(im[xmin:xmax,ymin:ymax])
+            out[ii,ij] = np.nanmean(im[xmin:xmax,ymin:ymax])
 
     return out
 
@@ -2204,8 +2203,8 @@ def detect_cosmic_rays(np.ndarray[np.float32_t, ndim=2] frame,
             box = np.copy(workframe[xmin:xmax, ymin:ymax])
 
             if not np.all(np.isnan(box)):
-                boxstd = bn.nanstd(box)
-                boxmed = bn.nanmedian(box)
+                boxstd = np.nanstd(box)
+                boxmed = np.nanmedian(box)
                 if frame[ix,iy] > boxmed + detect_coeff * boxstd:
                     cr_map[ix,iy] = 1
 
@@ -2248,8 +2247,8 @@ def check_cosmic_rays_neighbourhood(
         if xmax - xmin == box_size and ymax - ymin == box_size:
             box = np.copy(workframe[xmin:xmax, ymin:ymax])
             if not np.all(np.isnan(box)):
-                boxstd = bn.nanstd(box)
-                boxmed = bn.nanmedian(box)
+                boxstd = np.nanstd(box)
+                boxmed = np.nanmedian(box)
                 for ii in range(xmin, xmax):
                     for ij in range(ymin, ymax):
                         if frame[ii, ij] > boxmed + detect_coeff * boxstd:
