@@ -1224,6 +1224,33 @@ def transform_wcs(wcs, params, rc, zoom_factor, sip=None, wcs_params=None):
     
     return wcsB
        
+def bin_wcs(wcs, binning):
+    """Return a binned wcs"""
+    assert binning > 1, 'binning must be > 1'
+    assert isinstance(wcs, astropy.wcs.WCS), 'WCS must be an astropy.wcs.WCS instance'
+    binning = int(binning)
+    wcsp = get_wcs_parameters(wcs)
+    wcsp[0] /= binning
+    wcsp[1] /= binning
+    wcsp[2] *= binning
+    wcsp[3] *= binning
+    wcs = create_wcs(*wcsp, sip=wcs)
+
+    
+    return wcs
+
+def bin_header(hdr, binning):
+    assert binning > 1, 'binning must be > 1'
+    wcs = bin_wcs(astropy.wcs.WCS(hdr), binning)
+    
+    # remove old CD matrix in case because WCS converts CD to PC
+    for ikey in ['CD1_1', 'CD1_2', 'CD2_1', 'CD2_2']:
+        if ikey in hdr:
+            del hdr[ikey]
+            
+    hdr.update(wcs.to_header())
+    return hdr
+    
 
 def get_profile(profile_name):
     """Return the PSF profile class corresponding to the given profile name.
