@@ -419,41 +419,15 @@ class Image(Frame2D):
                 raise Exception('No DATE or DATE-OBS in header')
             
         obsdate = astropy.time.Time(self.params[date_key])
+        obsdate.format = 'decimalyear'
             
         epoch = astropy.time.Time(cat.Epoch.values[0], format='decimalyear')
-        pm_unit = astropy.units.mas/astropy.units.yr
+        yr = obsdate.value - epoch.value
 
-        # everything below was adapted from
-        # astropy.coordinates.SkyCoord.apply_space_motion. When ORB
-        # will be adapted to python 3 this function should be directly
-        # used
-        cat_frame = astropy.coordinates.ICRS(
-            cat.ra.values * astropy.units.deg, 
-            cat.dec.values * astropy.units.deg, 
-            pm_ra_cosdec=cat.pmRA.values*pm_unit, 
-            pm_dec=cat.pmRA.values*pm_unit)
-
-        t1 = epoch.tdb
-        t2 = obsdate.tdb
-
-        icrsrep = cat_frame.represent_as(
-            astropy.coordinates.SphericalRepresentation,
-            astropy.coordinates.SphericalDifferential)
-        icrsvel = icrsrep.differentials['s']
-
-        starpm = astropy._erfa.starpm(
-            icrsrep.lon.radian, icrsrep.lat.radian,
-            icrsvel.d_lon.to_value(astropy.units.radian/astropy.units.yr),
-            icrsvel.d_lat.to_value(astropy.units.radian/astropy.units.yr),
-            0, 0, t1.jd1, t1.jd2, t2.jd1, t2.jd2)
-
-        icrs2 = astropy.coordinates.ICRS(
-            starpm[0]* astropy.units.radian, 
-            starpm[1]* astropy.units.radian, 
-            pm_ra_cosdec=starpm[2]* astropy.units.radian/astropy.units.yr * np.cos(starpm[1]),
-            pm_dec=starpm[3]* astropy.units.radian/astropy.units.yr)
-
-        sld = np.array([icrs2.ra.to('deg').value, icrs2.dec.to('deg').value])
+        sld = orb.utils.astrometry.compute_radec_pm(
+            cat.ra.values, cat.dec.values,
+            cat.pmRA.values, cat.pmDE.values, yr)
+        
         slp = self.world2pix(sld)
         slp = np.array([istar for istar in slp 
                         if istar[0] > 0 
@@ -462,6 +436,7 @@ class Image(Frame2D):
                         and istar[1] < self.dimy])
 
         sld = self.pix2world(slp)
+        
         sources = pandas.DataFrame({
             'x':slp[:,0],
             'y':slp[:,1],

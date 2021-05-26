@@ -1067,8 +1067,12 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
         pm_ra_cosdec=pm_ra_mas * astropy.units.mas/astropy.units.yr,
         pm_dec= pm_dec_mas * astropy.units.mas/astropy.units.yr,
         obstime=astropy.time.Time(2000, format='decimalyear'))
+    
     coords = coords.apply_space_motion(dt=yr*astropy.units.yr)
-    return float(coords.ra.deg), float(coords.dec.deg)
+    if len(coords.ra) == 1:
+        return float(coords.ra.deg), float(coords.dec.deg)
+    else:
+        return coords.ra.deg, coords.dec.deg
 
 def ra2deg(ra):
     """Convert RA in sexagesimal format to degrees.
