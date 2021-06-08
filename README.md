@@ -69,13 +69,10 @@ sudo apt install build-essential
 
 clone [ORB](https://github.com/thomasorb/orb)
 ```bash
-mkdir orb-stable # do it where you want to put orb files
+cd
+mkdir orb-stable # this is an example and the folder can be the one you wish (but the following lines must be changed accordingly)
 cd orb-stable
 git clone https://github.com/thomasorb/orb.git
-```
-
-in the orb-stable folder
-```bash
 conda activate orb3 # you don't need to do it if you are already in the orb3 environment
 cd orb
 python setup.py build_ext --inplace
