@@ -45,14 +45,10 @@ def main(args):
         zrange = None
 
     export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
-    cube.to_fits(export_path)# , force_fits=True, overwrite=True,
-                    # header=cube.get_cube_header(),
-                    # z_range=zrange)
+    cube.to_fits(export_path)
                 
                 
                 
-            
-
 if __name__ == "__main__":
 
     parser = ArgumentParser(prog='orb-convert',

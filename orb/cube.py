@@ -757,23 +757,23 @@ class HDFCube(orb.core.WCSData):
         """write data to a FITS file. 
 
         Note that most of the information will be lost in the
-        process. The only output guaranteed format is hdf5 (usr
+        process. The only output guaranteed format is hdf5 (use
         writeto() method instead)
 
         :param path: Path to the FITS file
         """
         # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
 
-        wcshdr = self.get_wcs().to_header()
+        hdr = self.get_header()
 
-        hdr = astropy.io.fits.PrimaryHDU().header
-        hdr['NAXIS'] = 3
-        hdr['NAXIS1'] = self.dimx
-        hdr['NAXIS2'] = self.dimy
-        hdr['NAXIS3'] = self.dimz
-        hdr['BITPIX'] = (-32, 'np.float32')
-        hdr.update(wcshdr)
-        
+        newhdr = astropy.io.fits.PrimaryHDU().header
+        newhdr['NAXIS'] = 3
+        newhdr['NAXIS1'] = self.dimx
+        newhdr['NAXIS2'] = self.dimy
+        newhdr['NAXIS3'] = self.dimz
+        newhdr['BITPIX'] = (-32, 'np.float32')
+        hdr.update(newhdr)
+
         try:
             os.remove(path)
         except FileNotFoundError:

@@ -412,11 +412,15 @@ class Image(Frame2D):
 
         cat = self.query_vizier(as_pandas=True, max_stars=max_stars, catalog='gaia2')
 
-        date_key = 'DATE-OBS'
-        if date_key not in self.params:
-            date_key = 'DATE'
-            if date_key not in self.params:
-                raise Exception('No DATE or DATE-OBS in header')
+        date_keys = ['DATE-OBS', 'DATE', 'date', 'date_obs']
+        found = False
+        for date_key in date_keys:
+            if date_key in self.params:
+                found = True
+                break
+            
+        if not found:
+            raise Exception('No DATE or DATE-OBS in header')
             
         obsdate = astropy.time.Time(self.params[date_key])
         obsdate.format = 'decimalyear'

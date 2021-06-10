@@ -2967,7 +2967,7 @@ class WCSData(Tools, Data):
                       'BINNING': 'binning'}
 
     def __init__(self, data, instrument=None, config=None,
-                 data_prefix="./", sip=None, **kwargs):
+                 data_prefix="./", sip=None, reset_wcs=False, **kwargs):
 
         if isinstance(data, str):
             data_path = str(data)
@@ -3157,15 +3157,16 @@ class WCSData(Tools, Data):
             sip = self.get_wcs()
             
         # reset wcs
-        wcs = orb.utils.astrometry.create_wcs(
-            self.params.target_x, self.params.target_y,
-            self.params.delta_x, self.params.delta_y,
-            self.params.target_ra, self.params.target_dec,
-            self.params.wcs_rotation, sip=sip)
+        if reset_wcs:
+            wcs = orb.utils.astrometry.create_wcs(
+                self.params.target_x, self.params.target_y,
+                self.params.delta_x, self.params.delta_y,
+                self.params.target_ra, self.params.target_dec,
+                self.params.wcs_rotation, sip=sip)
+
         
-        self.set_wcs(wcs)
+            self.set_wcs(wcs)
         
-        logging.debug(self.get_wcs())
         self.validate_wcs()
         
     def has_dxdymaps(self):
