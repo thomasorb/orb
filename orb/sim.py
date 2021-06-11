@@ -219,6 +219,7 @@ class Interferogram(Base):
             corr=self.params.calib_coeff)
 
         self.spectrum_axis = orb.core.Axis(cm1_axis, params=self.params)
+        self.data = np.zeros_like(cm1_axis)
         
     def get_interferogram(self):
         return orb.fft.Interferogram(np.copy(self.data), params=self.params, exposure_time=1)
