@@ -885,7 +885,7 @@ class HDFCube(orb.core.WCSData):
           :py:meth:`orb.utils.image.create_master_frame`.
         """
 
-        if self.dimz > 25:
+        if self.dimz > 100:
             raise Exception('master combination is useful for a small set of frames')
         
         if combine is None:
