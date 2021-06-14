@@ -57,7 +57,7 @@ setup(
         'orb':['*~', '*.so', '*.pyc', '*.c']},
     platforms='any',
     scripts=[
-        'scripts/orb-header',],
+        'scripts/orb-convert',],
     classifiers = [
         'Programming Language :: Python',
         'Programming Language :: Cython',
