@@ -764,16 +764,20 @@ class HDFCube(orb.core.WCSData):
         """
         # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
 
-        hdr = self.get_header()
+        hdr = astropy.io.fits.Header()
+        hdr['SIMPLE'] = True
+        hdr['BITPIX'] = (-32, 'np.float32')
+        hdr['NAXIS'] = 3
+        hdr['EXTEND'] = False
+        hdr['NAXIS1'] = self.dimx
+        hdr['NAXIS2'] = self.dimy
+        hdr['NAXIS3'] = self.dimz
 
-        newhdr = astropy.io.fits.PrimaryHDU().header
-        newhdr['NAXIS'] = 3
-        newhdr['NAXIS1'] = self.dimx
-        newhdr['NAXIS2'] = self.dimy
-        newhdr['NAXIS3'] = self.dimz
-        newhdr['BITPIX'] = (-32, 'np.float32')
-        hdr.update(newhdr)
-
+        cubehdr = self.get_header()
+        for ikey in cubehdr:
+            if ikey not in hdr:
+                hdr[ikey] = (cubehdr[ikey], cubehdr.comments[ikey])    
+        
         try:
             os.remove(path)
         except FileNotFoundError:
@@ -781,11 +785,14 @@ class HDFCube(orb.core.WCSData):
         
         shdu = astropy.io.fits.StreamingHDU(path, hdr)
         progress = orb.core.ProgressBar(self.dimz)
-        for iz in range(self.dimz):
+        for iz in range(hdr['NAXIS3']):
             progress.update(iz, info='Exporting frame {}'.format(iz))
             shdu.write(self[:,:,iz].real.astype(np.float32).T)
+            #shdu.write(np.zeros((self.dimy, self.dimx), dtype=np.float32))
+            
         progress.end()
         shdu.close()
+
             
     def get_frame_header(self, index):
         """Return the header of a frame given its index in the list.
@@ -878,7 +885,7 @@ class HDFCube(orb.core.WCSData):
           :py:meth:`orb.utils.image.create_master_frame`.
         """
 
-        if self.dimz > 25:
+        if self.dimz > 100:
             raise Exception('master combination is useful for a small set of frames')
         
         if combine is None:
