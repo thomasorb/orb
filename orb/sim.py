@@ -333,6 +333,8 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
           30000))
 
         """
+        assert np.size(axis) > 0, 'axis size must be > 0'
+        assert np.size(spectrum) == np.size(axis), 'axis must have same size as spectrum'
         orb.core.Tools.__init__(
             self, instrument=instrument,
             data_prefix=data_prefix,
@@ -359,10 +361,14 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         wave = np.array(wave)
         if not np.issubdtype(wave.dtype, np.number):
             wave = orb.core.Lines().get_line_cm1(wave)
-
+        
+        if np.size(flux) == 1:
+            flux = [flux,]
         flux = np.array(flux)
+
         assert flux.size == wave.size, 'flux must have same size as wave'
-            
+
+        
         if vel is not None:
             vel = np.array(vel)
             assert vel.size == wave.size, 'vel must have same size as wave'
@@ -376,6 +382,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
             sigma = np.zeros_like(wave)
 
         axis_step = self.axis.data[1] - self.axis.data[0]
+        
         for iwave, isigma, iflux in zip(wave, sigma, flux):
             isigma = orb.utils.fit.vel2sigma(isigma, iwave, axis_step) * axis_step
             isigma = max(4 * axis_step, isigma)
@@ -395,8 +402,13 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         assert spectrum.size == self.axis.data.size, 'spectrum must have same size has the axis provided at init'
         self.data += spectrum
 
-    def get_interferogram(self, params, camera=0, theta=None, binning=1, me_factor=1.):
+    def get_interferogram(self, params, camera=0, theta=None, binning=1, me_factor=1., x=None):
 
+        """:param x: scanning vector (to simulate a non-uniform
+           scan). Must be given in step fraction. e.g. x =
+           (np.arange(params['step_nb']) - params['zpd_index']) will
+           simulate the default scanning sequence.
+        """
         needed_params = ('instrument', 'filter_name', 'exposure_time', 'step_nb', 'airmass')
         for ipar in needed_params:
             if ipar not in params:
@@ -409,13 +421,13 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         params['nm_laser'] = self.config.CALIB_NM_LASER
         params['apodization'] = 1.
         params['wavenumber'] = True
-        
         if theta is None:
             theta = self.config.OFF_AXIS_ANGLE_CENTER
 
         corr = orb.utils.spectrum.theta2corr(theta)
         params['calib_coeff_orig'] = corr
         params['calib_coeff'] = corr
+        params = orb.core.Params(params)
 
         spectrum = orb.fft.Spectrum(self.data, axis=self.axis, params=params)
         
@@ -445,16 +457,18 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         if int(params.order)&1:
             spectrum.reverse()
 
-        a = np.concatenate((spectrum.data, np.zeros(spectrum.dimx)))    
-        a_ifft = scipy.fft.ifft(a)
-        a_interf = np.concatenate(
+        if x is None:
+            a = np.concatenate((spectrum.data, np.zeros(spectrum.dimx)))
+            a_ifft = scipy.fft.ifft(a)
+            freq = scipy.fft.fftfreq(a.size)
+            a_interf = np.concatenate(
             (a_ifft[-params.zpd_index:], 
              a_ifft[:params.step_nb - params.zpd_index]))
-
-        # compensate energy lost in the imaginary part !
-        a_interf = a_interf.real.astype(float) * 2.
+        else:
+            a_interf = orb.utils.fft.indft(spectrum.data, x / (2*a.size))
         
-            
+        # compensate energy lost in the imaginary part !
+        a_interf = a_interf.real.astype(float) * 2.            
         interf = orb.fft.Interferogram(a_interf, params=params)
                 
         unmod_spectrum = spectrum.math('divide', photom.get_modulation_efficiency())
