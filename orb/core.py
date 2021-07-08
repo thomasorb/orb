@@ -2969,6 +2969,7 @@ class WCSData(Tools, Data):
     def __init__(self, data, instrument=None, config=None,
                  data_prefix="./", sip=None, reset_wcs=False, **kwargs):
 
+        
         if isinstance(data, str):
             data_path = str(data)
         else:
@@ -2991,14 +2992,16 @@ class WCSData(Tools, Data):
         
         Data.__init__(self, data, **kwargs)
 
+        
         # try to load wcs from fits keywords if a FITS file
         if data_path is not None:
             if 'fit' in os.path.splitext(data_path)[1]:
-                self.set_wcs(data_path)
+                if not reset_wcs:
+                    self.set_wcs(data_path)
                 # reingest kwargs in this case, because wcs params were forced
                 self.params.update(kwargs)
                 
-                    
+        
         # load dxdymaps
         self.dxdymaps = None
         if data_path is not None:
@@ -3016,7 +3019,7 @@ class WCSData(Tools, Data):
                 self.params.reset(iparam, self.default_params[iparam])
                 logging.debug('{} set to default value: {}'.format(
                     iparam, self.default_params[iparam]))
-                
+        
         # check params
         self.params.reset('instrument', self.instrument)
         if self.instrument is None:
@@ -3068,6 +3071,7 @@ class WCSData(Tools, Data):
         if self.dimx != self.config[cam + '_DETECTOR_SIZE_X'] // self.params.binning:
             logging.warning('image might be cropped, target_x, target_y and other parameters might be wrong')
 
+        
         # load wcs parameters
         if 'target_x' not in self.params:
             target_x = float(self.dimx / 2.)
@@ -3097,8 +3101,7 @@ class WCSData(Tools, Data):
         if 'target_dec' in self.params:
             if self.params.target_dec == self.default_params['target_dec']:
                 del self.params['target_dec']
-        
-        
+                
         if 'target_ra' not in self.params:
             if 'TARGETR' in self.params:
                 self.params['target_ra'] = orb.utils.astrometry.ra2deg(
@@ -3132,13 +3135,14 @@ class WCSData(Tools, Data):
             logging.debug('wcs_rotation computed from config parameters: {}'.format(
                 self.params.wcs_rotation))
 
-        # define platescale
+        # define platescale        
         if 'delta_x' not in self.params:
             self.params['delta_x'] = self.get_scale() / 3600.
             
         if 'delta_y' not in self.params:
             self.params['delta_y'] = self.get_scale() / 3600.
-                
+
+        
         # check if all needed parameters are present
         for iparam in self.default_params:
             if iparam not in self.params:
@@ -3166,6 +3170,7 @@ class WCSData(Tools, Data):
 
         
             self.set_wcs(wcs)
+            logging.info('WCS reset to:\n{}'.format(self.get_wcs()))
         
         self.validate_wcs()
         

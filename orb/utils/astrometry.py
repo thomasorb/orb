@@ -1069,7 +1069,7 @@ def compute_radec_pm(ra_deg, dec_deg, pm_ra_mas, pm_dec_mas, yr):
         obstime=astropy.time.Time(2000, format='decimalyear'))
     
     coords = coords.apply_space_motion(dt=yr*astropy.units.yr)
-    if len(coords.ra) == 1:
+    if np.size(coords.ra.deg) == 1:
         return float(coords.ra.deg), float(coords.dec.deg)
     else:
         return coords.ra.deg, coords.dec.deg
