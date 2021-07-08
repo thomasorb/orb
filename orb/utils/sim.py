@@ -98,7 +98,6 @@ def line_interf(sigma, step_nb, phi=0, symm=False, jitter=0.):
     a = np.zeros(step_nb, dtype=float)
     x = np.arange(step_nb, dtype=float) / (step_nb-1)
 
-    print(jitter)
     for i in range(randnb):    
         if jitter != 0:
             rand = np.random.standard_normal(x.size) * jitter

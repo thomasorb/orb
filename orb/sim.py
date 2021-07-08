@@ -403,7 +403,8 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         assert spectrum.size == self.axis.data.size, 'spectrum must have same size has the axis provided at init'
         self.data += spectrum
 
-    def get_interferogram(self, params, camera=0, theta=None, binning=1, me_factor=1., x=None):
+    def get_interferogram(self, params, camera=0, theta=None, binning=1, me_factor=1., x=None,
+                          bypass_flux2counts=False, noiseless=True):
 
         """:param x: scanning vector (to simulate a non-uniform
            scan). Must be given in step fraction. e.g. x =
@@ -430,7 +431,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         params['calib_coeff'] = corr
         params = orb.core.Params(params)
 
-        spectrum = orb.fft.Spectrum(self.data, axis=self.axis, params=params)
+        spectrum = orb.fft.Spectrum(np.copy(self.data), axis=np.copy(self.axis.data), params=params)
         
         photom = orb.photometry.Photometry(params.filter_name,
                                            camera, instrument=params.instrument,
@@ -438,9 +439,11 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
 
         # spectrum.data is in erg/cm2/s/A
         # it should be transformed to counts
-        spectrum = orb.fft.Spectrum(photom.flux2counts(spectrum, modulated=True))
-        spectrum.data *= params.step_nb * params.exposure_time * binning**2.
-        spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
+        if not bypass_flux2counts:
+            spectrum = orb.fft.Spectrum(photom.flux2counts(spectrum, modulated=True))
+            spectrum.data *= params.step_nb * params.exposure_time * binning**2.
+            spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
+            
 
         # compute total flux of input spectrum
         # axis_steps = (1e7/spectrum.axis.data[:-1] - 1e7/spectrum.axis.data[1:]) * 10
@@ -450,24 +453,22 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         # decalibrate spectrum
         decal_cm1_axis = orb.core.Axis(orb.utils.spectrum.create_cm1_axis(
             self.dimx, params.step, params.order, corr=corr))
-
         spectrum = spectrum.project(decal_cm1_axis)
         spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
-                
+        
         # spectrum is flipped if order is even
         if int(params.order)&1:
             spectrum.reverse()
 
+        a = np.concatenate((spectrum.data, np.zeros(spectrum.dimx)))
         if x is None:
-            a = np.concatenate((spectrum.data, np.zeros(spectrum.dimx)))
             a_ifft = scipy.fft.ifft(a)
-            freq = scipy.fft.fftfreq(a.size)
             a_interf = np.concatenate(
-            (a_ifft[-params.zpd_index:], 
-             a_ifft[:params.step_nb - params.zpd_index]))
+                (a_ifft[-params.zpd_index:], 
+                 a_ifft[:params.step_nb - params.zpd_index]))
         else:
-            a_interf = orb.utils.fft.indft(spectrum.data, x / (2*a.size))
-        
+            a_interf = orb.utils.fft.indft(spectrum.data, x/2)/2
+              
         # compensate energy lost in the imaginary part !
         a_interf = a_interf.real.astype(float) * 2.            
         interf = orb.fft.Interferogram(a_interf, params=params)
@@ -476,7 +477,6 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         unmod_spectrum.data[np.nonzero(np.isnan(unmod_spectrum.data))] = 0.
         
         interf.data += np.mean(unmod_spectrum.data).astype(np.float128)
-
         interf.data = interf.data.real
         
         # modulation efficiency loss with OPD
@@ -488,5 +488,6 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
             interf.data += mean_
 
         # poisson noise
-        interf.data = np.random.poisson(interf.data).astype(int).astype(float)
+        if not noiseless:
+            interf.data = np.random.poisson(interf.data).astype(int).astype(float)
         return interf
