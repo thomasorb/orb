@@ -1064,7 +1064,7 @@ class HDFCube(orb.core.WCSData):
 
         :param alignment_vectors: (Optional) If not None, must be a
           tuple of 2 vectors (dx, dy), each one having the same length
-          as the numebr of frames in the cube. It is used as a guess
+          as the number of frames in the cube. It is used as a guess
           for the alignement of the stars.
 
         :param add_cube: (Optional) A tuple [Cube instance,
