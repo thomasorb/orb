@@ -902,13 +902,20 @@ class Spectrum(orb.core.Cm1Vector1d):
                 is_sincgauss = True
         else:                        
             for imodel in range(len(inputparams['models'])):
-                if inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:
+                if inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:                    
                     if inputparams['params'][imodel]['fmodel'] == 'sincgauss':
                         is_sincgauss = True
 
+        # check fixed sigma parameters
+        is_fixed = False
+        if is_sincgauss:
+            for imodel in range(len(inputparams['models'])):
+                if inputparams['models'][imodel][0] == orb.fit.Cm1LinesModel:
+                    is_fixed = np.array(inputparams['params'][imodel]['sigma_def']) == 'fixed'
+                        
         if (_fit != []
             and is_sincgauss
-            and np.all(np.isnan(_fit['broadening_err']))):
+            and np.any(np.isnan(_fit['broadening_err']) * ~is_fixed)):
             logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
 
             # clean kwargs from sigma related params
@@ -920,11 +927,9 @@ class Spectrum(orb.core.Cm1Vector1d):
             new_kwargs['fmodel'] = 'sinc'
 
             try:
-                print('inpitparams')
                 new_inputparams = inputparams.convert()
             except AttributeError:
                 import copy
-                print('dict')
                 new_inputparams = copy.deepcopy(inputparams)
 
             # clean inputparams
