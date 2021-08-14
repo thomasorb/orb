@@ -764,6 +764,17 @@ class HDFCube(orb.core.WCSData):
         """
         # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
 
+        flambda = np.ones(self.dimz, dtype=float)
+        if self.get_level() >= 3:
+            if 'flambda' in self.params:
+                flambda = self.params.flambda
+            
+            if np.size(flambda) == 1:
+                flambda *= np.ones(self.dimz, dtype=float)
+            elif np.size(flambda) != self.dimz:
+                logging.warning('bad flux calibration, output will not be flux calibrated')
+                flambda = np.ones(self.dimz, dtype=float)
+                
         hdr = astropy.io.fits.Header()
         hdr['SIMPLE'] = True
         hdr['BITPIX'] = (-32, 'np.float32')
@@ -787,7 +798,7 @@ class HDFCube(orb.core.WCSData):
         progress = orb.core.ProgressBar(self.dimz)
         for iz in range(hdr['NAXIS3']):
             progress.update(iz, info='Exporting frame {}'.format(iz))
-            shdu.write(self[:,:,iz].real.astype(np.float32).T)
+            shdu.write(self[:,:,iz].real.astype(np.float32).T * flambda[iz])
             #shdu.write(np.zeros((self.dimy, self.dimx), dtype=np.float32))
             
         progress.end()
