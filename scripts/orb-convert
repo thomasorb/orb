@@ -35,14 +35,13 @@ import orb
     
 def main(args):
 
-    DIV_NB = 2
     cube = orb.cube.HDFCube(args.input_cube_path)
 
-    if args.zrange is not None:
-        tmp = args.zrange.split(',')
-        zrange = (int(tmp[0]),int(tmp[1]))
-    else:
-        zrange = None
+    # if args.zrange is not None:
+    #     tmp = args.zrange.split(',')
+    #     zrange = (int(tmp[0]),int(tmp[1]))
+    # else:
+    #     zrange = None
 
     export_path = os.path.splitext(args.input_cube_path)[0] + '.fits'
     cube.to_fits(export_path)
@@ -57,9 +56,9 @@ if __name__ == "__main__":
     
     parser.add_argument('input_cube_path', help='Path to an HDF5 cube.')
 
-    parser.add_argument("-z", dest="zrange", default=None,
-                        action="store",
-                        help="frame range to export: zmin,zmax, default None, i.e. full cube export")
+    # parser.add_argument("-z", dest="zrange", default=None,
+    #                     action="store",
+    #                     help="frame range to export: zmin,zmax, default None, i.e. full cube export")
  
     args = parser.parse_args()
 
