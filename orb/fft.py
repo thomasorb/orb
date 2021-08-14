@@ -851,7 +851,6 @@ class Spectrum(orb.core.Cm1Vector1d):
             wavenumber=self.params['wavenumber'])
 
         fwhm_guess = [fwhm_guess_cm1] * inputparams['allparams']['line_nb']
-
         if not 'fwhm_guess' in kwargs:
             kwargs['fwhm_guess'] = fwhm_guess
         else:

@@ -815,26 +815,29 @@ class HDFCube(orb.core.WCSData):
         return orb.utils.io.header_hdf52fits(
             self.get_dataset('frame_header_{}'.format(index)))
     
-    def get_calibration_laser_map(self):
+    def get_calibration_laser_map(self, checkattr=True):
         """Return calibration laser map"""
-        try:
-            return np.copy(self.calibration_laser_map)
-        except AttributeError:
-            if self.has_dataset('calib_map'):
-                self.calibration_laser_map = self.get_dataset('calib_map', protect=False)
-            else:
-                if 'calibration_laser_map_path' not in self.params:
-                    raise Exception("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
-                calib_path = self.params.calibration_laser_map_path
-                if not os.path.exists(calib_path):
-                    if not os.path.isabs(calib_path):
-                        calib_path = os.path.join(os.path.dirname(self.cube_path), calib_path)
-                
-                self.calibration_laser_map = orb.utils.io.read_fits(calib_path)
-                if 'cropped_bbox' in self.params:
-                    xmin, xmax, ymin, ymax = self.params.cropped_bbox
-                    self.calibration_laser_map = self.calibration_laser_map[xmin:xmax, ymin:ymax]
-                    
+        if checkattr:
+            try:
+                return np.copy(self.calibration_laser_map)
+            except AttributeError:
+                pass
+            
+        if self.has_dataset('calib_map'):
+            self.calibration_laser_map = self.get_dataset('calib_map', protect=False)
+        else:
+            if 'calibration_laser_map_path' not in self.params:
+                raise Exception("no calibration laser map in the hdf file. 'calibration_laser_map_path' must be set in params")
+            calib_path = self.params.calibration_laser_map_path
+            if not os.path.exists(calib_path):
+                if not os.path.isabs(calib_path):
+                    calib_path = os.path.join(os.path.dirname(self.cube_path), calib_path)
+
+            self.calibration_laser_map = orb.utils.io.read_fits(calib_path)
+            if 'cropped_bbox' in self.params:
+                xmin, xmax, ymin, ymax = self.params.cropped_bbox
+                self.calibration_laser_map = self.calibration_laser_map[xmin:xmax, ymin:ymax]
+
         if (self.calibration_laser_map.shape[0] != self.dimx):
             self.calibration_laser_map = orb.utils.image.interpolate_map(
                 self.calibration_laser_map, self.dimx, self.dimy)
@@ -2373,15 +2376,12 @@ class SpectralCube(Cube):
             wavenumber=self.params.wavenumber))
         self.set_param('filter_range', self.get_filter_range())
 
-    def get_sky_velocity_map(self):
-        if hasattr(self, 'sky_velocity_map'):
-            return self.sky_velocity_map
-        else: return None
-
     def get_calibration_laser_map_orig(self):
         """Return the original calibration laser map (not the version
         computed by :py:meth:`~HDFCube.get_calibration_laser_map`)"""
-        return Cube.get_calibration_laser_map(self)
+        if not hasattr(self, 'calibration_laser_map_orig'):
+            self.calibration_laser_map_orig = Cube.get_calibration_laser_map(self, checkattr=False)
+        return np.copy(self.calibration_laser_map_orig)
 
     def get_calibration_coeff_map_orig(self):
         """Return the original calibration coeff map (not the version
@@ -2404,11 +2404,6 @@ class SpectralCube(Cube):
         elif (calib_map.shape[0] != self.dimx):
             calib_map = orb.utils.image.interpolate_map(
                 calib_map, self.dimx, self.dimy)
-
-        # calibration correction
-        if self.get_sky_velocity_map() is not None:
-            ratio = 1 + (self.get_sky_velocity_map() / constants.LIGHT_VEL_KMS)
-            calib_map /= ratio
 
         self.calibration_laser_map = calib_map
         self.reset_calibration_coeff_map()
