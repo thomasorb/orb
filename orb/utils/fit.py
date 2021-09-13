@@ -136,7 +136,9 @@ def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
         combs.append(get_comb(lines_cm1, vels[i], axis, oversampling_ratio))
     return combs, vels
 
-def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix):
+def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comps, threshold=0.2,
+                               return_score=False):
+    spectrum = np.copy(spectrum)
     score = np.empty_like(vels)
     _spec = spectrum.real[filter_range_pix[0]:filter_range_pix[1]]
     back = np.nanmedian(_spec)
@@ -144,20 +146,17 @@ def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix):
     std = orb.utils.stats.unbiased_std(_spec)
     for i in range(len(vels)):
         score[i] = np.nansum(combs[i][filter_range_pix[0]:filter_range_pix[1]] * _spec)
-    _max = np.nanargmax(score)
-    #if _max == 0 or _max == len(score) - 1:
-    #    return np.nan
-    #if score[_max] < 0.2 * std:
-    #    return np.nan
-    return vels[_max]
-
-def estimate_velocity(spectrum , axis, lines_cm1, vel_range, oversampling_ratio, precision=2):    
-    assert vel_range[0] < vel_range[1], 'velocity_range must be in the order (vel_min, vel_max)'
-    combs, vels = prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision)
-    
-    return estimate_velocity_prepared(spectrum, vels, combs)
+    score /= np.nanmax(score)
+    score[np.isnan(score)] = 0
+    peaks = scipy.signal.find_peaks(score, height=(threshold, 1))
+    peaks = peaks[0][np.argsort(peaks[1]['peak_heights'])[::-1]]
+    peaks = peaks[:max_comps]
+    if return_score:
+        return score
+    return [vels[ipeak] for ipeak in peaks]
 
 def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio):
+    spectrum = np.copy(spectrum)
     axis_step = axis[1] - axis[0]
     lines_cm1 = np.copy(lines_cm1)
     fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(oversampling_ratio=oversampling_ratio)
