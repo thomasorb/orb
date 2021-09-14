@@ -22,7 +22,7 @@
 
 import logging
 import numpy as np
-import math
+import scipy.signal
 import orb.constants
 import gvar
 import orb.utils.validate
@@ -136,8 +136,16 @@ def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
         combs.append(get_comb(lines_cm1, vels[i], axis, oversampling_ratio))
     return combs, vels
 
-def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comps, threshold=0.2,
-                               return_score=False):
+def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comps, threshold=3, return_score=False):
+    """Provide a velocity estimate. Most of the input should be computed
+    with a dedicated function such as
+    fft.Spectrum.prepare_velocity_estimate.
+
+
+    :param threshold: Detection threshold as a factor of the std
+       of the calculated score.
+
+    """
     spectrum = np.copy(spectrum)
     score = np.empty_like(vels)
     _spec = spectrum.real[filter_range_pix[0]:filter_range_pix[1]]
@@ -148,12 +156,18 @@ def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comp
         score[i] = np.nansum(combs[i][filter_range_pix[0]:filter_range_pix[1]] * _spec)
     score /= np.nanmax(score)
     score[np.isnan(score)] = 0
-    peaks = scipy.signal.find_peaks(score, height=(threshold, 1))
+    peaks = scipy.signal.find_peaks(
+        score,
+        height=(threshold * orb.utils.stats.unbiased_std(score), 1))
     peaks = peaks[0][np.argsort(peaks[1]['peak_heights'])[::-1]]
-    peaks = peaks[:max_comps]
+    estimated_vels = list([vels[ipeak] for ipeak in peaks])
+    if max_comps <= len(estimated_vels):
+        estimated_vels = estimated_vels[:max_comps]
+    else:
+        estimated_vels += list([np.nan]) * (max_comps - len(estimated_vels))
     if return_score:
         return score
-    return [vels[ipeak] for ipeak in peaks]
+    return estimated_vels
 
 def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio):
     spectrum = np.copy(spectrum)

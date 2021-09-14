@@ -1006,9 +1006,12 @@ class Spectrum(orb.core.Cm1Vector1d):
                               / (self.params.step_nb - self.params.zpd_index) + 1)
         fluxes = list()
         for icomp in range(max_comps):
-            fluxes.append(orb.utils.fit.estimate_flux(
-                self.data.real, self.axis.data, lines_cm1, vel[icomp],
-                self.axis(self.params.filter_range).astype(int), oversampling_ratio))
+            if np.isnan(vel[icomp]):
+                fluxes.append(list([np.nan]) * len(lines))
+            else:
+                fluxes.append(orb.utils.fit.estimate_flux(
+                    self.data.real, self.axis.data, lines_cm1, vel[icomp],
+                    self.axis(self.params.filter_range).astype(int), oversampling_ratio))
         return fluxes
 
 #################################################
