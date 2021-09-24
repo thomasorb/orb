@@ -136,7 +136,7 @@ def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
         combs.append(get_comb(lines_cm1, vels[i], axis, oversampling_ratio))
     return combs, vels
 
-def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comps, threshold=3, return_score=False):
+def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comps, threshold=2.5, return_score=False):
     """Provide a velocity estimate. Most of the input should be computed
     with a dedicated function such as
     fft.Spectrum.prepare_velocity_estimate.
@@ -182,6 +182,10 @@ def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling
     _spec -= back
 
     fluxes = list()
+    try:
+        lines_pix[0]
+    except IndexError:
+        lines_pix = [lines_pix, ]
     for iline in lines_pix:
         iline -= int(filter_range_pix[0])
         fluxes.append(np.nansum(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1]))
