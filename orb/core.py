@@ -1854,7 +1854,7 @@ class Data(object):
         LIMIT_SIZE = 2 # Gb
                 
         # load from file
-        if isinstance(data, str):    
+        if isinstance(data, str):
             self.axis = None
             self.params = dict()
             self.mask = None
@@ -2639,7 +2639,13 @@ class Axis(Vector1d):
         # check that axis is regularly sampled
         diff = np.diff(self.data)
         if np.any(~np.isclose(diff - diff[0], 0.)):
-            raise Exception('axis must be regularly sampled')
+            # handle old low precision axes (stored as float16)
+            if np.all(np.abs((diff - diff[0]) / np.abs(diff)) < 1e-3):
+                self.data = np.linspace(self.data[0], self.data[-1], self.data.size)
+                warnings.warn('axis shows some numerical imprecision and was replaced with a high precision axis')
+            else:
+                raise Exception('axis must be regularly sampled')
+        
         if self.data[0] > self.data[-1]:
             raise Exception('axis must be naturally ordered')
 
@@ -2700,6 +2706,22 @@ class Cm1Vector1d(Vector1d):
           supplied in the params dictionnary.
 
         """
+        # try to handle old 2d data
+        if isinstance(spectrum, str):
+            if 'fit' in os.path.splitext(spectrum)[1] or '.fz' == os.path.splitext(spectrum)[1]:
+                _data, _header = orb.utils.io.read_fits(spectrum, return_header=True)
+                if _data.ndim == 1:
+                    # break here and continue
+                    pass
+                elif _data.ndim == 2:
+                    spectrum = _data[:,0]
+                    axis = _data[:,1]
+                    params = dict(_header)
+                    if 'COMMENT' in params:
+                        params.pop('COMMENT')
+                else: raise Exception('bad data shape {}'.format(_data.shape))
+                
+        
         super().__init__(spectrum, axis=axis, params=params, **kwargs)
 
         if self.has_params():
