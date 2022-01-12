@@ -1312,7 +1312,7 @@ class PhaseMaps(orb.core.Tools):
                 self.params[ikey] = f.attrs[ikey]
 
 
-        self.sigmaref = orb.core.FilterFile(self.params.filter_name).get_phase_fit_ref()
+        self.sigmaref = orb.core.FilterFile(str(self.params.filter_name)).get_phase_fit_ref()
         
         # detect binning
         self.dimx = self.phase_maps[0].shape[0]
