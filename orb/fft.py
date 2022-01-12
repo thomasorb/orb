@@ -1002,6 +1002,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         (combs, vels, filter_range_pix,
          lines_cm1, oversampling_ratio) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
+        
         vel = self.estimate_velocity_prepared(combs, vels, filter_range_pix,
                                               max_comps=max_comps, threshold=threshold)
         fluxes = self.estimate_flux(lines, vel, max_comps=max_comps)

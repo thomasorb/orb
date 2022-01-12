@@ -1121,6 +1121,26 @@ def nanbin_image(im, binning):
     else:
         return np.nanmean(im).reshape((1,1))
 
+def nn_interpolate(A, new_size):
+    """Vectorized Nearest Neighbor Interpolation
+    adapated from https://gist.github.com/KeremTurgutlu/68feb119c9dd148285be2e247267a203"""
+
+    old_size = A.shape
+
+    row_ratio, col_ratio = np.array(new_size)//np.array(old_size)
+
+    # row wise interpolation 
+    row_idx = (np.ceil(range(1, 1 + int(old_size[0]*row_ratio))/row_ratio) - 1).astype(int)
+
+    # column wise interpolation
+    col_idx = (np.ceil(range(1, 1 + int(old_size[1]*col_ratio))/col_ratio) - 1).astype(int)
+    
+    _matrix = A[row_idx, :][:, col_idx]
+
+    final_matrix = np.full(new_size, np.nan, dtype=A.dtype)
+    
+    final_matrix[:_matrix.shape[0], :_matrix.shape[1]] = _matrix
+    return final_matrix
 
 def fit_calibration_laser_map(calib_laser_map, calib_laser_nm, pixel_size=15.,
                               binning=4, mirror_distance_guess=2.4e5,
