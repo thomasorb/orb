@@ -1256,7 +1256,7 @@ class Indexer(Tools):
         :param file_key: Key name of the file to be located
         """
         if file_key in self.index:
-            return self.index[file_key]
+            return str(self.index[file_key])
         else:
             logging.warning("File key '%s' does not exist"%file_key)
             return None
@@ -1319,7 +1319,7 @@ class Indexer(Tools):
             raise Exception('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
 
         if file_key in self.index:
-            return self[file_key]
+            return str(self[file_key])
         else:
             if err:
                 raise Exception("File key '%s' does not exist"%file_key)
@@ -1358,7 +1358,7 @@ class Indexer(Tools):
         """Update index files with data in the virtual index"""
         f = orb.utils.io.open_file(self._get_index_path(), 'w')
         for ikey in self.index:
-            f.write('%s %s\n'%(ikey, self.index[ikey]))
+            f.write('%s %s\n'%(ikey, str(self.index[ikey])))
         f.close()
         
         
