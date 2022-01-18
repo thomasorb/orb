@@ -993,12 +993,12 @@ class Spectrum(orb.core.Cm1Vector1d):
                                                   oversampling_ratio, precision)
         return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio
 
-    def estimate_velocity_prepared(self, combs, vels, filter_range_pix, max_comps=1, threshold=2.5):
+    def estimate_velocity_prepared(self, combs, vels, filter_range_pix, max_comps=1, threshold=1):
         return orb.utils.fit.estimate_velocity_prepared(
             self.data.real, vels, combs, filter_range_pix, max_comps, threshold=threshold)
 
     def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
-                            threshold=2.5):
+                            threshold=1):
         (combs, vels, filter_range_pix,
          lines_cm1, oversampling_ratio) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
