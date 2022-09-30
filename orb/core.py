@@ -1256,7 +1256,7 @@ class Indexer(Tools):
         :param file_key: Key name of the file to be located
         """
         if file_key in self.index:
-            return self.index[file_key]
+            return str(self.index[file_key])
         else:
             logging.warning("File key '%s' does not exist"%file_key)
             return None
@@ -1319,7 +1319,7 @@ class Indexer(Tools):
             raise Exception('Bad file group. File group can be in %s, in %s or None'%(str(self.file_groups), str(self.file_group_indexes)))
 
         if file_key in self.index:
-            return self[file_key]
+            return str(self[file_key])
         else:
             if err:
                 raise Exception("File key '%s' does not exist"%file_key)
@@ -1358,7 +1358,7 @@ class Indexer(Tools):
         """Update index files with data in the virtual index"""
         f = orb.utils.io.open_file(self._get_index_path(), 'w')
         for ikey in self.index:
-            f.write('%s %s\n'%(ikey, self.index[ikey]))
+            f.write('%s %s\n'%(ikey, str(self.index[ikey])))
         f.close()
         
         
@@ -1422,7 +1422,8 @@ class Lines(Tools):
         '[OIII]4959':495.8911,
         '[OIII]5007':500.6843,
         '[NII]5755':575.459,
-        'HeI5876':587.567, 
+        'HeI5876':587.567,
+        '[FeVII]6087':608.700,
         '[OI]6300':630.0304, 
         '[SIII]6312':631.206, 
         '[NII]6548':654.805,
@@ -1854,7 +1855,7 @@ class Data(object):
         LIMIT_SIZE = 2 # Gb
                 
         # load from file
-        if isinstance(data, str):    
+        if isinstance(data, str):
             self.axis = None
             self.params = dict()
             self.mask = None
@@ -2639,7 +2640,13 @@ class Axis(Vector1d):
         # check that axis is regularly sampled
         diff = np.diff(self.data)
         if np.any(~np.isclose(diff - diff[0], 0.)):
-            raise Exception('axis must be regularly sampled')
+            # handle old low precision axes (stored as float16)
+            if np.all(np.abs((diff - diff[0]) / np.abs(diff)) < 1e-3):
+                self.data = np.linspace(self.data[0], self.data[-1], self.data.size)
+                warnings.warn('axis shows some numerical imprecision and was replaced with a high precision axis')
+            else:
+                raise Exception('axis must be regularly sampled')
+        
         if self.data[0] > self.data[-1]:
             raise Exception('axis must be naturally ordered')
 
@@ -2700,6 +2707,22 @@ class Cm1Vector1d(Vector1d):
           supplied in the params dictionnary.
 
         """
+        # try to handle old 2d data
+        if isinstance(spectrum, str):
+            if 'fit' in os.path.splitext(spectrum)[1] or '.fz' == os.path.splitext(spectrum)[1]:
+                _data, _header = orb.utils.io.read_fits(spectrum, return_header=True)
+                if _data.ndim == 1:
+                    # break here and continue
+                    pass
+                elif _data.ndim == 2:
+                    spectrum = _data[:,0]
+                    axis = _data[:,1]
+                    params = dict(_header)
+                    if 'COMMENT' in params:
+                        params.pop('COMMENT')
+                else: raise Exception('bad data shape {}'.format(_data.shape))
+                
+        
         super().__init__(spectrum, axis=axis, params=params, **kwargs)
 
         if self.has_params():

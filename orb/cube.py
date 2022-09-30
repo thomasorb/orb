@@ -2690,7 +2690,7 @@ class SpectralCube(Cube):
                 logging.info('standard_spectrum not set: no relative vector correction computed')
                 std_sp = None
 
-        if std_sp is not None:
+        if std_sp is not None and std_sp is not False:
             eps_vector = std_sp.compute_flux_correction_vector(deg=deg)
 
             logging.info('relative correction vector: max {:.2f}, min {:.2f}'.format(
