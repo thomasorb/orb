@@ -110,8 +110,13 @@ You should now have your web browser opened and showing the jupyter lab interfac
 
 - [Here](docs/orb3-ver.txt) is a list of all the versions of the packages on a working installation ([docs/orbs3/ver.txt](docs/orb3-ver.txt)). Higher versions generally work but not in some cases.
 
-- [Here](docs/orb3-env.txt) is an environment file that can be used directly with conda to install the correct versions of the packages ([docs/orbs3/env.txt](docs/orb3-env.txt)). 
+- [Here](docs/orb3-env.txt) is an environment file that can be used directly with conda to install the correct versions of the packages ([docs/orbs3/env.txt](docs/orb3-env.txt)).
 
+- These packages are known to raise exceptions when using the latest version. After uninstalling them you can install them again in a working version using the following:
+```bash
+conda install astropy=4.2.1
+conda install photutils=1.0.1
+```
 
 
 	  
