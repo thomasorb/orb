@@ -48,7 +48,7 @@ create an environment and install needed modules manually
 conda create -n orb3 python=3.7 
 conda install -n orb3 numpy scipy matplotlib astropy cython h5py dill pandas pytables
 conda install -n orb3 -c conda-forge pyregion
-conda install -n orb3 -c astropy photutils astroquery
+conda install -n orb3 -c astropy photutils=1.3.0 astroquery
 conda install -n orb3 -c anaconda gitpython
 conda activate orb3
 ```
