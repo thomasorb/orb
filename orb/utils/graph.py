@@ -80,6 +80,8 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
         cmap = getattr(matplotlib.cm, cmap)
         norm = matplotlib.colors.BoundaryNorm(np.linspace(vmin, vmax, ncolors),
                                               cmap.N, clip=True)
+        vmin = None # must be set to None if norm is passed
+        vmax = None # must be set to None if norm is passed
     else:
         norm = None
 
