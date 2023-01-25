@@ -1103,8 +1103,7 @@ def dec2deg(dec):
         for i in range(len(dec)):
             dec[i] = str(dec[i])
             dec[i] = dec[i].replace('+-', '-')
-            
-        dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), float(dec[2]))
+        dec = '{}:{}:{}'.format(int(float(dec[0])), int(float(dec[1])), float(dec[2]))
         
     return astropy.coordinates.SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
