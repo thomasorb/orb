@@ -188,9 +188,11 @@ class Spectrum(Base):
         super().__init__(*args, **kwargs)
 
     def add_component(self, lines, amp, noise_std=0, vel=0, sigma=0):
+    
         lines = orb.core.Lines().get_line_cm1(lines)
+        amp = np.array(amp).reshape((np.size(amp)))
         ax, sp = orb.fit.create_cm1_lines_model_raw(
-            lines, amp, self.params.step, self.params.order, self.params.step_nb, 
+            np.array(lines).reshape((np.size(lines))), amp, self.params.step, self.params.order, self.params.step_nb, 
             self.params.calib_coeff, self.params.zpd_index,
             vel=vel, sigma=sigma, fmodel='sincgauss')
         if self.data is None:
