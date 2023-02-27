@@ -29,7 +29,7 @@ import numpy as np
 import orb.utils.io
 
 def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
-           vmin=None, vmax=None, autofit=False):
+           vmin=None, vmax=None, autofit=False, fig=None, **kwargs):
     """Convenient image plotting function
 
     :param data: 2d array to show. Can be a path to a fits file.
@@ -55,6 +55,11 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
 
     :param vmax: max value used to scale the colorbar. If set the
       perc parameter is not used.
+
+    :param fig: You can pass an instance of matplotlib.Figure instead
+      of creating a new one. Note that figsize will not be used in
+      this case.
+
     """
     if isinstance(data, str):
         data = orb.utils.io.read_fits(data)
@@ -85,14 +90,16 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
     else:
         norm = None
 
-    fig = pl.figure(figsize=figsize)
+    if fig is None:
+        fig = pl.figure(figsize=figsize)
+        
     if wcs is not None:
         assert isinstance(wcs, astropy.wcs.WCS), 'wcs must be an astropy.wcs.WCS instance'
         
         ax = fig.add_subplot(111, projection=wcs)
         ax.coords[0].set_major_formatter('d.dd')
         ax.coords[1].set_major_formatter('d.dd')
-    pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm)
+    pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm, **kwargs)
 
     if autofit:
         xbounds = np.arange(data.shape[0]) * np.where(np.any(~np.isnan(data), axis=1), 1, np.nan) # x

@@ -1086,8 +1086,8 @@ def bin_image(a, binning):
     if binning < 1: raise Exception('binning must be an integer >= 1')
     if binning == 1: return a
 
-    if a.dtype is not np.float:
-        a = a.astype(np.float)
+    if a.dtype is not float:
+        a = a.astype(float)
 
     # x_bin
     xslices = np.arange(0, a.shape[0]+1, binning).astype(np.int)

@@ -187,6 +187,9 @@ def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling
     except IndexError:
         lines_pix = [lines_pix, ]
     for iline in lines_pix:
+        if np.isnan(iline):
+            fluxes.append(np.nan)
+            continue
         iline -= int(filter_range_pix[0])
         fluxes.append(np.nansum(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1]))
     return fluxes

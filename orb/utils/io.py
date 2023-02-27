@@ -441,7 +441,7 @@ def read_sitelle_chip(hdu, chip_index, substract_bias=True):
     if int(chip_index) not in (1,2): raise Exception(
         'Chip index must be 1 or 2')
 
-    frame = hdu.data.astype(np.float)
+    frame = hdu.data.astype(float)
 
     # get data without bias substraction
     if not substract_bias:
@@ -509,7 +509,7 @@ def read_spiomm_data(hdu, image_path, substract_bias=True):
     CENTER_SIZE_COEFF = 0.1
 
     data_index = get_hdu_data_index(hdu)
-    frame = np.array(hdu[data_index].data.transpose()).astype(np.float)
+    frame = np.array(hdu[data_index].data.transpose()).astype(float)
     hdr = hdu[data_index].header
     # check presence of a bias
     bias_path = os.path.splitext(image_path)[0] + '_bias.fits'

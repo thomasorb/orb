@@ -1109,8 +1109,8 @@ class ProgressBar(object):
         """
         self._start_time = time.time()
         self._max_index = float(max_index)
-        self._time_table = np.zeros((self.REFRESH_COUNT), np.float)
-        self._index_table = np.zeros((self.REFRESH_COUNT), np.float)
+        self._time_table = np.zeros((self.REFRESH_COUNT), float)
+        self._index_table = np.zeros((self.REFRESH_COUNT), float)
         self._silent = silent
         self._count = 0
         
@@ -2560,7 +2560,10 @@ class Vector1d(Data):
         # transform gvar to data and err
         if isinstance(_out[0], gvar._gvarcore.GVar):
             out.data = gvar.mean(_out)
-            out.err = gvar.sdev(_out)
+            try:
+                out.err = gvar.sdev(_out)
+            except ZeroDivisionError:
+                out.err = np.array([_out[i].sdev for i in range(len(_out))])
             
         else:
             out.data = _out
