@@ -57,11 +57,11 @@ def gvardict2pickdict(gvardict):
     """Convert a dictionary containing gvars into a nice pickable
     dictionary with couples of _mean / _sdev keys.
 
-    Use the pickdict2gvardict to rerturn to the original dictionary.
+    Use the pickdict2gvardict to return to the original dictionary.
     """
     if not isinstance(gvardict, dict):
         raise TypeError('gvardict must be a dict instance')
-    idict = dict()    
+    idict = dict()
     for ikey in gvardict:
         try:
             _mean = gvar.mean(gvardict[ikey])
@@ -70,6 +70,8 @@ def gvardict2pickdict(gvardict):
                 idict[ikey + '_mean'] = _mean
                 idict[ikey + '_sdev'] = _sdev
             else: raise TypeError
+        except ValueError:
+            idict[ikey] = gvardict[ikey]
         except TypeError:
             idict[ikey] = gvardict[ikey]
         except AttributeError:
@@ -118,13 +120,16 @@ def get_comb(lines_cm1, vel, axis, oversampling_ratio):
     fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(oversampling_ratio=oversampling_ratio)
     lines_cm1 += orb.utils.spectrum.line_shift(vel, lines_cm1, wavenumber=True, relativistic=False)
     lines_pix = (lines_cm1 - axis[0]) / axis_step
-    
+
     comb = np.zeros_like(axis)
     x = np.arange(len(axis))
     flux = orb.utils.spectrum.gaussian1d_flux(1, fwhm_pix)
+    combl = list()
     for iline in lines_pix:
-        comb += orb.utils.spectrum.gaussian1d(x, 0, 1, iline, fwhm_pix) / flux
-    return comb / len(lines_pix)
+        icomb = orb.utils.spectrum.gaussian1d(x, 0, 1, iline, fwhm_pix) / flux
+        combl.append(icomb)
+        comb += icomb
+    return comb / len(lines_pix), np.array(combl)
 
 def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
     assert precision >= 1, 'precision must be >= 1'
@@ -136,30 +141,53 @@ def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
         combs.append(get_comb(lines_cm1, vels[i], axis, oversampling_ratio))
     return combs, vels
 
-def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comps, threshold=2.5, return_score=False):
+def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pix, max_comps, threshold=2.5, return_score=False, prod=True):
     """Provide a velocity estimate. Most of the input should be computed
     with a dedicated function such as
     fft.Spectrum.prepare_velocity_estimate.
 
-
     :param threshold: Detection threshold as a factor of the std
        of the calculated score.
-
-    """
+    """    
     spectrum = np.copy(spectrum)
-    score = np.empty_like(vels)
     _spec = spectrum.real[filter_range_pix[0]:filter_range_pix[1]]
     back = np.nanmedian(_spec)
     _spec -= back
     std = orb.utils.stats.unbiased_std(_spec)
-    for i in range(len(vels)):
-        score[i] = np.nansum(combs[i][filter_range_pix[0]:filter_range_pix[1]] * _spec)
-    score /= np.nanmax(score)
-    score[np.isnan(score)] = 0
-    peaks = scipy.signal.find_peaks(
+
+    if not prod:
+        score = np.empty_like(vels)
+        for i in range(len(vels)):
+            score[i] = np.nansum(combs[i][0][filter_range_pix[0]:filter_range_pix[1]] * _spec)
+        
+        score /= np.nanmax(score)
+        score[np.isnan(score)] = 0
+        
+    else:
+        score = np.ones_like(vels)
+        mat = np.ones_like(combs[0][1])
+        mat = mat[:,filter_range_pix[0]:filter_range_pix[1]]
+        mat *= _spec
+        for i in range(len(vels)):
+            score[i] = np.prod(np.abs(np.nansum(mat * combs[i][1][:,filter_range_pix[0]:filter_range_pix[1]], axis=1))**(1/mat.shape[0]))
+        
+        score /= np.nanmax(score)
+        score[np.isnan(score)] = 0
+        threshold *= 2
+
+    threshold = np.nanmedian(score) + threshold * orb.utils.stats.unbiased_std(score)
+    
+    p = scipy.signal.find_peaks(
         score,
-        height=(threshold * orb.utils.stats.unbiased_std(score), 1))
-    peaks = peaks[0][np.argsort(peaks[1]['peak_heights'])[::-1]]
+        height=(threshold, 2),
+        width=precision/2)
+    peaks = p[0][np.argsort(p[1]['peak_heights'])[::-1]]
+
+    # import pylab as pl
+    # pl.plot(score, c='red')
+    # pl.axhline(threshold)
+    # pl.scatter(peaks, np.sort(p[1]['peak_heights'])[::-1])
+    
     estimated_vels = list([vels[ipeak] for ipeak in peaks])
     if max_comps <= len(estimated_vels):
         estimated_vels = estimated_vels[:max_comps]
@@ -167,6 +195,7 @@ def estimate_velocity_prepared(spectrum, vels, combs, filter_range_pix, max_comp
         estimated_vels += list([np.nan]) * (max_comps - len(estimated_vels))
     if return_score:
         return score
+
     return estimated_vels
 
 def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio):

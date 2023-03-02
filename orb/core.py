@@ -1176,14 +1176,19 @@ class ProgressBar(object):
                 else: time_to_end = None
             else:
                 time_to_end = None
-            pos = (float(index) / self._max_index) * self.BAR_LENGTH
+
+            progress = (float(index) / self._max_index)
+            mean_time_to_end = (self._time_table[-1] - self._start_time) / progress
+            
+            pos = progress * self.BAR_LENGTH
             line = ("\r [" + "="*int(math.floor(pos)) + 
                     " "*int(self.BAR_LENGTH - math.floor(pos)) + 
                     "] [%d%%] [" %(pos*100./self.BAR_LENGTH) + 
                     str(info) +"]")
             if remains:
-                line += (" [remains: " + 
-                         self._time_str_convert(time_to_end) + "]")
+                line += " [remains: {}|{}]".format(
+                    self._time_str_convert(time_to_end),
+                    self._time_str_convert(mean_time_to_end))
             
         else:
             color = TextColor.GREEN
