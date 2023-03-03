@@ -246,13 +246,13 @@ class HDFCube(orb.core.WCSData):
         """Return True if cube is level 1"""
         return self.get_level() == 1
 
-    def is_level2(self):
-        """Return True if cube is level 2"""
-        return self.get_level() == 2
+    # def is_level2(self):
+    #     """Return True if cube is level 2"""
+    #     return self.get_level() == 2
 
-    def is_level3(self):
-        """Return True if cube is level 3"""
-        return self.get_level() == 3
+    # def is_level3(self):
+    #     """Return True if cube is level 3"""
+    #     return self.get_level() == 3
     
     def get_level(self):
         """Return reduction level of the cube.
@@ -269,6 +269,10 @@ class HDFCube(orb.core.WCSData):
           cube.exposure_time, deep frame is the sum of the
           interferogram cube
 
+        * level 2.5: CFHT version, similar to level3 but calibrated
+          data is hard written. Used calibration vector is
+          cube.params.flambda2. spectrum = spectrum_counts *
+          cube.params.flambda.
         """
         try:
             return int(self.level)
@@ -282,7 +286,9 @@ class HDFCube(orb.core.WCSData):
                 self.level = 3
                 if 'level2' in f.attrs:
                     logging.warning('both level2 and level3 in attrs')
-            
+                if 'flambda2' in f.attrs:
+                    self.level = 2.5
+                    logging.info('CFHT version')
             if self.level == 1:
                 logging.warning('old cube architecture (level 1). IO performances could be reduced.')
                 

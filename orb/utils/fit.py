@@ -133,7 +133,7 @@ def get_comb(lines_cm1, vel, axis, oversampling_ratio):
 
 def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
     assert precision >= 1, 'precision must be >= 1'
-    axis_step_vel = orb.utils.spectrum.compute_radial_velocity(lines_cm1[0] - axis[1] + axis[0], lines_cm1[0], wavenumber=True, relativistic=False)
+    axis_step_vel = orb.utils.spectrum.compute_radial_velocity(np.min(lines_cm1) - axis[1] + axis[0], np.min(lines_cm1), wavenumber=True, relativistic=False)
     vels = np.linspace(vel_range[0], vel_range[1], max(3, int((vel_range[1] - vel_range[0]) / axis_step_vel * precision) + 1))
     
     combs = list()
@@ -148,7 +148,7 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
 
     :param threshold: Detection threshold as a factor of the std
        of the calculated score.
-    """    
+    """
     spectrum = np.copy(spectrum)
     _spec = spectrum.real[filter_range_pix[0]:filter_range_pix[1]]
     back = np.nanmedian(_spec)

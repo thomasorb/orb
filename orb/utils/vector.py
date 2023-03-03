@@ -249,7 +249,7 @@ def interpolate_size(a, size, deg):
     
     :param deg: Interpolation degree
     """
-    if a.dtype != np.complex:
+    if a.dtype != complex:
         f = interpolate.UnivariateSpline(np.arange(a.shape[0]), a, k=deg, s=0)
         return f(np.arange(size)/float(size - 1) * float(a.shape[0] - 1))
     else:
@@ -293,7 +293,7 @@ def interpolate_axis(a, new_axis, deg, old_axis=None, fill_value=np.nan):
             old_axis = old_axis[nonnans]
             a = a[nonnans]
 
-    if a.dtype != np.complex:
+    if a.dtype != complex:
         f = interpolate.UnivariateSpline(old_axis, a, k=deg, s=0)
         result = f(new_axis.astype(np.float64))
     else:

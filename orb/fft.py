@@ -994,7 +994,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio, precision
 
     def estimate_velocity_prepared(self, combs, vels, precision, filter_range_pix, max_comps=1,
-                                   threshold=1, prod=False):
+                                   threshold=1, prod=True):
         return orb.utils.fit.estimate_velocity_prepared(
             self.data.real, vels, combs, precision, filter_range_pix, max_comps,
             threshold=threshold, prod=prod)
@@ -1004,7 +1004,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         (combs, vels, filter_range_pix,
          lines_cm1, oversampling_ratio, precision) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
-        
+
         vel = self.estimate_velocity_prepared(combs, vels, precision, filter_range_pix, 
                                               max_comps=max_comps, threshold=threshold,
                                               prod=prod)
@@ -1012,7 +1012,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         return vel, fluxes
 
     def autofit(self, lines, *args, **kwargs):
-        
+
         vels, fluxes = self.estimate_parameters(lines, *args, **kwargs)
         logging.info('estimated velocities: {}'.format(vels))
 
