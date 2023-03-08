@@ -981,7 +981,9 @@ class Spectrum(orb.core.Cm1Vector1d):
         return fit
 
     def prepare_velocity_estimate(self, lines, vel_range, precision=10):
+
         lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+        
         try:
             lines_cm1[0]
         except IndexError:
@@ -1028,7 +1030,9 @@ class Spectrum(orb.core.Cm1Vector1d):
 
     
     def estimate_flux(self, lines, vel, max_comps=1):
+
         lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+
         oversampling_ratio = (self.params.zpd_index
                               / (self.params.step_nb - self.params.zpd_index) + 1)
         fluxes = list()

@@ -159,7 +159,6 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
         score = np.empty_like(vels)
         for i in range(len(vels)):
             score[i] = np.nansum(combs[i][0][filter_range_pix[0]:filter_range_pix[1]] * _spec)
-        
         score /= np.nanmax(score)
         score[np.isnan(score)] = 0
         

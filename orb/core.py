@@ -70,7 +70,8 @@ except ImportError: pass
 import orb.utils.spectrum, orb.utils.parallel, orb.utils.io, orb.utils.filters
 import orb.cutils
 
-import orb.utils.photometry
+import orb.utils.photometry, orb.utils.validate
+
 
 #################################################
 #### CLASS TextColor ############################
@@ -1591,19 +1592,31 @@ class Lines(Tools):
             return lines_nm, lines_name
         
 
+    def _to_list(self, lines):
+        try:
+            orb.utils.validate.is_iterable(lines)
+        except Exception:
+            lines = [lines,]
+        return lines
+        
     def get_line_nm(self, lines_name, round_ang=False):
         """Return the wavelength of a line or a list of lines
+
+        Only str instance will be converted.
 
         :param lines_name: List of line names
 
         :param round_ang: (Optional) If True return the rounded
           wavelength of the line in angstrom (default False)
         """
-        if isinstance(lines_name, str):
-            lines_name = [lines_name]
+        lines_name = self._to_list(lines_name)
 
-        lines_nm = [self.air_lines_nm[line_name]
-                    for line_name in lines_name]
+        lines_nm = list()
+        for line_name in lines_name:
+            if isinstance(line_name, str):
+                lines_nm.append(self.air_lines_nm[line_name])
+            else:
+                lines_nm.append(line_name)
 
         if len(lines_nm) == 1:
             lines_nm = lines_nm[0]

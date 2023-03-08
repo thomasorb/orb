@@ -407,10 +407,10 @@ class Image(Frame2D):
                     profile_name, str(self.profiles)))
         
     def get_stars_from_catalog(self, max_stars=5000):
-        """Return star positions, corrected for proper motion from Gaia DR2
+        """Return star positions, corrected for proper motion from Gaia DR3
         """
 
-        cat = self.query_vizier(as_pandas=True, max_stars=max_stars, catalog='gaia2')
+        cat = self.query_vizier(as_pandas=True, max_stars=max_stars, catalog='gaia3')
 
         date_keys = ['DATE-OBS', 'DATE', 'date', 'date_obs']
         found = False
@@ -624,7 +624,9 @@ class Image(Frame2D):
 
         :param nsteps: (Optional) Number of refinement steps (default 7).
 
-        :param sip_order: (Optional) SIP order (default 3)
+        :param sip_order: (Optional) SIP order (default
+          3). compute_distortion must be True for this parameter to be
+          used.
 
         :param return_fit_params: (Optional) If True return final fit
           parameters instead of wcs (default False).
@@ -814,15 +816,20 @@ class Image(Frame2D):
 
             logging.info('{} stars fitted'.format(len(fit.dropna())))
 
-            wcs = self.fit_sip(sl_cat_pix,
-                               orb.utils.astrometry.df2list(fit),
-                               params=None, init_sip=self.get_wcs(),
-                               err=None, sip_order=sip_order)
+            # wcs = self.fit_sip(sl_cat_pix,
+            #                    orb.utils.astrometry.df2list(fit),
+            #                    params=None, init_sip=self.get_wcs(),
+            #                    err=None, sip_order=sip_order)
+
+            wcs = orb.utils.astrometry.fit_sip_from_points(
+                (fit.x, fit.y), (sl_cat_deg[:,0], sl_cat_deg[:,1]),
+                sip_order=sip_order)
 
             # update wcs
             self.set_wcs(wcs)
             logging.info('sip after sip fit (A matrix)')
-            logging.info(str(self.get_wcs().sip.a))
+            if sip_order is not None:
+                logging.info(str(self.get_wcs().sip.a))
             
         # computing distortion maps
         if return_error_maps or return_error_spl:
@@ -957,6 +964,10 @@ class Image(Frame2D):
         """FIT the distortion correction polynomial to match two lists
         of stars (the list of stars 2 is distorded to match the list
         of stars 1).
+
+        .. warning:: If you want to fit a SIP for a WCS do not use
+          this function. Use register(skip_registration=True,
+          compute_distortion=True, sip_order=anything > 2).
 
         :param star_list1: list of stars 1
         

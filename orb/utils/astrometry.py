@@ -560,7 +560,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
     guess_params = np.array(guess_params, dtype=float)
 
     fixed_params = np.copy(guess_params)
-    masked_params = np.ones_like(guess_params, dtype=np.bool)
+    masked_params = np.ones_like(guess_params, dtype=bool)
     if fix_height:
         masked_params[0] = False
     if fix_amp:
@@ -2821,3 +2821,29 @@ def dflist2arr(df, key):
             _photom[ik] = list([np.nan]) * _len
 
     return np.array(_photom).T
+
+def fit_sip_from_points(xy, radec, sip_order=None):
+    """Return a fitted WCS with SIP. 
+
+    This is a simple wrapper around astropy.wcs.utils.fit_wcs_from_points().
+    
+    :param xy: (x,y) tuple in pixels
+
+    :param radec: (ra, dec) tuple in degrees
+
+    :param sip_order: SIP order. If SIP is None, the returned WCS will
+      not contain SIP.
+
+    """
+    nonans = (~np.isnan(xy[0]) *  ~np.isnan(xy[1])
+              * ~np.isnan(radec[0]) * ~np.isnan(radec[1]))
+    
+    sc = astropy.coordinates.SkyCoord(
+        astropy.coordinates.ICRS(
+            ra=radec[0] * astropy.units.deg,
+            dec=radec[1] * astropy.units.deg))
+    
+    return astropy.wcs.utils.fit_wcs_from_points(
+        (xy[0][nonans], xy[1][nonans]),
+        sc[nonans],
+        sip_degree=sip_order)
