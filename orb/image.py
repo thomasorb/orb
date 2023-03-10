@@ -697,6 +697,8 @@ class Image(Frame2D):
         RMAX = 6
         ZMAX = 0.03
 
+        if sip_order == 0: sip_order=None
+
         if not (self.params.target_ra is not None and self.params.target_dec is not None
                 and self.params.target_x is not None and self.params.target_y is not None
                 and self.params.wcs_rotation is not None):

@@ -29,7 +29,7 @@ import numpy as np
 import orb.utils.io
 
 def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
-           vmin=None, vmax=None, autofit=False, fig=None, **kwargs):
+           vmin=None, vmax=None, autofit=False, fig=None, interpolation=None, **kwargs):
     """Convenient image plotting function
 
     :param data: 2d array to show. Can be a path to a fits file.
@@ -59,6 +59,9 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
     :param fig: You can pass an instance of matplotlib.Figure instead
       of creating a new one. Note that figsize will not be used in
       this case.
+
+    :param interpolation: Interpolation method (same as pyplot.figure
+      parameter)
 
     """
     if isinstance(data, str):
@@ -99,7 +102,8 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
         ax = fig.add_subplot(111, projection=wcs)
         ax.coords[0].set_major_formatter('d.dd')
         ax.coords[1].set_major_formatter('d.dd')
-    pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm, **kwargs)
+    pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm,
+              interpolation=interpolation, **kwargs)
 
     if autofit:
         xbounds = np.arange(data.shape[0]) * np.where(np.any(~np.isnan(data), axis=1), 1, np.nan) # x
