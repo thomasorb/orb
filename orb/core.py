@@ -1616,7 +1616,7 @@ class Lines(Tools):
             if isinstance(line_name, str):
                 lines_nm.append(self.air_lines_nm[line_name])
             else:
-                lines_nm.append(line_name)
+                raise Exception('line name must be a str instance')
 
         if len(lines_nm) == 1:
             lines_nm = lines_nm[0]
