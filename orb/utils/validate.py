@@ -23,21 +23,20 @@
 
 
 import numpy as np
-import warnings
 import orb.utils.err
 import logging
 
 def is_ndarray(obj, raise_exception=True, object_name='object'):
     """Check if object is a numpy.ndarray
     :param obj: object to validate
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     err_msg = '{} is not a numpy.ndarray'.format(object_name)
     if not isinstance(obj, np.ndarray):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg)
         else:
-            logging.warning(err_msg)
+            logging.debug(err_msg)
             return False
     return True
 
@@ -45,7 +44,7 @@ def has_dtype(obj, dtype, raise_exception=True, object_name='object'):
     """Check if object is a numpy.ndarray of the correct type
     :param obj: object to validate
     :param dtype: array dtype
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     def err_msg(obj_type):
         return '{} has type {} but should have type {}'.format(
@@ -56,7 +55,7 @@ def has_dtype(obj, dtype, raise_exception=True, object_name='object'):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg(obj.dtype))
         else:
-            logging.warning(err_msg(obj.dtype))
+            logging.debug(err_msg(obj.dtype))
             return False
     return True
 
@@ -66,7 +65,7 @@ def is_xdarray(obj, ndim, raise_exception=True, object_name='object'):
 
     :param obj: object to validate
     :param ndim: number of dimensions
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     ndim = int(ndim)
     if ndim < 0: raise orb.utils.err.ValidationError('ndim must be positive')
@@ -81,34 +80,34 @@ def is_xdarray(obj, ndim, raise_exception=True, object_name='object'):
     if raise_exception:
         raise orb.utils.err.ValidationError(err_msg)
     else:
-        logging.warning(err_msg)
+        logging.debug(err_msg)
         return False
     
 def is_1darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 1d numpy.ndarray
     :param obj: object to validate
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     return is_xdarray(obj, 1, raise_exception=raise_exception, object_name=object_name)
 
 def is_2darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 2d numpy.ndarray
     :param obj: object to validate
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     return is_xdarray(obj, 2, raise_exception=raise_exception, object_name=object_name)
 
 def is_3darray(obj, raise_exception=True, object_name='object'):
     """Check if object is a 3d numpy.ndarray
     :param obj: object to validate
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     return is_xdarray(obj, 3, raise_exception=raise_exception, object_name=object_name)
 
 def have_same_shape(objs, raise_exception=True, object_name='arrays'):
     """Check if all numpy.ndarrays have the same shape
     :param obj: list of objects to validate
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     err_msg = 'all {} do not have the same shape'.format(object_name)
     if isinstance(objs, list) or isinstance(objs, tuple):
@@ -122,7 +121,7 @@ def have_same_shape(objs, raise_exception=True, object_name='arrays'):
                         if raise_exception:
                             raise orb.utils.err.ValidationError(err_msg)
                         else:
-                            logging.warning(err_msg)
+                            logging.debug(err_msg)
                             return False
             else: break
     else:
@@ -158,21 +157,21 @@ def is_iterable(obj, raise_exception=True, object_name='object'):
     """check if object is a tuple or a list or a 1darray
 
     :param obj: Object to check
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     """
     err_msg = '{} must be a tuple or a list'.format(object_name)
     if not isinstance(obj, list) and not isinstance(obj, tuple):
         if not is_1darray(obj, raise_exception=False, object_name=object_name):            
             if raise_exception: raise orb.utils.err.ValidationError(err_msg)
             else:
-                logging.warning(err_msg)
+                logging.debug(err_msg)
                 return False
     return True
 
 def has_len(obj, length, raise_exception=True, object_name='object'):
     """Check if object is 1d and if its length is correct
     :param obj: Object to check
-    :param raise_exception: If True raise an exception else raise a warning.
+    :param raise_exception: If True raise an exception else raise a debug.
     :param length: length of the object
     """
     err_msg = '{} must have length: {}'.format(object_name, length)
@@ -193,6 +192,6 @@ def has_len(obj, length, raise_exception=True, object_name='object'):
         if raise_exception:
             raise orb.utils.err.ValidationError(err_msg)
         else:
-            logging.warning(err_msg)
+            logging.debug(err_msg)
             return False
     return True
