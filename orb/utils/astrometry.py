@@ -2822,7 +2822,7 @@ def dflist2arr(df, key):
 
     return np.array(_photom).T
 
-def fit_sip_from_points(xy, radec, sip_order=None):
+def fit_sip_from_points(xy, radec, sip_order=None, proj_point=None):
     """Return a fitted WCS with SIP. 
 
     This is a simple wrapper around astropy.wcs.utils.fit_wcs_from_points().
@@ -2835,6 +2835,15 @@ def fit_sip_from_points(xy, radec, sip_order=None):
       not contain SIP.
 
     """
+    if proj_point is None:
+        proj_point = 'center'
+    else:
+        proj_point = astropy.coordinates.SkyCoord(
+            astropy.coordinates.ICRS(
+                ra=proj_point[0] * astropy.units.deg,
+                dec=proj_point[1] * astropy.units.deg))
+
+        
     nonans = (~np.isnan(xy[0]) *  ~np.isnan(xy[1])
               * ~np.isnan(radec[0]) * ~np.isnan(radec[1]))
     
@@ -2842,8 +2851,10 @@ def fit_sip_from_points(xy, radec, sip_order=None):
         astropy.coordinates.ICRS(
             ra=radec[0] * astropy.units.deg,
             dec=radec[1] * astropy.units.deg))
+
     
     return astropy.wcs.utils.fit_wcs_from_points(
         (xy[0][nonans], xy[1][nonans]),
         sc[nonans],
-        sip_degree=sip_order)
+        sip_degree=sip_order,
+        proj_point=proj_point)

@@ -553,6 +553,8 @@ class Tools(object):
         self.set_config('MOFFAT_BETA', float)
         self.set_config('DETECT_STACK', int)
         self.set_config('ALIGNER_RANGE_COEFF', float)
+        self.set_config('ALIGNER_RANGE_COEFF', float)
+        self.set_config('BOX_SIZE_COEFF', float)
             
         if self.instrument is not None:
             # load instrument configuration

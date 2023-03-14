@@ -156,7 +156,6 @@ class Frame2D(orb.core.WCSData):
 
 class Image(Frame2D):
 
-    BOX_SIZE_COEFF = 7
     FIT_TOL = 1e-2
     REDUCED_CHISQ_LIMIT = 1.5
     DETECT_INDEX = 0
@@ -166,11 +165,6 @@ class Image(Frame2D):
     def __init__(self, data, **kwargs):
         
         Frame2D.__init__(self, data, **kwargs)
-
-        if 'box_size_coeff' in self.params:
-            self.box_size_coeff = self.params.box_size_coeff
-        else:
-            self.box_size_coeff = self.BOX_SIZE_COEFF
 
         if 'profile_name' not in self.params:
             self.params['profile_name'] = self.config.PSF_PROFILE
@@ -218,7 +212,7 @@ class Image(Frame2D):
         return self.arc2pix(self.params.fwhm_arc)
 
     def get_box_size(self):
-        box_size = int(np.ceil(self.box_size_coeff *  self.get_fwhm_pix()))
+        box_size = int(np.ceil(self.config.BOX_SIZE_COEFF *  self.get_fwhm_pix()))
         box_size += int(~box_size%2) # make it odd
         return box_size
     
@@ -514,8 +508,8 @@ class Image(Frame2D):
         logging.info("star list reduced to %d stars" %(len(sources)))
         sources = orb.utils.astrometry.df2list(sources)
         sources = self.fit_stars(sources, no_aperture_photometry=True)
-        mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])    
-
+        mean_fwhm, mean_fwhm_err = self.detect_fwhm(sources[:FWHM_STARS_NB])
+        
         if path is not None:         
             orb.utils.io.open_file(path, 'w') # used to create the folder tree
             sources.to_hdf(path, 'data', mode='w')
@@ -602,8 +596,11 @@ class Image(Frame2D):
                  skip_registration=False,
                  compute_precision=True, compute_distortion=False,
                  return_error_maps=False,
-                 return_error_spl=False, star_list_query=None, fwhm_arc=None,
-                 filter_background=True):
+                 return_error_spl=False, sl_cat_deg=None,
+                 fwhm_arc=None,
+                 filter_background=True,
+                 fwhm_limit_factor=3,
+                 proj_point=None):
         """Register data and return a corrected pywcs.WCS
         object.
 
@@ -633,7 +630,9 @@ class Image(Frame2D):
 
         :param compute_distortion: (Optional) If True, optical
           distortion (SIP) are computed. Note that a frame with a lot
-          of stars is better for this purpose (default False).
+          of stars is better for this purpose. Setting this to True
+          and sip_order to None refit the wcs without any SIP
+          parameters. (default False).
 
         :param compute_precision: (Optional) If True, astrometrical
           precision is computed (default True).
@@ -647,12 +646,20 @@ class Image(Frame2D):
           scipy.interpolate.RectBivariateSpline instances (default
           False).
 
-        :param star_list_query: (Optional) A list of star positions in
+        :param sl_cat_deg: (Optional) A list of star positions in
           degree to perform registration. fwhm_arc must also be set.
 
-        :param fwhm_arc: (Optional) must be set if star_list_query is
+        :param fwhm_arc: (Optional) must be set if sl_cat_deg is
           not None.
 
+        :param fwhm_limit_factor: (Optional) Limit on the distance of
+          the stars used during distorsion computation in proportion
+          of the FWHM (default 3).
+
+        :param proj_point: (Optional) a Tuple (ra, dec in degrees)
+          giving the projection point of the fitted wcs (useful only
+          in the case when compute_distorsion is set to True, default
+          None).
         """        
         def get_filtered_params(fit_params, snr_min=None,
                                 dist_min=1e9,
@@ -717,23 +724,24 @@ class Image(Frame2D):
         logging.info('initial sip: {}'.format(self.get_wcs().sip))
         
         # Query to get reference star positions in degrees
-        if star_list_query is None:
+        if sl_cat_deg is None:
             #star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
             star_list_query = self.get_stars_from_catalog(max_stars=100 * max_stars_detect)
             star_list_query = np.array([star_list_query.ra.values, star_list_query.dec.values]).T
+            # reference star position list in degrees
+            sl_cat_deg = star_list_query[:max_stars_detect*20]
+
         else:
-            star_list_query = np.copy(star_list_query)
+            sl_cat_deg = np.copy(sl_cat_deg)
             if fwhm_arc is None:
                 logging.warning('fwhm_arc is kept to its default value: {}'.format(self.params.fwhm_arc))
             else:
                 self.reset_fwhm_arc(fwhm_arc)
                 
-        if len(star_list_query) < MIN_STAR_NB:
+        if len(sl_cat_deg) < MIN_STAR_NB:
             raise Exception("Not enough stars found in the field (%d < %d)"%(
-                len(star_list_query), MIN_STAR_NB))
+                len(sl_cat_deg), MIN_STAR_NB))
             
-        # reference star position list in degrees
-        sl_cat_deg = star_list_query[:max_stars_detect*20]
             
         # ## Define a basic WCS        
         # wcs = orb.utils.astrometry.create_wcs(
@@ -745,18 +753,18 @@ class Image(Frame2D):
         # parameters
         # rmax = max(self.dimx, self.dimy) / np.sqrt(2)
         
-        
-        # get FWHM
-        sl_im_pix_path, fwhm_pix = self.detect_stars(
-            min_star_number=max_stars_detect, max_roundness=max_roundness,
-            max_radius_coeff=max_radius_coeff, saturation_threshold=saturation_threshold)
-        sl_im_pix = orb.utils.astrometry.load_star_list(
-            sl_im_pix_path, remove_nans=True)
-
-        self.box_size_coeff = 5.
-
         if not skip_registration:
-            # match lists
+
+        
+            # detect stars in frame
+            sl_im_pix_path, _ = self.detect_stars(
+                min_star_number=max_stars_detect, max_roundness=max_roundness,
+                max_radius_coeff=max_radius_coeff, saturation_threshold=saturation_threshold)
+            sl_im_pix = orb.utils.astrometry.load_star_list(
+                sl_im_pix_path, remove_nans=True)
+
+            
+            # match lists (cat vs image positions)
             if rrange is None:
                 rrange = (RMAX, RMAX/6)
 
@@ -790,7 +798,8 @@ class Image(Frame2D):
                 # update wcs
                 self.set_wcs(wcs)
                 logging.info('wcs after fit')
-                logging.info(str(self.get_wcs()))                    
+                logging.info(str(self.get_wcs()))
+        
 
         ## COMPUTE SIP
         if compute_distortion:
@@ -804,7 +813,7 @@ class Image(Frame2D):
             sl_cat_pix = self.world2pix(sl_cat_deg[:,:2])
         
             logging.info('sip computed with {} stars'.format(sl_cat_pix.shape[0]))
-            
+
             fit = self.fit_stars(
                 sl_cat_pix,
                 local_background=True,
@@ -812,9 +821,10 @@ class Image(Frame2D):
                 no_aperture_photometry=True)
             
             ## remove bad fits
-            
-            fit[np.abs(fit.dx) > self.get_fwhm_pix() * 3] = np.nan
-            fit[np.abs(fit.dy) > self.get_fwhm_pix() * 3] = np.nan
+            fit[np.abs(fit.dx) > self.get_fwhm_pix() * fwhm_limit_factor] = np.nan
+            fit[np.abs(fit.dy) > self.get_fwhm_pix() * fwhm_limit_factor] = np.nan
+            if saturation_threshold is not None:
+                fit[fit.amplitude > saturation_threshold] = np.nan
 
             logging.info('{} stars fitted'.format(len(fit.dropna())))
 
@@ -824,9 +834,9 @@ class Image(Frame2D):
             #                    err=None, sip_order=sip_order)
 
             wcs = orb.utils.astrometry.fit_sip_from_points(
-                (fit.x, fit.y), (sl_cat_deg[:,0], sl_cat_deg[:,1]),
-                sip_order=sip_order)
-
+                (fit.x.values, fit.y.values), (sl_cat_deg[:,0], sl_cat_deg[:,1]),
+                sip_order=sip_order, proj_point=proj_point)
+            
             # update wcs
             self.set_wcs(wcs)
             logging.info('sip after sip fit (A matrix)')
@@ -945,7 +955,7 @@ class Image(Frame2D):
 
         logging.info('corrected WCS computed')
         logging.info('internal WCS updated (to update the file on disk use self.writeto function)')
-
+        
         if filter_background:
             logging.info('filter background: restoring original data')
             self.data = original_data
