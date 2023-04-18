@@ -21,7 +21,7 @@ https://orb.readthedocs.io/en/latest/
 
 ## installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)
 
-### 1. download Miniconda for your OS and python 3.7.
+### 1. download Miniconda for your OS and python 3.10.
 
 **If you already have [Anaconda](https://www.anaconda.com/) installed go to step 2**
 
