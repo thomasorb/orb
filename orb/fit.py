@@ -352,7 +352,7 @@ class FitVector(object):
                 
     
         if np.any(np.isnan(gvar.mean(model))):
-            logging.warning('Nan in model')
+            logging.debug('Nan in model')
 
         if return_models:
             return model, models
