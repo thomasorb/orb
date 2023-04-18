@@ -16,7 +16,7 @@ from scipy.special import factorial as fac
 from functools import reduce
 
 
-def mk_rad_mask(r0, r1=None, norm=True, center=None, dtype=np.float,
+def mk_rad_mask(r0, r1=None, norm=True, center=None, dtype=np.float64,
 		getxy=False):
 	"""
 	Make a rectangular matrix of size (r0, r1) where the value of each 
@@ -130,7 +130,7 @@ def zernikel(j, rho, phi, norm=True):
 # 	"""
 # 	n, m = noll_to_zern(j)
 #
-# 	grid = (np.indices((size, size), dtype=np.float) - 0.5*size) / (0.5*size)
+# 	grid = (np.indices((size, size), dtype=np.float64) - 0.5*size) / (0.5*size)
 # 	grid_rad = (grid[0]**2. + grid[1]**2.)**0.5
 # 	grid_ang = np.arctan2(grid[0], grid[1])
 # 	return zernike(m, n, grid_rad, grid_ang, norm)

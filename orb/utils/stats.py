@@ -62,6 +62,15 @@ def unbiased_std(a):
     """
     return np.diff(np.nanpercentile(a, [25,75]))[0]/1.349
 
+def unbiased_mean(a, perc=16):
+    """Return an unbiased measure of the mean.
+
+    Robust to outliers, but the underlying distribution must be Normal-ish between the choosen percentile limit.
+    """
+    a_sorted = np.array(a).flatten()
+    a_sorted = np.sort(a_sorted[~np.isnan(a_sorted)])
+    return np.nanmean(a_sorted[int(len(a_sorted)*perc/100):int(np.ceil(len(a_sorted)* (1-perc/100)))])
+
 def robust_mean(a, weights=None, warn=True):
     """Compute the mean of a distribution even with NaN values
 

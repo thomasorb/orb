@@ -21,7 +21,7 @@ https://orb.readthedocs.io/en/latest/
 
 ## installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)
 
-### 1. download Miniconda for your OS and python 3.7.
+### 1. download Miniconda for your OS and python 3.10.
 
 **If you already have [Anaconda](https://www.anaconda.com/) installed go to step 2**
 
@@ -44,20 +44,16 @@ conda install conda-build
 ### 3. create orb3 environment
 
 create an environment and install needed modules manually
+
 ```bash
-conda create -n orb3 python=3.7 
-conda install -n orb3 numpy scipy matplotlib astropy cython h5py dill pandas pytables
-conda install -n orb3 -c conda-forge pyregion
-conda install -n orb3 -c astropy photutils=1.3.0 astroquery
-conda install -n orb3 -c anaconda gitpython
+conda create -n orb3  -c conda-forge -c astropy -c anaconda python=3.10.8 numpy scipy matplotlib astropy cython h5py dill pandas pytables jupyterlab photutils astroquery reproject gitpython
+
 conda activate orb3
-```
-now your prompt should be something like `(orb3) $`.
-```bash
-pip install gvar==9.2 --no-deps
-pip install lsqfit==11.2 --no-deps
+
+pip install pyregion==2.1.1 --no-deps
+pip install gvar==11.11.1 --no-deps
+pip install lsqfit==13.0 --no-deps
 pip install fpdf --no-deps
-pip install gitpython --no-deps
 ```
 
 If you encounter a problem building gvar you may want to install build-essential (for Ubuntu users)
@@ -81,7 +77,7 @@ python setup.py install # not for developer
 **(developer only)**
 ```bash
 cd
-echo '/absolute/path/to/orb-stable/orb' > miniconda3/envs/orb3/lib/python3.7/site-packages/conda.pth
+echo '/absolute/path/to/orb-stable/orb' > ~/miniconda3/envs/orb3/lib/python3.10/site-packages/conda.pth
 ```
 
 Test it:
@@ -90,12 +86,7 @@ conda activate orb3 # you don't need to do it if you are already in the orb3 env
 python -c 'import orb.core'
 ```
 
-### 5. install jupyter
-
-```bash
-conda install -n orb3 -c conda-forge jupyterlab
-```
-Run it
+### 5. Run jupyter
 
 ```bash
 conda activate orb3 # you don't need to do it if you are already in the orb3 environment

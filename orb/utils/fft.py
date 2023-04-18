@@ -117,7 +117,7 @@ def raw_fft(x, apod=None, inverse=False, return_complex=False,
     zv[int(N/2):int(N/2)+N] = x
 
     # zero the centerburst
-    zv = np.roll(zv, zv.shape[0]/2)
+    zv = np.roll(zv, zv.shape[0]//2)
     
     # FFT
     if not inverse:

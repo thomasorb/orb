@@ -560,7 +560,7 @@ def fit_star(star_box, profile_name='gaussian', fwhm_pix=None,
     guess_params = np.array(guess_params, dtype=float)
 
     fixed_params = np.copy(guess_params)
-    masked_params = np.ones_like(guess_params, dtype=np.bool)
+    masked_params = np.ones_like(guess_params, dtype=bool)
     if fix_height:
         masked_params[0] = False
     if fix_amp:
@@ -1103,8 +1103,7 @@ def dec2deg(dec):
         for i in range(len(dec)):
             dec[i] = str(dec[i])
             dec[i] = dec[i].replace('+-', '-')
-            
-        dec = '{}:{}:{}'.format(int(dec[0]), int(dec[1]), float(dec[2]))
+        dec = '{}:{}:{}'.format(int(float(dec[0])), int(float(dec[1])), float(dec[2]))
         
     return astropy.coordinates.SkyCoord(0, dec, unit=astropy.units.degree).dec.deg
 
@@ -1487,7 +1486,7 @@ def fit_stars_in_frame(frame, star_list, box_size,
             
             fit_params = orb.cutils.multi_fit_stars(
                 np.array(fit_frame, dtype=float), np.array(star_list), box_size,
-                height_guess=np.array(background, dtype=np.float),
+                height_guess=np.array(background, dtype=float),
                 fwhm_guess=np.atleast_1d(fwhm_pix),
                 cov_height=cov_height,
                 cov_pos=True,
@@ -1496,8 +1495,8 @@ def fit_stars_in_frame(frame, star_list, box_size,
                 fix_pos=fix_pos,
                 fix_fwhm=fix_fwhm,
                 fit_tol=fit_tol,
-                ron=np.array(readout_noise, dtype=np.float),
-                dcl=np.array(dark_current_level, dtype=np.float),
+                ron=np.array(readout_noise, dtype=float),
+                dcl=np.array(dark_current_level, dtype=float),
                 enable_zoom=enable_zoom,
                 enable_rotation=enable_rotation,
                 estimate_local_noise=estimate_local_noise,
@@ -2822,3 +2821,40 @@ def dflist2arr(df, key):
             _photom[ik] = list([np.nan]) * _len
 
     return np.array(_photom).T
+
+def fit_sip_from_points(xy, radec, sip_order=None, proj_point=None):
+    """Return a fitted WCS with SIP. 
+
+    This is a simple wrapper around astropy.wcs.utils.fit_wcs_from_points().
+    
+    :param xy: (x,y) tuple in pixels
+
+    :param radec: (ra, dec) tuple in degrees
+
+    :param sip_order: SIP order. If SIP is None, the returned WCS will
+      not contain SIP.
+
+    """
+    if proj_point is None:
+        proj_point = 'center'
+    else:
+        proj_point = astropy.coordinates.SkyCoord(
+            astropy.coordinates.ICRS(
+                ra=proj_point[0] * astropy.units.deg,
+                dec=proj_point[1] * astropy.units.deg))
+
+        
+    nonans = (~np.isnan(xy[0]) *  ~np.isnan(xy[1])
+              * ~np.isnan(radec[0]) * ~np.isnan(radec[1]))
+    
+    sc = astropy.coordinates.SkyCoord(
+        astropy.coordinates.ICRS(
+            ra=radec[0] * astropy.units.deg,
+            dec=radec[1] * astropy.units.deg))
+
+    
+    return astropy.wcs.utils.fit_wcs_from_points(
+        (xy[0][nonans], xy[1][nonans]),
+        sc[nonans],
+        sip_degree=sip_order,
+        proj_point=proj_point)

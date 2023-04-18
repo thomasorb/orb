@@ -124,7 +124,7 @@ class FitVector(object):
             max_iter = int(np.clip(max_iter, 0, 1e6))
             logging.debug('max iteration changed to {}'.format(max_iter))
         else:
-            max_iter = 1000
+            max_iter = 10000
         self.max_iter = max_iter
 
         if np.any(np.iscomplex(vector)):

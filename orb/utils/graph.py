@@ -27,9 +27,11 @@ import matplotlib.cm
 import matplotlib.colors
 import numpy as np
 import orb.utils.io
+import orb.utils.stats
+import orb.utils.validate
 
 def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
-           vmin=None, vmax=None, autofit=False):
+           vmin=None, vmax=None, autofit=False, fig=None, interpolation=None, **kwargs):
     """Convenient image plotting function
 
     :param data: 2d array to show. Can be a path to a fits file.
@@ -55,6 +57,14 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
 
     :param vmax: max value used to scale the colorbar. If set the
       perc parameter is not used.
+
+    :param fig: You can pass an instance of matplotlib.Figure instead
+      of creating a new one. Note that figsize will not be used in
+      this case.
+
+    :param interpolation: Interpolation method (same as pyplot.figure
+      parameter)
+
     """
     if isinstance(data, str):
         data = orb.utils.io.read_fits(data)
@@ -80,17 +90,22 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
         cmap = getattr(matplotlib.cm, cmap)
         norm = matplotlib.colors.BoundaryNorm(np.linspace(vmin, vmax, ncolors),
                                               cmap.N, clip=True)
+        vmin = None # must be set to None if norm is passed
+        vmax = None # must be set to None if norm is passed
     else:
         norm = None
 
-    fig = pl.figure(figsize=figsize)
+    if fig is None:
+        fig = pl.figure(figsize=figsize)
+        
     if wcs is not None:
         assert isinstance(wcs, astropy.wcs.WCS), 'wcs must be an astropy.wcs.WCS instance'
         
         ax = fig.add_subplot(111, projection=wcs)
         ax.coords[0].set_major_formatter('d.dd')
         ax.coords[1].set_major_formatter('d.dd')
-    pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm)
+    pl.imshow(data.T, vmin=vmin, vmax=vmax, cmap=cmap, origin='lower', alpha=alpha,norm=norm,
+              interpolation=interpolation, **kwargs)
 
     if autofit:
         xbounds = np.arange(data.shape[0]) * np.where(np.any(~np.isnan(data), axis=1), 1, np.nan) # x
@@ -101,3 +116,25 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
         ymax = np.nanmax(ybounds)+1
         pl.xlim(xmin, xmax)
         pl.ylim(ymin, ymax)
+
+def moments(a, plot=True, median=True, **kwargs):
+    if median:
+        mean = orb.utils.stats.unbiased_mean(a)
+    else:
+        mean = np.nanmean(a)
+    std = orb.utils.stats.unbiased_std(a)
+    if plot:
+        pl.hist(a, **kwargs)
+        pl.axvline(mean, c='red', alpha=1)
+        pl.axvline(mean+std, c='red', alpha=0.5)
+        pl.axvline(mean-std, c='red', alpha=0.5)
+        pl.text()
+        print(mean, std)
+    return mean, std
+
+def scatter(x, y, c=None, vmin=None, vmax=None, perc=95, **kwargs):
+    if c is not None:
+        if orb.utils.validate.is_iterable(c, raise_exception=False):
+            if vmin is None: vmin = np.nanpercentile(c, 100-perc)
+            if vmax is None: vmax = np.nanpercentile(c, perc)
+    pl.scatter(x, y, c=c, vmin=vmin, vmax=vmax)

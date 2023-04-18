@@ -11,6 +11,7 @@ DIV_NB 3 # Number of "Quadrants" division along one axis of a cube
 	 # (the total number of quadrants is thus DIV_NB^2)
 
 ## Astrometry parameters
+BOX_SIZE_COEFF 2
 DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
 INIT_FWHM 1. # Rough estimate of the usual stars FWHM [in arcsecond]
 PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)

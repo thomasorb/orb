@@ -158,6 +158,11 @@ def query_vizier(radius, target_ra, target_dec,
         'gaia2': Catalog('I/345/gaia2',
                          'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,Gmag,pmRA,pmDE,e_pmRA,e_pmDE,Epoch',
                          '-Gmag'),
+
+        'gaia3': Catalog('I/350/gaiaedr3',
+                         'RA_ICRS,DE_ICRS,e_RA_ICRS,e_DE_ICRS,Gmag,pmRA,pmDE,e_pmRA,e_pmDE,Epoch',
+                         '-Gmag'),
+
         
         '2mass': Catalog('II/246/out',
                          'RAJ2000,DEJ2000,errMaj,errMin,Jmag,e_Jmag,Hmag,e_Hmag,Kmag,e_Kmag',
@@ -168,7 +173,7 @@ def query_vizier(radius, target_ra, target_dec,
                          '-rmag')}
 
     # shortcuts
-    catalogs['gaia'] = catalogs['gaia2']
+    catalogs['gaia'] = catalogs['gaia3']
 
     if catalog not in catalogs:
         raise Exception("Bad catalog name. Can be {}".format(list(catalogs.keys())))

@@ -70,7 +70,8 @@ except ImportError: pass
 import orb.utils.spectrum, orb.utils.parallel, orb.utils.io, orb.utils.filters
 import orb.cutils
 
-import orb.utils.photometry
+import orb.utils.photometry, orb.utils.validate
+
 
 #################################################
 #### CLASS TextColor ############################
@@ -552,6 +553,8 @@ class Tools(object):
         self.set_config('MOFFAT_BETA', float)
         self.set_config('DETECT_STACK', int)
         self.set_config('ALIGNER_RANGE_COEFF', float)
+        self.set_config('ALIGNER_RANGE_COEFF', float)
+        self.set_config('BOX_SIZE_COEFF', float)
             
         if self.instrument is not None:
             # load instrument configuration
@@ -1109,8 +1112,8 @@ class ProgressBar(object):
         """
         self._start_time = time.time()
         self._max_index = float(max_index)
-        self._time_table = np.zeros((self.REFRESH_COUNT), np.float)
-        self._index_table = np.zeros((self.REFRESH_COUNT), np.float)
+        self._time_table = np.zeros((self.REFRESH_COUNT), float)
+        self._index_table = np.zeros((self.REFRESH_COUNT), float)
         self._silent = silent
         self._count = 0
         
@@ -1126,6 +1129,7 @@ class ProgressBar(object):
         :param sec: Number of seconds to convert
         """
         if sec is None: return 'unknown'
+        if np.isinf(sec) or np.isnan(sec): return 'unknown'
         if (sec < 1):
             return '{:.3f} s'.format(sec)
         elif (sec < 5):
@@ -1142,7 +1146,7 @@ class ProgressBar(object):
             seconds = int(sec - (hours * 3600.) - (minutes * 60.))
             return str(hours) + "h" + str(minutes) + "m" + str(seconds) + "s"
 
-
+    
     def update(self, index, info="", remains=True, nolog=True):
         """Update the progress bar.
 
@@ -1166,9 +1170,10 @@ class ProgressBar(object):
                 self._index_table[_icount] = self._index_table[_icount + 1]
             self._time_table[-1] = time.time()
             self._index_table[-1] = index
+            index_by_step = ((self._index_table[-1] - self._index_table[0])
+                             /float(self.REFRESH_COUNT - 1))
+                
             if (self._count > self.REFRESH_COUNT):
-                index_by_step = ((self._index_table[-1] - self._index_table[0])
-                                 /float(self.REFRESH_COUNT - 1))
                 if index_by_step > 0:
                     time_to_end = (((self._time_table[-1] - self._time_table[0])
                                     /float(self.REFRESH_COUNT - 1))
@@ -1176,14 +1181,21 @@ class ProgressBar(object):
                 else: time_to_end = None
             else:
                 time_to_end = None
+
+            if index > 0:
+                mean_time_to_end = (self._time_table[-1] - self._start_time) / index * (self._max_index - index) / index_by_step
+            else:
+                mean_time_to_end = None
+            
             pos = (float(index) / self._max_index) * self.BAR_LENGTH
             line = ("\r [" + "="*int(math.floor(pos)) + 
                     " "*int(self.BAR_LENGTH - math.floor(pos)) + 
                     "] [%d%%] [" %(pos*100./self.BAR_LENGTH) + 
                     str(info) +"]")
             if remains:
-                line += (" [remains: " + 
-                         self._time_str_convert(time_to_end) + "]")
+                line += " [{}|{}]".format(
+                    self._time_str_convert(time_to_end),
+                    self._time_str_convert(mean_time_to_end))
             
         else:
             color = TextColor.GREEN
@@ -1586,19 +1598,31 @@ class Lines(Tools):
             return lines_nm, lines_name
         
 
+    def _to_list(self, lines):
+        try:
+            orb.utils.validate.is_iterable(lines)
+        except Exception:
+            lines = [lines,]
+        return lines
+        
     def get_line_nm(self, lines_name, round_ang=False):
         """Return the wavelength of a line or a list of lines
+
+        Only str instance will be converted.
 
         :param lines_name: List of line names
 
         :param round_ang: (Optional) If True return the rounded
           wavelength of the line in angstrom (default False)
         """
-        if isinstance(lines_name, str):
-            lines_name = [lines_name]
+        lines_name = self._to_list(lines_name)
 
-        lines_nm = [self.air_lines_nm[line_name]
-                    for line_name in lines_name]
+        lines_nm = list()
+        for line_name in lines_name:
+            if isinstance(line_name, str):
+                lines_nm.append(self.air_lines_nm[line_name])
+            else:
+                raise Exception('line name must be a str instance')
 
         if len(lines_nm) == 1:
             lines_nm = lines_nm[0]
@@ -2560,7 +2584,10 @@ class Vector1d(Data):
         # transform gvar to data and err
         if isinstance(_out[0], gvar._gvarcore.GVar):
             out.data = gvar.mean(_out)
-            out.err = gvar.sdev(_out)
+            try:
+                out.err = gvar.sdev(_out)
+            except ZeroDivisionError:
+                out.err = np.array([_out[i].sdev for i in range(len(_out))])
             
         else:
             out.data = _out

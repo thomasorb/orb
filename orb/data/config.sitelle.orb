@@ -61,6 +61,7 @@ OPTIM_DARK_CAM2 0 # Optimization routine for the dark of CAM 2
 EXT_ILLUMINATION 0 # Compute external illumination
 
 ## Astrometry parameters
+BOX_SIZE_COEFF 5
 DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
 INIT_FWHM 1. # Rough estimate of the usual stars FWHM [in arcsecond]
 PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)

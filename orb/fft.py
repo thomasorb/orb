@@ -864,7 +864,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         logging.debug('recomputed fwhm guess: {}'.format(kwargs['fwhm_guess']))
         
         if max_iter is None:
-            max_iter = max(100 * inputparams['allparams']['line_nb'], 1000)
+            max_iter = max(300 * inputparams['allparams']['line_nb'], 1000)
 
         spectrum = np.copy(self.data)
         spectrum[np.isnan(spectrum)] = 0
@@ -980,36 +980,69 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return fit
 
-    def prepare_velocity_estimate(self, lines, vel_range, precision=10):
-        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+
+    def _get_lines_cm1(self, lines):
         try:
-            lines_cm1[0]
-        except IndexError:
-            lines_cm1 = [lines_cm1,]
+            orb.utils.validate.is_iterable(lines)
+        except Exception:
+            lines = [lines,]
+
+        lines_cm1 = list()
+        for iline in lines:
+            if isinstance(iline, str):
+                iline = orb.core.Lines().get_line_cm1(iline)
+            lines_cm1.append(iline)
+
+        return np.array(lines_cm1, dtype=float)
+
+    def prepare_velocity_estimate(self, lines, vel_range, precision=10):
+
+        lines_cm1 = self._get_lines_cm1(lines)
         
         oversampling_ratio = (self.params.zpd_index
                               / (self.params.step_nb - self.params.zpd_index) + 1)
         combs, vels = orb.utils.fit.prepare_combs(lines_cm1, self.axis.data, vel_range,
                                                   oversampling_ratio, precision)
-        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio
+        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio, precision
 
-    def estimate_velocity_prepared(self, combs, vels, filter_range_pix, max_comps=1, threshold=1):
+    def estimate_velocity_prepared(self, combs, vels, precision, filter_range_pix, max_comps=1,
+                                   threshold=1, prod=True):
         return orb.utils.fit.estimate_velocity_prepared(
-            self.data.real, vels, combs, filter_range_pix, max_comps, threshold=threshold)
+            self.data.real, vels, combs, precision, filter_range_pix, max_comps,
+            threshold=threshold, prod=prod)
 
     def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
-                            threshold=1):
+                            threshold=1, prod=True):
         (combs, vels, filter_range_pix,
-         lines_cm1, oversampling_ratio) = self.prepare_velocity_estimate(
+         lines_cm1, oversampling_ratio, precision) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
-        
-        vel = self.estimate_velocity_prepared(combs, vels, filter_range_pix,
-                                              max_comps=max_comps, threshold=threshold)
+
+        vel = self.estimate_velocity_prepared(combs, vels, precision, filter_range_pix, 
+                                              max_comps=max_comps, threshold=threshold,
+                                              prod=prod)
         fluxes = self.estimate_flux(lines, vel, max_comps=max_comps)
         return vel, fluxes
+
+    def autofit(self, lines, *args, **kwargs):
+
+        vels, fluxes = self.estimate_parameters(lines, *args, **kwargs)
+        logging.info('estimated velocities: {}'.format(vels))
+
+        oks = ~np.isnan(vels)
+        
+        if np.sum(oks) == 0: raise Exception()
+        pos_def = list()
+        for i in range(np.sum(oks)):
+            pos_def += (str(i),) * len(lines)
+
+        fit = self.fit(lines * np.sum(oks), pos_def=pos_def, pos_cov=np.array(vels)[oks])
+        return fit
+
     
     def estimate_flux(self, lines, vel, max_comps=1):
-        lines_cm1 = orb.core.Lines().get_line_cm1(lines)
+
+        lines_cm1 = self._get_lines_cm1(lines)
+        
         oversampling_ratio = (self.params.zpd_index
                               / (self.params.step_nb - self.params.zpd_index) + 1)
         fluxes = list()
