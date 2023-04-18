@@ -79,7 +79,7 @@ python setup.py install # not for developer
 **(developer only)**
 ```bash
 cd
-echo '/absolute/path/to/orb-stable/orb' > miniconda3/envs/orb3/lib/python3.7/site-packages/conda.pth
+echo '/absolute/path/to/orb-stable/orb' > ~/miniconda3/envs/orb3/lib/python3.10/site-packages/conda.pth
 ```
 
 Test it:
