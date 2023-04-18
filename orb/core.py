@@ -1129,6 +1129,7 @@ class ProgressBar(object):
         :param sec: Number of seconds to convert
         """
         if sec is None: return 'unknown'
+        if np.isinf(sec) or np.isnan(sec): return 'unknown'
         if (sec < 1):
             return '{:.3f} s'.format(sec)
         elif (sec < 5):
@@ -1145,7 +1146,7 @@ class ProgressBar(object):
             seconds = int(sec - (hours * 3600.) - (minutes * 60.))
             return str(hours) + "h" + str(minutes) + "m" + str(seconds) + "s"
 
-
+    
     def update(self, index, info="", remains=True, nolog=True):
         """Update the progress bar.
 
@@ -1169,9 +1170,10 @@ class ProgressBar(object):
                 self._index_table[_icount] = self._index_table[_icount + 1]
             self._time_table[-1] = time.time()
             self._index_table[-1] = index
+            index_by_step = ((self._index_table[-1] - self._index_table[0])
+                             /float(self.REFRESH_COUNT - 1))
+                
             if (self._count > self.REFRESH_COUNT):
-                index_by_step = ((self._index_table[-1] - self._index_table[0])
-                                 /float(self.REFRESH_COUNT - 1))
                 if index_by_step > 0:
                     time_to_end = (((self._time_table[-1] - self._time_table[0])
                                     /float(self.REFRESH_COUNT - 1))
@@ -1180,16 +1182,18 @@ class ProgressBar(object):
             else:
                 time_to_end = None
 
-            progress = (float(index) / self._max_index)
-            mean_time_to_end = (self._time_table[-1] - self._start_time) / progress
+            if index > 0:
+                mean_time_to_end = (self._time_table[-1] - self._start_time) / index * (self._max_index - index) / index_by_step
+            else:
+                mean_time_to_end = None
             
-            pos = progress * self.BAR_LENGTH
+            pos = (float(index) / self._max_index) * self.BAR_LENGTH
             line = ("\r [" + "="*int(math.floor(pos)) + 
                     " "*int(self.BAR_LENGTH - math.floor(pos)) + 
                     "] [%d%%] [" %(pos*100./self.BAR_LENGTH) + 
                     str(info) +"]")
             if remains:
-                line += " [remains: {}|{}]".format(
+                line += " [{}|{}]".format(
                     self._time_str_convert(time_to_end),
                     self._time_str_convert(mean_time_to_end))
             

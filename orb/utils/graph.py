@@ -27,6 +27,8 @@ import matplotlib.cm
 import matplotlib.colors
 import numpy as np
 import orb.utils.io
+import orb.utils.stats
+import orb.utils.validate
 
 def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncolors=None,
            vmin=None, vmax=None, autofit=False, fig=None, interpolation=None, **kwargs):
@@ -114,3 +116,25 @@ def imshow(data, figsize=(7,7), perc=99, cmap='viridis', wcs=None, alpha=1, ncol
         ymax = np.nanmax(ybounds)+1
         pl.xlim(xmin, xmax)
         pl.ylim(ymin, ymax)
+
+def moments(a, plot=True, median=True, **kwargs):
+    if median:
+        mean = orb.utils.stats.unbiased_mean(a)
+    else:
+        mean = np.nanmean(a)
+    std = orb.utils.stats.unbiased_std(a)
+    if plot:
+        pl.hist(a, **kwargs)
+        pl.axvline(mean, c='red', alpha=1)
+        pl.axvline(mean+std, c='red', alpha=0.5)
+        pl.axvline(mean-std, c='red', alpha=0.5)
+        pl.text()
+        print(mean, std)
+    return mean, std
+
+def scatter(x, y, c=None, vmin=None, vmax=None, perc=95, **kwargs):
+    if c is not None:
+        if orb.utils.validate.is_iterable(c, raise_exception=False):
+            if vmin is None: vmin = np.nanpercentile(c, 100-perc)
+            if vmax is None: vmax = np.nanpercentile(c, perc)
+    pl.scatter(x, y, c=c, vmin=vmin, vmax=vmax)
