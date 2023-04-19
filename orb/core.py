@@ -1646,7 +1646,7 @@ class Lines(Tools):
 
         :param lines: List of lines wavelength
         """
-        if isinstance(lines, (float, int, np.float128)):
+        if isinstance(lines, (float, int, np.longdouble)):
             lines = [lines]
 
         names = list()
@@ -2463,8 +2463,8 @@ class Vector1d(Data):
         else:
             logging.debug('data is not complex and is interpolated the bad way')
             if timing: times.append(time.time()) ####
-            f = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
-                                           self.data.real.astype(np.float128),
+            f = scipy.interpolate.interp1d(self.axis.data.astype(np.longdouble),
+                                           self.data.real.astype(np.longdouble),
                                            bounds_error=False)
             # (added to get the same number of timings as if data is
             # complex)
@@ -2475,8 +2475,8 @@ class Vector1d(Data):
         if timing: times.append(time.time()) ####
             
         if self.has_err():
-            new_err = scipy.interpolate.interp1d(self.axis.data.astype(np.float128),
-                                                 self.err.astype(np.float128),
+            new_err = scipy.interpolate.interp1d(self.axis.data.astype(np.longdouble),
+                                                 self.err.astype(np.longdouble),
                                                  bounds_error=False)(new_axis.data)
         else:
             new_err = None

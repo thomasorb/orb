@@ -590,7 +590,7 @@ def sincgauss1d_complex_erf(x, h, a, dx, fwhm, sigma):
 
     a_ = sigma / np.sqrt(2) / width
     b_ = ((x - dx) / np.sqrt(2) / sigma)
-    if b_.dtype == np.float128: b_ = b_.astype(float)
+    if b_.dtype == np.longdouble: b_ = b_.astype(float)
 
 
     erf1 = special.erf(a_ - 1j*b_)
@@ -641,7 +641,7 @@ def sincgauss1d_complex(x, h, a, dx, fwhm, sigma):
 
     a_ = sigma / np.sqrt(2) / width
     b_ = ((x - dx) / np.sqrt(2) / sigma)
-    if b_.dtype == np.float128: b_ = b_.astype(float)
+    if b_.dtype == np.longdouble: b_ = b_.astype(float)
 
     sg1c = orb.cgvar.sincgauss1d_complex(a_, b_)
     return (h + a * sg1c[0], h + a * sg1c[1])
