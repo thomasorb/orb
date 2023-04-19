@@ -478,7 +478,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         unmod_spectrum = spectrum.math('divide', photom.get_modulation_efficiency())
         unmod_spectrum.data[np.nonzero(np.isnan(unmod_spectrum.data))] = 0.
         
-        interf.data += np.mean(unmod_spectrum.data).astype(np.float128)
+        interf.data += np.mean(unmod_spectrum.data).astype(np.longdouble)
         interf.data = interf.data.real
         
         # modulation efficiency loss with OPD

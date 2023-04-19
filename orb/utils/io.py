@@ -151,7 +151,7 @@ def write_fits(fits_path, fits_data, fits_header=None,
 
     # float64/128 data conversion to float32 to avoid too big files
     # with unnecessary precision
-    if fits_data.dtype == np.float64 or fits_data.dtype == np.float128:
+    if fits_data.dtype == np.float64 or fits_data.dtype == np.longdouble:
         fits_data = fits_data.astype(np.float32)
 
     # complex data cannot be written in fits
@@ -736,7 +736,7 @@ def write_hdf5(file_path, data, header=None,
 
 
 castables = [int, float, bool, str, 
-             np.int64, np.float64, int, np.float128, np.bool_]
+             np.int64, np.float64, int, np.longdouble, np.bool_]
     
 def cast(a, t_str):
     if isinstance(t_str, bytes):
@@ -888,12 +888,12 @@ def read_hdf5(file_path, return_header=False, dtype=float):
 def cast2hdf5(val):
     if val is None:
         return 'None'
-    elif isinstance(val, np.float128):
+    elif isinstance(val, np.longdouble):
         return val.astype(np.float64)
     #elif isinstance(val, int):
     #    return str(val)
     elif isinstance(val, np.ndarray):
-        if val.dtype == np.float128:
+        if val.dtype == np.longdouble:
             return val.astype(np.float64)
         
     return val

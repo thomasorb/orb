@@ -352,7 +352,7 @@ class FitVector(object):
                 
     
         if np.any(np.isnan(gvar.mean(model))):
-            logging.warning('Nan in model')
+            logging.debug('Nan in model')
 
         if return_models:
             return model, models
@@ -1089,7 +1089,7 @@ class ContinuumModel(Model):
                 mod *= multfsp(x)
 
         if np.any(np.isnan(gvar.mean(mod))):
-            logging.warning('Nan in model')
+            logging.debug('Nan in model')
 
         if return_complex:
             mod = orb.utils.vector.complex2float((mod, np.zeros_like(mod)))
