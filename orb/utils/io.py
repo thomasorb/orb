@@ -736,7 +736,7 @@ def write_hdf5(file_path, data, header=None,
 
 
 castables = [int, float, bool, str, 
-             np.int64, np.float64, int, np.longdouble, np.bool_]
+             np.int64, np.float64, int, np.longdouble, np.bool_, np.float128]
     
 def cast(a, t_str):
     if isinstance(t_str, bytes):
