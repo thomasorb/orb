@@ -19,7 +19,7 @@ https://orb.readthedocs.io/en/latest/
 
 
 
-## installation instructions with Anaconda (should work on Linux, Mac OSX, Windows)
+## installation instructions with Anaconda (should work on Linux and Mac OSX, Windows is not supported anymore)
 
 ### 1. download Miniconda for your OS and python 3.10.
 
