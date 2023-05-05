@@ -128,7 +128,6 @@ def moments(a, plot=True, median=True, **kwargs):
         pl.axvline(mean, c='red', alpha=1)
         pl.axvline(mean+std, c='red', alpha=0.5)
         pl.axvline(mean-std, c='red', alpha=0.5)
-        pl.text()
         print(mean, std)
     return mean, std
 

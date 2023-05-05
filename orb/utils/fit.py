@@ -159,7 +159,8 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
         score = np.empty_like(vels)
         for i in range(len(vels)):
             score[i] = np.nansum(combs[i][0][filter_range_pix[0]:filter_range_pix[1]] * _spec)
-        score /= np.nanmax(score)
+        score_norm = np.nanmax(score)
+        score /= score_norm
         score[np.isnan(score)] = 0
         
     else:
@@ -170,7 +171,8 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
         for i in range(len(vels)):
             score[i] = np.prod(np.abs(np.nansum(mat * combs[i][1][:,filter_range_pix[0]:filter_range_pix[1]], axis=1))**(1/mat.shape[0]))
         
-        score /= np.nanmax(score)
+        score_norm = np.nanmax(score)
+        score /= score_norm
         score[np.isnan(score)] = 0
         threshold *= 2
 
@@ -188,13 +190,16 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
     # pl.scatter(peaks, np.sort(p[1]['peak_heights'])[::-1])
     
     estimated_vels = list([vels[ipeak] for ipeak in peaks])
+    scores = list(score[peaks] * score_norm)
     if max_comps <= len(estimated_vels):
         estimated_vels = estimated_vels[:max_comps]
+        scores = scores[:max_comps]
     else:
         estimated_vels += list([np.nan]) * (max_comps - len(estimated_vels))
+        scores += list([np.nan]) * (max_comps - len(scores))
+        
     if return_score:
-        return score
-
+        return estimated_vels, scores
     return estimated_vels
 
 def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio):
@@ -219,7 +224,8 @@ def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling
             fluxes.append(np.nan)
             continue
         iline -= int(filter_range_pix[0])
-        fluxes.append(np.nansum(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1]))
+        amp = np.nanmax(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1])
+        fluxes.append(orb.utils.spectrum.sinc1d_flux(amp, fwhm_pix))
     return fluxes
 
 def BIC(residual, k):

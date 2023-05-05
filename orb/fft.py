@@ -915,7 +915,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         if (_fit != []
             and is_sincgauss
             and np.any(np.isnan(_fit['broadening_err']) * ~is_fixed)):
-            logging.info('bad sigma value for sincgauss model, fit recomputed with a sinc model')
+            logging.debug('bad sigma value for sincgauss model, fit recomputed with a sinc model')
 
             # clean kwargs from sigma related params
             new_kwargs = dict(kwargs_orig)
@@ -1006,21 +1006,27 @@ class Spectrum(orb.core.Cm1Vector1d):
         return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio, precision
 
     def estimate_velocity_prepared(self, combs, vels, precision, filter_range_pix, max_comps=1,
-                                   threshold=1, prod=True):
+                                   threshold=1, prod=True, return_score=False):
         return orb.utils.fit.estimate_velocity_prepared(
             self.data.real, vels, combs, precision, filter_range_pix, max_comps,
-            threshold=threshold, prod=prod)
+            threshold=threshold, prod=prod, return_score=return_score)
 
     def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
-                            threshold=1, prod=True):
+                            threshold=1, prod=True, return_score=False):
         (combs, vels, filter_range_pix,
          lines_cm1, oversampling_ratio, precision) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
 
         vel = self.estimate_velocity_prepared(combs, vels, precision, filter_range_pix, 
                                               max_comps=max_comps, threshold=threshold,
-                                              prod=prod)
+                                              prod=prod, return_score=return_score)
+        if return_score:
+            vel, score = vel
+            
         fluxes = self.estimate_flux(lines, vel, max_comps=max_comps)
+
+        if return_score:
+            return vel, fluxes, score
         return vel, fluxes
 
     def autofit(self, lines, *args, **kwargs):
