@@ -282,7 +282,14 @@ class HDFCube(orb.core.WCSData):
             self.level = 1
             if 'level2' in f.attrs:
                 self.level = 2
-            if 'level3' in f.attrs:
+                if 'flambda' in f.attrs:
+                    logging.warning('cube is level2 but contains flambda (may be a level 3 cube)')
+                    if np.iscomplexobj(f['data']):
+                        logging.warning('cube is level2 but contains complex data')
+                        self.level = 3
+                        logging.warning('cube level forced to 3')
+                    
+            if 'level3' in f.attrs or self.level == 3:
                 self.level = 3
                 if 'level2' in f.attrs:
                     logging.warning('both level2 and level3 in attrs')
@@ -2531,7 +2538,7 @@ class SpectralCube(Cube):
             spectrum /= params['pixels']
             err.data /= params['pixels']
             params['pixels'] = 1
-            
+
         return orb.fft.RealSpectrum(spectrum, err=err.data, axis=axis, params=params)
                 
 

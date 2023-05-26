@@ -2748,7 +2748,6 @@ class Cm1Vector1d(Vector1d):
                     if 'COMMENT' in params:
                         params.pop('COMMENT')
                 else: raise Exception('bad data shape {}'.format(_data.shape))
-                
         
         super().__init__(spectrum, axis=axis, params=params, **kwargs)
 
@@ -3468,6 +3467,25 @@ class WCSData(Tools, Data):
         """
         return np.array(x).astype(float) * self.get_scale()
 
+    def query_gaia(self, max_stars=100, as_pandas=False):
+        """Return a list of star coordinates around an object in a
+        given radius based on a query to last Gaia catalog
+
+        :param max_stars: (Optional) Maximum number of row to retrieve
+          (default 100)
+
+        :param as_pandas: (Optional) If True, results are returned as a
+          pandas.DataFrame instance. Else a numpy.ndarray instance is
+          returned (default False).
+
+        .. seealso:: :py:meth:`orb.orb.utils.web.query_gaia`
+        """
+        radius = self.config['FIELD_OF_VIEW_1'] / np.sqrt(2)
+        center_radec = self.pix2world([self.dimx/2., self.dimy/2])
+        return orb.utils.web.query_gaia(
+            radius, center_radec[0][0], center_radec[0][1],
+            max_stars=max_stars, as_pandas=as_pandas)
+    
     def query_vizier(self, catalog='gaia', max_stars=100, as_pandas=False):
         """Return a list of star coordinates around an object in a
         given radius based on a query to VizieR Services

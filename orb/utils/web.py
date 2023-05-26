@@ -31,6 +31,7 @@ import warnings
 import astroquery.vizier
 import astropy.coordinates
 import astropy.units
+from astroquery.gaia import Gaia
 
 def query_sesame(object_name, verbose=True, degree=False, pm=False):
     """Query the SESAME Database to get RA/DEC given the name of an
@@ -114,7 +115,8 @@ class Catalog(object):
         self.name = name
         self.out = out
         self.sort = sort
-    
+
+
 def query_vizier(radius, target_ra, target_dec,
                  catalog='gaia', max_stars=100, return_all_columns=False,
                  as_pandas=False):
@@ -192,7 +194,8 @@ def query_vizier(radius, target_ra, target_dec,
         vizier = astroquery.vizier.Vizier()
     vizier.ROW_LIMIT = -1
     result = vizier.query_region(coords, radius=radius/60.*astropy.units.deg, catalog=cat.name)
-    if len(result) == 0: raise Exception('Query returned nothing')
+    
+    if len(result) == 0: raise Exception('Query returned nothing at {} with a radius of {} arcmin'.format(coords, radius))
     else: result = result[0]
 
     sorting_key = cat.sort
@@ -222,4 +225,72 @@ def query_vizier(radius, target_ra, target_dec,
         result['dec'] = result[cat.out.split(',')[1]]
     
         return result
+
+        
+def query_gaia(radius, target_ra, target_dec,
+               max_stars=100, as_pandas=False):
+    """Return a list of star coordinates around an object in a
+    given radius based on a query to the last gaia catalog
+
+    :param radius: Radius around the target in arc-minutes.
+
+    :param target_ra: Target RA in degrees
+
+    :param target_dec: Target DEC in degrees
+
+    :param max_stars: (Optional) Maximum number of rows to retrieve
+      (default 100)
+
+    :param return_all_columns: (Optional) If True, return all
+      columns. Else only ra, dec and Mag are returned (default False).
+
+    :param as_pandas: (Optional) If True, results are returned as a
+      pandas.DataFrame instance. Else a numpy.ndarray instance is
+      returned (default False).
+    """    
+    logging.info("Looking for stars at RA: %f DEC: %f"%(target_ra, target_dec))
+
+    coords = astropy.coordinates.SkyCoord(ra=target_ra, dec=target_dec,
+                                          unit=(astropy.units.deg, astropy.units.deg),
+                                          frame='icrs')
+    Gaia.ROW_LIMIT = -1
+    
+    radius = astropy.units.Quantity(radius/60, astropy.units.deg)
+
+    result = Gaia.query_object_async(coordinate=coords, width=2*radius, height=2*radius,
+                                     columns=['ra', 'dec', 'ra_error', 'dec_error',
+                                              'phot_g_mean_mag', 'pmra', 'pmdec', 'pmra_error',
+                                              'pmdec_error', 'ref_epoch'])
+    
+    if len(result) == 0: raise Exception('Query returned nothing at {} with a radius of {} arcmin'.format(coords, radius))
+    
+    result = result.to_pandas()
+    result = result.drop('dist', axis=1)
+
+    sorting_key = 'phot_g_mean_mag'
+    result = result.sort_values(by=[sorting_key])
+
+    result = result.dropna()
+    result = result[:max_stars]
+    result = result.reset_index(drop=True)
+    
+    logging.info("%d stars recorded in the given field"%len(result))
+    logging.info("Magnitude min: {}, max:{}".format(
+        np.min(result[sorting_key].values), np.max(result[sorting_key].values)))
+
+    if not as_pandas:
+        return result.values
+
+    # for backward compatibility
+    result['Epoch'] = result['ref_epoch']
+    result['pmRA'] = result['pmra']
+    result['pmDE'] = result['pmdec']
+    result['e_pmRA'] = result['pmra_error']
+    result['e_pmDE'] = result['pmdec_error']
+    result['e_RA_ICRS'] = result['ra_error']
+    result['e_DE_ICRS'] = result['dec_error']
+    result['Gmag'] = result['phot_g_mean_mag']
+    
+    
+    return result
 

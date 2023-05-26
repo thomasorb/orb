@@ -1121,6 +1121,17 @@ def nanbin_image(im, binning):
     else:
         return np.nanmean(im).reshape((1,1))
 
+def pure_unbin_image(im, nx, ny):
+    """unbin image without any interpolation"""
+    out = np.full((nx, ny), np.nan, dtype=im.dtype)
+    binx = nx//im.shape[0]
+    biny = ny//im.shape[1]
+    for ii in range(im.shape[0]):
+        for ij in range(im.shape[1]):
+            out[ii*binx:(ii+1)*binx+1, 
+                ij*biny:(ij+1)*biny+1] = im[ii, ij]
+    return out
+
 def nn_interpolate(A, new_size):
     """Vectorized Nearest Neighbor Interpolation
     adapated from https://gist.github.com/KeremTurgutlu/68feb119c9dd148285be2e247267a203"""

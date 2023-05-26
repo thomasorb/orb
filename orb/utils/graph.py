@@ -125,9 +125,10 @@ def moments(a, plot=True, median=True, **kwargs):
     std = orb.utils.stats.unbiased_std(a)
     if plot:
         pl.hist(a, **kwargs)
-        pl.axvline(mean, c='red', alpha=1)
-        pl.axvline(mean+std, c='red', alpha=0.5)
+        pl.axvline(mean, c='red', alpha=1, label='mean: {:.2e}'.format(mean))
+        pl.axvline(mean+std, c='red', alpha=0.5, label='std: {:.2e}'.format(std))
         pl.axvline(mean-std, c='red', alpha=0.5)
+        pl.legend()
         print(mean, std)
     return mean, std
 
@@ -136,4 +137,4 @@ def scatter(x, y, c=None, vmin=None, vmax=None, perc=95, **kwargs):
         if orb.utils.validate.is_iterable(c, raise_exception=False):
             if vmin is None: vmin = np.nanpercentile(c, 100-perc)
             if vmax is None: vmax = np.nanpercentile(c, perc)
-    pl.scatter(x, y, c=c, vmin=vmin, vmax=vmax)
+    pl.scatter(x, y, c=c, vmin=vmin, vmax=vmax, **kwargs)

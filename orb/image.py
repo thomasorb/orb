@@ -404,7 +404,7 @@ class Image(Frame2D):
         """Return star positions, corrected for proper motion from Gaia DR3
         """
 
-        cat = self.query_vizier(as_pandas=True, max_stars=max_stars, catalog='gaia3')
+        cat = self.query_gaia(as_pandas=True, max_stars=max_stars)
 
         date_keys = ['DATE-OBS', 'DATE', 'date', 'date_obs']
         found = False
@@ -600,7 +600,7 @@ class Image(Frame2D):
                  fwhm_arc=None,
                  filter_background=True,
                  fwhm_limit_factor=3,
-                 proj_point=None):
+                 proj_point=None, photutils=False):
         """Register data and return a corrected pywcs.WCS
         object.
 
@@ -725,7 +725,7 @@ class Image(Frame2D):
         
         # Query to get reference star positions in degrees
         if sl_cat_deg is None:
-            #star_list_query = self.query_vizier(max_stars=100 * max_stars_detect)
+            #star_list_query = self.query_gaia(max_stars=100 * max_stars_detect)
             star_list_query = self.get_stars_from_catalog(max_stars=100 * max_stars_detect)
             star_list_query = np.array([star_list_query.ra.values, star_list_query.dec.values]).T
             # reference star position list in degrees
@@ -814,11 +814,15 @@ class Image(Frame2D):
         
             logging.info('sip computed with {} stars'.format(sl_cat_pix.shape[0]))
 
-            fit = self.fit_stars(
-                sl_cat_pix,
-                local_background=True,
-                multi_fit=False, fix_fwhm=True,
-                no_aperture_photometry=True)
+            if not photutils:
+                fit = self.fit_stars(
+                    sl_cat_pix,
+                    local_background=True,
+                    multi_fit=False, fix_fwhm=True,
+                    no_aperture_photometry=True)
+            else:
+                fit = orb.utils.astrometry.photutils_fit_stars(
+                    self, sl_cat_deg, fwhm=fwhm_arc)
             
             ## remove bad fits
             fit[np.abs(fit.dx) > self.get_fwhm_pix() * fwhm_limit_factor] = np.nan
@@ -851,11 +855,15 @@ class Image(Frame2D):
             logging.info('distortion maps computed with {} stars'.format(sl_cat_pix.shape[0]))
             
             # fit based on SIP corrected parameters
-            fit = self.fit_stars(
-                sl_cat_pix,
-                local_background=True,
-                multi_fit=False, fix_fwhm=True,
-                no_aperture_photometry=True)
+            if not photutils:
+                fit = self.fit_stars(
+                    sl_cat_pix,
+                    local_background=True,
+                    multi_fit=False, fix_fwhm=True,
+                    no_aperture_photometry=True)
+            else:
+                fit = orb.utils.astrometry.photutils_fit_stars(
+                    self, sl_cat_deg, fwhm=fwhm_arc)
 
             ## remove bad fits            
             fit[np.abs(fit.dx) > self.get_fwhm_pix()] = np.nan
@@ -914,11 +922,15 @@ class Image(Frame2D):
         if compute_precision:
             logging.info('Computing astrometrical precision')
 
-            fit_params = self.fit_stars(
-                self.world2pix(sl_cat_deg[:,:2]),
-                #local_background=True,
-                #multi_fit=False, fix_fwhm=False,
-                no_aperture_photometry=True)
+            if not photutils:
+                fit_params = self.fit_stars(
+                    self.world2pix(sl_cat_deg[:,:2]),
+                    #local_background=True,
+                    #multi_fit=False, fix_fwhm=False,
+                    no_aperture_photometry=True)
+            else:
+                fit_params = orb.utils.astrometry.photutils_fit_stars(
+                    self, sl_cat_deg, fwhm=fwhm_arc)
             
             # results must be filtered for 'jumping' stars
             # when fitted independantly the most brilliant stars in
