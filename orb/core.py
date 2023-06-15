@@ -1921,6 +1921,9 @@ class Data(object):
                         except TypeError as e:
                             logging.debug('error reading param from attributes {}: {}'.format(
                                 iparam, e))
+                        except ValueError as e:
+                            logging.warning('error reading param from attributes {}: {}'.format(
+                                iparam, e))
 
                     # load axis
                     if '/axis' in hdffile:
