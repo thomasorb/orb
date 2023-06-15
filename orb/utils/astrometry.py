@@ -2872,16 +2872,28 @@ def photutils_fit_stars(im, sl, fwhm=0.4, fast=False):
         newsl['ra'] = sl[:,0]
         newsl['dec'] = sl[:,1]
         sl = newsl
+
+    isarray = False
+    if isinstance(im, np.ndarray):
+        isarray = True
         
     if fast: func = photutils.centroids.centroid_com
     else: func = photutils.centroids.centroid_2dg
     
     sl = sl.copy()
-    sl['xi'], sl['yi'] = im.world2pix((sl.ra, sl.dec)).T
+    if isarray:
+        sl['xi'], sl['yi'] = sl.ra, sl.dec
+        rad = int(np.ceil(fwhm) + 1)
+        im_data = im
+    else:
+        sl['xi'], sl['yi'] = im.world2pix((sl.ra, sl.dec)).T
+        rad = int(np.ceil(im.arc2pix(fwhm)) + 1)
+        im_data = im.data
+        
     sl['x'] = np.nan
     sl['y'] = np.nan
     sl['flux'] = np.nan
-    rad = int(np.ceil(im.arc2pix(fwhm)) + 1)
+    
     
     WARN = 50
     ok = list()
@@ -2889,12 +2901,12 @@ def photutils_fit_stars(im, sl, fwhm=0.4, fast=False):
         iok = False
         if ~np.isnan(ix) and ~np.isnan(iy):
             if (ix > 0 + rad + WARN) * (ix < im.shape[0] - rad - WARN) * (iy > 0 + rad + WARN) * (iy < im.shape[1] - rad - WARN):
-                if np.all(~np.isnan(im.data[int(ix)-WARN:int(ix)+WARN+1,int(iy)-WARN:int(iy)+WARN+1])):
+                if np.all(~np.isnan(im_data[int(ix)-WARN:int(ix)+WARN+1,int(iy)-WARN:int(iy)+WARN+1])):
                     iok = True
         ok.append(iok)
             
     x, y = photutils.centroids.centroid_sources(
-        im.data.T, np.array(sl.xi[ok]), np.array(sl.yi[ok]), box_size=2*rad+1,
+        im_data.T, np.array(sl.xi[ok]), np.array(sl.yi[ok]), box_size=2*rad+1,
         centroid_func=func)
 
     iok = 0
@@ -2914,5 +2926,7 @@ def photutils_fit_stars(im, sl, fwhm=0.4, fast=False):
     sl['dx'] = sl.x - sl.xi
     sl['dy'] = sl.y - sl.yi
     sl['amplitude'] = sl['flux']
+    sl['x_err'] = 0.
+    sl['y_err'] = 0.
             
     return sl
