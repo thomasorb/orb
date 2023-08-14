@@ -743,6 +743,8 @@ def cast(a, t_str):
         t_str = t_str.decode()
     if 'type' in t_str: t_str = t_str.replace('type', 'class')
     if 'long' in t_str: t_str = t_str.replace('long', 'int')
+    if 'float128' in t_str: t_str = t_str.replace('float128', 'longdouble')
+    
     for _t in castables:
         if t_str == repr(_t):
             return _t(a)
