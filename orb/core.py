@@ -433,7 +433,7 @@ class Params(dict):
             for ikey in data:
                 try:
                     f.create_dataset(ikey, data=data[ikey])
-                except TypeError:
+                except (TypeError, ValueError):
                     logging.debug('error saving {} of type {}'.format(ikey, type(data[ikey])))
                     
     def load(self, path):
