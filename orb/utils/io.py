@@ -744,9 +744,11 @@ def cast(a, t_str):
     if 'type' in t_str: t_str = t_str.replace('type', 'class')
     if 'long' in t_str: t_str = t_str.replace('long', 'int')
     if 'float128' in t_str: t_str = t_str.replace('float128', 'longdouble')
+    if 'numpy' in t_str: t_str = t_str.replace('numpy', 'np')
+    t_str = t_str.split("'")[1]
     
     for _t in castables:
-        if t_str == repr(_t):
+        if _t is eval(t_str):
             return _t(a)
     raise Exception('Bad type string {} should be in {}'.format(t_str, [repr(_t) for _t in castables]))
 
