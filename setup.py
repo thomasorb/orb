@@ -35,7 +35,7 @@ extensions = [
 
 setup(
     name='orb-kernel',
-    ext_modules=cythonize(extensions),
+    ext_modules=cythonize(extensions, language_level="2"),
     version='3.0',
     url='https://github.com/thomasorb/orb',
     license='GPLv3+',

@@ -1720,7 +1720,7 @@ def multi_fit_stars(np.ndarray[np.float64_t, ndim=2] frame,
                                      maxfev=500, full_output=True,
                                      xtol=fit_tol)
     except Exception, e:
-        print 'Exception raised during least square fit of cutils.multi_fit_stars:', e
+        print('Exception raised during least square fit of cutils.multi_fit_stars:', e)
         fit = [5]
 
     ### CHECK FIT RESULTS ###
@@ -2024,8 +2024,8 @@ def unbin_image(np.ndarray[np.float64_t, ndim=2] im,
     out = np.empty((nx, ny), dtype=float)
     out.fill(np.nan)
 
-    binx = nx / dimx
-    biny = ny / dimy
+    binx = <int> (nx / dimx)
+    biny = <int> (ny / dimy)
 
     xaxis = (np.arange(dimx * binx) - (<double> binx / 2. - 0.5)) / (<double> binx)
     yaxis = (np.arange(dimy * biny) - (<double> biny / 2. - 0.5)) / (<double> biny)
