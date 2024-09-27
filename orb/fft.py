@@ -641,7 +641,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         """
         orb.core.Cm1Vector1d.__init__(self, spectrum, err=err, axis=axis,
                                       params=params, **kwargs)
-            
+        
         if not np.iscomplexobj(self.data):
             logging.debug('input spectrum is not complex')
             self.data = self.data.astype(complex)
