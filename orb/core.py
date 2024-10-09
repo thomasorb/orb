@@ -2689,7 +2689,7 @@ class Axis(Vector1d):
 
         :return: Position in index
         """
-        pos_index = (pos - self.data[0]) / float(self.axis_step)
+        pos_index = (pos - self.data[0].real) / float(self.axis_step)
         if np.any(pos_index < 0) or np.any(pos_index >= self.dimx):
             logging.warning('requested position is off axis')
         return pos_index
