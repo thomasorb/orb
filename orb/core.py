@@ -1503,7 +1503,7 @@ class Lines(Tools):
             f.close()
 
     def get_sky_lines(self, nm_min, nm_max, delta_nm, line_nb=0,
-                      get_names=False):
+                      get_names=False, add_balmer_lines=True):
         """Return sky lines in a range of optical wavelength.
 
         :param nm_min: min Wavelength of the lines in nm
@@ -1579,12 +1579,13 @@ class Lines(Tools):
         lines_name = [line[0] for line in lines]
         
         # add balmer lines
-        balmer_lines = ['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'Hepsilon']
-        for iline in balmer_lines:
-            if (self.air_lines_nm[iline] >= nm_min
-                and self.air_lines_nm[iline] <= nm_max):
-                lines_nm.append(self.air_lines_nm[iline])
-                lines_name.append(iline)
+        if add_balmer_lines:
+            balmer_lines = ['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'Hepsilon']
+            for iline in balmer_lines:
+                if (self.air_lines_nm[iline] >= nm_min
+                    and self.air_lines_nm[iline] <= nm_max):
+                    lines_nm.append(self.air_lines_nm[iline])
+                    lines_name.append(iline)
 
         if not get_names:
             lines_nm.sort()
