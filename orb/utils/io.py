@@ -971,3 +971,36 @@ def save_starlist(path, starlist):
         for i in range(starlist.shape[0]):
             f.write('{} {}\n'.format(starlist[i,0], starlist[i,1]))
         f.flush()
+
+        
+def open_large_fits_file(cube, export_path):
+    """Create and open a large fits file without laoding it into memory.
+
+    Useful for exporting an HDF5 SpectralCube to a FITS file.
+
+    :param cube: SpectralCube instance
+    :param export_path: Path to the output FITS file
+    """
+    # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
+            
+    hdr = astropy.io.fits.Header()
+    hdr['SIMPLE'] = True
+    hdr['BITPIX'] = (-32, 'np.float32')
+    hdr['NAXIS'] = 3
+    hdr['EXTEND'] = False
+    hdr['NAXIS1'] = cube.dimx
+    hdr['NAXIS2'] = cube.dimy
+    hdr['NAXIS3'] = cube.dimz
+    
+    cubehdr = cube.get_header()
+    for ikey in cubehdr:
+        if ikey not in hdr:
+            hdr[ikey] = (cubehdr[ikey], cubehdr.comments[ikey])    
+    
+    try:
+        os.remove(export_path)
+    except FileNotFoundError:
+        pass
+    
+    shdu = astropy.io.fits.StreamingHDU(export_path, hdr)
+    return shdu

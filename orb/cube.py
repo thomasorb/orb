@@ -775,41 +775,21 @@ class HDFCube(orb.core.WCSData):
 
         :param path: Path to the FITS file
         """
-        # https://docs.astropy.org/en/stable/generated/examples/io/skip_create-large-fits.html
-
         flambda = np.ones(self.dimz, dtype=float)
         if self.get_level() >= 3:
             if 'flambda' in self.params:
                 flambda = self.params.flambda
-            
+
             if np.size(flambda) == 1:
                 flambda *= np.ones(self.dimz, dtype=float)
             elif np.size(flambda) != self.dimz:
                 logging.warning('bad flux calibration, output will not be flux calibrated')
                 flambda = np.ones(self.dimz, dtype=float)
-                
-        hdr = astropy.io.fits.Header()
-        hdr['SIMPLE'] = True
-        hdr['BITPIX'] = (-32, 'np.float32')
-        hdr['NAXIS'] = 3
-        hdr['EXTEND'] = False
-        hdr['NAXIS1'] = self.dimx
-        hdr['NAXIS2'] = self.dimy
-        hdr['NAXIS3'] = self.dimz
 
-        cubehdr = self.get_header()
-        for ikey in cubehdr:
-            if ikey not in hdr:
-                hdr[ikey] = (cubehdr[ikey], cubehdr.comments[ikey])    
-        
-        try:
-            os.remove(path)
-        except FileNotFoundError:
-            pass
-        
-        shdu = astropy.io.fits.StreamingHDU(path, hdr)
+
+        shdu = orb.utils.io.open_large_fits_file(self, path)
         progress = orb.core.ProgressBar(self.dimz)
-        for iz in range(hdr['NAXIS3']):
+        for iz in range(self.dimz):
             progress.update(iz, info='Exporting frame {}'.format(iz))
             shdu.write(self[:,:,iz].real.astype(np.float32).T * flambda[iz])
             #shdu.write(np.zeros((self.dimy, self.dimx), dtype=np.float32))

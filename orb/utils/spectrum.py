@@ -22,7 +22,7 @@
 
 import numpy as np
 import math
-from scipy import interpolate, special
+from scipy import interpolate, special, fftpack
 import gvar
 
 import orb.constants
@@ -899,3 +899,57 @@ def detect_velocity(spec, axis_cm1, lines_cm1, ncomps=1, vrange=1000):
         fine_comps.append((vels + icomp)[np.nanargmax(fine_conv)])
 
     return fine_comps
+
+
+def project(data, old_axis, new_axis, quality):
+    """Project complex data on a new axis. 
+
+    Note: handle not complex data for backward compatibility, but the
+    projection is a simple linear interpolation.
+
+    :param data: data to project
+
+    :param old_axis: data original axis
+
+    :param new_axis: new axis (must be contained into the old axis -
+      no extrapolation)
+
+    :param quality: an integer from 2 to infinity which gives the
+      zero padding factor before interpolation. The more zero
+      padding, the better will be the interpolation, but the
+      slower too.
+
+    :return: data projected onto the new axis
+
+    .. warning:: Though much (much!) faster than pure resampling, this
+      can be a little less precise for complex data. Errors should be
+      negligible With a high enough quality factor. For non complex
+      data, its nothing more than a linear interpolation.
+    """
+    if np.any(np.iscomplex(data)):
+        quality = int(quality)
+        if quality < 2: raise ValueError('quality must be an integer > 2')
+        interf_complex = fftpack.ifft(data)
+        best_n = orb.utils.fft.next_power_of_two(len(old_axis) * quality)
+        zp_interf = np.zeros(best_n, dtype=complex)
+        center = interf_complex.shape[0] // 2
+        zp_interf[:center] = interf_complex[:center]
+        zp_interf[
+            -center-int(interf_complex.shape[0]&1):] = interf_complex[
+            -center-int(interf_complex.shape[0]&1):]
+
+        zp_spec = fftpack.fft(zp_interf)
+        ax_ratio = float(old_axis.size) / float(zp_spec.size)
+        zp_axis = (np.arange(zp_spec.size)
+                   * (old_axis[1] - old_axis[0]) * ax_ratio
+                   + old_axis[0])
+        f = interpolate.interp1d(zp_axis,
+                                       zp_spec,
+                                       bounds_error=False)
+
+    else:
+        f = interpolate.interp1d(old_axis.astype(np.longdouble),
+                                       data.real.astype(np.longdouble),
+                                       bounds_error=False)
+
+    return f(new_axis.data)

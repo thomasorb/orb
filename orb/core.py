@@ -2441,43 +2441,12 @@ class Vector1d(Data):
                     return self.copy()
                 
         if timing: times.append(time.time()) ####
-        if np.any(np.iscomplex(self.data)):
-            quality = int(quality)
-            if quality < 2: raise ValueError('quality must be an integer > 2')
-            interf_complex = scipy.fftpack.ifft(self.data)
-            best_n = orb.utils.fft.next_power_of_two(self.dimx * quality)
-            zp_interf = np.zeros(best_n, dtype=complex)
-            center = interf_complex.shape[0] // 2
-            zp_interf[:center] = interf_complex[:center]
-            zp_interf[
-                -center-int(interf_complex.shape[0]&1):] = interf_complex[
-                -center-int(interf_complex.shape[0]&1):]
 
-            if timing: times.append(time.time()) ####
-            zp_spec = scipy.fftpack.fft(zp_interf)
-            ax_ratio = float(self.axis.data.size) / float(zp_spec.size)
-            zp_axis = (np.arange(zp_spec.size)
-                       * (self.axis.data[1] - self.axis.data[0]) * ax_ratio
-                       + self.axis.data[0])
-            if timing: times.append(time.time()) ####
-            f = scipy.interpolate.interp1d(zp_axis,
-                                           zp_spec,
-                                           bounds_error=False)
-            
-        else:
+        if not np.any(np.iscomplex(self.data)):
             logging.debug('data is not complex and is interpolated the bad way')
-            if timing: times.append(time.time()) ####
-            f = scipy.interpolate.interp1d(self.axis.data.astype(np.longdouble),
-                                           self.data.real.astype(np.longdouble),
-                                           bounds_error=False)
-            # (added to get the same number of timings as if data is
-            # complex)
-            if timing: times.append(time.time()) 
-            
-        if timing: times.append(time.time()) ####
-        data  = f(new_axis.data)
-        if timing: times.append(time.time()) ####
-            
+        
+        data = orb.utils.spectrum.project(self.data, self.axis.data, new_axis.data, quality)
+
         if self.has_err():
             new_err = scipy.interpolate.interp1d(self.axis.data.astype(np.longdouble),
                                                  self.err.astype(np.longdouble),
