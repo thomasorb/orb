@@ -1023,6 +1023,23 @@ class Spectrum(orb.core.Cm1Vector1d):
 
     def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
                             threshold=1, prod=True, return_score=False):
+
+        """Detect and estimate the most probable velocities and
+        fluxes of a set of emission lines. Multiple components (same
+        set of emission lines, different velocities) can be detected
+
+        :param lines: Emission lines to fit (must be in cm-1 if the
+          cube is in wavenumber. must be in nm otherwise).
+
+        :param vel_range: A tuple (vel_min, vel_max) of the range of
+          velocities to try.
+
+        :param max_comps: Maximum number of components to detect. The
+          number of detected components can be lower.
+
+        :param threshold: Detection threshold as a factor of the std
+          of the calculated score.
+        """
         (combs, vels, filter_range_pix,
          lines_cm1, oversampling_ratio, precision) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
@@ -1146,6 +1163,25 @@ class Spectrum(orb.core.Cm1Vector1d):
     def autofit(self, lines=None, vel_range=[-2000,2000], fmodel='sinc',
                 max_comps=1, precision=10,
                 threshold=1, prod=True, return_score=False, **kwargs):
+        """Automatic fit of a spectrum.
+
+        Estimate the velocity of the different emission components and fit the spectrum.
+
+        :param lines: Set the lines to fit (for one velocity
+          component). If None, common emission lines in the filter are
+          automatically choosen.
+
+        :param vel_range: A tuple (vel_min, vel_max) of the range of
+          velocities to try.
+
+        :param max_comps: Maximum number of components to detect. The
+          number of detected components can be lower.
+
+        :param threshold: Detection threshold as a factor of the std
+          of the calculated score.
+
+        .. note:: Other parameters are the same as in fit().
+        """
 
         if lines is None:
             lines = orb.core.Lines().get_lines_in_filter(
