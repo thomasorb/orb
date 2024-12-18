@@ -836,7 +836,8 @@ class Spectrum(orb.core.Cm1Vector1d):
         
         return inputparams.convert(), kwargs
 
-    def prepared_fit(self, inputparams, max_iter=None, nogvar=False, **kwargs):
+    def prepared_fit(self, inputparams, max_iter=None, nogvar=False,
+                     force_positive_flux=True, **kwargs):
         """Run a fit already prepared with prepare_fit() method.
         """
         start_time = time.time()
@@ -887,6 +888,7 @@ class Spectrum(orb.core.Cm1Vector1d):
                 max_iter=max_iter,
                 nogvar=nogvar,
                 vector_err=err,
+                force_positive_flux=force_positive_flux,
                 **kwargs)
             warnings.simplefilter('default')
 
@@ -955,7 +957,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         return _fit
         
     def fit(self, lines, fmodel='sinc', nofilter=True,
-            max_iter=None, nogvar=False,
+            max_iter=None, nogvar=False, force_positive_flux=True,
             **kwargs):
         """Fit lines in a spectrum
 
@@ -981,6 +983,7 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         fit = self.prepared_fit(
             inputparams, max_iter=max_iter, nogvar=nogvar,
+            force_positive_flux=force_positive_flux,
             **kwargs)
         
         return fit
@@ -1004,16 +1007,18 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         lines_cm1 = self._get_lines_cm1(lines)
         
-        oversampling_ratio = (self.params.zpd_index
-                              / (self.params.step_nb - self.params.zpd_index) + 1)
+        self.oversampling_ratio = (self.params.zpd_index
+                                   / (self.params.step_nb - self.params.zpd_index) + 1)
         combs, vels = orb.utils.fit.prepare_combs(lines_cm1, self.axis.data, vel_range,
-                                                  oversampling_ratio, precision)
-        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, oversampling_ratio, precision
+                                                  self.oversampling_ratio, precision)
+        return combs, vels, self.axis(self.params.filter_range).astype(int), lines_cm1, self.oversampling_ratio, precision
 
-    def estimate_velocity_prepared(self, combs, vels, precision, filter_range_pix, max_comps=1,
-                                   threshold=1, prod=True, return_score=False):
+    def estimate_velocity_prepared(self, combs, vels, precision, filter_range_pix,
+                                   lines_cm1, max_comps=1, threshold=1, prod=True,
+                                   return_score=False):
         return orb.utils.fit.estimate_velocity_prepared(
             self.data.real, vels, combs, precision, filter_range_pix, max_comps,
+            lines_cm1, self.axis.data, self.oversampling_ratio,
             threshold=threshold, prod=prod, return_score=return_score)
 
     def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
@@ -1022,7 +1027,8 @@ class Spectrum(orb.core.Cm1Vector1d):
          lines_cm1, oversampling_ratio, precision) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
 
-        vel = self.estimate_velocity_prepared(combs, vels, precision, filter_range_pix, 
+        vel = self.estimate_velocity_prepared(combs, vels, precision, filter_range_pix,
+                                              lines_cm1,
                                               max_comps=max_comps, threshold=threshold,
                                               prod=prod, return_score=return_score)
         if return_score:
@@ -1034,19 +1040,132 @@ class Spectrum(orb.core.Cm1Vector1d):
             return vel, fluxes, score
         return vel, fluxes
 
-    def autofit(self, lines, *args, **kwargs):
 
-        vels, fluxes = self.estimate_parameters(lines, *args, **kwargs)
+    
+    def get_autofit_parameters(self, velocities=None, lines=None, fmodel='sinc'):
+        """Return a set of common fit definitions for multiple components.
+        
+        :param velocities: Tuple of velocities (the number of
+          velocities defines the number of components)
+
+        :param lines: If None, lines are automatically choosen in the
+          filter range. Lines must be passed as a list of strings.
+
+        """
+        params = dict()
+        Lines = orb.core.Lines()
+
+        # check velocities
+        if velocities is None:
+            velocities = tuple((0., ))
+            
+        velocities = np.atleast_1d(velocities)
+
+        oks = ~np.isnan(velocities)
+        
+        if np.sum(oks) == 0: raise Exception('all velocity components are NaN')
+        ncomp = np.sum(oks)
+        velocities = velocities[oks]
+
+            
+        # find lines in filter
+        if lines is None:
+            lines = Lines.get_lines_in_filter(self.params.filter_nm_min,
+                                              self.params.filter_nm_max)
+        lines = Lines.convert_lines_name(lines)
+
+        lines_cm1 = Lines.get_line_cm1(lines)
+        
+        if 'filter_name' not in self.params:
+            filter_name = 'unknown_filter'
+        else:
+            filter_name = self.params.filter_name
+
+        # check for doublet with known ratios
+        amp_def = list()
+        amp_guess = list()
+        
+        for i, ivel in zip(range(ncomp), velocities):
+            _amp_def = np.arange(len(lines)) + i * 100
+            _amp_guess = np.ones(len(lines), dtype=float)
+
+            if '[NII]6548' in lines and '[NII]6583' in lines:
+                line6548 = lines_cm1[lines.index('[NII]6548')]
+                line6548 += orb.utils.spectrum.line_shift(
+                    ivel, line6548, wavenumber=True,
+                    relativistic=False)
+                line6583 = lines_cm1[lines.index('[NII]6583')]
+                line6583 += orb.utils.spectrum.line_shift(
+                    ivel, line6583, wavenumber=True,
+                    relativistic=False)
+
+                _amp_def[lines.index('[NII]6548')] = lines.index('[NII]6583') + i * 100
+                _amp_guess[lines.index('[NII]6583')] = orb.utils.spectrum.amp_ratio_from_flux_ratio(line6583, line6548, 3.071) # Storey and Zeipen (2000)
+
+            if '[OIII]4959' in lines and '[OIII]5007' in lines:
+                line4959 = lines_cm1[lines.index('[OIII]4959')]
+                line4959 += orb.utils.spectrum.line_shift(
+                    ivel, line4959, wavenumber=True,
+                    relativistic=False)
+                line5007 = lines_cm1[lines.index('[OIII]5007')]
+                line5007 += orb.utils.spectrum.line_shift(
+                    ivel, line5007, wavenumber=True,
+                    relativistic=False)
+                
+                _amp_def[lines.index('[OIII]4959')] = lines.index('[OIII]5007') + i * 100
+                _amp_guess[lines.index('[OIII]5007')] = orb.utils.spectrum.amp_ratio_from_flux_ratio(line5007, line4959, 3.013) # Storey and Zeipen (2000)
+                
+            amp_def.append(_amp_def)
+            amp_guess.append(_amp_guess)
+        amp_def = np.concatenate(amp_def).astype(str)
+        amp_guess = np.concatenate(amp_guess)
+
+
+        # define wavenumbers for every lines
+        pos_def = list()
+        for i in range(ncomp):
+            pos_def += (str(i),) * len(lines)
+        
+        # add sigma definition if sincgauss
+        all_lines = Lines.get_line_cm1(lines * ncomp)
+        
+        if fmodel == 'sincgauss':
+            params['sigma_def'] = list(['1', ]) * len(all_lines)
+            params['sigma_guess'] = list([10., ]) * len(all_lines)
+                        
+        params['lines'] =  all_lines
+        params['amp_def'] =  amp_def
+        params['amp_guess'] =  amp_guess
+        params['pos_def'] = pos_def
+        params['pos_cov'] = np.array(velocities)
+        params['fwhm_def'] = 'fixed'
+
+        return lines, params
+        
+
+    def autofit(self, lines=None, vel_range=[-2000,2000], fmodel='sinc',
+                max_comps=1, precision=10,
+                threshold=1, prod=True, return_score=False, **kwargs):
+
+        if lines is None:
+            lines = orb.core.Lines().get_lines_in_filter(
+                self.params.filter_nm_min, self.params.filter_nm_max)
+
+        vels, fluxes = self.estimate_parameters(lines, vel_range=vel_range,
+                                                max_comps=max_comps, precision=precision,
+                                                threshold=threshold, prod=prod)
         logging.info('estimated velocities: {}'.format(vels))
 
-        oks = ~np.isnan(vels)
-        
-        if np.sum(oks) == 0: raise Exception()
-        pos_def = list()
-        for i in range(np.sum(oks)):
-            pos_def += (str(i),) * len(lines)
 
-        fit = self.fit(lines * np.sum(oks), pos_def=pos_def, pos_cov=np.array(vels)[oks])
+        lines, params = self.get_autofit_parameters(
+            velocities=vels,
+            lines=lines,
+            fmodel=fmodel)
+
+        print(params)
+        params['fmodel'] = fmodel
+                
+        fit = self.fit(**params, **kwargs)
         return fit
 
     

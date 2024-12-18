@@ -1605,6 +1605,32 @@ class Lines(Tools):
         except Exception:
             lines = [lines,]
         return lines
+
+    def get_lines_in_filter(self, filter_min_nm, filter_max_nm):
+        """Return the lines contained in a range of wavelengths
+        """
+        lines = list()
+        for iline in self.air_lines_nm:
+            if iline in self.other_names: continue
+            if (self.air_lines_nm[iline] > filter_min_nm) and (self.air_lines_nm[iline] < filter_max_nm):
+                lines.append(iline)
+        return lines
+
+    def convert_lines_name(self, lines_name):
+        lines = list()
+        for iline in lines_name:
+            if not isinstance(iline, str):
+                raise Exception('lines_name must be a list of strings')
+            for jline in self.other_names:
+                if iline in self.other_names[jline]:
+                    iline = jline
+            if iline in self.air_lines_nm:
+                lines.append(iline)
+            else: raise Exception('line unknown: {}'.format(iline))
+        return lines
+            
+                
+        
         
     def get_line_nm(self, lines_name, round_ang=False):
         """Return the wavelength of a line or a list of lines

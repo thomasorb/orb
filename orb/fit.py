@@ -82,7 +82,7 @@ class FitVector(object):
     def __init__(self, vector, models, params, 
                  fit_tol=1e-8, signal_range=None, 
                  max_iter=None, docomplex=False, nogvar=False,
-                 vector_err=None):
+                 vector_err=None, force_positive_flux=True):
         """Init class.
 
         :param vector: Vector to fit
@@ -108,6 +108,9 @@ class FitVector(object):
           part only.
 
         :param nogvar: (Optional) No gvar are returned.
+
+        :param force_positive_flux: (Optional) Force fluxes to be
+          positive (default True)
         """
         self.nogvar = bool(nogvar)
         
@@ -155,6 +158,7 @@ class FitVector(object):
         self.models_operation = list()
         self.priors_list = list()
         self.priors_keys_list = list()
+        self.bounds_list = list()
         params = orb.utils.fit.pick2paramslist(params)
         
         for i in range(len(models)):
@@ -166,10 +170,16 @@ class FitVector(object):
                 self.models_operations))
             # guess nan values for each model
             self.models[-1].make_guess(self.vector)
+            
             self.priors_list.append(self.models[-1].get_priors())
+            if isinstance(self.models[-1], Cm1LinesModel):
+                self.bounds_list.append(self.models[-1].get_p_bounds(
+                    force_positive_flux=force_positive_flux))
+            else:
+                self.bounds_list.append(self.models[-1].get_p_bounds())
             self.priors_keys_list.append(list(self.priors_list[-1].keys()))
         self.all_keys_index = None
-        
+
         if signal_range is not None:
             if (np.nanmin(signal_range) >= 0 and
                 np.nanmax(signal_range) < self.vector.shape[0]):
@@ -430,17 +440,25 @@ class FitVector(object):
         
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
-
+        bounds_dict = self._all_p_list2dict(self.bounds_list)
                         
         priors_arr = self._all_p_dict2arr(priors_dict)
+
+        upper_bounds_arr = np.empty(len(self.all_keys_index), dtype=float)
+        lower_bounds_arr = np.empty(len(self.all_keys_index), dtype=float)
+        for key in self.all_keys_index:
+            lower_bounds_arr[self.all_keys_index[key]] = bounds_dict[key][0]
+            upper_bounds_arr[self.all_keys_index[key]] = bounds_dict[key][1]
+        bounds = (lower_bounds_arr, upper_bounds_arr)
         try:
             fit_results = scipy.optimize.curve_fit(
                 self._get_model_onrange,
                 np.arange(self.vector.shape[0]),
                 self._get_vector_onrange(),
                 #sigma=self._get_sigma_onrange(),
+                bounds=bounds,
                 p0=priors_arr,
-                method='lm',
+                method='trf',
                 full_output=True,
                 maxfev=self.max_iter)
         except RuntimeError as e:
@@ -668,6 +686,9 @@ class Model(object):
     fitted parameters. For each group of covarying parameters one free
     parameter is added. """
 
+    p_bounds = None
+    """tuples of bounds (lower, upper) on the free parameters"""
+
     p_fixed = None
     """Array of fixed parameters. Each covarying parameter is stored
     as fixed. And one free parameter is added for each group of
@@ -678,7 +699,7 @@ class Model(object):
     values of the parameters"""
     
     p_def = None
-    """Definition the full set of parameters (fixed, free or
+    """Definition of the full set of parameters (fixed, free or
     covarying). This array as the same shape as :py:attr:`fit.Model.p_val`"""
     
     p_val = None
@@ -776,6 +797,12 @@ class Model(object):
         """
         priors = dict(self.get_p_free())
         return priors
+
+    def get_p_bounds(self):
+        bounds = dict(self.get_p_free())
+        for ikey in bounds:
+            bounds[ikey] = (-np.inf, np.inf)
+        return bounds
         
     def set_p_free(self, p_free):
         """Set the vector of free parameters :py:attr:`fit.Model.p_free`
@@ -1338,7 +1365,23 @@ class LinesModel(Model):
         for key in priors:
             priors[key] = gvar.mean(priors[key])
         return priors    
-        
+
+    def get_p_bounds(self, force_positive_flux=True):
+        bounds = dict(self.get_p_free())
+        for ikey in bounds:
+            if 'amp' in ikey:
+                if force_positive_flux:
+                    bounds[ikey] = (0, np.inf)
+                else:
+                    bounds[ikey] = (-np.inf, np.inf)
+            elif 'fwhm' in ikey:
+                bounds[ikey] = (0, np.inf)
+            elif 'sigma' in ikey:
+                bounds[ikey] = (0, np.inf)
+            else:
+                bounds[ikey] = (-np.inf, np.inf)
+        return bounds
+
     def parse_dict(self):
         """Parse input dictionary :py:attr:`fit.Model.p_dict`"""
         
@@ -2504,6 +2547,25 @@ class OutputParams(Params):
         res[np.min(self.signal_range):np.max(self.signal_range)] = self.residual
         spectrum = orb.core.Cm1Vector1d(res, axis=self.get_axis(), params=self.get_params())
         return spectrum
+
+    def get_components(self):
+        """Return the multiple components fitted (lines sharing the same velocity)"""
+        
+        ncomps = len(np.unique((self.velocity*1e5).astype(int))/1e5)
+        linesnb = self.lines_params.shape[0]//ncomps
+        cont = self.fitted_models['ContinuumModel']
+        comps = list()
+        for icomp in range(ncomps):
+            axis, iflux = orb.fit.create_cm1_lines_model_raw(
+                self.lines_params[icomp*linesnb:(icomp+1)*linesnb,2], 
+                self.lines_params[icomp*linesnb:(icomp+1)*linesnb,1], 
+                self.step, self.order, self.step_nb, self.axis_corr_proj, 
+                self.zpd_index)
+            ispec = orb.core.Cm1Vector1d(
+                iflux + cont, axis=axis, params=self.get_params())
+        
+            comps.append(ispec)
+        return comps
     
     def plot(self, *args, **kwargs):
         """Plot fitted spectrum. Convenient wrapper around pyplot.plot() function""" 
@@ -2545,7 +2607,7 @@ class OutputParams(Params):
 
 def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                            compute_mcmc_error=False, max_iter=None, nogvar=False,
-                           vector_err=None,
+                           vector_err=None, force_positive_flux=True,
                            **kwargs):
     """raw function for spectrum fitting. Need the InputParams
     class to be defined before call.
@@ -2566,9 +2628,13 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
     :param max_iter: (Optional) Maximum number of iterations (default None)
 
     :param nogvar: (Optional) No gvar are returned. 
+
+    :param force_positive_flux: (Optional) Force line fluxes and
+      amplitudes to be positive.
         
     :param kwargs: (Optional) Model parameters that must be changed in
       the InputParams instance.
+
     """
     if isinstance(ip, InputParams):
         rawip = ip.convert()
@@ -2593,7 +2659,8 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                    fit_tol=fit_tol,
                    max_iter=max_iter,
                    nogvar=nogvar,
-                   vector_err=vector_err)
+                   vector_err=vector_err,
+                   force_positive_flux=force_positive_flux)
 
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
@@ -2681,6 +2748,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           velocity_range=None,
                           compute_mcmc_error=False,
                           max_iter=None,
+                          force_positive_flux=True,
                           **kwargs):
     
     """Fit lines in spectrum
@@ -2784,7 +2852,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
     fit = _fit_lines_in_spectrum(spectrum, ip,
                                  fit_tol=fit_tol,
                                  compute_mcmc_error=compute_mcmc_error,
-                                 max_iter=max_iter)
+                                 max_iter=max_iter,
+                                 force_positive_flux=force_positive_flux)
 
 
     if fit != []:

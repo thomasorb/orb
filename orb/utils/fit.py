@@ -123,17 +123,18 @@ def get_comb(lines_cm1, vel, axis, oversampling_ratio):
 
     comb = np.zeros_like(axis)
     x = np.arange(len(axis))
-    flux = orb.utils.spectrum.gaussian1d_flux(1, fwhm_pix)
+    flux = orb.utils.spectrum.sinc1d_flux(1, fwhm_pix)
     combl = list()
     for iline in lines_pix:
-        icomb = orb.utils.spectrum.gaussian1d(x, 0, 1, iline, fwhm_pix) / flux
+        icomb = orb.utils.spectrum.sinc1d(x, 0, 1, iline, fwhm_pix) / flux
         combl.append(icomb)
         comb += icomb
     return comb / len(lines_pix), np.array(combl)
 
 def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
     assert precision >= 1, 'precision must be >= 1'
-    axis_step_vel = orb.utils.spectrum.compute_radial_velocity(np.min(lines_cm1) - axis[1] + axis[0], np.min(lines_cm1), wavenumber=True, relativistic=False)
+    axis_step_vel = orb.utils.spectrum.compute_radial_velocity(
+        np.min(lines_cm1) - axis[1] + axis[0], np.min(lines_cm1), wavenumber=True, relativistic=False)
     vels = np.linspace(vel_range[0], vel_range[1], max(3, int((vel_range[1] - vel_range[0]) / axis_step_vel * precision) + 1))
     
     combs = list()
@@ -141,7 +142,9 @@ def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
         combs.append(get_comb(lines_cm1, vels[i], axis, oversampling_ratio))
     return combs, vels
 
-def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pix, max_comps, threshold=2.5, return_score=False, prod=True):
+def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pix,
+                               max_comps, lines_cm1, axis, oversampling_ratio,
+                               threshold=2.5, return_score=False, prod=True):
     """Provide a velocity estimate. Most of the input should be computed
     with a dedicated function such as
     fft.Spectrum.prepare_velocity_estimate.
@@ -149,48 +152,88 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
     :param threshold: Detection threshold as a factor of the std
        of the calculated score.
     """
+    def get_component(_spec, vel, lines_cm1, axis):
+        axis_step = axis[1] - axis[0]
+        lines = np.copy(lines_cm1)
+        fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(
+            oversampling_ratio=oversampling_ratio)
+        lines += orb.utils.spectrum.line_shift(
+            vel, lines, wavenumber=True, relativistic=False)
+        lines_pix = (lines - axis[0]) / axis_step
+
+        amps = np.clip(_spec[lines_pix.astype(int)], 0, np.max(_spec))
+        comb = np.zeros_like(axis)
+        x = np.arange(len(axis))
+        flux = orb.utils.spectrum.sinc1d_flux(1, fwhm_pix)
+        for iline, iamp in zip(lines_pix, amps):
+            comb += orb.utils.spectrum.sinc1d(x, 0, iamp, iline, fwhm_pix)
+        return comb
+
     spectrum = np.copy(spectrum)
     _spec = spectrum.real[filter_range_pix[0]:filter_range_pix[1]]
+    _axis = np.copy(axis[filter_range_pix[0]:filter_range_pix[1]])
     back = np.nanmedian(_spec)
     _spec -= back
     std = orb.utils.stats.unbiased_std(_spec)
 
-    if not prod:
-        score = np.empty_like(vels)
-        for i in range(len(vels)):
-            score[i] = np.nansum(combs[i][0][filter_range_pix[0]:filter_range_pix[1]] * _spec)
-        score_norm = np.nanmax(score)
-        score /= score_norm
-        score[np.isnan(score)] = 0
-        
-    else:
-        score = np.ones_like(vels)
-        mat = np.ones_like(combs[0][1])
-        mat = mat[:,filter_range_pix[0]:filter_range_pix[1]]
-        mat *= _spec
-        for i in range(len(vels)):
-            score[i] = np.prod(np.abs(np.nansum(mat * combs[i][1][:,filter_range_pix[0]:filter_range_pix[1]], axis=1))**(1/mat.shape[0]))
-        
-        score_norm = np.nanmax(score)
-        score /= score_norm
-        score[np.isnan(score)] = 0
-        threshold *= 2
-
-    threshold = np.nanmedian(score) + threshold * orb.utils.stats.unbiased_std(score)
+    estimated_vels = list()
+    scores = list()
     
-    p = scipy.signal.find_peaks(
-        score,
-        height=(threshold, 2),
-        width=precision/2)
-    peaks = p[0][np.argsort(p[1]['peak_heights'])[::-1]]
-
-    # import pylab as pl
-    # pl.plot(score, c='red')
-    # pl.axhline(threshold)
-    # pl.scatter(peaks, np.sort(p[1]['peak_heights'])[::-1])
+    if prod: threshold *= 2
     
-    estimated_vels = list([vels[ipeak] for ipeak in peaks])
-    scores = list(score[peaks] * score_norm)
+    for i in range(max_comps):
+        if not prod:
+            score = np.empty_like(vels)
+            for i in range(len(vels)):
+                score[i] = np.nansum(combs[i][0][filter_range_pix[0]:filter_range_pix[1]] * _spec)
+            score_norm = np.nanmax(score)
+            score /= score_norm
+            score[np.isnan(score)] = 0
+
+        else:
+            score = np.ones_like(vels)
+            mat = np.ones_like(combs[0][1])
+            mat = mat[:,filter_range_pix[0]:filter_range_pix[1]]
+            mat *= _spec
+
+            for i in range(len(vels)):
+                imat = np.nansum(mat * combs[i][1][:,filter_range_pix[0]:filter_range_pix[1]], axis=1)
+                score[i] = np.prod(np.abs(imat)**(1/mat.shape[0]))
+
+            score_norm = np.nanmax(score)
+            score /= score_norm
+            score[np.isnan(score)] = 0
+            
+        ithreshold = np.nanmedian(score) + threshold * orb.utils.stats.unbiased_std(score)
+
+        p = scipy.signal.find_peaks(
+            score,
+            height=(ithreshold, 2),
+            width=precision/2)
+        peaks = p[0][np.argsort(p[1]['peak_heights'])[::-1]]
+
+        # import pylab as pl
+        # pl.figure()
+        # pl.plot(vels, score, c='red')
+        # pl.axhline(ithreshold)
+        # pl.scatter(vels[peaks], np.sort(p[1]['peak_heights'])[::-1])
+
+        if len(peaks) > 0:
+            ibest_vel = vels[peaks[0]]
+
+            # create detected component to remove from _spec
+            icomp = get_component(_spec, ibest_vel, lines_cm1, _axis)
+            _spec -= icomp
+            # pl.figure()
+            # pl.plot(_spec)
+            # pl.plot(icomp)
+            
+        
+            estimated_vels.append(ibest_vel)
+            scores.append(score[peaks[0]] * score_norm)
+        else:
+            break
+        
     if max_comps <= len(estimated_vels):
         estimated_vels = estimated_vels[:max_comps]
         scores = scores[:max_comps]
