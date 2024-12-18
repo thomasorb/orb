@@ -1503,7 +1503,7 @@ class Lines(Tools):
             f.close()
 
     def get_sky_lines(self, nm_min, nm_max, delta_nm, line_nb=0,
-                      get_names=False):
+                      get_names=False, add_balmer_lines=True):
         """Return sky lines in a range of optical wavelength.
 
         :param nm_min: min Wavelength of the lines in nm
@@ -1579,12 +1579,13 @@ class Lines(Tools):
         lines_name = [line[0] for line in lines]
         
         # add balmer lines
-        balmer_lines = ['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'Hepsilon']
-        for iline in balmer_lines:
-            if (self.air_lines_nm[iline] >= nm_min
-                and self.air_lines_nm[iline] <= nm_max):
-                lines_nm.append(self.air_lines_nm[iline])
-                lines_name.append(iline)
+        if add_balmer_lines:
+            balmer_lines = ['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'Hepsilon']
+            for iline in balmer_lines:
+                if (self.air_lines_nm[iline] >= nm_min
+                    and self.air_lines_nm[iline] <= nm_max):
+                    lines_nm.append(self.air_lines_nm[iline])
+                    lines_name.append(iline)
 
         if not get_names:
             lines_nm.sort()
@@ -2440,43 +2441,12 @@ class Vector1d(Data):
                     return self.copy()
                 
         if timing: times.append(time.time()) ####
-        if np.any(np.iscomplex(self.data)):
-            quality = int(quality)
-            if quality < 2: raise ValueError('quality must be an integer > 2')
-            interf_complex = scipy.fftpack.ifft(self.data)
-            best_n = orb.utils.fft.next_power_of_two(self.dimx * quality)
-            zp_interf = np.zeros(best_n, dtype=complex)
-            center = interf_complex.shape[0] // 2
-            zp_interf[:center] = interf_complex[:center]
-            zp_interf[
-                -center-int(interf_complex.shape[0]&1):] = interf_complex[
-                -center-int(interf_complex.shape[0]&1):]
 
-            if timing: times.append(time.time()) ####
-            zp_spec = scipy.fftpack.fft(zp_interf)
-            ax_ratio = float(self.axis.data.size) / float(zp_spec.size)
-            zp_axis = (np.arange(zp_spec.size)
-                       * (self.axis.data[1] - self.axis.data[0]) * ax_ratio
-                       + self.axis.data[0])
-            if timing: times.append(time.time()) ####
-            f = scipy.interpolate.interp1d(zp_axis,
-                                           zp_spec,
-                                           bounds_error=False)
-            
-        else:
+        if not np.any(np.iscomplex(self.data)):
             logging.debug('data is not complex and is interpolated the bad way')
-            if timing: times.append(time.time()) ####
-            f = scipy.interpolate.interp1d(self.axis.data.astype(np.longdouble),
-                                           self.data.real.astype(np.longdouble),
-                                           bounds_error=False)
-            # (added to get the same number of timings as if data is
-            # complex)
-            if timing: times.append(time.time()) 
-            
-        if timing: times.append(time.time()) ####
-        data  = f(new_axis.data)
-        if timing: times.append(time.time()) ####
-            
+        
+        data = orb.utils.spectrum.project(self.data, self.axis.data, new_axis.data, quality)
+
         if self.has_err():
             new_err = scipy.interpolate.interp1d(self.axis.data.astype(np.longdouble),
                                                  self.err.astype(np.longdouble),
@@ -2689,7 +2659,7 @@ class Axis(Vector1d):
 
         :return: Position in index
         """
-        pos_index = (pos - self.data[0]) / float(self.axis_step)
+        pos_index = (pos - self.data[0].real) / float(self.axis_step)
         if np.any(pos_index < 0) or np.any(pos_index >= self.dimx):
             logging.warning('requested position is off axis')
         return pos_index

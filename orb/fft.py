@@ -684,6 +684,15 @@ class Spectrum(orb.core.Cm1Vector1d):
             spec.data.imag.fill(0.)
         return spec
 
+
+    def get_fwhm(self):
+        """Return the estimate of the FWHM based on the observation parameters"""
+        return orb.utils.spectrum.compute_line_fwhm(
+            self.dimx - self.params['zpd_index'],
+            self.params['step'], self.params['order'],
+            self.params['calib_coeff_orig'],
+            wavenumber=self.params['wavenumber'])
+
     
     def inverse_transform(self):
         """Return the inverse transform of the spectrum. This should be the
@@ -844,11 +853,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         if 'calib_coeff_orig' not in self.params:
             self.params['calib_coeff_orig'] = self.params['calib_coeff']
             
-        fwhm_guess_cm1 = orb.utils.spectrum.compute_line_fwhm(
-            self.dimx - self.params['zpd_index'],
-            self.params['step'], self.params['order'],
-            self.params['calib_coeff_orig'],
-            wavenumber=self.params['wavenumber'])
+        fwhm_guess_cm1 = self.get_fwhm()
 
         fwhm_guess = [fwhm_guess_cm1] * inputparams['allparams']['line_nb']
         if not 'fwhm_guess' in kwargs:
@@ -1060,6 +1065,121 @@ class Spectrum(orb.core.Cm1Vector1d):
                     self.data.real, self.axis.data, lines_cm1, vel[icomp],
                     self.axis(self.params.filter_range).astype(int), oversampling_ratio))
         return fluxes
+
+    def clean(self, threshold=None, precision=10, max_iter=1000, cleaned_ils='gaussian', damp=1, oversampling=2, snr_coeff=3):
+        """Implementation of the CLEAN algorithm for emission lines spectra.
+
+        Please note that it must be used with great care and is only
+        useful to help visual inspection of emission lines spectra, in
+        particular to help discover multiple components by eye. It
+        does not give more information. On the contrary, it may
+        introduce errors and cannot recover absorptions lines since it
+        assumes that 1) the background can be modeled as a low order
+        polynomial and 2) that the spectrum contains only emission
+        lines. It does not recover low SNR lines.
+
+        This implementation is flux conservative.
+
+        :param threshold: indicate a threshold below which the
+          remaining lines are not considered. If None, with a real
+          spectrum, the SNR is computed from off band data and used as
+          a limit: threshold = SNR x snr_coeff.
+
+        :param precision: oversampling factor during peak detection
+
+        :param max_iter: Maximum number of iterations
+
+        :param clean_ils: ILS of the cleaned emission lines. Can be 'gaussian' or 'sinc'.
+
+        :param damp: Dampening factor on emission line replacement, must be <= 1.
+
+        :param oversampling: oversampling factor of the resulting
+          spectrum. The FWHM of the cleand ILS is reduced by the same
+          factor. Help detection of multiple components, but may
+          leaves strange results if higher than 2. Note that it does
+          not enhance the real resolution and must be used with care.
+        
+        :param snr_coeff: Used to compute threshold if threshold is
+          set to None. See threshold parameter.
+        """
+
+        if oversampling == 1:
+            spectrum = self.copy()
+        else:
+            if oversampling < 1: raise Exception('oversampling must be >= 1')
+            spectrum = self.project(np.linspace(self.axis.data.min(), self.axis.data.max(),
+                                                self.data.size * oversampling))
+            spectrum.data = spectrum.data.astype(np.complex128)
+            spectrum.axis.data = spectrum.axis.data.astype(np.float64)
+            
+        original_data = np.copy(spectrum.data)
+        xmin, xmax = spectrum.get_filter_bandpass_pix()
+
+        # threshold
+        if threshold is None:
+            threshold = orb.utils.stats.unbiased_std(
+                np.concatenate([spectrum.data[10:xmin-int(spectrum.data.size*0.1)],
+                                spectrum.data[xmax+int(spectrum.data.size*0.1):-10]])) * snr_coeff
+
+        # background estimation and subtraction
+        background = np.copy(spectrum.data[xmin:xmax].real)
+        x = np.arange(background.size)
+        ok = np.ones_like(x, dtype=bool)
+        for i in range(4):
+            c = np.polyfit(x[ok], background[ok], 3)
+            ifit = np.polyval(c, x)
+            ok = np.abs(background - ifit) < threshold
+
+        background = np.polyval(c, x)
+        spectrum.data[xmin:xmax] -= background
+
+        # off-filter regions are removed
+        spectrum.data[:xmin] = 0
+        spectrum.data[xmax:] = 0
+
+
+        hr_axis = np.linspace(spectrum.axis.data.min(), spectrum.axis.data.max(), precision*spectrum.axis.data.size)
+        hr_spec = spectrum.project(hr_axis)
+        data = hr_spec.data.real
+        axis = hr_spec.axis.data
+        fwhm = spectrum.get_fwhm()
+
+        def get_ils(axis, wave, a, fmodel='sinc'):
+            if fmodel == 'gaussian':
+                # flux must be conserved
+                _fwhm = fwhm / oversampling
+                a *= orb.utils.spectrum.sinc1d_flux(a, fwhm) / orb.utils.spectrum.gaussian1d_flux(a, _fwhm)
+                return orb.utils.spectrum.gaussian1d(axis, 0, a, wave, _fwhm)
+
+            elif fmodel == 'sinc':
+                return orb.utils.spectrum.sinc1d(axis, 0, a, wave, fwhm)
+            else: raise Exception("cleaned_ils must be 'gaussian' or 'sinc'")
+
+        data = np.copy(data.real)
+
+        if threshold > data.max(): raise Exception('threshold should be lower than data.max()')
+
+        iloop = 0
+        cleaned_spectrum = np.zeros_like(spectrum.data)
+        while data.max() > threshold:
+            iloop += 1
+            if iloop > max_iter:
+                logging.warning('maximum number of iterations reached')
+                break
+
+
+            imax = np.argmax(data)
+            iamp = data[imax]
+            iwave = hr_axis[imax]
+            cleaned_spectrum += damp * get_ils(spectrum.axis.data, iwave, iamp, fmodel=cleaned_ils)
+            data -= damp * get_ils(axis, iwave, iamp, fmodel='sinc')
+
+        spectrum.data.real = cleaned_spectrum.real
+        spectrum.data.real[xmin:xmax] += background
+        if np.iscomplexobj(spectrum.data):
+            spectrum.data.imag = 0
+
+        return spectrum
 
 #################################################
 #### CLASS RealSpectrum #########################

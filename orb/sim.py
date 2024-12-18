@@ -242,13 +242,13 @@ class Interferogram(Base):
 
             
         RESOLV_COEFF = self.params.order * 10
-        opd_axis = (np.arange(self.params.step_nb) * self.params.step
-                    - (self.params.step * self.params.zpd_index)) * 1e-7 / self.params.calib_coeff
+
+        opd_axis = ((np.arange(self.params.step_nb) - self.params.zpd_index) * self.params.step) * 1e-7 / self.params.calib_coeff
 
         ratio = self.params.step_nb / float(self.params.step_nb - self.params.zpd_index)
 
         if jitter == 0:
-            interf = np.cos(2. * np.pi * wave * opd_axis)
+            interf = np.cos(2 * np.pi * wave * opd_axis)
         else:
             jitter_range = np.linspace(-jitter * 3, jitter * 3, RESOLV_COEFF) * 1e-7
             highres_opd_axis = np.concatenate([iopd + jitter_range for iopd in opd_axis])
@@ -284,7 +284,7 @@ class Interferogram(Base):
             self.params.step_nb / ratio, fwhm_nm)
 
         interf /= line_flux / flux
-        
+
         self.data += interf
         
     def add_background(self):
