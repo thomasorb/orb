@@ -1015,14 +1015,14 @@ class Spectrum(orb.core.Cm1Vector1d):
 
     def estimate_velocity_prepared(self, combs, vels, precision, filter_range_pix,
                                    lines_cm1, max_comps=1, threshold=1, prod=True,
-                                   return_score=False):
+                                   return_score=False, clean=False):
         return orb.utils.fit.estimate_velocity_prepared(
             self.data.real, vels, combs, precision, filter_range_pix, max_comps,
             lines_cm1, self.axis.data, self.oversampling_ratio,
-            threshold=threshold, prod=prod, return_score=return_score)
+            threshold=threshold, prod=prod, return_score=return_score, clean=clean)
 
     def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
-                            threshold=1, prod=True, return_score=False):
+                            threshold=1, prod=True, return_score=False, clean=False):
 
         """Detect and estimate the most probable velocities and
         fluxes of a set of emission lines. Multiple components (same
@@ -1047,7 +1047,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         vel = self.estimate_velocity_prepared(combs, vels, precision, filter_range_pix,
                                               lines_cm1,
                                               max_comps=max_comps, threshold=threshold,
-                                              prod=prod, return_score=return_score)
+                                              prod=prod, return_score=return_score, clean=clean)
         if return_score:
             vel, score = vel
             
@@ -1162,7 +1162,8 @@ class Spectrum(orb.core.Cm1Vector1d):
 
     def autofit(self, lines=None, vel_range=[-2000,2000], fmodel='sinc',
                 max_comps=1, precision=10,
-                threshold=1, prod=True, return_score=False, **kwargs):
+                threshold=1, prod=True, return_score=False,
+                clean=False, **kwargs):
         """Automatic fit of a spectrum.
 
         Estimate the velocity of the different emission components and fit the spectrum.
@@ -1189,20 +1190,22 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         vels, fluxes = self.estimate_parameters(lines, vel_range=vel_range,
                                                 max_comps=max_comps, precision=precision,
-                                                threshold=threshold, prod=prod)
+                                                threshold=threshold, prod=prod, clean=clean)
         logging.info('estimated velocities: {}'.format(vels))
-
 
         lines, params = self.get_autofit_parameters(
             velocities=vels,
             lines=lines,
             fmodel=fmodel)
 
-        print(params)
         params['fmodel'] = fmodel
-                
-        fit = self.fit(**params, **kwargs)
-        return fit
+
+        # update params with kwargs
+        for ikey in params:
+            if ikey in kwargs:
+                params[ikey] = kwargs.pop(ikey)
+        
+        return self.fit(**params, **kwargs)
 
     
     def estimate_flux(self, lines, vel, max_comps=1):

@@ -144,19 +144,24 @@ def prepare_combs(lines_cm1, axis, vel_range, oversampling_ratio, precision):
 
 def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pix,
                                max_comps, lines_cm1, axis, oversampling_ratio,
-                               threshold=2.5, return_score=False, prod=True):
+                               threshold=2.5, return_score=False, prod=True,
+                               clean=False):
     """Provide a velocity estimate. Most of the input should be computed
     with a dedicated function such as
     fft.Spectrum.prepare_velocity_estimate.
 
     :param threshold: Detection threshold as a factor of the std
        of the calculated score.
+
+    :param clean: Clean the velocities from unresolved components.
     """
+
+    fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(
+        oversampling_ratio=oversampling_ratio)
+
     def get_component(_spec, vel, lines_cm1, axis):
         axis_step = axis[1] - axis[0]
         lines = np.copy(lines_cm1)
-        fwhm_pix = orb.utils.spectrum.compute_line_fwhm_pix(
-            oversampling_ratio=oversampling_ratio)
         lines += orb.utils.spectrum.line_shift(
             vel, lines, wavenumber=True, relativistic=False)
         lines_pix = (lines - axis[0]) / axis_step
@@ -219,21 +224,39 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
         # pl.scatter(vels[peaks], np.sort(p[1]['peak_heights'])[::-1])
 
         if len(peaks) > 0:
+            
             ibest_vel = vels[peaks[0]]
-
+            
             # create detected component to remove from _spec
             icomp = get_component(_spec, ibest_vel, lines_cm1, _axis)
             _spec -= icomp
             # pl.figure()
             # pl.plot(_spec)
             # pl.plot(icomp)
-            
-        
+                    
             estimated_vels.append(ibest_vel)
             scores.append(score[peaks[0]] * score_norm)
         else:
             break
-        
+
+
+    # clean found velocities
+    if clean:
+        fwhm_vel = orb.utils.spectrum.compute_radial_velocity(
+            np.min(lines_cm1) - (axis[1] - axis[0]) * fwhm_pix,
+            np.min(lines_cm1), wavenumber=True, relativistic=False)
+
+        estimated_vels = np.array(estimated_vels)
+        scores = np.array(scores)
+        for ii in range(len(estimated_vels))[::-1]:
+            icheck = np.abs(estimated_vels - estimated_vels[ii])
+            icheck[ii] = np.nan
+            if np.any(icheck < fwhm_vel):
+                estimated_vels[ii] = np.nan
+
+        scores = list(scores[~np.isnan(estimated_vels)])
+        estimated_vels = list(estimated_vels[~np.isnan(estimated_vels)])
+    
     if max_comps <= len(estimated_vels):
         estimated_vels = estimated_vels[:max_comps]
         scores = scores[:max_comps]

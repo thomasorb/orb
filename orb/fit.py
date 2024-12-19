@@ -458,6 +458,7 @@ class FitVector(object):
                 #sigma=self._get_sigma_onrange(),
                 bounds=bounds,
                 p0=priors_arr,
+                #ftol=5e-6, xtol=5e-6,
                 method='trf',
                 full_output=True,
                 maxfev=self.max_iter)
@@ -1358,8 +1359,7 @@ class LinesModel(Model):
         return ans    
 
     def get_priors(self):
-        """Return priors. Replace gaussian distribution by lognormal
-        distribution for some parameters.
+        """Return priors. 
         """
         priors = dict(self.get_p_free())
         for key in priors:
