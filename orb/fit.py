@@ -82,7 +82,8 @@ class FitVector(object):
     def __init__(self, vector, models, params, 
                  fit_tol=1e-8, signal_range=None, 
                  max_iter=None, docomplex=False, nogvar=False,
-                 vector_err=None, force_positive_flux=True):
+                 vector_err=None, force_positive_flux=True,
+                 nofit=False):
         """Init class.
 
         :param vector: Vector to fit
@@ -113,6 +114,7 @@ class FitVector(object):
           positive (default True)
         """
         self.nogvar = bool(nogvar)
+        self.nofit = bool(nofit)
         
         if not isinstance(models, tuple) and not isinstance(models, list) :
             raise ValueError('models must be a tuple of (model, model_operation).')
@@ -441,7 +443,6 @@ class FitVector(object):
         start_time = time.time()
         priors_dict = self._all_p_list2dict(self.priors_list)
         bounds_dict = self._all_p_list2dict(self.bounds_list)
-                        
         priors_arr = self._all_p_dict2arr(priors_dict)
 
         upper_bounds_arr = np.empty(len(self.all_keys_index), dtype=float)
@@ -450,25 +451,38 @@ class FitVector(object):
             lower_bounds_arr[self.all_keys_index[key]] = bounds_dict[key][0]
             upper_bounds_arr[self.all_keys_index[key]] = bounds_dict[key][1]
         bounds = (lower_bounds_arr, upper_bounds_arr)
-        try:
-            fit_results = scipy.optimize.curve_fit(
-                self._get_model_onrange,
-                np.arange(self.vector.shape[0]),
-                self._get_vector_onrange(),
-                #sigma=self._get_sigma_onrange(),
-                bounds=bounds,
-                p0=priors_arr,
-                #ftol=5e-6, xtol=5e-6,
-                method='trf',
-                full_output=True,
-                maxfev=self.max_iter)
-        except RuntimeError as e:
-            logging.debug('RuntimeError during fit: {}'.format(e))
-            fit_results = list(['Runtime error during fit: {}'.format(e), 0])
 
+        if not self.nofit:
+            try:
+                fit_results = scipy.optimize.curve_fit(
+                    self._get_model_onrange,
+                    np.arange(self.vector.shape[0]),
+                    self._get_vector_onrange(),
+                    #sigma=self._get_sigma_onrange(),
+                    bounds=bounds,
+                    p0=priors_arr,
+                    #ftol=5e-6, xtol=5e-6,
+                    method='trf',
+                    full_output=True,
+                    maxfev=self.max_iter)
+
+
+            except RuntimeError as e:
+                logging.debug('RuntimeError during fit: {}'.format(e))
+                fit_results = list(['Runtime error during fit: {}'.format(e), 0])
+                
+        else: # fake fit results
+            fit_results = [
+                priors_arr,
+                np.zeros((len(priors_arr), len(priors_arr))),
+                {'nfev':0,
+                 'fvec':np.zeros_like(self._get_vector_onrange()),                 
+                 },
+                '', 1]
+            
         fit = type('fit', (), {})
 
-        if 0 < fit_results[-1] < 5:
+        if (0 < fit_results[-1] < 5):
             fit.stopping_criterion = fit_results[-1]
             fit.error = None
 
@@ -861,7 +875,8 @@ class Model(object):
         # remove sdev from p_fixed
         for idef in self.p_fixed:
             if self.p_fixed[idef] is not None:
-                self.p_fixed[idef] = gvar.mean(self.p_fixed[idef]) 
+                self.p_fixed[idef] = gvar.mean(self.p_fixed[idef])
+
         
     def free2val(self):
         """Read the array of parameters definition
@@ -1434,14 +1449,15 @@ class LinesModel(Model):
                                 # todo: set it to a covarying value
                                 # which depends on the parameter
                                 # operation (amp=1, others=0)
-                                cov_value = 0. 
+                                if 'amp' in key: cov_value = 1.
+                                else: cov_value = 0. 
                             else:
                                 if np.size(p_cov) > 0:
                                     cov_value = p_cov[0]
                                 else:
                                     raise TypeError("not enough covarying parameters: {} must have the same size as the number of covarying parameters".format(key_cov))
                                 p_cov = p_cov[1:] # used cov values are dumped
-                    
+
                             p_cov_dict[cov_symbol] = (
                                 np.squeeze(cov_value), cov_operation)
                             
@@ -1461,7 +1477,6 @@ class LinesModel(Model):
             if key_def in self.p_dict: self.unused_keys.pop(key_def)
             if key_cov in self.p_dict: self.unused_keys.pop(key_cov)
             
-
         line_nb = self._get_line_nb()
         self.p_def = dict()
         self.p_val = dict()
@@ -1485,7 +1500,6 @@ class LinesModel(Model):
                     for ikey_def in keys_def:
                         self.p_val[ikey_def] = 0.
                     self.p_cov[key_cov] = (self.p_cov[key_cov][0] + vals[0], self.p_cov[key_cov][1])
-                
         
     def _get_amp_cov_operation(self):
         """Return covarying amplitude operation"""
@@ -2607,7 +2621,7 @@ class OutputParams(Params):
 
 def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                            compute_mcmc_error=False, max_iter=None, nogvar=False,
-                           vector_err=None, force_positive_flux=True,
+                           vector_err=None, force_positive_flux=True, nofit=False,
                            **kwargs):
     """raw function for spectrum fitting. Need the InputParams
     class to be defined before call.
@@ -2660,7 +2674,8 @@ def _fit_lines_in_spectrum(spectrum, ip, fit_tol=1e-10,
                    max_iter=max_iter,
                    nogvar=nogvar,
                    vector_err=vector_err,
-                   force_positive_flux=force_positive_flux)
+                   force_positive_flux=force_positive_flux,
+                   nofit=nofit)
 
     fit = fv.fit(compute_mcmc_error=compute_mcmc_error)
 
@@ -2749,6 +2764,7 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                           compute_mcmc_error=False,
                           max_iter=None,
                           force_positive_flux=True,
+                          nofit=False,
                           **kwargs):
     
     """Fit lines in spectrum
@@ -2853,7 +2869,8 @@ def fit_lines_in_spectrum(spectrum, lines, step, order, nm_laser,
                                  fit_tol=fit_tol,
                                  compute_mcmc_error=compute_mcmc_error,
                                  max_iter=max_iter,
-                                 force_positive_flux=force_positive_flux)
+                                 force_positive_flux=force_positive_flux,
+                                 nofit=nofit)
 
 
     if fit != []:

@@ -268,7 +268,7 @@ def estimate_velocity_prepared(spectrum, vels, combs, precision, filter_range_pi
         return estimated_vels, scores
     return estimated_vels
 
-def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio):
+def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling_ratio, return_amp=False):
     spectrum = np.copy(spectrum)
     axis_step = axis[1] - axis[0]
     lines_cm1 = np.copy(lines_cm1)
@@ -291,7 +291,10 @@ def estimate_flux(spectrum, axis, lines_cm1, vel, filter_range_pix, oversampling
             continue
         iline -= int(filter_range_pix[0])
         amp = np.nanmax(_spec[int(iline-fwhm_pix*3):int(iline+fwhm_pix*3)+1])
-        fluxes.append(orb.utils.spectrum.sinc1d_flux(amp, fwhm_pix))
+        if return_amp:
+            fluxes.append(amp)
+        else:
+            fluxes.append(orb.utils.spectrum.sinc1d_flux(amp, fwhm_pix))
     return fluxes
 
 def BIC(residual, k):

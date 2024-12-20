@@ -837,7 +837,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         return inputparams.convert(), kwargs
 
     def prepared_fit(self, inputparams, max_iter=None, nogvar=False,
-                     force_positive_flux=True, **kwargs):
+                     force_positive_flux=True, nofit=False, **kwargs):
         """Run a fit already prepared with prepare_fit() method.
         """
         start_time = time.time()
@@ -889,6 +889,7 @@ class Spectrum(orb.core.Cm1Vector1d):
                 nogvar=nogvar,
                 vector_err=err,
                 force_positive_flux=force_positive_flux,
+                nofit=nofit,
                 **kwargs)
             warnings.simplefilter('default')
 
@@ -958,7 +959,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         
     def fit(self, lines, fmodel='sinc', nofilter=True,
             max_iter=None, nogvar=False, force_positive_flux=True,
-            **kwargs):
+            nofit=False, **kwargs):
         """Fit lines in a spectrum
 
         Wrapper around orb.fit.fit_lines_in_spectrum.
@@ -983,7 +984,7 @@ class Spectrum(orb.core.Cm1Vector1d):
 
         fit = self.prepared_fit(
             inputparams, max_iter=max_iter, nogvar=nogvar,
-            force_positive_flux=force_positive_flux,
+            force_positive_flux=force_positive_flux, nofit=nofit,
             **kwargs)
         
         return fit
@@ -1021,8 +1022,9 @@ class Spectrum(orb.core.Cm1Vector1d):
             lines_cm1, self.axis.data, self.oversampling_ratio,
             threshold=threshold, prod=prod, return_score=return_score, clean=clean)
 
-    def estimate_parameters(self, lines, vel_range, max_comps=1, precision=10,
-                            threshold=1, prod=True, return_score=False, clean=False):
+    def estimate_parameters(self, lines=None, vel_range=(-2000,2000), max_comps=1, precision=10,
+                            threshold=1, prod=True, return_score=False, clean=False,
+                            return_fit=False):
 
         """Detect and estimate the most probable velocities and
         fluxes of a set of emission lines. Multiple components (same
@@ -1040,6 +1042,14 @@ class Spectrum(orb.core.Cm1Vector1d):
         :param threshold: Detection threshold as a factor of the std
           of the calculated score.
         """
+        Lines = orb.core.Lines()
+
+        if lines is None:
+            lines = Lines.get_lines_in_filter(self.params.filter_nm_min,
+                                              self.params.filter_nm_max)
+        lines = Lines.convert_lines_name(lines)
+
+        
         (combs, vels, filter_range_pix,
          lines_cm1, oversampling_ratio, precision) = self.prepare_velocity_estimate(
              lines, vel_range, precision=precision)
@@ -1050,11 +1060,31 @@ class Spectrum(orb.core.Cm1Vector1d):
                                               prod=prod, return_score=return_score, clean=clean)
         if return_score:
             vel, score = vel
+
+        if return_fit:
+            _, params = self.get_autofit_parameters(velocities=vel, lines=lines)
+
+            fluxes = self.estimate_flux(lines, vel, max_comps=max_comps, return_amp=True)
+            fluxes = np.concatenate(fluxes)
+            #params['amp_def'] = 'fixed'
+            #params['amp_guess'] = fluxes
+            params['pos_def'] = 'fixed'
+            params.pop('pos_cov')
+            lines_cm1 = list()
+            ilines_cm1 = Lines.get_line_cm1(lines)
+            for ivel in vel:
+                lines_cm1.append(ilines_cm1 + orb.utils.spectrum.line_shift(
+                    ivel, ilines_cm1, wavenumber=True, relativistic=False))
+            params['lines'] = np.concatenate(lines_cm1)
+            fit = self.fit(fmodel='sinc', nofit=False, **params)
             
+            return fit
+        
         fluxes = self.estimate_flux(lines, vel, max_comps=max_comps)
 
         if return_score:
             return vel, fluxes, score
+        
         return vel, fluxes
 
 
@@ -1208,7 +1238,7 @@ class Spectrum(orb.core.Cm1Vector1d):
         return self.fit(**params, **kwargs)
 
     
-    def estimate_flux(self, lines, vel, max_comps=1):
+    def estimate_flux(self, lines, vel, max_comps=1, return_amp=False):
 
         lines_cm1 = self._get_lines_cm1(lines)
         
@@ -1221,7 +1251,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             else:
                 fluxes.append(orb.utils.fit.estimate_flux(
                     self.data.real, self.axis.data, lines_cm1, vel[icomp],
-                    self.axis(self.params.filter_range).astype(int), oversampling_ratio))
+                    self.axis(self.params.filter_range).astype(int), oversampling_ratio, return_amp=return_amp))
         return fluxes
 
     def clean(self, threshold=None, precision=10, max_iter=1000, cleaned_ils='gaussian', damp=1, oversampling=2, snr_coeff=3):
