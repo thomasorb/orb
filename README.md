@@ -1,3 +1,5 @@
+![header](docs/images/svg/orb_header.jpg?raw=true "Title")
+
 # ORB
 
 [ORB](https://github.com/thomasorb/orb) is the kernel module for the
