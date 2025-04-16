@@ -9,9 +9,12 @@ INSTRUMENT_NAME SpIOMM # Instrument name
 OBS_LAT 45.455000 # Observatory latitude
 OBS_LON -71.153000 # Observatory longitude
 OBS_ALT 1100. # Observatory altitude
+ATM_EXTINCTION_FILE MAUNA_KEA.atm_ext.hdf5 # Atmospheric extinction file name
+MIR_TRANSMISSION_FILE CFHT.mir_trans.hdf5 # Mirror transmision file name
+MIR_SURFACE 63546 # Mirror surface in cm^2 (1.6m, -21%)
 
 ## Instrumental parameters
-FIELD_OF_VIEW 12.4 # Size of the field of view of the camera 1 in
+FIELD_OF_VIEW_1 12.4 # Size of the field of view of the camera 1 in
 		   # arc-minutes along the largest axis
 FIELD_OF_VIEW_2 14.2 # Size of the field of view of the camera 2 in
 	             # arc-minutes along the largest axis
@@ -22,6 +25,13 @@ CAM1_DETECTOR_SIZE_X 1340 # Camera 1 detector size along X
 CAM1_DETECTOR_SIZE_Y 1300 # Camera 1 detector size along Y
 CAM2_DETECTOR_SIZE_X 2047 # Camera 2 detector size along X
 CAM2_DETECTOR_SIZE_Y 2047 # Camera 2 detector size along Y
+CAM1_GAIN 1. # Camera 1 gain (ADU/e-)
+CAM2_GAIN 1. # Camera 2 gain (ADU/e-)
+CAM1_QE_FILE SITELLE.cam1.QE.hdf5 # Camera 1 Quantum efficiency file path
+CAM2_QE_FILE SITELLE.cam2.QE.hdf5 # Camera 2 Quantum efficiency file path
+OFF_AXIS_ANGLE_MIN 5.09 # Min off-axis angle
+OFF_AXIS_ANGLE_MAX 10.91 # Max off-axis angle
+OFF_AXIS_ANGLE_CENTER 8.00 # off-axis ange at the center of the FOV
 
 ## Disalignment guess
 INIT_ANGLE 176. # Rough angle between images of the camera 1 and
@@ -37,6 +47,7 @@ CALIB_STEP_SIZE 9765 # Step size of the calibration cube [in nm]
 
 ## Phase parameters
 PHASE_FIT_DEG 1 # Degree of the polynomial used to fit the phase
+PHASE_BINNING 6
 
 ## Processing parameters
 NCPUS 0 # Max number of CPU to use (0 : max available)
@@ -46,10 +57,11 @@ BIG_DATA 0 # Some processes can be optimized for big data set (> 1000
 DIV_NB 2 # Number of "Quadrants" division along one axis of a cube
 	 # (the total number of quadrants is thus DIV_NB^2)
 OPTIM_DARK_CAM1 0 # Optimization routine for the dark of CAM 1 
-OPTIM_DARK_CAM2 1 # Optimization routine for the dark of CAM 2
-EXT_ILLUMINATION 1 # Compute external illumination
+OPTIM_DARK_CAM2 0 # Optimization routine for the dark of CAM 2
+EXT_ILLUMINATION 0 # Compute external illumination
 
 ## Astrometry parameters
+BOX_SIZE_COEFF 5
 DETECT_STAR_NB 15 # Number of star to use for alignment and photometry
 INIT_FWHM 2.5 # Rough estimate of the usual stars FWHM [in arcsecond]
 PSF_PROFILE gaussian # PSF used to fit stars (can be gaussian of moffat)
@@ -74,3 +86,8 @@ BIAS_CALIB_PARAM_B 1417.34030164
 
 ## WCS parameters
 WCS_ROTATION -93.0 # Initial rotation angle of the image [in degree]
+
+## Performance model
+OPD_JITTER 16 # opd standard deviation in nm (equivalent)
+WF_ERROR 0.0333333333 # equivalent wavefront error ratio
+4RT_FILE SITELLE.4RT.hdf5 # 4RT curve
