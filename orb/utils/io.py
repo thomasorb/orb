@@ -743,9 +743,8 @@ except AttributeError:
     HAS_FLOAT128 = False
 else:
     HAS_FLOAT128 = True
-    castables += np.float128
+    castables += [np.float128,]
 
-    
 def cast(a, t_str):
     if isinstance(t_str, bytes):
         t_str = t_str.decode()
