@@ -1726,212 +1726,458 @@ def fit_stars_in_frame(frame, star_list, box_size,
     return fit_results
 
 
-
-def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
-            err=None, sip_order=4, crpix=None, crval=None, plot=False):
-    """FIT the distortion correction polynomial to match two lists
-    of stars (the list of stars 2 is distorded to match the list
-    of stars 1).
-
-    :param scale: Plate scale of the image in arcseconds (can be a
-      tuple (scalex, scaley) or a single float)
-
-    :param star_list1: list of stars 1
-
-    :param star_list2: list of stars 2
-
-    :param params: (Optional) Transformation parameter to go from
-      the list of stars 1 to the list of stars 2. Must be a tuple
-      [dx, dy, dr, da, db, rcx, rcy, zoom_factor] (default None).
-
-    :param init_sip: (Optional) Initial SIP (an astropy.wcs.WCS object,
-      default None)
-
-    :param err: (Optional) error on the star positions of the star
-      list 2 (default None).
-
-    :param sip_order: (Optional) SIP order (default 3).
-
-    :param crpix: (Optional) If an initial wcs is not given (init_sip
-      set to None) this header value must be given.
-
-    :param crval: (Optional) If an initial wcs is not given (init_sip
-      set to None) this header value must be given.
-
+def fit_wcs_from_points(
+    xy, world_coords, proj_point="center", projection="TAN", sip_degree=None
+):
     """
-    def triangular_number(n):
-        return n * (n+1) // 2
+    Given two matching sets of coordinates on detector and sky,
+    compute the WCS.
+
+    Fits a WCS object to matched set of input detector and sky coordinates.
+    Optionally, a SIP can be fit to account for geometric
+    distortion. Returns an `~astropy.wcs.WCS` object with the best fit
+    parameters for mapping between input pixel and sky coordinates.
+
+    The projection type (default 'TAN') can passed in as a string, one of
+    the valid three-letter projection codes - or as a WCS object with
+    projection keywords already set. Note that if an input WCS has any
+    non-polynomial distortion, this will be applied and reflected in the
+    fit terms and coefficients. Passing in a WCS object in this way essentially
+    allows it to be refit based on the matched input coordinates and projection
+    point, but take care when using this option as non-projection related
+    keywords in the input might cause unexpected behavior.
+
+    Notes
+    -----
+    - The fiducial point for the spherical projection can be set to 'center'
+      to use the mean position of input sky coordinates, or as an
+      `~astropy.coordinates.SkyCoord` object.
+    - Units in all output WCS objects will always be in degrees.
+    - If the coordinate frame differs between `~astropy.coordinates.SkyCoord`
+      objects passed in for ``world_coords`` and ``proj_point``, the frame for
+      ``world_coords``  will override as the frame for the output WCS.
+    - If a WCS object is passed in to ``projection`` the CD/PC matrix will
+      be used as an initial guess for the fit. If this is known to be
+      significantly off and may throw off the fit, set to the identity matrix
+      (for example, by doing wcs.wcs.pc = [(1., 0.,), (0., 1.)])
+
+    Parameters
+    ----------
+    xy : (`numpy.ndarray`, `numpy.ndarray`) tuple
+        x & y pixel coordinates.  These should be in FITS convention, starting
+        from (1,1) as the center of the bottom-left pixel.
+    world_coords : `~astropy.coordinates.SkyCoord`
+        Skycoord object with world coordinates.
+    proj_point : 'center' or ~astropy.coordinates.SkyCoord`
+        Defaults to 'center', in which the geometric center of input world
+        coordinates will be used as the projection point. To specify an exact
+        point for the projection, a Skycoord object with a coordinate pair can
+        be passed in. For consistency, the units and frame of these coordinates
+        will be transformed to match ``world_coords`` if they don't.
+    projection : str or `~astropy.wcs.WCS`
+        Three letter projection code, of any of standard projections defined
+        in the FITS WCS standard. Optionally, a WCS object with projection
+        keywords set may be passed in.
+    sip_degree : None or int
+        If set to a non-zero integer value, will fit SIP of degree
+        ``sip_degree`` to model geometric distortion. Defaults to None, meaning
+        no distortion corrections will be fit.
+
+    Returns
+    -------
+    wcs : `~astropy.wcs.WCS`
+        The best-fit WCS to the points given.
+    """
+    from scipy.optimize import least_squares
+
+    import astropy.units as u
+    from astropy.coordinates import SkyCoord  # here to avoid circular import
+
+    from astropy.wcs import Sip
+    import astropy.wcs.utils
+
+    xp, yp = xy
+    try:
+        lon, lat = world_coords.data.lon.deg, world_coords.data.lat.deg
+    except AttributeError:
+        unit_sph = world_coords.unit_spherical
+        lon, lat = unit_sph.lon.deg, unit_sph.lat.deg
+
+    # verify input
+    if (type(proj_point) != type(world_coords)) and (proj_point != "center"):
+        raise ValueError(
+            "proj_point must be set to 'center', or an"
+            "`~astropy.coordinates.SkyCoord` object with "
+            "a pair of points."
+        )
+
+    use_center_as_proj_point = str(proj_point) == "center"
+
+    if not use_center_as_proj_point:
+        assert proj_point.size == 1
+
+    proj_codes = [
+        "AZP",
+        "SZP",
+        "TAN",
+        "STG",
+        "SIN",
+        "ARC",
+        "ZEA",
+        "AIR",
+        "CYP",
+        "CEA",
+        "CAR",
+        "MER",
+        "SFL",
+        "PAR",
+        "MOL",
+        "AIT",
+        "COP",
+        "COE",
+        "COD",
+        "COO",
+        "BON",
+        "PCO",
+        "TSC",
+        "CSC",
+        "QSC",
+        "HPX",
+        "XPH",
+    ]
+    if type(projection) == str:
+        if projection not in proj_codes:
+            raise ValueError(
+                "Must specify valid projection code from list of supported types: ",
+                ", ".join(proj_codes),
+            )
+        # empty wcs to fill in with fit values
+        wcs = astropy.wcs.utils.celestial_frame_to_wcs(frame=world_coords.frame, projection=projection)
+    else:  # if projection is not string, should be wcs object. use as template.
+        wcs = copy.deepcopy(projection)
+        wcs.wcs.cdelt = (1.0, 1.0)  # make sure cdelt is 1
+        wcs.sip = None
+
+    # Change PC to CD, since cdelt will be set to 1
+    if wcs.wcs.has_pc():
+        wcs.wcs.cd = wcs.wcs.pc
+        wcs.wcs.__delattr__("pc")
+
+    if (sip_degree is not None) and (type(sip_degree) != int):
+        raise ValueError("sip_degree must be None, or integer.")
+
+    # compute bounding box for sources in image coordinates:
+    xpmin, xpmax, ypmin, ypmax = xp.min(), xp.max(), yp.min(), yp.max()
+
+    # set pixel_shape to span of input points
+    wcs.pixel_shape = (
+        1 if xpmax <= 0.0 else int(np.ceil(xpmax)),
+        1 if ypmax <= 0.0 else int(np.ceil(ypmax)),
+    )
+
+    # determine CRVAL from input
+    close = lambda l, p: p[np.argmin(np.abs(l))]
+    if use_center_as_proj_point:  # use center of input points
+        sc1 = SkyCoord(lon.min() * u.deg, lat.max() * u.deg)
+        sc2 = SkyCoord(lon.max() * u.deg, lat.min() * u.deg)
+        pa = sc1.position_angle(sc2)
+        sep = sc1.separation(sc2)
+        midpoint_sc = sc1.directional_offset_by(pa, sep / 2)
+        wcs.wcs.crval = (midpoint_sc.data.lon.deg, midpoint_sc.data.lat.deg)
+        wcs.wcs.crpix = ((xpmax + xpmin) / 2.0, (ypmax + ypmin) / 2.0)
+    else:  # convert units, initial guess for crpix
+        proj_point.transform_to(world_coords)
+        wcs.wcs.crval = (proj_point.data.lon.deg, proj_point.data.lat.deg)
+        wcs.wcs.crpix = (
+            close(lon - wcs.wcs.crval[0], xp + 1),
+            close(lon - wcs.wcs.crval[1], yp + 1),
+        )
+
+    # fit linear terms, assign to wcs
+    # use (1, 0, 0, 1) as initial guess, in case input wcs was passed in
+    # and cd terms are way off.
+    # Use bounds to require that the fit center pixel is on the input image
+    if xpmin == xpmax:
+        xpmin, xpmax = xpmin - 0.5, xpmax + 0.5
+    if ypmin == ypmax:
+        ypmin, ypmax = ypmin - 0.5, ypmax + 0.5
+
+    p0 = np.concatenate([wcs.wcs.cd.flatten(), wcs.wcs.crpix.flatten()])
+    fit = least_squares(
+        astropy.wcs.utils._linear_wcs_fit,
+        p0,
+        args=(lon, lat, xp, yp, wcs),
+        loss='soft_l1',
+        bounds=[
+            [-np.inf, -np.inf, -np.inf, -np.inf, xpmin + 1, ypmin + 1],
+            [np.inf, np.inf, np.inf, np.inf, xpmax + 1, ypmax + 1],
+        ],
+    )
+    wcs.wcs.crpix = np.array(fit.x[4:6])
+    wcs.wcs.cd = np.array(fit.x[0:4].reshape((2, 2)))
+
+    # fit SIP, if specified. Only fit forward coefficients
+    if sip_degree:
+        degree = sip_degree
+        if "-SIP" not in wcs.wcs.ctype[0]:
+            wcs.wcs.ctype = [x + "-SIP" for x in wcs.wcs.ctype]
+
+        coef_names = [
+            f"{i}_{j}"
+            for i in range(degree + 1)
+            for j in range(degree + 1)
+            if (i + j) < (degree + 1) and (i + j) > 1
+        ]
+        p0 = np.concatenate(
+            (
+                np.array(wcs.wcs.crpix),
+                wcs.wcs.cd.flatten(),
+                np.zeros(2 * len(coef_names)),
+            )
+        )
+
+        fit = least_squares(
+            astropy.wcs.utils._sip_fit,
+            p0,
+            args=(lon, lat, xp, yp, wcs, degree, coef_names),
+            loss='cauchy',
+            bounds=[
+                [xpmin + 1, ypmin + 1] + [-np.inf] * (4 + 2 * len(coef_names)),
+                [xpmax + 1, ypmax + 1] + [np.inf] * (4 + 2 * len(coef_names)),
+            ],
+        )
+        coef_fit = (
+            list(fit.x[6 : 6 + len(coef_names)]),
+            list(fit.x[6 + len(coef_names) :]),
+        )
+
+        # put fit values in wcs
+        wcs.wcs.cd = fit.x[2:6].reshape((2, 2))
+        wcs.wcs.crpix = fit.x[0:2]
+
+        a_vals = np.zeros((degree + 1, degree + 1))
+        b_vals = np.zeros((degree + 1, degree + 1))
+
+        for coef_name in coef_names:
+            a_vals[int(coef_name[0])][int(coef_name[2])] = coef_fit[0].pop(0)
+            b_vals[int(coef_name[0])][int(coef_name[2])] = coef_fit[1].pop(0)
+
+        wcs.sip = Sip(
+            a_vals,
+            b_vals,
+            np.zeros((degree + 1, degree + 1)),
+            np.zeros((degree + 1, degree + 1)),
+            wcs.wcs.crpix,
+        )
+
+    return wcs
+
+
+# def fit_sip(scale, star_list1, star_list2, params=None, init_sip=None,
+#             err=None, sip_order=4, crpix=None, crval=None, plot=False):
+#     """FIT the distortion correction polynomial to match two lists
+#     of stars (the list of stars 2 is distorded to match the list
+#     of stars 1).
+
+#     :param scale: Plate scale of the image in arcseconds (can be a
+#       tuple (scalex, scaley) or a single float)
+
+#     :param star_list1: list of stars 1
+
+#     :param star_list2: list of stars 2
+
+#     :param params: (Optional) Transformation parameter to go from
+#       the list of stars 1 to the list of stars 2. Must be a tuple
+#       [dx, dy, dr, da, db, rcx, rcy, zoom_factor] (default None).
+
+#     :param init_sip: (Optional) Initial SIP (an astropy.wcs.WCS object,
+#       default None)
+
+#     :param err: (Optional) error on the star positions of the star
+#       list 2 (default None).
+
+#     :param sip_order: (Optional) SIP order (default 3).
+
+#     :param crpix: (Optional) If an initial wcs is not given (init_sip
+#       set to None) this header value must be given.
+
+#     :param crval: (Optional) If an initial wcs is not given (init_sip
+#       set to None) this header value must be given.
+
+#     """
+#     def triangular_number(n):
+#         return n * (n+1) // 2
     
-    def mat2list(mat):
-        matflat = list()
-        for i in range(mat.shape[0]):
-            for j in range(mat.shape[1]):
-                if i+j < mat.shape[0]:
-                    matflat.append(mat[i,j])
-        return list(matflat)
+#     def mat2list(mat):
+#         matflat = list()
+#         for i in range(mat.shape[0]):
+#             for j in range(mat.shape[1]):
+#                 if i+j < mat.shape[0]:
+#                     matflat.append(mat[i,j])
+#         return list(matflat)
 
-    def list2mat(matflat, order=None):
-        if order is None:
-            size = None
-            for isize in range(2,10):
-                # triangular number
-                if triangular_number(isize) == len(matflat):
-                    size = isize
-                    break
-        else:
-            size = order + 1
-        if size is None: raise StandardError('badly formatted matflat')
+#     def list2mat(matflat, order=None):
+#         if order is None:
+#             size = None
+#             for isize in range(2,10):
+#                 # triangular number
+#                 if triangular_number(isize) == len(matflat):
+#                     size = isize
+#                     break
+#         else:
+#             size = order + 1
+#         if size is None: raise StandardError('badly formatted matflat')
         
-        mat = np.zeros((size, size), dtype=float)
-        k = 0
-        for i in range(mat.shape[0]):
-            for j in range(mat.shape[1]):
-                if i+j < mat.shape[0]:
-                    mat[i,j] = matflat[k]
-                    k += 1
-        return mat
+#         mat = np.zeros((size, size), dtype=float)
+#         k = 0
+#         for i in range(mat.shape[0]):
+#             for j in range(mat.shape[1]):
+#                 if i+j < mat.shape[0]:
+#                     mat[i,j] = matflat[k]
+#                     k += 1
+#         return mat
 
-    def p2sip(p, sip, direct):
-        if direct:
-            sip.sip.a[:] = list2mat(p[:(sip.sip.a_order + 1)**2], sip.sip.a_order)
-            p = p[triangular_number(sip.sip.a_order + 1):]
-            sip.sip.b[:] = list2mat(p[:(sip.sip.b_order + 1)**2], sip.sip.b_order)
-        else:
-            sip.sip.ap[:] = list2mat(p[:(sip.sip.a_order + 1)**2], sip.sip.a_order)
-            p = p[triangular_number(sip.sip.a_order + 1):]
-            sip.sip.bp[:] = list2mat(p[:(sip.sip.b_order + 1)**2], sip.sip.b_order)
-        return sip
+#     def p2sip(p, sip, direct):
+#         if direct:
+#             sip.sip.a[:] = list2mat(p[:(sip.sip.a_order + 1)**2], sip.sip.a_order)
+#             p = p[triangular_number(sip.sip.a_order + 1):]
+#             sip.sip.b[:] = list2mat(p[:(sip.sip.b_order + 1)**2], sip.sip.b_order)
+#         else:
+#             sip.sip.ap[:] = list2mat(p[:(sip.sip.a_order + 1)**2], sip.sip.a_order)
+#             p = p[triangular_number(sip.sip.a_order + 1):]
+#             sip.sip.bp[:] = list2mat(p[:(sip.sip.b_order + 1)**2], sip.sip.b_order)
+#         return sip
 
-    def sip2p(sip, direct):
-        p = list()
-        if direct:
-            p += mat2list(sip.sip.a)
-            p += mat2list(sip.sip.b)
-        else:
-            p += mat2list(sip.sip.ap)
-            p += mat2list(sip.sip.bp)
-        return p
+#     def sip2p(sip, direct):
+#         p = list()
+#         if direct:
+#             p += mat2list(sip.sip.a)
+#             p += mat2list(sip.sip.b)
+#         else:
+#             p += mat2list(sip.sip.ap)
+#             p += mat2list(sip.sip.bp)
+#         return p
 
-    def diff(p, star_list2, star_list_deg1, 
-             params, sip, err, direct):
-        sip = p2sip(p, sip, direct)
-        try:
-            if direct:
-                star_list_1t = sip.all_world2pix(star_list_deg1, 0)
+#     def diff(p, star_list2, star_list_deg1, 
+#              params, sip, err, direct):
+#         sip = p2sip(p, sip, direct)
+#         try:
+#             if direct:
+#                 star_list_1t = sip.all_world2pix(star_list_deg1, 0)
             
-                ## star_list_1t = transform_star_position_A_to_B(
-                ##     star_list1, params[:5],
-                ##     (params[5], params[6]),
-                ##     (params[7], params[8]),
-                ##     sip_A=None, sip_B=None)
+#                 ## star_list_1t = transform_star_position_A_to_B(
+#                 ##     star_list1, params[:5],
+#                 ##     (params[5], params[6]),
+#                 ##     (params[7], params[8]),
+#                 ##     sip_A=None, sip_B=None)
 
-                dx = (star_list2 - star_list_1t)[:,0]
-                dy = (star_list2 - star_list_1t)[:,1]
+#                 dx = (star_list2 - star_list_1t)[:,0]
+#                 dy = (star_list2 - star_list_1t)[:,1]
 
-            else:
-                star_list_2t = sip.all_pix2world(star_list2, 0)
-                star_list_2t = sip.all_world2pix(star_list_2t, 0)
+#             else:
+#                 star_list_2t = sip.all_pix2world(star_list2, 0)
+#                 star_list_2t = sip.all_world2pix(star_list_2t, 0)
                             
-                dx = (star_list_2t - star_list2)[:,0]
-                dy = (star_list_2t - star_list2)[:,1]
+#                 dx = (star_list_2t - star_list2)[:,0]
+#                 dy = (star_list_2t - star_list2)[:,1]
 
-            result = np.array(list(dx/err) + list(dy/err))
-            if not np.all(np.isnan(result)):
-                return np.sqrt(np.nanmean(result**2.))
-            else: return 1e9
-        except Exception as e:
-            #logging.debug(str(e))
-            pass
-            return 1e9
+#             result = np.array(list(dx/err) + list(dy/err))
+#             if not np.all(np.isnan(result)):
+#                 return np.sqrt(np.nanmean(result**2.))
+#             else: return 1e9
+#         except Exception as e:
+#             #logging.debug(str(e))
+#             pass
+#             return 1e9
 
-    def add_sip(wcs):
-        wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
-        wcs.sip = pywcs.wcs.Sip(np.zeros((sip_order + 1, sip_order + 1)),
-                                np.zeros((sip_order + 1, sip_order + 1)),
-                                np.zeros((sip_order + 1, sip_order + 1)),
-                                np.zeros((sip_order + 1, sip_order + 1)),
-                                wcs.wcs.crpix)
-        return wcs
+#     def add_sip(wcs):
+#         wcs.wcs.ctype = ["RA---TAN-SIP", "DEC--TAN-SIP"]
+#         wcs.sip = pywcs.wcs.Sip(np.zeros((sip_order + 1, sip_order + 1)),
+#                                 np.zeros((sip_order + 1, sip_order + 1)),
+#                                 np.zeros((sip_order + 1, sip_order + 1)),
+#                                 np.zeros((sip_order + 1, sip_order + 1)),
+#                                 wcs.wcs.crpix)
+#         return wcs
 
 
-    if params is not None:
-        raise Exception('Not implemented')
+#     if params is not None:
+#         raise Exception('Not implemented')
 
-    if isinstance(scale, float):
-        scale = (scale, scale)
-    elif len(scale) != 2:
-        raise TypeError('scale must a float or a tuple (scalex, scaley)')
+#     if isinstance(scale, float):
+#         scale = (scale, scale)
+#     elif len(scale) != 2:
+#         raise TypeError('scale must a float or a tuple (scalex, scaley)')
         
-    # initialize WCS and SIP if not given
-    if init_sip is None:
-        if crpix is None or crval is None:
-            raise Exception('If an initial wcs is not given (init_sip set to None) CRPIX and CRVAL must be given.')
+#     # initialize WCS and SIP if not given
+#     if init_sip is None:
+#         if crpix is None or crval is None:
+#             raise Exception('If an initial wcs is not given (init_sip set to None) CRPIX and CRVAL must be given.')
         
-        init_sip = create_wcs(crpix[0], crpix[1],
-                              scale[0] / 3600., scale[1] / 3600.,
-                              crval[0], crval[1], 0.)
-    else: # WCS copy to avoid modifing the original WCS
-        init_sipt = pywcs.WCS(init_sip.to_header(relax=True))
-        init_sipt.sip = copy.copy(init_sip.sip)
-        init_sip = init_sipt
+#         init_sip = create_wcs(crpix[0], crpix[1],
+#                               scale[0] / 3600., scale[1] / 3600.,
+#                               crval[0], crval[1], 0.)
+#     else: # WCS copy to avoid modifing the original WCS
+#         init_sipt = pywcs.WCS(init_sip.to_header(relax=True))
+#         init_sipt.sip = copy.copy(init_sip.sip)
+#         init_sip = init_sipt
 
-    if init_sip.sip is not None:
-        if len(sip2p(init_sip, True)) != len(sip2p(add_sip(init_sip), True)):
-            logging.debug('initial sip order is different from the fitted sip order. initial sip cannot be used.')
-            init_sip.sip = None
+#     if init_sip.sip is not None:
+#         if len(sip2p(init_sip, True)) != len(sip2p(add_sip(init_sip), True)):
+#             logging.debug('initial sip order is different from the fitted sip order. initial sip cannot be used.')
+#             init_sip.sip = None
 
-    if init_sip.sip is None:
-        init_sip = add_sip(init_sip)
+#     if init_sip.sip is None:
+#         init_sip = add_sip(init_sip)
 
-    # computation of a reference ra/dec list of stars from the
-    # reference list of pixels (star_list1)
-    star_list_deg1 = init_sip.all_pix2world(star_list1, 0)
+#     # computation of a reference ra/dec list of stars from the
+#     # reference list of pixels (star_list1)
+#     star_list_deg1 = init_sip.all_pix2world(star_list1, 0)
 
-    if err is None:
-        err = np.ones(star_list1.shape[0], dtype=float)
-    elif np.all(np.isnan(err)):
-        err = np.ones(star_list1.shape[0], dtype=float)
+#     if err is None:
+#         err = np.ones(star_list1.shape[0], dtype=float)
+#     elif np.all(np.isnan(err)):
+#         err = np.ones(star_list1.shape[0], dtype=float)
 
-    err /= np.nanmean(err)
+#     err /= np.nanmean(err)
 
-    guess = np.array(sip2p(init_sip, True))
-    logging.debug('initial guess: {} (average error: {})'.format(
-        guess, diff(guess, star_list2, star_list_deg1, params,
-                    init_sip, err, True)))
+#     guess = np.array(sip2p(init_sip, True))
+#     logging.debug('initial guess: {} (average error: {})'.format(
+#         guess, diff(guess, star_list2, star_list_deg1, params,
+#                     init_sip, err, True)))
     
-    # look for direct transformation parameters (A, B matrices)
-    logging.debug('gradient optimization started')
+#     # look for direct transformation parameters (A, B matrices)
+#     logging.debug('gradient optimization started')
 
-    fit = optimize.fmin(diff, guess,
-                        args=(star_list2, star_list_deg1, params,
-                              init_sip, err, True),
-                        full_output=True, xtol=1e-6, disp=False)
+#     fit = optimize.fmin(diff, guess,
+#                         args=(star_list2, star_list_deg1, params,
+#                               init_sip, err, True),
+#                         full_output=True, xtol=1e-6, disp=False)
 
-    if fit[-1] <= 4:
-        logging.info('Optimized average radius for direct transformation (in pixel) {}'.format(fit[1]))
-        init_sip = p2sip(fit[0], init_sip, True)
+#     if fit[-1] <= 4:
+#         logging.info('Optimized average radius for direct transformation (in pixel) {}'.format(fit[1]))
+#         init_sip = p2sip(fit[0], init_sip, True)
 
-    else:
-        raise Exception('SIP direct transformation fit failed')
+#     else:
+#         raise Exception('SIP direct transformation fit failed')
 
-    # look for reverse transformation parameters (AP, BP matrices)
-    logging.debug('reverse transformation optimization started')
+#     # look for reverse transformation parameters (AP, BP matrices)
+#     logging.debug('reverse transformation optimization started')
     
-    fit = optimize.fmin(diff, -fit[0],
-                        args=(star_list2, star_list_deg1, params,
-                              init_sip, err, False),
-                        full_output=True, xtol=1e-6, disp=False)
+#     fit = optimize.fmin(diff, -fit[0],
+#                         args=(star_list2, star_list_deg1, params,
+#                               init_sip, err, False),
+#                         full_output=True, xtol=1e-6, disp=False)
 
-    if fit[-1] <= 4:
-        logging.info('Optimized average radius for reverse transformation (in pixel) {}'.format(fit[1]))
-        new_wcs = p2sip(fit[0], init_sip, False)
-        new_wcs.wcs.cd = np.dot(np.diag(new_wcs.wcs.get_cdelt()),
-                                new_wcs.wcs.get_pc())
+#     if fit[-1] <= 4:
+#         logging.info('Optimized average radius for reverse transformation (in pixel) {}'.format(fit[1]))
+#         new_wcs = p2sip(fit[0], init_sip, False)
+#         new_wcs.wcs.cd = np.dot(np.diag(new_wcs.wcs.get_cdelt()),
+#                                 new_wcs.wcs.get_pc())
             
-        return new_wcs
+#         return new_wcs
 
-    else:
-        raise Exception('SIP reverse transformation fit failed')
+#     else:
+#         raise Exception('SIP reverse transformation fit failed')
     
 
 def histogram_registration(star_list1, star_list2, dimx, dimy, xy_bins):
@@ -2853,7 +3099,7 @@ def fit_sip_from_points(xy, radec, sip_order=None, proj_point=None):
             dec=radec[1] * astropy.units.deg))
 
     
-    return astropy.wcs.utils.fit_wcs_from_points(
+    return fit_wcs_from_points(
         (xy[0][nonans], xy[1][nonans]),
         sc[nonans],
         sip_degree=sip_order,

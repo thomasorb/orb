@@ -832,10 +832,10 @@ class Image(Frame2D):
 
             logging.info('{} stars fitted'.format(len(fit.dropna())))
 
-            # wcs = self.fit_sip(sl_cat_pix,
-            #                    orb.utils.astrometry.df2list(fit),
-            #                    params=None, init_sip=self.get_wcs(),
-            #                    err=None, sip_order=sip_order)
+            #wcs = self.fit_sip(sl_cat_pix,
+            #                   orb.utils.astrometry.df2list(fit),
+            #                   params=None, init_sip=self.get_wcs(),
+            #                   err=None, sip_order=sip_order)
 
             wcs = orb.utils.astrometry.fit_sip_from_points(
                 (fit.x.values, fit.y.values), (sl_cat_deg[:,0], sl_cat_deg[:,1]),
@@ -983,43 +983,43 @@ class Image(Frame2D):
             return fit_params
 
 
-    def fit_sip(self, star_list1, star_list2, params=None, init_sip=None,
-                err=None, sip_order=2, crpix=None, crval=None):
-        """FIT the distortion correction polynomial to match two lists
-        of stars (the list of stars 2 is distorded to match the list
-        of stars 1).
+    # def fit_sip(self, star_list1, star_list2, params=None, init_sip=None,
+    #             err=None, sip_order=2, crpix=None, crval=None):
+    #     """FIT the distortion correction polynomial to match two lists
+    #     of stars (the list of stars 2 is distorded to match the list
+    #     of stars 1).
 
-        .. warning:: If you want to fit a SIP for a WCS do not use
-          this function. Use register(skip_registration=True,
-          compute_distortion=True, sip_order=anything > 2).
+    #     .. warning:: If you want to fit a SIP for a WCS do not use
+    #       this function. Use register(skip_registration=True,
+    #       compute_distortion=True, sip_order=anything > 2).
 
-        :param star_list1: list of stars 1
+    #     :param star_list1: list of stars 1
         
-        :param star_list2: list of stars 2
+    #     :param star_list2: list of stars 2
         
-        :param params: (Optional) Transformation parameter to go from
-          the list of stars 1 to the list of stars 2. Must be a tuple
-          [dx, dy, dr, da, db, rcx, rcy, zoom_factor] (default None).
+    #     :param params: (Optional) Transformation parameter to go from
+    #       the list of stars 1 to the list of stars 2. Must be a tuple
+    #       [dx, dy, dr, da, db, rcx, rcy, zoom_factor] (default None).
 
-        :param init_sip: (Optional) Initial SIP (an astropy.wcs.WCS object,
-          default None)
+    #     :param init_sip: (Optional) Initial SIP (an astropy.wcs.WCS object,
+    #       default None)
 
-        :param err: (Optional) error on the star positions of the star
-          list 2 (default None).
+    #     :param err: (Optional) error on the star positions of the star
+    #       list 2 (default None).
           
-        :param sip_order: (Optional) SIP order (default 2).
+    #     :param sip_order: (Optional) SIP order (default 2).
 
-        :param crpix: (Optional) If an initial wcs is not given (init_sip
-          set to None) this header value must be given.
+    #     :param crpix: (Optional) If an initial wcs is not given (init_sip
+    #       set to None) this header value must be given.
 
-        :param crval: (Optional) If an initial wcs is not given (init_sip
-          set to None) this header value must be given.
+    #     :param crval: (Optional) If an initial wcs is not given (init_sip
+    #       set to None) this header value must be given.
 
-        """
-        return orb.utils.astrometry.fit_sip(
-            self.get_scale(), star_list1, star_list2,
-            params=params, init_sip=init_sip, err=err, sip_order=sip_order,
-            crpix=crpix, crval=crval)
+    #     """            
+    #     return orb.utils.astrometry.fit_sip(
+    #         self.get_scale(), star_list1, star_list2,
+    #         params=params, init_sip=init_sip, err=err, sip_order=sip_order,
+    #         crpix=crpix, crval=crval)
 
 
 
@@ -1368,6 +1368,8 @@ class Image(Frame2D):
             ## FIT SIP 
             ## SIP 1 and SIP 2 are replaced by only one SIP that matches the
             ## stars of the frame 2 onto the stars of the frame 1
+
+            raise Exception('deprecated: must be replaced with a call to orb.utils.astrometry.fit_sip_from_points')
             sip = self.fit_sip(
                 np.copy(star_list2),
                 orb.utils.astrometry.df2list(fit_results),

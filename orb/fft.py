@@ -1047,7 +1047,10 @@ class Spectrum(orb.core.Cm1Vector1d):
         if lines is None:
             lines = Lines.get_lines_in_filter(self.params.filter_nm_min,
                                               self.params.filter_nm_max)
-        lines = Lines.convert_lines_name(lines)
+        if np.all([isinstance(lines, str)]):
+            lines = Lines.convert_lines_name(lines)
+        else:
+            logging.warning('lines passed as float')
 
         
         (combs, vels, filter_range_pix,
@@ -1119,9 +1122,23 @@ class Spectrum(orb.core.Cm1Vector1d):
         if lines is None:
             lines = Lines.get_lines_in_filter(self.params.filter_nm_min,
                                               self.params.filter_nm_max)
-        lines = Lines.convert_lines_name(lines)
 
-        lines_cm1 = Lines.get_line_cm1(lines)
+        check_amp = False
+        
+        _lines = list()
+        for iline in lines:
+            if isinstance(iline, str):
+                _lines.append(Lines.convert_lines_name([iline,])[0])
+                check_amp = True
+            else:
+                _lines.append(iline)
+                logging.warning(f'{iline} passed as float')
+        lines = _lines
+
+        if not check_amp:
+            logging.warning('all lines passed as float: amplitude constraints on known doublets cannot be set automatically')
+
+        lines_cm1 = self._get_lines_cm1(lines)
         
         if 'filter_name' not in self.params:
             filter_name = 'unknown_filter'
@@ -1136,31 +1153,32 @@ class Spectrum(orb.core.Cm1Vector1d):
             _amp_def = np.arange(len(lines)) + i * 100
             _amp_guess = np.ones(len(lines), dtype=float)
 
-            if '[NII]6548' in lines and '[NII]6583' in lines:
-                line6548 = lines_cm1[lines.index('[NII]6548')]
-                line6548 += orb.utils.spectrum.line_shift(
-                    ivel, line6548, wavenumber=True,
-                    relativistic=False)
-                line6583 = lines_cm1[lines.index('[NII]6583')]
-                line6583 += orb.utils.spectrum.line_shift(
-                    ivel, line6583, wavenumber=True,
-                    relativistic=False)
+            if check_amp:
+                if ('[NII]6548' in lines) & ('[NII]6583' in lines):
+                    line6548 = lines_cm1[lines.index('[NII]6548')]
+                    line6548 += orb.utils.spectrum.line_shift(
+                        ivel, line6548, wavenumber=True,
+                        relativistic=False)
+                    line6583 = lines_cm1[lines.index('[NII]6583')]
+                    line6583 += orb.utils.spectrum.line_shift(
+                        ivel, line6583, wavenumber=True,
+                        relativistic=False)
 
-                _amp_def[lines.index('[NII]6548')] = lines.index('[NII]6583') + i * 100
-                _amp_guess[lines.index('[NII]6583')] = orb.utils.spectrum.amp_ratio_from_flux_ratio(line6583, line6548, 3.071) # Storey and Zeipen (2000)
+                    _amp_def[lines.index('[NII]6548')] = lines.index('[NII]6583') + i * 100
+                    _amp_guess[lines.index('[NII]6583')] = orb.utils.spectrum.amp_ratio_from_flux_ratio(line6583, line6548, 3.071) # Storey and Zeipen (2000)
 
-            if '[OIII]4959' in lines and '[OIII]5007' in lines:
-                line4959 = lines_cm1[lines.index('[OIII]4959')]
-                line4959 += orb.utils.spectrum.line_shift(
-                    ivel, line4959, wavenumber=True,
-                    relativistic=False)
-                line5007 = lines_cm1[lines.index('[OIII]5007')]
-                line5007 += orb.utils.spectrum.line_shift(
-                    ivel, line5007, wavenumber=True,
-                    relativistic=False)
-                
-                _amp_def[lines.index('[OIII]4959')] = lines.index('[OIII]5007') + i * 100
-                _amp_guess[lines.index('[OIII]5007')] = orb.utils.spectrum.amp_ratio_from_flux_ratio(line5007, line4959, 3.013) # Storey and Zeipen (2000)
+                if ('[OIII]4959' in lines) & ('[OIII]5007' in lines):
+                    line4959 = lines_cm1[lines.index('[OIII]4959')]
+                    line4959 += orb.utils.spectrum.line_shift(
+                        ivel, line4959, wavenumber=True,
+                        relativistic=False)
+                    line5007 = lines_cm1[lines.index('[OIII]5007')]
+                    line5007 += orb.utils.spectrum.line_shift(
+                        ivel, line5007, wavenumber=True,
+                        relativistic=False)
+
+                    _amp_def[lines.index('[OIII]4959')] = lines.index('[OIII]5007') + i * 100
+                    _amp_guess[lines.index('[OIII]5007')] = orb.utils.spectrum.amp_ratio_from_flux_ratio(line5007, line4959, 3.013) # Storey and Zeipen (2000)
                 
             amp_def.append(_amp_def)
             amp_guess.append(_amp_guess)
@@ -1174,7 +1192,7 @@ class Spectrum(orb.core.Cm1Vector1d):
             pos_def += (str(i),) * len(lines)
         
         # add sigma definition if sincgauss
-        all_lines = Lines.get_line_cm1(lines * ncomp)
+        all_lines = self._get_lines_cm1(lines * ncomp)
         
         if fmodel == 'sincgauss':
             params['sigma_def'] = list(['1', ]) * len(all_lines)
@@ -1218,11 +1236,14 @@ class Spectrum(orb.core.Cm1Vector1d):
             lines = orb.core.Lines().get_lines_in_filter(
                 self.params.filter_nm_min, self.params.filter_nm_max)
 
+        
         vels, fluxes = self.estimate_parameters(lines, vel_range=vel_range,
                                                 max_comps=max_comps, precision=precision,
                                                 threshold=threshold, prod=prod, clean=clean)
+        logging.info('lines: {}'.format(lines))
         logging.info('estimated velocities: {}'.format(vels))
 
+        
         lines, params = self.get_autofit_parameters(
             velocities=vels,
             lines=lines,
