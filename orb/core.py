@@ -515,7 +515,7 @@ class Tools(object):
     Load instrument config file and give access to orb data files.
     """
     instruments = ['sitelle', 'spiomm', 'spice']
-    filters = ['SN1', 'SN2', 'SN3', 'C1', 'C2', 'C3', 'C4', 'FULL', 'PS1_r', 'PS1_i', 'PS1_g', 'PS1_y', 'PS1_z', 'F656N', 'SPIOMM_CALIB', 'SN123', 'SN23']
+    filters = ['SN1', 'SN2', 'SN3', 'SN4', 'SN5', 'SN6', 'C1', 'C2', 'C3', 'C4', 'FULL', 'PS1_r', 'PS1_i', 'PS1_g', 'PS1_y', 'PS1_z', 'F656N', 'SPIOMM_CALIB', 'SN123', 'SN23']
                 
     def __init__(self, instrument=None, config=None,
                  data_prefix="./temp/data."):
