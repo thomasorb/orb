@@ -1123,12 +1123,20 @@ class Spectrum(orb.core.Cm1Vector1d):
             lines = Lines.get_lines_in_filter(self.params.filter_nm_min,
                                               self.params.filter_nm_max)
 
-        check_amp = True
-        if np.all([isinstance(lines, str)]):
-            lines = Lines.convert_lines_name(lines)
-        else:
-            check_amp = False
-            logging.warning('lines passed as float, amplitude constraints on known doublets cannot be set automatically')
+        check_amp = False
+        
+        _lines = list()
+        for iline in lines:
+            if isinstance(iline, str):
+                _lines.append(Lines.convert_lines_name([iline,])[0])
+                check_amp = True
+            else:
+                _lines.append(iline)
+                logging.warning(f'{iline} passed as float')
+        lines = _lines
+
+        if not check_amp:
+            logging.warning('all lines passed as float: amplitude constraints on known doublets cannot be set automatically')
 
         lines_cm1 = self._get_lines_cm1(lines)
         
@@ -1228,11 +1236,14 @@ class Spectrum(orb.core.Cm1Vector1d):
             lines = orb.core.Lines().get_lines_in_filter(
                 self.params.filter_nm_min, self.params.filter_nm_max)
 
+        
         vels, fluxes = self.estimate_parameters(lines, vel_range=vel_range,
                                                 max_comps=max_comps, precision=precision,
                                                 threshold=threshold, prod=prod, clean=clean)
+        logging.info('lines: {}'.format(lines))
         logging.info('estimated velocities: {}'.format(vels))
 
+        
         lines, params = self.get_autofit_parameters(
             velocities=vels,
             lines=lines,

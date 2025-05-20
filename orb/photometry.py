@@ -64,25 +64,35 @@ class Photometry(object):
     def get_transmission(self, tterm):
         if not tterm in self.transmission_terms:
             raise ValueError('tterm must be in {}'.format(self.transmission_terms))
-        if tterm == 'atmosphere':
-            atm = orb.core.Cm1Vector1d(self.tools._get_atmospheric_extinction_file_path(),
-                                   params=self.params).project(self.cm1_axis)
-            atm.data = orb.utils.photometry.ext2trans(atm.data, self.airmass)
-            return atm
-        elif tterm == 'mirror':
-            return orb.core.Cm1Vector1d(self.tools._get_mirror_transmission_file_path(),
-                                   params=self.params).project(self.cm1_axis)
-        elif tterm == 'optics':
-            return orb.core.Cm1Vector1d(self.tools._get_optics_file_path(self.filter_name),
-                                    params=self.params).project(self.cm1_axis)
-        elif tterm == 'filter':
-            return self.filter_trans.copy()
-        elif tterm == 'telescope':
-            mtrans = self.get_transmission('mirror')
-            mtrans = mtrans.math('power', 2)
-            return mtrans
 
-        else: raise NotImplementedError('{} not defined'.format(tterm))
+        if tterm == 'filter':
+            return self.filter_trans.copy()
+        
+        try:
+            
+            if tterm == 'atmosphere':
+                atm = orb.core.Cm1Vector1d(self.tools._get_atmospheric_extinction_file_path(),
+                                           params=self.params).project(self.cm1_axis)
+                atm.data = orb.utils.photometry.ext2trans(atm.data, self.airmass)
+                return atm
+            elif tterm == 'mirror':
+                return orb.core.Cm1Vector1d(self.tools._get_mirror_transmission_file_path(),
+                                            params=self.params).project(self.cm1_axis)
+            elif tterm == 'optics':
+                return orb.core.Cm1Vector1d(self.tools._get_optics_file_path(self.filter_name),
+                                            params=self.params).project(self.cm1_axis)
+            elif tterm == 'telescope':
+                mtrans = self.get_transmission('mirror')
+                mtrans = mtrans.math('power', 2)
+                return mtrans
+
+            else:
+                raise NotImplementedError('{} not defined'.format(tterm))
+        except Exception as e:
+            logging.warning('{} file could not be loaded, a 100% transmission is considered'.format(tterm))
+            neutral_trans = self.filter_trans.copy()
+            neutral_trans.data = np.ones_like(neutral_trans.data)
+            return neutral_trans
         
     def get_unmodulated_transmission(self, eps=None):
         trans = self.get_transmission('atmosphere')
@@ -133,7 +143,6 @@ class Photometry(object):
 
         :param wf_error: wavefront error ratio (e.g. 1/30.)
         """
-        
         if opd_jitter is None: opd_jitter = self.tools.config['OPD_JITTER']
         if wf_error is None: wf_error = self.tools.config['WF_ERROR']
         rt4 = orb.core.Cm1Vector1d(self.tools._get_4rt_file_path(),
