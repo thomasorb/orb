@@ -445,7 +445,7 @@ class SourceSpectrum(orb.core.Vector1d, orb.core.Tools):
         # it should be transformed to counts/s
         if not bypass_flux2counts:
             spectrum = orb.fft.Spectrum(photom.flux2counts(spectrum, modulated=True, opd_jitter=opd_jitter, wf_error=wf_error))
-            spectrum.data *= spectrum.data.size * 2 #* params.exposure_time * binning**2.
+            spectrum.data *= spectrum.data.size #* params.exposure_time * binning**2.
             spectrum.data[np.nonzero(np.isnan(spectrum.data))] = 0.
             
         # compute total flux of input spectrum
