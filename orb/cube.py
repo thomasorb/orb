@@ -143,7 +143,6 @@ class HDFCube(orb.core.WCSData):
 
                 if 'instrument' in self.params and instrument is None:
                     instrument = self.params['instrument']
-
                 
         # init Tools and Data
         if not self.is_level1() and instrument is None:

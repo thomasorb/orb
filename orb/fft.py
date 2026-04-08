@@ -80,7 +80,7 @@ class Interferogram(orb.core.Vector1d):
                 - (self.params.step * self.params.zpd_index)) * self.params.calib_coeff
         if self.axis is None:
             self.axis = orb.core.Axis(opdaxis)
-        elif np.any(opdaxis != self.axis.data):
+        elif not np.allclose(opdaxis, self.axis.data):
             raise Exception('provided axis is inconsistent with the opd axis computed from the observation parameters')
         
         if self.axis.dimx != self.dimx:

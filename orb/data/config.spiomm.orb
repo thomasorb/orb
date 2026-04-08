@@ -11,7 +11,7 @@ OBS_LON -71.153000 # Observatory longitude
 OBS_ALT 1100. # Observatory altitude
 ATM_EXTINCTION_FILE MEGANTIC.atm_ext.hdf5 # Atmospheric extinction file name
 MIR_TRANSMISSION_FILE CFHT.mir_trans.hdf5 # Mirror transmision file name
-MIR_SURFACE 63546 # Mirror surface in cm^2 (1.6m, -21%)
+MIR_SURFACE 15883 # (np.pi * (160/2)**2)*0.79 # Mirror surface in cm^2 (1.6m, -21%)
 
 ## Instrumental parameters
 FIELD_OF_VIEW_1 12.4 # Size of the field of view of the camera 1 in

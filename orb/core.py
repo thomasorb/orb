@@ -2031,11 +2031,14 @@ class Data(object):
                 except AttributeError:
                     pass
 
+
         # load params
         if params is not None:
             self.params.update(params)
+            
         self.params.update(kwargs)
 
+        
         for iparam in self.convert_params:
             self.copy_param(iparam, self.convert_params[iparam])
             
@@ -3040,7 +3043,6 @@ class WCSData(Tools, Data):
         
         Data.__init__(self, data, **kwargs)
 
-        
         # try to load wcs from fits keywords if a FITS file
         if data_path is not None:
             if 'fit' in os.path.splitext(data_path)[1]:

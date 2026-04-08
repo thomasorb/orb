@@ -167,6 +167,12 @@ class Base(object):
             
         elif isinstance(params, dict):
             self.params = params
+            self.params['step_nb'] = int(step_nb)
+            self.params['nm_laser'] = self.tools.config['CALIB_NM_LASER']
+            self.params['zpd_index'] = self.params.step_nb // 5
+            self.params['calib_coeff'] = orb.utils.spectrum.theta2corr(
+                self.tools.config['OFF_AXIS_ANGLE_CENTER'])
+            
             if 'calib_coeff' not in self.params:
                 if 'axis_corr' in self.params:
                     self.params['calib_coeff'] = self.params['axis_corr']
@@ -216,7 +222,7 @@ class Interferogram(Base):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        
+
         cm1_axis = orb.utils.spectrum.create_cm1_axis(
             self.params.step_nb, self.params.step, self.params.order,
             corr=self.params.calib_coeff)
@@ -288,12 +294,15 @@ class Interferogram(Base):
 
         self.data += interf
         
-    def add_background(self):
-        QUALITY_COEFF = 100
+    def add_background(self, level=1):
+        QUALITY_COEFF = 10
         
         a = self.filterfile.get_transmission(
             self.params.step_nb * QUALITY_COEFF,
             corr=self.params.calib_coeff)
+
+        a.data = np.where(np.isnan(a.data), 0, a.data)
+        a.data /= np.nanmax(a.data) / level
 
         return self.add_spectrum(a)
     
@@ -302,6 +311,8 @@ class Interferogram(Base):
         :param spectrum: Spectrum instance which must be defined on the filter range.
         """
         a = spectrum.project(self.spectrum_axis)
+        a.data = np.where(np.isnan(a.data), 0, a.data)
+        
         if np.any(np.isnan(a.data)):
             raise ValueError('spectrum must be defined at least on the whole filter bandpass')
         

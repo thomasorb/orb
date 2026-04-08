@@ -79,6 +79,7 @@ class Photometry(object):
                 return orb.core.Cm1Vector1d(self.tools._get_mirror_transmission_file_path(),
                                             params=self.params).project(self.cm1_axis)
             elif tterm == 'optics':
+                print(self.filter_name)
                 return orb.core.Cm1Vector1d(self.tools._get_optics_file_path(self.filter_name),
                                             params=self.params).project(self.cm1_axis)
             elif tterm == 'telescope':
